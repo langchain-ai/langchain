@@ -728,7 +728,7 @@
                 "base",
                 "RunnableLambda"
               ],
-              "repr": "RunnableLambda(lambda x: x)"
+              "repr": "RunnableLambda(lambda _: 'shadow')"
             }
           }
         }

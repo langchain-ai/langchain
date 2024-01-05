@@ -1277,6 +1277,8 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
+        from langchain_core.tracers.log_stream import LogStreamCallbackHandler
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -1302,6 +1304,16 @@ class Runnable(Generic[Input, Output], ABC):
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            if stream_log := next(
+                (
+                    h
+                    for h in run_manager.handlers
+                    if isinstance(h, LogStreamCallbackHandler)
+                ),
+                None,
+            ):
+                # populates streamed_output in astream_log() output if needed
+                iterator = stream_log.tap_output_aiter(run_manager.run_id, iterator)
             try:
                 while True:
                     if accepts_context(asyncio.create_task):
