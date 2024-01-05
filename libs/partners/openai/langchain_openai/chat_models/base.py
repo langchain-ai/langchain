@@ -146,15 +146,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-async def acompletion_with_retry(
-    llm: ChatOpenAI,
-    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    **kwargs: Any,
-) -> Any:
-    """Use tenacity to retry the async completion call."""
-    return await llm.async_client.create(**kwargs)
-
-
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
@@ -497,9 +488,8 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await acompletion_with_retry(
-            self, messages=message_dicts, run_manager=run_manager, **params
-        ):
+        async for chunk in 
+        await self.async_client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
@@ -539,9 +529,7 @@ class ChatOpenAI(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = await acompletion_with_retry(
-            self, messages=message_dicts, run_manager=run_manager, **params
-        )
+        response = await self.async_client.create(messages=message_dicts,**params)
         return self._create_chat_result(response)
 
     @property

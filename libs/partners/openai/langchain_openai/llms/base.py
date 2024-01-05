@@ -69,15 +69,6 @@ def completion_with_retry(
     return llm.client.create(**kwargs)
 
 
-async def acompletion_with_retry(
-    llm: BaseOpenAI,
-    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    **kwargs: Any,
-) -> Any:
-    """Use tenacity to retry the async completion call."""
-    return await llm.async_client.create(**kwargs)
-
-
 class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class."""
 
@@ -265,9 +256,7 @@ class BaseOpenAI(BaseLLM):
     ) -> Iterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
         self.get_sub_prompts(params, [prompt], stop)  # this mutates params
-        for stream_resp in completion_with_retry(
-            self, prompt=prompt, run_manager=run_manager, **params
-        ):
+        for stream_resp in self.client.create(prompt=prompt, **params):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()
             chunk = _stream_response_to_generation_chunk(stream_resp)
@@ -291,8 +280,8 @@ class BaseOpenAI(BaseLLM):
     ) -> AsyncIterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
         self.get_sub_prompts(params, [prompt], stop)  # this mutates params
-        async for stream_resp in await acompletion_with_retry(
-            self, prompt=prompt, run_manager=run_manager, **params
+        async for stream_resp in await self.async_client.create(
+            prompt=prompt, **params
         ):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()
@@ -363,9 +352,7 @@ class BaseOpenAI(BaseLLM):
                     }
                 )
             else:
-                response = completion_with_retry(
-                    self, prompt=_prompts, run_manager=run_manager, **params
-                )
+                response = self.client.create(prompt=_prompts, **params)
                 if not isinstance(response, dict):
                     # V1 client returns the response in an PyDantic object instead of
                     # dict. For the transition period, we deep convert it to dict.
@@ -426,9 +413,7 @@ class BaseOpenAI(BaseLLM):
                     }
                 )
             else:
-                response = await acompletion_with_retry(
-                    self, prompt=_prompts, run_manager=run_manager, **params
-                )
+                response = await self.async_client.create(prompt=_prompts, **params)
                 if not isinstance(response, dict):
                     response = response.dict()
                 choices.extend(response["choices"])
