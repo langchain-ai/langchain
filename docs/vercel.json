@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/chains/(.+)",
+      "destination": "/docs/modules/chains"
+    },
+    {
       "source": "/docs/modules/agents/how_to/custom_llm_agent",
       "destination": "/docs/modules/agents/how_to/custom_agent"
     },
@@ -1423,10 +1427,6 @@
     {
       "source": "/docs/modules/callbacks/integrations/argilla",
       "destination": "/docs/integrations/callbacks/argilla"
-    },
-    {
-      "source": "/en/latest/modules/chains/examples/extraction.html",
-      "destination": "/docs/modules/chains/additional/extraction"
     },
     {
       "source": "/en/latest/modules/chains/examples/flare.html",
@@ -3661,102 +3661,6 @@
       "destination": "/docs/:path*"
     },
     {
-      "source": "/docs/modules/chains/additional/constitutional_chain",
-      "destination": "/docs/guides/safety/constitutional_chain"
-    },
-    {
-      "source": "/docs/modules/chains/additional/moderation",
-      "destination": "/docs/guides/safety/moderation"
-    },
-    {
-      "source": "/docs/modules/chains/popular/api",
-      "destination": "/docs/use_cases/apis/api"
-    },
-    {
-      "source": "/docs/modules/chains/additional/analyze_document",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/chains/popular/chat_vector_db",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/modules/chains/additional/multi_retrieval_qa_router",
-      "destination": "/docs/use_cases/question_answering/multi_retrieval_qa_router"
-    },
-    {
-      "source": "/docs/modules/chains/additional/question_answering",
-      "destination": "/docs/use_cases/question_answering/question_answering"
-    },
-    {
-      "source": "/docs/modules/chains/popular/vector_db_qa",
-      "destination": "/docs/use_cases/question_answering/vector_db_qa"
-    },
-    {
-      "source": "/docs/modules/chains/popular/summarize",
-      "destination": "/docs/use_cases/summarization/summarize"
-    },
-    {
-      "source": "/docs/modules/chains/popular/sqlite",
-      "destination": "/docs/use_cases/qa_structured/sql"
-    },
-    {
-      "source": "/docs/modules/chains/popular/openai_functions",
-      "destination": "/docs/modules/chains/how_to/openai_functions"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_requests",
-      "destination": "/docs/use_cases/apis/llm_requests"
-    },
-    {
-      "source": "/docs/modules/chains/additional/openai_openapi",
-      "destination": "/docs/use_cases/apis/openai_openapi"
-    },
-    {
-      "source": "/docs/modules/chains/additional/openapi",
-      "destination": "/docs/use_cases/apis/openapi"
-    },
-    {
-      "source": "/docs/modules/chains/additional/openapi_openai",
-      "destination": "/docs/use_cases/apis/openapi_openai"
-    },
-    {
-      "source": "/docs/modules/chains/additional/cpal",
-      "destination": "/docs/use_cases/more/code_writing/cpal"
-    },
-    {
-      "source": "/docs/use_cases/code_writing/cpal",
-      "destination": "/docs/use_cases/more/code_writing/cpal"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_bash",
-      "destination": "/docs/use_cases/more/code_writing/llm_bash"
-    },
-    {
-      "source": "/docs/use_cases/code_writing/llm_bash",
-      "destination": "/docs/use_cases/more/code_writing/llm_bash"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_math",
-      "destination": "/docs/use_cases/more/code_writing/llm_math"
-    },
-    {
-      "source": "/docs/use_cases/code_writing/llm_math",
-      "destination": "/docs/use_cases/more/code_writing/llm_math"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_symbolic_math",
-      "destination": "/docs/use_cases/more/code_writing/llm_symbolic_math"
-    },
-    {
-      "source": "/docs/use_cases/code_writing/llm_symbolic_math",
-      "destination": "/docs/use_cases/more/code_writing/llm_symbolic_math"
-    },
-    {
-      "source": "/docs/modules/chains/additional/pal",
-      "destination": "/docs/use_cases/more/code_writing/pal"
-    },
-    {
       "source": "/docs/use_cases/code_writing/pal",
       "destination": "/docs/use_cases/more/code_writing/pal"
     },
@@ -3769,74 +3673,6 @@
       "destination": "/docs/use_cases/more/code_writing/"
     },
     {
-      "source": "/docs/modules/chains/additional/graph_arangodb_qa",
-      "destination": "/docs/use_cases/graph/graph_arangodb_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_cypher_qa",
-      "destination": "/docs/use_cases/graph/graph_cypher_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_hugegraph_qa",
-      "destination": "/docs/use_cases/graph/graph_hugegraph_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_kuzu_qa",
-      "destination": "/docs/use_cases/graph/graph_kuzu_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_falkordb_qa",
-      "destination": "/docs/use_cases/graph/graph_falkordb_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_nebula_qa",
-      "destination": "/docs/use_cases/graph/graph_nebula_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_qa",
-      "destination": "/docs/use_cases/graph/graph_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_sparql_qa",
-      "destination": "/docs/use_cases/graph/graph_sparql_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/neptune_cypher_qa",
-      "destination": "/docs/use_cases/graph/neptune_cypher_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/tot",
-      "destination": "/docs/use_cases/graph/tot"
-    },
-    {
-      "source": "/docs/modules/chains/additional/flare",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/chains/additional/hyde",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/chains/additional/qa_citations",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/chains/additional/vector_db_text_generation",
-      "destination": "/docs/use_cases/question_answering/vector_db_text_generation"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_checker",
-      "destination": "/docs/use_cases/more/self_check/llm_checker"
-    },
-    {
-      "source": "/docs/use_cases/self_check/llm_checker",
-      "destination": "/docs/use_cases/more/self_check/llm_checker"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_summarization_checker",
-      "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
-    },
-    {
       "source": "/docs/use_cases/self_check/llm_summarization_checker",
       "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
     },
@@ -3847,13 +3683,6 @@
     {
       "source": "/docs/use_cases/self_check(/?)",
       "destination": "/docs/use_cases/more/self_check/"
-    }, {
-      "source": "/docs/modules/chains/additional/elasticsearch_database",
-      "destination": "/docs/use_cases/qa_structured/integrations/elasticsearch"
-    },
-    {
-      "source": "/docs/modules/chains/additional/tagging",
-      "destination": "/docs/use_cases/tagging"
     },
     {
       "source": "docs/integrations/providers/agent_with_wandb_tracing",
