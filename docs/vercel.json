@@ -1,7 +1,7 @@
 {
   "redirects": [
     {
-      "source": "/docs/modules/chains/:path*",
+      "source": "/docs/modules/chains/(.+)",
       "destination": "/docs/modules/chains"
     },
     {
