@@ -54,7 +54,6 @@ from langchain.utilities.asyncio import asyncio_timeout
 logger = logging.getLogger(__name__)
 
 
-@deprecated("0.1.0", removal="0.2.0")
 class BaseSingleActionAgent(BaseModel):
     """Base Single Action Agent class."""
 
@@ -196,7 +195,6 @@ class BaseSingleActionAgent(BaseModel):
         return {}
 
 
-@deprecated("0.1.0", removal="0.2.0")
 class BaseMultiActionAgent(BaseModel):
     """Base Multi Action Agent class."""
 
@@ -579,7 +577,14 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         }
 
 
-@deprecated("0.1.0", removal="0.2.0")
+@deprecated(
+    "0.1.0",
+    alternative=(
+        "Use new agent constructor methods like create_react_agent, create_json_agent, "
+        "create_structured_chat_agent, etc."
+    ),
+    removal="0.2.0",
+)
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
 
