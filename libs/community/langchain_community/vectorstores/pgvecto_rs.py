@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Iterable, List, Literal, Optional, Tuple, Type
+from typing import Any, Iterable, List, Literal, Optional, Tuple, Type, Union, Dict
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -158,20 +158,30 @@ class PGVecto_rs(VectorStore):
         distance_func: Literal[
             "sqrt_euclid", "neg_dot_prod", "ned_cos"
         ] = "sqrt_euclid",
-        filter: Optional[Any] = None,
+        filter: Union[None, Dict[str, Any], Any] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query vector, with its score."""
 
         from pgvecto_rs.sdk import Filter, Record
+        from pgvecto_rs.sdk.filters import meta_contains
 
         distance_func_map = {
             "sqrt_euclid": "<->",
             "neg_dot_prod": "<#>",
             "ned_cos": "<=>",
         }
+        if filter is None:
+            real_filter = None
+        elif isinstance(filter, dict):
+            real_filter = meta_contains(filter)
+        else:
+            real_filter = filter
         results = self._store.search(
-            query_vector, distance_func_map[distance_func], k, filter=filter
+            query_vector,
+            distance_func_map[distance_func],
+            k,
+            filter=real_filter,
         )
 
         return [
