@@ -179,7 +179,7 @@ def _convert_delta_to_message_chunk(
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
-    To use, you should have the ``openai`` python package installed, and the
+    To use, you should have the
     environment variable ``OPENAI_API_KEY`` set with your API key.
 
     Any parameters that are valid to be passed to the openai.create call can be passed

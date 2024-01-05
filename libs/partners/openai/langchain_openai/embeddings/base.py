@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 class OpenAIEmbeddings(BaseModel, Embeddings):
     """OpenAI embedding models.
 
-    To use, you should have the ``openai`` python package installed, and the
+    To use, you should have the
     environment variable ``OPENAI_API_KEY`` set with your API key or pass it
     as a named parameter to the constructor.
 
@@ -209,8 +209,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             or os.getenv("OPENAI_ORGANIZATION")
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
-            warnings.warn(
-                "If you have openai>=1.0.0 installed and are using Azure, "
+            raise ValueError(
+                "If you are using Azure, "
                 "please use the `AzureOpenAIEmbeddings` class."
             )
         client_params = {

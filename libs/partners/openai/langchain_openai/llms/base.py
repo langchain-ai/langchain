@@ -19,6 +19,7 @@ from typing import (
     Union,
 )
 
+import openai
 import tiktoken
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -191,13 +192,6 @@ class BaseOpenAI(BaseLLM):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        try:
-            import openai
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
 
         client_params = {
             "api_key": values["openai_api_key"],

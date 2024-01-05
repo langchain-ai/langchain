@@ -16,7 +16,7 @@ import openai
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from .base import BaseOpenAI
+from langchain_openai.llms.base import BaseOpenAI
 
 logger = logging.getLogger(__name__)
 

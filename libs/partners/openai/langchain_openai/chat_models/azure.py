@@ -11,7 +11,7 @@ from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from .base import ChatOpenAI
+from langchain_openai.chat_models.base import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class AzureChatOpenAI(ChatOpenAI):
     must have a deployed model on Azure OpenAI. Use `deployment_name` in the
     constructor to refer to the "Model deployment name" in the Azure portal.
 
-    In addition, you should have the ``openai`` python package installed, and the
+    In addition, you should have the
     following environment variables set or passed in constructor in lower case:
     - ``AZURE_OPENAI_API_KEY``
     - ``AZURE_OPENAI_ENDPOINT``
@@ -31,7 +31,7 @@ class AzureChatOpenAI(ChatOpenAI):
     - ``OPENAI_API_VERSION``
     - ``OPENAI_PROXY``
 
-    For example, if you have `gpt-35-turbo` deployed, with the deployment name
+    For example, if you have `gpt-3.5-turbo` deployed, with the deployment name
     `35-turbo-dev`, the constructor should look like:
 
     .. code-block:: python
