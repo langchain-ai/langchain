@@ -5,6 +5,10 @@
       "destination": "/docs/packages"
     },
     {
+      "source": "/docs/community",
+      "destination": "/docs/contributing"
+    },
+    {
       "source": "/docs/modules/chains/(.+)",
       "destination": "/docs/modules/chains"
     },
