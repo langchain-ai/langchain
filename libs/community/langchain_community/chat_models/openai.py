@@ -144,7 +144,7 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-@deprecated(since="0.1.0", alternative="langchain_openai.ChatOpenAI")
+@deprecated(since="0.1.0", removal="0.2.0", alternative="langchain_openai.ChatOpenAI")
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 

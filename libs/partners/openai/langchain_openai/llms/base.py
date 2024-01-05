@@ -631,6 +631,11 @@ class OpenAI(BaseOpenAI):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "openai"]
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **super()._invocation_params}

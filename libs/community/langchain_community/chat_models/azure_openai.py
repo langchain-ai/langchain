@@ -17,7 +17,9 @@ from langchain_community.utils.openai import is_openai_v1
 logger = logging.getLogger(__name__)
 
 
-@deprecated(since="0.1.0", alternative="langchain_openai.AzureChatOpenAI")
+@deprecated(
+    since="0.1.0", removal="0.2.0", alternative="langchain_openai.AzureChatOpenAI"
+)
 class AzureChatOpenAI(ChatOpenAI):
     """`Azure OpenAI` Chat Completion API.
 
