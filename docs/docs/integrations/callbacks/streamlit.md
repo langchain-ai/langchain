@@ -7,7 +7,7 @@
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/streamlit-agent?quickstart=1)
 
 In this guide we will demonstrate how to use `StreamlitCallbackHandler` to display the thoughts and actions of an agent in an
-interactive Streamlit app. Try it out with the running app below using the [MRKL agent](/docs/modules/agents/how_to/mrkl/):
+interactive Streamlit app. Try it out with the running app below using the MRKL agent:
 
 <iframe loading="lazy" src="https://langchain-mrkl.streamlit.app/?embed=true&embed_options=light_theme"
     style={{ width: 100 + '%', border: 'none', marginBottom: 1 + 'rem', height: 600 }}
