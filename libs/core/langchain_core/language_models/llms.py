@@ -926,6 +926,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def __call__(
         self,
         prompt: str,
