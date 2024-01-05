@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
     Runnable,
     RunnableSerializable,
@@ -156,6 +157,7 @@ def config_with_context(
     return _config_with_context(config, steps, _setter, _getter, threading.Event)
 
 
+@beta()
 class ContextGet(RunnableSerializable):
     """Get a context value."""
 
@@ -219,6 +221,7 @@ def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
     return coerce_to_runnable(value)
 
 
+@beta()
 class ContextSet(RunnableSerializable):
     """Set a context value."""
 
