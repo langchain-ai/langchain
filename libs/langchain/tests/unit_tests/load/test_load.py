@@ -5,7 +5,6 @@ from langchain_community.llms.openai import OpenAI as CommunityOpenAI
 from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.load import load, loads
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_openai import OpenAI
 
 from langchain.chains.llm import LLMChain
 
@@ -14,8 +13,10 @@ class NotSerializable:
     pass
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain-openai")
 def test_loads_openai_llm() -> None:
+    from langchain_openai import OpenAI
+
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
@@ -26,8 +27,10 @@ def test_loads_openai_llm() -> None:
     assert isinstance(llm2, OpenAI)
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_loads_llmchain() -> None:
+    from langchain_openai import OpenAI
+
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
@@ -41,9 +44,11 @@ def test_loads_llmchain() -> None:
     assert isinstance(chain2.prompt, PromptTemplate)
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_loads_llmchain_env() -> None:
     import os
+
+    from langchain_openai import OpenAI
 
     has_env = "OPENAI_API_KEY" in os.environ
     if not has_env:
@@ -80,8 +85,10 @@ def test_loads_llmchain_with_non_serializable_arg() -> None:
         loads(chain_string, secrets_map={"OPENAI_API_KEY": "hello"})
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_load_openai_llm() -> None:
+    from langchain_openai import OpenAI
+
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     llm_obj = dumpd(llm)
     llm2 = load(llm_obj, secrets_map={"OPENAI_API_KEY": "hello"})
@@ -91,8 +98,10 @@ def test_load_openai_llm() -> None:
     assert isinstance(llm2, OpenAI)
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_load_llmchain() -> None:
+    from langchain_openai import OpenAI
+
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
@@ -106,9 +115,11 @@ def test_load_llmchain() -> None:
     assert isinstance(chain2.prompt, PromptTemplate)
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_load_llmchain_env() -> None:
     import os
+
+    from langchain_openai import OpenAI
 
     has_env = "OPENAI_API_KEY" in os.environ
     if not has_env:
