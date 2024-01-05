@@ -50,8 +50,10 @@ class ChatHuggingFace(BaseChatModel):
         super().__init__(**kwargs)
 
         from transformers import AutoTokenizer
-
-        self._resolve_model_id()
+        # `self.model_id` should only be resolved when not explicitly defined
+        # If `llm` is a HuggingFaceTextGenInference, there would exist cases in which the TGI server is not a HuggingFace-deployed Inference Endpoint that has an explicit model ID, but a self-hosted version
+        if not self.model_id:
+            self._resolve_model_id()
         self.tokenizer = (
             AutoTokenizer.from_pretrained(self.model_id)
             if self.tokenizer is None
