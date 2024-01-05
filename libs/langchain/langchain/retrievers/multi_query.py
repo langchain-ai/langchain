@@ -39,8 +39,8 @@ class LineListOutputParser(PydanticOutputParser):
 # Default prompt
 DEFAULT_QUERY_PROMPT = PromptTemplate(
     input_variables=["question"],
-    template="""You are an AI language model assistant. Your task is 
-    to generate 3 different versions of the given user 
+    template=f"""You are an AI language model assistant. Your task is 
+    to generate {num_variations} different versions of the given user 
     question to retrieve relevant documents from a vector  database. 
     By generating multiple perspectives on the user question, 
     your goal is to help the user overcome some of the limitations 
@@ -64,6 +64,7 @@ class MultiQueryRetriever(BaseRetriever):
     verbose: bool = True
     parser_key: str = "lines"
     include_original: bool = False
+    num_variations: int = 3
     """Whether to include the original query in the list of generated queries."""
 
     @classmethod
@@ -74,6 +75,7 @@ class MultiQueryRetriever(BaseRetriever):
         prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: str = "lines",
         include_original: bool = False,
+        num_variations: int = 3,
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 
