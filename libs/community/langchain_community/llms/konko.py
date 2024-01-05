@@ -82,8 +82,8 @@ class Konko(LLM):
                 "including the completion endpoint."
             )
         return values
-    
-    def _construct_payload(
+
+    def construct_payload(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
@@ -137,7 +137,7 @@ class Konko(LLM):
         """
         import konko
 
-        payload = self._construct_payload(prompt, stop, **kwargs)
+        payload = self.construct_payload(prompt, stop, **kwargs)
 
         try:
             if is_openai_v1():
@@ -176,7 +176,7 @@ class Konko(LLM):
         """
         import konko
 
-        payload = self._construct_payload(prompt, stop, **kwargs)
+        payload = self.construct_payload(prompt, stop, **kwargs)
 
         try:
             if is_openai_v1():
