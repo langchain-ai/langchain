@@ -43,7 +43,7 @@ class BaseChatMessageHistory(ABC):
     """A list of Messages stored in-memory."""
 
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
-        """Convenience method for adding a human message string to the store.
+        """Convenience method for adding a human message to the store.
 
         Args:
             message: The human message to add
@@ -54,7 +54,7 @@ class BaseChatMessageHistory(ABC):
             self.add_message(HumanMessage(content=message))
 
     def add_ai_message(self, message: Union[AIMessage, str]) -> None:
-        """Convenience method for adding an AI message string to the store.
+        """Convenience method for adding an AI message to the store.
 
         Args:
             message: The AI message to add.
