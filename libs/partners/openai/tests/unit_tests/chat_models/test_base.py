@@ -12,7 +12,7 @@ from langchain_core.messages import (
 )
 
 from langchain_openai import ChatOpenAI
-from langchain_openai.chat_models import _convert_dict_to_message
+from langchain_openai.chat_models.base import _convert_dict_to_message
 
 
 def test_openai_model_param() -> None:
