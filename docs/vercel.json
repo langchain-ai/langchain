@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/contributing/packages",
+      "destination": "/docs/packages"
+    },
+    {
       "source": "/docs/modules/chains/(.+)",
       "destination": "/docs/modules/chains"
     },
