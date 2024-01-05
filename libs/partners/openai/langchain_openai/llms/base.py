@@ -33,7 +33,7 @@ from langchain_core.utils.utils import build_extra_kwargs
 logger = logging.getLogger(__name__)
 
 
-def update_token_usage(
+def _update_token_usage(
     keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
 ) -> None:
     """Update token usage."""
@@ -359,7 +359,7 @@ class BaseOpenAI(BaseLLM):
                     response = response.dict()
 
                 choices.extend(response["choices"])
-                update_token_usage(_keys, response, token_usage)
+                _update_token_usage(_keys, response, token_usage)
                 if not system_fingerprint:
                     system_fingerprint = response.get("system_fingerprint")
         return self.create_llm_result(
@@ -417,7 +417,7 @@ class BaseOpenAI(BaseLLM):
                 if not isinstance(response, dict):
                     response = response.dict()
                 choices.extend(response["choices"])
-                update_token_usage(_keys, response, token_usage)
+                _update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(
             choices,
             prompts,
