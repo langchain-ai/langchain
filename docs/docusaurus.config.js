@@ -182,7 +182,8 @@ const config = {
                 label: "Versioning",
               },
               {
-                to: "/docs/changelog",
+                type: "docSidebar",
+                sidebarId: "changelog",
                 label: "Changelog",
               },
               {
