@@ -8,7 +8,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_pydantic_field_names, get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -135,10 +135,13 @@ class HuggingFaceTextGenInference(LLM):
         huggingfacehub_api_token = get_from_dict_or_env(
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
-        # When TGI make requests to Huggingface's Inference Enpoints, a bearer token must be included into the request header for authorization
-        # https://github.com/huggingface/text-generation-inference/issues/747         
+        # When TGI make requests to Huggingface's Inference Enpoints,
+        # a bearer token must be included into the request header for authorization
+        # https://github.com/huggingface/text-generation-inference/issues/747
         if huggingfacehub_api_token:
-            values["server_kwargs"]["headers"] = {"Authorization": f"Bearer {huggingfacehub_api_token}"}
+            values["server_kwargs"]["headers"] = {
+                "Authorization": f"Bearer {huggingfacehub_api_token}"
+            }
         try:
             import text_generation
 
