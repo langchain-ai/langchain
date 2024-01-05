@@ -49,28 +49,22 @@ def get_llm_output(usage: Any, **params: Any) -> dict:
     return llm_output
 
 
-def _get_router(
-    llm: Any,
-):
-    return llm.metadata["router"]
-
-
-def _get_model_for_completion(router):
-    # use first model name (aka: model group),
-    # since we can only pass one to the router completion functions
-    return router.model_list[0]["model_name"]
-
-
 class ChatLiteLLMRouter(ChatLiteLLM):
     """LiteLLM Router as LangChain Model."""
+    router: Any
 
-    # use metadata here, so we can store arbitrary types
-    # from https://github.com/langchain-ai/langchain/issues/12304#issuecomment-1826394746
-    metadata: Dict[str, Any] = None
+    def __init__(self, *, router, **kwargs):
+        super().__init__(**kwargs)
+        self.router = router
 
     @property
     def _llm_type(self) -> str:
         return "LiteLLMRouter"
+
+    def _set_model_for_completion(self):
+        # use first model name (aka: model group),
+        # since we can only pass one to the router completion functions
+        self.model = self.router.model_list[0]["model_name"]
 
     def _prepare_params_for_router(self, params):
         params["model"] = self.model
@@ -100,11 +94,10 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        router = _get_router(self)
-        self.model = _get_model_for_completion(router)
+        self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
-        response = router.completion(
+        response = self.router.completion(
             messages=message_dicts,
             **params,
         )
@@ -120,11 +113,10 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         default_chunk_class = AIMessageChunk
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
-        router = _get_router(self)
-        self.model = _get_model_for_completion(router)
+        self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
-        for chunk in router.completion(messages=message_dicts, **params):
+        for chunk in self.router.completion(messages=message_dicts, **params):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
@@ -144,11 +136,10 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         default_chunk_class = AIMessageChunk
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
-        router = _get_router(self)
-        self.model = _get_model_for_completion(router)
+        self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
-        async for chunk in await router.acompletion(messages=message_dicts, **params):
+        async for chunk in await self.router.acompletion(messages=message_dicts, **params):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
@@ -175,11 +166,10 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        router = _get_router(self)
-        self.model = _get_model_for_completion(router)
+        self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
-        response = await router.acompletion(
+        response = await self.router.acompletion(
             messages=message_dicts,
             **params,
         )

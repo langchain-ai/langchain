@@ -157,7 +157,7 @@ def litellm_router():
 @pytest.mark.scheduled
 def test_litellm_router_call(fake_completion, litellm_router) -> None:
     """Test valid call to LiteLLM Router."""
-    chat = ChatLiteLLMRouter(metadata={"router": litellm_router})
+    chat = ChatLiteLLMRouter(router=litellm_router)
     message = HumanMessage(content="Hello")
 
     response = chat([message])
@@ -174,7 +174,7 @@ def test_litellm_router_generate(fake_completion, litellm_router) -> None:
     """Test generate method of LiteLLM Router."""
     from litellm import Usage
 
-    chat = ChatLiteLLMRouter(metadata={"router": litellm_router})
+    chat = ChatLiteLLMRouter(router=litellm_router)
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -200,7 +200,7 @@ def test_litellm_router_generate(fake_completion, litellm_router) -> None:
 @pytest.mark.scheduled
 def test_litellm_router_streaming(fake_completion, litellm_router) -> None:
     """Test streaming tokens from LiteLLM Router."""
-    chat = ChatLiteLLMRouter(metadata={"router": litellm_router}, streaming=True)
+    chat = ChatLiteLLMRouter(router=litellm_router, streaming=True)
     message = HumanMessage(content="Hello")
 
     response = chat([message])
@@ -217,7 +217,7 @@ def test_litellm_router_streaming_callback(fake_completion, litellm_router) -> N
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     chat = ChatLiteLLMRouter(
-        metadata={"router": litellm_router},
+        router=litellm_router,
         streaming=True,
         callbacks=[callback_handler],
         verbose=True,
@@ -240,7 +240,7 @@ async def test_async_litellm_router(fake_completion, litellm_router) -> None:
     """Test async generation."""
     from litellm import Usage
 
-    chat = ChatLiteLLMRouter(metadata={"router": litellm_router})
+    chat = ChatLiteLLMRouter(router=litellm_router)
     message = HumanMessage(content="Hello")
 
     response = await chat.agenerate([[message], [message]])
@@ -266,7 +266,7 @@ async def test_async_litellm_router_streaming(fake_completion, litellm_router) -
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     chat = ChatLiteLLMRouter(
-        metadata={"router": litellm_router},
+        router=litellm_router,
         streaming=True,
         callbacks=[callback_handler],
         verbose=True,
