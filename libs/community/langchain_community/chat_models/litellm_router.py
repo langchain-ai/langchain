@@ -2,7 +2,6 @@
 from typing import (
     Any,
     AsyncIterator,
-    Dict,
     Iterator,
     List,
     Mapping,
@@ -51,9 +50,10 @@ def get_llm_output(usage: Any, **params: Any) -> dict:
 
 class ChatLiteLLMRouter(ChatLiteLLM):
     """LiteLLM Router as LangChain Model."""
+
     router: Any
 
-    def __init__(self, *, router, **kwargs):
+    def __init__(self, *, router: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.router = router
 
@@ -61,12 +61,12 @@ class ChatLiteLLMRouter(ChatLiteLLM):
     def _llm_type(self) -> str:
         return "LiteLLMRouter"
 
-    def _set_model_for_completion(self):
+    def _set_model_for_completion(self) -> None:
         # use first model name (aka: model group),
         # since we can only pass one to the router completion functions
         self.model = self.router.model_list[0]["model_name"]
 
-    def _prepare_params_for_router(self, params):
+    def _prepare_params_for_router(self, params: Any) -> None:
         params["model"] = self.model
 
         # allow the router to set api_base based on its model choice
@@ -139,7 +139,9 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
-        async for chunk in await self.router.acompletion(messages=message_dicts, **params):
+        async for chunk in await self.router.acompletion(
+            messages=message_dicts, **params
+        ):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
