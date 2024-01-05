@@ -270,6 +270,12 @@ class AzureSearch(VectorStore):
         """Initialize with necessary components."""
         # Initialize base class
         self.embedding_function = embedding_function
+
+        if isinstance(self.embedding_function, Embeddings):
+            self.embed_query = self.embedding_function.embed_query
+        else:
+            self.embed_query = self.embedding_function
+
         default_fields = [
             SimpleField(
                 name=FIELDS_ID,
@@ -285,7 +291,7 @@ class AzureSearch(VectorStore):
                 name=FIELDS_CONTENT_VECTOR,
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                vector_search_dimensions=self._get_vector_search_dimensions(),
+                vector_search_dimensions=len(self.embed_query("Text")),
                 vector_search_configuration="default",
             ),
             SearchableField(
@@ -319,12 +325,6 @@ class AzureSearch(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         # TODO: Support embedding object directly
         return None
-
-    def _get_vector_search_dimensions(self) -> int:
-        if isinstance(self.embedding_function, Embeddings):
-            return len(self.embedding_function.embed_query("Text"))
-        else:
-            return len(self.embedding_function("Text"))
 
     def add_texts(
         self,
@@ -457,9 +457,7 @@ class AzureSearch(VectorStore):
             search_text="",
             vectors=[
                 Vector(
-                    value=np.array(
-                        self.embedding_function(query), dtype=np.float32
-                    ).tolist(),
+                    value=np.array(self.embed_query(query), dtype=np.float32).tolist(),
                     k=k,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
@@ -528,9 +526,7 @@ class AzureSearch(VectorStore):
             search_text=query,
             vectors=[
                 Vector(
-                    value=np.array(
-                        self.embedding_function(query), dtype=np.float32
-                    ).tolist(),
+                    value=np.array(self.embed_query(query), dtype=np.float32).tolist(),
                     k=k,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
@@ -620,9 +616,7 @@ class AzureSearch(VectorStore):
             search_text=query,
             vectors=[
                 Vector(
-                    value=np.array(
-                        self.embedding_function(query), dtype=np.float32
-                    ).tolist(),
+                    value=np.array(self.embed_query(query), dtype=np.float32).tolist(),
                     k=50,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
@@ -701,7 +695,7 @@ class AzureSearch(VectorStore):
             azure_search_endpoint,
             azure_search_key,
             index_name,
-            embedding.embed_query,
+            embedding,
         )
         azure_search.add_texts(texts, metadatas, **kwargs)
         return azure_search
