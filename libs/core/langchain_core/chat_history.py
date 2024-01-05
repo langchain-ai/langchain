@@ -64,6 +64,17 @@ class BaseChatMessageHistory(ABC):
         else:
             self.add_message(AIMessage(content=message))
 
+    def add_system_message(self, message: Union[SystemMessage, str]) -> None:
+        """Convenience method for adding a system message to the store.
+
+        Args:
+            message: The system message to add.
+        """
+        if isinstance(message, SystemMessage):
+            self.add_message(message)
+        else:
+            self.add_message(SystemMessage(content=message))
+
     @abstractmethod
     def add_message(self, message: BaseMessage) -> None:
         """Add a Message object to the store.
