@@ -37,6 +37,12 @@ jobs:
         shell: bash
         run: poetry install --with test,test_integration
 
+      - name: 'Authenticate to Google Cloud'
+        id: 'auth'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
       - name: Run integration tests
         shell: bash
         env:
