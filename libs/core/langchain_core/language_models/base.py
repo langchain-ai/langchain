@@ -150,7 +150,7 @@ class BaseLanguageModel(
                 prompt and additional model provider-specific output.
         """
 
-    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     @abstractmethod
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
@@ -171,7 +171,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
-    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     @abstractmethod
     def predict_messages(
         self,
@@ -196,7 +196,7 @@ class BaseLanguageModel(
             Top model prediction as a message.
         """
 
-    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
     @abstractmethod
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
@@ -217,7 +217,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
-    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
     @abstractmethod
     async def apredict_messages(
         self,
