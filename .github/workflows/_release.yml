@@ -153,9 +153,18 @@ jobs:
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Run unit tests with minimum dependency versions
+        if: ${{ (inputs.working-directory == 'libs/langchain') || (inputs.working-directory == 'libs/community') || (inputs.working-directory == 'libs/experimental') }}
+        run: |
+          poetry run pip install -r _test_minimum_requirements.txt
+          make tests
+        working-directory: ${{ inputs.working-directory }}
 
   publish:
     needs:

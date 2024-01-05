@@ -83,7 +83,12 @@ class QianfanChatEndpoint(BaseChatModel):
                 endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
     """
 
+    init_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """init kwargs for qianfan client init, such as `query_per_second` which is 
+        associated with qianfan resource object to limit QPS"""
+
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """extra params for model invoke using with `do`."""
 
     client: Any
 
@@ -122,6 +127,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 values,
                 "qianfan_ak",
                 "QIANFAN_AK",
+                default="",
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
@@ -129,14 +135,18 @@ class QianfanChatEndpoint(BaseChatModel):
                 values,
                 "qianfan_sk",
                 "QIANFAN_SK",
+                default="",
             )
         )
         params = {
-            "ak": values["qianfan_ak"].get_secret_value(),
-            "sk": values["qianfan_sk"].get_secret_value(),
+            **values.get("init_kwargs", {}),
             "model": values["model"],
             "stream": values["streaming"],
         }
+        if values["qianfan_ak"].get_secret_value() != "":
+            params["ak"] = values["qianfan_ak"].get_secret_value()
+        if values["qianfan_sk"].get_secret_value() != "":
+            params["sk"] = values["qianfan_sk"].get_secret_value()
         if values["endpoint"] is not None and values["endpoint"] != "":
             params["endpoint"] = values["endpoint"]
         try:

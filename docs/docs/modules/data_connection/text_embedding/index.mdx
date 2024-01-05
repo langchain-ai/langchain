@@ -32,14 +32,14 @@ export OPENAI_API_KEY="..."
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
 
 embeddings_model = OpenAIEmbeddings(openai_api_key="...")
 ```
 
 Otherwise you can initialize without any params:
 ```python
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
 
 embeddings_model = OpenAIEmbeddings()
 ```
