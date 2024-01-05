@@ -1,6 +1,5 @@
 """Test LiteLLM Router API wrapper."""
 import asyncio
-import functools
 from copy import deepcopy
 from typing import List
 
@@ -13,6 +12,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 model_group = "gpt-4"
 fake_model_prefix = "azure/fake-deployment-name-"
+fake_models_names = [fake_model_prefix + suffix for suffix in ["1", "2"]]
 fake_api_key = "fakekeyvalue"
 fake_api_version = "XXXX-XX-XX"
 fake_api_base = "https://faketesturl/"
@@ -24,7 +24,7 @@ model_list = [
     {
         "model_name": model_group,
         "litellm_params": {
-            "model": fake_model_prefix + "1",
+            "model": fake_models_names[0],
             "api_key": fake_api_key,
             "api_version": fake_api_version,
             "api_base": fake_api_base,
@@ -33,7 +33,7 @@ model_list = [
     {
         "model_name": model_group,
         "litellm_params": {
-            "model": fake_model_prefix + "2",
+            "model": fake_models_names[1],
             "api_key": fake_api_key,
             "api_version": fake_api_version,
             "api_base": fake_api_base,
@@ -41,102 +41,112 @@ model_list = [
     },
 ]
 
+class FakeCompletion():
+    def __init__(self):
+        self.seen_inputs = []
 
-def fake_completion_fn(**kwargs):
-    from litellm import Usage
+    async def _get_fake_results_agenerator(self, **kwargs):
+        from litellm import Usage
 
-    assert kwargs["model"].startswith(fake_model_prefix)
-    assert kwargs["api_key"] == fake_api_key
-    assert kwargs["api_version"] == fake_api_version
-    assert kwargs["api_base"] == fake_api_base
-    metadata = kwargs["metadata"]
-    assert metadata["model_group"] == model_group
-    assert metadata["deployment"].startswith(fake_model_prefix)
+        self.seen_inputs.append(kwargs)
+        base_result = {
+            "choices": [
+                {
+                    "index": 0,
+                }
+            ],
+            "created": 0,
+            "id": "",
+            "model": model_group,
+            "object": "chat.completion",
+        }
+        if kwargs["stream"]:
+            for chunk_index in range(0, len(fake_chunks)):
+                result = deepcopy(base_result)
+                choice = result["choices"][0]
+                choice["delta"] = {
+                    "role": "assistent",
+                    "content": fake_chunks[chunk_index],
+                    "function_call": None,
+                }
+                choice["finish_reason"] = None
+                # no usage here, since no usage from OpenAI API for streaming yet
+                # https://community.openai.com/t/usage-info-in-api-responses/18862
+                yield result
 
-    base_result = {
-        "choices": [
-            {
-                "index": 0,
-            }
-        ],
-        "created": 0,
-        "id": "",
-        "model": model_group,
-        "object": "chat.completion",
-    }
-    if kwargs["stream"]:
-        results = []
-        for chunk_index in range(0, len(fake_chunks)):
             result = deepcopy(base_result)
             choice = result["choices"][0]
-            choice["delta"] = {
-                "role": "assistent",
-                "content": fake_chunks[chunk_index],
-                "function_call": None,
-            }
-            choice["finish_reason"] = None
+            choice["delta"] = {}
+            choice["finish_reason"] = "stop"
             # no usage here, since no usage from OpenAI API for streaming yet
             # https://community.openai.com/t/usage-info-in-api-responses/18862
-            results.append(result)
+            yield result
+        else:
+            result = base_result
+            choice = result["choices"][0]
+            choice["message"] = {
+                "content": fake_answer,
+                "role": "assistant",
+            }
+            choice["finish_reason"] = "stop"
+            result["usage"] = Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
+            yield result
 
-        result = deepcopy(base_result)
-        choice = result["choices"][0]
-        choice["delta"] = {}
-        choice["finish_reason"] = "stop"
-        # no usage here, since no usage from OpenAI API for streaming yet
-        # https://community.openai.com/t/usage-info-in-api-responses/18862
-        results.append(result)
+    def completion(self, **kwargs):
+        agen = self._get_fake_results_agenerator(**kwargs)
+        if kwargs["stream"]:
+            results = []
+            while True:
+                try:
+                    results.append(asyncio.run(agen.__anext__()))
+                except StopAsyncIteration:
+                    break
+            return results
+        else:
+            # there is only one result for non-streaming
+            return asyncio.run(agen.__anext__())
 
-        return results
-    else:
-        result = base_result
-        choice = result["choices"][0]
-        choice["message"] = {
-            "content": fake_answer,
-            "role": "assistant",
-        }
-        choice["finish_reason"] = "stop"
-        result["usage"] = Usage(completion_tokens=1, prompt_tokens=2, total_tokens=3)
-        return result
+    async def acompletion(self, **kwargs):
+        agen = self._get_fake_results_agenerator(**kwargs)
+        if kwargs["stream"]:
+            return agen
+        else:
+            # there is only one result for non-streaming
+            return await agen.__anext__()
 
+    def check_inputs(self, expected_num_calls):
+        assert len(self.seen_inputs) == expected_num_calls
+        for kwargs in self.seen_inputs:
+            metadata = kwargs["metadata"]
 
-class AsyncIterator:
-    def __init__(self, seq):
-        self.iter = iter(seq)
+            assert metadata["model_group"] == model_group
 
-    def __aiter__(self):
-        return self
+            # LiteLLM router chooses one model name from the model_list
+            assert kwargs["model"] in fake_models_names
+            assert metadata["deployment"] in fake_models_names
 
-    async def __anext__(self):
-        try:
-            return next(self.iter)
-        except StopIteration:
-            raise StopAsyncIteration
-
-
-async def fake_acompletion_fn(**kwargs):
-    loop = asyncio.get_event_loop()
-    results = await loop.run_in_executor(
-        None, functools.partial(fake_completion_fn, **kwargs)
-    )
-    if kwargs["stream"]:
-        return AsyncIterator(results)
-    else:
-        return results
+            assert kwargs["api_key"] == fake_api_key
+            assert kwargs["api_version"] == fake_api_version
+            assert kwargs["api_base"] == fake_api_base
 
 
-def setup_fakes() -> None:
-    """Setup fakes."""
+
+@pytest.fixture
+def fake_completion():
+    """Fake AI completion for testing."""
     import litellm
+
+    fake_completion = FakeCompletion()
 
     # Turn off LiteLLM's built-in telemetry
     litellm.telemetry = False
-    litellm.completion = fake_completion_fn
-    litellm.acompletion = fake_acompletion_fn
+    litellm.completion = fake_completion.completion
+    litellm.acompletion = fake_completion.acompletion
+    return fake_completion
 
-
-def get_test_router() -> None:
-    """Get router for testing."""
+@pytest.fixture
+def litellm_router():
+    """LiteLLM router for testing."""
     from litellm import Router
 
     return Router(
@@ -145,11 +155,9 @@ def get_test_router() -> None:
 
 
 @pytest.mark.scheduled
-def test_litellm_router_call() -> None:
+def test_litellm_router_call(fake_completion, litellm_router) -> None:
     """Test valid call to LiteLLM Router."""
-    setup_fakes()
-    router = get_test_router()
-    chat = ChatLiteLLMRouter(metadata={"router": router})
+    chat = ChatLiteLLMRouter(metadata={"router": litellm_router})
     message = HumanMessage(content="Hello")
 
     response = chat([message])
@@ -158,16 +166,15 @@ def test_litellm_router_call() -> None:
     assert isinstance(response.content, str)
     assert response.content == fake_answer
     # no usage check here, since response is only an AIMessage
+    fake_completion.check_inputs(expected_num_calls=1)
 
 
 @pytest.mark.scheduled
-def test_litellm_router_generate() -> None:
+def test_litellm_router_generate(fake_completion, litellm_router) -> None:
     """Test generate method of LiteLLM Router."""
     from litellm import Usage
 
-    setup_fakes()
-    router = get_test_router()
-    chat = ChatLiteLLMRouter(metadata={"router": router})
+    chat = ChatLiteLLMRouter(metadata={"router": litellm_router})
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -187,14 +194,13 @@ def test_litellm_router_generate() -> None:
     assert result.llm_output[token_usage_key_name] == Usage(
         completion_tokens=1, prompt_tokens=2, total_tokens=3
     )
+    fake_completion.check_inputs(expected_num_calls=1)
 
 
 @pytest.mark.scheduled
-def test_litellm_router_streaming() -> None:
+def test_litellm_router_streaming(fake_completion, litellm_router) -> None:
     """Test streaming tokens from LiteLLM Router."""
-    setup_fakes()
-    router = get_test_router()
-    chat = ChatLiteLLMRouter(metadata={"router": router}, streaming=True)
+    chat = ChatLiteLLMRouter(metadata={"router": litellm_router}, streaming=True)
     message = HumanMessage(content="Hello")
 
     response = chat([message])
@@ -203,16 +209,15 @@ def test_litellm_router_streaming() -> None:
     assert isinstance(response.content, str)
     assert response.content == fake_answer
     # no usage check here, since response is only an AIMessage
+    fake_completion.check_inputs(expected_num_calls=1)
 
 
 @pytest.mark.scheduled
-def test_litellm_router_streaming_callback() -> None:
+def test_litellm_router_streaming_callback(fake_completion, litellm_router) -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
-    setup_fakes()
-    router = get_test_router()
     chat = ChatLiteLLMRouter(
-        metadata={"router": router},
+        metadata={"router": litellm_router},
         streaming=True,
         callbacks=[callback_handler],
         verbose=True,
@@ -226,16 +231,16 @@ def test_litellm_router_streaming_callback() -> None:
     assert isinstance(response.content, str)
     assert response.content == fake_answer
     # no usage check here, since response is only an AIMessage
+    fake_completion.check_inputs(expected_num_calls=1)
 
 
+@pytest.mark.asyncio
 @pytest.mark.scheduled
-async def test_async_litellm_router() -> None:
+async def test_async_litellm_router(fake_completion, litellm_router) -> None:
     """Test async generation."""
     from litellm import Usage
 
-    setup_fakes()
-    router = get_test_router()
-    chat = ChatLiteLLMRouter(metadata={"router": router})
+    chat = ChatLiteLLMRouter(metadata={"router": litellm_router})
     message = HumanMessage(content="Hello")
 
     response = await chat.agenerate([[message], [message]])
@@ -252,16 +257,16 @@ async def test_async_litellm_router() -> None:
     assert response.llm_output[token_usage_key_name] == Usage(
         completion_tokens=2, prompt_tokens=4, total_tokens=6
     )
+    fake_completion.check_inputs(expected_num_calls=2)
 
 
+@pytest.mark.asyncio
 @pytest.mark.scheduled
-async def test_async_litellm_router_streaming() -> None:
+async def test_async_litellm_router_streaming(fake_completion, litellm_router) -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
-    setup_fakes()
-    router = get_test_router()
     chat = ChatLiteLLMRouter(
-        metadata={"router": router},
+        metadata={"router": litellm_router},
         streaming=True,
         callbacks=[callback_handler],
         verbose=True,
@@ -282,3 +287,4 @@ async def test_async_litellm_router_streaming() -> None:
             assert generation.message.content == fake_answer
     # no usage check here, since no usage from OpenAI API for streaming yet
     # https://community.openai.com/t/usage-info-in-api-responses/18862
+    fake_completion.check_inputs(expected_num_calls=2)
