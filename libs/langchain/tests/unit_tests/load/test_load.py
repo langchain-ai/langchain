@@ -22,7 +22,6 @@ def test_loads_openai_llm() -> None:
 
     assert llm2 == llm
     llm_string_2 = dumps(llm2)
-    print(llm_string_2)
     assert llm_string_2 == llm_string
     assert isinstance(llm2, OpenAI)
 
