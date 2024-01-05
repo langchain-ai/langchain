@@ -8,7 +8,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils import get_pydantic_field_names, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +95,8 @@ class HuggingFaceTextGenInference(LLM):
     """Holds any model parameters valid for `call` not explicitly specified"""
     client: Any
     async_client: Any
+    """Keyword arguments to pass to the model."""
+    huggingfacehub_api_token: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -129,8 +131,14 @@ class HuggingFaceTextGenInference(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that python package exists in environment."""
-
+        """Validate that api key and python package exists in environment."""
+        huggingfacehub_api_token = get_from_dict_or_env(
+            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
+        )
+        # When TGI make requests to Huggingface's Inference Enpoints, a bearer token must be included into the request header for authorization
+        # https://github.com/huggingface/text-generation-inference/issues/747         
+        if huggingfacehub_api_token:
+            values["server_kwargs"]["headers"] = {"Authorization": f"Bearer {huggingfacehub_api_token}"}
         try:
             import text_generation
 
