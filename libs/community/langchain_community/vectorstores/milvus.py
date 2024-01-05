@@ -119,6 +119,9 @@ class Milvus(VectorStore):
         text_field: str = "text",
         vector_field: str = "vector",
         metadata_field: Optional[str] = None,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -158,6 +161,10 @@ class Milvus(VectorStore):
         self._vector_field = vector_field
         self._metadata_field = metadata_field
         self.fields: list[str] = []
+        self.partition_names = partition_names
+        self.replica_number = replica_number
+        self.timeout = timeout
+
         # Create the connection to the server
         if connection_args is None:
             connection_args = DEFAULT_MILVUS_CONNECTION
@@ -176,7 +183,11 @@ class Milvus(VectorStore):
             self.col = None
 
         # Initialize the vector store
-        self._init()
+        self._init(
+            partition_names=partition_names,
+            replica_number=replica_number,
+            timeout=timeout,
+        )
 
     @property
     def embeddings(self) -> Embeddings:
@@ -235,14 +246,23 @@ class Milvus(VectorStore):
             raise e
 
     def _init(
-        self, embeddings: Optional[list] = None, metadatas: Optional[list[dict]] = None
+        self,
+        embeddings: Optional[list] = None,
+        metadatas: Optional[list[dict]] = None,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
     ) -> None:
         if embeddings is not None:
             self._create_collection(embeddings, metadatas)
         self._extract_fields()
         self._create_index()
         self._create_search_params()
-        self._load()
+        self._load(
+            partition_names=partition_names,
+            replica_number=replica_number,
+            timeout=timeout,
+        )
 
     def _create_collection(
         self, embeddings: list, metadatas: Optional[list[dict]] = None
@@ -396,12 +416,21 @@ class Milvus(VectorStore):
                 self.search_params = self.default_search_params[index_type]
                 self.search_params["metric_type"] = metric_type
 
-    def _load(self) -> None:
+    def _load(
+        self,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
+    ) -> None:
         """Load the collection if available."""
         from pymilvus import Collection
 
         if isinstance(self.col, Collection) and self._get_index() is not None:
-            self.col.load()
+            self.col.load(
+                partition_names=partition_names,
+                replica_number=replica_number,
+                timeout=timeout,
+            )
 
     def add_texts(
         self,
@@ -417,7 +446,7 @@ class Milvus(VectorStore):
         in creating a new Collection. The data of the first entity decides
         the schema of the new collection, the dim is extracted from the first
         embedding and the columns are decided by the first metadata dict.
-        Metada keys will need to be present for all inserted values. At
+        Metadata keys will need to be present for all inserted values. At
         the moment there is no None equivalent in Milvus.
 
         Args:
@@ -451,7 +480,14 @@ class Milvus(VectorStore):
 
         # If the collection hasn't been initialized yet, perform all steps to do so
         if not isinstance(self.col, Collection):
-            self._init(embeddings, metadatas)
+            kwargs = {"embeddings": embeddings, "metadatas": metadatas}
+            if self.partition_names:
+                kwargs["partition_names"] = self.partition_names
+            if self.replica_number:
+                kwargs["replica_number"] = self.replica_number
+            if self.timeout:
+                kwargs["timeout"] = self.timeout
+            self._init(**kwargs)
 
         # Dict to hold all insert columns
         insert_dict: dict[str, list] = {
