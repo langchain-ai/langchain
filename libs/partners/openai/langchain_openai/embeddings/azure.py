@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import warnings
 from typing import Callable, Dict, Optional, Union
 
 import openai
@@ -94,31 +93,19 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         if openai_api_base and values["validate_base_url"]:
             if "/openai" not in openai_api_base:
                 values["openai_api_base"] += "/openai"
-                warnings.warn(
+                raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
-                    f"the `azure_endpoint` param not `openai_api_base` "
-                    f"(or alias `base_url`). Updating `openai_api_base` from "
-                    f"{openai_api_base} to {values['openai_api_base']}."
+                    "the `azure_endpoint` param not `openai_api_base` "
+                    "(or alias `base_url`). "
                 )
             if values["deployment"]:
-                warnings.warn(
+                raise ValueError(
                     "As of openai>=1.0.0, if `deployment` (or alias "
                     "`azure_deployment`) is specified then "
                     "`openai_api_base` (or alias `base_url`) should not be. "
                     "Instead use `deployment` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
-                if values["deployment"] not in values["openai_api_base"]:
-                    warnings.warn(
-                        "As of openai>=1.0.0, if `openai_api_base` "
-                        "(or alias `base_url`) is specified it is expected to be "
-                        "of the form "
-                        "https://example-resource.azure.openai.com/openai/deployments/example-deployment. "  # noqa: E501
-                        f"Updating {openai_api_base} to "
-                        f"{values['openai_api_base']}."
-                    )
-                    values["openai_api_base"] += "/deployments/" + values["deployment"]
-                values["deployment"] = None
         client_params = {
             "api_version": values["openai_api_version"],
             "azure_endpoint": values["azure_endpoint"],

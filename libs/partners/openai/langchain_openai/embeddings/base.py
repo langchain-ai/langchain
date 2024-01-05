@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from typing import (
     Any,
     Dict,
@@ -150,7 +149,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             if field_name in extra:
                 raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                warnings.warn(
+                logger.warning(
                     f"""WARNING! {field_name} is not default parameter.
                     {field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
