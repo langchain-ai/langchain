@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "langchain-openai"
-version = "0.0.1rc0"
+version = "0.0.1rc1"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.12"
+langchain-core = ">=0.1.7,<0.2"
 openai = "^1.6.1"
 numpy = "^1"
 tiktoken = "^0.5.2"
