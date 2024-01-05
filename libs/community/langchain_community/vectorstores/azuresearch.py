@@ -319,7 +319,7 @@ class AzureSearch(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         # TODO: Support embedding object directly
         return None
-    
+
     def _get_vector_search_dimensions(self) -> int:
         if isinstance(self.embedding_function, Embeddings):
             return len(self.embedding_function.embed_query("Text"))
@@ -336,7 +336,7 @@ class AzureSearch(VectorStore):
         keys = kwargs.get("keys")
         ids = []
 
-        # Embedding documents with batching support if embedding function is an Embeddings object
+        # batching support if embedding function is an Embeddings object
         if isinstance(self.embedding_function, Embeddings):
             try:
                 embeddings = self.embedding_func.embed_documents(texts)
