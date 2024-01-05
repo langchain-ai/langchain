@@ -1,38 +1,42 @@
----
-sidebar_label: Package Versioning
-sidebar_position: 4
----
-
 # 📕 Package Versioning
 
 As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
-a maintainer and published to [PyPI](https://pypi.org/). 
+a maintainer and published to [PyPI](https://pypi.org/).
 The different packages are versioned slightly differently.
 
 ## `langchain-core`
 
 `langchain-core` is currently on version `0.1.x`. 
 
-As `langchain-core` contains the base abstractions and runtime for the whole LangChain ecosystem, we will communicate any breaking changes with advance notice and version bumps. The exception for this is anything in `langchain_core.beta`. The reason for `langchain_core.beta` is that given the rate of change of the field, being able to move quickly is still a priority, and this module is our attempt to do so.
+As `langchain-core` contains the base abstractions and runtime for the whole LangChain ecosystem, we will communicate any breaking changes with advance notice and version bumps. The exception for this is anything marked with the `beta` decorator (you can see this in the API reference and will see warnings when using such functionality). The reason for beta features is that given the rate of change of the field, being able to move quickly is still a priority.
 
 Minor version increases will occur for:
 
-- Breaking changes for any public interfaces NOT in `langchain_core.beta`
+- Breaking changes for any public interfaces marked as `beta`.
 
 Patch version increases will occur for:
 
 - Bug fixes
 - New features
 - Any changes to private interfaces
-- Any changes to `langchain_core.beta`
+- Any changes to `beta` features
 
 ## `langchain`
 
-`langchain` is currently on version `0.0.x`
+`langchain` is currently on version `0.1.x`
 
-All changes will be accompanied by a patch version increase. Any changes to public interfaces are nearly always done in a backwards compatible way and will be communicated ahead of time when they are not backwards compatible.
+Minor version increases will occur for:
 
-We are targeting January 2024 for a release of `langchain` v0.1, at which point `langchain` will adopt the same versioning policy as `langchain-core`.
+- Breaking changes for any public interfaces NOT marked as `beta`.
+
+Patch version increases will occur for:
+
+- Bug fixes
+- New features
+- Any changes to private interfaces
+- Any changes to `beta` features
+
+We are targeting February 2024 for a release of `langchain` v0.2, which will have some breaking changes to legacy Chains and Agents.
 
 ## `langchain-community`
 
