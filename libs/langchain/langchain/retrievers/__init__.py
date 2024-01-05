@@ -21,7 +21,6 @@ import warnings
 from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
-from langchain_core.utils.interactive_env import is_interactive_env
 
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.ensemble import EnsembleRetriever
@@ -36,6 +35,7 @@ from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
 from langchain.retrievers.web_research import WebResearchRetriever
+from langchain.utils.interactive_env import is_interactive_env
 
 
 def __getattr__(name: str) -> Any:

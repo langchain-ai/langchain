@@ -19,7 +19,6 @@ from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core._api.path import as_import_path
-from langchain_core.utils.interactive_env import is_interactive_env
 
 from langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (
     create_conversational_retrieval_agent,
@@ -34,6 +33,7 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.tools.retriever import create_retriever_tool
+from langchain.utils.interactive_env import is_interactive_env
 
 DEPRECATED_AGENTS = [
     "create_csv_agent",

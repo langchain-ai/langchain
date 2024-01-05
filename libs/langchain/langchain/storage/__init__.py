@@ -9,12 +9,12 @@ import warnings
 from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
-from langchain_core.utils.interactive_env import is_interactive_env
 
 from langchain.storage._lc_store import create_kv_docstore, create_lc_store
 from langchain.storage.encoder_backed import EncoderBackedStore
 from langchain.storage.file_system import LocalFileStore
 from langchain.storage.in_memory import InMemoryByteStore, InMemoryStore
+from langchain.utils.interactive_env import is_interactive_env
 
 
 def __getattr__(name: str) -> Any:

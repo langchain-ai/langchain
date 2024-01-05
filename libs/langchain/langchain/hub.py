@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from langchain_core._api import suppress_langchain_beta_warning
 from langchain_core.load.dump import dumps
-from langchain_core.load.load import _loads_suppress_warning
+from langchain_core.load.load import loads
 
 if TYPE_CHECKING:
     from langchainhub import Client
@@ -79,6 +78,4 @@ def pull(
     """
     client = _get_client(api_url=api_url, api_key=api_key)
     resp: str = client.pull(owner_repo_commit)
-    with suppress_langchain_beta_warning():
-        obj = _loads_suppress_warning(resp)
-    return obj
+    return loads(resp)

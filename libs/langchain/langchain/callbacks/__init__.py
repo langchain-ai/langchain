@@ -20,13 +20,13 @@ from langchain_core.tracers.context import (
     tracing_v2_enabled,
 )
 from langchain_core.tracers.langchain import LangChainTracer
-from langchain_core.utils.interactive_env import is_interactive_env
 
 from langchain.callbacks.file import FileCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
+from langchain.utils.interactive_env import is_interactive_env
 
 
 def __getattr__(name: str) -> Any:
