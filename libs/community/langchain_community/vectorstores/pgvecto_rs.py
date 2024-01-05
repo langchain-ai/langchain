@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Iterable, List, Literal, Optional, Tuple, Type, Union, Dict
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -29,8 +29,9 @@ class PGVecto_rs(VectorStore):
             dimension: Dimension of the embeddings.
             db_url: Database URL.
             collection_name: Name of the collection.
-            new_table: Whether to create a new table or connect to an existing one. If true, the table will be dropped if exists, then recreated.
-              Defaults to False.
+            new_table: Whether to create a new table or connect to an existing one.
+            If true, the table will be dropped if exists, then recreated.
+            Defaults to False.
         """
         try:
             from pgvecto_rs.sdk import PGVectoRs
@@ -163,7 +164,6 @@ class PGVecto_rs(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query vector, with its score."""
 
-        from pgvecto_rs.sdk import Filter, Record
         from pgvecto_rs.sdk.filters import meta_contains
 
         distance_func_map = {
