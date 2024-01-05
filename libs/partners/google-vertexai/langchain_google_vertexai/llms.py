@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from concurrent.futures import Executor, ThreadPoolExecutor
+from concurrent.futures import Executor
 from typing import Any, ClassVar, Dict, Iterator, List, Optional, Union
 
 import vertexai  # type: ignore
@@ -51,7 +51,9 @@ def _completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = create_retry_decorator(run_manager=run_manager)
+    retry_decorator = create_retry_decorator(
+        max_retries=llm.max_retries, run_manager=run_manager
+    )
 
     @retry_decorator
     def _completion_with_retry_inner(
@@ -77,7 +79,9 @@ async def _acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = create_retry_decorator(run_manager=run_manager)
+    retry_decorator = create_retry_decorator(
+        max_retries=llm.max_retries, run_manager=run_manager
+    )
 
     @retry_decorator
     async def _acompletion_with_retry_inner(
@@ -107,12 +111,6 @@ class _VertexAIBase(BaseModel):
     "Optional list of stop words to use when generating."
     model_name: Optional[str] = None
     "Underlying model name."
-
-    @classmethod
-    def _get_task_executor(cls, request_parallelism: int = 5) -> Executor:
-        if cls.task_executor is None:
-            cls.task_executor = ThreadPoolExecutor(max_workers=request_parallelism)
-        return cls.task_executor
 
 
 class _VertexAICommon(_VertexAIBase):
