@@ -248,7 +248,7 @@ class AzureSearch(VectorStore):
         azure_search_endpoint: str,
         azure_search_key: str,
         index_name: str,
-        embedding_function: Callable,
+        embedding_function: Union[Callable, Embeddings],
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         semantic_query_language: str = "en-us",
@@ -285,7 +285,7 @@ class AzureSearch(VectorStore):
                 name=FIELDS_CONTENT_VECTOR,
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                vector_search_dimensions=len(embedding_function("Text")),
+                vector_search_dimensions=self._get_vector_search_dimensions(),
                 vector_search_configuration="default",
             ),
             SearchableField(
@@ -319,6 +319,12 @@ class AzureSearch(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         # TODO: Support embedding object directly
         return None
+    
+    def _get_vector_search_dimensions(self) -> int:
+        if isinstance(self.embedding_function, Embeddings):
+            return len(self.embedding_function.embed_query("Text"))
+        else:
+            return len(self.embedding_function("Text"))
 
     def add_texts(
         self,
@@ -329,6 +335,20 @@ class AzureSearch(VectorStore):
         """Add texts data to an existing index."""
         keys = kwargs.get("keys")
         ids = []
+
+        # Embedding documents with batching support if embedding function is an Embeddings object
+        if isinstance(self.embedding_function, Embeddings):
+            try:
+                embeddings = self.embedding_func.embed_documents(texts)
+            except NotImplementedError:
+                embeddings = [self.embedding_func.embed_query(x) for x in texts]
+        else:
+            embeddings = [self.embedding_function(x) for x in texts]
+
+        if len(embeddings) == 0:
+            logger.debug("Nothing to insert, skipping.")
+            return []
+
         # Write data to index
         data = []
         for i, text in enumerate(texts):
@@ -344,7 +364,7 @@ class AzureSearch(VectorStore):
                 FIELDS_ID: key,
                 FIELDS_CONTENT: text,
                 FIELDS_CONTENT_VECTOR: np.array(
-                    self.embedding_function(text), dtype=np.float32
+                    embeddings[i], dtype=np.float32
                 ).tolist(),
                 FIELDS_METADATA: json.dumps(metadata),
             }
