@@ -18,7 +18,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 
 
-@deprecated("0.1.0", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_react_agent", removal="0.2.0")
 class ConversationalAgent(Agent):
     """An agent that holds a conversation in addition to using tools."""
 
