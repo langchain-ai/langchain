@@ -15,7 +15,6 @@ source .venv/bin/activate
 python3.8 -m pip install --upgrade pip
 python3.8 -m pip install -r vercel_requirements.txt
 python3.8 scripts/model_feat_table.py
-python3.8 scripts/generate_api_reference_links.py
 mkdir docs/templates
 cp ../templates/docs/INDEX.md docs/templates/index.md
 python3.8 scripts/copy_templates.py
