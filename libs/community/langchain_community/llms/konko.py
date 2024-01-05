@@ -137,7 +137,6 @@ class Konko(LLM):
         """
         import konko
 
-        stop_to_use = stop[0] if stop and len(stop) == 1 else stop
         payload = self._construct_payload(prompt, stop, **kwargs)
 
         try:
@@ -177,7 +176,6 @@ class Konko(LLM):
         """
         import konko
 
-        stop_to_use = stop[0] if stop and len(stop) == 1 else stop
         payload = self._construct_payload(prompt, stop, **kwargs)
 
         try:
