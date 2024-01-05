@@ -15,6 +15,3 @@ except metadata.PackageNotFoundError:
 if not is_interactive_env():
     surface_langchain_deprecation_warnings()
     surface_langchain_beta_warnings()
-
-surface_langchain_deprecation_warnings()
-surface_langchain_beta_warnings()
