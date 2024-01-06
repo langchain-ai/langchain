@@ -3501,12 +3501,12 @@ url = "../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.0.1rc1"
+version = "0.0.2"
 description = "An integration package connecting OpenAI and LangChain"
-optional = true
+optional = false
 python-versions = ">=3.8.1,<4.0"
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 langchain-core = ">=0.1.7,<0.2"
@@ -9130,4 +9130,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d76f34f0cc4ed3c0d4612e1bfd00e76147844045252fb760d6d1035dbdcc07a5"
+content-hash = "d7c5c1442fe27a676f42cb065d2336933d1e5b5ae44822adfeff03f5e924f439"
