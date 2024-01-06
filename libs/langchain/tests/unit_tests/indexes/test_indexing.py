@@ -12,14 +12,14 @@ from typing import (
 )
 from unittest.mock import patch
 
+import langchain_community.vectorstores
 import pytest
 import pytest_asyncio
+from langchain_community.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
 
-import langchain.vectorstores
-from langchain.document_loaders.base import BaseLoader
 from langchain.indexes import aindex, index
 from langchain.indexes._api import _abatch
 from langchain.indexes._sql_record_manager import SQLRecordManager
@@ -1207,9 +1207,9 @@ def test_compatible_vectorstore_documentation() -> None:
 
     # Check all vector store classes for compatibility
     compatible = set()
-    for class_name in langchain.vectorstores.__all__:
+    for class_name in langchain_community.vectorstores.__all__:
         # Get the definition of the class
-        cls = getattr(langchain.vectorstores, class_name)
+        cls = getattr(langchain_community.vectorstores, class_name)
 
         # If the class corresponds to a vectorstore, check its compatibility
         if issubclass(cls, VectorStore):
@@ -1242,6 +1242,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ScaNN",
         "SemaDB",
         "SupabaseVectorStore",
+        "SurrealDBStore",
         "TileDB",
         "TimescaleVector",
         "Vald",

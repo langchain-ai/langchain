@@ -14,6 +14,8 @@
 
     Document, <name>TextSplitter
 """
+import warnings
+from typing import Any
 
 from langchain.document_loaders.acreom import AcreomLoader
 from langchain.document_loaders.airbyte import (
@@ -201,12 +203,39 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
+from langchain_core._api import LangChainDeprecationWarning
 
-# Legacy: only for backwards compatibility. Use PyPDFLoader instead
-PagedPDFSplitter = PyPDFLoader
+from langchain.utils.interactive_env import is_interactive_env
 
 # For backwards compatibility
-TelegramChatLoader = TelegramChatFileLoader
+_old_to_new_name = {
+    "PagedPDFSplitter": "PyPDFLoader",
+    "TelegramChatLoader": "TelegramChatFileLoader",
+}
+
+
+def __getattr__(name: str) -> Any:
+    from langchain_community import document_loaders
+
+    # If not in interactive env, raise warning.
+    if not is_interactive_env():
+        warnings.warn(
+            "Importing document loaders from langchain is deprecated. Importing from "
+            "langchain will no longer be supported as of langchain==0.2.0. "
+            "Please import from langchain-community instead:\n\n"
+            f"`from langchain_community.document_loaders import {name}`.\n\n"
+            "To install langchain-community run `pip install -U langchain-community`.",
+            category=LangChainDeprecationWarning,
+        )
+
+    if name in _old_to_new_name:
+        warnings.warn(
+            f"Using legacy class name {name}, use {_old_to_new_name[name]} instead."
+        )
+        name = _old_to_new_name[name]
+
+    return getattr(document_loaders, name)
+
 
 __all__ = [
     "AcreomLoader",

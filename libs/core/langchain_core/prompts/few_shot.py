@@ -98,7 +98,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     prefix: str = ""
     """A prompt template string to put before the examples."""
 
-    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
+    template_format: Literal["f-string", "jinja2"] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     @root_validator()

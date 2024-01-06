@@ -90,9 +90,9 @@ SERIALIZABLE_MAPPING = {
         "MessagesPlaceholder",
     ),
     ("langchain", "llms", "openai", "OpenAI"): (
-        "langchain",
+        "langchain_openai",
         "llms",
-        "openai",
+        "base",
         "OpenAI",
     ),
     ("langchain", "prompts", "chat", "ChatPromptTemplate"): (
@@ -203,9 +203,9 @@ SERIALIZABLE_MAPPING = {
         "StrOutputParser",
     ),
     ("langchain", "chat_models", "openai", "ChatOpenAI"): (
-        "langchain",
+        "langchain_openai",
         "chat_models",
-        "openai",
+        "base",
         "ChatOpenAI",
     ),
     ("langchain", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
@@ -221,9 +221,9 @@ SERIALIZABLE_MAPPING = {
         "RunnableParallel",
     ),
     ("langchain", "chat_models", "azure_openai", "AzureChatOpenAI"): (
-        "langchain",
+        "langchain_openai",
         "chat_models",
-        "azure_openai",
+        "azure",
         "AzureChatOpenAI",
     ),
     ("langchain", "chat_models", "bedrock", "BedrockChat"): (
@@ -323,9 +323,9 @@ SERIALIZABLE_MAPPING = {
         "GooglePalm",
     ),
     ("langchain", "llms", "openai", "AzureOpenAI"): (
-        "langchain",
+        "langchain_openai",
         "llms",
-        "openai",
+        "azure",
         "AzureOpenAI",
     ),
     ("langchain", "llms", "replicate", "Replicate"): (
