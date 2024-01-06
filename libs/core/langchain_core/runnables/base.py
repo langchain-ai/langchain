@@ -2745,6 +2745,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 ],
             ]
         ] = None,
+        name: Optional[str] = None,
     ) -> None:
         """Create a RunnableLambda from a callable, and async callable or both.
 
@@ -2778,7 +2779,9 @@ class RunnableLambda(Runnable[Input, Output]):
             )
 
         try:
-            if func_for_name.__name__ != "<lambda>":
+            if name is not None:
+                self.name = name
+            elif func_for_name.__name__ != "<lambda>":
                 self.name = func_for_name.__name__
         except AttributeError:
             pass
@@ -3057,17 +3060,7 @@ class RunnableLambda(Runnable[Input, Output]):
     def _config(
         self, config: Optional[RunnableConfig], callable: Callable[..., Any]
     ) -> RunnableConfig:
-        config = ensure_config(config)
-
-        if config.get("run_name") is None:
-            try:
-                run_name = callable.__name__
-            except AttributeError:
-                run_name = None
-            if run_name is not None:
-                return patch_config(config, run_name=run_name)
-
-        return config
+        return ensure_config(config)
 
     def invoke(
         self,
