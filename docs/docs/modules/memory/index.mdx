@@ -2,7 +2,7 @@
 sidebar_position: 3
 sidebar_class_name: hidden
 ---
-# Memory
+# [Beta] Memory
 
 Most LLM applications have a conversational interface. An essential component of a conversation is being able to refer to information introduced earlier in the conversation.
 At bare minimum, a conversational system should be able to access some window of past messages directly.
@@ -11,6 +11,23 @@ A more complex system will need to have a world model that it is constantly upda
 We call this ability to store information about past interactions "memory".
 LangChain provides a lot of utilities for adding memory to a system.
 These utilities can be used by themselves or incorporated seamlessly into a chain.
+
+Most of memory-related functionality in LangChain is marked as beta. This is for two reasons:
+
+1. Most functionality (with some exceptions, see below) are not production ready
+
+2. Most functionality (with some exceptions, see below) work with Legacy chains, not the newer LCEL syntax.
+
+The main exception to this is the `ChatMessageHistory` functionality. This functionality is largely production ready and does integrate with LCEL.
+
+- [LCEL Runnables](/docs/expression_language/how_to/message_history): For an overview of how to use `ChatMessageHistory` with LCEL runnables, see these docs
+
+- [Integrations](/docs/integrations/memory): For an introduction to the various `ChatMessageHistory` integrations, see these docs
+
+
+
+
+## Introduction
 
 A memory system needs to support two basic actions: reading and writing.
 Recall that every chain defines some core execution logic that expects certain inputs.

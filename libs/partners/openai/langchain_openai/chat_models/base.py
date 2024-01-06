@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import warnings
 from typing import (
     Any,
     AsyncIterator,
@@ -179,7 +180,7 @@ def _convert_delta_to_message_chunk(
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
-    To use, you should have the ``openai`` python package installed, and the
+    To use, you should have the
     environment variable ``OPENAI_API_KEY`` set with your API key.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
@@ -285,7 +286,7 @@ class ChatOpenAI(BaseChatModel):
             if field_name in extra:
                 raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                logger.warning(
+                warnings.warn(
                     f"""WARNING! {field_name} is not default parameter.
                     {field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""

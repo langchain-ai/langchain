@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from typing import Any, Callable, Dict, List, Union
 
 import openai
@@ -11,7 +10,7 @@ from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from .base import ChatOpenAI
+from langchain_openai.chat_models.base import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class AzureChatOpenAI(ChatOpenAI):
     must have a deployed model on Azure OpenAI. Use `deployment_name` in the
     constructor to refer to the "Model deployment name" in the Azure portal.
 
-    In addition, you should have the ``openai`` python package installed, and the
+    In addition, you should have the
     following environment variables set or passed in constructor in lower case:
     - ``AZURE_OPENAI_API_KEY``
     - ``AZURE_OPENAI_ENDPOINT``
@@ -31,7 +30,7 @@ class AzureChatOpenAI(ChatOpenAI):
     - ``OPENAI_API_VERSION``
     - ``OPENAI_PROXY``
 
-    For example, if you have `gpt-35-turbo` deployed, with the deployment name
+    For example, if you have `gpt-3.5-turbo` deployed, with the deployment name
     `35-turbo-dev`, the constructor should look like:
 
     .. code-block:: python
@@ -145,36 +144,19 @@ class AzureChatOpenAI(ChatOpenAI):
         openai_api_base = values["openai_api_base"]
         if openai_api_base and values["validate_base_url"]:
             if "/openai" not in openai_api_base:
-                values["openai_api_base"] = (
-                    values["openai_api_base"].rstrip("/") + "/openai"
-                )
-                warnings.warn(
+                raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
-                    f"the `azure_endpoint` param not `openai_api_base` "
-                    f"(or alias `base_url`). Updating `openai_api_base` from "
-                    f"{openai_api_base} to {values['openai_api_base']}."
+                    "the `azure_endpoint` param not `openai_api_base` "
+                    "(or alias `base_url`)."
                 )
             if values["deployment_name"]:
-                warnings.warn(
+                raise ValueError(
                     "As of openai>=1.0.0, if `deployment_name` (or alias "
                     "`azure_deployment`) is specified then "
                     "`openai_api_base` (or alias `base_url`) should not be. "
                     "Instead use `deployment_name` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
-                if values["deployment_name"] not in values["openai_api_base"]:
-                    warnings.warn(
-                        "As of openai>=1.0.0, if `openai_api_base` "
-                        "(or alias `base_url`) is specified it is expected to be "
-                        "of the form "
-                        "https://example-resource.azure.openai.com/openai/deployments/example-deployment. "  # noqa: E501
-                        f"Updating {openai_api_base} to "
-                        f"{values['openai_api_base']}."
-                    )
-                    values["openai_api_base"] += (
-                        "/deployments/" + values["deployment_name"]
-                    )
-                values["deployment_name"] = None
         client_params = {
             "api_version": values["openai_api_version"],
             "azure_endpoint": values["azure_endpoint"],

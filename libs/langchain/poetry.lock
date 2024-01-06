@@ -3448,7 +3448,7 @@ files = [
 
 [[package]]
 name = "langchain-community"
-version = "0.0.8"
+version = "0.0.9"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3458,7 +3458,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = ">=0.1.5,<0.2"
+langchain-core = ">=0.1.7,<0.2"
 langsmith = "~0.0.63"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -3476,7 +3476,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.1.6"
+version = "0.1.7"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3502,7 +3502,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.0.1"
+version = "0.0.1rc1"
 description = "An integration package connecting OpenAI and LangChain"
 optional = true
 python-versions = ">=3.8.1,<4.0"
@@ -3510,7 +3510,7 @@ files = []
 develop = false
 
 [package.dependencies]
-langchain-core = ">=0.0.12"
+langchain-core = ">=0.1.7,<0.2"
 numpy = "^1"
 openai = "^1.6.1"
 tiktoken = "^0.5.2"
@@ -9063,4 +9063,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "aa9f54772221cb8f6faa71e643fab30fc72761366b65cde9fd408e424478d77a"
+content-hash = "d76f34f0cc4ed3c0d4612e1bfd00e76147844045252fb760d6d1035dbdcc07a5"

@@ -1,5 +1,5 @@
-from .azure import AzureOpenAIEmbeddings
-from .base import OpenAIEmbeddings
+from langchain_openai.embeddings.azure import AzureOpenAIEmbeddings
+from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 __all__ = [
     "OpenAIEmbeddings",

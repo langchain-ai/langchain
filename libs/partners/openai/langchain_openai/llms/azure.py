@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from typing import (
     Any,
     Callable,
@@ -16,7 +15,7 @@ import openai
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from .base import BaseOpenAI
+from langchain_openai.llms.base import BaseOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -132,32 +131,19 @@ class AzureOpenAI(BaseOpenAI):
                 values["openai_api_base"] = (
                     values["openai_api_base"].rstrip("/") + "/openai"
                 )
-                warnings.warn(
+                raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
-                    f"the `azure_endpoint` param not `openai_api_base` "
-                    f"(or alias `base_url`). Updating `openai_api_base` from "
-                    f"{openai_api_base} to {values['openai_api_base']}."
+                    "the `azure_endpoint` param not `openai_api_base` "
+                    "(or alias `base_url`)."
                 )
             if values["deployment_name"]:
-                warnings.warn(
+                raise ValueError(
                     "As of openai>=1.0.0, if `deployment_name` (or alias "
                     "`azure_deployment`) is specified then "
                     "`openai_api_base` (or alias `base_url`) should not be. "
                     "Instead use `deployment_name` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
-                if values["deployment_name"] not in values["openai_api_base"]:
-                    warnings.warn(
-                        "As of openai>=1.0.0, if `openai_api_base` "
-                        "(or alias `base_url`) is specified it is expected to be "
-                        "of the form "
-                        "https://example-resource.azure.openai.com/openai/deployments/example-deployment. "  # noqa: E501
-                        f"Updating {openai_api_base} to "
-                        f"{values['openai_api_base']}."
-                    )
-                    values["openai_api_base"] += (
-                        "/deployments/" + values["deployment_name"]
-                    )
                 values["deployment_name"] = None
         client_params = {
             "api_version": values["openai_api_version"],
