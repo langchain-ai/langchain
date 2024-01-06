@@ -3506,18 +3506,16 @@ version = "0.0.2"
 description = "An integration package connecting OpenAI and LangChain"
 optional = true
 python-versions = ">=3.8.1,<4.0"
-files = []
-develop = true
+files = [
+    {file = "langchain_openai-0.0.2-py3-none-any.whl", hash = "sha256:0a46067be13ce95a029fdca339cd1034a61be1a727786178fbad702668a060f9"},
+    {file = "langchain_openai-0.0.2.tar.gz", hash = "sha256:713af4a638f65b3af2f741a9d61991011c31939b070d81ede5b2e3cba625e01a"},
+]
 
 [package.dependencies]
 langchain-core = ">=0.1.7,<0.2"
-numpy = "^1"
-openai = "^1.6.1"
-tiktoken = "^0.5.2"
-
-[package.source]
-type = "directory"
-url = "../partners/openai"
+numpy = ">=1,<2"
+openai = ">=1.6.1,<2.0.0"
+tiktoken = ">=0.5.2,<0.6.0"
 
 [[package]]
 name = "langsmith"
@@ -9063,4 +9061,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "35f37d1c5c14a2d656d91eb1d8e25110847a052a4e579a928e5bac9ae91559ad"
+content-hash = "00113cc914ec1dd07b5cb99d13fe9cb99ce79743743f80b345f745398faa3515"
