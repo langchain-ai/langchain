@@ -54,6 +54,11 @@ RETURN m2.title As movie
 
 
 def recommend_movie(movie: Optional[str] = None, genre: Optional[str] = None) -> str:
+    """
+    Recommends movies based on user's history and preference for a specific movie and/or genre.
+    Returns:
+        str: A string containing a list of recommended movies, or an error message.
+    """
     user_id = get_user_id()
     params = {"user_id": user_id, "genre": genre}
     if not movie and not genre:
