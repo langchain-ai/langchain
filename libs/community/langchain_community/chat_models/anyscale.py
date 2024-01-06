@@ -4,9 +4,10 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 import requests
+from langchain_core._api.deprecation import suppress_langchain_deprecation_warning
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -71,6 +72,11 @@ class ChatAnyscale(ChatOpenAI):
     """To support explicit proxy for Anyscale."""
     available_models: Optional[Set[str]] = None
     """Available models from Anyscale API."""
+
+    def __init__(self, *kwargs: Any) -> None:
+        # bypass deprecation warning for ChatOpenAI
+        with suppress_langchain_deprecation_warning():
+            super().__init__(*kwargs)
 
     @staticmethod
     def get_available_models(

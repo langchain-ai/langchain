@@ -656,6 +656,6 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 ## Other callbacks
 
-`Callbacks` are what we use to execute any functionality within a component outside the primary component logic. All of the above solutions use `Callbacks` under the hood to log intermediate steps of components. There are a number of `Callbacks` relevant for debugging that come with LangChain out of the box, like the [FileCallbackHandler](/docs/modules/callbacks/how_to/filecallbackhandler). You can also implement your own callbacks to execute custom functionality.
+`Callbacks` are what we use to execute any functionality within a component outside the primary component logic. All of the above solutions use `Callbacks` under the hood to log intermediate steps of components. There are a number of `Callbacks` relevant for debugging that come with LangChain out of the box, like the [FileCallbackHandler](/docs/modules/callbacks/filecallbackhandler). You can also implement your own callbacks to execute custom functionality.
 
 See here for more info on [Callbacks](/docs/modules/callbacks/), how to use them, and customize them.

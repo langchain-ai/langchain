@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional, Union
 
 import requests
 
+from langchain_core._api import deprecated
 from langchain_core.messages import get_buffer_string
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import (
@@ -34,6 +35,7 @@ def _get_endpoint() -> str:
     return os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
 
 
+@deprecated("0.1.0", alternative="LangChainTracer", removal="0.2.0")
 class LangChainTracerV1(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
