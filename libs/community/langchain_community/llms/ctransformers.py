@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, AsyncIterator, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -7,6 +7,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import root_validator
+
+from libs.core.langchain_core.outputs.generation import GenerationChunk
 
 
 class CTransformers(LLM):
@@ -138,3 +140,35 @@ class CTransformers(LLM):
             text += token
 
         return text
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        """Internal method called for "streaming" response from LLM using `astream`
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: A list of strings to stop generation when encountered.
+
+        Returns:
+            The asynchronous iterator of type generation chunk.
+
+        Example:
+            .. code-block:: python
+                for token in llm.astream("Once upon a time, ")
+                    print(f"token: {token}")
+        """
+        
+        text_callback = None
+        if run_manager:
+            text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
+        
+        for token in self.client(prompt, stop=stop, stream=True):
+            token_chunk = GenerationChunk(text=token)
+            if text_callback:
+                await text_callback(token)
+            yield token_chunk
