@@ -110,7 +110,7 @@ databricks-vectorsearch = {version = "^0.21", optional = true}
 couchbase = {version = "^4.1.9", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
-langchain-openai = {path = "../partners/openai", optional = true}
+langchain-openai = {version = ">=0.0.2,<0.1", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -134,6 +134,7 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 langchain-core = {path = "../core", develop = true}
+langchain-openai = {path = "../partners/openai", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
