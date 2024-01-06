@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -29,6 +30,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 
 
+@deprecated("0.1.0", alternative="create_json_chat_agent", removal="0.2.0")
 class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
