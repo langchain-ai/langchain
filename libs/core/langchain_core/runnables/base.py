@@ -1523,7 +1523,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         .. code-block:: python
 
             from langchain_core.output_parsers.json import SimpleJsonOutputParser
-            from langchain.chat_models.openai import ChatOpenAI
+            from langchain_openai import ChatOpenAI
 
             prompt = PromptTemplate.from_template(
                 'In JSON format, give me a list of {topic} and their '
@@ -2985,6 +2985,7 @@ class RunnableLambda(Runnable[Input, Output]):
                             except TypeError:
                                 output = chunk
                     return cast(Output, output)
+
             else:
 
                 def func(
@@ -3940,7 +3941,7 @@ def chain(
 
         from langchain_core.runnables import chain
         from langchain_core.prompts import PromptTemplate
-        from langchain.llms import OpenAI
+        from langchain_openai import OpenAI
 
         @chain
         def my_func(fields):

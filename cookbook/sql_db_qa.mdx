@@ -9,7 +9,7 @@ To set it up, follow the instructions on https://database.guide/2-sample-databas
 
 
 ```python
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain_community.utilities import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
 ```
@@ -200,7 +200,7 @@ result["intermediate_steps"]
 How to add memory to a SQLDatabaseChain:
 
 ```python
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain_community.utilities import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
 ```
