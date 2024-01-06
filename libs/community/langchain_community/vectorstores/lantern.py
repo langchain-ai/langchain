@@ -4,7 +4,18 @@ import contextlib
 import enum
 import logging
 import uuid
-from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple, Type
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import numpy as np
 import sqlalchemy
@@ -265,8 +276,8 @@ class Lantern(VectorStore):
             )
 
     def _typed_arg_for_distance(
-        self, embedding: List[float | int]
-    ) -> List[float | int]:
+        self, embedding: List[Union[float, int]]
+    ) -> List[Union[float, int]]:
         if self.distance_strategy == DistanceStrategy.HAMMING:
             return list(map(lambda x: int(x), embedding))
         return embedding
@@ -278,11 +289,28 @@ class Lantern(VectorStore):
     def create_hnsw_index(
         self,
         dims: int = ADA_TOKEN_COUNT,
-        m: int = 8,
-        ef_construction: int = 16,
-        ef_search: int = 16,
+        m: int = 16,
+        ef_construction: int = 64,
+        ef_search: int = 64,
         **_kwargs: Any,
     ) -> None:
+        """Create HNSW index on collection.
+
+        Optional Keyword Args for HNSW Index:
+            engine: "nmslib", "faiss", "lucene"; default: "nmslib"
+
+            ef: Size of the dynamic list used during k-NN searches. Higher values
+            lead to more accurate but slower searches; default: 64
+
+            ef_construction: Size of the dynamic list used during k-NN graph creation.
+            Higher values lead to more accurate graph but slower indexing speed;
+            default: 64
+
+            m: Number of bidirectional links created for each new element. Large impact
+            on memory consumption. Between 2 and 100; default: 16
+
+            dims: Dimensions of the vectors in collection. default: 1536
+        """
         create_index_query = sqlalchemy.text(
             "CREATE INDEX IF NOT EXISTS {} "
             "ON {} USING hnsw (embedding {}) "
@@ -383,13 +411,40 @@ class Lantern(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> Lantern:
+        """
+        Order of elements for lists `ids`, `embeddings`, `texts`, `metadatas`
+        should match, so each row will be associated with correct values.
+
+        Postgres connection string is required
+        "Either pass it as `connection_string` parameter
+        or set the LANTERN_CONNECTION_STRING environment variable.
+
+        - `texts` texts to insert into collection.
+        - `embeddings` an Embeddings to insert into collection
+        - `embedding` is :class:`Embeddings` that will be used for
+                embedding the text sent. If none is sent, then the
+                multilingual Tensorflow Universal Sentence Encoder will be used.
+        - `metadatas` row metadata to insert into collection.
+        - `ids` row ids to insert into collection.
+        - `collection_name` is the name of the collection to use. (default: langchain)
+            - NOTE: This is the name of the table in which embedding data will be stored
+                The table will be created when initializing the store (if not exists)
+                So, make sure the user has the right permissions to create tables.
+        - `distance_strategy` is the distance strategy to use. (default: EUCLIDEAN)
+            - `EUCLIDEAN` is the euclidean distance.
+            - `COSINE` is the cosine distance.
+            - `HAMMING` is the hamming distance.
+        - `pre_delete_collection` if True, will delete the collection if it exists.
+            (default: False)
+            - Useful for testing.
+        """
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        connection_string = cls.get_connection_string(kwargs)
+        connection_string = cls.__get_connection_string(kwargs)
 
         store = cls(
             connection_string=connection_string,
@@ -434,7 +489,7 @@ class Lantern(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         embeddings = self.embedding_function.embed_documents(list(texts))
 
@@ -582,6 +637,36 @@ class Lantern(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> Lantern:
+        """
+        Initialize Lantern vectorstore from list of texts.
+        The embeddings will be generated using `embedding` class provided.
+
+        Order of elements for lists `ids`, `texts`, `metadatas` should match,
+        so each row will be associated with correct values.
+
+        Postgres connection string is required
+        "Either pass it as `connection_string` parameter
+        or set the LANTERN_CONNECTION_STRING environment variable.
+
+        - `connection_string` is fully populated connection string for postgres database
+        - `texts` texts to insert into collection.
+        - `embedding` is :class:`Embeddings` that will be used for
+                embedding the text sent. If none is sent, then the
+                multilingual Tensorflow Universal Sentence Encoder will be used.
+        - `metadatas` row metadata to insert into collection.
+        - `collection_name` is the name of the collection to use. (default: langchain)
+            - NOTE: This is the name of the table in which embedding data will be stored
+                The table will be created when initializing the store (if not exists)
+                So, make sure the user has the right permissions to create tables.
+        - `distance_strategy` is the distance strategy to use. (default: EUCLIDEAN)
+            - `EUCLIDEAN` is the euclidean distance.
+            - `COSINE` is the cosine distance.
+            - `HAMMING` is the hamming distance.
+        - `ids` row ids to insert into collection.
+        - `pre_delete_collection` if True, will delete the collection if it exists.
+            (default: False)
+            - Useful for testing.
+        """
         embeddings = embedding.embed_documents(list(texts))
 
         return cls._initialize_from_embeddings(
@@ -608,6 +693,36 @@ class Lantern(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         **kwargs: Any,
     ) -> Lantern:
+        """Construct Lantern wrapper from raw documents and pre-
+        generated embeddings.
+
+        Postgres connection string is required
+        "Either pass it as `connection_string` parameter
+        or set the LANTERN_CONNECTION_STRING environment variable.
+
+        Order of elements for lists `ids`, `text_embeddings`, `metadatas` should match,
+        so each row will be associated with correct values.
+
+        - `connection_string` is fully populated connection string for postgres database
+        - `text_embeddings` is array with tuples (text, embedding)
+                to insert into collection.
+        - `embedding` is :class:`Embeddings` that will be used for
+                embedding the text sent. If none is sent, then the
+                multilingual Tensorflow Universal Sentence Encoder will be used.
+        - `metadatas` row metadata to insert into collection.
+        - `collection_name` is the name of the collection to use. (default: langchain)
+            - NOTE: This is the name of the table in which embedding data will be stored
+                The table will be created when initializing the store (if not exists)
+                So, make sure the user has the right permissions to create tables.
+        - `ids` row ids to insert into collection.
+        - `pre_delete_collection` if True, will delete the collection if it exists.
+            (default: False)
+            - Useful for testing.
+        - `distance_strategy` is the distance strategy to use. (default: EUCLIDEAN)
+            - `EUCLIDEAN` is the euclidean distance.
+            - `COSINE` is the cosine distance.
+            - `HAMMING` is the hamming distance.
+        """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
 
@@ -632,7 +747,33 @@ class Lantern(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         **kwargs: Any,
     ) -> Lantern:
-        connection_string = cls.get_connection_string(kwargs)
+        """
+        Get instance of an existing Lantern store.This method will
+        return the instance of the store without inserting any new
+        embeddings
+
+        Postgres connection string is required
+        "Either pass it as `connection_string` parameter
+        or set the LANTERN_CONNECTION_STRING environment variable.
+
+        - `connection_string` is a postgres connection string.
+        - `embedding` is :class:`Embeddings` that will be used for
+                embedding the text sent. If none is sent, then the
+                multilingual Tensorflow Universal Sentence Encoder will be used.
+        - `collection_name` is the name of the collection to use. (default: langchain)
+            - NOTE: This is the name of the table in which embedding data will be stored
+                The table will be created when initializing the store (if not exists)
+                So, make sure the user has the right permissions to create tables.
+        - `ids` row ids to insert into collection.
+        - `pre_delete_collection` if True, will delete the collection if it exists.
+            (default: False)
+            - Useful for testing.
+        - `distance_strategy` is the distance strategy to use. (default: EUCLIDEAN)
+            - `EUCLIDEAN` is the euclidean distance.
+            - `COSINE` is the cosine distance.
+            - `HAMMING` is the hamming distance.
+        """
+        connection_string = cls.__get_connection_string(kwargs)
 
         store = cls(
             connection_string=connection_string,
@@ -645,18 +786,18 @@ class Lantern(VectorStore):
         return store
 
     @classmethod
-    def get_connection_string(cls, kwargs: Dict[str, Any]) -> str:
+    def __get_connection_string(cls, kwargs: Dict[str, Any]) -> str:
         connection_string: str = get_from_dict_or_env(
             data=kwargs,
             key="connection_string",
-            env_key="POSTGRES_CONNECTION_STRING",
+            env_key="LANTERN_CONNECTION_STRING",
         )
 
         if not connection_string:
             raise ValueError(
                 "Postgres connection string is required"
-                "Either pass it as a parameter"
-                "or set the POSTGRES_CONNECTION_STRING environment variable."
+                "Either pass it as `connection_string` parameter"
+                "or set the LANTERN_CONNECTION_STRING variable."
             )
 
         return connection_string
@@ -672,9 +813,34 @@ class Lantern(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> Lantern:
+        """
+        Initialize a vector store with a set of documents.
+
+        Postgres connection string is required
+        "Either pass it as `connection_string` parameter
+        or set the LANTERN_CONNECTION_STRING environment variable.
+
+        - `connection_string` is a postgres connection string.
+        - `documents` is list of :class:`Document` to initialize the vector store with
+        - `embedding` is :class:`Embeddings` that will be used for
+                embedding the text sent. If none is sent, then the
+                multilingual Tensorflow Universal Sentence Encoder will be used.
+        - `collection_name` is the name of the collection to use. (default: langchain)
+            - NOTE: This is the name of the table in which embedding data will be stored
+                The table will be created when initializing the store (if not exists)
+                So, make sure the user has the right permissions to create tables.
+        - `distance_strategy` is the distance strategy to use. (default: EUCLIDEAN)
+            - `EUCLIDEAN` is the euclidean distance.
+            - `COSINE` is the cosine distance.
+            - `HAMMING` is the hamming distance.
+        - `ids` row ids to insert into collection.
+        - `pre_delete_collection` if True, will delete the collection if it exists.
+            (default: False)
+            - Useful for testing.
+        """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
-        connection_string = cls.get_connection_string(kwargs)
+        connection_string = cls.__get_connection_string(kwargs)
 
         kwargs["connection_string"] = connection_string
 
@@ -767,6 +933,7 @@ class Lantern(VectorStore):
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
+            filter=filter,
             **kwargs,
         )
 
