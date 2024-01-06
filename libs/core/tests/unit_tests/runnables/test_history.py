@@ -364,3 +364,43 @@ def test_using_custom_config_specs() -> None:
             ]
         ),
     }
+
+
+def test_thingy():
+    from langchain.schema import HumanMessage
+    from langchain_community.chat_message_histories import SQLChatMessageHistory
+    from langchain_core.runnables.history import RunnableWithMessageHistory
+
+    def _fake_llm(input: Dict[str, Any]) -> List[BaseMessage]:
+        messages = input
+        return [
+            AIMessage(
+                content="you said: "
+                + "\n".join(
+                    str(m.content) for m in messages if isinstance(m, HumanMessage)
+                )
+            )
+        ]
+
+    chat = RunnableLambda(_fake_llm)
+
+    def factory(session_id):
+        return SQLChatMessageHistory(
+            session_id=session_id, connection_string="sqlite:///sqlite.db"
+        )
+
+    session = factory("abc")
+
+    chat_with_history = RunnableWithMessageHistory(
+        chat,
+        factory,
+    )
+
+    # This is where we configure the session id, which is needed for fetching messages
+    config = {"configurable": {"session_id": "abc"}}
+
+    chat_with_history.invoke(HumanMessage(content="Hi! I'm Bob"), config=config)
+    assert session.messages[:2] == [
+        HumanMessage(content="Hi! I'm Bob"),
+        AIMessage(content="you said: Hi! I'm Bob"),
+    ]
