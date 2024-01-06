@@ -15,6 +15,8 @@ import inspect
 import warnings
 from typing import Any, Callable, Generator, Type, TypeVar
 
+from langchain_core._api.internal import is_caller_internal
+
 
 class LangChainBetaWarning(DeprecationWarning):
     """A class for issuing beta warnings for LangChain users."""
@@ -164,6 +166,8 @@ def beta(
                 addendum=_addendum,
             )
 
+        warned = False
+
         def warning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper for the original wrapped callable that emits a warning.
 
@@ -174,7 +178,10 @@ def beta(
             Returns:
                 The return value of the function being wrapped.
             """
-            emit_warning()
+            nonlocal warned
+            if not warned and not is_caller_internal():
+                warned = True
+                emit_warning()
             return wrapped(*args, **kwargs)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
