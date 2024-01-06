@@ -390,6 +390,7 @@ def test_thingy():
         )
 
     session = factory("abc")
+    session.clear()
 
     chat_with_history = RunnableWithMessageHistory(
         chat,
@@ -400,7 +401,10 @@ def test_thingy():
     config = {"configurable": {"session_id": "abc"}}
 
     chat_with_history.invoke(HumanMessage(content="Hi! I'm Bob"), config=config)
-    assert session.messages[:2] == [
+    chat_with_history.invoke(HumanMessage(content="Hi! I'm Alice"), config=config)
+    assert session.messages == [
         HumanMessage(content="Hi! I'm Bob"),
         AIMessage(content="you said: Hi! I'm Bob"),
+        HumanMessage(content="Hi! I'm Alice"),
+        AIMessage(content="you said: Hi! I'm Bob\nHi! I'm Alice"),
     ]
