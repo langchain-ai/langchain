@@ -12,11 +12,13 @@ class AthenaLoader(BaseLoader):
     """Load documents from `AWS Athena`.
 
     Each document represents one row of the result.
-    By default, all columns are written into the `page_content` and none into the `metadata`.
-    If `metadata_columns` are provided then these columns are written into the `metadata` of the
-    document while the rest of the columns are written into the `page_content` of the document.
+    - By default, all columns are written into the `page_content` of the document
+    and none into the `metadata` of the document.
+    - If `metadata_columns` are provided then these columns are written
+    into the `metadata` of the document while the rest of the columns
+    are written into the `page_content` of the document.
 
-    To authenticate, the AWS client uses the following methods to automatically load credentials:
+    To authenticate, the AWS client uses this method to automatically load credentials:
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
 
     If a specific credential profile should be used, you must pass
@@ -71,9 +73,10 @@ class AthenaLoader(BaseLoader):
             if state == "SUCCEEDED":
                 break
             elif state == "FAILED":
-                raise Exception(
-                    f"Query Failed: {response['QueryExecution']['Status']['StateChangeReason']}"
-                )
+                resp_status = response["QueryExecution"]["Status"]
+                state_change_reason = resp_status["StateChangeReason"]
+                err = f"Query Failed: {state_change_reason}"
+                raise Exception(err)
             elif state == "CANCELLED":
                 raise Exception("Query was cancelled by the user.")
             else:
