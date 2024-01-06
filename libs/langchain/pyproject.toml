@@ -134,7 +134,6 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 langchain-core = {path = "../core", develop = true}
-langchain-openai = {path = "../partners/openai", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
