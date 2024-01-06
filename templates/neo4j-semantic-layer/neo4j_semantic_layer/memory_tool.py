@@ -51,15 +51,19 @@ class MemoryTool(BaseTool):
     args_schema: Type[BaseModel] = MemoryInput
 
     def _run(
-        self, movie: str, run_manager: Optional[CallbackManagerForToolRun] = None
+        self,
+        movie: str,
+        rating: int,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return store_movie_rating(movie)
+        return store_movie_rating(movie, rating)
 
     async def _arun(
         self,
         movie: str,
+        rating: int,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        return store_movie_rating(movie)
+        return store_movie_rating(movie, rating)
