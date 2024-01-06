@@ -7,8 +7,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import root_validator
-
-from libs.core.langchain_core.outputs.generation import GenerationChunk
+from langchain_core.outputs import GenerationChunk
 
 
 class CTransformers(LLM):
