@@ -41,7 +41,7 @@ from langchain_community.embeddings import AzureOpenAIEmbeddings
 ## LLMs
 ### Azure OpenAI
 
-See a [usage example](/docs/integrations/llms/azure_openai_example).
+See a [usage example](/docs/integrations/llms/azure_openai).
 
 ```python
 from langchain_community.llms import AzureOpenAI
@@ -165,7 +165,7 @@ The `UnstructuredExcelLoader` is used to load `Microsoft Excel` files. The loade
 The page content will be the raw text of the Excel file. If you use the loader in `"elements"` mode, an HTML 
 representation of the Excel file will be available in the document metadata under the `text_as_html` key.
 
-See a [usage example](/docs/integrations/document_loaders/excel).
+See a [usage example](/docs/integrations/document_loaders/microsoft_excel).
 
 ```python
 from langchain_community.document_loaders import UnstructuredExcelLoader
@@ -203,7 +203,7 @@ First, let's install dependencies:
 pip install bs4 msal
 ```
 
-See a [usage example](/docs/integrations/document_loaders/onenote).
+See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
 
 ```python
 from langchain_community.document_loaders.onenote import OneNoteLoader
