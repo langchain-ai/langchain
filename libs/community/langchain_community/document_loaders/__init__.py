@@ -35,6 +35,7 @@ from langchain_community.document_loaders.assemblyai import (
     AssemblyAIAudioTranscriptLoader,
 )
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
+from langchain_community.document_loaders.athena import AthenaLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
@@ -249,6 +250,7 @@ __all__ = [
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
     "AsyncHtmlLoader",
+    "AthenaLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",

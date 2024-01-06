@@ -33,6 +33,7 @@ from langchain.document_loaders.arcgis_loader import ArcGISLoader
 from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.assemblyai import AssemblyAIAudioTranscriptLoader
 from langchain.document_loaders.async_html import AsyncHtmlLoader
+from langchain.document_loaders.athena import AthenaLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
@@ -229,6 +230,7 @@ __all__ = [
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
     "AsyncHtmlLoader",
+    "AthenaLoader",
     "AzureAIDataLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
