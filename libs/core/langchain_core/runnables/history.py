@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -15,9 +14,10 @@ from typing import (
 )
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.load import load
+from langchain_core.load.load import _load_suppress_warning
 from langchain_core.pydantic_v1 import BaseModel, create_model
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
@@ -46,8 +46,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             from typing import Optional
 
-            from langchain.chat_models import ChatAnthropic
-            from langchain.memory.chat_message_histories import RedisChatMessageHistory
+            from langchain_community.chat_models import ChatAnthropic
+            from langchain_community.chat_message_histories import RedisChatMessageHistory
 
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
             from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -331,15 +331,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     async def _aenter_history(
         self, input: Dict[str, Any], config: RunnableConfig
     ) -> List[BaseMessage]:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self._enter_history, input, config
-        )
+        return await run_in_executor(config, self._enter_history, input, config)
 
     def _exit_history(self, run: Run, config: RunnableConfig) -> None:
         hist = config["configurable"]["message_history"]
 
         # Get the input messages
-        inputs = load(run.inputs)
+        inputs = _load_suppress_warning(run.inputs)
         input_val = inputs[self.input_messages_key or "input"]
         input_messages = self._get_input_messages(input_val)
 
@@ -350,7 +348,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs)
+        output_val = _load_suppress_warning(run.outputs)
         output_messages = self._get_output_messages(output_val)
 
         for m in input_messages + output_messages:

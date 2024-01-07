@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional
 
+from langchain_community.utilities.redis import get_client
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
@@ -15,7 +16,6 @@ from langchain.memory.prompt import (
     ENTITY_SUMMARIZATION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
-from langchain.utilities.redis import get_client
 
 logger = logging.getLogger(__name__)
 

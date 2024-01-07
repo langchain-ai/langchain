@@ -9,12 +9,12 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.351"
+langchain = ">=0.0.353,<0.2"
 openai = "<2"
 tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
 pypdfium2 = ">=4.20.0"
-langchain-experimental = "^0.0.43"
+langchain-experimental = ">=0.0.43"
 pillow = ">=10.1.0"
 langchain-community = ">=0.0.4"
 

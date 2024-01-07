@@ -68,6 +68,14 @@ def accepts_config(callable: Callable[..., Any]) -> bool:
         return False
 
 
+def accepts_context(callable: Callable[..., Any]) -> bool:
+    """Check if a callable accepts a context argument."""
+    try:
+        return signature(callable).parameters.get("context") is not None
+    except ValueError:
+        return False
+
+
 class IsLocalDict(ast.NodeVisitor):
     """Check if a name is a local dict."""
 
@@ -107,14 +115,20 @@ class IsFunctionArgDict(ast.NodeVisitor):
         self.keys: Set[str] = set()
 
     def visit_Lambda(self, node: ast.Lambda) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node.body)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 

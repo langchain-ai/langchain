@@ -1,5 +1,5 @@
 from langchain.pydantic_v1 import BaseModel
-from langchain.schema.runnable import RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough
 
 from sql_research_assistant.search.web import chain as search_chain
 from sql_research_assistant.writer import chain as writer_chain

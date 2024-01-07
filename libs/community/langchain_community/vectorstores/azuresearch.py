@@ -653,7 +653,10 @@ class AzureSearch(VectorStore):
                             if result.get("@search.captions")
                             else {},
                             "answers": semantic_answers_dict.get(
-                                json.loads(result["metadata"]).get("key"), ""
+                                json.loads(result[FIELDS_METADATA]).get("key")
+                                if FIELDS_METADATA in result
+                                else "",
+                                "",
                             ),
                         },
                     },
