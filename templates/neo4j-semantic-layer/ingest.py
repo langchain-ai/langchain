@@ -13,7 +13,8 @@ graph.query("CREATE CONSTRAINT IF NOT EXISTS FOR (g:Genre) REQUIRE g.name IS UNI
 
 movies_query = """
 LOAD CSV WITH HEADERS FROM 
-'https://raw.githubusercontent.com/tomasonjo/blog-datasets/main/movies/movies.csv' AS row
+'https://raw.githubusercontent.com/tomasonjo/blog-datasets/main/movies/movies.csv'
+AS row
 CALL {
     WITH row
     MERGE (m:Movie {id:row.movieId})
@@ -37,7 +38,8 @@ graph.query(movies_query)
 # Import rating information
 rating_query = """
 LOAD CSV WITH HEADERS FROM 
-'https://raw.githubusercontent.com/tomasonjo/blog-datasets/main/movies/ratings.csv' AS row
+'https://raw.githubusercontent.com/tomasonjo/blog-datasets/main/movies/ratings.csv'
+AS row
 CALL {
     WITH row
     MATCH (m:Movie {id:row.movieId})

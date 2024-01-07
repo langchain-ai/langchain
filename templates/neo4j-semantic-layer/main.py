@@ -7,7 +7,8 @@ if __name__ == "__main__":
         (
             "What do you know about person John?",
             "I found multiple people named John. Could you please specify "
-            "which one you are interested in? Here are some options:\n\n1. John Travolta\n2. John McDonough",
+            "which one you are interested in? Here are some options:"
+            "\n\n1. John Travolta\n2. John McDonough",
         )
     ]
     print(agent_executor.invoke({"input": original_query}))
