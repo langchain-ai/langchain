@@ -462,9 +462,15 @@ class MathpixPDFLoader(BasePDFLoader):
 
             # This indicates an error with the request (e.g. auth problems)
             error = response_data.get("error", None)
+            error_info = response_data.get("error_info", None)
 
             if error is not None:
-                raise ValueError(f"Unable to retrieve PDF from Mathpix: {error}")
+                error_msg = f"Unable to retrieve PDF from Mathpix: {error}"
+
+                if error_info is not None:
+                    error_msg += f" ({error_info['id']})"
+
+                raise ValueError(error_msg)
 
             status = response_data.get("status", None)
 
