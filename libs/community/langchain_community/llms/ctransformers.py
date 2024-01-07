@@ -158,10 +158,9 @@ class CTransformers(LLM):
 
         Example:
             .. code-block:: python
-                for token in llm.astream("Once upon a time, ")
-                    print(f"token: {token}")
-        """
-        
+                async for text in llm.astream("Once upon a time, ")
+                    print(f"text: {text}")
+        """        
         text_callback = None
         if run_manager:
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
