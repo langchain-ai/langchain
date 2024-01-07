@@ -1,4 +1,3 @@
-from langchain.schema import AIMessage, HumanMessage
 from neo4j_semantic_layer import agent_executor
 
 if __name__ == "__main__":
