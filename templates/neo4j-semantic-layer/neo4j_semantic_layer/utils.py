@@ -12,6 +12,7 @@ def get_user_id() -> int:
     """
     return 1
 
+
 def remove_lucene_chars(text: str) -> str:
     """Remove Lucene special characters"""
     special_chars = [
