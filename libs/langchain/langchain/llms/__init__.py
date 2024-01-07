@@ -17,9 +17,13 @@ access to the large language model (**LLM**) APIs and services.
     CallbackManager, AsyncCallbackManager,
     AIMessage, BaseMessage
 """  # noqa: E501
+import warnings
 from typing import Any, Callable, Dict, Type
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.language_models.llms import BaseLLM
+
+from langchain.utils.interactive_env import is_interactive_env
 
 
 def _import_ai21() -> Any:
@@ -537,180 +541,27 @@ def _import_volcengine_maas() -> Any:
 
 
 def __getattr__(name: str) -> Any:
-    if name == "AI21":
-        return _import_ai21()
-    elif name == "AlephAlpha":
-        return _import_aleph_alpha()
-    elif name == "AmazonAPIGateway":
-        return _import_amazon_api_gateway()
-    elif name == "Anthropic":
-        return _import_anthropic()
-    elif name == "Anyscale":
-        return _import_anyscale()
-    elif name == "Arcee":
-        return _import_arcee()
-    elif name == "Aviary":
-        return _import_aviary()
-    elif name == "AzureMLOnlineEndpoint":
-        return _import_azureml_endpoint()
-    elif name == "QianfanLLMEndpoint":
-        return _import_baidu_qianfan_endpoint()
-    elif name == "Banana":
-        return _import_bananadev()
-    elif name == "Baseten":
-        return _import_baseten()
-    elif name == "Beam":
-        return _import_beam()
-    elif name == "Bedrock":
-        return _import_bedrock()
-    elif name == "NIBittensorLLM":
-        return _import_bittensor()
-    elif name == "CerebriumAI":
-        return _import_cerebriumai()
-    elif name == "ChatGLM":
-        return _import_chatglm()
-    elif name == "Clarifai":
-        return _import_clarifai()
-    elif name == "Cohere":
-        return _import_cohere()
-    elif name == "CTransformers":
-        return _import_ctransformers()
-    elif name == "CTranslate2":
-        return _import_ctranslate2()
-    elif name == "Databricks":
-        return _import_databricks()
-    elif name == "DeepInfra":
-        return _import_deepinfra()
-    elif name == "DeepSparse":
-        return _import_deepsparse()
-    elif name == "EdenAI":
-        return _import_edenai()
-    elif name == "FakeListLLM":
-        return _import_fake()
-    elif name == "Fireworks":
-        return _import_fireworks()
-    elif name == "ForefrontAI":
-        return _import_forefrontai()
-    elif name == "GigaChat":
-        return _import_gigachat()
-    elif name == "GooglePalm":
-        return _import_google_palm()
-    elif name == "GooseAI":
-        return _import_gooseai()
-    elif name == "GPT4All":
-        return _import_gpt4all()
-    elif name == "GradientLLM":
-        return _import_gradient_ai()
-    elif name == "HuggingFaceEndpoint":
-        return _import_huggingface_endpoint()
-    elif name == "HuggingFaceHub":
-        return _import_huggingface_hub()
-    elif name == "HuggingFacePipeline":
-        return _import_huggingface_pipeline()
-    elif name == "HuggingFaceTextGenInference":
-        return _import_huggingface_text_gen_inference()
-    elif name == "HumanInputLLM":
-        return _import_human()
-    elif name == "JavelinAIGateway":
-        return _import_javelin_ai_gateway()
-    elif name == "KoboldApiLLM":
-        return _import_koboldai()
-    elif name == "LlamaCpp":
-        return _import_llamacpp()
-    elif name == "ManifestWrapper":
-        return _import_manifest()
-    elif name == "Minimax":
-        return _import_minimax()
-    elif name == "Mlflow":
-        return _import_mlflow()
-    elif name == "MlflowAIGateway":
-        return _import_mlflow_ai_gateway()
-    elif name == "Modal":
-        return _import_modal()
-    elif name == "MosaicML":
-        return _import_mosaicml()
-    elif name == "NLPCloud":
-        return _import_nlpcloud()
-    elif name == "OctoAIEndpoint":
-        return _import_octoai_endpoint()
-    elif name == "Ollama":
-        return _import_ollama()
-    elif name == "OpaquePrompts":
-        return _import_opaqueprompts()
-    elif name == "AzureOpenAI":
-        return _import_azure_openai()
-    elif name == "OpenAI":
-        return _import_openai()
-    elif name == "OpenAIChat":
-        return _import_openai_chat()
-    elif name == "OpenLLM":
-        return _import_openllm()
-    elif name == "OpenLM":
-        return _import_openlm()
-    elif name == "PaiEasEndpoint":
-        return _import_pai_eas_endpoint()
-    elif name == "Petals":
-        return _import_petals()
-    elif name == "PipelineAI":
-        return _import_pipelineai()
-    elif name == "Predibase":
-        return _import_predibase()
-    elif name == "PredictionGuard":
-        return _import_predictionguard()
-    elif name == "PromptLayerOpenAI":
-        return _import_promptlayer()
-    elif name == "PromptLayerOpenAIChat":
-        return _import_promptlayer_chat()
-    elif name == "Replicate":
-        return _import_replicate()
-    elif name == "RWKV":
-        return _import_rwkv()
-    elif name == "SagemakerEndpoint":
-        return _import_sagemaker_endpoint()
-    elif name == "SelfHostedPipeline":
-        return _import_self_hosted()
-    elif name == "SelfHostedHuggingFaceLLM":
-        return _import_self_hosted_hugging_face()
-    elif name == "StochasticAI":
-        return _import_stochasticai()
-    elif name == "Nebula":
-        return _import_symblai_nebula()
-    elif name == "TextGen":
-        return _import_textgen()
-    elif name == "TitanTakeoff":
-        return _import_titan_takeoff()
-    elif name == "TitanTakeoffPro":
-        return _import_titan_takeoff_pro()
-    elif name == "Together":
-        return _import_together()
-    elif name == "Tongyi":
-        return _import_tongyi()
-    elif name == "VertexAI":
-        return _import_vertex()
-    elif name == "VertexAIModelGarden":
-        return _import_vertex_model_garden()
-    elif name == "VLLM":
-        return _import_vllm()
-    elif name == "VLLMOpenAI":
-        return _import_vllm_openai()
-    elif name == "WatsonxLLM":
-        return _import_watsonxllm()
-    elif name == "Writer":
-        return _import_writer()
-    elif name == "Xinference":
-        return _import_xinference()
-    elif name == "YandexGPT":
-        return _import_yandex_gpt()
-    elif name == "VolcEngineMaasLLM":
-        return _import_volcengine_maas()
-    elif name == "type_to_cls_dict":
+    from langchain_community import llms
+
+    # If not in interactive env, raise warning.
+    if not is_interactive_env():
+        warnings.warn(
+            "Importing LLMs from langchain is deprecated. Importing from "
+            "langchain will no longer be supported as of langchain==0.2.0. "
+            "Please import from langchain-community instead:\n\n"
+            f"`from langchain_community.llms import {name}`.\n\n"
+            "To install langchain-community run `pip install -U langchain-community`.",
+            category=LangChainDeprecationWarning,
+        )
+
+    if name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
             k: v() for k, v in get_type_to_cls_dict().items()
         }
         return type_to_cls_dict
     else:
-        raise AttributeError(f"Could not find: {name}")
+        return getattr(llms, name)
 
 
 __all__ = [

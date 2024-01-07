@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Union, cast
 
 from langchain_core.chat_sessions import ChatSession
-from langchain_core.load import load
+from langchain_core.load.load import _load_suppress_warning
 
 from langchain_community.chat_loaders.base import BaseChatLoader
 
@@ -66,8 +66,10 @@ class LangSmithRunChatLoader(BaseChatLoader):
             raise ValueError(f"Run has no 'messages' inputs. Got {llm_run.inputs}")
         if not llm_run.outputs:
             raise ValueError("Cannot convert pending run")
-        messages = load(llm_run.inputs)["messages"]
-        message_chunk = load(llm_run.outputs)["generations"][0]["message"]
+        messages = _load_suppress_warning(llm_run.inputs)["messages"]
+        message_chunk = _load_suppress_warning(llm_run.outputs)["generations"][0][
+            "message"
+        ]
         return ChatSession(messages=messages + [message_chunk])
 
     @staticmethod
