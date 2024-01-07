@@ -16,10 +16,7 @@ class PackageInstallInput(BaseModel):
     package_names: Union[str, List[str]] = Field(
         ...,
         description="List of package name(s) to install",
-        examples=[
-            "pandas",
-            ['pandas', 'numpy']
-        ]
+        examples=["pandas", ["pandas", "numpy"]],
     )
 
 
@@ -31,19 +28,15 @@ class PackageInstallTool(BaseTool):
     description: str = "Install Python packages during run time."
 
     def _run(
-            self,
-            package_names: Union[str, List[str]],
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        package_names: Union[str, List[str]],
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> bool:
         try:
             if isinstance(package_names, str):
                 package_names = [package_names]
             subprocess.check_call(
-                [
-                    sys.executable,
-                    "-m", "pip", "install",
-                    *package_names
-                ]
+                [sys.executable, "-m", "pip", "install", *package_names]
             )
             print(f"Packages successfully installed: {', '.join(package_names)}.")
             return True
@@ -52,9 +45,9 @@ class PackageInstallTool(BaseTool):
             return False
 
     async def _arun(
-            self,
-            package_names: List[str],
-            run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self,
+        package_names: List[str],
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         raise NotImplementedError(f"{self.name} does not support async")
 
