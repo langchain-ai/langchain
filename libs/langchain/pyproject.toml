@@ -47,9 +47,9 @@ aleph-alpha-client = {version="^2.15.0", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 azure-identity = {version = "^1.12.0", optional=true}
 atlassian-python-api = {version = "^3.36.0", optional=true}
-html2text = {version="^2020.1.16", optional=true}
-numexpr = {version="^2.8.6", optional=true}
-azure-cosmos = {version="^4.4.0b1", optional=true}
+html2text = {version = "^2020.1.16", optional=true}
+numexpr = {version = "^2.8.6", optional=true}
+azure-cosmos = {version = "^4.4.0b1", optional=true}
 jq = {version = "^1.4.1", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.32.0", extras=["hnswlib"], optional=true}
