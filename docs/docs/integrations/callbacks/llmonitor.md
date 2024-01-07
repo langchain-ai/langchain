@@ -27,8 +27,8 @@ handler = LLMonitorCallbackHandler(app_id="...")
 ## Usage with LLM/Chat models
 
 ```python
-from langchain_community.llms import OpenAI
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 from langchain.callbacks import LLMonitorCallbackHandler
 
 handler = LLMonitorCallbackHandler()
@@ -52,7 +52,7 @@ It is also recommended to pass `agent_name` in the metadata to be able to distin
 Example:
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 from langchain.agents import OpenAIFunctionsAgent, AgentExecutor, tool
 from langchain.callbacks import LLMonitorCallbackHandler
@@ -85,7 +85,7 @@ Another example:
 
 ```python
 from langchain.agents import load_tools, initialize_agent, AgentType
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.callbacks import LLMonitorCallbackHandler
 
 handler = LLMonitorCallbackHandler()
