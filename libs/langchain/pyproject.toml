@@ -94,7 +94,7 @@ dashvector = {version = "^1.0.1", optional = true}
 sqlite-vss = {version = "^0.1.2", optional = true}
 motor = {version = "^3.3.1", optional = true}
 timescale-vector = {version = "^0.0.1", optional = true}
-typer = {version= "^0.9.0", optional = true}
+typer = {version = "^0.9.0", optional = true}
 anthropic = {version = "^0.3.11", optional = true}
 aiosqlite = {version = "^0.19.0", optional = true}
 rspace_client = {version = "^2.5.0", optional = true}
