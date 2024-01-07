@@ -4,8 +4,6 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-
-# Import things that are needed generically
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools import BaseTool
 
@@ -40,7 +38,7 @@ RETURN m.title AS movie
 def recommendation_query_movie(genre: bool) -> str:
     return f"""
 MATCH (m1:Movie)<-[r1:RATED]-()-[r2:RATED]->(m2:Movie)
-WHERE r1.rating > 3.5 AND r2.rating > 3.5
+WHERE r1.rating > 3.5 AND r2.rating > 3.5 and m1.title IN $movieTitles
 // filter out already seen movies by the user
 AND NOT EXISTS {{
   (m2)<-[:RATED]-(:User {{userId:$user_id}})
@@ -80,7 +78,7 @@ def recommend_movie(movie: Optional[str] = None, genre: Optional[str] = None) ->
     candidates = get_candidates(movie, "movie")
     if not candidates:
         return "The movie you mentioned wasn't found in the database"
-    params["candidates"] = candidates
+    params["movieTitles"] = [el["candidate"] for el in candidates]
     query = recommendation_query_movie(bool(genre))
     response = graph.query(query, params)
     try:

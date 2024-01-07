@@ -29,7 +29,7 @@ CALL {
         MERGE (p)-[:ACTED_IN]->(m))
     FOREACH (genre in split(row.genres, '|') | 
         MERGE (g:Genre {name:trim(genre)})
-        MERGE (m)-[:HAS_GENRE]->(g))
+        MERGE (m)-[:IN_GENRE]->(g))
 } IN TRANSACTIONS
 """
 
@@ -45,7 +45,7 @@ CALL {
     MATCH (m:Movie {id:row.movieId})
     MERGE (u:User {id:row.userId})
     MERGE (u)-[r:RATED]->(m)
-    SET r.rating = row.rating,
+    SET r.rating = toFloat(row.rating),
         r.timestamp = row.timestamp
 } IN TRANSACTIONS OF 10000 ROWS
 """
