@@ -1,6 +1,5 @@
 import subprocess
 import sys
-
 from typing import List, Optional, Type, Union
 
 from langchain_core.callbacks import (
@@ -39,7 +38,13 @@ class PackageInstallTool(BaseTool):
         try:
             if isinstance(package_names, str):
                 package_names = [package_names]
-            subprocess.check_call([sys.executable, "-m", "pip", "install", *package_names])
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    "-m", "pip", "install",
+                    *package_names
+                ]
+            )
             print(f"Packages successfully installed: {', '.join(package_names)}.")
             return True
         except Exception as e:
