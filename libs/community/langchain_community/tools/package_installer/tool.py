@@ -27,9 +27,9 @@ class PackageInstallInput(BaseModel):
 class PackageInstallTool(BaseTool):
     """Tool that installs Python packages in runtime."""
 
-    name: str = "install_package"
+    name: str = "package_install"
     args_schema: Type[BaseModel] = PackageInstallInput
-    description: str = "Install Python packages"
+    description: str = "Install Python packages during run time."
 
     def _run(
             self,
@@ -51,7 +51,7 @@ class PackageInstallTool(BaseTool):
             package_names: List[str],
             run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        raise NotImplementedError("install_package does not support async")
+        raise NotImplementedError(f"{self.name} does not support async")
 
     def as_tool(self) -> Tool:
         return Tool.from_function(
