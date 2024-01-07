@@ -22,9 +22,10 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a helpful assistant that finds information about movies and recommends them. "
-            "If tools require follow up questions, make sure to ask the user for clarification. "
-            "Make sure to include any available options that need to be clarified in the follow up questions",
+            "You are a helpful assistant that finds information about movies "
+            " and recommends them. If tools require follow up questions, "
+            "make sure to ask the user for clarification. Make sure to include "
+            "any available options that need to be clarified in the follow up questions",
         ),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),

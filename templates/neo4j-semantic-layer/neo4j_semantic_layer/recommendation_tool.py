@@ -55,7 +55,8 @@ RETURN m2.title As movie
 
 def recommend_movie(movie: Optional[str] = None, genre: Optional[str] = None) -> str:
     """
-    Recommends movies based on user's history and preference for a specific movie and/or genre.
+    Recommends movies based on user's history and preference
+    for a specific movie and/or genre.
     Returns:
         str: A string containing a list of recommended movies, or an error message.
     """
@@ -66,14 +67,14 @@ def recommend_movie(movie: Optional[str] = None, genre: Optional[str] = None) ->
         response = graph.query(recommendation_query_db_history, params)
         try:
             return ", ".join([el["movie"] for el in response])
-        except:
+        except Exception:
             return "Can you tell us about some of the movies you liked?"
     if not movie and genre:
         # Recommend top voted movies in the genre the user haven't seen before
         response = graph.query(recommendation_query_genre, params)
         try:
             return ", ".join([el["movie"] for el in response])
-        except:
+        except Exception:
             return "Something went wrong"
 
     candidates = get_candidates(movie, "movie")
@@ -84,7 +85,7 @@ def recommend_movie(movie: Optional[str] = None, genre: Optional[str] = None) ->
     response = graph.query(query, params)
     try:
         return ", ".join([el["movie"] for el in response])
-    except:
+    except Exception:
         return "Something went wrong"
 
 
@@ -114,7 +115,9 @@ all_genres = [
 class RecommenderInput(BaseModel):
     movie: Optional[str] = Field(description="movie used for recommendation")
     genre: Optional[str] = Field(
-        description=f"genre used for recommendation. Available options are: {all_genres}"
+        description=(
+            "genre used for recommendation. Available options are:" f"{all_genres}"
+        )
     )
 
 

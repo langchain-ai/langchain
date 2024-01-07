@@ -41,7 +41,10 @@ def store_movie_rating(movie: str, rating: int):
 class MemoryInput(BaseModel):
     movie: str = Field(description="movie the user liked")
     rating: int = Field(
-        description="Rating from 1 to 5, where one represents heavy dislike and 5 represent the user loved the movie"
+        description=(
+            "Rating from 1 to 5, where one represents heavy dislike "
+            "and 5 represent the user loved the movie"
+        )
     )
 
 

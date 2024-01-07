@@ -34,7 +34,8 @@ def generate_full_text_query(input: str) -> str:
 candidate_query = """
 CALL db.index.fulltext.queryNodes($index, $fulltextQuery, {limit: $limit})
 YIELD node
-RETURN coalesce(node.name, node.title) AS candidate, [el in labels(node) WHERE el IN ['Person', 'Movie'] | el][0] AS label
+RETURN coalesce(node.name, node.title) AS candidate,
+       [el in labels(node) WHERE el IN ['Person', 'Movie'] | el][0] AS label
 """
 
 

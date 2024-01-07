@@ -18,7 +18,8 @@ MATCH (m)-[r:ACTED_IN|DIRECTED|HAS_GENRE]-(t)
 WITH m, type(r) as type, collect(coalesce(t.name, t.title)) as names
 WITH m, type+": "+reduce(s="", n IN names | s + n + ", ") as types
 WITH m, collect(types) as contexts
-WITH m, "type:" + labels(m)[0] + "\ntitle: "+ coalesce(m.title, m.name) + "\nyear: "+coalesce(m.released,"") +"\n" +
+WITH m, "type:" + labels(m)[0] + "\ntitle: "+ coalesce(m.title, m.name) 
+       + "\nyear: "+coalesce(m.released,"") +"\n" +
        reduce(s="", c in contexts | s + substring(c, 0, size(c)-2) +"\n") as context
 RETURN context LIMIT 1
 """
@@ -30,7 +31,10 @@ def get_information(entity: str, type: str) -> str:
         return "No information was found about the movie or person in the database"
     elif len(candidates) > 1:
         newline = "\n"
-        return f"Need additional information, which of these did you mean: {newline + newline.join(str(d) for d in candidates)}"
+        return (
+            "Need additional information, which of these "
+            f"did you mean: {newline + newline.join(str(d) for d in candidates)}"
+        )
     data = graph.query(
         description_query, params={"candidate": candidates[0]["candidate"]}
     )
