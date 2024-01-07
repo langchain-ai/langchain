@@ -1,20 +1,20 @@
-# neo4j-advanced-rag
+# neo4j-semantic-layer
 
-This template allows you to balance precise embeddings and context retention by implementing advanced retrieval strategies.
+This template is designed to implement an agent capable of interacting with a graph database like Neo4j through a semantic layer using OpenAI function calling.
+The semantic layer equips the agent with a suite of robust tools, allowing it to interact with the graph databas based on the user's intent.
 
-## Strategies
+![Workflow diagram](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-semantic-layer/static/workflow.png)
 
-1. **Typical RAG**:
-   - Traditional method where the exact data indexed is the data retrieved.
-2. **Parent retriever**:
-   - Instead of indexing entire documents, data is divided into smaller chunks, referred to as Parent and Child documents.
-   - Child documents are indexed for better representation of specific concepts, while parent documents is retrieved to ensure context retention.
-3. **Hypothetical Questions**:
-     - Documents are processed to determine potential questions they might answer.
-     - These questions are then indexed for better representation of specific concepts, while parent documents are retrieved to ensure context retention.
-4. **Summaries**:
-     - Instead of indexing the entire document, a summary of the document is created and indexed.
-     - Similarly, the parent document is retrieved in a RAG application.
+## Tools
+
+The agent utilizes several tools to interact with the Neo4j graph database effectively:
+
+1. **Information tool**:
+   - Retrieves data about movies or individuals, ensuring the agent has access to the latest and most relevant information.
+2. **Recommendation Tool**:
+   - Provides movie recommendations based upon user preferences and input.
+3. **Memory Tool**:
+   - Stores information about user preferences in the knowledge graph, allowing for a personalized experience over multiple interactions.
 
 ## Environment Setup
 
@@ -29,14 +29,9 @@ NEO4J_PASSWORD=<YOUR_NEO4J_PASSWORD>
 
 ## Populating with data
 
-If you want to populate the DB with some example data, you can run `python ingest.py`.
-The script process and stores sections of the text from the file `dune.txt` into a Neo4j graph database.
-First, the text is divided into larger chunks ("parents") and then further subdivided into smaller chunks ("children"), where both parent and child chunks overlap slightly to maintain context.
-After storing these chunks in the database, embeddings for the child nodes are computed using OpenAI's embeddings and stored back in the graph for future retrieval or analysis.
-For every parent node, hypothetical questions and summaries are generated, embedded, and added to the database. 
-Additionally, a vector index for each retrieval strategy is created for efficient querying of these embeddings.
-
-*Note that ingestion can take a minute or two due to LLMs velocity of generating hypothetical questions and summaries.*
+If you want to populate the DB with an example movie dataset, you can run `python ingest.py`.
+The script import information about movies and their rating by users.
+Additionally, the script creates two [fulltext indices](https://neo4j.com/docs/cypher-manual/current/indexes-for-full-text-search/), which are used to map information from user input to the database.
 
 ## Usage
 
@@ -49,20 +44,20 @@ pip install -U "langchain-cli[serve]"
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package neo4j-advanced-rag
+langchain app new my-app --package neo4j-semantic-layer
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add neo4j-advanced-rag
+langchain app add neo4j-semantic-layer
 ```
 
 And add the following code to your `server.py` file:
 ```python
-from neo4j_advanced_rag import chain as neo4j_advanced_chain
+from neo4j_semantic_layer import agent_executor as neo4j_semantic_agent
 
-add_routes(app, neo4j_advanced_chain, path="/neo4j-advanced-rag")
+add_routes(app, neo4j_semantic_agent, path="/neo4j-semantic-layer")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -86,12 +81,12 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/neo4j-advanced-rag/playground](http://127.0.0.1:8000/neo4j-advanced-rag/playground)  
+We can access the playground at [http://127.0.0.1:8000/neo4j-semantic-layer/playground](http://127.0.0.1:8000/neo4j-semantic-layer/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/neo4j-advanced-rag")
+runnable = RemoteRunnable("http://localhost:8000/neo4j-semantic-layer")
 ```
