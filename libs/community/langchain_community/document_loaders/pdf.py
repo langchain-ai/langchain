@@ -518,7 +518,7 @@ class MathpixPDFLoader(BasePDFLoader):
         contents = self.get_processed_pdf(pdf_id)
         if self.should_clean_pdf:
             contents = self.clean_pdf(contents)
-        metadata = {"source": self.source, "file_path": self.source}
+        metadata = {"source": self.source, "file_path": self.source, "pdf_id": pdf_id}
         return [Document(page_content=contents, metadata=metadata)]
 
 
