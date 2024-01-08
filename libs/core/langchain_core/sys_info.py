@@ -1,22 +1,8 @@
-from importlib import metadata
+"""Print information about the system and langchain packages for debugging purposes."""
 from typing import Sequence
 
-from langchain_core._api import (
-    surface_langchain_beta_warnings,
-    surface_langchain_deprecation_warnings,
-)
 
-try:
-    __version__ = metadata.version(__package__)
-except metadata.PackageNotFoundError:
-    # Case where package metadata is not available.
-    __version__ = ""
-
-surface_langchain_deprecation_warnings()
-surface_langchain_beta_warnings()
-
-
-def print_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
+def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     """Print information about the environment for debugging purposes."""
     import importlib
     import platform
@@ -33,12 +19,12 @@ def print_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         "OS Version": platform.version(),
         "Python Version": sys.version,
     }
-
+    print()
     print("System Information")
     print("------------------")
-    print("OS: ", system_info["OS"])
-    print("OS Version: ", system_info["OS Version"])
-    print("Python Version: ", system_info["Python Version"])
+    print("> OS: ", system_info["OS"])
+    print("> OS Version: ", system_info["OS Version"])
+    print("> Python Version: ", system_info["Python Version"])
 
     # Print out only langchain packages
     print()
@@ -51,7 +37,7 @@ def print_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         except Exception:
             found_package = None
         if found_package is None:
-            print(f"{pkg}: Not Found")
+            print(f"> {pkg}: Not Found")
             continue
 
         # Package version
@@ -62,6 +48,10 @@ def print_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
 
         # Print package with version
         if package_version is not None:
-            print(f"{pkg}: {package_version}")
+            print(f"> {pkg}: {package_version}")
         else:
-            print(f"{pkg}: Found")
+            print(f"> {pkg}: Found")
+
+
+if __name__ == "__main__":
+    print_sys_info()
