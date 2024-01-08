@@ -1,2 +1,2 @@
-langchain-core==0.1.5
-langchain-community==0.0.8
+langchain-core==0.1.7
+langchain-community==0.0.9

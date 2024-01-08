@@ -1,6 +1,7 @@
 """Load agent."""
 from typing import Any, Optional, Sequence
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import BaseTool
 
@@ -10,6 +11,14 @@ from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 from langchain.callbacks.base import BaseCallbackManager
 
 
+@deprecated(
+    "0.1.0",
+    alternative=(
+        "Use new agent constructor methods like create_react_agent, create_json_agent, "
+        "create_structured_chat_agent, etc."
+    ),
+    removal="0.2.0",
+)
 def initialize_agent(
     tools: Sequence[BaseTool],
     llm: BaseLanguageModel,
