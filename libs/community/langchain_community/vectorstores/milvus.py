@@ -40,6 +40,8 @@ class Milvus(VectorStore):
         embedding_function (Embeddings): Function used to embed the text.
         collection_name (str): Which Milvus collection to use. Defaults to
             "LangChainCollection".
+        collection_description (str): The description of the collection. Defaults to
+            "".
         connection_args (Optional[dict[str, any]]): The connection args used for
             this class comes in the form of a dict.
         consistency_level (str): The consistency level to use for a collection.
@@ -53,6 +55,9 @@ class Milvus(VectorStore):
         primary_field (str): Name of the primary key field. Defaults to "pk".
         text_field (str): Name of the text field. Defaults to "text".
         vector_field (str): Name of the vector field. Defaults to "vector".
+        metadata_field (str): Name of the metadta field. Defaults to None.
+            When metadata_field is specified,
+            the document's metadata will store as json.
 
     The connection args used for this class comes in the form of a dict,
     here are a few of the options:
@@ -103,6 +108,7 @@ class Milvus(VectorStore):
         self,
         embedding_function: Embeddings,
         collection_name: str = "LangChainCollection",
+        collection_description: str = "",
         connection_args: Optional[dict[str, Any]] = None,
         consistency_level: str = "Session",
         index_params: Optional[dict] = None,
@@ -112,6 +118,10 @@ class Milvus(VectorStore):
         primary_field: str = "pk",
         text_field: str = "text",
         vector_field: str = "vector",
+        metadata_field: Optional[str] = None,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -138,6 +148,7 @@ class Milvus(VectorStore):
 
         self.embedding_func = embedding_function
         self.collection_name = collection_name
+        self.collection_description = collection_description
         self.index_params = index_params
         self.search_params = search_params
         self.consistency_level = consistency_level
@@ -148,7 +159,12 @@ class Milvus(VectorStore):
         self._text_field = text_field
         # In order for compatibility, the vector field needs to be called "vector"
         self._vector_field = vector_field
+        self._metadata_field = metadata_field
         self.fields: list[str] = []
+        self.partition_names = partition_names
+        self.replica_number = replica_number
+        self.timeout = timeout
+
         # Create the connection to the server
         if connection_args is None:
             connection_args = DEFAULT_MILVUS_CONNECTION
@@ -167,7 +183,11 @@ class Milvus(VectorStore):
             self.col = None
 
         # Initialize the vector store
-        self._init()
+        self._init(
+            partition_names=partition_names,
+            replica_number=replica_number,
+            timeout=timeout,
+        )
 
     @property
     def embeddings(self) -> Embeddings:
@@ -226,14 +246,23 @@ class Milvus(VectorStore):
             raise e
 
     def _init(
-        self, embeddings: Optional[list] = None, metadatas: Optional[list[dict]] = None
+        self,
+        embeddings: Optional[list] = None,
+        metadatas: Optional[list[dict]] = None,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
     ) -> None:
         if embeddings is not None:
             self._create_collection(embeddings, metadatas)
         self._extract_fields()
         self._create_index()
         self._create_search_params()
-        self._load()
+        self._load(
+            partition_names=partition_names,
+            replica_number=replica_number,
+            timeout=timeout,
+        )
 
     def _create_collection(
         self, embeddings: list, metadatas: Optional[list[dict]] = None
@@ -250,24 +279,32 @@ class Milvus(VectorStore):
         # Determine embedding dim
         dim = len(embeddings[0])
         fields = []
-        # Determine metadata schema
-        if metadatas:
-            # Create FieldSchema for each entry in metadata.
-            for key, value in metadatas[0].items():
-                # Infer the corresponding datatype of the metadata
-                dtype = infer_dtype_bydata(value)
-                # Datatype isn't compatible
-                if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
-                    logger.error(
-                        "Failure to create collection, unrecognized dtype for key: %s",
-                        key,
-                    )
-                    raise ValueError(f"Unrecognized datatype for {key}.")
-                # Dataype is a string/varchar equivalent
-                elif dtype == DataType.VARCHAR:
-                    fields.append(FieldSchema(key, DataType.VARCHAR, max_length=65_535))
-                else:
-                    fields.append(FieldSchema(key, dtype))
+        if self._metadata_field is not None:
+            fields.append(FieldSchema(self._metadata_field, DataType.JSON))
+        else:
+            # Determine metadata schema
+            if metadatas:
+                # Create FieldSchema for each entry in metadata.
+                for key, value in metadatas[0].items():
+                    # Infer the corresponding datatype of the metadata
+                    dtype = infer_dtype_bydata(value)
+                    # Datatype isn't compatible
+                    if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
+                        logger.error(
+                            (
+                                "Failure to create collection, "
+                                "unrecognized dtype for key: %s"
+                            ),
+                            key,
+                        )
+                        raise ValueError(f"Unrecognized datatype for {key}.")
+                    # Dataype is a string/varchar equivalent
+                    elif dtype == DataType.VARCHAR:
+                        fields.append(
+                            FieldSchema(key, DataType.VARCHAR, max_length=65_535)
+                        )
+                    else:
+                        fields.append(FieldSchema(key, dtype))
 
         # Create the text field
         fields.append(
@@ -285,7 +322,7 @@ class Milvus(VectorStore):
         )
 
         # Create the schema for the collection
-        schema = CollectionSchema(fields)
+        schema = CollectionSchema(fields, description=self.collection_description)
 
         # Create the collection
         try:
@@ -379,12 +416,21 @@ class Milvus(VectorStore):
                 self.search_params = self.default_search_params[index_type]
                 self.search_params["metric_type"] = metric_type
 
-    def _load(self) -> None:
+    def _load(
+        self,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
+    ) -> None:
         """Load the collection if available."""
         from pymilvus import Collection
 
         if isinstance(self.col, Collection) and self._get_index() is not None:
-            self.col.load()
+            self.col.load(
+                partition_names=partition_names,
+                replica_number=replica_number,
+                timeout=timeout,
+            )
 
     def add_texts(
         self,
@@ -400,7 +446,7 @@ class Milvus(VectorStore):
         in creating a new Collection. The data of the first entity decides
         the schema of the new collection, the dim is extracted from the first
         embedding and the columns are decided by the first metadata dict.
-        Metada keys will need to be present for all inserted values. At
+        Metadata keys will need to be present for all inserted values. At
         the moment there is no None equivalent in Milvus.
 
         Args:
@@ -434,7 +480,14 @@ class Milvus(VectorStore):
 
         # If the collection hasn't been initialized yet, perform all steps to do so
         if not isinstance(self.col, Collection):
-            self._init(embeddings, metadatas)
+            kwargs = {"embeddings": embeddings, "metadatas": metadatas}
+            if self.partition_names:
+                kwargs["partition_names"] = self.partition_names
+            if self.replica_number:
+                kwargs["replica_number"] = self.replica_number
+            if self.timeout:
+                kwargs["timeout"] = self.timeout
+            self._init(**kwargs)
 
         # Dict to hold all insert columns
         insert_dict: dict[str, list] = {
@@ -442,12 +495,16 @@ class Milvus(VectorStore):
             self._vector_field: embeddings,
         }
 
-        # Collect the metadata into the insert dict.
-        if metadatas is not None:
+        if self._metadata_field is not None:
             for d in metadatas:
-                for key, value in d.items():
-                    if key in self.fields:
-                        insert_dict.setdefault(key, []).append(value)
+                insert_dict.setdefault(self._metadata_field, []).append(d)
+        else:
+            # Collect the metadata into the insert dict.
+            if metadatas is not None:
+                for d in metadatas:
+                    for key, value in d.items():
+                        if key in self.fields:
+                            insert_dict.setdefault(key, []).append(value)
 
         # Total insert count
         vectors: list = insert_dict[self._vector_field]
@@ -471,6 +528,7 @@ class Milvus(VectorStore):
                     "Failed to insert batch starting at entity: %s/%s", i, total_count
                 )
                 raise e
+        self.col.flush()
         return pks
 
     def similarity_search(
@@ -630,8 +688,8 @@ class Milvus(VectorStore):
         # Organize results.
         ret = []
         for result in res[0]:
-            meta = {x: result.entity.get(x) for x in output_fields}
-            doc = Document(page_content=meta.pop(self._text_field), metadata=meta)
+            data = {x: result.entity.get(x) for x in output_fields}
+            doc = self._parse_document(data)
             pair = (doc, result.score)
             ret.append(pair)
 
@@ -746,8 +804,8 @@ class Milvus(VectorStore):
         documents = []
         scores = []
         for result in res[0]:
-            meta = {x: result.entity.get(x) for x in output_fields}
-            doc = Document(page_content=meta.pop(self._text_field), metadata=meta)
+            data = {x: result.entity.get(x) for x in output_fields}
+            doc = self._parse_document(data)
             documents.append(doc)
             scores.append(result.score)
             ids.append(result.id)
@@ -826,3 +884,9 @@ class Milvus(VectorStore):
         )
         vector_db.add_texts(texts=texts, metadatas=metadatas)
         return vector_db
+
+    def _parse_document(self, data: dict) -> Document:
+        return Document(
+            page_content=data.pop(self._text_field),
+            metadata=data.pop(self._metadata_field) if self._metadata_field else data,
+        )

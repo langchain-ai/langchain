@@ -21,6 +21,7 @@ from typing import (
 )
 
 import yaml
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish, AgentStep
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
@@ -486,6 +487,14 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         return output
 
 
+@deprecated(
+    "0.1.0",
+    alternative=(
+        "Use new agent constructor methods like create_react_agent, create_json_agent, "
+        "create_structured_chat_agent, etc."
+    ),
+    removal="0.2.0",
+)
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
 
@@ -568,6 +577,14 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         }
 
 
+@deprecated(
+    "0.1.0",
+    alternative=(
+        "Use new agent constructor methods like create_react_agent, create_json_agent, "
+        "create_structured_chat_agent, etc."
+    ),
+    removal="0.2.0",
+)
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
 
