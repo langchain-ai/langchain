@@ -71,6 +71,7 @@ __all__ = [
     "Epsilla",
     "FAISS",
     "Hologres",
+    "KDBAI",
     "LanceDB",
     "LLMRails",
     "Marqo",
