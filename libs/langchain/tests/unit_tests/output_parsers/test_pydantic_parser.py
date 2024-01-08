@@ -76,3 +76,24 @@ def test_pydantic_output_parser_fail() -> None:
         assert "Failed to parse TestModel from completion" in str(e)
     else:
         assert False, "Expected OutputParserException"
+
+
+def test_pydantic_output_parser_type_inference() -> None:
+    """Test pydantic output parser type inference."""
+
+    class SampleModel(BaseModel):
+        foo: int
+        bar: str
+
+    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)
+    schema = pydantic_parser.get_output_schema().schema()
+
+    assert schema == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "string"},
+            "foo": {"title": "Foo", "type": "integer"},
+        },
+        "required": ["foo", "bar"],
+        "title": "SampleModel",
+        "type": "object",
+    }
