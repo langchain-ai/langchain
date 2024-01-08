@@ -2,6 +2,7 @@
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
@@ -30,6 +31,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 
 
+@deprecated("0.1.0", alternative="create_openai_functions_agent", removal="0.2.0")
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
     """An Agent driven by OpenAIs function powered API.
 
