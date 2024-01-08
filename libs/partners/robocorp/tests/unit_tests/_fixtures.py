@@ -33,3 +33,41 @@ class FakeChatLLMT(BaseChatModel):
                 )
             ]
         )
+
+
+openapi_endpoint_doc_mock = {
+    "summary": "Test Action",
+    "operationId": "test_action",
+    "description": "Greets an employee",
+    "responses": {
+        "description": "Successful Response",
+        "content": {
+            "application/json": {
+                "schema": {
+                    "type": "string",
+                    "title": "Response Test Action",
+                    "description": "The greeting",
+                }
+            }
+        },
+    },
+    "requestBody": {
+        "content": {
+            "application/json": {
+                "schema": {
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "title": "Name",
+                            "description": "Name of the employee",
+                        }
+                    },
+                    "type": "object",
+                    "required": ["name"],
+                    "title": "TestActionInput",
+                }
+            }
+        },
+        "required": True,
+    },
+}
