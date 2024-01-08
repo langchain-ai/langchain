@@ -56,7 +56,7 @@ from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM, get_prompts
 from langchain_core.load.dump import dumps
-from langchain_core.load.load import _loads_suppress_warning
+from langchain_core.load.load import loads
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
 
@@ -149,10 +149,7 @@ def _loads_generations(generations_str: str) -> Union[RETURN_VAL_TYPE, None]:
         RETURN_VAL_TYPE: A list of generations.
     """
     try:
-        generations = [
-            _loads_suppress_warning(_item_str)
-            for _item_str in json.loads(generations_str)
-        ]
+        generations = [loads(_item_str) for _item_str in json.loads(generations_str)]
         return generations
     except (json.JSONDecodeError, TypeError):
         # deferring the (soft) handling to after the legacy-format attempt
@@ -227,7 +224,7 @@ class SQLAlchemyCache(BaseCache):
             rows = session.execute(stmt).fetchall()
             if rows:
                 try:
-                    return [_loads_suppress_warning(row[0]) for row in rows]
+                    return [loads(row[0]) for row in rows]
                 except Exception:
                     logger.warning(
                         "Retrieving a cache value that could not be deserialized "
@@ -398,7 +395,7 @@ class RedisCache(BaseCache):
         if results:
             for _, text in results.items():
                 try:
-                    generations.append(_loads_suppress_warning(text))
+                    generations.append(loads(text))
                 except Exception:
                     logger.warning(
                         "Retrieving a cache value that could not be deserialized "
@@ -538,9 +535,7 @@ class RedisSemanticCache(BaseCache):
         if results:
             for document in results:
                 try:
-                    generations.extend(
-                        _loads_suppress_warning(document.metadata["return_val"])
-                    )
+                    generations.extend(loads(document.metadata["return_val"]))
                 except Exception:
                     logger.warning(
                         "Retrieving a cache value that could not be deserialized "
@@ -1190,7 +1185,7 @@ class SQLAlchemyMd5Cache(BaseCache):
         """Look up based on prompt and llm_string."""
         rows = self._search_rows(prompt, llm_string)
         if rows:
-            return [_loads_suppress_warning(row[0]) for row in rows]
+            return [loads(row[0]) for row in rows]
         return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:

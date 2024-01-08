@@ -221,25 +221,24 @@ embeddings = OllamaEmbeddings()
 </Tabs>
 
 Now, we can use this embedding model to ingest documents into a vectorstore.
-We will use a simple local vectorstore, [DocArray InMemorySearch](/docs/integrations/vectorstores/docarray_in_memory), for simplicity's sake.
+We will use a simple local vectorstore, [FAISS](/docs/integrations/vectorstores/faiss), for simplicity's sake.
 
 First we need to install the required packages for that:
 
 ```shell
-pip install docarray
-pip install tiktoken
+pip install faiss-cpu
 ```
 
 Then we can build our index:
 
 ```python
-from langchain_community.vectorstores import DocArrayInMemorySearch
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
-vector = DocArrayInMemorySearch.from_documents(documents, embeddings)
+vector = FAISS.from_documents(documents, embeddings)
 ```
 
 Now that we have this data indexed in a vectorstore, we will create a retrieval chain.
@@ -483,7 +482,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import DocArrayInMemorySearch
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -501,7 +500,7 @@ docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
 embeddings = OpenAIEmbeddings()
-vector = DocArrayInMemorySearch.from_documents(documents, embeddings)
+vector = FAISS.from_documents(documents, embeddings)
 retriever = vector.as_retriever()
 
 # 2. Create Tools
