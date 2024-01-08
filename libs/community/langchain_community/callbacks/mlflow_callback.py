@@ -139,29 +139,39 @@ class MlflowLogger:
                 kwargs, "tracking_uri", "MLFLOW_TRACKING_URI", ""
             )
             self.mlflow.set_tracking_uri(tracking_uri)
-
-            # User can set other env variables described here
-            # > https://www.mlflow.org/docs/latest/tracking.html#logging-to-a-tracking-server
-
-            experiment_name = get_from_dict_or_env(
-                kwargs, "experiment_name", "MLFLOW_EXPERIMENT_NAME"
-            )
-            self.mlf_exp = self.mlflow.get_experiment_by_name(experiment_name)
-            if self.mlf_exp is not None:
-                self.mlf_expid = self.mlf_exp.experiment_id
+            
+            if "run_id" in kwargs:
+                self.mlf_expid = self.mlflow.get_run(kwargs["run_id"]).info.experiment_id
             else:
-                self.mlf_expid = self.mlflow.create_experiment(experiment_name)
 
-        self.start_run(kwargs["run_name"], kwargs["run_tags"])
+                # User can set other env variables described here
+                # > https://www.mlflow.org/docs/latest/tracking.html#logging-to-a-tracking-server
 
-    def start_run(self, name: str, tags: Dict[str, str]) -> None:
-        """To start a new run, auto generates the random suffix for name"""
-        if name.endswith("-%"):
-            rname = "".join(random.choices(string.ascii_uppercase + string.digits, k=7))
-            name = name.replace("%", rname)
-        self.run = self.mlflow.MlflowClient().create_run(
-            self.mlf_expid, run_name=name, tags=tags
-        )
+                experiment_name = get_from_dict_or_env(
+                    kwargs, "experiment_name", "MLFLOW_EXPERIMENT_NAME"
+                )
+                self.mlf_exp = self.mlflow.get_experiment_by_name(experiment_name)
+                if self.mlf_exp is not None:
+                    self.mlf_expid = self.mlf_exp.experiment_id
+                else:
+                    self.mlf_expid = self.mlflow.create_experiment(experiment_name)
+
+        self.start_run(kwargs["run_name"], kwargs["run_tags"], kwargs.get("run_id", None))
+
+    def start_run(self, name: str, tags: Dict[str, str], run_id: Optional[str]=None) -> None:
+        """
+        If run_id is provided, it will reuse the run with the given run_id.
+        Otherwise, it starts a new run, auto generates the random suffix for name
+        """
+        if run_id:
+            self.run = self.mlflow.MlflowClient().get_run(run_id)
+        else:
+            if name.endswith("-%"):
+                rname = "".join(random.choices(string.ascii_uppercase + string.digits, k=7))
+                name = name.replace("%", rname)
+            self.run = self.mlflow.MlflowClient().create_run(
+                self.mlf_expid, run_name=name, tags=tags
+            )
 
     def finish_run(self) -> None:
         """To finish the run."""
@@ -246,6 +256,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         experiment: Optional[str] = "langchain",
         tags: Optional[Dict] = None,
         tracking_uri: Optional[str] = None,
+        run_id: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
         import_pandas()
@@ -258,6 +269,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.experiment = experiment
         self.tags = tags or {}
         self.tracking_uri = tracking_uri
+        self.run_id = run_id
 
         self.temp_dir = tempfile.TemporaryDirectory()
 
@@ -266,6 +278,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             experiment_name=self.experiment,
             run_name=self.name,
             run_tags=self.tags,
+            run_id=self.run_id,
         )
 
         self.action_records: list = []
