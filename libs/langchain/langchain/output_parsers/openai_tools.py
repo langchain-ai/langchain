@@ -63,6 +63,11 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return False
+
     tools: List[Type[BaseModel]]
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
