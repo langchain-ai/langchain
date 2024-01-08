@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional, Tuple
 import uuid
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
-from langchain_core.vectorstores import VectorStore
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class VikingDBConfig(object):
-    def __init__(self, host="host", region="region", ak="ak",
-                 sk="sk", scheme="http"):
+    def __init__(self, host="host", region="region", ak="ak", sk="sk", scheme="http"):
         self.host = host
         self.region = region
         self.ak = ak
@@ -26,16 +25,16 @@ class VikingDBConfig(object):
 
 class VikingDB(VectorStore):
     def __init__(
-            self,
-            embedding_function: Embeddings,
-            collection_name: str = "LangChainCollection",
-            connection_args: Optional[VikingDBConfig] = None,
-            index_params: Optional[dict] = None,
-            drop_old: Optional[bool] = False,
-            **kwargs: Any,
+        self,
+        embedding_function: Embeddings,
+        collection_name: str = "LangChainCollection",
+        connection_args: Optional[VikingDBConfig] = None,
+        index_params: Optional[dict] = None,
+        drop_old: Optional[bool] = False,
+        **kwargs: Any,
     ):
         try:
-            from volcengine.viking_db import VikingDBService, Collection
+            from volcengine.viking_db import Collection, VikingDBService
         except ImportError:
             raise ValueError(
                 "Could not import volcengine python package. "
@@ -47,11 +46,13 @@ class VikingDB(VectorStore):
         self.connection_args = connection_args
         self.index_params = index_params
         self.drop_old = drop_old
-        self.service = VikingDBService(connection_args.host,
-                                       connection_args.region,
-                                       connection_args.ak,
-                                       connection_args.sk,
-                                       connection_args.scheme)
+        self.service = VikingDBService(
+            connection_args.host,
+            connection_args.region,
+            connection_args.ak,
+            connection_args.sk,
+            connection_args.scheme,
+        )
 
         try:
             col = self.service.get_collection(collection_name)
@@ -75,7 +76,7 @@ class VikingDB(VectorStore):
         return self.embedding_func
 
     def _create_collection(
-            self, embeddings: List, metadatas: Optional[List[dict]] = None
+        self, embeddings: List, metadatas: Optional[List[dict]] = None
     ) -> None:
         try:
             from volcengine.viking_db import Field, FieldType
@@ -95,14 +96,12 @@ class VikingDB(VectorStore):
                     fields.append(Field(key, FieldType.Int64))
                 if isinstance(value, bool):
                     fields.append(Field(key, FieldType.Bool))
-                if (
-                    isinstance(value, list) and
-                    all(isinstance(item, str) for item in value)
+                if isinstance(value, list) and all(
+                    isinstance(item, str) for item in value
                 ):
                     fields.append(Field(key, FieldType.List_String))
-                if (
-                    isinstance(value, list) and
-                    all(isinstance(item, int) for item in value)
+                if isinstance(value, list) and all(
+                    isinstance(item, int) for item in value
                 ):
                     fields.append(Field(key, FieldType.List_Int64))
         fields.append(Field("text", FieldType.String))
@@ -135,19 +134,21 @@ class VikingDB(VectorStore):
             if self.index_params.get("scalar_index") is not None:
                 scalar_index = self.index_params["scalar_index"]
 
-        self.index = self.service.create_index(self.collection_name,
-                                               self.index_name,
-                                               vector_index=vector_index,
-                                               cpu_quota=cpu_quota,
-                                               partition_by=partition_by,
-                                               scalar_index=scalar_index)
+        self.index = self.service.create_index(
+            self.collection_name,
+            self.index_name,
+            vector_index=vector_index,
+            cpu_quota=cpu_quota,
+            partition_by=partition_by,
+            scalar_index=scalar_index,
+        )
 
     def add_texts(
-            self,
-            texts: List[str],
-            metadatas: Optional[List[dict]] = None,
-            batch_size: int = 1000,
-            **kwargs: Any,
+        self,
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        batch_size: int = 1000,
+        **kwargs: Any,
     ) -> List[str]:
         try:
             from volcengine.viking_db import Data
@@ -194,21 +195,19 @@ class VikingDB(VectorStore):
         return pks
 
     def similarity_search(
-            self,
-            query: str,
-            params: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        params: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
-        res = self.similarity_search_with_score(
-            query=query, params=params, **kwargs
-        )
+        res = self.similarity_search_with_score(query=query, params=params, **kwargs)
         return [doc for doc, _ in res]
 
     def similarity_search_with_score(
-            self,
-            query: str,
-            params: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        params: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         embedding = self.embedding_func.embed_query(query)
 
@@ -218,10 +217,10 @@ class VikingDB(VectorStore):
         return res
 
     def similarity_search_by_vector(
-            self,
-            embedding: List[float],
-            params: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        params: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         res = self.similarity_search_with_score_by_vector(
             embedding=embedding, params=params, **kwargs
@@ -229,10 +228,10 @@ class VikingDB(VectorStore):
         return [doc for doc, _ in res]
 
     def similarity_search_with_score_by_vector(
-            self,
-            embedding: List[float],
-            params: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        params: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         if self.collection is None:
             logger.debug("No existing collection to search.")
@@ -252,11 +251,13 @@ class VikingDB(VectorStore):
             if params.get("partition") is not None:
                 partition = params["partition"]
 
-        res = self.index.search_by_vector(embedding,
-                                          filter=filter,
-                                          limit=limit,
-                                          output_fields=output_fields,
-                                          partition=partition)
+        res = self.index.search_by_vector(
+            embedding,
+            filter=filter,
+            limit=limit,
+            output_fields=output_fields,
+            partition=partition,
+        )
 
         ret = []
         for item in res:
@@ -269,12 +270,12 @@ class VikingDB(VectorStore):
         return ret
 
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            lambda_mult: float = 0.5,
-            params: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        lambda_mult: float = 0.5,
+        params: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         embedding = self.embedding_func.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
@@ -286,14 +287,13 @@ class VikingDB(VectorStore):
         )
 
     def max_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            lambda_mult: float = 0.5,
-            params: Optional[dict] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        lambda_mult: float = 0.5,
+        params: Optional[dict] = None,
+        **kwargs: Any,
     ) -> List[Document]:
-
         if self.collection is None:
             logger.debug("No existing collection to search.")
             return []
@@ -311,11 +311,13 @@ class VikingDB(VectorStore):
             if params.get("partition") is not None:
                 partition = params["partition"]
 
-        res = self.index.search_by_vector(embedding,
-                                          filter=filter,
-                                          limit=limit,
-                                          output_fields=output_fields,
-                                          partition=partition)
+        res = self.index.search_by_vector(
+            embedding,
+            filter=filter,
+            limit=limit,
+            output_fields=output_fields,
+            partition=partition,
+        )
         documents = []
         ordered_result_embeddings = []
         for item in res:
@@ -339,9 +341,9 @@ class VikingDB(VectorStore):
         return ret
 
     def delete(
-            self,
-            ids: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> None:
         if self.collection is None:
             logger.debug("No existing collection to search.")
@@ -349,15 +351,15 @@ class VikingDB(VectorStore):
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            connection_args: Optional[VikingDBConfig] = None,
-            metadatas: Optional[List[dict]] = None,
-            collection_name: str = "LangChainCollection",
-            index_params: Optional[dict] = None,
-            drop_old: bool = False,
-            **kwargs: Any,
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        connection_args: Optional[VikingDBConfig] = None,
+        metadatas: Optional[List[dict]] = None,
+        collection_name: str = "LangChainCollection",
+        index_params: Optional[dict] = None,
+        drop_old: bool = False,
+        **kwargs: Any,
     ):
         if connection_args is None:
             raise Exception("VikingDBConfig does not exists")
