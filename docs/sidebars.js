@@ -78,6 +78,7 @@ module.exports = {
         id: "langsmith/index"
       },
     },
+    {type: "doc", id: "langgraph", label: "LangGraph"},
   ],
   integrations: [
     {
