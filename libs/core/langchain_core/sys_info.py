@@ -12,6 +12,7 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         "langchain_core",
         "langchain",
         "langchain_community",
+        "langserve",
     ] + list(additional_pkgs)
 
     system_info = {
