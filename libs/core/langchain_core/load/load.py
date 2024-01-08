@@ -3,7 +3,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from langchain_core._api import beta, suppress_langchain_beta_warning
+from langchain_core._api import beta
 from langchain_core.load.mapping import (
     OLD_PROMPT_TEMPLATE_FORMATS,
     SERIALIZABLE_MAPPING,
@@ -125,16 +125,6 @@ def loads(
     return json.loads(text, object_hook=Reviver(secrets_map, valid_namespaces))
 
 
-def _loads_suppress_warning(
-    text: str,
-    *,
-    secrets_map: Optional[Dict[str, str]] = None,
-    valid_namespaces: Optional[List[str]] = None,
-) -> Any:
-    with suppress_langchain_beta_warning():
-        return loads(text, secrets_map=secrets_map, valid_namespaces=valid_namespaces)
-
-
 @beta()
 def load(
     obj: Any,
@@ -166,13 +156,3 @@ def load(
         return obj
 
     return _load(obj)
-
-
-def _load_suppress_warning(
-    obj: Any,
-    *,
-    secrets_map: Optional[Dict[str, str]] = None,
-    valid_namespaces: Optional[List[str]] = None,
-) -> Any:
-    with suppress_langchain_beta_warning():
-        return load(obj, secrets_map=secrets_map, valid_namespaces=valid_namespaces)

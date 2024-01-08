@@ -281,12 +281,14 @@ class PGVector(VectorStore):
     def delete(
         self,
         ids: Optional[List[str]] = None,
+        collection_only: bool = False,
         **kwargs: Any,
     ) -> None:
         """Delete vectors by ids or uuids.
 
         Args:
             ids: List of ids to delete.
+            collection_only: Only delete ids in the collection.
         """
         with Session(self._bind) as session:
             if ids is not None:
@@ -294,9 +296,20 @@ class PGVector(VectorStore):
                     "Trying to delete vectors by ids (represented by the model "
                     "using the custom ids field)"
                 )
-                stmt = delete(self.EmbeddingStore).where(
-                    self.EmbeddingStore.custom_id.in_(ids)
-                )
+
+                stmt = delete(self.EmbeddingStore)
+
+                if collection_only:
+                    collection = self.get_collection(session)
+                    if not collection:
+                        self.logger.warning("Collection not found")
+                        return
+
+                    stmt = stmt.where(
+                        self.EmbeddingStore.collection_id == collection.uuid
+                    )
+
+                stmt = stmt.where(self.EmbeddingStore.custom_id.in_(ids))
                 session.execute(stmt)
             session.commit()
 
