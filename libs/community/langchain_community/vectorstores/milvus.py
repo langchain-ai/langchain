@@ -122,6 +122,7 @@ class Milvus(VectorStore):
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
+        load: Optional[bool] = True
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -187,6 +188,7 @@ class Milvus(VectorStore):
             partition_names=partition_names,
             replica_number=replica_number,
             timeout=timeout,
+            load=load
         )
 
     @property
@@ -252,17 +254,19 @@ class Milvus(VectorStore):
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
+        load: Optional[bool] = True
     ) -> None:
         if embeddings is not None:
             self._create_collection(embeddings, metadatas)
         self._extract_fields()
         self._create_index()
         self._create_search_params()
-        self._load(
-            partition_names=partition_names,
-            replica_number=replica_number,
-            timeout=timeout,
-        )
+        if load:
+            self._load(
+                partition_names=partition_names,
+                replica_number=replica_number,
+                timeout=timeout,
+            )
 
     def _create_collection(
         self, embeddings: list, metadatas: Optional[list[dict]] = None
