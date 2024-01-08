@@ -85,7 +85,11 @@ def test_pydantic_output_parser_type_inference() -> None:
         foo: int
         bar: str
 
-    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)
+    # Ignoring mypy error that appears in python 3.8, but not 3.11.
+    # This seems to be functionally correct, so we'll ignore the error.
+    pydantic_parser = PydanticOutputParser(
+        pydantic_object=SampleModel  # type: ignore[var-annotated]
+    )
     schema = pydantic_parser.get_output_schema().schema()
 
     assert schema == {
