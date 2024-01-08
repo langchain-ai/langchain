@@ -50,9 +50,14 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
     key_name: str
     """The type of tools to return."""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         results = super().parse_result(result)
-        return [res["args"] for res in results if results["type"] == self.key_name]
+        return [res["args"] for res in results if res["type"] == self.key_name]
 
 
 class PydanticToolsParser(JsonOutputToolsParser):
