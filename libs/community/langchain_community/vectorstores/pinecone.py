@@ -371,7 +371,7 @@ class Pinecone(VectorStore):
 
         pinecone_client_version = pinecone.__version__
 
-        if version.parse(pinecone_client_version) >= version.parse("3.0.0"):
+        if version.parse(pinecone_client_version) >= version.parse("3.0.0.dev"):
             pinecone_instance = pinecone.Pinecone(
                 api_key=os.environ.get("PINECONE_API_KEY"), pool_threads=pool_threads
             )
