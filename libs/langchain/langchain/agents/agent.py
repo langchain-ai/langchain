@@ -1137,7 +1137,7 @@ class AgentExecutor(Chain):
         for agent_action in actions:
             yield agent_action
         for agent_action in actions:
-            self._perform_agent_action(
+            yield self._perform_agent_action(
                 name_to_tool_map, color_mapping, agent_action, run_manager
             )
 
@@ -1178,7 +1178,7 @@ class AgentExecutor(Chain):
                 callbacks=run_manager.get_child() if run_manager else None,
                 **tool_run_kwargs,
             )
-        yield AgentStep(action=agent_action, observation=observation)
+        return AgentStep(action=agent_action, observation=observation)
 
     async def _atake_next_step(
         self,
