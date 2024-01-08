@@ -1141,13 +1141,13 @@ class AgentExecutor(Chain):
                 name_to_tool_map, color_mapping, agent_action, run_manager
             )
 
-    async def _perform_agent_action(
+    def _perform_agent_action(
         self,
         name_to_tool_map: Dict[str, BaseTool],
         color_mapping: Dict[str, str],
         agent_action: AgentAction,
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ):
+    ) -> AgentStep:
         if run_manager:
             run_manager.on_agent_action(agent_action, color="green")
         # Otherwise we lookup the tool
@@ -1274,7 +1274,12 @@ class AgentExecutor(Chain):
 
         # Use asyncio.gather to run multiple tool.arun() calls concurrently
         result = await asyncio.gather(
-            *[self._aperform_agent_action(name_to_tool_map, color_mapping, agent_action, run_manager) for agent_action in actions],
+            *[
+                self._aperform_agent_action(
+                    name_to_tool_map, color_mapping, agent_action, run_manager
+                )
+                for agent_action in actions
+            ],
         )
 
         # TODO This could yield each result as it becomes available
