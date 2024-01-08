@@ -2,6 +2,7 @@
 import os
 from typing import List
 
+import sqlalchemy
 from langchain_core.documents import Document
 from sqlalchemy.orm import Session
 
@@ -155,7 +156,7 @@ def test_pgvector_collection_with_metadata() -> None:
         connection_string=CONNECTION_STRING,
         pre_delete_collection=True,
     )
-    session = Session(pgvector.connect())
+    session = Session(pgvector._create_engine())
     collection = pgvector.get_collection(session)
     if collection is None:
         assert False, "Expected a CollectionStore object but received None"
@@ -327,3 +328,43 @@ def test_pgvector_max_marginal_relevance_search_with_score() -> None:
     )
     output = docsearch.max_marginal_relevance_search_with_score("foo", k=1, fetch_k=3)
     assert output == [(Document(page_content="foo"), 0.0)]
+
+
+def test_pgvector_with_custom_connection() -> None:
+    """Test construction using a custom connection."""
+    texts = ["foo", "bar", "baz"]
+    engine = sqlalchemy.create_engine(CONNECTION_STRING)
+    with engine.connect() as connection:
+        docsearch = PGVector.from_texts(
+            texts=texts,
+            collection_name="test_collection",
+            embedding=FakeEmbeddingsWithAdaDimension(),
+            connection_string=CONNECTION_STRING,
+            pre_delete_collection=True,
+            connection=connection,
+        )
+        output = docsearch.similarity_search("foo", k=1)
+        assert output == [Document(page_content="foo")]
+
+
+def test_pgvector_with_custom_engine_args() -> None:
+    """Test construction using custom engine arguments."""
+    texts = ["foo", "bar", "baz"]
+    engine_args = {
+        "pool_size": 5,
+        "max_overflow": 10,
+        "pool_recycle": -1,
+        "pool_use_lifo": False,
+        "pool_pre_ping": False,
+        "pool_timeout": 30,
+    }
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+        engine_args=engine_args,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
