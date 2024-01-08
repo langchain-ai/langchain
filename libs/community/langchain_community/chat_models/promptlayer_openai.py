@@ -2,6 +2,7 @@
 import datetime
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api.deprecation import suppress_langchain_deprecation_warning
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -38,6 +39,11 @@ class PromptLayerChatOpenAI(ChatOpenAI):
 
     pl_tags: Optional[List[str]]
     return_pl_id: Optional[bool] = False
+
+    def __init__(self, *kwargs: Any) -> None:
+        # bypass deprecation warning for ChatOpenAI
+        with suppress_langchain_deprecation_warning():
+            super().__init__(*kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

@@ -1,6 +1,7 @@
 import re
 from typing import Any, List, Optional, Sequence, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -27,6 +28,7 @@ from langchain.tools.render import render_text_description_and_args
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
 
+@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="0.2.0")
 class StructuredChatAgent(Agent):
     """Structured Chat Agent."""
 

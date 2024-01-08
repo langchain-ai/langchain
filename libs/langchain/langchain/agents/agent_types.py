@@ -1,7 +1,17 @@
 """Module definitions of agent types together with corresponding agents."""
 from enum import Enum
 
+from langchain_core._api import deprecated
 
+
+@deprecated(
+    "0.1.0",
+    alternative=(
+        "Use new agent constructor methods like create_react_agent, create_json_agent, "
+        "create_structured_chat_agent, etc."
+    ),
+    removal="0.2.0",
+)
 class AgentType(str, Enum):
     """An enum for agent types.
 
