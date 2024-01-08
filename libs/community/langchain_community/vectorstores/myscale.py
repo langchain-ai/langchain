@@ -470,7 +470,7 @@ class MyScale(VectorStore):
             ids is None and where_str is None
         ), "You need to specify where to be deleted! Either with `ids` or `where_str`"
         conds = []
-        if ids:
+        if ids and len(ids) > 0:
             id_list = ", ".join([f"'{id}'" for id in ids])
             conds.append(f"{self.config.column_map['id']} IN ({id_list})")
         if where_str:
