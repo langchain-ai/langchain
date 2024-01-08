@@ -762,6 +762,12 @@ def _import_e2b_data_analysis() -> Any:
     return E2BDataAnalysisTool
 
 
+def _import_package_installer() -> Any:
+    from langchain_community.tools.package_installer.tool import PackageInstallTool
+
+    return PackageInstallTool
+
+
 def __getattr__(name: str) -> Any:
     if name == "AINAppOps":
         return _import_ainetwork_app()
@@ -999,6 +1005,8 @@ def __getattr__(name: str) -> Any:
         return _import_bearly_tool()
     elif name == "E2BDataAnalysisTool":
         return _import_e2b_data_analysis()
+    elif name == "PackageInstallTool":
+        return _import_package_installer()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -1085,6 +1093,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PackageInstallTool",
     "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",

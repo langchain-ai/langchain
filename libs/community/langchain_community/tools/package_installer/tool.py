@@ -25,7 +25,7 @@ class PackageInstallTool(BaseTool):
 
     name: str = "package_install"
     args_schema: Type[BaseModel] = PackageInstallInput
-    description: str = "Install Python packages during run time."
+    description: str = "Install Python packages dynamically during runtime as they are imported"
 
     def _run(
         self,
