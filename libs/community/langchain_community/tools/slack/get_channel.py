@@ -11,11 +11,12 @@ class SlackGetChannel(SlackBaseTool):
     """Tool that gets Slack channel information."""
 
     name: str = "get_channelid_name_dict"
-    description: str = "Use this tool to get channelid-name dict."
+    description: str = (
+        "Use this tool to get channelid-name dict. Their is no input to this tool"
+    )
 
     def _run(
-        self,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, *args, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         try:
             logging.getLogger(__name__)
