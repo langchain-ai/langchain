@@ -21,7 +21,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
 from packaging import version
-from pkg_resources import get_distribution
 
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
@@ -370,7 +369,7 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
 
-        pinecone_client_version = get_distribution("pinecone-client").version
+        pinecone_client_version = pinecone.__version__
 
         if version.parse(pinecone_client_version) >= version.parse("3.0.0"):
             pinecone_instance = pinecone.Pinecone(
