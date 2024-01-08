@@ -13,6 +13,11 @@ from langchain_core.pydantic_v1 import BaseModel
 class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
     """Parse tools from OpenAI response."""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         generation = result[0]
         if not isinstance(generation, ChatGeneration):

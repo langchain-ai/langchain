@@ -51,6 +51,11 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
     @property
     def _type(self) -> str:
         return "json_functions"
@@ -128,6 +133,11 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
 
     key_name: str
     """The name of the key to return."""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         res = super().parse_result(result, partial=partial)
