@@ -19,7 +19,7 @@ As of June 2023, the API supports Vicuna-13B by default. We are going to support
 
 For example
 ```python
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 

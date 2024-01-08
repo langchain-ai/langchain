@@ -11,6 +11,7 @@ uvicorn = "^0.23.2"
 langserve = {extras = ["server"], version = ">=0.0.30"}
 pydantic = "<2"
 boto3 = "^1.33.10"
+langchain = "^0.1"
 
 [tool.langserve]
 export_module = "bedrock_jcvd.chain"

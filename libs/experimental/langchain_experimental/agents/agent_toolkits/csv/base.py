@@ -2,7 +2,7 @@ from io import IOBase
 from typing import Any, List, Optional, Union
 
 from langchain.agents.agent import AgentExecutor
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.agents.agent_toolkits.pandas.base import (
     create_pandas_dataframe_agent,

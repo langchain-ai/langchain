@@ -104,7 +104,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
 
             from langchain.chains import StuffDocumentsChain, LLMChain
             from langchain_core.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
             # it will be passed to `format_document` - see that function for more
