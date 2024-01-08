@@ -4,9 +4,9 @@ from typing import Sequence
 
 def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     """Print information about the environment for debugging purposes."""
-    import importlib
     import platform
     import sys
+    from importlib import metadata, util
 
     packages = [
         "langchain_core",
@@ -34,7 +34,7 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
 
     for pkg in packages:
         try:
-            found_package = importlib.util.find_spec(pkg)
+            found_package = util.find_spec(pkg)
         except Exception:
             found_package = None
         if found_package is None:
@@ -43,7 +43,7 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
 
         # Package version
         try:
-            package_version = importlib.metadata.version(pkg)
+            package_version = metadata.version(pkg)
         except Exception:
             package_version = None
 
