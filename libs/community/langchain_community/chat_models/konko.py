@@ -25,8 +25,8 @@ from langchain_core.language_models.chat_models import (
 )
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
@@ -72,8 +72,8 @@ class ChatKonko(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[str] = None
-    konko_api_key: Optional[str] = None
+    openai_api_key: Optional[SecretStr] = None
+    konko_api_key: Optional[SecretStr] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to Konko completion API."""
     max_retries: int = 6
@@ -88,8 +88,8 @@ class ChatKonko(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["konko_api_key"] = get_from_dict_or_env(
-            values, "konko_api_key", "KONKO_API_KEY"
+        values["konko_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "konko_api_key", "KONKO_API_KEY")
         )
         try:
             import konko
@@ -128,8 +128,8 @@ class ChatKonko(BaseChatModel):
 
     @staticmethod
     def get_available_models(
-        konko_api_key: Optional[str] = None,
-        openai_api_key: Optional[str] = None,
+        konko_api_key: Union[str, SecretStr, None] = None,
+        openai_api_key: Union[str, SecretStr, None] = None,
         konko_api_base: str = DEFAULT_API_BASE,
     ) -> Set[str]:
         """Get available models from Konko API."""
@@ -137,28 +137,32 @@ class ChatKonko(BaseChatModel):
         # Try to retrieve the OpenAI API key if it's not passed as an argument
         if not openai_api_key:
             try:
-                openai_api_key = os.environ["OPENAI_API_KEY"]
+                openai_api_key = convert_to_secret_str(os.environ["OPENAI_API_KEY"])
             except KeyError:
                 pass  # It's okay if it's not set, we just won't use it
+        elif isinstance(openai_api_key, str):
+            openai_api_key = convert_to_secret_str(openai_api_key)
 
         # Try to retrieve the Konko API key if it's not passed as an argument
         if not konko_api_key:
             try:
-                konko_api_key = os.environ["KONKO_API_KEY"]
+                konko_api_key = convert_to_secret_str(os.environ["KONKO_API_KEY"])
             except KeyError:
                 raise ValueError(
                     "Konko API key must be passed as keyword argument or "
                     "set in environment variable KONKO_API_KEY."
                 )
+        elif isinstance(konko_api_key, str):
+            konko_api_key = convert_to_secret_str(konko_api_key)
 
         models_url = f"{konko_api_base}/models"
 
         headers = {
-            "Authorization": f"Bearer {konko_api_key}",
+            "Authorization": f"Bearer {konko_api_key.get_secret_value()}",
         }
 
         if openai_api_key:
-            headers["X-OpenAI-Api-Key"] = openai_api_key
+            headers["X-OpenAI-Api-Key"] = openai_api_key.get_secret_value()
 
         models_response = requests.get(models_url, headers=headers)
 
