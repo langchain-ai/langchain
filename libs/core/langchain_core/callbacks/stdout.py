@@ -1,6 +1,7 @@
 """Callback Handler that prints to std out."""
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from langchain_core.callbacks.base import BaseCallbackHandler
@@ -22,7 +23,8 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Print out that we are entering a chain."""
         class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
-        print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")
+        current_thread = threading.current_thread().name
+        print(f"\n\n\033[1m> Entering new {class_name} chain in thread {current_thread}...\033[0m")
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
