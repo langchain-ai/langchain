@@ -8,24 +8,37 @@ body:
         Thank you for taking the time to file a bug report. Before creating a new
         issue, please make sure to take a few moments to check the issue tracker
         for existing issues about the bug.
-
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: First Check
+      description: Please confirm and check all the following options.
+      options:
+        - label: I added a very descriptive title here.
+          required: true
+        - label: I used the GitHub search to find a similar question and didn't find it.
+          required: true
+        - label: I searched the LangChain documentation, with the integrated search.
+          required: true
+        - label: I already searched in Google "How to X in LangChain" and didn't find any information.
+          required: true
   - type: textarea
     id: reproduction
     validations:
       required: true
     attributes:
-      label: Reproduction
+      label: Example Code
       description: |
-        Please provide a [minimal reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) that reproduces issue. 
-        It can be a Colab link or just a code snippet. The snippet should be *minimal* and *self-contained*. It should include *all* relevant imports and data definitions.
+        Please add a self-contained, [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example) with your use case.
         
-        Please include a **full** stack trace (i.e., the error message and the entire log) unless you KNOW that the stack trace is not relevant.
+        If a maintainer can copy it, run it, and see it right away, there's a much higher chance that you'll be able to get help.
+        
+        If you're including an error message, please include the full stack trace not just the last error.
         
         Important! Use code tags to correctly format your code. See https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting
         Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
 
       placeholder: |
-        
         The following code: 
         
         ```python
@@ -34,16 +47,29 @@ body:
         # Some code goes here
         ```
         
-        Here is the full stack trace:
-
+        Error / Full Stack trace:
   - type: textarea
-    id: expected-behavior
-    validations:
-      required: false
+    id: description
     attributes:
-      label: Expected behavior
-      description: "A clear and concise description of what you would expect to happen."
+      label: Description
+      description: |
+        What is the problem, question, or error?
 
+        Write a short description telling what you are doing, what you expect to happen, and what is currently happening.
+      placeholder: |
+        * I'm trying to use the `langchain` library to do X.
+        * I expect to see Y.
+        * Instead, it does Z.
+    validations:
+      required: true
+  - type: textarea
+    id: system-info
+    attributes:
+      label: System Info
+      description: Please share your system info with us.
+      placeholder: LangChain version, platform, python version, ...
+    validations:
+      required: true
   - type: checkboxes
     id: related-components
     attributes:
@@ -62,13 +88,3 @@ body:
         - label: "Chains"
         - label: "Callbacks/Tracing"
         - label: "Async"
-
-  - type: textarea
-    id: system-info
-    attributes:
-      label: System Info
-      description: Please share your system info with us.
-      placeholder: LangChain version, platform, python version, ...
-    validations:
-      required: true
-
