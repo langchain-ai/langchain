@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "action_server"
+name = "robocorp-action-server"
 version = "0.0.1"
 description = ""
 authors = ["Robocorp Technologies <info@robocorp.com>"]
@@ -7,17 +7,17 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.313, <0.1"
-openai = "^0.28.1"
-langchain-robocorp = {path = "../../libs/partners/robocorp"}
+langchain = "^0.1"
+langchain-openai = ">=0.0.2,<0.1"
+langchain-robocorp = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.4"
+langchain-cli = ">=0.0.20"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
-export_module = "action_server"
+export_module = "robocorp_action_server"
 export_attr = "agent_executor"
 
 [build-system]
