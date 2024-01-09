@@ -1277,6 +1277,8 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
+        from langchain_core.tracers.log_stream import LogStreamCallbackHandler
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -1302,6 +1304,16 @@ class Runnable(Generic[Input, Output], ABC):
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            if stream_log := next(
+                (
+                    h
+                    for h in run_manager.handlers
+                    if isinstance(h, LogStreamCallbackHandler)
+                ),
+                None,
+            ):
+                # populates streamed_output in astream_log() output if needed
+                iterator = stream_log.tap_output_aiter(run_manager.run_id, iterator)
             try:
                 while True:
                     if accepts_context(asyncio.create_task):
@@ -2733,6 +2745,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 ],
             ]
         ] = None,
+        name: Optional[str] = None,
     ) -> None:
         """Create a RunnableLambda from a callable, and async callable or both.
 
@@ -2766,7 +2779,9 @@ class RunnableLambda(Runnable[Input, Output]):
             )
 
         try:
-            if func_for_name.__name__ != "<lambda>":
+            if name is not None:
+                self.name = name
+            elif func_for_name.__name__ != "<lambda>":
                 self.name = func_for_name.__name__
         except AttributeError:
             pass
@@ -3046,17 +3061,7 @@ class RunnableLambda(Runnable[Input, Output]):
     def _config(
         self, config: Optional[RunnableConfig], callable: Callable[..., Any]
     ) -> RunnableConfig:
-        config = ensure_config(config)
-
-        if config.get("run_name") is None:
-            try:
-                run_name = callable.__name__
-            except AttributeError:
-                run_name = None
-            if run_name is not None:
-                return patch_config(config, run_name=run_name)
-
-        return config
+        return ensure_config(config)
 
     def invoke(
         self,

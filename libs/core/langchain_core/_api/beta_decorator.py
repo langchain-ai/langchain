@@ -15,6 +15,8 @@ import inspect
 import warnings
 from typing import Any, Callable, Generator, Type, TypeVar
 
+from langchain_core._api.internal import is_caller_internal
+
 
 class LangChainBetaWarning(DeprecationWarning):
     """A class for issuing beta warnings for LangChain users."""
@@ -78,6 +80,34 @@ def beta(
         _addendum: str = addendum,
     ) -> T:
         """Implementation of the decorator returned by `beta`."""
+
+        def emit_warning() -> None:
+            """Emit the warning."""
+            warn_beta(
+                message=_message,
+                name=_name,
+                obj_type=_obj_type,
+                addendum=_addendum,
+            )
+
+        warned = False
+
+        def warning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Wrapper for the original wrapped callable that emits a warning.
+
+            Args:
+                *args: The positional arguments to the function.
+                **kwargs: The keyword arguments to the function.
+
+            Returns:
+                The return value of the function being wrapped.
+            """
+            nonlocal warned
+            if not warned and not is_caller_internal():
+                warned = True
+                emit_warning()
+            return wrapped(*args, **kwargs)
+
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
@@ -85,14 +115,25 @@ def beta(
             _name = _name or obj.__name__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(_: Any, new_doc: str) -> T:
                 """Finalize the annotation of a class."""
                 try:
                     obj.__doc__ = new_doc
                 except AttributeError:  # Can't set on some extension objects.
                     pass
+
+                def warn_if_direct_instance(
+                    self: Any, *args: Any, **kwargs: Any
+                ) -> Any:
+                    """Warn that the class is in beta."""
+                    nonlocal warned
+                    if not warned and type(self) is obj and not is_caller_internal():
+                        warned = True
+                        emit_warning()
+                    return wrapped(self, *args, **kwargs)
+
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
-                    wrapper
+                    warn_if_direct_instance
                 )
                 return obj
 
@@ -154,28 +195,6 @@ def beta(
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
                 return wrapper
-
-        def emit_warning() -> None:
-            """Emit the warning."""
-            warn_beta(
-                message=_message,
-                name=_name,
-                obj_type=_obj_type,
-                addendum=_addendum,
-            )
-
-        def warning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
-            """Wrapper for the original wrapped callable that emits a warning.
-
-            Args:
-                *args: The positional arguments to the function.
-                **kwargs: The keyword arguments to the function.
-
-            Returns:
-                The return value of the function being wrapped.
-            """
-            emit_warning()
-            return wrapped(*args, **kwargs)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
