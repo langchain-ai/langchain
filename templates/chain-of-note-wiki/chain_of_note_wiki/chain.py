@@ -1,7 +1,7 @@
 from langchain import hub
-from langchain.chat_models import ChatAnthropic
 from langchain.schema import StrOutputParser
-from langchain.utilities import WikipediaAPIWrapper
+from langchain_community.chat_models import ChatAnthropic
+from langchain_community.utilities import WikipediaAPIWrapper
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 

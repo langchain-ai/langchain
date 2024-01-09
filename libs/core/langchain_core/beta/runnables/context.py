@@ -18,12 +18,13 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
     Runnable,
     RunnableSerializable,
     coerce_to_runnable,
 )
-from langchain_core.runnables.config import RunnableConfig, patch_config
+from langchain_core.runnables.config import RunnableConfig, ensure_config, patch_config
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 
 T = TypeVar("T")
@@ -156,6 +157,7 @@ def config_with_context(
     return _config_with_context(config, steps, _setter, _getter, threading.Event)
 
 
+@beta()
 class ContextGet(RunnableSerializable):
     """Get a context value."""
 
@@ -186,7 +188,7 @@ class ContextGet(RunnableSerializable):
         ]
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             return {key: configurable[id_]() for key, id_ in zip(self.key, self.ids)}
@@ -196,7 +198,7 @@ class ContextGet(RunnableSerializable):
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
@@ -219,6 +221,7 @@ def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
     return coerce_to_runnable(value)
 
 
+@beta()
 class ContextSet(RunnableSerializable):
     """Set a context value."""
 
@@ -281,7 +284,7 @@ class ContextSet(RunnableSerializable):
         ]
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):
             if mapper is not None:
@@ -293,7 +296,7 @@ class ContextSet(RunnableSerializable):
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):
             if mapper is not None:

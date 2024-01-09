@@ -1,5 +1,7 @@
 _type: prompt
 input_variables:
-    ["adjective", "content"]
+    ["adjective"]
+partial_variables:
+    content: dogs
 template: 
     Tell me a {adjective} joke about {content}.
