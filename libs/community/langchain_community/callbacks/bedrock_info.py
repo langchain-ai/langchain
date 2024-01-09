@@ -1,8 +1,7 @@
 from typing import Any, Dict, List
 
+from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
-
-from langchain.callbacks.base import BaseCallbackHandler
 
 
 class BedrockTokenUsageCallbackHandler(BaseCallbackHandler):

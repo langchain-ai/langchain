@@ -27,9 +27,8 @@ comet_tracing_callback_var: ContextVar[Optional[CometTracer]] = ContextVar(  # n
     "tracing_comet_callback", default=None
 )
 bedrock_callback_var: ContextVar[
-    Optional[BedrockTokenUsageCallbackHandler]] = ContextVar(
-    "bedrock_callback", default=None
-)
+    Optional[BedrockTokenUsageCallbackHandler]
+] = ContextVar("bedrock_callback", default=None)
 
 register_configure_hook(openai_callback_var, True)
 register_configure_hook(
@@ -61,7 +60,7 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 
 @contextmanager
 def wandb_tracing_enabled(
-        session_name: str = "default",
+    session_name: str = "default",
 ) -> Generator[None, None, None]:
     """Get the WandbTracer in a context manager.
 
@@ -84,7 +83,7 @@ def wandb_tracing_enabled(
 
 @contextmanager
 def get_bedrock_token_count_callback() -> (
-        Generator[BedrockTokenUsageCallbackHandler, None, None]
+    Generator[BedrockTokenUsageCallbackHandler, None, None]
 ):
     """Get the Bedrock callback handler in a context manager.
     which conveniently exposes token count information.
