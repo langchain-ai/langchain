@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch
 from langchain_core.exceptions import OutputParserException
