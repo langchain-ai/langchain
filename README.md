@@ -224,7 +224,7 @@ chat.get_num_tokens("Сколько токенов в этой строке")
 Сейчас генерация эмбеддингов с помощью GigaChat недоступна.
 В качестве временного решения вы можете использовать любые доступные эмбеддинги, например, OpenAIEmbeddings.
 
-Вы также можете [использовать локальные эмбеддинги](https://github.com/ai-forever/gigachain/blob/master/docs/docs/modules/chains/how_to/retrieve.ipynb).
+Вы также можете [использовать локальные эмбеддинги](docs/docs/modules/chains/how_to/retrieve.ipynb).
 
 ## Коллекция примеров
 
@@ -232,7 +232,7 @@ chat.get_num_tokens("Сколько токенов в этой строке")
 
 ### Базовые примеры работы с GigaChat
 
-- [Ответы на вопросы по статьям из Wikipedia](docs/docs/integrations/retrievers/wikipedia.ipynb)
+- [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/use_cases/question_answering/gigachat_qa.ipynb)
 - [Суммаризация по алгоритму MapReduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
 - [Работа с хабом промптов, цепочками и парсером JSON](docs/docs/modules/model_io/output_parsers/json.ipynb)
 - [Парсинг списков, содержащихся в ответе](docs/docs/modules/model_io/output_parsers/list.ipynb)

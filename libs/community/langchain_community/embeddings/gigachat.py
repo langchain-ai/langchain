@@ -8,6 +8,9 @@ from typing import Any, Dict, List, Optional
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
+from tqdm import tqdm
+import time
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,6 +24,9 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
 
             embeddings = GigaChatEmbeddings(credentials=..., verify_ssl_certs=False)
     """
+
+    one_by_one_mode: bool = True
+    """ Send texts one-by-one to server (to increse token limit)"""
 
     base_url: Optional[str] = None
     """ Base API URL """
@@ -45,6 +51,9 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
     """ Timeout for request """
     verify_ssl_certs: Optional[bool] = None
     """ Check certificates for all requests """
+
+    _debug_delay: float = 0
+    """ Debug timeout for limit rps to server"""
 
     ca_bundle_file: Optional[str] = None
     cert_file: Optional[str] = None
@@ -108,10 +117,23 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        return [
-            embedding.embedding
-            for embedding in self._client.embeddings(texts=texts, model=model).data
-        ]
+        if self.one_by_one_mode:
+            result: List[List[float]] = []
+            if self._debug_delay == 0:
+                for text in texts:
+                    for embedding in self._client.embeddings(texts=[text], model=model).data:
+                        result.append(embedding.embedding)
+            else:
+                for text in texts:
+                    time.sleep(self._debug_delay)
+                    for embedding in tqdm(self._client.embeddings(texts=[text], model=model).data):
+                        result.append(embedding.embedding)
+            return result
+        else:
+            return [
+                embedding.embedding
+                for embedding in self._client.embeddings(texts=texts, model=model).data
+            ]
 
         # return _embed_with_retry(self, texts=texts)
 
