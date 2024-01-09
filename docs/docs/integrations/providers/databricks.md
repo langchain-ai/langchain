@@ -58,6 +58,7 @@ client.create_endpoint(
 chat = ChatDatabricks(endpoint=name, temperature=0.1)
 print(chat([HumanMessage(content="hello")]))
 # -> content='Hello! How can I assist you today?'
+*Last updated: 2024-01-04*
 ```
 
 Databricks Foundation Model APIs
