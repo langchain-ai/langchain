@@ -4966,4 +4966,4 @@ extended-testing = ["faker", "jinja2", "presidio-analyzer", "presidio-anonymizer
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6390d7808d47246dc172ff486ec60da972aec1fcc0f7b271b89b63a3743973a0"
+content-hash = "afb68dae209d0ea29389e65bdd035074e155c94ab55609cda7b3182e2c61a199"
