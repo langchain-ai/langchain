@@ -725,7 +725,18 @@ class BaseOpenAI(BaseLLM):
         return self.max_context_size - num_tokens
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="langchain_openai.OpenAI")
+@deprecated(
+    since="0.0.10",
+    removal="0.2.0",
+    message=(
+        "The class langchain_community.llms.openai.OpenAI was "
+        "deprecated in langchain-community 0.0.10 and will be removed in "
+        "langchain-community 0.2.0. An updated version of the class lives in the "
+        "langchain-openai package and should be used instead. To use it run "
+        "`pip install -U langchain-openai` and import as "
+        "`from langchain_openai import OpenAI`."
+    ),
+)
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
 
@@ -752,7 +763,18 @@ class OpenAI(BaseOpenAI):
         return {**{"model": self.model_name}, **super()._invocation_params}
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="langchain_openai.AzureOpenAI")
+@deprecated(
+    since="0.0.10",
+    removal="0.2.0",
+    message=(
+        "The class langchain_community.llms.openai.AzureOpenAI was "
+        "deprecated in langchain-community 0.0.10 and will be removed in "
+        "langchain-community 0.2.0. An updated version of the class lives in the "
+        "langchain-openai package and should be used instead. To use it run "
+        "`pip install -U langchain-openai` and import as "
+        "`from langchain_openai import AzureOpenAI`."
+    ),
+)
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
 
@@ -956,7 +978,18 @@ class AzureOpenAI(BaseOpenAI):
         }
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="langchain_openai.ChatOpenAI")
+@deprecated(
+    since="0.0.1",
+    removal="0.2.0",
+    message=(
+        "The class langchain_community.llms.openai.OpenAIChat was "
+        "deprecated in langchain-community 0.0.1 and will be removed in "
+        "langchain-community 0.2.0. An updated version of the class lives in the "
+        "langchain-openai package and should be used instead. To use it run "
+        "`pip install -U langchain-openai` and import as "
+        "`from langchain_openai import ChatOpenAI`."
+    ),
+)
 class OpenAIChat(BaseLLM):
     """OpenAI Chat large language models.
 
