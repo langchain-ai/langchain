@@ -21,6 +21,7 @@ EXPECTED_ALL = [
     "ArcGISLoader",
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
+    "AstraDBLoader",
     "AsyncHtmlLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
