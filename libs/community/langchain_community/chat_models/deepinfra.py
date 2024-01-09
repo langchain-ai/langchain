@@ -166,7 +166,6 @@ class ChatDeepInfra(BaseChatModel):
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
     max_tokens: int = 256
-    streaming: bool = False
     max_retries: int = 1
 
     @property
@@ -175,7 +174,6 @@ class ChatDeepInfra(BaseChatModel):
         return {
             "model": self.model_name,
             "max_tokens": self.max_tokens,
-            "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
             "request_timeout": self.request_timeout,
@@ -270,13 +268,6 @@ class ChatDeepInfra(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
-            stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
-
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.completion_with_retry(
@@ -359,13 +350,6 @@ class ChatDeepInfra(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
-            stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return await agenerate_from_stream(stream_iter)
-
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {"messages": message_dicts, **params, **kwargs}
 
