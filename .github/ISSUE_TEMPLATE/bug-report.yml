@@ -67,7 +67,7 @@ body:
     attributes:
       label: System Info
       description: Please share your system info with us.
-      placeholder: LangChain version, platform, python version, ...
+      placeholder: `pip freeze | grep langchain`, platform, python version
     validations:
       required: true
   - type: checkboxes
