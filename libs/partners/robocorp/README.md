@@ -8,6 +8,6 @@ This package contains the LangChain integrations for [Robocorp](https://github.c
 pip install -U langchain-robocorp
 ```
 
-## Toolkit use
+## Action Server Toolkit
 
 See [ActionServerToolkit](./docs/toolkit.ipynb) for detailed documentation.
