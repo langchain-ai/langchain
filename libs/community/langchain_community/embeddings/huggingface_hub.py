@@ -107,7 +107,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         return json.loads(responses.decode())
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Async Call out to HuggingFaceHub's embedding endpoint for embedding search docs.
+        """Async Call to HuggingFaceHub's embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
@@ -136,7 +136,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         return response
 
     async def aembed_query(self, text: str) -> List[float]:
-        """Async Call out to HuggingFaceHub's embedding endpoint for embedding query text.
+        """Async Call to HuggingFaceHub's embedding endpoint for embedding query text.
 
         Args:
             text: The text to embed.
