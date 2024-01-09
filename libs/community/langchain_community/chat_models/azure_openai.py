@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.1.0",
+    since="0.0.10",
     removal="0.2.0",
     message=(
         "The class langchain_community.chat_models.azure_openai.AzureChatOpenAI was "
-        "deprecated in langchain-community 0.1.0 and will be removed in "
+        "deprecated in langchain-community 0.0.10 and will be removed in "
         "langchain-community 0.2.0. An updated version of the class lives in the "
         "langchain-openai package and should be used instead. To use it run "
         "`pip install -U langchain-openai` and import as "
