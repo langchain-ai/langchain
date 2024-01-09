@@ -11,7 +11,7 @@ body:
   - type: checkboxes
     id: checks
     attributes:
-      label: First Check
+      label: Checked other resources
       description: Please confirm and check all the following options.
       options:
         - label: I added a very descriptive title here.
