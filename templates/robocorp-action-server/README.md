@@ -30,7 +30,24 @@ from robocorp_action_server import agent_executor as action_server_chain
 add_routes(app, action_server_chain, path="/robocorp-action-server")
 ```
 
-(Optional) Let's now configure LangSmith.
+### Running the Action Server
+
+To run the Action Server, you need to have the Robocorp Action Server installed
+
+```bash
+pip install -U robocorp-action-server
+```
+
+Then you can run the Action Server with:
+
+```bash
+action-server new
+cd ./your-project-name
+action-server start
+```
+
+### Configure LangSmith (Optional)
+
 LangSmith will help us trace, monitor and debug LangChain applications.
 LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/).
 If you don't have access, you can skip this section
@@ -40,6 +57,8 @@ export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_API_KEY=<your-api-key>
 export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
 ```
+
+### Start LangServe instance
 
 If you are inside this directory, then you can spin up a LangServe instance directly by:
 
