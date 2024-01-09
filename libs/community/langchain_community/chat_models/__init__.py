@@ -46,11 +46,15 @@ from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain_community.chat_models.promptlayer_openai import PromptLayerChatOpenAI
+from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_community.chat_models.vertexai import ChatVertexAI
 from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
+from langchain_community.chat_models.wasm_chat import WasmChatService
 from langchain_community.chat_models.yandex import ChatYandexGPT
+from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
 __all__ = [
+    "WasmChatService",
     "ChatOpenAI",
     "BedrockChat",
     "AzureChatOpenAI",
@@ -76,6 +80,7 @@ __all__ = [
     "ChatKonko",
     "PaiEasChatEndpoint",
     "QianfanChatEndpoint",
+    "ChatTongyi",
     "ChatFireworks",
     "ChatYandexGPT",
     "ChatBaichuan",
@@ -83,4 +88,5 @@ __all__ = [
     "GigaChat",
     "VolcEngineMaasChat",
     "GPTRouter",
+    "ChatZhipuAI",
 ]

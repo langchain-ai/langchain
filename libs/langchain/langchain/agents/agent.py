@@ -21,6 +21,7 @@ from typing import (
 )
 
 import yaml
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish, AgentStep
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
@@ -30,7 +31,7 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
@@ -486,6 +487,14 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         return output
 
 
+@deprecated(
+    "0.1.0",
+    alternative=(
+        "Use new agent constructor methods like create_react_agent, create_json_agent, "
+        "create_structured_chat_agent, etc."
+    ),
+    removal="0.2.0",
+)
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
 
@@ -568,6 +577,14 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         }
 
 
+@deprecated(
+    "0.1.0",
+    alternative=(
+        "Use new agent constructor methods like create_react_agent, create_json_agent, "
+        "create_structured_chat_agent, etc."
+    ),
+    removal="0.2.0",
+)
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
 
@@ -1437,7 +1454,7 @@ class AgentExecutor(Chain):
         **kwargs: Any,
     ) -> Iterator[AddableDict]:
         """Enables streaming over steps taken to reach final output."""
-        config = config or {}
+        config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,
             input,
@@ -1458,7 +1475,7 @@ class AgentExecutor(Chain):
         **kwargs: Any,
     ) -> AsyncIterator[AddableDict]:
         """Enables streaming over steps taken to reach final output."""
-        config = config or {}
+        config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,
             input,

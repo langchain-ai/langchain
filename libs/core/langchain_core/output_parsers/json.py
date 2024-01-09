@@ -10,6 +10,7 @@ import jsonpatch  # type: ignore[import]
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
+from langchain_core.outputs import Generation
 from langchain_core.pydantic_v1 import BaseModel
 
 
@@ -101,16 +102,27 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     if is_inside_string:
         new_s += '"'
 
-    # Close any remaining open structures in the reverse order that they were opened.
-    for closing_char in reversed(stack):
-        new_s += closing_char
+    # Try to parse mods of string until we succeed or run out of characters.
+    while new_s:
+        final_s = new_s
 
-    # Attempt to parse the modified string as JSON.
-    try:
-        return json.loads(new_s, strict=strict)
-    except json.JSONDecodeError:
-        # If we still can't parse the string as JSON, return None to indicate failure.
-        return None
+        # Close any remaining open structures in the reverse
+        # order that they were opened.
+        for closing_char in reversed(stack):
+            final_s += closing_char
+
+        # Attempt to parse the modified string as JSON.
+        try:
+            return json.loads(final_s, strict=strict)
+        except json.JSONDecodeError:
+            # If we still can't parse the string as JSON,
+            # try removing the last character
+            new_s = new_s[:-1]
+
+    # If we got here, we ran out of characters to remove
+    # and still couldn't parse the string as JSON, so return the parse error
+    # for the original string.
+    return json.loads(s, strict=strict)
 
 
 def parse_json_markdown(
@@ -187,12 +199,22 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def parse(self, text: str) -> Any:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        text = result[0].text
         text = text.strip()
-        try:
-            return parse_json_markdown(text.strip())
-        except JSONDecodeError as e:
-            raise OutputParserException(f"Invalid json output: {text}") from e
+        if partial:
+            try:
+                return parse_json_markdown(text)
+            except JSONDecodeError:
+                return None
+        else:
+            try:
+                return parse_json_markdown(text)
+            except JSONDecodeError as e:
+                raise OutputParserException(f"Invalid json output: {text}") from e
+
+    def parse(self, text: str) -> Any:
+        return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
         if self.pydantic_object is None:

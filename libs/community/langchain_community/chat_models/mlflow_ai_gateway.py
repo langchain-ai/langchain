@@ -1,11 +1,8 @@
-import asyncio
 import logging
 import warnings
-from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -115,18 +112,6 @@ class ChatMLflowAIGateway(BaseChatModel):
 
         resp = mlflow.gateway.query(self.route, data=data)
         return ChatMLflowAIGateway._create_chat_result(resp)
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        func = partial(
-            self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
-        )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
