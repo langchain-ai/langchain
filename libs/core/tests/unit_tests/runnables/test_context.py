@@ -12,7 +12,7 @@ from langchain_core.runnables.utils import aadd, add
 from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
-class TestCase(NamedTuple):
+class _TestCase(NamedTuple):
     input: Any
     output: Any
 
@@ -102,22 +102,22 @@ test_cases = [
     (
         Context.setter("foo") | Context.getter("foo"),
         (
-            TestCase("foo", "foo"),
-            TestCase("bar", "bar"),
+            _TestCase("foo", "foo"),
+            _TestCase("bar", "bar"),
         ),
     ),
     (
         Context.setter("input") | {"bar": Context.getter("input")},
         (
-            TestCase("foo", {"bar": "foo"}),
-            TestCase("bar", {"bar": "bar"}),
+            _TestCase("foo", {"bar": "foo"}),
+            _TestCase("bar", {"bar": "bar"}),
         ),
     ),
     (
         {"bar": Context.setter("input")} | Context.getter("input"),
         (
-            TestCase("foo", "foo"),
-            TestCase("bar", "bar"),
+            _TestCase("foo", "foo"),
+            _TestCase("bar", "bar"),
         ),
     ),
     (
@@ -132,11 +132,11 @@ test_cases = [
             }
         ),
         (
-            TestCase(
+            _TestCase(
                 {"foo": "foo", "bar": "bar"},
                 {"response": "hello", "prompt": StringPromptValue(text="foo bar")},
             ),
-            TestCase(
+            _TestCase(
                 {"foo": "bar", "bar": "foo"},
                 {"response": "hello", "prompt": StringPromptValue(text="bar foo")},
             ),
@@ -155,7 +155,7 @@ test_cases = [
             }
         ),
         (
-            TestCase(
+            _TestCase(
                 {"foo": "foo", "bar": "bar"},
                 {
                     "response": "hello",
@@ -163,7 +163,7 @@ test_cases = [
                     "prompt_str": "foo bar",
                 },
             ),
-            TestCase(
+            _TestCase(
                 {"foo": "bar", "bar": "foo"},
                 {
                     "response": "hello",
@@ -185,11 +185,11 @@ test_cases = [
             }
         ),
         (
-            TestCase(
+            _TestCase(
                 {"foo": "foo", "bar": "bar"},
                 {"response": "hello", "prompt_str": "foo bar"},
             ),
-            TestCase(
+            _TestCase(
                 {"foo": "bar", "bar": "foo"},
                 {"response": "hello", "prompt_str": "bar foo"},
             ),
@@ -207,11 +207,11 @@ test_cases = [
             }
         ),
         (
-            TestCase(
+            _TestCase(
                 {"foo": "foo", "bar": "bar"},
                 {"response": "hello", "prompt_str": "foo bar"},
             ),
-            TestCase(
+            _TestCase(
                 {"foo": "bar", "bar": "foo"},
                 {"response": "hello", "prompt_str": "bar foo"},
             ),
@@ -229,11 +229,11 @@ test_cases = [
             }
         ),
         (
-            TestCase(
+            _TestCase(
                 {"foo": "foo", "bar": "bar"},
                 {"response": "hello", "prompt": StringPromptValue(text="foo bar")},
             ),
-            TestCase(
+            _TestCase(
                 {"foo": "bar", "bar": "foo"},
                 {"response": "hello", "prompt": StringPromptValue(text="bar foo")},
             ),
@@ -242,7 +242,7 @@ test_cases = [
     (
         seq_naive_rag,
         (
-            TestCase(
+            _TestCase(
                 "What up",
                 {
                     "result": "hello",
@@ -254,7 +254,7 @@ test_cases = [
                     "input": "What up",
                 },
             ),
-            TestCase(
+            _TestCase(
                 "Howdy",
                 {
                     "result": "hello",
@@ -271,7 +271,7 @@ test_cases = [
     (
         seq_naive_rag_alt,
         (
-            TestCase(
+            _TestCase(
                 "What up",
                 {
                     "result": "hello",
@@ -283,7 +283,7 @@ test_cases = [
                     "input": "What up",
                 },
             ),
-            TestCase(
+            _TestCase(
                 "Howdy",
                 {
                     "result": "hello",
@@ -300,7 +300,7 @@ test_cases = [
     (
         seq_naive_rag_scoped,
         (
-            TestCase(
+            _TestCase(
                 "What up",
                 {
                     "result": "hello",
@@ -312,7 +312,7 @@ test_cases = [
                     "input": "What up",
                 },
             ),
-            TestCase(
+            _TestCase(
                 "Howdy",
                 {
                     "result": "hello",
@@ -331,7 +331,7 @@ test_cases = [
 
 @pytest.mark.parametrize("runnable, cases", test_cases)
 async def test_context_runnables(
-    runnable: Union[Runnable, Callable[[], Runnable]], cases: List[TestCase]
+    runnable: Union[Runnable, Callable[[], Runnable]], cases: List[_TestCase]
 ) -> None:
     runnable = runnable if isinstance(runnable, Runnable) else runnable()
     assert runnable.invoke(cases[0].input) == cases[0].output

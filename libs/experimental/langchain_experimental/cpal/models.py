@@ -3,7 +3,7 @@ from __future__ import annotations  # allows pydantic model to reference itself
 import re
 from typing import Any, List, Optional, Union
 
-from langchain.graphs.networkx_graph import NetworkxEntityGraph
+from langchain_community.graphs.networkx_graph import NetworkxEntityGraph
 
 from langchain_experimental.cpal.constants import Constant
 from langchain_experimental.pydantic_v1 import (
