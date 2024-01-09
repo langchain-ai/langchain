@@ -1,5 +1,4 @@
 # Flyte
-*Last updated: 2024-01-02*
 
 > [Flyte](https://github.com/flyteorg/flyte) is an open-source orchestrator that facilitates building production-grade data and ML pipelines.
 > It is built for scalability and reproducibility, leveraging Kubernetes as its underlying platform.
@@ -29,7 +28,7 @@ from flytekit import ImageSpec, task
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import FlyteCallbackHandler
 from langchain.chains import LLMChain
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 ```

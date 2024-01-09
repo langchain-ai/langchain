@@ -3,7 +3,6 @@ sidebar_position: 5
 sidebar_class_name: hidden
 ---
 # Callbacks
-*Last updated: 2024-01-02*
 
 :::info
 Head to [Integrations](/docs/integrations/callbacks/) for documentation on built-in callbacks integrations with 3rd-party tools.
@@ -87,7 +86,7 @@ LangChain provides a few built-in handlers that you can use to get started. Thes
 ```python
 from langchain.callbacks import StdOutCallbackHandler
 from langchain.chains import LLMChain
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.prompts import PromptTemplate
 
 handler = StdOutCallbackHandler()

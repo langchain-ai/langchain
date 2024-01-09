@@ -1,5 +1,4 @@
 # Predibase
-*Last updated: 2024-01-02*
 
 Learn how to use LangChain with models on Predibase. 
 

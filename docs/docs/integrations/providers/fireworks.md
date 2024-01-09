@@ -1,5 +1,4 @@
 # Fireworks
-*Last updated: 2024-01-02*
 
 This page covers how to use [Fireworks](https://app.fireworks.ai/) models within
 Langchain.

@@ -1,5 +1,4 @@
 # Shale Protocol
-*Last updated: 2024-01-02*
 
 [Shale Protocol](https://shaleprotocol.com) provides production-ready inference APIs for open LLMs. It's a Plug & Play API as it's hosted on a highly scalable GPU cloud infrastructure. 
 
@@ -20,7 +19,7 @@ As of June 2023, the API supports Vicuna-13B by default. We are going to support
 
 For example
 ```python
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 

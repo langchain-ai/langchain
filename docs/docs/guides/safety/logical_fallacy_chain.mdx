@@ -1,5 +1,4 @@
 # Logical Fallacy chain
-*Last updated: 2024-01-02*
 
 This example shows how to remove logical fallacies from model output.
 
@@ -22,7 +21,7 @@ Therefore, it is crucial that model developers proactively address logical falla
 
 ```python
 # Imports
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains.llm import LLMChain
 from langchain_experimental.fallacy_removal.base import FallacyChain

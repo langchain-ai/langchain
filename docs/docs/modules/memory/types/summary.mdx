@@ -1,5 +1,4 @@
 # Conversation Summary
-*Last updated: 2024-01-02*
 Now let's take a look at using a slightly more complex type of memory - `ConversationSummaryMemory`. This type of memory creates a summary of the conversation over time. This can be useful for condensing information from the conversation over time.
 Conversation summary memory summarizes the conversation as it happens and stores the current summary in memory. This memory can then be used to inject the summary of the conversation so far into a prompt/chain. This memory is most useful for longer conversations, where keeping the past message history in the prompt verbatim would take up too many tokens.
 
@@ -7,7 +6,7 @@ Let's first explore the basic functionality of this type of memory.
 
 ```python
 from langchain.memory import ConversationSummaryMemory, ChatMessageHistory
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 ```
 
 
@@ -116,7 +115,7 @@ Let's walk through an example of using this in a chain, again setting `verbose=T
 
 
 ```python
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.chains import ConversationChain
 llm = OpenAI(temperature=0)
 conversation_with_summary = ConversationChain(

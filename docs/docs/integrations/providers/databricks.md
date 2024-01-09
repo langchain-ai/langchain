@@ -13,7 +13,7 @@ Databricks embraces the LangChain ecosystem in various ways:
 Databricks connector for the SQLDatabase Chain
 ----------------------------------------------
 You can connect to [Databricks runtimes](https://docs.databricks.com/runtime/index.html) and [Databricks SQL](https://www.databricks.com/product/databricks-sql) using the SQLDatabase wrapper of LangChain. 
-See the notebook [Connect to Databricks](/docs/use_cases/qa_structured/integrations/databricks) for details.
+
 
 Databricks MLflow integrates with LangChain
 -------------------------------------------
@@ -58,7 +58,6 @@ client.create_endpoint(
 chat = ChatDatabricks(endpoint=name, temperature=0.1)
 print(chat([HumanMessage(content="hello")]))
 # -> content='Hello! How can I assist you today?'
-*Last updated: 2024-01-02*
 ```
 
 Databricks Foundation Model APIs

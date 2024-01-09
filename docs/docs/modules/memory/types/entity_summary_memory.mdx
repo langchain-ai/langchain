@@ -1,12 +1,11 @@
 # Entity
-*Last updated: 2024-01-02*
 
 Entity memory remembers given facts about specific entities in a conversation. It extracts information on entities (using an LLM) and builds up its knowledge about that entity over time (also using an LLM).
 
 Let's first walk through using this functionality.
 
 ```python
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.memory import ConversationEntityMemory
 llm = OpenAI(temperature=0)
 ```

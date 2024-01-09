@@ -1,5 +1,4 @@
 # Backed by a Vector Store
-*Last updated: 2024-01-02*
 
 `VectorStoreRetrieverMemory` stores memories in a vector store and queries the top-K most "salient" docs every time it is called.
 
@@ -9,8 +8,8 @@ In this case, the "docs" are previous conversation snippets. This can be useful 
 
 ```python
 from datetime import datetime
-from langchain_community.embeddings.openai import OpenAIEmbeddings
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_openai import OpenAI
 from langchain.memory import VectorStoreRetrieverMemory
 from langchain.chains import ConversationChain
 from langchain.prompts import PromptTemplate

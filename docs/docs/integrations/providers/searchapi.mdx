@@ -1,5 +1,4 @@
 # SearchApi
-*Last updated: 2024-01-03*
 
 This page covers how to use the [SearchApi](https://www.searchapi.io/) Google Search API within LangChain. SearchApi is a real-time SERP API for easy SERP scraping.
 
@@ -22,7 +21,7 @@ You can use it as part of a Self Ask chain:
 
 ```python
 from langchain_community.utilities import SearchApiAPIWrapper
-from langchain_community.llms.openai import OpenAI
+from langchain_openai import OpenAI
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 

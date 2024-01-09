@@ -1,5 +1,4 @@
 # CnosDB
-*Last updated: 2024-01-03*
 > [CnosDB](https://github.com/cnosdb/cnosdb) is an open-source distributed time series database with high performance, high compression rate and high ease of use.
 
 ## Installation and Setup
@@ -38,7 +37,7 @@ db = SQLDatabase.from_cnosdb()
 ```
 ```python
 # Creating a OpenAI Chat LLM Wrapper
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
 ```
