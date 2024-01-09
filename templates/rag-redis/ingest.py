@@ -1,9 +1,9 @@
 import os
 
-from langchain.document_loaders import UnstructuredFileLoader
-from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Redis
+from langchain_community.document_loaders import UnstructuredFileLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Redis
 from rag_redis.config import EMBED_MODEL, INDEX_NAME, INDEX_SCHEMA, REDIS_URL
 
 

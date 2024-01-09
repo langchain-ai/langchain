@@ -1,3 +1,7 @@
+---
+sidebar_position: 0
+---
+
 # Quickstart
 
 The quick start will cover the basics of working with language models. It will introduce the two different types of models - LLMs and ChatModels. It will then cover how to use PromptTemplates to format the inputs to these models, and how to use Output Parsers to work with the outputs. For a deeper conceptual guide into these topics - please see [this documentation](./concepts)
@@ -27,8 +31,8 @@ export OPENAI_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAI
 
 llm = OpenAI()
 chat_model = ChatOpenAI()
@@ -37,7 +41,7 @@ chat_model = ChatOpenAI()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 llm = ChatOpenAI(openai_api_key="...")
 ```
 
@@ -53,8 +57,8 @@ First, follow [these instructions](https://github.com/jmorganca/ollama) to set u
 
 Then, make sure the Ollama server is running. After that, you can do:
 ```python
-from langchain.llms import Ollama
-from langchain.chat_models import ChatOllama
+from langchain_community.llms import Ollama
+from langchain_community.chat_models import ChatOllama
 
 llm = Ollama(model="llama2")
 chat_model = ChatOllama()

@@ -1,6 +1,7 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 from typing import Any, List, Optional, Sequence
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -17,6 +18,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.docstore.base import Docstore
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class ReActDocstoreAgent(Agent):
     """Agent for the ReAct chain."""
 
@@ -63,6 +65,7 @@ class ReActDocstoreAgent(Agent):
         return "Thought:"
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class DocstoreExplorer:
     """Class to assist with exploration of a document store."""
 
@@ -112,6 +115,7 @@ class DocstoreExplorer:
         return self.document.page_content.split("\n\n")
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class ReActTextWorldAgent(ReActDocstoreAgent):
     """Agent for the ReAct TextWorld chain."""
 
@@ -131,6 +135,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
             raise ValueError(f"Tool name should be Play, got {tool_names}")
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class ReActChain(AgentExecutor):
     """[Deprecated] Chain that implements the ReAct paper."""
 

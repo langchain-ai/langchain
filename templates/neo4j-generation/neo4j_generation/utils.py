@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from langchain.graphs.graph_document import Node as BaseNode
-from langchain.graphs.graph_document import Relationship as BaseRelationship
+from langchain_community.graphs.graph_document import Node as BaseNode
+from langchain_community.graphs.graph_document import Relationship as BaseRelationship
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 

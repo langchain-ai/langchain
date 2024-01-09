@@ -70,10 +70,10 @@ For this getting started guide, we will provide two options: using OpenAI (a pop
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
 
-First we'll need to install their Python package:
+First we'll need to import the LangChain x OpenAI integration package.
 
 ```shell
-pip install openai
+pip install langchain_openai
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -85,7 +85,7 @@ export OPENAI_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI()
 ```
@@ -93,7 +93,7 @@ llm = ChatOpenAI()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(openai_api_key="...")
 ```
@@ -110,7 +110,7 @@ First, follow [these instructions](https://github.com/jmorganca/ollama) to set u
 
 Then, make sure the Ollama server is running. After that, you can do:
 ```python
-from langchain.llms import Ollama
+from langchain_community.llms import Ollama
 llm = Ollama(model="llama2")
 ```
 
@@ -128,7 +128,7 @@ We can also guide it's response with a prompt template.
 Prompt templates are used to convert raw user input to a better input to the LLM.
 
 ```python
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are world class technical documentation writer."),
     ("user", "{input}")
@@ -142,6 +142,10 @@ chain = prompt | llm
 ```
 
 We can now invoke it and ask the same question. It still won't know the answer, but it should respond in a more proper tone for a technical writer!
+
+```python
+chain.invoke({"input": "how can langsmith help with testing?"})
+```
 
 The output of a ChatModel (and therefore, of this chain) is a message. However, it's often much more convenient to work with strings. Let's add a simple output parser to convert the chat message to a string.
 
@@ -195,16 +199,16 @@ For embedding models, we once again provide examples for accessing via OpenAI or
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
   
-Make sure you have the openai package installed an the appropriate environment variables set (these are the same as needed for the LLM).
+Make sure you have the `langchain_openai` package installed an the appropriate environment variables set (these are the same as needed for the LLM).
 
 ```python
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
 embeddings = OpenAIEmbeddings()
 ```
 
 </TabItem>
-<TabItem value="local" label="Ollama">
+<TabItem value="local" label="Local">
 
 Make sure you have Ollama running (same set up as with the LLM).
 
@@ -217,24 +221,24 @@ embeddings = OllamaEmbeddings()
 </Tabs>
 
 Now, we can use this embedding model to ingest documents into a vectorstore.
-We will use a simple local vectorstore, [DocArray InMemorySearch](/docs/integrations/vectorstores/docarray_in_memory), for simplicity's sake.
+We will use a simple local vectorstore, [FAISS](/docs/integrations/vectorstores/faiss), for simplicity's sake.
 
 First we need to install the required packages for that:
 
 ```shell
-pip install docarray
+pip install faiss-cpu
 ```
 
 Then we can build our index:
 
 ```python
-from langchain_community.vectorstores import DocArrayInMemorySearch
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
-vector = DocArrayInMemorySearch.from_documents(documents, embeddings)
+vector = FAISS.from_documents(documents, embeddings)
 ```
 
 Now that we have this data indexed in a vectorstore, we will create a retrieval chain.
@@ -283,7 +287,7 @@ We can now invoke this chain. This returns a dictionary - the response from the 
 response = retrieval_chain.invoke({"input": "how can langsmith help with testing?"})
 print(response["answer"])
 
-// LangSmith offers several features that can help with testing:...
+# LangSmith offers several features that can help with testing:...
 ```
 
 This answer should be much more accurate!
@@ -313,7 +317,7 @@ from langchain_core.prompts import MessagesPlaceholder
 
 prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="chat_history"),
-    ("user", "{input}")
+    ("user", "{input}"),
     ("user", "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation")
 ])
 retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
@@ -325,7 +329,7 @@ We can test this out by passing in an instance where the user is asking a follow
 from langchain_core.messages import HumanMessage, AIMessage
 
 chat_history = [HumanMessage(content="Can LangSmith help test my LLM applications?"), AIMessage(content="Yes!")]
-retrieval_chain.invoke({
+retriever_chain.invoke({
     "chat_history": chat_history,
     "input": "Tell me how"
 })
@@ -403,8 +407,15 @@ tools = [retriever_tool, search]
 
 Now that we have the tools, we can create an agent to use them. We will go over this pretty quickly - for a deeper dive into what exactly is going on, check out the [Agent's Getting Started documentation](/docs/modules/agents)
 
+Install langchain hub first
+```bash
+pip install langchainhub
+```
+
+Now we can use it to get a predefined prompt
+
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
@@ -467,15 +478,15 @@ To create a server for our application we'll make a `serve.py` file. This will c
 from typing import List
 
 from fastapi import FastAPI
-from langchain.prompts import ChatPromptTemplate
-from langchain.chat_models import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import DocArrayInMemorySearch
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
@@ -489,7 +500,7 @@ docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
 embeddings = OpenAIEmbeddings()
-vector = DocArrayInMemorySearch.from_documents(documents, embeddings)
+vector = FAISS.from_documents(documents, embeddings)
 retriever = vector.as_retriever()
 
 # 2. Create Tools

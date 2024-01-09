@@ -281,12 +281,14 @@ class PGVector(VectorStore):
     def delete(
         self,
         ids: Optional[List[str]] = None,
+        collection_only: bool = False,
         **kwargs: Any,
     ) -> None:
         """Delete vectors by ids or uuids.
 
         Args:
             ids: List of ids to delete.
+            collection_only: Only delete ids in the collection.
         """
         with Session(self._bind) as session:
             if ids is not None:
@@ -294,9 +296,20 @@ class PGVector(VectorStore):
                     "Trying to delete vectors by ids (represented by the model "
                     "using the custom ids field)"
                 )
-                stmt = delete(self.EmbeddingStore).where(
-                    self.EmbeddingStore.custom_id.in_(ids)
-                )
+
+                stmt = delete(self.EmbeddingStore)
+
+                if collection_only:
+                    collection = self.get_collection(session)
+                    if not collection:
+                        self.logger.warning("Collection not found")
+                        return
+
+                    stmt = stmt.where(
+                        self.EmbeddingStore.collection_id == collection.uuid
+                    )
+
+                stmt = stmt.where(self.EmbeddingStore.custom_id.in_(ids))
                 session.execute(stmt)
             session.commit()
 
@@ -485,6 +498,66 @@ class PGVector(VectorStore):
         ]
         return docs
 
+    def _create_filter_clause(self, key, value):
+        IN, NIN, BETWEEN, GT, LT, NE = "in", "nin", "between", "gt", "lt", "ne"
+        EQ, LIKE, CONTAINS, OR, AND = "eq", "like", "contains", "or", "and"
+
+        value_case_insensitive = {k.lower(): v for k, v in value.items()}
+        if IN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.in_(
+                value_case_insensitive[IN]
+            )
+        elif NIN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.not_in(
+                value_case_insensitive[NIN]
+            )
+        elif BETWEEN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.between(
+                str(value_case_insensitive[BETWEEN][0]),
+                str(value_case_insensitive[BETWEEN][1]),
+            )
+        elif GT in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext > str(
+                value_case_insensitive[GT]
+            )
+        elif LT in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext < str(
+                value_case_insensitive[LT]
+            )
+        elif NE in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext != str(
+                value_case_insensitive[NE]
+            )
+        elif EQ in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext == str(
+                value_case_insensitive[EQ]
+            )
+        elif LIKE in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.like(
+                value_case_insensitive[LIKE]
+            )
+        elif CONTAINS in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.contains(
+                value_case_insensitive[CONTAINS]
+            )
+        elif OR in map(str.lower, value):
+            or_clauses = [
+                self._create_filter_clause(key, sub_value)
+                for sub_value in value_case_insensitive[OR]
+            ]
+            filter_by_metadata = sqlalchemy.or_(or_clauses)
+        elif AND in map(str.lower, value):
+            and_clauses = [
+                self._create_filter_clause(key, sub_value)
+                for sub_value in value_case_insensitive[AND]
+            ]
+            filter_by_metadata = sqlalchemy.and_(and_clauses)
+
+        else:
+            filter_by_metadata = None
+
+        return filter_by_metadata
+
     def __query_collection(
         self,
         embedding: List[float],
@@ -501,22 +574,11 @@ class PGVector(VectorStore):
 
             if filter is not None:
                 filter_clauses = []
-                IN, NIN = "in", "nin"
+
                 for key, value in filter.items():
                     if isinstance(value, dict):
-                        value_case_insensitive = {
-                            k.lower(): v for k, v in value.items()
-                        }
-                        if IN in map(str.lower, value):
-                            filter_by_metadata = self.EmbeddingStore.cmetadata[
-                                key
-                            ].astext.in_(value_case_insensitive[IN])
-                        elif NIN in map(str.lower, value):
-                            filter_by_metadata = self.EmbeddingStore.cmetadata[
-                                key
-                            ].astext.not_in(value_case_insensitive[NIN])
-                        else:
-                            filter_by_metadata = None
+                        filter_by_metadata = self._create_filter_clause(key, value)
+
                         if filter_by_metadata is not None:
                             filter_clauses.append(filter_by_metadata)
                     else:

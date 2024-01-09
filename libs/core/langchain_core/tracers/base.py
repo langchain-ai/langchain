@@ -5,7 +5,7 @@ import logging
 import sys
 import traceback
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -73,6 +73,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _start_trace(self, run: Run) -> None:
         """Start a trace for a run."""
+        current_dotted_order = run.start_time.strftime("%Y%m%dT%H%M%S%fZ") + str(run.id)
         if run.parent_run_id:
             parent_run = self.run_map.get(str(run.parent_run_id))
             if parent_run:
@@ -80,8 +81,23 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 parent_run.child_execution_order = max(
                     parent_run.child_execution_order, run.child_execution_order
                 )
+                run.trace_id = parent_run.trace_id
+                if parent_run.dotted_order:
+                    run.dotted_order = (
+                        parent_run.dotted_order + "." + current_dotted_order
+                    )
+                else:
+                    # Something wrong with tracer parent run has no dotted_order
+                    logger.debug(
+                        f"Parent run with UUID {run.parent_run_id} has no dotted_order."
+                    )
             else:
+                # Something wrong with tracer, parent run not found
+                # Calculate the trace_id and dotted_order server side
                 logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
+        else:
+            run.trace_id = run.id
+            run.dotted_order = current_dotted_order
         self.run_map[str(run.id)] = run
         self._on_run_create(run)
 
@@ -144,7 +160,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
         llm_run = Run(
@@ -182,7 +198,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run.events.append(
             {
                 "name": "new_token",
-                "time": datetime.utcnow(),
+                "time": datetime.now(timezone.utc),
                 "kwargs": event_kwargs,
             },
         )
@@ -214,7 +230,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run.events.append(
             {
                 "name": "retry",
-                "time": datetime.utcnow(),
+                "time": datetime.now(timezone.utc),
                 "kwargs": retry_d,
             },
         )
@@ -231,7 +247,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
                     output_generation["message"] = dumpd(
                         cast(ChatGeneration, generation).message
                     )
-        llm_run.end_time = datetime.utcnow()
+        llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
         self._end_trace(llm_run)
         self._on_llm_end(llm_run)
@@ -247,7 +263,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Handle an error for an LLM run."""
         llm_run = self._get_run(run_id, run_type="llm")
         llm_run.error = self._get_stacktrace(error)
-        llm_run.end_time = datetime.utcnow()
+        llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
         self._end_trace(llm_run)
         self._on_llm_error(llm_run)
@@ -269,7 +285,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Start a trace for a chain run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
         chain_run = Run(
@@ -304,7 +320,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         chain_run.outputs = (
             outputs if isinstance(outputs, dict) else {"output": outputs}
         )
-        chain_run.end_time = datetime.utcnow()
+        chain_run.end_time = datetime.now(timezone.utc)
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
@@ -323,7 +339,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Handle an error for a chain run."""
         chain_run = self._get_run(run_id)
         chain_run.error = self._get_stacktrace(error)
-        chain_run.end_time = datetime.utcnow()
+        chain_run.end_time = datetime.now(timezone.utc)
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
@@ -346,7 +362,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Start a trace for a tool run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
         tool_run = Run(
@@ -372,7 +388,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """End a trace for a tool run."""
         tool_run = self._get_run(run_id, run_type="tool")
         tool_run.outputs = {"output": output}
-        tool_run.end_time = datetime.utcnow()
+        tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
         self._end_trace(tool_run)
         self._on_tool_end(tool_run)
@@ -388,7 +404,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Handle an error for a tool run."""
         tool_run = self._get_run(run_id, run_type="tool")
         tool_run.error = self._get_stacktrace(error)
-        tool_run.end_time = datetime.utcnow()
+        tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         self._end_trace(tool_run)
         self._on_tool_error(tool_run)
@@ -409,7 +425,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Run when Retriever starts running."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
         retrieval_run = Run(
@@ -441,7 +457,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Run when Retriever errors."""
         retrieval_run = self._get_run(run_id, run_type="retriever")
         retrieval_run.error = self._get_stacktrace(error)
-        retrieval_run.end_time = datetime.utcnow()
+        retrieval_run.end_time = datetime.now(timezone.utc)
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         self._end_trace(retrieval_run)
         self._on_retriever_error(retrieval_run)
@@ -453,7 +469,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Run when Retriever ends running."""
         retrieval_run = self._get_run(run_id, run_type="retriever")
         retrieval_run.outputs = {"documents": documents}
-        retrieval_run.end_time = datetime.utcnow()
+        retrieval_run.end_time = datetime.now(timezone.utc)
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})
         self._end_trace(retrieval_run)
         self._on_retriever_end(retrieval_run)
