@@ -144,7 +144,18 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="langchain_openai.ChatOpenAI")
+@deprecated(
+    since="0.0.10",
+    removal="0.2.0",
+    message=(
+        "The class langchain_community.chat_models.openai.ChatOpenAI was "
+        "deprecated in langchain-community 0.0.10 and will be removed in "
+        "langchain-community 0.2.0. An updated version of the class lives in the "
+        "langchain-openai package and should be used instead. To use it run "
+        "`pip install -U langchain-openai` and import as "
+        "`from langchain_openai import ChatOpenAI`."
+    ),
+)
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
