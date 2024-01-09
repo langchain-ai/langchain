@@ -90,9 +90,9 @@ SERIALIZABLE_MAPPING = {
         "MessagesPlaceholder",
     ),
     ("langchain", "llms", "openai", "OpenAI"): (
-        "langchain",
+        "langchain_openai",
         "llms",
-        "openai",
+        "base",
         "OpenAI",
     ),
     ("langchain", "prompts", "chat", "ChatPromptTemplate"): (
@@ -203,9 +203,9 @@ SERIALIZABLE_MAPPING = {
         "StrOutputParser",
     ),
     ("langchain", "chat_models", "openai", "ChatOpenAI"): (
-        "langchain",
+        "langchain_openai",
         "chat_models",
-        "openai",
+        "base",
         "ChatOpenAI",
     ),
     ("langchain", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
@@ -221,9 +221,9 @@ SERIALIZABLE_MAPPING = {
         "RunnableParallel",
     ),
     ("langchain", "chat_models", "azure_openai", "AzureChatOpenAI"): (
-        "langchain",
+        "langchain_openai",
         "chat_models",
-        "azure_openai",
+        "azure",
         "AzureChatOpenAI",
     ),
     ("langchain", "chat_models", "bedrock", "BedrockChat"): (
@@ -323,9 +323,9 @@ SERIALIZABLE_MAPPING = {
         "GooglePalm",
     ),
     ("langchain", "llms", "openai", "AzureOpenAI"): (
-        "langchain",
+        "langchain_openai",
         "llms",
-        "openai",
+        "azure",
         "AzureOpenAI",
     ),
     ("langchain", "llms", "replicate", "Replicate"): (
@@ -474,5 +474,164 @@ SERIALIZABLE_MAPPING = {
         "runnables",
         "retry",
         "RunnableRetry",
+    ),
+}
+
+# Needed for backwards compatibility for a few versions where we serialized
+# with langchain_core
+OLD_PROMPT_TEMPLATE_FORMATS = {
+    (
+        "langchain_core",
+        "prompts",
+        "base",
+        "BasePromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "base",
+        "BasePromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "prompt",
+        "PromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "prompt",
+        "PromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "MessagesPlaceholder",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "MessagesPlaceholder",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "ChatPromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "ChatPromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "HumanMessagePromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "HumanMessagePromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "SystemMessagePromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "SystemMessagePromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "BaseMessagePromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "BaseMessagePromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "BaseChatPromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "BaseChatPromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "ChatMessagePromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "ChatMessagePromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "few_shot_with_templates",
+        "FewShotPromptWithTemplates",
+    ): (
+        "langchain_core",
+        "prompts",
+        "few_shot_with_templates",
+        "FewShotPromptWithTemplates",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "pipeline",
+        "PipelinePromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "pipeline",
+        "PipelinePromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "string",
+        "StringPromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "string",
+        "StringPromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "BaseStringMessagePromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "BaseStringMessagePromptTemplate",
+    ),
+    (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "AIMessagePromptTemplate",
+    ): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "AIMessagePromptTemplate",
     ),
 }

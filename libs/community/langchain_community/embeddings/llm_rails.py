@@ -1,11 +1,10 @@
 """ This file is for LLMRails Embedding """
-import logging
-import os
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class LLMRailsEmbeddings(BaseModel, Embeddings):
@@ -29,13 +28,22 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
     model: str = "embedding-english-v1"
     """Model name to use."""
 
-    api_key: Optional[str] = None
+    api_key: Optional[SecretStr] = None
     """LLMRails API key."""
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key exists in environment."""
+        api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "api_key", "LLM_RAILS_API_KEY")
+        )
+        values["api_key"] = api_key
+        return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to Cohere's embedding endpoint.
@@ -46,14 +54,9 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        api_key = self.api_key or os.environ.get("LLM_RAILS_API_KEY")
-        if api_key is None:
-            logging.warning("Can't find LLMRails credentials in environment.")
-            raise ValueError("LLM_RAILS_API_KEY is not set")
-
         response = requests.post(
             "https://api.llmrails.com/v1/embeddings",
-            headers={"X-API-KEY": api_key},
+            headers={"X-API-KEY": self.api_key.get_secret_value()},
             json={"input": texts, "model": self.model},
             timeout=60,
         )
