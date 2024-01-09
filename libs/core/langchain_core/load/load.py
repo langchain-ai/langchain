@@ -3,6 +3,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import beta
 from langchain_core.load.mapping import (
     OLD_PROMPT_TEMPLATE_FORMATS,
     SERIALIZABLE_MAPPING,
@@ -102,6 +103,7 @@ class Reviver:
         return value
 
 
+@beta()
 def loads(
     text: str,
     *,
@@ -123,6 +125,7 @@ def loads(
     return json.loads(text, object_hook=Reviver(secrets_map, valid_namespaces))
 
 
+@beta()
 def load(
     obj: Any,
     *,

@@ -68,6 +68,14 @@ def accepts_config(callable: Callable[..., Any]) -> bool:
         return False
 
 
+def accepts_context(callable: Callable[..., Any]) -> bool:
+    """Check if a callable accepts a context argument."""
+    try:
+        return signature(callable).parameters.get("context") is not None
+    except ValueError:
+        return False
+
+
 class IsLocalDict(ast.NodeVisitor):
     """Check if a name is a local dict."""
 

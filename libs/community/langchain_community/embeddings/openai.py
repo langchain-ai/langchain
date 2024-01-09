@@ -19,6 +19,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
@@ -137,6 +138,11 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
     return await _async_embed_with_retry(**kwargs)
 
 
+@deprecated(
+    since="0.1.0",
+    removal="0.2.0",
+    alternative="langchain_openai.OpenAIEmbeddings",
+)
 class OpenAIEmbeddings(BaseModel, Embeddings):
     """OpenAI embedding models.
 

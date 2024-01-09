@@ -1,5 +1,5 @@
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import AgentAction, AgentFinish
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 template = """You are a helpful assistant. Help the user answer any questions.
 

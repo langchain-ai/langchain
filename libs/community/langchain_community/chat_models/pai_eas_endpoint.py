@@ -1,7 +1,5 @@
-import asyncio
 import json
 import logging
-from functools import partial
 from typing import Any, AsyncIterator, Dict, List, Optional, cast
 
 import requests
@@ -300,25 +298,3 @@ class PaiEasChatEndpoint(BaseChatModel):
                 # break if stop sequence found
                 if stop_seq_found:
                     break
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        if stream if stream is not None else self.streaming:
-            generation: Optional[ChatGenerationChunk] = None
-            async for chunk in self._astream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                generation = chunk
-            assert generation is not None
-            return ChatResult(generations=[generation])
-
-        func = partial(
-            self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
-        )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
