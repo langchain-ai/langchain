@@ -1,10 +1,10 @@
 # flake8: noqa
 """Global values and configuration that apply to all of LangChain."""
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
-    from langchain_core.caches import BaseCache
+    from langchain_core.caches import BaseCache, AsyncBaseCache
 
 
 # DO NOT USE THESE VALUES DIRECTLY!
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 # https://github.com/langchain-ai/langchain/pull/11311#issuecomment-1743780004
 _verbose: bool = False
 _debug: bool = False
-_llm_cache: Optional["BaseCache"] = None
+_llm_cache: Optional[Union["BaseCache", "AsyncBaseCache"]] = None
 
 
 def set_verbose(value: bool) -> None:
@@ -134,7 +134,7 @@ def get_debug() -> bool:
     return _debug or old_debug
 
 
-def set_llm_cache(value: Optional["BaseCache"]) -> None:
+def set_llm_cache(value: Optional[Union["BaseCache", "AsyncBaseCache"]]) -> None:
     """Set a new LLM cache, overwriting the previous value, if any."""
     try:
         import langchain  # type: ignore[import]
@@ -162,7 +162,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
     _llm_cache = value
 
 
-def get_llm_cache() -> "BaseCache":
+def get_llm_cache() -> Union["BaseCache", "AsyncBaseCache"]:
     """Get the value of the `llm_cache` global setting."""
     try:
         import langchain  # type: ignore[import]

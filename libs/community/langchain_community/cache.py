@@ -52,7 +52,7 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
+from langchain_core.caches import RETURN_VAL_TYPE, AsyncBaseCache, BaseCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM, get_prompts
 from langchain_core.load.dump import dumps
@@ -349,8 +349,12 @@ class UpstashRedisCache(BaseCache):
         self.redis.flushdb(flush_type=asynchronous)
 
 
-class RedisCache(BaseCache):
-    """Cache that uses Redis as a backend."""
+class RedisCache(BaseCache, AsyncBaseCache):
+    """
+    Cache that uses Redis as a backend. Allows to use either sync or
+    async Redis client. Depending on the client passed, you are expected
+    to use either sync or async methods.
+    """
 
     def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
         """
@@ -358,12 +362,12 @@ class RedisCache(BaseCache):
 
         This method initializes an object with Redis caching capabilities.
         It takes a `redis_` parameter, which should be an instance of a Redis
-        client class, allowing the object to interact with a Redis
-        server for caching purposes.
+        client class (`redis.Redis` or `redis.asyncio.Redis`), allowing the object
+        to interact with a Redis server for caching purposes.
 
         Parameters:
             redis_ (Any): An instance of a Redis client class
-                (e.g., redis.Redis) used for caching.
+                (`redis.Redis` or `redis.asyncio.Redis`) to be used for caching.
                 This allows the object to communicate with a
                 Redis server for caching operations.
             ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
@@ -372,14 +376,19 @@ class RedisCache(BaseCache):
                 have an automatic expiration.
         """
         try:
-            from redis import Redis
+            from redis import Redis as SyncRedis
+            from redis.asyncio import Redis as AsyncRedis
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
-        if not isinstance(redis_, Redis):
-            raise ValueError("Please pass in Redis object.")
+        if isinstance(redis_, SyncRedis):
+            self._async = False
+        elif isinstance(redis_, AsyncRedis):
+            self._async = True
+        else:
+            raise ValueError("Please pass a valid Redis client.")
         self.redis = redis_
         self.ttl = ttl
 
@@ -387,11 +396,29 @@ class RedisCache(BaseCache):
         """Compute key from prompt and llm_string"""
         return _hash(prompt + llm_string)
 
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
+    def __ensure_sync(self, function_name: str = "function"):
+        if self._async:
+            raise ValueError(f"Cannot use sync {function_name} with async Redis client")
+
+    def __ensure_async(self, function_name: str = "function"):
+        if not self._async:
+            logger.warning(
+                f"Performing async {function_name} with sync Redis client. This may block event loop. "
+                "Consider using `redis.asyncio.Redis`"
+            )
+
+    @staticmethod
+    def __ensure_generation_type(return_val: RETURN_VAL_TYPE):
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "RedisCache only supports caching of normal LLM generations, "
+                    f"got {type(gen)}"
+                )
+
+    @staticmethod
+    def __get_generations(results: dict[str | bytes, str | bytes]) -> list[Generation]:
         generations = []
-        # Read from a Redis HASH
-        results = self.redis.hgetall(self._key(prompt, llm_string))
         if results:
             for _, text in results.items():
                 try:
@@ -408,34 +435,61 @@ class RedisCache(BaseCache):
                     generations.append(Generation(text=text))
         return generations if generations else None
 
+    def __configure_pipeline_for_update(self, key, pipe, return_val):
+        pipe.hset(
+            key,
+            mapping={
+                str(idx): dumps(generation)
+                for idx, generation in enumerate(return_val)
+            },
+        )
+        if self.ttl is not None:
+            pipe.expire(key, self.ttl)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        self.__ensure_sync("lookup")
+        # Read from a Redis HASH
+        results = self.redis.hgetall(self._key(prompt, llm_string))
+        return self.__get_generations(results)
+
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string. Async version."""
+        self.__ensure_async("alookup")
+        results = await self.redis.hgetall(self._key(prompt, llm_string))
+        return self.__get_generations(results)
+
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        for gen in return_val:
-            if not isinstance(gen, Generation):
-                raise ValueError(
-                    "RedisCache only supports caching of normal LLM generations, "
-                    f"got {type(gen)}"
-                )
-        # Write to a Redis HASH
+        self.__ensure_sync("update")
+        self.__ensure_generation_type(return_val)
         key = self._key(prompt, llm_string)
 
         with self.redis.pipeline() as pipe:
-            pipe.hset(
-                key,
-                mapping={
-                    str(idx): dumps(generation)
-                    for idx, generation in enumerate(return_val)
-                },
-            )
-            if self.ttl is not None:
-                pipe.expire(key, self.ttl)
-
+            self.__configure_pipeline_for_update(key, pipe, return_val)
             pipe.execute()
+
+    async def aupdate(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string. Async version."""
+        self.__ensure_async("aupdate")
+        self.__ensure_generation_type(return_val)
+        key = self._key(prompt, llm_string)
+
+        async with self.redis.pipeline() as pipe:
+            self.__configure_pipeline_for_update(key, pipe, return_val)
+            await pipe.execute()
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
+        self.__ensure_sync("clear")
         asynchronous = kwargs.get("asynchronous", False)
         self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+
+    async def aclear(self, **kwargs: Any) -> None:
+        """Clear cache. If `asynchronous` is True, flush asynchronously. Async version."""
+        self.__ensure_async("aclear")
+        asynchronous = kwargs.get("asynchronous", False)
+        await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
 
 class RedisSemanticCache(BaseCache):

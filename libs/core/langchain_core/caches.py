@@ -22,3 +22,19 @@ class BaseCache(ABC):
     @abstractmethod
     def clear(self, **kwargs: Any) -> None:
         """Clear cache that can take additional keyword arguments."""
+
+
+class AsyncBaseCache(ABC):
+    """Base interface for async cache."""
+
+    @abstractmethod
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+
+    @abstractmethod
+    async def aupdate(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+
+    @abstractmethod
+    async def aclear(self, **kwargs: Any) -> None:
+        """Clear cache that can take additional keyword arguments."""
