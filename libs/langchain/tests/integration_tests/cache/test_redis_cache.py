@@ -17,7 +17,7 @@ from tests.integration_tests.cache.fake_embeddings import (
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-REDIS_TEST_URL = "redis://0.0.0.0:6379"
+REDIS_TEST_URL = "redis://localhost:6379"
 
 
 def random_string() -> str:
