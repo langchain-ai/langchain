@@ -1,7 +1,6 @@
 from operator import itemgetter
 from typing import Optional, Sequence
 
-from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_community.tools.convert_to_openai import (
     format_tool_to_openai_function,
     format_tool_to_openai_tool,
@@ -12,13 +11,18 @@ from langchain_core.runnables import Runnable, RunnableLambda, RunnableMap
 from langchain_core.tools import Tool
 
 from langchain.output_parsers import JsonOutputToolsParser
+from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 
 
 def _call_tool(tool_api_output: list, tools: Sequence[Tool]) -> Runnable:
     tool_map = {tool.name: tool for tool in tools}
     chosen = {}
     for i, tool_call in enumerate(tool_api_output):
-        chosen[tool_call["type"]] = RunnableLambda(itemgetter(i)) | RunnableLambda(itemgetter("args")) | tool_map[tool_call["type"]]
+        chosen[tool_call["type"]] = (
+            RunnableLambda(itemgetter(i))
+            | RunnableLambda(itemgetter("args"))
+            | tool_map[tool_call["type"]]
+        )
     return RunnableMap(chosen)
 
 
@@ -73,7 +77,9 @@ def create_openai_functions_chain(
             function_call={"name": tools[0].name}
         )
     call_tool: Runnable = RunnableLambda(_call_tool_from_function).bind(tools=tools)
-    chain: Runnable = llm_with_functions | JsonOutputFunctionsParser(args_only=False) | call_tool
+    chain: Runnable = (
+        llm_with_functions | JsonOutputFunctionsParser(args_only=False) | call_tool
+    )
     if prompt:
         chain = prompt | chain
     return chain
