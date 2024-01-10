@@ -26,7 +26,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
             from langchain.chains import StuffDocumentsChain, LLMChain
             from langchain_core.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from langchain.output_parsers.regex import RegexParser
 
             document_variable_name = "context"

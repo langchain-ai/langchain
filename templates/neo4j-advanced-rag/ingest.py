@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import List
 
 from langchain.chains.openai_functions import create_structured_output_chain
-from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.graphs import Neo4jGraph
-from langchain.prompts import ChatPromptTemplate
 from langchain.text_splitter import TokenTextSplitter
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.document_loaders import TextLoader
+from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_community.graphs import Neo4jGraph
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from neo4j.exceptions import ClientError
 

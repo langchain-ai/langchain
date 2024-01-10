@@ -7,7 +7,7 @@ import functools
 import inspect
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -34,6 +34,7 @@ from langchain_core.tracers.evaluation import (
 )
 from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
+from langsmith.env import get_git_info
 from langsmith.evaluation import EvaluationResult, RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example, TracerSession
@@ -930,13 +931,18 @@ def _prepare_eval_run(
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
 
     try:
-        project_extra: dict = {"metadata": project_metadata} if project_metadata else {}
-        if tags:
-            project_extra["tags"] = tags
+        git_info = get_git_info()
+        if git_info:
+            project_metadata = project_metadata or {}
+            project_metadata = {
+                **project_metadata,
+                "git": git_info,
+            }
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
-            project_extra=project_extra,
+            project_extra={"tags": tags} if tags else {},
+            metadata=project_metadata,
         )
     except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
@@ -1050,7 +1056,9 @@ class _DatasetRunContainer:
                 logger.debug(f"Failed to print aggregate feedback: {repr(e)}")
         try:
             # Closing the project permits name changing and metric optimizations
-            self.client.update_project(self.project.id, end_time=datetime.utcnow())
+            self.client.update_project(
+                self.project.id, end_time=datetime.now(timezone.utc)
+            )
         except Exception as e:
             logger.debug(f"Failed to close project: {repr(e)}")
         return results
@@ -1077,6 +1085,9 @@ class _DatasetRunContainer:
             project_metadata=project_metadata,
             tags=tags,
         )
+        tags = tags or []
+        for k, v in (project.metadata.get("git") or {}).items():
+            tags.append(f"git:{k}={v}")
         wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
         run_evaluators = _setup_evaluation(
             wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
@@ -1100,7 +1111,7 @@ class _DatasetRunContainer:
                     ),
                     progress_bar,
                 ],
-                tags=tags or [],
+                tags=tags,
                 max_concurrency=concurrency_level,
             )
             for example in examples
@@ -1302,7 +1313,7 @@ Examples
 .. code-block:: python
 
     from langsmith import Client
-    from langchain.chat_models import ChatOpenAI
+    from langchain_community.chat_models import ChatOpenAI
     from langchain.chains import LLMChain
     from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
 
