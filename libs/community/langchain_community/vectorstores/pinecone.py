@@ -355,7 +355,7 @@ class Pinecone(VectorStore):
                 "Could not import pinecone python package. "
                 "Please install it with `pip install pinecone-client`."
             )
-            
+                        
         if self.use_pod_based == False:
             pinecone_instance = pinecone.Pinecone(
                 api_key=os.environ.get("PINECONE_API_KEY"), pool_threads=pool_threads
@@ -398,7 +398,7 @@ class Pinecone(VectorStore):
         upsert_kwargs: Optional[dict] = None,
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
-        use_pod_based: Optional[bool] = False,
+        use_pod_based: Optional[bool] = True,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -427,7 +427,7 @@ class Pinecone(VectorStore):
                     index_name="langchain-demo"
                 )
         """
-        pinecone = cls(None, embedding, text_key, namespace, use_pod_based, **kwargs)
+        pinecone = cls(None, embedding, text_key, namespace, use_pod_based=use_pod_based, **kwargs)
         pinecone_index = pinecone.get_pinecone_index(index_name, pool_threads)
         pinecone._index = pinecone_index
 
@@ -453,8 +453,7 @@ class Pinecone(VectorStore):
         use_pod_based: Optional[bool] = True,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
-
-        pinecone = cls(None, embedding, text_key, namespace, use_pod_based)
+        pinecone = cls(None, embedding, text_key, namespace,  use_pod_based=use_pod_based)
         pinecone_index = pinecone.get_pinecone_index(index_name, pool_threads)
         pinecone._index = pinecone_index
 
