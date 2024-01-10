@@ -119,7 +119,7 @@ class DirectoryLoader(BaseLoader):
         docs: List[Document] = []
         items = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
 
-        if len(item)==0:
+        if len(items)==0:
             raise ValueError(f"Expected files but it's a empty directory: '{self.path}'")
 
         if self.sample_size > 0:
