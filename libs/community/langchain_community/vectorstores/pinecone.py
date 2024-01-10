@@ -360,7 +360,7 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
 
-        if self.use_pod_based == False:
+        if self.use_pod_based is False:
             pinecone_instance = pinecone.Pinecone(
                 api_key=os.environ.get("PINECONE_API_KEY"), pool_threads=pool_threads
             )
@@ -372,7 +372,7 @@ class Pinecone(VectorStore):
         if index_name in index_names:
             index = (
                 pinecone_instance.Index(index_name)
-                if self.use_pod_based == False
+                if self.use_pod_based is False
                 else pinecone.Index(index_name, pool_threads=pool_threads)
             )
         elif len(index_names) == 0:
