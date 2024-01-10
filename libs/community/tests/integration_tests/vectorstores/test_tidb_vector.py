@@ -45,9 +45,13 @@ def test_search() -> None:
         distance_strategy="cosine",
     )
 
+    with docsearch._make_session() as session:
+        records = list(session.query(docsearch._table_model).all())
+        assert len([record.id for record in records]) == 3  # type: ignore
+        session.close()
+
     output = docsearch.similarity_search("foo", k=1)
     docsearch.drop_table()
-
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
