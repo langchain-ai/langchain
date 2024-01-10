@@ -1,17 +1,16 @@
 import contextlib
 import enum
 import logging
-import numpy as np
 import uuid
-from typing import Any, Dict, Generator, Iterable, List, Optional, Type, Tuple
+from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
 
+import numpy as np
 import sqlalchemy
-from sqlalchemy.orm import Session, declarative_base
-from sqlalchemy.types import UserDefinedType, Float
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.types import Float, UserDefinedType
 
 logger = logging.getLogger()
 
@@ -81,7 +80,14 @@ class VectorType(UserDefinedType):
             return self.op("<==>", return_type=Float)(other)
 
 
+_classes: Any = None
+
+
 def _create_vector_model(table_name: str):
+    global _classes
+    if _classes is not None:
+        return _classes
+
     class SQLVectorModel(Base):
         __tablename__ = table_name
         id = sqlalchemy.Column(
@@ -91,7 +97,8 @@ def _create_vector_model(table_name: str):
         document = sqlalchemy.Column(sqlalchemy.Text, nullable=True)
         meta = sqlalchemy.Column(sqlalchemy.JSON, nullable=True)
 
-    return SQLVectorModel
+    _classes = SQLVectorModel
+    return _classes
 
 
 class TiDBVector(VectorStore):
@@ -102,7 +109,8 @@ class TiDBVector(VectorStore):
         collection_name: str = "DEFAULT_COLLECTION_NAME",
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         *,
-        engine_args: Optional[dict[str, Any]] = None,
+        engine_args: Optional[Dict[str, Any]] = None,
+        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -110,8 +118,10 @@ class TiDBVector(VectorStore):
         self._embedding_function = embedding_function
         self._distance_strategy = distance_strategy
         self._engine_args = engine_args or {}
+        self._pre_delete_collection = pre_delete_collection
         self._bind = self._create_engine()
         self._table_model = _create_vector_model(collection_name)
+        _ = self.distance_strategy  # check if distance strategy is valid
         self.create_table_if_not_exists()
 
     @property
@@ -119,6 +129,8 @@ class TiDBVector(VectorStore):
         return self._embedding_function
 
     def create_table_if_not_exists(self) -> None:
+        if self._pre_delete_collection:
+            self.drop_table()
         with Session(self._bind) as session, session.begin():
             Base.metadata.create_all(session.get_bind())
             # wait for tidb support vector index
@@ -150,7 +162,8 @@ class TiDBVector(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         *,
-        engine_args: Optional[dict[str, Any]] = None,
+        engine_args: Optional[Dict[str, Any]] = None,
+        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> VectorStore:
         embeddings = embedding.embed_documents(list(texts))
@@ -161,6 +174,7 @@ class TiDBVector(VectorStore):
             embedding_function=embedding,
             distance_strategy=distance_strategy,
             engine_args=engine_args,
+            pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
 
@@ -178,19 +192,20 @@ class TiDBVector(VectorStore):
         collection_name: str = DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         *,
-        engine_args: Optional[dict[str, Any]] = None,
+        engine_args: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> VectorStore:
         engine = sqlalchemy.create_engine(connection_string, **(engine_args or {}))
 
         try:
             # check if the table exists
+            table_query = sqlalchemy.sql.text(
+                "SELECT 1 FROM information_schema.tables WHERE table_name = :table_name"
+            )
             with engine.connect() as connection:
                 if (
                     connection.execute(
-                        sqlalchemy.sql.text(
-                            f"SELECT 1 FROM information_schema.tables WHERE table_name = :table_name"
-                        ),
+                        table_query,
                         {"table_name": collection_name},
                     ).fetchone()
                     is None
@@ -312,3 +327,17 @@ class TiDBVector(VectorStore):
                 .all()
             )
         return results
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        # Default strategy is to rely on distance strategy provided
+        # in vectorstore constructor
+        if self._distance_strategy == DistanceStrategy.COSINE:
+            return self._cosine_relevance_score_fn
+        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance_strategy of {self._distance_strategy}."
+                "Consider providing relevance_score_fn to PGVector constructor."
+            )
