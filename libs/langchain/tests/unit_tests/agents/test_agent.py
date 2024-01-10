@@ -1,7 +1,7 @@
 """Unit tests for agents."""
 import json
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain_core.agents import (
     AgentAction,
@@ -19,6 +19,7 @@ from langchain_core.messages import (
 from langchain_core.prompts import MessagesPlaceholder
 from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool
+from langchain_core.tracers import RunLog, RunLogPatch
 
 from langchain.agents import (
     AgentExecutor,
@@ -464,14 +465,18 @@ async def test_runnable_agent() -> None:
     assert result == {"foo": "meow", "question": "hello"}
 
     # Batch
-    result = executor.batch([{"question": "hello"}, {"question": "hello"}])
+    result = executor.batch(  # type: ignore[assignment]
+        [{"question": "hello"}, {"question": "hello"}]
+    )
     assert result == [
         {"foo": "meow", "question": "hello"},
         {"foo": "meow", "question": "hello"},
     ]
 
     # abatch
-    result = await executor.abatch([{"question": "hello"}, {"question": "hello"}])
+    result = await executor.abatch(  # type: ignore[assignment]
+        [{"question": "hello"}, {"question": "hello"}]
+    )
     assert result == [
         {"foo": "meow", "question": "hello"},
         {"foo": "meow", "question": "hello"},
@@ -495,11 +500,13 @@ async def test_runnable_agent() -> None:
     ]
 
     # stream log
-    results = [r async for r in executor.astream_log({"question": "hello"})]
+    results: List[RunLogPatch] = [  # type: ignore[no-redef]
+        r async for r in executor.astream_log({"question": "hello"})
+    ]
     # # Let's stream just the llm tokens.
     messages = []
     for log_record in results:
-        for op in log_record.ops:
+        for op in log_record.ops:  # type: ignore[attr-defined]
             if op["op"] == "add" and isinstance(op["value"], AIMessageChunk):
                 messages.append(op["value"])
 
@@ -512,7 +519,10 @@ async def test_runnable_agent() -> None:
         if run_log is None:
             run_log = result
         else:
-            run_log = run_log + result
+            # `+` is defined for RunLogPatch
+            run_log = run_log + result  # type: ignore[union-attr]
+
+    assert isinstance(run_log, RunLog)
 
     assert run_log.state["final_output"] == {
         "foo": "meow",
@@ -550,7 +560,7 @@ async def test_runnable_agent_with_function_calls() -> None:
 
     def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
-        return next(parser_responses)
+        return cast(Union[AgentFinish, AgentAction], next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:
@@ -665,7 +675,12 @@ async def test_openai_agent_with_streaming() -> None:
         ]
     )
 
-    agent = create_openai_functions_agent(model, [find_pet], template)
+    # type error due to base tool type below -- would need to be adjusted on tool decorator.
+    agent = create_openai_functions_agent(
+        model,
+        [find_pet],  # type: ignore[list-item]
+        template,
+    )
     executor = AgentExecutor(agent=agent, tools=[find_pet])
 
     # Invoke

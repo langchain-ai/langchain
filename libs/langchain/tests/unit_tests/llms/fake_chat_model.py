@@ -1,6 +1,6 @@
 """Fake Chat Model wrapper for testing purposes."""
 import re
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.messages import (
@@ -115,7 +115,8 @@ class GenericFakeChatModel(BaseChatModel):
         if content:
             # Use a regular expression to split on whitespace with a capture group
             # so that we can preserve the whitespace in the output.
-            content_chunks = re.split(r"(\s)", content)
+            assert isinstance(content, str)
+            content_chunks = cast(List[str], re.split(r"(\s)", content))
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
@@ -131,7 +132,7 @@ class GenericFakeChatModel(BaseChatModel):
                     for fkey, fvalue in value.items():
                         if isinstance(fvalue, str):
                             # Break function call by `,`
-                            fvalue_chunks = re.split(r"(,)", fvalue)
+                            fvalue_chunks = cast(List[str], re.split(r"(,)", fvalue))
                             for fvalue_chunk in fvalue_chunks:
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(

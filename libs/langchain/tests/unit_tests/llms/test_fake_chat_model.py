@@ -1,9 +1,9 @@
 """Tests for verifying that testing utility code works as expected."""
 from itertools import cycle
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
 from langchain.callbacks.base import AsyncCallbackHandler
@@ -141,8 +141,19 @@ async def test_callback_handlers() -> None:
         def __init__(self, store: List[str]) -> None:
             self.store = store
 
-        async def on_chat_model_start(self, *args, **kwargs) -> Any:
-            """Abstract method implementation"""
+        async def on_chat_model_start(
+            self,
+            serialized: Dict[str, Any],
+            messages: List[List[BaseMessage]],
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            tags: Optional[List[str]] = None,
+            metadata: Optional[Dict[str, Any]] = None,
+            **kwargs: Any,
+        ) -> Any:
+            # Do nothing
+            # Required to implement since this is an abstract method
             pass
 
         async def on_llm_new_token(
@@ -163,7 +174,7 @@ async def test_callback_handlers() -> None:
         ]
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
-    tokens = []
+    tokens: List[str] = []
     # New model
     results = list(model.stream("meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}))
     assert results == [
