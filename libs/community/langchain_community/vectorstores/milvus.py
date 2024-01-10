@@ -42,8 +42,9 @@ class Milvus(VectorStore):
             "LangChainCollection".
         collection_description (str): The description of the collection. Defaults to
             "".
-        collection_properties (Optional[dict[str, any]]): The collection properties. Defaults to
-            None. If set, will override collection existing properties. For example: {"collection.ttl.seconds": 60}
+        collection_properties (Optional[dict[str, any]]): The collection properties. 
+            Defaults to None. If set, will override collection existing properties. 
+            For example: {"collection.ttl.seconds": 60}
         connection_args (Optional[dict[str, any]]): The connection args used for
             this class comes in the form of a dict.
         consistency_level (str): The consistency level to use for a collection.
