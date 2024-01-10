@@ -24,7 +24,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                                           model_id=MODEL_ID)
                              (or)
             Example_URL = "https://clarifai.com/clarifai/main/models/BAAI-bge-base-en-v15"
-            clarifai = ClarifaiEmbeddings(model_url=EXAMPLE_URL) 
+            clarifai = ClarifaiEmbeddings(model_url=EXAMPLE_URL)
     """
 
     model_url: Optional[str] = None
