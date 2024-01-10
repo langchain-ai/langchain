@@ -2,16 +2,14 @@
 import re
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import RunnableConfig, run_in_executor
+from langchain_core.runnables import run_in_executor
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -53,7 +51,14 @@ class FakeChatModel(SimpleChatModel):
 
 
 class GenericFakeChatModel(BaseChatModel):
-    """A generic fake chat model that can be used to test the chat model interface."""
+    """A generic fake chat model that can be used to test the chat model interface.
+
+    * Chat model should be usable in both sync and async tests
+    * Invokes on_llm_new_token to allow for testing of callback related code for new
+      tokens.
+    * Includes logic to break messages into message chunk to facilitate testing of
+      streaming.
+    """
 
     messages: Iterator[AIMessage]
     """Get an iterator over messages.
