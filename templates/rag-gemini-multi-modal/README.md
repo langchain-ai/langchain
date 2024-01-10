@@ -9,7 +9,7 @@ It uses OpenCLIP embeddings to embed all of the slide images and stores them in 
  
 Given a question, relevat slides are retrieved and passed to [Google Gemini](https://deepmind.google/technologies/gemini/#introduction) for answer synthesis.
  
-![mm-mmembd](https://github.com/langchain-ai/langchain/assets/122662504/b9e69bef-d687-4ecf-a599-937e559d5184)
+![](https://github.com/langchain-ai/langchain/assets/122662504/b9e69bef-d687-4ecf-a599-937e559d5184)
 
 ## Input
 

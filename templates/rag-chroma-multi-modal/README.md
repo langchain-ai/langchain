@@ -9,7 +9,7 @@ It uses OpenCLIP embeddings to embed all of the slide images and stores them in 
  
 Given a question, relevat slides are retrieved and passed to GPT-4V for answer synthesis.
 
-![mm-mmembd](https://github.com/langchain-ai/langchain/assets/122662504/b3bc8406-48ae-4707-9edf-d0b3a511b200)
+![](https://github.com/langchain-ai/langchain/assets/122662504/b3bc8406-48ae-4707-9edf-d0b3a511b200)
 
 ## Input
 

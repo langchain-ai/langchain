@@ -9,7 +9,7 @@ It uses GPT-4V to create image summaries for each slide, embeds the summaries, a
  
 Given a question, relevat slides are retrieved and passed to GPT-4V for answer synthesis.
 
-![mm-captioning](https://github.com/langchain-ai/langchain/assets/122662504/5277ef6b-d637-43c7-8dc1-9b1567470503)
+![](https://github.com/langchain-ai/langchain/assets/122662504/5277ef6b-d637-43c7-8dc1-9b1567470503)
 
 ## Input
 
