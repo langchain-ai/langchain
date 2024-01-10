@@ -123,8 +123,6 @@ class LlamaChatService(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            print("\n[DEBUG] streaming mode")
-
             stream_iter = self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
             )
