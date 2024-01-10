@@ -1,9 +1,6 @@
 from operator import itemgetter
 
 import numpy as np
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers import (
     ArxivRetriever,
     KayAiRetriever,
@@ -12,6 +9,9 @@ from langchain.retrievers import (
 )
 from langchain.schema import StrOutputParser
 from langchain.utils.math import cosine_similarity
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import (
     RunnableParallel,

@@ -88,7 +88,7 @@ runnable = RemoteRunnable("http://localhost:8000/openai-functions-agent-gmail")
 ## Customize Auth
 
 ```
-from langchain.tools.gmail.utils import build_resource_service, get_gmail_credentials
+from langchain_community.tools.gmail.utils import build_resource_service, get_gmail_credentials
 
 # Can review scopes here https://developers.google.com/gmail/api/auth/scopes
 # For instance, readonly scope is 'https://www.googleapis.com/auth/gmail.readonly'

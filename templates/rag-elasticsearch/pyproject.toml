@@ -9,7 +9,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
-langchain = ">=0.0.325"
+langchain = "^0.1"
 openai = "<2"
 elasticsearch = "^8.10.0"
 sentence-transformers = "^2.2.2"
