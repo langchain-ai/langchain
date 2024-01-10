@@ -81,8 +81,6 @@ class WasmChatService(BaseChatModel):
     """URL of WasmChat service"""
     model: str = "NA"
     """model name, default is `NA`."""
-    temperature: float = 0.3
-    """What sampling temperature to use."""
     streaming: bool = False
     """Whether to stream the results or not."""
 
