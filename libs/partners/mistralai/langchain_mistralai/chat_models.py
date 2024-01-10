@@ -156,8 +156,8 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: MistralClient  #: :meta private:
-    async_client: MistralAsyncClient  #: :meta private:
+    client: MistralClient = None  #: :meta private:
+    async_client: MistralAsyncClient = None  #: :meta private:
     mistral_api_key: Optional[SecretStr] = None
     endpoint: str = DEFAULT_MISTRAL_ENDPOINT
     max_retries: int = 5
