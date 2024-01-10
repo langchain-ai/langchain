@@ -18,7 +18,8 @@ def combine_sentences(sentences, buffer_size=1):
 
         # Add sentences before the current one, based on the buffer size.
         for j in range(i - buffer_size, i):
-            # Check if the index j is not negative (to avoid index out of range like on the first one)
+            # Check if the index j is not negative
+            # (to avoid index out of range like on the first one)
             if j >= 0:
                 # Add the sentence at index j to the combined_sentence string
                 combined_sentence += sentences[j]["sentence"] + " "
