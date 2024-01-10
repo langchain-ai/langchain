@@ -11,7 +11,7 @@ Required to run this test:
         export ASTRA_DB_KEYSPACE="my_keyspace"
 """
 import os
-from typing import Iterator, cast
+from typing import Iterator
 
 import pytest
 from langchain_core.outputs import Generation, LLMResult
@@ -66,8 +66,7 @@ class TestAstraDBCaches:
         params = llm.dict()
         params["stop"] = None
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
-        llm_cache = cast(AstraDBCache, get_llm_cache())
-        llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+        get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
         output = llm.generate(["foo"])
         print(output)
         expected_output = LLMResult(
@@ -86,8 +85,7 @@ class TestAstraDBCaches:
         params = llm.dict()
         params["stop"] = None
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
-        llm_cache = cast(AstraDBCache, get_llm_cache())
-        llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+        get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
         output = llm.generate(["bar"])  # same embedding as 'foo'
         expected_output = LLMResult(
             generations=[[Generation(text="fizz")]],

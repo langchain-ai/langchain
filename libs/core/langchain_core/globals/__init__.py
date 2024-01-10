@@ -162,7 +162,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
     _llm_cache = value
 
 
-def get_llm_cache() -> Optional["BaseCache"]:
+def get_llm_cache() -> "BaseCache":
     """Get the value of the `llm_cache` global setting."""
     try:
         import langchain  # type: ignore[import]

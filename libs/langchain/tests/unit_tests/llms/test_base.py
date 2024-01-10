@@ -1,6 +1,4 @@
 """Test base LLM functionality."""
-from typing import cast
-
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
 
 try:
@@ -33,11 +31,10 @@ def test_caching() -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    llm_cache = cast(InMemoryCache, get_llm_cache())
-    llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo", "bar", "foo"])
     expected_cache_output = [Generation(text="foo")]
-    cache_output = llm_cache.lookup("bar", llm_string)
+    cache_output = get_llm_cache().lookup("bar", llm_string)
     assert cache_output == expected_cache_output
     set_llm_cache(None)
     expected_generations = [
@@ -72,11 +69,10 @@ def test_custom_caching() -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    llm_cache = cast(SQLAlchemyCache, get_llm_cache())
-    llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo", "bar", "foo"])
     expected_cache_output = [Generation(text="foo")]
-    cache_output = llm_cache.lookup("bar", llm_string)
+    cache_output = get_llm_cache().lookup("bar", llm_string)
     assert cache_output == expected_cache_output
     set_llm_cache(None)
     expected_generations = [
