@@ -11,7 +11,7 @@ It uses an open source multi-modal LLM of your choice to create image summaries 
  
 Given a question, relevat photos are retrieved and passed to the multi-modal LLM for answer synthesis.
 
-![mm-caption-local](https://github.com/langchain-ai/langchain/assets/122662504/cd9b3d82-9b06-4a39-8490-7482466baf43)
+![](https://github.com/langchain-ai/langchain/assets/122662504/cd9b3d82-9b06-4a39-8490-7482466baf43)
 
 ## Input
 

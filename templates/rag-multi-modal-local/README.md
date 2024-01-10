@@ -11,7 +11,7 @@ It uses OpenCLIP embeddings to embed all of the photos and stores them in Chroma
  
 Given a question, relevat photos are retrieved and passed to an open source multi-modal LLM of your choice for answer synthesis.
  
-![mm-local](https://github.com/langchain-ai/langchain/assets/122662504/da543b21-052c-4c43-939e-d4f882a45d75)
+![](https://github.com/langchain-ai/langchain/assets/122662504/da543b21-052c-4c43-939e-d4f882a45d75)
 
 ## Input
 
