@@ -5,9 +5,9 @@ import numpy as np
 import uuid
 from typing import Any, Dict, Generator, Iterable, List, Optional, Type, Tuple
 
-from pgvector.sqlalchemy import Vector
 import sqlalchemy
 from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.types import UserDefinedType, Float
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -27,29 +27,74 @@ DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
 DEFAULT_COLLECTION_NAME = "langchain_tidb_vector"
 
 Base = declarative_base()  # type: Any
-_classes: Any = None
+
+
+class VectorType(UserDefinedType):
+    cache_ok = True
+
+    def __init__(self, dim=None):
+        super(UserDefinedType, self).__init__()
+        self.dim = None
+
+    def get_col_spec(self, **kw):
+        if self.dim is None:
+            return "VECTOR<FLOAT>"
+        return "VECTOR(%d)" % self.dim
+
+    def bind_processor(self, dialect):
+        def process(value, dim=None):
+            if value is None:
+                return value
+
+            if isinstance(value, np.ndarray):
+                if value.ndim != 1:
+                    raise ValueError("expected ndim to be 1")
+
+                if not np.issubdtype(value.dtype, np.integer) and not np.issubdtype(
+                    value.dtype, np.floating
+                ):
+                    raise ValueError("dtype must be numeric")
+
+                value = value.tolist()
+
+            if dim is not None and len(value) != dim:
+                raise ValueError("expected %d dimensions, not %d" % (dim, len(value)))
+
+            return "[" + ",".join([str(float(v)) for v in value]) + "]"
+
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is None or isinstance(value, np.ndarray):
+                return value
+
+            return np.array(value[1:-1].split(","), dtype=np.float32)
+
+        return process
+
+    class comparator_factory(UserDefinedType.Comparator):
+        def l2_distance(self, other):
+            return self.op("<-->", return_type=Float)(other)
+
+        def cosine_distance(self, other):
+            return self.op("<==>", return_type=Float)(other)
 
 
 def _create_vector_model(table_name: str):
-    global _classes
-    if _classes is not None:
-        return _classes
-
     class SQLVectorModel(Base):
         __tablename__ = table_name
         id = sqlalchemy.Column(
-            sqlalchemy.BINARY(16),
-            primary_key=True,
-            default=lambda: uuid.uuid4().bytes,
+            sqlalchemy.String(36), primary_key=True, default=lambda: str(uuid.uuid4())
         )
-        embedding = sqlalchemy.Column(Vector(None))
+        embedding = sqlalchemy.Column(VectorType())
         document = sqlalchemy.Column(sqlalchemy.Text, nullable=True)
         meta = sqlalchemy.Column(sqlalchemy.JSON, nullable=True)
 
     return SQLVectorModel
 
 
-class TiDBVec(VectorStore):
+class TiDBVector(VectorStore):
     def __init__(
         self,
         connection_string: str,
@@ -110,7 +155,7 @@ class TiDBVec(VectorStore):
     ) -> VectorStore:
         embeddings = embedding.embed_documents(list(texts))
 
-        tidb_vs = cls(
+        tidbvs = cls(
             connection_string=connection_string,
             collection_name=collection_name,
             embedding_function=embedding,
@@ -119,11 +164,11 @@ class TiDBVec(VectorStore):
             **kwargs,
         )
 
-        tidb_vs.add_texts(
+        tidbvs.add_texts(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
-        return tidb_vs
+        return tidbvs
 
     @classmethod
     def from_existing_collection(
@@ -136,15 +181,36 @@ class TiDBVec(VectorStore):
         engine_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> VectorStore:
-        return cls(
-            connection_string=connection_string,
-            collection_name=collection_name,
-            embedding_function=embedding,
-            distance_strategy=distance_strategy,
-            engine_args=engine_args,
-            **kwargs,
-        )
-    
+        engine = sqlalchemy.create_engine(connection_string, **(engine_args or {}))
+
+        try:
+            # check if the table exists
+            with engine.connect() as connection:
+                if (
+                    connection.execute(
+                        sqlalchemy.sql.text(
+                            f"SELECT 1 FROM information_schema.tables WHERE table_name = :table_name"
+                        ),
+                        {"table_name": collection_name},
+                    ).fetchone()
+                    is None
+                ):
+                    raise sqlalchemy.exc.NoSuchTableError(
+                        f"The table '{collection_name}' does not exist in the database."
+                    )
+
+            return cls(
+                connection_string=connection_string,
+                collection_name=collection_name,
+                embedding_function=embedding,
+                distance_strategy=distance_strategy,
+                engine_args=engine_args,
+                **kwargs,
+            )
+        finally:
+            # Close the engine after use
+            engine.dispose()
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -154,7 +220,7 @@ class TiDBVec(VectorStore):
     ) -> List[str]:
         embeddings = self._embedding_function.embed_documents(list(texts))
         if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
+            ids = [uuid.uuid4() for _ in texts]
         if not metadatas:
             metadatas = [{} for _ in texts]
 
@@ -170,7 +236,7 @@ class TiDBVec(VectorStore):
             session.commit()
 
         return ids
-    
+
     def delete(
         self,
         ids: Optional[List[str]] = None,
@@ -198,17 +264,20 @@ class TiDBVec(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = 4,
+        k: int = 5,
         filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         query_vector = self._embedding_function.embed_query(query)
         relevant_docs = self._query_collection(query_vector, k, filter)
         return [
-            (Document(
-                page_content=doc._table_model.document,
-                metadata=doc._table_model.mata,
-            ), doc.distance)
+            (
+                Document(
+                    page_content=doc.document,
+                    metadata=doc.meta,
+                ),
+                doc.distance,
+            )
             for doc in relevant_docs
         ]
 
@@ -217,7 +286,7 @@ class TiDBVec(VectorStore):
         if self._distance_strategy == DistanceStrategy.EUCLIDEAN:
             return self._table_model.embedding.l2_distance
         elif self._distance_strategy == DistanceStrategy.COSINE:
-            return self._table_model.embedding.cosion_distance
+            return self._table_model.embedding.cosine_distance
         else:
             raise ValueError(
                 f"Got unexpected value for distance: {self._distance_strategy}. "
@@ -226,20 +295,20 @@ class TiDBVec(VectorStore):
 
     def _query_collection(
         self,
-        embedding: List[float],
-        k: int = 4,
+        query_embedding: List[float],
+        k: int = 5,
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Any]:
         """Query the collection."""
         with Session(self._bind) as session:
             results: List[Any] = (
                 session.query(
-                    self._table_model,
-                    self.distance_strategy(embedding).label("distance"),  # type: ignore
+                    self._table_model.meta,
+                    self._table_model.document,
+                    self.distance_strategy(query_embedding).label("distance"),
                 )
                 .order_by(sqlalchemy.asc("distance"))
                 .limit(k)
                 .all()
             )
         return results
-        
