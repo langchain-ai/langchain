@@ -329,6 +329,11 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
                 "options": {"wait_for_model": True, "use_cache": True},
             },
         )
+        if response.status_code != 200:
+            raise Exception(
+                f"HuggingFaceInferenceAPI returned an unexpected response with status "
+                f"{response.status_code}: {response.text}"
+            )
         return response.json()
 
     def embed_query(self, text: str) -> List[float]:
