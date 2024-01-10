@@ -13,7 +13,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.tools import Tool
 from langchain_core.utils.json_schema import dereference_refs
-from vertexai.preview.generative_models import (
+from vertexai.preview.generative_models import (  # type: ignore
     FunctionDeclaration,
 )
 from vertexai.preview.generative_models import (
@@ -21,7 +21,7 @@ from vertexai.preview.generative_models import (
 )
 
 
-def format_tool_to_vertex_function(tool: Tool) -> FunctionDescription:
+def _format_tool_to_vertex_function(tool: Tool) -> FunctionDescription:
     "Format tool into the Vertex function API."
     if tool.args_schema:
         schema = dereference_refs(tool.args_schema.schema())
@@ -45,12 +45,12 @@ def format_tool_to_vertex_function(tool: Tool) -> FunctionDescription:
         }
 
 
-def format_tools_to_vertex_tool(tools: List[Tool]) -> List[VertexTool]:
+def _format_tools_to_vertex_tool(tools: List[Tool]) -> List[VertexTool]:
     "Format tool into the Vertex Tool instance."
     function_declarations = []
     for tool in tools:
         function_declarations.append(
-            FunctionDeclaration(**format_tool_to_vertex_function(tool))
+            FunctionDeclaration(**_format_tool_to_vertex_function(tool))
         )
 
     return [VertexTool(function_declarations=function_declarations)]
@@ -70,7 +70,7 @@ class VertexAIFunctionsAgentOutputParser(AgentOutputParser):
 
     @property
     def _type(self) -> str:
-        return "vertexai-functions-agent"
+        return "vertexai-functions-parser"
 
     @staticmethod
     def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:

@@ -48,6 +48,9 @@ from vertexai.preview.generative_models import (  # type: ignore
 from langchain_google_vertexai._utils import (
     load_image_from_gcs,
 )
+from langchain_google_vertexai.functions_utils import (
+    _format_tools_to_vertex_tool,
+)
 from langchain_google_vertexai.llms import (
     _VertexAICommon,
     is_codey_model,
@@ -317,7 +320,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            tools = params.pop("tools") if "tools" in params else None
+            raw_tools = params.pop("tools") if "tools" in params else None
+            tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
             response = chat.send_message(message, generation_config=params, tools=tools)
             generations = [
                 ChatGeneration(message=_parse_response_candidate(c))
@@ -371,7 +375,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            tools = params.pop("tools") if "tools" in params else None
+            raw_tools = params.pop("tools") if "tools" in params else None
+            tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
             response = await chat.send_message_async(
                 message, generation_config=params, tools=tools
             )

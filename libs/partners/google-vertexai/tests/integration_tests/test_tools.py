@@ -7,23 +7,19 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.utilities import GoogleSearchAPIWrapper
 
 from langchain_google_vertexai.chat_models import ChatVertexAI
-from langchain_google_vertexai.functions_utils import (
-    VertexAIFunctionsAgentOutputParser,
-    format_tools_to_vertex_tool,
-)
+from langchain_google_vertexai.functions_utils import VertexAIFunctionsAgentOutputParser
 
 
 def test_tools() -> None:
     llm = ChatVertexAI(model_name="gemini-pro")
     math_chain = LLMMathChain.from_llm(llm=llm)
-    raw_tools = [
+    tools = [
         Tool(
             name="Calculator",
             func=math_chain.run,
             description="useful for when you need to answer questions about math",
         )
     ]
-    tools = format_tools_to_vertex_tool(raw_tools)
     prompt = ChatPromptTemplate.from_messages(
         [
             ("user", "{input}"),
@@ -43,7 +39,7 @@ def test_tools() -> None:
         | llm_with_tools
         | VertexAIFunctionsAgentOutputParser()
     )
-    agent_executor = AgentExecutor(agent=agent, tools=raw_tools, verbose=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
     response = agent_executor.invoke({"input": "What is 6 raised to the 0.43 power?"})
     assert isinstance(response, dict)
@@ -59,7 +55,7 @@ def test_multiple_tools() -> None:
     search = GoogleSearchAPIWrapper(
         k=10, google_api_key=google_search_api_key, google_cse_id=google_cse_id
     )
-    raw_tools = [
+    tools = [
         Tool(
             name="Calculator",
             func=math_chain.run,
@@ -74,7 +70,6 @@ def test_multiple_tools() -> None:
             ),
         ),
     ]
-    tools = format_tools_to_vertex_tool(raw_tools)
     prompt = ChatPromptTemplate.from_messages(
         [
             ("user", "{input}"),
@@ -94,7 +89,7 @@ def test_multiple_tools() -> None:
         | llm_with_tools
         | VertexAIFunctionsAgentOutputParser()
     )
-    agent_executor = AgentExecutor(agent=agent, tools=raw_tools, verbose=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
     question = (
         "Who is Leo DiCaprio's girlfriend? What is her "
