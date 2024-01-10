@@ -120,7 +120,7 @@ class DirectoryLoader(BaseLoader):
         items = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
 
         if len(items)==0:
-            raise ValueError(f"Expected files but it's a empty directory: '{self.path}'")
+            raise ValueError(f"Found empty directory: '{self.path}'")
 
         if self.sample_size > 0:
             if self.randomize_sample:
