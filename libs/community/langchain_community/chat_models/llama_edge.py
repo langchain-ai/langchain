@@ -69,10 +69,10 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-class WasmChatService(BaseChatModel):
+class LlamaChatService(BaseChatModel):
     """Chat with LLMs via `llama-api-server`
 
-    For the information about `llama-api-server`, visit https://github.com/second-state/llama-utils
+    For the information about `llama-api-server`, visit https://github.com/second-state/LlamaEdge
     """
 
     request_timeout: int = 60
