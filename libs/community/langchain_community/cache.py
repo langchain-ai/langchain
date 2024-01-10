@@ -170,7 +170,7 @@ def _loads_generations(generations_str: str) -> Union[RETURN_VAL_TYPE, None]:
         return None
 
 
-class InMemoryCache(BaseCache):
+class InMemoryCache(BaseCache, AsyncBaseCache):
     """Cache that stores things in memory."""
 
     def __init__(self) -> None:
@@ -189,6 +189,14 @@ class InMemoryCache(BaseCache):
         """Clear cache."""
         self._cache = {}
 
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        return self.lookup(prompt, llm_string)
+
+    async def aupdate(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        return self.update(prompt, llm_string, return_val)
+
+    async def aclear(self, **kwargs: Any) -> None:
+        return self.clear(**kwargs)
 
 Base = declarative_base()
 
