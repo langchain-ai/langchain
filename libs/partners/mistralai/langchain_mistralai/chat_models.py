@@ -289,10 +289,12 @@ class ChatMistralAI(BaseChatModel):
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[MistralChatMessage], Dict[str, Any]]:
         params = self._client_params
-        if stop is not None:
+        if stop is not None or "stop" in params:
             if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
+                params.pop("stop")
+            logger.warning(
+                "Parameter `stop` not yet supported (https://docs.mistral.ai/api)"
+            )
         message_dicts = [_convert_message_to_mistral_chat_message(m) for m in messages]
         return message_dicts, params
 
@@ -319,7 +321,7 @@ class ChatMistralAI(BaseChatModel):
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
     async def _astream(
         self,
@@ -344,7 +346,7 @@ class ChatMistralAI(BaseChatModel):
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
     async def _agenerate(
         self,
