@@ -25,9 +25,10 @@ if TYPE_CHECKING:
     import weaviate
 
 
-def _default_schema(index_name: str) -> Dict:
+def _default_schema(index_name: str, enable_multi_tenancy: bool) -> Dict:
     return {
         "class": index_name,
+        "multiTenancyConfig": {"enabled": enable_multi_tenancy},
         "properties": [
             {
                 "name": "text",
@@ -397,6 +398,7 @@ class Weaviate(VectorStore):
         relevance_score_fn: Optional[
             Callable[[float], float]
         ] = _default_score_normalizer,
+        tenant: Optional[str] = None,
         **kwargs: Any,
     ) -> Weaviate:
         """Construct Weaviate wrapper from raw documents.
@@ -428,6 +430,8 @@ class Weaviate(VectorStore):
             relevance_score_fn: Function for converting whatever distance function the
                 vector store uses to a relevance score, which is a normalized similarity
                 score (0 means dissimilar, 1 means similar).
+            tenant: The tenant name which docs are going to be stored. By default,
+                the multi-tenancy is disabled.
             **kwargs: Additional named parameters to pass to ``Weaviate.__init__()``.
 
         Example:
@@ -445,6 +449,7 @@ class Weaviate(VectorStore):
         """
 
         try:
+            from weaviate import Tenant
             from weaviate.util import get_valid_uuid
         except ImportError as e:
             raise ImportError(
@@ -460,10 +465,16 @@ class Weaviate(VectorStore):
             client.batch.configure(batch_size=batch_size)
 
         index_name = index_name or f"LangChain_{uuid4().hex}"
-        schema = _default_schema(index_name)
+        enable_multi_tenancy = True if tenant is not None else False
+        schema = _default_schema(index_name, enable_multi_tenancy)
         # check whether the index already exists
         if not client.schema.exists(index_name):
             client.schema.create_class(schema)
+
+        if tenant is not None:
+            tenants = [t.name for t in client.schema.get_class_tenants(index_name)]
+            if tenants not in tenants:
+                client.schema.add_class_tenants(index_name, [Tenant(tenant)])
 
         embeddings = embedding.embed_documents(texts) if embedding else None
         attributes = list(metadatas[0].keys()) if metadatas else None
@@ -497,6 +508,9 @@ class Weaviate(VectorStore):
                 }
                 if embeddings is not None:
                     params["vector"] = embeddings[i]
+
+                if tenant is not None:
+                    params["tenant"] = tenant
 
                 batch.add_data_object(**params)
 
