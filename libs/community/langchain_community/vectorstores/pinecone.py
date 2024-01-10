@@ -46,7 +46,7 @@ class Pinecone(VectorStore):
         text_key: str,
         namespace: Optional[str] = None,
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
-        use_pod_based: Optional[bool] = False,
+        use_pod_based: Optional[bool] = True,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -398,7 +398,7 @@ class Pinecone(VectorStore):
         upsert_kwargs: Optional[dict] = None,
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
-        use_pod_storage: Optional[bool] = False,
+        use_pod_based: Optional[bool] = False,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -427,7 +427,7 @@ class Pinecone(VectorStore):
                     index_name="langchain-demo"
                 )
         """
-        pinecone = cls(None, embedding, text_key, namespace, use_pod_storage, **kwargs)
+        pinecone = cls(None, embedding, text_key, namespace, use_pod_based, **kwargs)
         pinecone_index = pinecone.get_pinecone_index(index_name, pool_threads)
         pinecone._index = pinecone_index
 
@@ -450,11 +450,11 @@ class Pinecone(VectorStore):
         text_key: str = "text",
         namespace: Optional[str] = None,
         pool_threads: int = 4,
-        use_pod_storage: Optional[bool] = False,
+        use_pod_based: Optional[bool] = True,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
 
-        pinecone = cls(None, embedding, text_key, namespace, use_pod_storage)
+        pinecone = cls(None, embedding, text_key, namespace, use_pod_based)
         pinecone_index = pinecone.get_pinecone_index(index_name, pool_threads)
         pinecone._index = pinecone_index
 
