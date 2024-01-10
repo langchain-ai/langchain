@@ -16,7 +16,6 @@ from typing import (
 )
 
 from langchain_core.callbacks import (
-    AsyncCallbackHandler,
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
@@ -108,7 +107,6 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
