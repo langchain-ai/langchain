@@ -2,8 +2,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+import requests
 from aiohttp import ClientSession
-from langchain_community.utilities.requests import Requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -128,7 +128,7 @@ class Together(LLM):
 
         # filter None values to not pass them to the http payload
         payload = {k: v for k, v in payload.items() if v is not None}
-        request = Requests(headers=headers)
+        request = requests.Request(headers=headers)
         response = request.post(url=self.base_url, data=payload)
 
         if response.status_code >= 500:

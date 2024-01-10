@@ -9,6 +9,7 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
 together = "^0.2.10"
+requests = "^2"
 
 [tool.poetry.group.test]
 optional = true
@@ -27,11 +28,6 @@ optional = true
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.group.lint]
 optional = true
