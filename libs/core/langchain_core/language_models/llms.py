@@ -37,6 +37,7 @@ from tenacity import (
 )
 
 from langchain_core._api import deprecated
+from langchain_core.caches import AsyncBaseCache, BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -123,9 +124,37 @@ def get_prompts(
     missing_prompt_idxs = []
     existing_prompts = {}
     llm_cache = get_llm_cache()
+    if isinstance(llm_cache, AsyncBaseCache) and not isinstance(llm_cache, BaseCache):
+        raise ValueError("Cannot use async-only cache in the given context.")
     for i, prompt in enumerate(prompts):
         if llm_cache is not None:
             cache_val = llm_cache.lookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                existing_prompts[i] = cache_val
+            else:
+                missing_prompts.append(prompt)
+                missing_prompt_idxs.append(i)
+    return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
+
+
+async def aget_prompts(
+    params: Dict[str, Any], prompts: List[str]
+) -> Tuple[Dict[int, List], str, List[int], List[str]]:
+    """Get prompts that are already cached. Async version."""
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    missing_prompts = []
+    missing_prompt_idxs = []
+    existing_prompts = {}
+    llm_cache = get_llm_cache()
+    for i, prompt in enumerate(prompts):
+        if llm_cache:
+            if isinstance(llm_cache, AsyncBaseCache):
+                cache_val = await llm_cache.alookup(prompt, llm_string)
+            else:
+                logging.warning(
+                    "Using sync cache in async context. This may block event loop."
+                )
+                cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
             else:
@@ -143,11 +172,37 @@ def update_cache(
 ) -> Optional[dict]:
     """Update the cache and get the LLM output."""
     llm_cache = get_llm_cache()
+    if isinstance(llm_cache, AsyncBaseCache) and not isinstance(llm_cache, BaseCache):
+        raise ValueError("Cannot use async-only cache in the given context.")
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
         if llm_cache is not None:
             llm_cache.update(prompt, llm_string, result)
+    llm_output = new_results.llm_output
+    return llm_output
+
+
+async def aupdate_cache(
+    existing_prompts: Dict[int, List],
+    llm_string: str,
+    missing_prompt_idxs: List[int],
+    new_results: LLMResult,
+    prompts: List[str],
+) -> Optional[dict]:
+    """Update the cache and get the LLM output. Async version"""
+    llm_cache = get_llm_cache()
+    for i, result in enumerate(new_results.generations):
+        existing_prompts[missing_prompt_idxs[i]] = result
+        prompt = prompts[missing_prompt_idxs[i]]
+        if llm_cache:
+            if isinstance(llm_cache, AsyncBaseCache):
+                await llm_cache.aupdate(prompt, llm_string, result)
+            else:
+                logging.warning(
+                    "Using sync cache in async context. This may block event loop."
+                )
+                llm_cache.update(prompt, llm_string, result)
     llm_output = new_results.llm_output
     return llm_output
 
@@ -864,7 +919,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             llm_string,
             missing_prompt_idxs,
             missing_prompts,
-        ) = get_prompts(params, prompts)
+        ) = await aget_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
@@ -912,7 +967,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             new_results = await self._agenerate_helper(
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
-            llm_output = update_cache(
+            llm_output = await aupdate_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
             run_info = (

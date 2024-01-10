@@ -192,11 +192,14 @@ class InMemoryCache(BaseCache, AsyncBaseCache):
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         return self.lookup(prompt, llm_string)
 
-    async def aupdate(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
         return self.update(prompt, llm_string, return_val)
 
     async def aclear(self, **kwargs: Any) -> None:
         return self.clear(**kwargs)
+
 
 Base = declarative_base()
 
@@ -411,8 +414,8 @@ class RedisCache(BaseCache, AsyncBaseCache):
     def __ensure_async(self, function_name: str = "function"):
         if not self._async:
             logger.warning(
-                f"Performing async {function_name} with sync Redis client. This may block event loop. "
-                "Consider using `redis.asyncio.Redis`"
+                f"Performing async {function_name} with sync Redis client. "
+                "This may block event loop. Consider using `redis.asyncio.Redis`"
             )
 
     @staticmethod
@@ -447,8 +450,7 @@ class RedisCache(BaseCache, AsyncBaseCache):
         pipe.hset(
             key,
             mapping={
-                str(idx): dumps(generation)
-                for idx, generation in enumerate(return_val)
+                str(idx): dumps(generation) for idx, generation in enumerate(return_val)
             },
         )
         if self.ttl is not None:
@@ -477,7 +479,9 @@ class RedisCache(BaseCache, AsyncBaseCache):
             self.__configure_pipeline_for_update(key, pipe, return_val)
             pipe.execute()
 
-    async def aupdate(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
         """Update cache based on prompt and llm_string. Async version."""
         self.__ensure_async("aupdate")
         self.__ensure_generation_type(return_val)
@@ -494,7 +498,10 @@ class RedisCache(BaseCache, AsyncBaseCache):
         self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
     async def aclear(self, **kwargs: Any) -> None:
-        """Clear cache. If `asynchronous` is True, flush asynchronously. Async version."""
+        """
+        Clear cache. If `asynchronous` is True, flush asynchronously.
+        Async version.
+        """
         self.__ensure_async("aclear")
         asynchronous = kwargs.get("asynchronous", False)
         await self.redis.flushdb(asynchronous=asynchronous, **kwargs)

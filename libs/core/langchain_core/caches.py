@@ -32,7 +32,9 @@ class AsyncBaseCache(ABC):
         """Look up based on prompt and llm_string."""
 
     @abstractmethod
-    async def aupdate(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
         """Update cache based on prompt and llm_string."""
 
     @abstractmethod

@@ -17,7 +17,7 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
-from langchain_core.caches import BaseCache, AsyncBaseCache
+from langchain_core.caches import AsyncBaseCache, BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,

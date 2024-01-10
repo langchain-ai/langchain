@@ -3,7 +3,7 @@ import warnings
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
-    from langchain_core.caches import BaseCache, AsyncBaseCache
+    from langchain_core.caches import AsyncBaseCache, BaseCache
 
 
 # DO NOT USE THESE VALUES DIRECTLY!
