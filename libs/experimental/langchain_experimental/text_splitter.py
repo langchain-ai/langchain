@@ -1,6 +1,6 @@
 import copy
 import re
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 from langchain_community.utils.math import (
@@ -10,7 +10,7 @@ from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
 
 
-def combine_sentences(sentences, buffer_size=1):
+def combine_sentences(sentences: List[dict], buffer_size: int = 1) -> List[dict]:
     # Go through each sentence dict
     for i in range(len(sentences)):
         # Create a string that will hold the sentences which are joined
@@ -41,7 +41,7 @@ def combine_sentences(sentences, buffer_size=1):
     return sentences
 
 
-def calculate_cosine_distances(sentences):
+def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List[dict]]:
     distances = []
     for i in range(len(sentences) - 1):
         embedding_current = sentences[i]["combined_sentence_embedding"]
