@@ -4,28 +4,14 @@ import logging
 import os
 import uuid
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union)
 
 import numpy as np
+from langchain_community.vectorstores.utils import (DistanceStrategy, maximal_marginal_relevance)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
-from packaging import version
-
-from langchain_community.vectorstores.utils import (
-    DistanceStrategy,
-    maximal_marginal_relevance,
-)
 
 if TYPE_CHECKING:
     from pinecone import Index
@@ -60,6 +46,7 @@ class Pinecone(VectorStore):
         text_key: str,
         namespace: Optional[str] = None,
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
+        use_pod_based: Optional[bool] = False,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -74,7 +61,7 @@ class Pinecone(VectorStore):
                 "Passing in `embedding` as a Callable is deprecated. Please pass in an"
                 " Embeddings object instead."
             )
-        if not isinstance(index, pinecone.Index):
+        if index is not None and not isinstance(index, pinecone.Index):
             raise ValueError(
                 f"client should be an instance of pinecone.Index, " f"got {type(index)}"
             )
@@ -83,6 +70,7 @@ class Pinecone(VectorStore):
         self._text_key = text_key
         self._namespace = namespace
         self.distance_strategy = distance_strategy
+        self.use_pod_based = use_pod_based
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -347,11 +335,10 @@ class Pinecone(VectorStore):
             embedding, k, fetch_k, lambda_mult, filter, namespace
         )
 
-    @classmethod
     def get_pinecone_index(
-        cls,
+        self,
         index_name: Optional[str],
-        pool_threads: int = 4,
+        pool_threads: int = 4,        
     ) -> Index:
         """Return a Pinecone Index instance.
 
@@ -368,10 +355,8 @@ class Pinecone(VectorStore):
                 "Could not import pinecone python package. "
                 "Please install it with `pip install pinecone-client`."
             )
-
-        pinecone_client_version = pinecone.__version__
-
-        if version.parse(pinecone_client_version) >= version.parse("3.0.0.dev"):
+            
+        if self.use_pod_based == False:
             pinecone_instance = pinecone.Pinecone(
                 api_key=os.environ.get("PINECONE_API_KEY"), pool_threads=pool_threads
             )
@@ -383,7 +368,7 @@ class Pinecone(VectorStore):
         if index_name in index_names:
             index = (
                 pinecone_instance.Index(index_name)
-                if version.parse(pinecone_client_version) >= version.parse("3.0.0")
+                if self.use_pod_based == False
                 else pinecone.Index(index_name, pool_threads=pool_threads)
             )
         elif len(index_names) == 0:
@@ -413,6 +398,7 @@ class Pinecone(VectorStore):
         upsert_kwargs: Optional[dict] = None,
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
+        use_pod_storage: Optional[bool] = False,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -441,8 +427,9 @@ class Pinecone(VectorStore):
                     index_name="langchain-demo"
                 )
         """
-        pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
-        pinecone = cls(pinecone_index, embedding, text_key, namespace, **kwargs)
+        pinecone = cls(None, embedding, text_key, namespace, use_pod_storage, **kwargs)
+        pinecone_index = pinecone.get_pinecone_index(index_name, pool_threads)
+        pinecone._index = pinecone_index
 
         pinecone.add_texts(
             texts,
@@ -463,10 +450,15 @@ class Pinecone(VectorStore):
         text_key: str = "text",
         namespace: Optional[str] = None,
         pool_threads: int = 4,
+        use_pod_storage: Optional[bool] = False,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
-        pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
-        return cls(pinecone_index, embedding, text_key, namespace)
+
+        pinecone = cls(None, embedding, text_key, namespace, use_pod_storage)
+        pinecone_index = pinecone.get_pinecone_index(index_name, pool_threads)
+        pinecone._index = pinecone_index
+
+        return pinecone
 
     def delete(
         self,
