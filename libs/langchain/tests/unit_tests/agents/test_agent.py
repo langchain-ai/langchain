@@ -25,8 +25,8 @@ from langchain.agents import (
     AgentExecutor,
     AgentType,
     create_openai_functions_agent,
-    initialize_agent,
     create_openai_tools_agent,
+    initialize_agent,
 )
 from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
 from langchain.callbacks.manager import CallbackManagerForLLMRun
