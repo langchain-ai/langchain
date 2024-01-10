@@ -1146,7 +1146,7 @@ class AgentExecutor(Chain):
         name_to_tool_map: Dict[str, BaseTool],
         color_mapping: Dict[str, str],
         agent_action: AgentAction,
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> AgentStep:
         if run_manager:
             run_manager.on_agent_action(agent_action, color="green")
