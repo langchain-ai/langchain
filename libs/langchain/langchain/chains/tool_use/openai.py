@@ -1,6 +1,7 @@
 from operator import itemgetter
 from typing import Optional, Sequence
 
+from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_community.tools.convert_to_openai import (
     format_tool_to_openai_function,
     format_tool_to_openai_tool,
@@ -11,7 +12,6 @@ from langchain_core.runnables import Runnable, RunnableLambda, RunnableMap
 from langchain_core.tools import Tool
 
 from langchain.output_parsers import JsonOutputToolsParser
-from langchain.output_parsers.ernie_functions import JsonOutputFunctionsParser
 
 
 def _call_tool(tool_api_output: list, tools: Sequence[Tool]) -> Runnable:
@@ -37,8 +37,8 @@ def create_openai_tools_chain(
         llm_with_tools = llm_with_tools.bind(
             tool_choice={"type": "function", "function": {"name": tools[0].name}}
         )
-    call_tool = RunnableLambda(_call_tool).bind(tools=tools)
-    chain = llm_with_tools | JsonOutputToolsParser() | call_tool
+    call_tool: Runnable = RunnableLambda(_call_tool).bind(tools=tools)
+    chain: Runnable = llm_with_tools | JsonOutputToolsParser() | call_tool
     if prompt:
         chain = prompt | chain
     if enforce_tool_usage:
@@ -50,8 +50,8 @@ def _call_tool_from_function(
     function_api_output: dict, tools: Sequence[Tool]
 ) -> Runnable:
     tool_map = {tool.name: tool for tool in tools}
-    chosen = tool_map[function_api_output["type"]]
-    return itemgetter("args") | chosen
+    chosen = tool_map[function_api_output["name"]]
+    return itemgetter("arguments") | chosen
 
 
 def create_openai_functions_chain(
@@ -66,14 +66,14 @@ def create_openai_functions_chain(
         raise ValueError()
 
     llm_with_functions = llm.bind(
-        tools=[format_tool_to_openai_function(t) for t in tools]
+        functions=[format_tool_to_openai_function(t) for t in tools]
     )
     if enforce_tool_usage:
         llm_with_functions = llm_with_functions.bind(
             function_call={"name": tools[0].name}
         )
-    call_tool = RunnableLambda(_call_tool_from_function).bind(tools=tools)
-    chain = llm_with_functions | JsonOutputFunctionsParser() | call_tool
+    call_tool: Runnable = RunnableLambda(_call_tool_from_function).bind(tools=tools)
+    chain: Runnable = llm_with_functions | JsonOutputFunctionsParser(args_only=False) | call_tool
     if prompt:
         chain = prompt | chain
     return chain
