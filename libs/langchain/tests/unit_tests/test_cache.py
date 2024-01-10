@@ -1,4 +1,5 @@
 """Test caching for LLMs and ChatModels."""
+import sqlite3
 from typing import Dict, Generator, List, Union
 
 import pytest
@@ -21,7 +22,11 @@ from langchain.globals import get_llm_cache, set_llm_cache
 
 
 def get_sqlite_cache() -> SQLAlchemyCache:
-    return SQLAlchemyCache(engine=create_engine("sqlite://"))
+    return SQLAlchemyCache(
+        engine=create_engine(
+            "sqlite://", creator=lambda: sqlite3.connect("file::memory:?cache=shared")
+        )
+    )
 
 
 CACHE_OPTIONS = [
