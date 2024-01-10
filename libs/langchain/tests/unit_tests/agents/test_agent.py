@@ -675,7 +675,8 @@ async def test_openai_agent_with_streaming() -> None:
         ]
     )
 
-    # type error due to base tool type below -- would need to be adjusted on tool decorator.
+    # type error due to base tool type below -- would need to be adjusted on tool
+    # decorator.
     agent = create_openai_functions_agent(
         model,
         [find_pet],  # type: ignore[list-item]
