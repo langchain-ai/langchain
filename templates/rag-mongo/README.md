@@ -131,23 +131,23 @@ Note that you can (and should!) change this to ingest data of your choice
 
 We can first connect to the cluster where our database lives
 
-![cluster.png](_images%2Fcluster.png)
+![](_images/cluster.png)
 
 We can then navigate to where all our collections are listed
 
-![collections.png](_images%2Fcollections.png)
+![](_images/collections.png)
 
 We can then find the collection we want and look at the search indexes for that collection
 
-![search-indexes.png](_images%2Fsearch-indexes.png)
+![](_images/search-indexes.png)
 
 That should likely be empty, and we want to create a new one:
 
-![create.png](_images%2Fcreate.png)
+![](_images/create.png)
 
 We will use the JSON editor to create it
 
-![json_editor.png](_images%2Fjson_editor.png)
+![](_images/json_editor.png)
 
 And we will paste the following JSON in:
 
@@ -165,7 +165,6 @@ And we will paste the following JSON in:
    }
  }
 ```
-![json.png](_images%2Fjson.png)
+![](_images/json.png)
 
 From there, hit "Next" and then "Create Search Index". It will take a little bit but you should then have an index over your data!
-
