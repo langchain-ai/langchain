@@ -16,7 +16,7 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableMap
 from langchain_core.utils.function_calling import (
     PYTHON_TO_JSON_TYPES,
     convert_to_openai_function,
@@ -70,6 +70,8 @@ def create_openai_fn_runnable(
     *,
     enforce_single_function_usage: bool = True,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
+    raise_parsing_error: bool = True,
+    return_raw_output: bool = False,
     **kwargs: Any,
 ) -> Runnable:
     """Create a runnable sequence that uses OpenAI functions.
@@ -147,7 +149,14 @@ def create_openai_fn_runnable(
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
     output_parser = output_parser or get_openai_output_parser(functions)
-    return prompt | llm.bind(**llm_kwargs) | output_parser
+    if not raise_parsing_error:
+        output_parser = output_parser.with_fallbacks([lambda _: None])
+    if return_raw_output:
+        return RunnableMap(raw_output=prompt | llm.bind(**llm_kwargs)).assign(
+            parsed_output=output_parser
+        )
+    else:
+        return prompt | llm.bind(**llm_kwargs) | output_parser
 
 
 def create_structured_output_runnable(
