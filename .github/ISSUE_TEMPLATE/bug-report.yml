@@ -5,9 +5,16 @@ body:
   - type: markdown
     attributes:
       value: >
-        Thank you for taking the time to file a bug report. Before creating a new
-        issue, please make sure to take a few moments to check the issue tracker
-        for existing issues about the bug.
+        Thank you for taking the time to file a bug report. 
+        
+        Relevant links to check before filing a bug report to see if your issue has already been reported, fixed or
+        if there's another way to solve your problem:
+        
+        [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction),
+        [API Reference](https://api.python.langchain.com/en/stable/),
+        [GitHub search](https://github.com/langchain-ai/langchain),
+        [LangChain Github Discussions](https://github.com/langchain-ai/langchain/discussions),
+        [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue)
   - type: checkboxes
     id: checks
     attributes:
@@ -16,7 +23,7 @@ body:
       options:
         - label: I added a very descriptive title to this issue.
           required: true
-        - label: I searched the LangChain documentation, with the integrated search.
+        - label: I searched the LangChain documentation with the integrated search.
           required: true
         - label: I used the GitHub search to find a similar question and didn't find it.
           required: true
@@ -33,19 +40,47 @@ body:
         
         If you're including an error message, please include the full stack trace not just the last error.
         
-        Important! Use code tags to correctly format your code. See https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting
+        **Important!** Use code tags to correctly format your code. See https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting
         Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
 
       placeholder: |
         The following code: 
         
         ```python
-        
-        from langchain import ....
-        # Some code goes here
+        from langchain_core.runnables import RunnableLambda
+
+        def bad_code(inputs) -> int:
+          raise NotImplementedError('For demo purpose')
+          
+          
+          chain = RunnableLambda(bad_code)
+          chain.invoke('Hello!')
         ```
         
-        Error / Full Stack trace:
+        Include both the error and the full stack trace if reporting an exception!
+        
+        ```
+          File langchain_core/runnables/base.py:2950, in RunnableLambda._invoke(self, input, run_manager, config, **kwargs)
+          2948                 output = chunk
+        2949 else:
+          -> 2950     output = call_func_with_variable_args(
+          2951         self.func, input, config, run_manager, **kwargs
+          2952     )
+          2953 # If the output is a runnable, invoke it
+        2954 if isinstance(output, Runnable):
+          
+          File langchain_core/runnables/config.py:323, in call_func_with_variable_args(func, input, config, run_manager, **kwargs)
+        321 if run_manager is not None and accepts_run_manager(func):
+          322     kwargs["run_manager"] = run_manager
+          --> 323 return func(input, **kwargs)
+          
+          Cell In[1], line 4, in bad_code(inputs)
+        3 def bad_code(inputs) -> int:
+          ----> 4     raise NotImplementedError('For demo purpose')
+
+        NotImplementedError: For demo purpose
+        ```
+
   - type: textarea
     id: description
     attributes:
