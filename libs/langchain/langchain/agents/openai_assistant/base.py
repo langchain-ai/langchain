@@ -5,6 +5,7 @@ from json import JSONDecodeError
 from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
+from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import Field
@@ -12,7 +13,6 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensur
 from langchain_core.tools import BaseTool
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.tools.render import format_tool_to_openai_tool
 
 if TYPE_CHECKING:
     import openai
@@ -172,7 +172,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         Args:
             name: Assistant name.
             instructions: Assistant instructions.
-            tools: Assistant tools. Can be passed in in OpenAI format or as BaseTools.
+            tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
             model: Assistant model to use.
             client: OpenAI client. Will create default client if not specified.
 
@@ -217,7 +217,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
 
         Return:
             If self.as_agent, will return
-                Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise
+                Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise,
                 will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """

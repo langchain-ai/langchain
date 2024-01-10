@@ -43,8 +43,8 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 # TODO: Remove 'type: ignore' once mistralai has stubs or py.typed marker.
 from mistralai.async_client import MistralAsyncClient  # type: ignore[import]
@@ -102,39 +102,6 @@ def _convert_mistral_chat_message_to_message(
         return ChatMessage(content=_message.content, role=role)
 
 
-class ClientManager(AsyncCallbackHandler):
-    """
-    Manages the client lifecycle by both providing a `close` method and
-    closing the client session automatically once the LLM stream ended.
-    """
-
-    _run_manager: Optional[AsyncCallbackManagerForLLMRun] = None
-
-    def __init__(
-        self,
-        client: MistralAsyncClient,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    ):
-        self._client = client
-        if run_manager is not None:
-            self._run_manager = run_manager
-            self._run_manager.handlers.append(self)
-
-    @property
-    def client(self) -> MistralAsyncClient:
-        return self._client
-
-    async def close(self) -> None:
-        await self._client.close()
-
-    async def on_llm_end(  # type: ignore[no-untyped-def]
-        self, *args, **kwargs
-    ) -> None:
-        await self._client.close()
-        if self._run_manager is not None:
-            self._run_manager.handlers.remove(self)
-
-
 async def acompletion_with_retry(
     llm: ChatMistralAI,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
@@ -142,29 +109,15 @@ async def acompletion_with_retry(
 ) -> Any:
     """Use tenacity to retry the async completion call."""
 
-    client_attributes = {
-        "api_key": llm.mistral_api_key,
-        "endpoint": llm.endpoint,
-        "max_retries": llm.max_retries,
-        "timeout": llm.timeout,
-        "max_concurrent_requests": llm.max_concurrent_requests,
-    }
-    client_manager = ClientManager(
-        client=MistralAsyncClient(**client_attributes), run_manager=run_manager
-    )
-
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
         stream = kwargs.pop("stream", False)
         if stream:
-            return client_manager.client.chat_stream(**kwargs)
+            return llm.async_client.chat_stream(**kwargs)
         else:
-            try:
-                return await client_manager.client.chat(**kwargs)
-            finally:
-                await client_manager.close()
+            return await llm.async_client.chat(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 
@@ -205,8 +158,9 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: Any  #: :meta private:
-    mistral_api_key: Optional[str] = None
+    client: MistralClient = None  #: :meta private:
+    async_client: MistralAsyncClient = None  #: :meta private:
+    mistral_api_key: Optional[SecretStr] = None
     endpoint: str = DEFAULT_MISTRAL_ENDPOINT
     max_retries: int = 5
     timeout: int = 120
@@ -266,14 +220,23 @@ class ChatMistralAI(BaseChatModel):
                 "Please install it with `pip install mistralai`"
             )
 
-        values["mistral_api_key"] = get_from_dict_or_env(
-            values, "mistral_api_key", "MISTRAL_API_KEY", default=""
+        values["mistral_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values, "mistral_api_key", "MISTRAL_API_KEY", default=""
+            )
         )
         values["client"] = MistralClient(
-            api_key=values["mistral_api_key"],
+            api_key=values["mistral_api_key"].get_secret_value(),
             endpoint=values["endpoint"],
             max_retries=values["max_retries"],
             timeout=values["timeout"],
+        )
+        values["async_client"] = MistralAsyncClient(
+            api_key=values["mistral_api_key"].get_secret_value(),
+            endpoint=values["endpoint"],
+            max_retries=values["max_retries"],
+            timeout=values["timeout"],
+            max_concurrent_requests=values["max_concurrent_requests"],
         )
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
