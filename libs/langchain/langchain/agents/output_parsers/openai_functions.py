@@ -1,6 +1,6 @@
 import json
 from json import JSONDecodeError
-from typing import List, Union
+from typing import Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -8,12 +8,13 @@ from langchain_core.messages import (
     AIMessage,
     BaseMessage,
 )
-from langchain_core.outputs import ChatGeneration, Generation
 
-from langchain.agents.agent import AgentOutputParser
+from langchain.agents.output_parsers.functions_utils import (
+    BaseFunctionsAgentOutputParser,
+)
 
 
-class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
+class OpenAIFunctionsAgentOutputParser(BaseFunctionsAgentOutputParser):
     """Parses a message into agent action/finish.
 
     Is meant to be used with OpenAI models, as it relies on the specific
@@ -75,14 +76,3 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         return AgentFinish(
             return_values={"output": message.content}, log=str(message.content)
         )
-
-    def parse_result(
-        self, result: List[Generation], *, partial: bool = False
-    ) -> Union[AgentAction, AgentFinish]:
-        if not isinstance(result[0], ChatGeneration):
-            raise ValueError("This output parser only works on ChatGeneration output")
-        message = result[0].message
-        return self._parse_ai_message(message)
-
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        raise ValueError("Can only parse messages")
