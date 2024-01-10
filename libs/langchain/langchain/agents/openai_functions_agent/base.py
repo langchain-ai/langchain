@@ -238,9 +238,7 @@ def create_openai_functions_agent(
 
     Examples:
 
-        This code creates an agent that uses OpenAI's function calling API (not
-        it's
-
+        Creating an agent with no memory
 
         .. code-block:: python
 
