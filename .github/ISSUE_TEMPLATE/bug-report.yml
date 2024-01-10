@@ -52,34 +52,11 @@ body:
         def bad_code(inputs) -> int:
           raise NotImplementedError('For demo purpose')
           
-          
           chain = RunnableLambda(bad_code)
           chain.invoke('Hello!')
         ```
         
         Include both the error and the full stack trace if reporting an exception!
-        
-        ```
-          File langchain_core/runnables/base.py:2950, in RunnableLambda._invoke(self, input, run_manager, config, **kwargs)
-          2948                 output = chunk
-        2949 else:
-          -> 2950     output = call_func_with_variable_args(
-          2951         self.func, input, config, run_manager, **kwargs
-          2952     )
-          2953 # If the output is a runnable, invoke it
-        2954 if isinstance(output, Runnable):
-          
-          File langchain_core/runnables/config.py:323, in call_func_with_variable_args(func, input, config, run_manager, **kwargs)
-        321 if run_manager is not None and accepts_run_manager(func):
-          322     kwargs["run_manager"] = run_manager
-          --> 323 return func(input, **kwargs)
-          
-          Cell In[1], line 4, in bad_code(inputs)
-        3 def bad_code(inputs) -> int:
-          ----> 4     raise NotImplementedError('For demo purpose')
-
-        NotImplementedError: For demo purpose
-        ```
 
   - type: textarea
     id: description
