@@ -22,7 +22,7 @@ from typing import (
 
 import yaml
 from langchain_core._api import deprecated
-from langchain_core.agents import AgentAction, AgentFinish, AgentStep
+from langchain_core.agents import AgentAction, AgentFinish, AgentOutputParser, AgentStep
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage
@@ -318,14 +318,6 @@ class BaseMultiActionAgent(BaseModel):
 
     def tool_run_logging_kwargs(self) -> Dict:
         return {}
-
-
-class AgentOutputParser(BaseOutputParser[Union[AgentAction, AgentFinish]]):
-    """Base class for parsing agent output into agent action/finish."""
-
-    @abstractmethod
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        """Parse text into agent action/finish."""
 
 
 class MultiActionAgentOutputParser(

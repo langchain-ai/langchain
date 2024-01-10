@@ -2,15 +2,16 @@ import json
 from json import JSONDecodeError
 from typing import Union
 
-from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.agents import (
+    AgentAction,
+    AgentActionMessageLog,
+    AgentFinish,
+    BaseFunctionsAgentOutputParser,
+)
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
-)
-
-from langchain.agents.output_parsers.functions_utils import (
-    BaseFunctionsAgentOutputParser,
 )
 
 

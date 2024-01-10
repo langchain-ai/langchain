@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import json
+from abc import abstractmethod
 from typing import Any, List, Literal, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
@@ -10,6 +12,8 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
 )
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.outputs import ChatGeneration, Generation
 
 
 class AgentAction(Serializable):
@@ -112,6 +116,55 @@ class AgentFinish(Serializable):
     def messages(self) -> Sequence[BaseMessage]:
         """Return the messages that correspond to this observation."""
         return [AIMessage(content=self.log)]
+
+
+class AgentOutputParser(BaseOutputParser[Union[AgentAction, AgentFinish]]):
+    """Base class for parsing agent output into agent action/finish."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        """Parse text into agent action/finish."""
+
+
+class BaseFunctionsAgentOutputParser(AgentOutputParser):
+    """Parses a message into agent action/finish.
+
+    Is meant to be used with OpenAI models, as it relies on the specific
+    function_call parameter from OpenAI to convey what tools to use.
+
+    If a function_call parameter is passed, then that is used to get
+    the tool and tool input.
+
+    If one is not passed, then the AIMessage is assumed to be the final output.
+    """
+
+    @staticmethod
+    @abstractmethod
+    def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
+        """Parse an AI message."""
+
+    def parse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> Union[AgentAction, AgentFinish]:
+        if not isinstance(result[0], ChatGeneration):
+            raise ValueError("This output parser only works on ChatGeneration output")
+        message = result[0].message
+        return self._parse_ai_message(message)
+
+    async def aparse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> Union[AgentAction, AgentFinish]:
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.parse_result, result
+        )
+
+    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        raise ValueError("Can only parse messages")
+
+    @property
+    @abstractmethod
+    def _type(self) -> str:
+        """Returns type of the AgentOutputParser"""
 
 
 def _convert_agent_action_to_messages(
