@@ -1,7 +1,8 @@
 import json
 import sys
+import os
 
-ALL_DIRS = {
+LANGCHAIN_DIRS = {
     "libs/core",
     "libs/langchain",
     "libs/experimental",
@@ -11,6 +12,10 @@ ALL_DIRS = {
 if __name__ == "__main__":
     files = sys.argv[1:]
     dirs_to_run = set()
+
+    if len(files) == 300:
+        # max diff length is 300 files - there are likely files missing
+        raise ValueError("Max diff reached. Please manually run CI on changed libs.")
 
     for file in files:
         if any(
@@ -23,24 +28,29 @@ if __name__ == "__main__":
                 ".github/scripts/check_diff.py",
             )
         ):
-            dirs_to_run = ALL_DIRS
-            break
+            dirs_to_run.update(LANGCHAIN_DIRS)
         elif "libs/community" in file:
             dirs_to_run.update(
                 ("libs/community", "libs/langchain", "libs/experimental")
             )
         elif "libs/partners" in file:
             partner_dir = file.split("/")[2]
-            dirs_to_run.update(
-                (f"libs/partners/{partner_dir}", "libs/langchain", "libs/experimental")
-            )
+            if os.path.isdir(f"libs/partners/{partner_dir}"):
+                dirs_to_run.update(
+                    (
+                        f"libs/partners/{partner_dir}",
+                        "libs/langchain",
+                        "libs/experimental",
+                    )
+                )
+            # Skip if the directory was deleted
         elif "libs/langchain" in file:
             dirs_to_run.update(("libs/langchain", "libs/experimental"))
         elif "libs/experimental" in file:
             dirs_to_run.add("libs/experimental")
         elif file.startswith("libs/"):
-            dirs_to_run = ALL_DIRS
-            break
+            dirs_to_run.update(LANGCHAIN_DIRS)
         else:
             pass
-    print(json.dumps(list(dirs_to_run)))
+    json_output = json.dumps(list(dirs_to_run))
+    print(f"dirs-to-run={json_output}")

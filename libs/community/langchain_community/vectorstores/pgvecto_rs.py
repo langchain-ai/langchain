@@ -23,6 +23,8 @@ class _ORMBase(DeclarativeBase):
 
 
 class PGVecto_rs(VectorStore):
+    """VectorStore backed by pgvecto_rs."""
+
     _engine: sqlalchemy.engine.Engine
     _table: Type[_ORMBase]
     _embedding: Embeddings
@@ -35,6 +37,16 @@ class PGVecto_rs(VectorStore):
         collection_name: str,
         new_table: bool = False,
     ) -> None:
+        """Initialize a PGVecto_rs vectorstore.
+
+        Args:
+            embedding: Embeddings to use.
+            dimension: Dimension of the embeddings.
+            db_url: Database URL.
+            collection_name: Name of the collection.
+            new_table: Whether to create a new table or connect to an existing one.
+              Defaults to False.
+        """
         try:
             from pgvecto_rs.sqlalchemy import Vector
         except ImportError as e:
