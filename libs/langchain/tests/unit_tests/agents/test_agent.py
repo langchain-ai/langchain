@@ -1188,7 +1188,8 @@ async def test_openai_agent_tools_agent() -> None:
                         ],
                         tool_call_id="1",
                     ),
-                    observation="check_time is not a valid tool, try one of [find_pet].",
+                    observation="check_time is not a valid tool, "
+                    "try one of [find_pet].",
                 )
             ],
         },
