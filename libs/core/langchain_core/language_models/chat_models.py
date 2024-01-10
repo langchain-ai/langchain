@@ -17,7 +17,6 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
-from langchain_core.caches import AsyncBaseCache, BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -582,12 +581,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
-            if isinstance(llm_cache, BaseCache):
-                cache_val = llm_cache.lookup(prompt, llm_string)
-            elif isinstance(llm_cache, AsyncBaseCache):
-                raise ValueError("Async cache is not supported in this context")
-            else:
-                raise ValueError("Unknown type of llm_cache instance")
+            cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
             else:
@@ -597,12 +591,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 else:
                     result = self._generate(messages, stop=stop, **kwargs)
-                if isinstance(llm_cache, BaseCache):
-                    llm_cache.update(prompt, llm_string, result.generations)
-                elif isinstance(llm_cache, AsyncBaseCache):
-                    raise ValueError("Async cache is not supported in this context")
-                else:
-                    raise ValueError("Unknown type of llm_cache instance")
+                llm_cache.update(prompt, llm_string, result.generations)
                 return result
 
     async def _agenerate_with_cache(
@@ -632,12 +621,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
-            if isinstance(llm_cache, AsyncBaseCache):
-                cache_val = await llm_cache.alookup(prompt, llm_string)
-            elif isinstance(llm_cache, BaseCache):
-                cache_val = llm_cache.lookup(prompt, llm_string)
-            else:
-                raise ValueError("Unknown type of llm_cache instance")
+            cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
             else:
@@ -647,10 +631,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 else:
                     result = await self._agenerate(messages, stop=stop, **kwargs)
-                if isinstance(llm_cache, AsyncBaseCache):
-                    await llm_cache.aupdate(prompt, llm_string, result.generations)
-                elif isinstance(llm_cache, BaseCache):
-                    llm_cache.update(prompt, llm_string, result.generations)
+                await llm_cache.aupdate(prompt, llm_string, result.generations)
                 return result
 
     @abstractmethod

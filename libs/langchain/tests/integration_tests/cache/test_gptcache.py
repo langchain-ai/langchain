@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Union, cast
+from typing import Any, Callable, Union
 
 import pytest
 from langchain_core.outputs import Generation
@@ -53,11 +53,10 @@ def test_gptcache_caching(
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    llm_cache = cast(GPTCache, get_llm_cache())
-    llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     _ = llm.generate(["foo", "bar", "foo"])
-    cache_output = llm_cache.lookup("foo", llm_string)
+    cache_output = get_llm_cache().lookup("foo", llm_string)
     assert cache_output == [Generation(text="fizz")]
 
-    llm_cache.clear()
-    assert llm_cache.lookup("bar", llm_string) is None
+    get_llm_cache().clear()
+    assert get_llm_cache().lookup("bar", llm_string) is None

@@ -1,7 +1,7 @@
 """Test Cassandra caches. Requires a running vector-capable Cassandra cluster."""
 import os
 import time
-from typing import Any, Iterator, Tuple, cast
+from typing import Any, Iterator, Tuple
 
 import pytest
 from langchain_core.outputs import Generation, LLMResult
@@ -44,8 +44,7 @@ def test_cassandra_cache(cassandra_connection: Tuple[Any, str]) -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    llm_cache = cast(CassandraCache, get_llm_cache())
-    llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo"])
     print(output)
     expected_output = LLMResult(
@@ -65,8 +64,7 @@ def test_cassandra_cache_ttl(cassandra_connection: Tuple[Any, str]) -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    llm_cache = cast(CassandraCache, get_llm_cache())
-    llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],
         llm_output={},
@@ -92,8 +90,7 @@ def test_cassandra_semantic_cache(cassandra_connection: Tuple[Any, str]) -> None
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    llm_cache = cast(CassandraSemanticCache, get_llm_cache())
-    llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["bar"])  # same embedding as 'foo'
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],

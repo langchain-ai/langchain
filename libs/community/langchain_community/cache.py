@@ -52,7 +52,7 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from langchain_core.caches import RETURN_VAL_TYPE, AsyncBaseCache, BaseCache
+from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM, get_prompts
 from langchain_core.load.dump import dumps
@@ -170,7 +170,7 @@ def _loads_generations(generations_str: str) -> Union[RETURN_VAL_TYPE, None]:
         return None
 
 
-class InMemoryCache(BaseCache, AsyncBaseCache):
+class InMemoryCache(BaseCache):
     """Cache that stores things in memory."""
 
     def __init__(self) -> None:
@@ -188,17 +188,6 @@ class InMemoryCache(BaseCache, AsyncBaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         self._cache = {}
-
-    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        return self.lookup(prompt, llm_string)
-
-    async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
-    ) -> None:
-        return self.update(prompt, llm_string, return_val)
-
-    async def aclear(self, **kwargs: Any) -> None:
-        return self.clear(**kwargs)
 
 
 Base = declarative_base()
@@ -360,7 +349,7 @@ class UpstashRedisCache(BaseCache):
         self.redis.flushdb(flush_type=asynchronous)
 
 
-class RedisCache(BaseCache, AsyncBaseCache):
+class RedisCache(BaseCache):
     """
     Cache that uses Redis as a backend. Allows to use either sync or
     async Redis client. Depending on the client passed, you are expected
@@ -411,13 +400,6 @@ class RedisCache(BaseCache, AsyncBaseCache):
         if self._async:
             raise ValueError(f"Cannot use sync {function_name} with async Redis client")
 
-    def __ensure_async(self, function_name: str = "function"):
-        if not self._async:
-            logger.warning(
-                f"Performing async {function_name} with sync Redis client. "
-                "This may block event loop. Consider using `redis.asyncio.Redis`"
-            )
-
     @staticmethod
     def __ensure_generation_type(return_val: RETURN_VAL_TYPE):
         for gen in return_val:
@@ -465,7 +447,8 @@ class RedisCache(BaseCache, AsyncBaseCache):
 
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string. Async version."""
-        self.__ensure_async("alookup")
+        if not self._async:
+            return await super().alookup(prompt, llm_string)
         results = await self.redis.hgetall(self._key(prompt, llm_string))
         return self.__get_generations(results)
 
@@ -483,7 +466,8 @@ class RedisCache(BaseCache, AsyncBaseCache):
         self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
         """Update cache based on prompt and llm_string. Async version."""
-        self.__ensure_async("aupdate")
+        if not self._async:
+            return await super().aupdate(prompt, llm_string, return_val)
         self.__ensure_generation_type(return_val)
         key = self._key(prompt, llm_string)
 
@@ -502,7 +486,8 @@ class RedisCache(BaseCache, AsyncBaseCache):
         Clear cache. If `asynchronous` is True, flush asynchronously.
         Async version.
         """
-        self.__ensure_async("aclear")
+        if not self._async:
+            return await super().aclear(**kwargs)
         asynchronous = kwargs.get("asynchronous", False)
         await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
