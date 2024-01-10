@@ -16,11 +16,9 @@ body:
       options:
         - label: I added a very descriptive title to this issue.
           required: true
-        - label: I used the GitHub search to find a similar question and didn't find it.
-          required: true
         - label: I searched the LangChain documentation, with the integrated search.
           required: true
-        - label: I already searched in Google "How to X in LangChain" and didn't find any information.
+        - label: I used the GitHub search to find a similar question and didn't find it.
           required: true
   - type: textarea
     id: reproduction
