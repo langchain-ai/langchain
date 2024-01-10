@@ -5,9 +5,15 @@ body:
   - type: markdown
     attributes:
       value: >
-        Thank you for taking the time to file a bug report. Before creating a new
-        issue, please make sure to take a few moments to check the issue tracker
-        for existing issues about the bug.
+        Thank you for taking the time to file a bug report. 
+        
+        Relevant links to check before filing a bug report to see if your issue has already been reported, fixed or
+        if there's another way to solve your problem:
+        * [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction)
+        * [API Reference](https://api.python.langchain.com/en/stable/)
+        * [GitHub search](https://github.com/langchain-ai/langchain)
+        * [LangChain Github Discussions](https://github.com/langchain-ai/langchain/discussions)
+        * [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue)
   - type: checkboxes
     id: checks
     attributes:
@@ -16,9 +22,9 @@ body:
       options:
         - label: I added a very descriptive title to this issue.
           required: true
-        - label: I searched the [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction) and [API Reference](https://api.python.langchain.com/en/stable/).
+        - label: I searched the LangChain documentation with the integrated search.
           required: true
-        - label: I used the [GitHub search](https://github.com/langchain-ai/langchain) to find a similar question and didn't find it.
+        - label: I used the GitHub search to find a similar question and didn't find it.
           required: true
   - type: textarea
     id: reproduction
