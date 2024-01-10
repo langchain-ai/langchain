@@ -5,7 +5,7 @@ import pytest
 from _pytest.fixtures import FixtureRequest
 from langchain_community.chat_models import FakeListChatModel
 from langchain_community.llms import FakeListLLM
-from langchain_core.caches import AsyncBaseCache
+from langchain_core.caches import AsyncBaseCache, BaseCache
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load import dumps
@@ -36,16 +36,18 @@ def set_cache_and_teardown(request: FixtureRequest) -> Generator[None, None, Non
     # Will be run before each test
     cache_instance = request.param
     set_llm_cache(cache_instance())
-    if get_llm_cache():
-        get_llm_cache().clear()
+    if llm_cache := get_llm_cache():
+        if isinstance(llm_cache, BaseCache):
+            llm_cache.clear()
     else:
         raise ValueError("Cache not set. This should never happen.")
 
     yield
 
     # Will be run after each test
-    if get_llm_cache():
-        get_llm_cache().clear()
+    if llm_cache:
+        if isinstance(llm_cache, BaseCache):
+            llm_cache.clear()
         set_llm_cache(None)
     else:
         raise ValueError("Cache not set. This should never happen.")

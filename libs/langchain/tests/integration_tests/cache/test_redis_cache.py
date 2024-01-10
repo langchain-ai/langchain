@@ -17,7 +17,7 @@ from tests.integration_tests.cache.fake_embeddings import (
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-REDIS_TEST_URL = "redis://localhost:6379"
+REDIS_TEST_URL = "redis://0.0.0.0:6379"
 
 
 def random_string() -> str:
@@ -34,6 +34,18 @@ def test_redis_cache_ttl() -> None:
     assert llm_cache.redis.pttl(key) > 0
 
 
+async def test_async_redis_cache_ttl() -> None:
+    import redis.asyncio
+
+    set_llm_cache(
+        RedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL), ttl=1)
+    )
+    llm_cache = cast(RedisCache, get_llm_cache())
+    await llm_cache.aupdate("foo", "bar", [Generation(text="fizz")])
+    key = llm_cache._key("foo", "bar")
+    assert await llm_cache.redis.pttl(key) > 0
+
+
 def test_redis_cache() -> None:
     import redis
 
@@ -42,15 +54,34 @@ def test_redis_cache() -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
+    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache.update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo"])
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],
         llm_output={},
     )
     assert output == expected_output
-    llm_cache = cast(RedisCache, get_llm_cache())
     llm_cache.redis.flushall()
+
+
+async def test_async_redis_cache() -> None:
+    import redis.asyncio
+
+    set_llm_cache(RedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL)))
+    llm = FakeLLM()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    llm_cache = cast(RedisCache, get_llm_cache())
+    await llm_cache.aupdate("foo", llm_string, [Generation(text="fizz")])
+    output = await llm.agenerate(["foo"])
+    expected_output = LLMResult(
+        generations=[[Generation(text="fizz")]],
+        llm_output={},
+    )
+    assert output == expected_output
+    await llm_cache.redis.flushall()
 
 
 def test_redis_cache_chat() -> None:
@@ -62,7 +93,8 @@ def test_redis_cache_chat() -> None:
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     prompt: List[BaseMessage] = [HumanMessage(content="foo")]
-    get_llm_cache().update(
+    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache.update(
         dumps(prompt), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
     )
     output = llm.generate([prompt])
@@ -71,8 +103,29 @@ def test_redis_cache_chat() -> None:
         llm_output={},
     )
     assert output == expected_output
-    llm_cache = cast(RedisCache, get_llm_cache())
     llm_cache.redis.flushall()
+
+
+async def test_async_redis_cache_chat() -> None:
+    import redis.asyncio
+
+    set_llm_cache(RedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL)))
+    llm = FakeChatModel()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    prompt: List[BaseMessage] = [HumanMessage(content="foo")]
+    llm_cache = cast(RedisCache, get_llm_cache())
+    await llm_cache.aupdate(
+        dumps(prompt), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
+    )
+    output = await llm.agenerate([prompt])
+    expected_output = LLMResult(
+        generations=[[ChatGeneration(message=AIMessage(content="fizz"))]],
+        llm_output={},
+    )
+    assert output == expected_output
+    await llm_cache.redis.flushall()
 
 
 def test_redis_semantic_cache() -> None:
