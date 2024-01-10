@@ -8,7 +8,7 @@ from langchain_core.load.dump import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
-from langchain.cache import RedisCache, RedisSemanticCache
+from langchain.cache import AsyncRedisCache, RedisCache, RedisSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
 from tests.integration_tests.cache.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -17,7 +17,7 @@ from tests.integration_tests.cache.fake_embeddings import (
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-REDIS_TEST_URL = "redis://localhost:6379"
+REDIS_TEST_URL = "redis://0.0.0.0:6379"
 
 
 def random_string() -> str:
@@ -38,15 +38,15 @@ async def test_async_redis_cache_ttl() -> None:
     import redis.asyncio
 
     set_llm_cache(
-        RedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL), ttl=1)
+        AsyncRedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL), ttl=1)
     )
-    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache = cast(AsyncRedisCache, get_llm_cache())
     await llm_cache.aupdate("foo", "bar", [Generation(text="fizz")])
     key = llm_cache._key("foo", "bar")
     assert await llm_cache.redis.pttl(key) > 0
 
 
-def test_redis_cache() -> None:
+def test_sync_redis_cache() -> None:
     import redis
 
     set_llm_cache(RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL)))
@@ -65,10 +65,10 @@ def test_redis_cache() -> None:
     llm_cache.redis.flushall()
 
 
-async def test_async_redis_cache() -> None:
-    import redis.asyncio
+async def test_sync_in_async_redis_cache() -> None:
+    import redis
 
-    set_llm_cache(RedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL)))
+    set_llm_cache(RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL)))
     llm = FakeLLM()
     params = llm.dict()
     params["stop"] = None
@@ -81,7 +81,39 @@ async def test_async_redis_cache() -> None:
         llm_output={},
     )
     assert output == expected_output
+    llm_cache.redis.flushall()
+
+
+async def test_async_redis_cache() -> None:
+    import redis.asyncio
+
+    set_llm_cache(AsyncRedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL)))
+    llm = FakeLLM()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    llm_cache = cast(AsyncRedisCache, get_llm_cache())
+    await llm_cache.aupdate("foo", llm_string, [Generation(text="fizz")])
+    output = await llm.agenerate(["foo"])
+    expected_output = LLMResult(
+        generations=[[Generation(text="fizz")]],
+        llm_output={},
+    )
+    assert output == expected_output
     await llm_cache.redis.flushall()
+
+
+async def test_async_in_sync_redis_cache() -> None:
+    import redis.asyncio
+
+    set_llm_cache(AsyncRedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL)))
+    llm = FakeLLM()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    llm_cache = cast(AsyncRedisCache, get_llm_cache())
+    with pytest.raises(ValueError):
+        llm_cache.update("foo", llm_string, [Generation(text="fizz")])
 
 
 def test_redis_cache_chat() -> None:
@@ -109,13 +141,13 @@ def test_redis_cache_chat() -> None:
 async def test_async_redis_cache_chat() -> None:
     import redis.asyncio
 
-    set_llm_cache(RedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL)))
+    set_llm_cache(AsyncRedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL)))
     llm = FakeChatModel()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     prompt: List[BaseMessage] = [HumanMessage(content="foo")]
-    llm_cache = cast(RedisCache, get_llm_cache())
+    llm_cache = cast(AsyncRedisCache, get_llm_cache())
     await llm_cache.aupdate(
         dumps(prompt), llm_string, [ChatGeneration(message=AIMessage(content="fizz"))]
     )
