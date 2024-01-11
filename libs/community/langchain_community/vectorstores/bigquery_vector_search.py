@@ -850,5 +850,8 @@ class BigQueryVectorSearch(VectorStore):
 
         Args:
             job_id: The BigQuery Job id.
+        
+        Returns:
+            A dictionary of job statistics for a given job.
         """
         return self.bq_client.get_job(job_id)._properties["statistics"]
