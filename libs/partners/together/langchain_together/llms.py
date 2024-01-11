@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import requests
-from aiohttp import ClientSession  # type: ignore
+from aiohttp import ClientSession
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
