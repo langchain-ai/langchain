@@ -257,7 +257,7 @@ def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> Non
     )
 
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(page_content="foo", metadata={'text': 'foo'})]
 
 
 @pytest.mark.requires("gpudb")
