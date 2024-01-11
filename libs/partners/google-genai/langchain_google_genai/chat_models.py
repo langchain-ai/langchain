@@ -466,17 +466,14 @@ Supported examples:
     
     Gemini does not support system messages; any unsupported messages will 
     raise an error."""
-    end_point: Optional[str] = None
-    """
-    The endpoint to use for the Gemini API.
-    """
-    # The user can pass a string to choose `rest` or `grpc` or 'grpc_asyncio'.
-    # See `_transport_registry` in `DiscussServiceClientMeta`.
-    # Since the transport classes align with the client classes it wouldn't make
-    # sense to accept a `Transport` object here even though the client classes can.
-    # We could accept a dict since all the `Transport` classes take the same args,
-    # but that seems rare. Users that need it can just switch to the low level API.
-    transport: Optional[str] = None
+    client_options: Optional[Dict] = Field(
+        None,
+        description="Client options to pass to the Google API client.",
+    )
+    transport: Optional[str] = Field(
+        None,
+        description="A string, one of: [`rest`, `grpc`, `grpc_asyncio`].",
+    )
 
     class Config:
         allow_population_by_field_name = True
@@ -499,17 +496,18 @@ Supported examples:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
+        """Validates params and passes them to google-generativeai package."""
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
         if isinstance(google_api_key, SecretStr):
             google_api_key = google_api_key.get_secret_value()
 
-        transport = values.get("transport")
-        end_point = values.get("end_point")
-        genai.configure(api_key=google_api_key,
-                        transport=transport,
-                        client_options={"api_endpoint": end_point})
+        genai.configure(
+            api_key=google_api_key,
+            transport=values.get("transport"),
+            client_options=values.get("client_options"),
+        )
         if (
             values.get("temperature") is not None
             and not 0 <= values["temperature"] <= 1

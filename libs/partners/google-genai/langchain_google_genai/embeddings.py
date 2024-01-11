@@ -43,31 +43,32 @@ class GoogleGenerativeAIEmbeddings(BaseModel, Embeddings):
         description="The Google API key to use. If not provided, "
         "the GOOGLE_API_KEY environment variable will be used.",
     )
-    end_point: Optional[str] = Field(
+    client_options: Optional[Dict] = Field(
         None,
-        description="The Google API endpoint to use. If not provided, "
-        "the default endpoint will be used.",
+        description=(
+            "A dictionary of client options to pass to the Google API client, "
+            "such as `api_endpoint`."
+        ),
     )
     transport: Optional[str] = Field(
         None,
-        description="The Google API endpoint to use. If not provided, "
-        "the default endpoint will be used.",
+        description="A string, one of: [`rest`, `grpc`, `grpc_asyncio`].",
     )
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validates that the python package exists in environment."""
+        """Validates params and passes them to google-generativeai package."""
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
         if isinstance(google_api_key, SecretStr):
             google_api_key = google_api_key.get_secret_value()
 
-        transport = values.get("transport")
-        end_point = values.get("end_point")
-        genai.configure(api_key=google_api_key,
-                        transport=transport,
-                        client_options={"api_endpoint": end_point})
+        genai.configure(
+            api_key=google_api_key,
+            transport=values.get("transport"),
+            client_options=values.get("client_options"),
+        )
         return values
 
     def _embed(
