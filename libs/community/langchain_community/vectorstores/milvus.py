@@ -122,7 +122,6 @@ class Milvus(VectorStore):
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
-        load: Optional[bool] = True
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -188,7 +187,6 @@ class Milvus(VectorStore):
             partition_names=partition_names,
             replica_number=replica_number,
             timeout=timeout,
-            load=load
         )
 
     @property
@@ -254,19 +252,17 @@ class Milvus(VectorStore):
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
-        load: Optional[bool] = True
     ) -> None:
         if embeddings is not None:
             self._create_collection(embeddings, metadatas)
         self._extract_fields()
         self._create_index()
         self._create_search_params()
-        if load:
-            self._load(
-                partition_names=partition_names,
-                replica_number=replica_number,
-                timeout=timeout,
-            )
+        self._load(
+            partition_names=partition_names,
+            replica_number=replica_number,
+            timeout=timeout,
+        )
 
     def _create_collection(
         self, embeddings: list, metadatas: Optional[list[dict]] = None
@@ -427,9 +423,14 @@ class Milvus(VectorStore):
         timeout: Optional[float] = None,
     ) -> None:
         """Load the collection if available."""
-        from pymilvus import Collection
+        from pymilvus import Collection, utility
+        from pymilvus.client.types import LoadState
 
-        if isinstance(self.col, Collection) and self._get_index() is not None:
+        if (
+                isinstance(self.col, Collection)
+                and self._get_index() is not None
+                and utility.load_state(self.collection_name) == LoadState.NotLoad
+        ):
             self.col.load(
                 partition_names=partition_names,
                 replica_number=replica_number,
