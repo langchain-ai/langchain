@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import time
+import io
+import pandas as pd
+import json
 from typing import Any, Dict, Iterator, List, Optional, Tuple
-
 from langchain_core.documents import Document
-
 from langchain_community.document_loaders.base import BaseLoader
 
 
@@ -66,11 +67,12 @@ class AthenaLoader(BaseLoader):
             ResultConfiguration={"OutputLocation": self.s3_output_uri},
         )
         query_execution_id = response["QueryExecutionId"]
-
+        print(f"Query : {self.query}")
         while True:
             response = client.get_query_execution(QueryExecutionId=query_execution_id)
             state = response["QueryExecution"]["Status"]["State"]
             if state == "SUCCEEDED":
+                print(f"State : {state}")
                 break
             elif state == "FAILED":
                 resp_status = response["QueryExecution"]["Status"]
@@ -80,21 +82,22 @@ class AthenaLoader(BaseLoader):
             elif state == "CANCELLED":
                 raise Exception("Query was cancelled by the user.")
             else:
-                print(state)
+                print(f"State : {state}")
             time.sleep(1)
 
-        results = []
-        result_set = client.get_query_results(QueryExecutionId=query_execution_id)[
-            "ResultSet"
-        ]["Rows"]
-        columns = [x["VarCharValue"] for x in result_set[0]["Data"]]
-        for i in range(1, len(result_set)):
-            row = result_set[i]["Data"]
-            row_dict = {}
-            for col_num in range(len(row)):
-                row_dict[columns[col_num]] = row[col_num]["VarCharValue"]
-            results.append(row_dict)
-        return results
+        result_set = self.get_result_set(session, query_execution_id)
+        return json.loads(result_set.to_json(orient='records'))
+
+    def get_result_set(self, session, query_execution_id):
+        s3c = session.client('s3')
+
+        tokens = self.s3_output_uri.removeprefix("s3://").removesuffix("/").split("/")
+        bucket = tokens[0]
+        key = "/".join(tokens[1:]) +"/"+ query_execution_id + '.csv'
+
+        obj = s3c.get_object(Bucket=bucket, Key=key)
+        df = pd.read_csv(io.BytesIO(obj['Body'].read()), encoding='utf8')
+        return df
 
     def _get_columns(
         self, query_result: List[Dict[str, Any]]
