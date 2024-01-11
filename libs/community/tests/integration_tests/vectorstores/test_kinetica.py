@@ -257,7 +257,7 @@ def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> Non
     )
 
     output = docsearch.similarity_search("foo", k=1)
-    assert output[0].page_content == "foo"
+    assert output == Document(page_content="foo")
 
 @pytest.mark.requires("gpudb")
 def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) -> None:
@@ -280,7 +280,9 @@ def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) ->
         search_kwargs={"k": 3, "score_threshold": 0.999},
     )
     output = retriever.get_relevant_documents("summer")
-    assert output == [Document(page_content="foo", metadata={"page": "0"})]
+    assert output == [
+        Document(page_content="foo", metadata={"page": "0"}),
+    ]
 
 @pytest.mark.requires("gpudb")
 def test_kinetica_retriever_search_threshold_custom_normalization_fn(
