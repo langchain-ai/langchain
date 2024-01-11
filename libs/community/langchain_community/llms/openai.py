@@ -726,16 +726,7 @@ class BaseOpenAI(BaseLLM):
 
 
 @deprecated(
-    since="0.0.10",
-    removal="0.2.0",
-    message=(
-        "The class langchain_community.llms.openai.OpenAI was "
-        "deprecated in langchain-community 0.0.10 and will be removed in "
-        "langchain-community 0.2.0. An updated version of the class lives in the "
-        "langchain-openai package and should be used instead. To use it run "
-        "`pip install -U langchain-openai` and import as "
-        "`from langchain_openai import OpenAI`."
-    ),
+    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.OpenAI"
 )
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
@@ -764,16 +755,7 @@ class OpenAI(BaseOpenAI):
 
 
 @deprecated(
-    since="0.0.10",
-    removal="0.2.0",
-    message=(
-        "The class langchain_community.llms.openai.AzureOpenAI was "
-        "deprecated in langchain-community 0.0.10 and will be removed in "
-        "langchain-community 0.2.0. An updated version of the class lives in the "
-        "langchain-openai package and should be used instead. To use it run "
-        "`pip install -U langchain-openai` and import as "
-        "`from langchain_openai import AzureOpenAI`."
-    ),
+    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.AzureOpenAI"
 )
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
@@ -981,14 +963,7 @@ class AzureOpenAI(BaseOpenAI):
 @deprecated(
     since="0.0.1",
     removal="0.2.0",
-    message=(
-        "The class langchain_community.llms.openai.OpenAIChat was "
-        "deprecated in langchain-community 0.0.1 and will be removed in "
-        "langchain-community 0.2.0. An updated version of the class lives in the "
-        "langchain-openai package and should be used instead. To use it run "
-        "`pip install -U langchain-openai` and import as "
-        "`from langchain_openai import ChatOpenAI`."
-    ),
+    alternative_import="langchain_openai.ChatOpenAI",
 )
 class OpenAIChat(BaseLLM):
     """OpenAI Chat large language models.
