@@ -3,7 +3,7 @@ from typing import List
 
 import pytest
 from langchain_core.documents import Document
-from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
 from langchain_community.vectorstores import (
     DistanceStrategy,
@@ -286,7 +286,8 @@ def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) ->
 
 @pytest.mark.requires("gpudb")
 def test_kinetica_retriever_search_threshold_custom_normalization_fn(
-    create_config: KineticaSettings) -> None:
+    create_config: KineticaSettings
+) -> None:
     """Test searching with threshold and custom normalization function"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
