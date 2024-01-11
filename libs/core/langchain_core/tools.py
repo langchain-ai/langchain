@@ -101,8 +101,9 @@ class ToolException(Exception):
 
     pass
 
+ToolInput = Union[str, Dict]
 
-class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
+class BaseTool(RunnableSerializable[ToolInput, Any]):
     """Interface LangChain tools must implement."""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
