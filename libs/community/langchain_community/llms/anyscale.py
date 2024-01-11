@@ -114,8 +114,12 @@ class Anyscale(BaseOpenAI):
             default=DEFAULT_MODEL,
         )
         if values["model_name"] not in COMPLETION_MODELS:
-            raise ValueError("langchain_community.llm.Anyscale ONLY works with completions models. For Chat models, please use langchain_community.chat_model.ChatAnyscale")
-            
+            raise ValueError(
+                "langchain_community.llm.Anyscale ONLY works \
+            with completions models.For Chat models, please use \
+            langchain_community.chat_model.ChatAnyscale"
+            )
+
         try:
             import openai
 
