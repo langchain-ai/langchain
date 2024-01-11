@@ -49,7 +49,7 @@ The LangChain libraries themselves are made up of several different packages.
 - **[`langchain-community`](libs/community)**: Third party integrations.
 - **[`langchain`](libs/langchain)**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
-![](docs/static/img/langchain_stack.png)
+![Diagram showing the architecture of LangChain, including LangSmith, LangServe, Templates, LangChain, LangChain-Community, and LangChain-Core modules.](docs/static/img/langchain_stack.png "LangChain Architecture Diagram")
 
 ## 🧱 What can you build with LangChain?
 **❓ Retrieval augmented generation**
