@@ -1,6 +1,8 @@
+from typing import Dict, Tuple
+
 # First value is the value that it is serialized as
 # Second value is the path to load it from
-SERIALIZABLE_MAPPING = {
+SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
     ("langchain", "schema", "messages", "AIMessage"): (
         "langchain_core",
         "messages",
@@ -477,9 +479,44 @@ SERIALIZABLE_MAPPING = {
     ),
 }
 
+# Needed for backwards compatibility for old versions of LangChain where things
+# Were in different place
+_OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+    ("langchain", "schema", "AIMessage"): (
+        "langchain_core",
+        "messages",
+        "ai",
+        "AIMessage",
+    ),
+    ("langchain", "schema", "ChatMessage"): (
+        "langchain_core",
+        "messages",
+        "chat",
+        "ChatMessage",
+    ),
+    ("langchain", "schema", "FunctionMessage"): (
+        "langchain_core",
+        "messages",
+        "function",
+        "FunctionMessage",
+    ),
+    ("langchain", "schema", "HumanMessage"): (
+        "langchain_core",
+        "messages",
+        "human",
+        "HumanMessage",
+    ),
+    ("langchain", "schema", "SystemMessage"): (
+        "langchain_core",
+        "messages",
+        "system",
+        "SystemMessage",
+    ),
+}
+
 # Needed for backwards compatibility for a few versions where we serialized
 # with langchain_core
-OLD_PROMPT_TEMPLATE_FORMATS = {
+OLD_PROMPT_TEMPLATE_FORMATS: Dict[Tuple[str, ...], Tuple[str, ...]] = {
     (
         "langchain_core",
         "prompts",
