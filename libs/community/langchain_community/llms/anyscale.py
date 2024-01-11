@@ -1,18 +1,13 @@
 """Wrapper around Anyscale Endpoint"""
-import os
 from typing import (
     Any,
-    AsyncIterator,
     Dict,
-    Iterator,
     List,
     Mapping,
     Optional,
     Set,
-    Tuple,
 )
 
-import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
