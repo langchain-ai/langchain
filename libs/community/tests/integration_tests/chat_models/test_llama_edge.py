@@ -1,7 +1,7 @@
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from langchain_community.chat_models.llama_edge import ChatService
+from langchain_community.chat_models.llama_edge import LlamaEdgeChatService
 
 
 @pytest.mark.enable_socket
@@ -12,7 +12,7 @@ def test_chat_wasm_service() -> None:
     service_url = "https://b008-54-186-154-209.ngrok-free.app"
 
     # create wasm-chat service instance
-    chat = ChatService(service_url=service_url)
+    chat = LlamaEdgeChatService(service_url=service_url)
 
     # create message sequence
     system_message = SystemMessage(content="You are an AI assistant")
@@ -36,7 +36,7 @@ def test_chat_wasm_service_streaming() -> None:
     service_url = "https://b008-54-186-154-209.ngrok-free.app"
 
     # create wasm-chat service instance
-    chat = ChatService(service_url=service_url, streaming=True)
+    chat = LlamaEdgeChatService(service_url=service_url, streaming=True)
 
     # create message sequence
     user_message = HumanMessage(content="What is the capital of France?")
