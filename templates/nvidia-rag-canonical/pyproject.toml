@@ -7,11 +7,12 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.325"
+langchain = "^0.1"
 pymilvus = ">=2.3.0"
+langchain-nvidia-aiplay = "^0.0.2"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.20"
 
 [tool.langserve]
 export_module = "nvidia_rag_canonical"
@@ -20,7 +21,7 @@ export_attr = "chain"
 [tool.templates-hub]
 use-case = "rag"
 author = "LangChain"
-integrations = ["Milvus"]
+integrations = ["Milvus", "NVIDIA"]
 tags = ["vectordbs"]
 
 [build-system]
