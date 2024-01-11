@@ -325,7 +325,7 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
             start = 0
             while True:
                 stop = start + ITERATOR_WINDOW_SIZE
-                query = session.query(self.ItemStore.content).where(
+                query = session.query(self.ItemStore.custom_id).where(
                     self.ItemStore.collection_id == (collection.uuid)
                 )
                 if prefix is not None:
@@ -337,8 +337,6 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
                 for item in items:
                     yield item[0]
                 start += ITERATOR_WINDOW_SIZE
-
-        return items
 
 
 SQLDocStore = SQLBaseStore[Document]
