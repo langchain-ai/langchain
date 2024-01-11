@@ -680,7 +680,8 @@ async def _arun_llm(
             and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
             return await llm.ainvoke(
-                prompt_or_messages, config=dict(callbacks=callbacks, tags=tags)
+                prompt_or_messages,
+                config=RunnableConfig(callbacks=callbacks, tags=tags or []),
             )
         else:
             raise InputFormatError(
@@ -693,12 +694,12 @@ async def _arun_llm(
         try:
             prompt = _get_prompt(inputs)
             llm_output: Union[str, BaseMessage] = await llm.ainvoke(
-                prompt, config=dict(callbacks=callbacks, tags=tags)
+                prompt, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
             )
         except InputFormatError:
             messages = _get_messages(inputs)
             llm_output = await llm.ainvoke(
-                messages, config=dict(callbacks=callbacks, tags=tags)
+                messages, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
             )
     return llm_output
 
@@ -720,7 +721,9 @@ async def _arun_chain(
         and chain.input_keys
     ):
         val = next(iter(inputs_.values()))
-        output = await chain.ainvoke(val, config=dict(callbacks=callbacks, tags=tags))
+        output = await chain.ainvoke(
+            val, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
+        )
     else:
         runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = await chain.ainvoke(inputs_, config=runnable_config)
@@ -814,7 +817,8 @@ def _run_llm(
             and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
             llm_output: Union[str, BaseMessage] = llm.invoke(
-                prompt_or_messages, config=dict(callbacks=callbacks, tags=tags)
+                prompt_or_messages,
+                config=RunnableConfig(callbacks=callbacks, tags=tags or []),
             )
         else:
             raise InputFormatError(
@@ -826,11 +830,13 @@ def _run_llm(
         try:
             llm_prompts = _get_prompt(inputs)
             llm_output = llm.invoke(
-                llm_prompts, config=dict(callbacks=callbacks, tags=tags)
+                llm_prompts, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
             )
         except InputFormatError:
             llm_messages = _get_messages(inputs)
-            llm_output = llm.invoke(llm_messages, config=dict(callbacks=callbacks))
+            llm_output = llm.invoke(
+                llm_messages, config=RunnableConfig(callbacks=callbacks)
+            )
     return llm_output
 
 
@@ -851,7 +857,9 @@ def _run_chain(
         and chain.input_keys
     ):
         val = next(iter(inputs_.values()))
-        output = chain.invoke(val, config=dict(callbacks=callbacks, tags=tags))
+        output = chain.invoke(
+            val, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
+        )
     else:
         runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = chain.invoke(inputs_, config=runnable_config)
