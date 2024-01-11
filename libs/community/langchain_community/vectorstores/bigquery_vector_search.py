@@ -850,7 +850,7 @@ class BigQueryVectorSearch(VectorStore):
 
         Args:
             job_id: The BigQuery Job id.
-        
+
         Returns:
             A dictionary of job statistics for a given job.
         """
