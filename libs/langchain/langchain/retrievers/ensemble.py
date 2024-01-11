@@ -7,6 +7,10 @@ from typing import Any, Dict, List
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables.utils import (
+    ConfigurableFieldSpec,
+    get_unique_config_specs,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -31,6 +35,13 @@ class EnsembleRetriever(BaseRetriever):
     retrievers: List[BaseRetriever]
     weights: List[float]
     c: int = 60
+
+    @property
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
+        """List configurable fields for this runnable."""
+        return get_unique_config_specs(
+            spec for retriever in self.retrievers for spec in retriever.config_specs
+        )
 
     @root_validator(pre=True)
     def set_weights(cls, values: Dict[str, Any]) -> Dict[str, Any]:
