@@ -12,6 +12,7 @@ from typing import (
     Optional,
     Sequence,
     TypedDict,
+    TypeVar,
     Union,
 )
 from uuid import UUID
@@ -19,7 +20,7 @@ from uuid import UUID
 import jsonpatch  # type: ignore[import]
 from anyio import create_memory_object_stream
 
-from langchain_core.load.load import _load_suppress_warning
+from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
@@ -128,6 +129,9 @@ class RunLog(RunLogPatch):
         return f"RunLog({pformat(self.state)})"
 
 
+T = TypeVar("T")
+
+
 class LogStreamCallbackHandler(BaseTracer):
     """A tracer that streams run logs to a stream."""
 
@@ -164,6 +168,28 @@ class LogStreamCallbackHandler(BaseTracer):
 
     def __aiter__(self) -> AsyncIterator[RunLogPatch]:
         return self.receive_stream.__aiter__()
+
+    async def tap_output_aiter(
+        self, run_id: UUID, output: AsyncIterator[T]
+    ) -> AsyncIterator[T]:
+        """Tap an output async iterator to stream its values to the log."""
+        async for chunk in output:
+            # root run is handled in .astream_log()
+            if run_id != self.root_id:
+                # if we can't find the run silently ignore
+                # eg. because this run wasn't included in the log
+                if key := self._key_map_by_run_id.get(run_id):
+                    self.send_stream.send_nowait(
+                        RunLogPatch(
+                            {
+                                "op": "add",
+                                "path": f"/logs/{key}/streamed_output/-",
+                                "value": chunk,
+                            }
+                        )
+                    )
+
+            yield chunk
 
     def include_run(self, run: Run) -> bool:
         if run.id == self.root_id:
@@ -267,7 +293,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         "op": "add",
                         "path": f"/logs/{index}/final_output",
                         # to undo the dumpd done by some runnables / tracer / etc
-                        "value": _load_suppress_warning(run.outputs),
+                        "value": load(run.outputs),
                     },
                     {
                         "op": "add",

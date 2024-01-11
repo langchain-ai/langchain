@@ -34,6 +34,7 @@ from langchain_community.document_loaders.arxiv import ArxivLoader
 from langchain_community.document_loaders.assemblyai import (
     AssemblyAIAudioTranscriptLoader,
 )
+from langchain_community.document_loaders.astradb import AstraDBLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
 from langchain_community.document_loaders.athena import AthenaLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
@@ -249,6 +250,7 @@ __all__ = [
     "ArcGISLoader",
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
+    "AstraDBLoader",
     "AsyncHtmlLoader",
     "AthenaLoader",
     "AzureAIDataLoader",

@@ -19,7 +19,6 @@ def create_openai_tools_agent(
 
     Examples:
 
-
         .. code-block:: python
 
             from langchain import hub
@@ -56,7 +55,6 @@ def create_openai_tools_agent(
         A runnable sequence representing an agent. It takes as input all the same input
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
-
     """
     missing_vars = {"agent_scratchpad"}.difference(prompt.input_variables)
     if missing_vars:
