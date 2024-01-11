@@ -28,7 +28,7 @@ DEFAULT_METADATA_COLUMN_NAME = "metadata"  # document metadata
 DEFAULT_CONTENT_COLUMN_NAME = "content"  # text content, do not rename
 DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
 
-_MIN_INDEX_ROWS = 5000 # minimal number of rows for creating an index
+_MIN_INDEX_ROWS = 5000  # minimal number of rows for creating an index
 _INDEX_CHECK_PERIOD_SECONDS = 60  # Do not check for index more often that this.
 
 _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
@@ -844,7 +844,7 @@ class BigQueryVectorSearch(VectorStore):
         vs_obj = BigQueryVectorSearch(embedding=embedding, **kwargs)
         vs_obj.add_texts(texts, metadatas)
         return vs_obj
-    
+
     def explore_job_stats(self, job_id: str) -> Dict:
         """Return the statistics for a single job execution.
 
