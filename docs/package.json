@@ -19,10 +19,10 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,md,mdx}\""
   },
   "dependencies": {
-    "@docusaurus/core": "2.4.3",
-    "@docusaurus/preset-classic": "2.4.3",
+    "@docusaurus/core": "3.1.0",
+    "@docusaurus/preset-classic": "3.1.0",
     "@docusaurus/remark-plugin-npm2yarn": "^2.4.3",
-    "@docusaurus/theme-mermaid": "2.4.3",
+    "@docusaurus/theme-mermaid": "3.1.0",
     "@mdx-js/react": "^1.6.22",
     "clsx": "^1.2.1",
     "json-loader": "^0.5.7",
