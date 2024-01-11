@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import time
 import io
-import pandas as pd
 import json
+import time
 from typing import Any, Dict, Iterator, List, Optional, Tuple
+
+import pandas as pd
 from langchain_core.documents import Document
+
 from langchain_community.document_loaders.base import BaseLoader
 
 
@@ -86,17 +88,17 @@ class AthenaLoader(BaseLoader):
             time.sleep(1)
 
         result_set = self.get_result_set(session, query_execution_id)
-        return json.loads(result_set.to_json(orient='records'))
+        return json.loads(result_set.to_json(orient="records"))
 
     def get_result_set(self, session, query_execution_id):
-        s3c = session.client('s3')
+        s3c = session.client("s3")
 
         tokens = self.s3_output_uri.removeprefix("s3://").removesuffix("/").split("/")
         bucket = tokens[0]
-        key = "/".join(tokens[1:]) +"/"+ query_execution_id + '.csv'
+        key = "/".join(tokens[1:]) + "/" + query_execution_id + ".csv"
 
         obj = s3c.get_object(Bucket=bucket, Key=key)
-        df = pd.read_csv(io.BytesIO(obj['Body'].read()), encoding='utf8')
+        df = pd.read_csv(io.BytesIO(obj["Body"].read()), encoding="utf8")
         return df
 
     def _get_columns(
