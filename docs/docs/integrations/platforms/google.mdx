@@ -57,16 +57,16 @@ The value of image_url can be any of the following:
 
 Access PaLM chat models like `chat-bison` and `codechat-bison` via Google Cloud.
 
-We need to install `google-cloud-aiplatform` python package.
+We need to install `langchain-google-vertexai` python package.
 
 ```bash
-pip install google-cloud-aiplatform
+pip install langchain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 
 ```python
-from langchain_community.chat_models import ChatVertexAI
+from langchain_google_vertexai import ChatVertexAI
 ```
 
 ## Document Loaders
@@ -93,32 +93,32 @@ from langchain_community.document_loaders import BigQueryLoader
 
 Access to `Gemini` and `PaLM` LLMs (like `text-bison` and `code-bison`) via `Google Vertex AI`.
 
-We need to install `google-cloud-aiplatform` python package.
+We need to install `langchain-google-vertexai` python package.
 
 ```bash
-pip install google-cloud-aiplatform
+pip install langchain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
 
 ```python
-from langchain_community.llms import VertexAI
+from langchain_google_vertexai import VertexAI
 ```
 
 ### Model Garden
 
 Access PaLM and hundreds of OSS models via `Vertex AI Model Garden`.
 
-We need to install `google-cloud-aiplatform` python package.
+We need to install `langchain-google-vertexai` python package.
 
 ```bash
-pip install google-cloud-aiplatform
+pip install langchain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
 
 ```python
-from langchain_community.llms import VertexAIModelGarden
+from langchain_google_vertexai import VertexAIModelGarden
 ```
 
 
@@ -193,7 +193,7 @@ from langchain_community.document_loaders import GoogleSpeechToTextLoader
 We need to install several python packages.
 
 ```bash
-pip install tensorflow google-cloud-aiplatform tensorflow-hub tensorflow-text
+pip install tensorflow langchain-google-vertexai tensorflow-hub tensorflow-text
 ```
 
 See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_search).
