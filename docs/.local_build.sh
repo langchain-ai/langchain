@@ -20,4 +20,4 @@ wget https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O 
 
 yarn
 
-quarto preview docs
+poetry run quarto preview docs
