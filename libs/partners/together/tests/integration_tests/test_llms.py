@@ -18,10 +18,11 @@ def test_together_call() -> None:
         temperature=0.2,
         max_tokens=250,
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "together"
     assert isinstance(output, str)
+    assert len(output) > 0
 
 
 async def test_together_acall() -> None:
