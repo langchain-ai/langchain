@@ -166,7 +166,12 @@ class CallbackManagerMixin:
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when LLM starts running."""
+        """Run when LLM starts running.
+
+        **ATTENTION**: This method is called for non-chat models (regular LLMs). If
+            you're implementing a handler for a chat model,
+            you should use on_chat_model_start instead.
+        """
 
     def on_chat_model_start(
         self,
@@ -179,7 +184,11 @@ class CallbackManagerMixin:
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when a chat model starts running."""
+        """Run when a chat model starts running.
+
+        **ATTENTION**: This method is called for chat models. If you're implementing
+            a handler for a non-chat model, you should use on_llm_start instead.
+        """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         )
@@ -307,7 +316,12 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM starts running."""
+        """Run when LLM starts running.
+
+        **ATTENTION**: This method is called for non-chat models (regular LLMs). If
+            you're implementing a handler for a chat model,
+            you should use on_chat_model_start instead.
+        """
 
     async def on_chat_model_start(
         self,
@@ -320,7 +334,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when a chat model starts running."""
+        """Run when a chat model starts running.
+
+        **ATTENTION**: This method is called for chat models. If you're implementing
+            a handler for a non-chat model, you should use on_llm_start instead.
+        """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         )
@@ -358,8 +376,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors.
+
         Args:
-            error (BaseException): The error that occurred.
+            error: The error that occurred.
             kwargs (Any): Additional keyword arguments.
                 - response (LLMResult): The response which was generated before
                     the error occurred.
