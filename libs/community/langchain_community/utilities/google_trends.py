@@ -66,7 +66,11 @@ class GoogleTrendsAPIWrapper(BaseModel):
         total_results = []
         client = self.serp_search_engine(params)
         client_dict = client.get_dict()
-        total_results = client_dict["interest_over_time"]["timeline_data"] if "interest_over_time" in client_dict else None
+        total_results = (
+            client_dict["interest_over_time"]["timeline_data"]
+            if "interest_over_time" in client_dict
+            else None
+        )
 
         if not total_results:
             return "No good Trend Result was found"
