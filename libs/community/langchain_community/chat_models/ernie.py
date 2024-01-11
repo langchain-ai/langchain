@@ -33,10 +33,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 @deprecated(
     since="0.1.0",
-    message=(
-        "Please use `langchain_community.chat_models.QianfanChatEndpoint` "
-        "instead of this class. "
-    )
+    alternative="langchain_community.chat_models.QianfanChatEndpoint",
 )
 class ErnieBotChat(BaseChatModel):
     """`ERNIE-Bot` large language model.
