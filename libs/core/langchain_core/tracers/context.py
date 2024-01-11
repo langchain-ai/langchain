@@ -18,6 +18,7 @@ from uuid import UUID
 from langsmith import utils as ls_utils
 from langsmith.run_helpers import get_run_tree_context
 
+from langchain_core._api import deprecated
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.langchain_v1 import LangChainTracerV1
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 
+# Deprecated as of 0.1.0, will be removed in 0.2.0.
 tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
@@ -43,6 +45,7 @@ run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVa
 
 
 @contextmanager
+@deprecated("0.1.0", alternative="tracing_v2_enabled", removal="0.2.0")
 def tracing_enabled(
     session_name: str = "default",
 ) -> Generator[TracerSessionV1, None, None]:
@@ -84,6 +87,8 @@ def tracing_v2_enabled(
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
         tags (List[str], optional): The tags to add to the run.
+            Defaults to None.
+        client (LangSmithClient, optional): The client of the langsmith.
             Defaults to None.
 
     Returns:

@@ -31,6 +31,7 @@ from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
     call_func_with_variable_args,
+    ensure_config,
     get_executor_for_config,
     patch_config,
 )
@@ -202,26 +203,13 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """
         return RunnableAssign(RunnableParallel(kwargs))
 
-    @classmethod
-    def pick(
-        cls,
-        keys: Union[str, List[str]],
-    ) -> "RunnablePick":
-        """Pick keys from the Dict input.
-
-        Args:
-            keys: A string or list of strings representing the keys to pick.
-
-        Returns:
-            A runnable that picks keys from the Dict input.
-        """
-        return RunnablePick(keys)
-
     def invoke(
         self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Other:
         if self.func is not None:
-            call_func_with_variable_args(self.func, input, config or {}, **kwargs)
+            call_func_with_variable_args(
+                self.func, input, ensure_config(config), **kwargs
+            )
         return self._call_with_config(identity, input, config)
 
     async def ainvoke(
@@ -232,10 +220,12 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     ) -> Other:
         if self.afunc is not None:
             await acall_func_with_variable_args(
-                self.afunc, input, config or {}, **kwargs
+                self.afunc, input, ensure_config(config), **kwargs
             )
         elif self.func is not None:
-            call_func_with_variable_args(self.func, input, config or {}, **kwargs)
+            call_func_with_variable_args(
+                self.func, input, ensure_config(config), **kwargs
+            )
         return await self._acall_with_config(aidentity, input, config)
 
     def transform(
@@ -258,7 +248,9 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                     final = final + chunk
 
             if final is not None:
-                call_func_with_variable_args(self.func, final, config or {}, **kwargs)
+                call_func_with_variable_args(
+                    self.func, final, ensure_config(config), **kwargs
+                )
 
     async def atransform(
         self,
@@ -284,7 +276,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                     final = final + chunk
 
             if final is not None:
-                config = config or {}
+                config = ensure_config(config)
                 if self.afunc is not None:
                     await acall_func_with_variable_args(
                         self.afunc, final, config, **kwargs
@@ -334,6 +326,14 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
+
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = (
+            name or self.name or f"RunnableAssign<{','.join(self.mapper.steps.keys())}>"
+        )
+        return super().get_name(suffix, name=name)
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
@@ -465,7 +465,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         )
 
         # get executor to start map output stream in background
-        with get_executor_for_config(config or {}) as executor:
+        with get_executor_for_config(config) as executor:
             # start map output stream
             first_map_chunk_future = executor.submit(
                 next,
@@ -589,6 +589,16 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
+    def get_name(
+        self, suffix: Optional[str] = None, *, name: Optional[str] = None
+    ) -> str:
+        name = (
+            name
+            or self.name
+            or f"RunnablePick<{','.join([self.keys] if isinstance(self.keys, str) else self.keys)}>"  # noqa: E501
+        )
+        return super().get_name(suffix, name=name)
+
     def _pick(self, input: Dict[str, Any]) -> Any:
         assert isinstance(
             input, dict
@@ -644,7 +654,7 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         self,
         input: Iterator[Dict[str, Any]],
         config: Optional[RunnableConfig] = None,
-        **kwargs: Any | None,
+        **kwargs: Any,
     ) -> Iterator[Dict[str, Any]]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, **kwargs
