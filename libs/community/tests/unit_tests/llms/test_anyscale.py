@@ -9,7 +9,7 @@ from langchain_community.llms.anyscale import Anyscale
 @pytest.mark.requires("openai")
 def test_api_key_is_secret_string() -> None:
     llm = Anyscale(
-        anyscale_api_key="secret-api-key", anyscale_api_base="test", model_name="test"
+        anyscale_api_key="secret-api-key", anyscale_api_base="test"
     )
     assert isinstance(llm.anyscale_api_key, SecretStr)
 
@@ -20,7 +20,7 @@ def test_api_key_masked_when_passed_from_env(
 ) -> None:
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("ANYSCALE_API_KEY", "secret-api-key")
-    llm = Anyscale(anyscale_api_base="test", model_name="test")
+    llm = Anyscale(anyscale_api_base="test")
     print(llm.anyscale_api_key, end="")
     captured = capsys.readouterr()
 
@@ -33,7 +33,7 @@ def test_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = Anyscale(
-        anyscale_api_key="secret-api-key", anyscale_api_base="test", model_name="test"
+        anyscale_api_key="secret-api-key", anyscale_api_base="test"
     )
     print(llm.anyscale_api_key, end="")
     captured = capsys.readouterr()
