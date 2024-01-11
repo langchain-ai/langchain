@@ -104,7 +104,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
 
             from langchain.chains import StuffDocumentsChain, LLMChain
             from langchain_core.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
             # it will be passed to `format_document` - see that function for more
@@ -182,8 +182,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
         """Construct inputs from kwargs and docs.
 
-        Format and the join all the documents together into one input with name
-        `self.document_variable_name`. The pluck any additional variables
+        Format and then join all the documents together into one input with name
+        `self.document_variable_name`. Also pluck any additional variables
         from **kwargs.
 
         Args:

@@ -277,7 +277,9 @@ class BedrockBase(BaseModel, ABC):
             text = LLMInputOutputAdapter.prepare_output(provider, response)
 
         except Exception as e:
-            raise ValueError(f"Error raised by bedrock service: {e}")
+            raise ValueError(f"Error raised by bedrock service: {e}").with_traceback(
+                e.__traceback__
+            )
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
