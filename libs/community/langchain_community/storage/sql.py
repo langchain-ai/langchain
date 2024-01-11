@@ -249,7 +249,7 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
             collection = self.__get_collection(session)
 
             items = (
-                session.query(self.ItemStore.content)
+                session.query(self.ItemStore.content, self.ItemStore.custom_id)
                 .where(
                     sqlalchemy.and_(
                         self.ItemStore.custom_id.in_(keys),
@@ -259,10 +259,14 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
                 .all()
             )
 
-        return [
-            self.__deserialize_value(value[0]) if value is not None else value
-            for value in items
-        ]
+        ordered_values = {key: None for key in keys}
+        for item in items:
+            v = item[0]
+            val = self.__deserialize_value(v) if v is not None else v
+            k = item[1]
+            ordered_values[k] = val
+
+        return [ordered_values[key] for key in keys]
 
     def mset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
         """Set the values for the given keys.
