@@ -1,11 +1,11 @@
-"""SQL storage that persists data in a SQL database and supports data isolation using collections."""
-from typing import List, Optional, Any, Tuple, Sequence, TypeVar, Generic, Iterator
+"""SQL storage that persists data in a SQL database
+and supports data isolation using collections."""
 import uuid
+from typing import Any, Generic, Iterator, List, Optional, Sequence, Tuple, TypeVar
 
 import sqlalchemy
-from sqlalchemy.orm import Session, relationship
 from sqlalchemy import JSON, UUID
-
+from sqlalchemy.orm import Session, relationship
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -13,8 +13,8 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 from langchain_core.documents import Document
-from langchain_core.stores import BaseStore
 from langchain_core.load import Serializable, dumps, loads
+from langchain_core.stores import BaseStore
 
 V = TypeVar("V")
 
@@ -30,8 +30,7 @@ class BaseModel(Base):
     """Base model for the SQL stores."""
 
     __abstract__ = True
-    uuid = sqlalchemy.Column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
 _classes: Any = None
@@ -115,7 +114,7 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
     Args:
         connection_string: SQL connection string that will be passed to SQLAlchemy.
         collection_name: The name of the collection to use. (default: langchain)
-            NOTE: Collections are useful to isolate your data in a given a database. 
+            NOTE: Collections are useful to isolate your data in a given a database.
             This is not the name of the table, but the name of the collection.
             The tables will be created when initializing the store (if not exists)
             So, make sure the user has the right permissions to create tables.
@@ -129,7 +128,8 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
             from langchain_community.storage import import SQLDocStore
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
-            # example using an SQLDocStore to store Document objects for a ParentDocumentRetriever
+            # example using an SQLDocStore to store Document objects for
+            # a ParentDocumentRetriever
             CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
             COLLECTION_NAME = "state_of_the_union_test"
             docstore = SQLDocStore(
@@ -193,8 +193,7 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
         self.__create_collection()
 
     def __connect(self) -> sqlalchemy.engine.Connection:
-        engine = sqlalchemy.create_engine(
-            self.connection_string, **self.engine_args)
+        engine = sqlalchemy.create_engine(self.connection_string, **self.engine_args)
         conn = engine.connect()
         return conn
 
@@ -249,12 +248,16 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
         with Session(self._conn) as session:
             collection = self.__get_collection(session)
 
-            items = session.query(self.ItemStore.content).where(
-                sqlalchemy.and_(
-                    self.ItemStore.custom_id.in_(keys),
-                    self.ItemStore.collection_id == (collection.uuid)
+            items = (
+                session.query(self.ItemStore.content)
+                .where(
+                    sqlalchemy.and_(
+                        self.ItemStore.custom_id.in_(keys),
+                        self.ItemStore.collection_id == (collection.uuid),
+                    )
                 )
-            ).all()
+                .all()
+            )
 
         return [
             self.__deserialize_value(value[0]) if value is not None else value
@@ -298,7 +301,7 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
                 stmt = sqlalchemy.delete(self.ItemStore).where(
                     sqlalchemy.and_(
                         self.ItemStore.custom_id.in_(keys),
-                        self.ItemStore.collection_id == (collection.uuid)
+                        self.ItemStore.collection_id == (collection.uuid),
                     )
                 )
                 session.execute(stmt)
@@ -322,9 +325,7 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
                     self.ItemStore.collection_id == (collection.uuid)
                 )
                 if prefix is not None:
-                    query = query.filter(
-                        self.ItemStore.custom_id.startswith(prefix)
-                    )
+                    query = query.filter(self.ItemStore.custom_id.startswith(prefix))
                 items = query.slice(start, stop).all()
 
                 if len(items) == 0:
