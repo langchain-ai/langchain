@@ -11,9 +11,15 @@ from langchain_community.storage.upstash_redis import (
     UpstashRedisByteStore,
     UpstashRedisStore,
 )
+from langchain_community.storage.sql import (
+    SQLDocStore,
+    SQLStrStore,
+)
 
 __all__ = [
     "RedisStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
+    "SQLDocStore",
+    "SQLStrStore",
 ]
