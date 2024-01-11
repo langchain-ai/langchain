@@ -1,5 +1,6 @@
 from typing import Any, List, Sequence, Tuple, Union
 
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
@@ -16,6 +17,7 @@ from langchain.chains.llm import LLMChain
 from langchain.tools.render import render_text_description
 
 
+@deprecated("0.1.0", alternative="create_xml_agent", removal="0.2.0")
 class XMLAgent(BaseSingleActionAgent):
     """Agent that uses XML tags.
 

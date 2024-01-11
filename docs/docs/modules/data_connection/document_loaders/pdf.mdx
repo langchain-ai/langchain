@@ -61,7 +61,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 ```python
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
 faiss_index = FAISS.from_documents(pages, OpenAIEmbeddings())
 docs = faiss_index.similarity_search("How will the community be engaged?", k=2)
