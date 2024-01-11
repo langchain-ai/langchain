@@ -146,7 +146,7 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
             )
 
             # example using an SQLStrStore to store strings
-            # same examle as in "InMemoryStore" but using SQL persistance
+            # same example as in "InMemoryStore" but using SQL persistence
             store = SQLDocStore(
                 collection_name=COLLECTION_NAME,
                 connection_string=CONNECTION_STRING,
