@@ -280,13 +280,11 @@ def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) ->
         search_kwargs={"k": 3, "score_threshold": 0.999},
     )
     output = retriever.get_relevant_documents("summer")
-    assert output == [
-        Document(page_content="foo", metadata={"page": "0"}),
-    ]
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 @pytest.mark.requires("gpudb")
 def test_kinetica_retriever_search_threshold_custom_normalization_fn(
-    create_config: KineticaSettings
+    create_config: KineticaSettings,
 ) -> None:
     """Test searching with threshold and custom normalization function"""
     texts = ["foo", "bar", "baz"]
