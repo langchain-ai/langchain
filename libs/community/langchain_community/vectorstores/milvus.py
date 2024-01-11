@@ -42,6 +42,10 @@ class Milvus(VectorStore):
             "LangChainCollection".
         collection_description (str): The description of the collection. Defaults to
             "".
+        collection_properties (Optional[dict[str, any]]): The collection properties.
+            Defaults to None.
+            If set, will override collection existing properties.
+            For example: {"collection.ttl.seconds": 60}.
         connection_args (Optional[dict[str, any]]): The connection args used for
             this class comes in the form of a dict.
         consistency_level (str): The consistency level to use for a collection.
@@ -109,6 +113,7 @@ class Milvus(VectorStore):
         embedding_function: Embeddings,
         collection_name: str = "LangChainCollection",
         collection_description: str = "",
+        collection_properties: Optional[dict[str, Any]] = None,
         connection_args: Optional[dict[str, Any]] = None,
         consistency_level: str = "Session",
         index_params: Optional[dict] = None,
@@ -149,6 +154,7 @@ class Milvus(VectorStore):
         self.embedding_func = embedding_function
         self.collection_name = collection_name
         self.collection_description = collection_description
+        self.collection_properties = collection_properties
         self.index_params = index_params
         self.search_params = search_params
         self.consistency_level = consistency_level
@@ -177,6 +183,8 @@ class Milvus(VectorStore):
                 self.collection_name,
                 using=self.alias,
             )
+            if self.collection_properties is not None:
+                self.col.set_properties(self.collection_properties)
         # If need to drop old, drop it
         if drop_old and isinstance(self.col, Collection):
             self.col.drop()
@@ -332,6 +340,9 @@ class Milvus(VectorStore):
                 consistency_level=self.consistency_level,
                 using=self.alias,
             )
+            # Set the collection properties if they exist
+            if self.collection_properties is not None:
+                self.col.set_properties(self.collection_properties)
         except MilvusException as e:
             logger.error(
                 "Failed to create collection: %s error: %s", self.collection_name, e
