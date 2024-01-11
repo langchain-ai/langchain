@@ -189,6 +189,8 @@ class CallbackManagerMixin:
         **ATTENTION**: This method is called for chat models. If you're implementing
             a handler for a non-chat model, you should use on_llm_start instead.
         """
+        # NotImplementedError is thrown intentionally
+        # Callback handler will fall back to on_llm_start if this is exception is thrown
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         )
@@ -339,6 +341,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **ATTENTION**: This method is called for chat models. If you're implementing
             a handler for a non-chat model, you should use on_llm_start instead.
         """
+        # NotImplementedError is thrown intentionally
+        # Callback handler will fall back to on_llm_start if this is exception is thrown
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         )
