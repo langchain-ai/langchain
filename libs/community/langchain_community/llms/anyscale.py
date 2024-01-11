@@ -29,8 +29,9 @@ from langchain_community.llms.openai import (
 from langchain_community.utils.openai import is_openai_v1
 
 DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
-DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
+DEFAULT_MODEL = "Meta-Llama/Llama-Guard-7b"
 
+# Completion models support by Anyscale Endpoints
 COMPLETION_MODELS = ["Meta-Llama/Llama-Guard-7b"]
 
 
@@ -117,7 +118,9 @@ class Anyscale(BaseOpenAI):
             "MODEL_NAME",
             default=DEFAULT_MODEL,
         )
-
+        if values["model_name"] not in COMPLETION_MODELS:
+            raise ValueError("langchain_community.llm.Anyscale ONLY works with completions models. For Chat models, please use langchain_community.chat_model.ChatAnyscale")
+            
         try:
             import openai
 
