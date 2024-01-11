@@ -670,7 +670,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> Iterator[ChatGenerationChunk]:
         raise NotImplementedError()
 
-    def _astream(
+    async def _astream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
