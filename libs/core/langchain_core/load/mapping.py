@@ -477,6 +477,41 @@ SERIALIZABLE_MAPPING = {
     ),
 }
 
+# Needed for backwards compatibility for old versions of LangChain where things
+# Were in different place
+OG_SERIALIZABLE_MAPPING = {
+    ("langchain", "schema", "AIMessage"): (
+        "langchain_core",
+        "messages",
+        "ai",
+        "AIMessage",
+    ),
+    ("langchain", "schema", "ChatMessage"): (
+        "langchain_core",
+        "messages",
+        "chat",
+        "ChatMessage",
+    ),
+    ("langchain", "schema", "FunctionMessage"): (
+        "langchain_core",
+        "messages",
+        "function",
+        "FunctionMessage",
+    ),
+    ("langchain", "schema", "HumanMessage"): (
+        "langchain_core",
+        "messages",
+        "human",
+        "HumanMessage",
+    ),
+    ("langchain", "schema", "SystemMessage"): (
+        "langchain_core",
+        "messages",
+        "system",
+        "SystemMessage",
+    ),
+}
+
 # Needed for backwards compatibility for a few versions where we serialized
 # with langchain_core
 OLD_PROMPT_TEMPLATE_FORMATS = {
