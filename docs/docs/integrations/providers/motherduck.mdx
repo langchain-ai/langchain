@@ -26,7 +26,9 @@ conn_str = f"duckdb:///md:{token}@my_db"
 You can use the SQLChain to query data in your Motherduck instance in natural language.
 
 ```
-from langchain_community.llms import OpenAI, SQLDatabase, SQLDatabaseChain
+from langchain_openai import OpenAI
+from langchain_community.utilities import SQLDatabase
+from langchain_experimental.sql import SQLDatabaseChain
 db = SQLDatabase.from_uri(conn_str)
 db_chain = SQLDatabaseChain.from_llm(OpenAI(temperature=0), db, verbose=True)
 ```

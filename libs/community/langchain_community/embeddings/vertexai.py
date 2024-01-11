@@ -5,6 +5,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.pydantic_v1 import root_validator
@@ -19,6 +20,11 @@ _MAX_BATCH_SIZE = 250
 _MIN_BATCH_SIZE = 5
 
 
+@deprecated(
+    since="0.0.12",
+    removal="0.2.0",
+    alternative_import="langchain_google_vertexai.VertexAIEmbeddings",
+)
 class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     """Google Cloud VertexAI embedding models."""
 
