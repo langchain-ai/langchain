@@ -125,12 +125,12 @@ class SQLBaseStore(BaseStore[str, V], Generic[V]):
     Example:
         .. code-block:: python
 
-            from langchain_community.storage import import SQLDocStore
+            from langchain_community.storage import SQLDocStore
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             # example using an SQLDocStore to store Document objects for
             # a ParentDocumentRetriever
-            CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
+            CONNECTION_STRING = "postgresql+psycopg2://user:pass@localhost:5432/db"
             COLLECTION_NAME = "state_of_the_union_test"
             docstore = SQLDocStore(
                 collection_name=COLLECTION_NAME,
