@@ -112,7 +112,7 @@ async def test_async_in_sync_redis_cache() -> None:
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     llm_cache = cast(AsyncRedisCache, get_llm_cache())
-    with pytest.raises(ValueError):
+    with pytest.raises(NotImplementedError):
         llm_cache.update("foo", llm_string, [Generation(text="fizz")])
 
 
