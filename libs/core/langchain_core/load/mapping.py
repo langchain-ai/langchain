@@ -481,7 +481,7 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
 
 # Needed for backwards compatibility for old versions of LangChain where things
 # Were in different place
-OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+_OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
     ("langchain", "schema", "AIMessage"): (
         "langchain_core",
         "messages",
