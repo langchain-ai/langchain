@@ -8,7 +8,7 @@ from langchain_core.messages import (
 )
 
 from langchain_community.chat_models.llama_edge import (
-    LlamaChatService,
+    ChatService,
     _convert_dict_to_message,
     _convert_message_to_dict,
 )
@@ -64,7 +64,7 @@ def test__convert_dict_to_message_other_role() -> None:
 
 
 def test_wasm_chat_without_service_url() -> None:
-    chat = LlamaChatService()
+    chat = ChatService()
 
     # create message sequence
     system_message = SystemMessage(content="You are an AI assistant")

@@ -69,7 +69,7 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-class LlamaChatService(BaseChatModel):
+class ChatService(BaseChatModel):
     """Chat with LLMs via `llama-api-server`
 
     For the information about `llama-api-server`, visit https://github.com/second-state/LlamaEdge
