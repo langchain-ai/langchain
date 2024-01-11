@@ -450,14 +450,21 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
-        chain_input = ",".join([f"{k}={v}" for k, v in inputs.items()])
+        if isinstance(inputs, dict):
+            chain_input = ",".join([f"{k}={v}" for k, v in inputs.items()])
+        elif isinstance(inputs, list):
+            chain_input = ",".join([str(input) for input in inputs])
+        else:
+            chain_input = str(inputs)
         input_resp = deepcopy(resp)
         input_resp["inputs"] = chain_input
         self.records["on_chain_start_records"].append(input_resp)
         self.records["action_records"].append(input_resp)
         self.mlflg.jsonf(input_resp, f"chain_start_{chain_starts}")
 
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    def on_chain_end(
+        self, outputs: Union[Dict[str, Any], str, List[str]], **kwargs: Any
+    ) -> None:
         """Run when chain ends running."""
         self.metrics["step"] += 1
         self.metrics["chain_ends"] += 1
@@ -466,7 +473,12 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         chain_ends = self.metrics["chain_ends"]
 
         resp: Dict[str, Any] = {}
-        chain_output = ",".join([f"{k}={v}" for k, v in outputs.items()])
+        if isinstance(outputs, dict):
+            chain_output = ",".join([f"{k}={v}" for k, v in outputs.items()])
+        elif isinstance(outputs, list):
+            chain_output = ",".join([str(output) for output in outputs])
+        else:
+            chain_output = str(outputs)
         resp.update({"action": "on_chain_end", "outputs": chain_output})
         resp.update(self.metrics)
 
@@ -634,15 +646,22 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         visualizations_columns = ["dependency_tree", "entities"]
 
+        token_usage_columns = [
+            "token_usage_total_tokens",
+            "token_usage_prompt_tokens",
+            "token_usage_completion_tokens",
+        ]
+        token_usage_columns = [
+            x for x in token_usage_columns if x in on_llm_end_records_df.columns
+        ]
+
         llm_outputs_df = (
             on_llm_end_records_df[
                 [
                     "step",
                     "text",
-                    "token_usage_total_tokens",
-                    "token_usage_prompt_tokens",
-                    "token_usage_completion_tokens",
                 ]
+                + token_usage_columns
                 + complexity_metrics_columns
                 + visualizations_columns
             ]
