@@ -36,7 +36,9 @@ class AmadeusClosestAirport(AmadeusBaseTool):
         "Use this tool to find the closest airport to a particular location."
     )
     args_schema: Type[ClosestAirportSchema] = ClosestAirportSchema
+
     llm: Optional[BaseLanguageModel] = Field(default=None)
+    """Tool's llm used for calculating the closest airport. Defaults to `ChatOpenAI`."""
 
     @root_validator(pre=True)
     def set_llm(cls, values: Dict[str, Any]) -> Dict[str, Any]:
