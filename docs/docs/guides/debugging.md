@@ -1,4 +1,5 @@
 # Debugging
+*Last updated: 2024-01-06*
 
 If you're building with LLMs, at some point something will break, and you'll need to debug. A model call will fail, or the model output will be misformatted, or there will be some nested model calls and it won't be clear where along the way an incorrect output was created.
 

@@ -1,4 +1,5 @@
 # Baseten
+*Last updated: 2023-12-22*
 
 [Baseten](https://baseten.co) provides all the infrastructure you need to deploy and serve ML models performantly, scalably, and cost-efficiently.
 

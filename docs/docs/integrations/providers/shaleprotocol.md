@@ -1,4 +1,5 @@
 # Shale Protocol
+*Last updated: 2024-01-06*
 
 [Shale Protocol](https://shaleprotocol.com) provides production-ready inference APIs for open LLMs. It's a Plug & Play API as it's hosted on a highly scalable GPU cloud infrastructure. 
 

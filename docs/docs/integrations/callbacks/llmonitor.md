@@ -1,4 +1,5 @@
 # LLMonitor
+*Last updated: 2024-01-06*
 
 >[LLMonitor](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source observability platform that provides cost and usage analytics, user tracking, tracing and evaluation tools.
 

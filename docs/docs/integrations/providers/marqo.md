@@ -1,4 +1,5 @@
 # Marqo
+*Last updated: 2024-01-02*
 
 This page covers how to use the Marqo ecosystem within LangChain.
 
