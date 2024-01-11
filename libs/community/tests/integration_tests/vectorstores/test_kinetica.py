@@ -258,3 +258,53 @@ def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> Non
 
     output = docsearch.similarity_search("foo", k=1)
     assert output[0].page_content == "foo"
+
+@pytest.mark.requires("gpudb")
+def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) -> None:
+    """Test using retriever for searching with threshold."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = Kinetica.from_texts(
+        config=create_config,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        dimensions=3,
+        distance_strategy=DistanceStrategy.EUCLIDEAN,
+        collection_name="test_kinetica_retriever_search_threshold",
+        pre_delete_collection=True,
+    )
+
+    retriever = docsearch.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"k": 3, "score_threshold": 0.999},
+    )
+    output = retriever.get_relevant_documents("summer")
+    assert output == [
+        Document(page_content="foo", metadata={"page": "0"}),
+    ]
+
+@pytest.mark.requires("gpudb")
+def test_kinetica_retriever_search_threshold_custom_normalization_fn(
+    create_config: KineticaSettings) -> None:
+    """Test searching with threshold and custom normalization function"""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = Kinetica.from_texts(
+        config=create_config,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        dimensions=3,
+        distance_strategy=DistanceStrategy.EUCLIDEAN,
+        collection_name="test_kinetica_retriever_search_threshold_custom_normalization_fn",
+        pre_delete_collection=True,
+        relevance_score_fn=lambda d: d * 0,
+    )
+
+    retriever = docsearch.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"k": 3, "score_threshold": 0.5},
+    )
+    output = retriever.get_relevant_documents("foo")
+    assert output == []
