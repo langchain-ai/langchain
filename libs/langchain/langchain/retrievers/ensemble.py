@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.retrievers import BaseRetriever
+from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     get_unique_config_specs,
@@ -32,7 +32,7 @@ class EnsembleRetriever(BaseRetriever):
             Default is 60.
     """
 
-    retrievers: List[BaseRetriever]
+    retrievers: List[RetrieverLike]
     weights: List[float]
     c: int = 60
 
@@ -108,8 +108,8 @@ class EnsembleRetriever(BaseRetriever):
 
         # Get the results of all retrievers.
         retriever_docs = [
-            retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
+            retriever.invoke(
+                query, {"callbacks": run_manager.get_child(tag=f"retriever_{i+1}")}
             )
             for i, retriever in enumerate(self.retrievers)
         ]
@@ -142,8 +142,8 @@ class EnsembleRetriever(BaseRetriever):
 
         # Get the results of all retrievers.
         retriever_docs = [
-            await retriever.aget_relevant_documents(
-                query, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
+            await retriever.ainvoke(
+                query, {"callbacks": run_manager.get_child(tag=f"retriever_{i+1}")}
             )
             for i, retriever in enumerate(self.retrievers)
         ]
