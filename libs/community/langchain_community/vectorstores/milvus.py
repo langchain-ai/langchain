@@ -429,7 +429,7 @@ class Milvus(VectorStore):
         if (
                 isinstance(self.col, Collection)
                 and self._get_index() is not None
-                and utility.load_state(self.collection_name) == LoadState.NotLoad
+                and utility.load_state(self.collection_name, using=self.alias) == LoadState.NotLoad
         ):
             self.col.load(
                 partition_names=partition_names,
