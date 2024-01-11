@@ -221,9 +221,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return MongoDB documents most similar to the given query and their scores.
 
-        Uses the $vectorSearch stage performs an aNN search on a vector in the specified field.
-        The field that you want to search must be indexed as Atlas Vector Search vector type inside a vectorSearch index type
-        
+        Uses the $vectorSearch stage
+        performs aNN search on a vector in the specified field.
+        Index the field as "vector" using Atlas Vector Search "vectorSearch" index type
+
         For more info : https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
 
         Args:
@@ -256,9 +257,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[Document]:
         """Return MongoDB documents most similar to the given query.
 
-        Uses the $vectorSearch stage performs an aNN search on a vector in the specified field.
-        The field that you want to search must be indexed as Atlas Vector Search vector type inside a vectorSearch index type
-        
+        Uses the $vectorSearch stage
+        performs aNN search on a vector in the specified field.
+        Index the field as "vector" using Atlas Vector Search "vectorSearch" index type
+
         For more info : https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
 
         Args:
