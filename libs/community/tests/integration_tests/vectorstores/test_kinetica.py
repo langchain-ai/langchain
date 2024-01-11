@@ -3,8 +3,8 @@ from typing import List
 
 import pytest
 from langchain_core.documents import Document
+from langchain_openai.embeddings import OpenAIEmbeddings
 
-from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import (
     DistanceStrategy,
     Kinetica,
@@ -272,7 +272,7 @@ def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) ->
         dimensions=3,
         distance_strategy=DistanceStrategy.EUCLIDEAN,
         collection_name="test_kinetica_retriever_search_threshold",
-        pre_delete_collection=True,
+        pre_delete_collection=False,
     )
 
     retriever = docsearch.as_retriever(
@@ -298,7 +298,7 @@ def test_kinetica_retriever_search_threshold_custom_normalization_fn(
         dimensions=3,
         distance_strategy=DistanceStrategy.EUCLIDEAN,
         collection_name="test_kinetica_retriever_search_threshold_custom_normalization_fn",
-        pre_delete_collection=True,
+        pre_delete_collection=False,
         relevance_score_fn=lambda d: d * 0,
     )
 
