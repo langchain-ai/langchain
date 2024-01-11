@@ -256,7 +256,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         elif similarity is DistanceStrategy.DOT_PRODUCT:
             similarityAlgo = f"""
             double value = dotProduct(params.query_vector, '{vector_query_field}');
-            return sigmoid(1, Math.E, -value); 
+            return sigmoid(1, Math.E, -value);
             """
         else:
             raise ValueError(f"Similarity {similarity} not supported.")
@@ -512,6 +512,7 @@ class ElasticsearchStore(VectorStore):
             ]
         ] = None,
         strategy: BaseRetrievalStrategy = ApproxRetrievalStrategy(),
+        es_params: Optional[Dict[str, Any]] = None,
     ):
         self.embedding = embedding
         self.index_name = index_name
@@ -535,6 +536,7 @@ class ElasticsearchStore(VectorStore):
                 password=es_password,
                 cloud_id=es_cloud_id,
                 api_key=es_api_key,
+                es_params=es_params,
             )
         else:
             raise ValueError(
@@ -556,6 +558,7 @@ class ElasticsearchStore(VectorStore):
         api_key: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
+        es_params: Optional[Dict[str, Any]] = None,
     ) -> "Elasticsearch":
         try:
             import elasticsearch
@@ -583,6 +586,9 @@ class ElasticsearchStore(VectorStore):
             connection_params["api_key"] = api_key
         elif username and password:
             connection_params["basic_auth"] = (username, password)
+
+        if es_params is not None:
+            connection_params.update(es_params)
 
         es_client = elasticsearch.Elasticsearch(
             **connection_params,
