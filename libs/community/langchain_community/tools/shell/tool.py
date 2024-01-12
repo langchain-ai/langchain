@@ -71,7 +71,16 @@ class ShellTool(BaseTool):
     def _run(
         self,
         commands: Union[str, List[str]],
+        ask_human_input: bool = False,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Run commands and return final output."""
-        return self.process.run(commands)
+        print("Executing Command:", commands)
+        if not ask_human_input:
+            return self.process.run(commands)
+        else:
+            user_input = input("Do you want to proceed? (y/n): ").lower()
+            if user_input == 'y':
+                return self.process.run(commands)
+            else:
+                return "Operation canceled by user."
