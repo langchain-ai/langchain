@@ -115,11 +115,12 @@ def create_xml_agent(
     Args:
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input keys of
-            `tools` and `agent_scratchpad`.
+        prompt: The prompt to use, must have input keys
+            `tools`: contains descriptions for each tool.
+            `agent_scratchpad`: contains previous agent actions and tool outputs.
 
     Returns:
-        A runnable sequence representing an agent. It takes as input all the same input
+        A Runnable sequence representing an agent. It takes as input all the same input
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
 
@@ -155,32 +156,32 @@ def create_xml_agent(
 
         .. code-block:: python
 
-            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.prompts import PromptTemplate
 
-                human_template = '''You are a helpful assistant. Help the user answer any questions.
+            template = '''You are a helpful assistant. Help the user answer any questions.
 
-                You have access to the following tools:
+            You have access to the following tools:
 
-                {tools}
+            {tools}
 
-                In order to use a tool, you can use <tool></tool> and <tool_input></tool_input> tags. You will then get back a response in the form <observation></observation>
-                For example, if you have a tool called 'search' that could run a google search, in order to search for the weather in SF you would respond:
+            In order to use a tool, you can use <tool></tool> and <tool_input></tool_input> tags. You will then get back a response in the form <observation></observation>
+            For example, if you have a tool called 'search' that could run a google search, in order to search for the weather in SF you would respond:
 
-                <tool>search</tool><tool_input>weather in SF</tool_input>
-                <observation>64 degrees</observation>
+            <tool>search</tool><tool_input>weather in SF</tool_input>
+            <observation>64 degrees</observation>
 
-                When you are done, respond with a final answer between <final_answer></final_answer>. For example:
+            When you are done, respond with a final answer between <final_answer></final_answer>. For example:
 
-                <final_answer>The weather in SF is 64 degrees</final_answer>
+            <final_answer>The weather in SF is 64 degrees</final_answer>
 
-                Begin!
+            Begin!
 
-                Previous Conversation:
-                {chat_history}
+            Previous Conversation:
+            {chat_history}
 
-                Question: {input}
-                {agent_scratchpad}'''
-                prompt = ChatPromptTemplate.from_messages([("human", human_template)])
+            Question: {input}
+            {agent_scratchpad}'''
+            prompt = PromptTemplate.from_template(template)
     """  # noqa: E501
     missing_vars = {"tools", "agent_scratchpad"}.difference(prompt.input_variables)
     if missing_vars:
