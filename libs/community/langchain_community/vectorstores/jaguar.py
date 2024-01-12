@@ -444,4 +444,5 @@ class Jaguar(VectorStore):
                     nvec.append(k)
                     vvec.append(v)
 
-        return nvec, vvec, filepath
+        vvec_s = [str(e) for e in vvec]
+        return nvec, vvec_s, filepath
