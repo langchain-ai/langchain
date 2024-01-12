@@ -176,7 +176,7 @@ def test_search_with_filter() -> None:
         k=1,
         filter={
             "$or": [{"page": 1}, {"page": 2}],
-            "$or": [{"page": 2}, {"page": 3}],
+            "$and": [{"page": 2}],
         },
     )
     assert output == [

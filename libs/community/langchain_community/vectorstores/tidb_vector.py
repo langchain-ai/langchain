@@ -288,7 +288,7 @@ class TiDBVector(VectorStore):
                 **kwargs,
             )
         finally:
-            # Close the engine after quering the tale
+            # Close the engine after querying the tale
             engine.dispose()
 
     def add_texts(
