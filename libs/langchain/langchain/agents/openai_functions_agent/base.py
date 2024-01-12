@@ -47,9 +47,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
     prompt: BasePromptTemplate
-    output_parser: Type[OpenAIFunctionsAgentOutputParser] = (
+    output_parser: Type[
         OpenAIFunctionsAgentOutputParser
-    )
+    ] = OpenAIFunctionsAgentOutputParser
 
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
@@ -108,9 +108,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 messages,
                 callbacks=callbacks,
             )
-        agent_decision = self.output_parser._parse_ai_message(
-            predicted_message
-        )
+        agent_decision = self.output_parser._parse_ai_message(predicted_message)
         return agent_decision
 
     async def aplan(
@@ -139,9 +137,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         predicted_message = await self.llm.apredict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
-        agent_decision = self.output_parser._parse_ai_message(
-            predicted_message
-        )
+        agent_decision = self.output_parser._parse_ai_message(predicted_message)
         return agent_decision
 
     def return_stopped_response(
