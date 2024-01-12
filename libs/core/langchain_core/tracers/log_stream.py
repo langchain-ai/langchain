@@ -46,6 +46,8 @@ class LogEntry(TypedDict):
     """List of LLM tokens streamed by this run, if applicable."""
     streamed_output: List[Any]
     """List of output chunks streamed by this run, if available."""
+    inputs: Optional[Any]
+    """Inputs to this run."""
     final_output: Optional[Any]
     """Final output of this run.
     Only available after the run has finished successfully."""
@@ -61,6 +63,8 @@ class RunState(TypedDict):
     """ID of the run."""
     streamed_output: List[Any]
     """List of output chunks streamed by Runnable.stream()"""
+    inputs: Optional[Any]
+    """Inputs to the run."""
     final_output: Optional[Any]
     """Final output of the run, usually the result of aggregating (`+`) streamed_output.
     Updated throughout the run when supported by the Runnable."""
@@ -240,6 +244,7 @@ class LogStreamCallbackHandler(BaseTracer):
                             id=str(run.id),
                             streamed_output=[],
                             final_output=None,
+                            inputs=run.inputs,
                             logs={},
                         ),
                     }
@@ -272,6 +277,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         start_time=run.start_time.isoformat(timespec="milliseconds"),
                         streamed_output=[],
                         streamed_output_str=[],
+                        inputs=run.inputs,
                         final_output=None,
                         end_time=None,
                     ),

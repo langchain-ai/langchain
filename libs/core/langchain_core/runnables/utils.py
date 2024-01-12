@@ -1,3 +1,4 @@
+"""Utility code for runnables."""
 from __future__ import annotations
 
 import ast
@@ -9,6 +10,7 @@ from itertools import groupby
 from typing import (
     Any,
     AsyncIterable,
+    AsyncIterator,
     Callable,
     Coroutine,
     Dict,
@@ -23,6 +25,10 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from typing_extensions import TypedDict
+
+from langchain_core.tracers import RunLog, RunLogPatch
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -419,3 +425,96 @@ def get_unique_config_specs(
                 f"for {id}: {[first] + others}"
             )
     return unique
+
+
+class Event(TypedDict):
+    """An event in an event stream."""
+
+    event: str
+    """The event type. 
+
+    TODO: Document some examples
+    """
+    name: str
+    """The name of the runnable that generated the event."""
+    run_id: str
+    """The run id."""
+    tags: List[str]
+    """The tags."""
+    metadata: dict
+    """The metadata."""
+    data: Any
+    """Event data.
+
+    The contents of the event data depend on the event type.
+    """
+
+
+async def as_event_stream(
+    run_log_patches: AsyncIterator[RunLogPatch]
+) -> AsyncIterator[Event]:
+    """Convert a stream of run log patches to a stream of events.
+
+    This is a utility function that can be used to convert the output of a runnable's
+    astream_log method to a stream of events that should be easier to work with.
+
+    Example:
+
+        .. code-block:: python
+
+    Args:
+        run_log_patches: The output from astream_log method of a runnable.
+
+    Returns:
+        An async stream of events.
+    """
+    state = RunLog(state=None)  # type: ignore[arg-type]
+
+    async for log in run_log_patches:
+        state = state + log
+
+        paths = {
+            op["path"].split("/")[2]
+            for op in log.ops
+            if op["path"].startswith("/logs/")
+        }
+        # TODO iteration here is in the same order
+        for path in paths:
+            data = {}
+            log = state.state["logs"][path]
+            if log["end_time"] is None:
+                if log["streamed_output"]:
+                    event_type = "stream"
+                else:
+                    event_type = "start"
+            # elif log["error"] is not None:
+            #     event_type = "error"
+            else:
+                event_type = "end"
+
+            if event_type == "start":
+                if log["inputs"]:
+                    data["inputs"] = log["inputs"]
+                    # Clean up the inputs since we don't need them anymore
+                    del log["inputs"]
+
+            if event_type == "end":
+                if log["final_output"]:
+                    data["output"] = log["final_output"]
+                    # Clean up the final output since we don't need it anymore
+                    del log["final_output"]
+
+            if event_type == "stream":
+                data = list(log["streamed_output"])
+                # Clean up the stream, we don't need it anymore.
+                # And this avoids duplicates as well!
+                log["streamed_output"] = []
+
+            yield Event(
+                event=f"on_{log['type']}_{event_type}",
+                name=log["name"],
+                run_id=log["id"],
+                tags=log["tags"],
+                metadata=log["metadata"],
+                data=data,
+            )
