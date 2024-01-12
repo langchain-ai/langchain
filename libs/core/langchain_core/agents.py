@@ -10,15 +10,12 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
 )
+from langchain_core.tools import ToolInvocation
 
 
-class AgentAction(Serializable):
+class AgentAction(ToolInvocation):
     """A full description of an action for an ActionAgent to execute."""
 
-    tool: str
-    """The name of the Tool to execute."""
-    tool_input: Union[str, dict]
-    """The input to pass in to the Tool."""
     log: str
     """Additional information to log about the action.
     This log can be used in a few ways. First, it can be used to audit

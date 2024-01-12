@@ -15,6 +15,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain_core.load import Serializable
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -36,6 +37,14 @@ from langchain_core.runnables.config import run_in_executor
 class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
+
+class ToolInvocation(Serializable):
+    """The name and input for a tool to invoke."""
+
+    tool: str
+    """The name of the Tool to execute."""
+    tool_input: Union[str, dict]
+    """The input to pass in to the Tool."""
 
 def _create_subset_model(
     name: str, model: BaseModel, field_names: list
@@ -845,3 +854,4 @@ def tool(
         return _partial
     else:
         raise ValueError("Too many arguments for tool decorator")
+
