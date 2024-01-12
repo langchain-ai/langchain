@@ -327,7 +327,7 @@ class Milvus(VectorStore):
         schema = CollectionSchema(
             fields,
             description=self.collection_description,
-            partition_key_field=self._partition_key_field
+            partition_key_field=self._partition_key_field,
         )
 
         # Create the collection
