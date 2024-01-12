@@ -1,8 +1,8 @@
 """**Graphs** provide a natural language interface to graph databases."""
 
-from langchain.graphs.graphdb_graph import GraphDBGraph
 from langchain_community.graphs.arangodb_graph import ArangoGraph
 from langchain_community.graphs.falkordb_graph import FalkorDBGraph
+from langchain_community.graphs.graphdb_graph import GraphDBGraph
 from langchain_community.graphs.hugegraph import HugeGraph
 from langchain_community.graphs.kuzu_graph import KuzuGraph
 from langchain_community.graphs.memgraph_graph import MemgraphGraph
