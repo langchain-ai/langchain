@@ -209,7 +209,7 @@ class Chroma(VectorStore):
                     empty_ids.append(idx)
             if non_empty_ids:
                 metadatas = [metadatas[idx] for idx in non_empty_ids]
-                images_with_metadatas = [uris[idx] for idx in non_empty_ids]
+                images_with_metadatas = [b64_texts[idx] for idx in non_empty_ids]
                 embeddings_with_metadatas = (
                     [embeddings[idx] for idx in non_empty_ids] if embeddings else None
                 )
