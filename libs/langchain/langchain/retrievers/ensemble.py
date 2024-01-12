@@ -88,7 +88,7 @@ class EnsembleRetriever(BaseRetriever):
             return result
 
     async def ainvoke(
-        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any | None
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Document]:
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
