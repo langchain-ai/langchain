@@ -119,7 +119,7 @@ class RecursiveUrlLoader(BaseLoader):
             check_response_status: If True, check HTTP response status and skip
                 URLs with error responses (400-599).
             concurrent_requests_limit: Maximum number of concurrent http requests when 
-                using asyncronous loading.
+                using asynchronous loading.
         """
 
         self.url = url
