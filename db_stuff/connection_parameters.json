@@ -1,0 +1,14 @@
+{
+    "mysqlOptions": {
+      "authProtocol": "default",
+      "enableSsl": "Disabled"
+    },
+    "previewLimit": 50,
+    "server": "ec2-3-20-141-107.us-east-2.compute.amazonaws.com",
+    "port": 3306,
+    "driver": "MySQL",
+    "name": "work_db",
+    "database": "toolbox",
+    "username": "kwoods",
+    "password": "ybQ7wxusL7sS7qNXBqQL"
+  }
