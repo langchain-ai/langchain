@@ -12,7 +12,7 @@ class SlackGetChannel(SlackBaseTool):
 
     name: str = "get_channelid_name_dict"
     description: str = (
-        "Use this tool to get channelid-name dict. Their is no input to this tool"
+        "Use this tool to get channelid-name dict. There is no input to this tool"
     )
 
     def _run(
