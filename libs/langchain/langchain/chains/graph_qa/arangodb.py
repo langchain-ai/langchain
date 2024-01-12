@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
+from langchain_community.graphs.arangodb_graph import ArangoGraph
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
 
@@ -16,7 +17,6 @@ from langchain.chains.graph_qa.prompts import (
     AQL_QA_PROMPT,
 )
 from langchain.chains.llm import LLMChain
-from langchain.graphs.arangodb_graph import ArangoGraph
 
 
 class ArangoGraphQAChain(Chain):

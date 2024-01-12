@@ -75,7 +75,13 @@ class LLMManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when LLM errors."""
+        """Run when LLM errors.
+        Args:
+            error (BaseException): The error that occurred.
+            kwargs (Any): Additional keyword arguments.
+                - response (LLMResult): The response which was generated before
+                    the error occurred.
+        """
 
 
 class ChainManagerMixin:
@@ -351,7 +357,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM errors."""
+        """Run when LLM errors.
+        Args:
+            error (BaseException): The error that occurred.
+            kwargs (Any): Additional keyword arguments.
+                - response (LLMResult): The response which was generated before
+                    the error occurred.
+        """
 
     async def on_chain_start(
         self,

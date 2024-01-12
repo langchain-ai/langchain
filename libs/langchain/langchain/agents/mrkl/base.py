@@ -3,9 +3,11 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseTool
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -15,7 +17,6 @@ from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.tools.base import BaseTool
 
 
 class ChainConfig(NamedTuple):
@@ -32,6 +33,7 @@ class ChainConfig(NamedTuple):
     action_description: str
 
 
+@deprecated("0.1.0", alternative="create_react_agent", removal="0.2.0")
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
 
@@ -137,6 +139,7 @@ class ZeroShotAgent(Agent):
         super()._validate_tools(tools)
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class MRKLChain(AgentExecutor):
     """[Deprecated] Chain that implements the MRKL system."""
 
