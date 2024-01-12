@@ -143,21 +143,6 @@ def construct_html_from_prompt_and_generation(prompt: str, generation: str) -> A
     """
 
 
-def log_wrapper(func):
-    @wraps(func)
-    def wrapper(mlflow_logger, *args, **kwargs):
-        if mlflow_logger.mlflow.active_run() is None:
-            with mlflow_logger.mlflow.start_run(
-                run_id=mlflow_logger.run.info.run_id,
-                experiment_id=mlflow_logger.mlf_expid,
-            ):
-                return func(mlflow_logger, *args, **kwargs)
-        else:
-            return func(mlflow_logger, *args, **kwargs)
-
-    return wrapper
-
-
 class MlflowLogger:
     """Callback Handler that logs metrics and artifacts to mlflow server.
 
@@ -213,67 +198,54 @@ class MlflowLogger:
         If there's already an active run, we will reuse the active run and ignore
         the run_id parameter.
         """
-        if active_run := self.mlflow.active_run():
-            if run_id != active_run.info.run_id:
-                logger.warning("run_id is ignored as there's already an active run.")
-            self.run = active_run
-        else:
-            if run_id:
-                self.run = self.mlflow.MlflowClient().get_run(run_id)
-            else:
-                if name.endswith("-%"):
-                    rname = "".join(
-                        random.choices(string.ascii_uppercase + string.digits, k=7)
-                    )
-                    name = name.replace("%", rname)
-                self.run = self.mlflow.MlflowClient().create_run(
-                    self.mlf_expid, run_name=name, tags=tags
+        if run_id is None:
+            if name.endswith("-%"):
+                rname = "".join(
+                    random.choices(string.ascii_uppercase + string.digits, k=7)
                 )
+                name = name.replace("%", rname)
+            run = self.mlflow.MlflowClient().create_run(
+                self.mlf_expid, run_name=name, tags=tags
+            )
+            run_id = run.info.run_id
+        self.run_id = run_id
 
-    @log_wrapper
     def finish_run(self) -> None:
         """To finish the run."""
         self.mlflow.end_run()
 
-    @log_wrapper
     def metric(self, key: str, value: float) -> None:
         """To log metric to mlflow server."""
-        self.mlflow.log_metric(key, value)
+        self.mlflow.log_metric(key, value, run_id=self.run_id)
 
-    @log_wrapper
     def metrics(
         self, data: Union[Dict[str, float], Dict[str, int]], step: Optional[int] = 0
     ) -> None:
         """To log all metrics in the input dict."""
-        self.mlflow.log_metrics(data)
+        self.mlflow.log_metrics(data, run_id=self.run_id)
 
-    @log_wrapper
     def jsonf(self, data: Dict[str, Any], filename: str) -> None:
         """To log the input data as json file artifact."""
-        self.mlflow.log_dict(data, f"{filename}.json")
+        self.mlflow.log_dict(data, f"{filename}.json", run_id=self.run_id)
 
     def table(self, name: str, dataframe) -> None:  # type: ignore
         """To log the input pandas dataframe as a html table"""
         self.html(dataframe.to_html(), f"table_{name}")
 
-    @log_wrapper
     def html(self, html: str, filename: str) -> None:
         """To log the input html string as html file artifact."""
-        self.mlflow.log_text(html, f"{filename}.html")
+        self.mlflow.log_text(html, f"{filename}.html", run_id=self.run_id)
 
-    @log_wrapper
     def text(self, text: str, filename: str) -> None:
         """To log the input text as text file artifact."""
-        self.mlflow.log_text(text, f"{filename}.txt")
+        self.mlflow.log_text(text, f"{filename}.txt", run_id=self.run_id)
 
-    @log_wrapper
     def artifact(self, path: str) -> None:
         """To upload the file from given path as artifact."""
-        self.mlflow.log_artifact(path)
+        self.mlflow.log_artifact(path, run_id=self.run_id)
 
-    @log_wrapper
     def langchain_artifact(self, chain: Any) -> None:
-        self.mlflow.langchain.log_model(chain, "langchain-model")
+        self.mlflow.langchain.log_model(chain, "langchain-model", run_id=self.run_id)
 
 
 class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
