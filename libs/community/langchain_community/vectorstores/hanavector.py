@@ -87,6 +87,11 @@ class HanaDB(VectorStore):
             finally:
                 cur.close()
 
+        # Check if the needed columns exists
+        self._check_column(self.table_name, self.content_field, "NVARCHAR", self.content_field_length)
+        self._check_column(self.table_name, self.metadata_field, "NVARCHAR", self.metadata_field_length)
+        self._check_column(self.table_name, self.vector_field, "REAL_VECTOR", -1)
+
     def _table_exists(self, table_name) -> bool:
         sql_str = "SELECT COUNT(*) as NUM FROM TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ?"
         try:
@@ -97,6 +102,27 @@ class HanaDB(VectorStore):
                 print(rows)
                 if rows[0][0] == 1:
                     return True
+        finally:
+            cur.close()
+        return False
+
+
+    def _check_column(self, table_name, column_name, column_type, column_length):
+        sql_str = "SELECT DATA_TYPE_NAME, LENGTH FROM TABLE_COLUMNS WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ? AND COLUMN_NAME = ?"
+        try:
+            cur = self.connection.cursor()
+            cur.execute(sql_str, (table_name, column_name))
+            if cur.has_result_set():
+                rows = cur.fetchall()
+                if len(rows) == 0:
+                    raise AttributeError(f"Column {column_name} does not exist")
+                # Check data type
+                if rows[0][0] != column_type:
+                    raise AttributeError(f"Column {column_name} has the wrong type: {rows[0][0]}")
+                if rows[0][1] != column_length:
+                    raise AttributeError(f"Column {column_name} has the wrong length: {rows[0][1]}")
+            else: 
+                raise AttributeError(f"Column {column_name} does not exist")
         finally:
             cur.close()
         return False
