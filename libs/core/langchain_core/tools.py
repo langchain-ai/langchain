@@ -249,7 +249,7 @@ class ChildTool(BaseTool):
             if input_args is not None:
                 result = input_args.parse_obj(tool_input)
                 return {
-                    k: tool_input[k]
+                    k: getattr(result, k)
                     for k, v in result.dict().items()
                     if k in tool_input
                 }
