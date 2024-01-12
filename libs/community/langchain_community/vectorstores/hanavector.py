@@ -1,3 +1,4 @@
+"""Test HANA functionality."""
 from __future__ import annotations
 
 import json
@@ -43,7 +44,9 @@ class HanaDB(VectorStore):
         distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
         table_name: str = "EMBEDDINGS",
         content_field: str = "DOC_TEXT",
+        content_field_length: int = 2048,
         metadata_field: str = "DOC_META",
+        metadata_field_length: int = 2048,
         vector_field: str = "DOC_VECTOR",
         **kwargs: Any,
     ):
@@ -67,11 +70,37 @@ class HanaDB(VectorStore):
         self.distance_strategy = distance_strategy
         self.table_name = self._sanitize_input(table_name)
         self.content_field = self._sanitize_input(content_field)
+        self.content_field_length = HanaDB._sanitize_int(content_field_length)
         self.metadata_field = self._sanitize_input(metadata_field)
+        self.metadata_field_length = HanaDB._sanitize_int(metadata_field_length)
         self.vector_field = self._sanitize_input(vector_field)
 
         # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
+
+        # Check if the table exists, and eventually create it
+        if not self._table_exists(self.table_name):
+            sql_str = f"CREATE TABLE {self.table_name}({self.content_field} NVARCHAR({self.content_field_length}), {self.metadata_field} NVARCHAR({self.metadata_field_length}), {self.vector_field} REAL_VECTOR);"
+            try:
+                cur = self.connection.cursor()
+                cur.execute(sql_str)
+            finally:
+                cur.close()
+
+    def _table_exists(self, table_name) -> bool:
+        sql_str = "SELECT COUNT(*) as NUM FROM TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ?"
+        try:
+            cur = self.connection.cursor()
+            cur.execute(sql_str, (table_name))
+            if cur.has_result_set():
+                rows = cur.fetchall()
+                print(rows)
+                if rows[0][0] == 1:
+                    return True
+        finally:
+            cur.close()
+        return False
+
 
     @property
     def embeddings(self) -> Embeddings:
@@ -80,6 +109,9 @@ class HanaDB(VectorStore):
     def _sanitize_input(self, input_str: str) -> str:
         # Remove characters that are not alphanumeric or underscores
         return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
+
+    def _sanitize_int(input_int: any) -> int:
+        return int(str(input_int))
 
     def add_texts(
         self,
