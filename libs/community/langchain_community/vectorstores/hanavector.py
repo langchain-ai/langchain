@@ -38,14 +38,23 @@ class HanaDB(VectorStore):
 
     def __init__(
         self,
+        connection: dbapi.Connection,
         embedding: Embeddings,
         distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
         table_name: str = "EMBEDDINGS",
-        content_field: str = "CONTENT",
+        content_field: str = "DOC_TEXT",
         metadata_field: str = "DOC_META",
-        vector_field: str = "VECTOR",
+        vector_field: str = "DOC_VECTOR",
         **kwargs: Any,
     ):
+        try:
+            from hdbcli import dbapi
+        except ImportError:
+            raise ImportError(
+                "Could not import hdbcli python package. "
+                "Please install it with `pip install hdbcli`."
+            )
+        
         valid_distance = False
         for key in HANA_DISTANCE_FUNCTION.keys():
             if key is distance_strategy:
@@ -53,6 +62,7 @@ class HanaDB(VectorStore):
         if not valid_distance:
             raise ValueError("Unsupported distance_strategy: {}".format(distance_strategy))
         
+        self.connection = connection
         self.embedding = embedding
         self.distance_strategy = distance_strategy
         self.table_name = self._sanitize_input(table_name)
@@ -62,17 +72,6 @@ class HanaDB(VectorStore):
 
         # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
-        self.connection = self._get_connection()
-
-    def _get_connection(self: HanaDB) -> dbapi.Connection:
-        try:
-            from hdbcli import dbapi
-        except ImportError:
-            raise ImportError(
-                "Could not import hdbcli python package. "
-                "Please install it with `pip install hdbcli`."
-            )
-        return dbapi.connect(**self.connection_kwargs)
 
     @property
     def embeddings(self) -> Embeddings:
