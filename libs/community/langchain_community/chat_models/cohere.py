@@ -105,9 +105,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
             from langchain_community.chat_models import ChatCohere
             from langchain_core.messages import HumanMessage
 
-            chat = ChatCohere(model="foo")
-            result = chat([HumanMessage(content="Hello")])
-            print(result.content)
+            chat = ChatCohere(model="command", max_tokens=256, temperature=0.75)
+
+            messages = [HumanMessage(content="knock knock")]
+            chat.invoke(messages)
     """
 
     class Config:

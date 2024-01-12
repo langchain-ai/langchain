@@ -107,6 +107,12 @@ class _OllamaCommon(BaseLanguageModel):
     timeout: Optional[int] = None
     """Timeout for the request stream"""
 
+    headers: Optional[dict] = None
+    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
+    This is useful when Ollama is hosted on cloud services that require
+    tokens for authentication.
+    """
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -207,7 +213,10 @@ class _OllamaCommon(BaseLanguageModel):
 
         response = requests.post(
             url=api_url,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                **(self.headers if isinstance(self.headers, dict) else {}),
+            },
             json=request_payload,
             stream=True,
             timeout=self.timeout,

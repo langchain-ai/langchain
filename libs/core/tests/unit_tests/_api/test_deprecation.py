@@ -219,8 +219,8 @@ def test_whole_class_deprecation() -> None:
         assert len(warning_list) == 2
         warning = warning_list[0].message
         assert str(warning) == (
-            "The class `DeprecatedClass` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
+            "The class `tests.unit_tests._api.test_deprecation.DeprecatedClass` was "
+            "deprecated in tests 2.0.0 and will be removed in 3.0.0"
         )
 
         warning = warning_list[1].message
