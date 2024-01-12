@@ -1,4 +1,4 @@
-"""An NVIDIA Riva TTS module that converts text into audio bytes."""
+"""An NVIDIA Riva ASR module that converts audio bytes to text."""
 import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional, cast

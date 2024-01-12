@@ -1,4 +1,4 @@
-"""An NVIDIA Riva TTS module that converts text into audio bytes."""
+"""A collection of common code used by the NVIDIA Riva Runnables."""
 import asyncio
 import queue
 from enum import Enum

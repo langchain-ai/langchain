@@ -1,4 +1,4 @@
-"""An NVIDIA Riva TTS module that converts text into audio bytes."""
+"""An abstraction of an Audio Stream that can be provided to the Riva ASR Runnable."""
 import asyncio
 import queue
 import threading
