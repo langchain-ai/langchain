@@ -38,24 +38,14 @@ class HanaDB(VectorStore):
 
     def __init__(
         self,
-        connection: dbapi.Connection,
         embedding: Embeddings,
         distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
-        table_name: str = "EMBEDDINGS3",
+        table_name: str = "EMBEDDINGS",
         content_field: str = "CONTENT",
         metadata_field: str = "DOC_META",
         vector_field: str = "VECTOR",
         **kwargs: Any,
     ):
-        
-        try:
-            from hdbcli import dbapi
-        except ImportError:
-            raise ImportError(
-                "Could not import hdbcli python package. "
-                "Please install it with `pip install hdbcli`."
-            )
-
         valid_distance = False
         for key in HANA_DISTANCE_FUNCTION.keys():
             if key is distance_strategy:
@@ -63,7 +53,6 @@ class HanaDB(VectorStore):
         if not valid_distance:
             raise ValueError("Unsupported distance_strategy: {}".format(distance_strategy))
         
-        self.connection = connection
         self.embedding = embedding
         self.distance_strategy = distance_strategy
         self.table_name = self._sanitize_input(table_name)
@@ -73,6 +62,17 @@ class HanaDB(VectorStore):
 
         # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
+        self.connection = self._get_connection()
+
+    def _get_connection(self: HanaDB) -> dbapi.Connection:
+        try:
+            from hdbcli import dbapi
+        except ImportError:
+            raise ImportError(
+                "Could not import hdbcli python package. "
+                "Please install it with `pip install hdbcli`."
+            )
+        return dbapi.connect(**self.connection_kwargs)
 
     @property
     def embeddings(self) -> Embeddings:
@@ -129,6 +129,31 @@ class HanaDB(VectorStore):
             cur.close()
         return []
 
+    @classmethod
+    def from_texts(
+        cls: Type[HanaDB],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ):
+        """Create a HANA vectorstore from raw documents.
+        This is a user-friendly interface that:
+            1. Embeds documents.
+            2. Creates a new table for the embeddings in HANA.
+            3. Adds the documents to the newly created table.
+        This is intended to be a quick way to get started.
+        """
+
+        instance = cls(
+            texts,
+            metadatas,
+            embedding,
+            **kwargs,
+        )
+        instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
+        return instance
+
     def similarity_search(
         self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
@@ -169,4 +194,4 @@ class HanaDB(VectorStore):
         finally:
             cur.close()
         return result
-    
+

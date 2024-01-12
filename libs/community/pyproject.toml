@@ -147,6 +147,7 @@ langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
 boto3 = ">=1.28.57,<2"
 google-cloud-aiplatform = ">=1.37.0,<2"
+hdbcli = "^2.19.21"
 
 [tool.poetry.group.lint]
 optional = true
