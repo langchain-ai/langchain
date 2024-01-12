@@ -16,18 +16,28 @@ body:
       placeholder: Версия GigaChain, версия python, операционная система, ...
     validations:
       required: true
-
-  - type: textarea
-    id: who-can-help
     attributes:
       label: К кому обратиться?
       description: |
         Разработчики стараются своевременно обрабатывать все открытые issue. Тем не менее, если вы считаете, что обнаруженную ошибку нужно рассмотреть с повышенным приоритетом, вы можете уведомить об этом руководителя проекта — @Rai220.
 
-      placeholder: "@Username ..."
+      placeholder: |
+        The following code: 
+        
+        ```python
+        from langchain_core.runnables import RunnableLambda
 
-  - type: checkboxes
-    id: information-scripts-examples
+        def bad_code(inputs) -> int:
+          raise NotImplementedError('For demo purpose')
+          
+          chain = RunnableLambda(bad_code)
+          chain.invoke('Hello!')
+        ```
+        
+        Include both the error and the full stack trace if reporting an exception!
+
+  - type: textarea
+    id: description
     attributes:
       label: Дополнительная информация
       description: "Ошибка обнаружена при использовании:"
@@ -35,6 +45,24 @@ body:
         - label: "Официальных примеров (*notebooks*)/скриптов"
         - label: "Собственных или доработанных скриптов"
 
+        Write a short description telling what you are doing, what you expect to happen, and what is currently happening.
+      placeholder: |
+        * I'm trying to use the `langchain` library to do X.
+        * I expect to see Y.
+        * Instead, it does Z.
+    validations:
+      required: true
+  - type: textarea
+    id: system-info
+    attributes:
+      label: System Info
+      description: Please share your system info with us.
+      placeholder: |
+        "pip freeze | grep langchain"
+        platform
+        python version
+    validations:
+      required: true
   - type: checkboxes
     id: related-components
     attributes:

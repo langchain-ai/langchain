@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain"
-version = "0.0.352.1"
+version = "0.1.0"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -15,8 +15,8 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.3"
-gigachain-community = ">=0.0.6.1,<0.1"
+gigachain-core = ">=0.1.7,<0.2"
+gigachain-community = ">=0.0.9,<0.1"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
@@ -83,7 +83,7 @@ cassio = {version = "^0.1.0", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
 jsonschema = {version = ">1", optional = true}
-langsmith = "~0.0.70"
+langsmith = "~0.0.77"
 rank-bm25 = {version = "^0.2.2", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
 gitpython = {version = "^3.1.32", optional = true}
@@ -99,7 +99,7 @@ motor = {version = "^3.3.1", optional = true}
 timescale-vector = {version = "^0.0.1", optional = true}
 typer = {version= "^0.9.0", optional = true}
 anthropic = {version = "^0.3.11", optional = true}
-gigachat = "^0.1.12.1"
+gigachat = "^0.1.13"
 aiosqlite = {version = "^0.19.0", optional = true}
 rspace_client = {version = "^2.5.0", optional = true}
 upstash-redis = {version = "^0.15.0", optional = true}
@@ -114,6 +114,7 @@ databricks-vectorsearch = {version = "^0.21", optional = true}
 couchbase = {version = "^4.1.9", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+langchain-openai = {version = ">=0.0.2,<0.1", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -168,7 +169,7 @@ wrapt = "^1.15.0"
 openai = "^1"
 python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
-tiktoken = "^0.3.2"
+tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 gigachain-core = {path = "../core", develop = true}
 gigachain-community = {path = "../community", develop = true}
@@ -298,6 +299,7 @@ extended_testing = [
  "couchbase",
  "dgml-utils",
  "cohere",
+ "langchain-openai",
 ]
 
 [tool.ruff]

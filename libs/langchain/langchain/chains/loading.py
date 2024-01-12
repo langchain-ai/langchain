@@ -4,16 +4,17 @@ from pathlib import Path
 from typing import Any, Union
 
 import yaml
+from langchain_community.llms.loading import load_llm, load_llm_from_config
 from langchain_core.prompts.loading import (
     _load_output_parser,
     load_prompt,
     load_prompt_from_config,
 )
+from langchain_core.utils.loading import try_load_from_hub
 
-from langchain.chains import AnalyzeDocumentChain, ReduceDocumentsChain
+from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.base import Chain
-from langchain.chains.combine_documents.conditional import ConditionalDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
@@ -28,21 +29,17 @@ from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
-from langchain.document_transformers.loading import load_transformer_from_config
-from langchain.llms.loading import load_llm, load_llm_from_config
-from langchain.utilities.loading import try_load_from_hub
 
-URL_BASE = "https://raw.githubusercontent.com/ai-forever/gigachain/hub/master/chains/"
+URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 
 
 def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
     """Load LLM chain from config dict."""
-    llm_settings = kwargs.get("llm_settings", {})
     if "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config, **llm_settings)
+        llm = load_llm_from_config(llm_config)
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"), **llm_settings)
+        llm = load_llm(config.pop("llm_path"))
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
 
@@ -552,36 +549,6 @@ def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
         return LLMRequestsChain(llm_chain=llm_chain, **config)
 
 
-def _load_analyze_document_chain(config: dict, **kwargs: Any) -> AnalyzeDocumentChain:
-    if "text_splitter" in config:
-        text_splitter = load_transformer_from_config(config.pop("text_splitter"))
-        config["text_splitter"] = text_splitter
-    combine_chain = load_chain_from_config(config.pop("combine_docs_chain"))
-    return AnalyzeDocumentChain(combine_docs_chain=combine_chain, **config)
-
-
-def _load_conditional_documents_chain(
-    config: dict, **kwargs: Any
-) -> ConditionalDocumentsChain:
-    if "stuff_chain" in config:
-        stuff_chain_config = config.pop("stuff_chain")
-        stuff_chain = load_chain_from_config(stuff_chain_config)
-    else:
-        raise ValueError("`stuff_chain` must be present.")
-
-    if "map_reduce_chain" in config:
-        map_reduce_chain_config = config.pop("map_reduce_chain")
-        map_reduce_chain = load_chain_from_config(map_reduce_chain_config)
-    else:
-        raise ValueError("`map_reduce_chain` must be present.")
-
-    return ConditionalDocumentsChain(
-        stuff_chain=stuff_chain,
-        map_reduce_chain=map_reduce_chain,
-        **config,
-    )
-
-
 type_to_loader_dict = {
     "api_chain": _load_api_chain,
     "hyde_chain": _load_hyde_chain,
@@ -593,7 +560,6 @@ type_to_loader_dict = {
     "pal_chain": _load_pal_chain,
     "qa_with_sources_chain": _load_qa_with_sources_chain,
     "stuff_documents_chain": _load_stuff_documents_chain,
-    "analyze_document_chain": _load_analyze_document_chain,
     "map_reduce_documents_chain": _load_map_reduce_documents_chain,
     "reduce_documents_chain": _load_reduce_documents_chain,
     "map_rerank_documents_chain": _load_map_rerank_documents_chain,
@@ -604,7 +570,6 @@ type_to_loader_dict = {
     "retrieval_qa": _load_retrieval_qa,
     "retrieval_qa_with_sources_chain": _load_retrieval_qa_with_sources_chain,
     "graph_cypher_chain": _load_graph_cypher_chain,
-    "conditional_documents_chain": _load_conditional_documents_chain,
 }
 
 

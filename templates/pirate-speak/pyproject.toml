@@ -7,8 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain = ">=0.0.324"
 openai = "<2"
+langchain-community = "^0.0.7"
+gigachain-core = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 gigachain-cli = ">=0.0.15"

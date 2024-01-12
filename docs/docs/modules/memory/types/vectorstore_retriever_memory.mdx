@@ -8,8 +8,8 @@ In this case, the "docs" are previous conversation snippets. This can be useful 
 
 ```python
 from datetime import datetime
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_openai import OpenAI
 from langchain.memory import VectorStoreRetrieverMemory
 from langchain.chains import ConversationChain
 from langchain.prompts import PromptTemplate
@@ -24,7 +24,7 @@ Depending on the store you choose, this step may look different. Consult the rel
 import faiss
 
 from langchain.docstore import InMemoryDocstore
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 
 
 embedding_size = 1536 # Dimensions of the OpenAIEmbeddings
@@ -52,8 +52,6 @@ memory.save_context({"input": "I don't the Celtics"}, {"output": "ok"}) #
 
 
 ```python
-# Notice the first result returned is the memory pertaining to tax help, which the language model deems more semantically relevant
-# to a 1099 than the other documents, despite them both containing numbers.
 print(memory.load_memory_variables({"prompt": "what sport should i watch?"})["history"])
 ```
 
@@ -88,7 +86,6 @@ PROMPT = PromptTemplate(
 conversation_with_summary = ConversationChain(
     llm=llm,
     prompt=PROMPT,
-    # We set a very low max_token_limit for the purposes of testing.
     memory=memory,
     verbose=True
 )
