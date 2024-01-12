@@ -42,9 +42,9 @@ from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
+from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
-from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
@@ -66,7 +66,11 @@ from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
+from langchain.chains.retrieval import create_retrieval_chain
+from langchain.chains.retrieval_qa.base import (
+    RetrievalQA,
+    VectorDBQA,
+)
 from langchain.chains.router import (
     LLMRouterChain,
     MultiPromptChain,
@@ -76,6 +80,7 @@ from langchain.chains.router import (
 )
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.query import create_sql_query_chain
+from langchain.chains.summarize import load_summarize_chain
 from langchain.chains.transform import TransformChain
 
 __all__ = [
@@ -94,7 +99,6 @@ __all__ = [
     "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
-    "LLMBashChain",
     "LLMChain",
     "LLMCheckerChain",
     "LLMMathChain",
@@ -135,4 +139,7 @@ __all__ = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
+    "create_retrieval_chain",
+    "create_history_aware_retriever",
+    "load_summarize_chain",
 ]

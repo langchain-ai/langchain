@@ -6,7 +6,7 @@ preferences, measuring similarity / semantic equivalence between outputs,
 or any other comparison task.
 
 Example:
-    >>> from langchain.chat_models import ChatOpenAI
+    >>> from langchain_community.chat_models import ChatOpenAI
     >>> from langchain.evaluation.comparison import PairwiseStringEvalChain
     >>> llm = ChatOpenAI(temperature=0)
     >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
@@ -18,7 +18,7 @@ Example:
     ...        " there are two hydrogen atoms and one oxygen atom."
     ...     reference = "The chemical formula for water is H2O.",
     ... )
-    >>> print(result["text"])
+    >>> print(result)
     # {
     #    "value": "B",
     #    "comment": "Both responses accurately state"

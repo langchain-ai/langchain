@@ -1,4 +1,5 @@
 """Evaluators for parsing strings."""
+import json
 from operator import eq
 from typing import Any, Callable, Optional, Union, cast
 
@@ -51,7 +52,7 @@ class JsonValidityEvaluator(StringEvaluator):
         prediction: str,
         input: Optional[str] = None,
         reference: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.
 
@@ -68,7 +69,7 @@ class JsonValidityEvaluator(StringEvaluator):
 
         """
         try:
-            parse_json_markdown(prediction)
+            parse_json_markdown(prediction, parser=json.loads)
             return {"score": 1}
         except Exception as e:
             return {"score": 0, "reasoning": str(e)}
@@ -122,16 +123,19 @@ class JsonEqualityEvaluator(StringEvaluator):
         return "json_equality"
 
     def _parse_json(
-        self, string: str
+        self,
+        string: Any,
     ) -> Union[dict, list, None, float, bool, int, str]:
-        return parse_json_markdown(string)
+        if isinstance(string, str):
+            return parse_json_markdown(string)
+        return string
 
     def _evaluate_strings(
         self,
         prediction: str,
         input: Optional[str] = None,
         reference: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.
 

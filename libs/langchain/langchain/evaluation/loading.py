@@ -1,8 +1,10 @@
 """Loading datasets and evaluators."""
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
+from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_core.language_models import BaseLanguageModel
+
 from langchain.chains.base import Chain
-from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
 from langchain.evaluation.comparison import PairwiseStringEvalChain
 from langchain.evaluation.comparison.eval_chain import LabeledPairwiseStringEvalChain
@@ -14,17 +16,24 @@ from langchain.evaluation.embedding_distance.base import (
     EmbeddingDistanceEvalChain,
     PairwiseEmbeddingDistanceEvalChain,
 )
+from langchain.evaluation.exact_match.base import ExactMatchStringEvaluator
 from langchain.evaluation.parsing.base import (
     JsonEqualityEvaluator,
     JsonValidityEvaluator,
 )
+from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
+from langchain.evaluation.parsing.json_schema import JsonSchemaEvaluator
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
+from langchain.evaluation.regex_match.base import RegexMatchStringEvaluator
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
+from langchain.evaluation.scoring.eval_chain import (
+    LabeledScoreStringEvalChain,
+    ScoreStringEvalChain,
+)
 from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
     StringDistanceEvalChain,
 )
-from langchain.schema.language_model import BaseLanguageModel
 
 
 def load_dataset(uri: str) -> List[Dict]:
@@ -68,7 +77,9 @@ _EVALUATOR_MAP: Dict[
     EvaluatorType.COT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
     EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
+    EvaluatorType.SCORE_STRING: ScoreStringEvalChain,
     EvaluatorType.LABELED_PAIRWISE_STRING: LabeledPairwiseStringEvalChain,
+    EvaluatorType.LABELED_SCORE_STRING: LabeledScoreStringEvalChain,
     EvaluatorType.AGENT_TRAJECTORY: TrajectoryEvalChain,
     EvaluatorType.CRITERIA: CriteriaEvalChain,
     EvaluatorType.LABELED_CRITERIA: LabeledCriteriaEvalChain,
@@ -78,6 +89,10 @@ _EVALUATOR_MAP: Dict[
     EvaluatorType.PAIRWISE_EMBEDDING_DISTANCE: PairwiseEmbeddingDistanceEvalChain,
     EvaluatorType.JSON_VALIDITY: JsonValidityEvaluator,
     EvaluatorType.JSON_EQUALITY: JsonEqualityEvaluator,
+    EvaluatorType.JSON_EDIT_DISTANCE: JsonEditDistanceEvaluator,
+    EvaluatorType.JSON_SCHEMA_VALIDATION: JsonSchemaEvaluator,
+    EvaluatorType.REGEX_MATCH: RegexMatchStringEvaluator,
+    EvaluatorType.EXACT_MATCH: ExactMatchStringEvaluator,
 }
 
 
@@ -111,12 +126,14 @@ def load_evaluator(
     if evaluator not in _EVALUATOR_MAP:
         raise ValueError(
             f"Unknown evaluator type: {evaluator}"
-            f"Valid types are: {list(_EVALUATOR_MAP.keys())}"
+            f"\nValid types are: {list(_EVALUATOR_MAP.keys())}"
         )
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
         try:
-            llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
+            llm = llm or ChatOpenAI(
+                model="gpt-4", model_kwargs={"seed": 42}, temperature=0
+            )
         except Exception as e:
             raise ValueError(
                 f"Evaluation with the {evaluator_cls} requires a "

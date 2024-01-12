@@ -10,13 +10,14 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools.sql_database.prompt import QUERY_CHECKER
-from langchain.utilities.sql_database import SQLDatabase
+from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
+from langchain_community.utilities.sql_database import SQLDatabase
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
+SQL_QUERY = "SQLQuery:"
 
 
 class SQLDatabaseChain(Chain):
@@ -26,7 +27,7 @@ class SQLDatabaseChain(Chain):
         .. code-block:: python
 
             from langchain_experimental.sql import SQLDatabaseChain
-            from langchain import OpenAI, SQLDatabase
+            from langchain_community.llms import OpenAI, SQLDatabase
             db = SQLDatabase(...)
             db_chain = SQLDatabaseChain.from_llm(OpenAI(), db)
 
@@ -110,7 +111,7 @@ class SQLDatabaseChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        input_text = f"{inputs[self.input_key]}\nSQLQuery:"
+        input_text = f"{inputs[self.input_key]}\n{SQL_QUERY}"
         _run_manager.on_text(input_text, verbose=self.verbose)
         # If not present, then defaults to None which is all tables.
         table_names_to_use = inputs.get("table_names_to_use")
@@ -122,9 +123,12 @@ class SQLDatabaseChain(Chain):
             "table_info": table_info,
             "stop": ["\nSQLResult:"],
         }
+        if self.memory is not None:
+            for k in self.memory.memory_variables:
+                llm_inputs[k] = inputs[k]
         intermediate_steps: List = []
         try:
-            intermediate_steps.append(llm_inputs)  # input: sql generation
+            intermediate_steps.append(llm_inputs.copy())  # input: sql generation
             sql_cmd = self.llm_chain.predict(
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
@@ -137,6 +141,8 @@ class SQLDatabaseChain(Chain):
                     sql_cmd
                 )  # output: sql generation (no checker)
                 intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
+                if SQL_QUERY in sql_cmd:
+                    sql_cmd = sql_cmd.split(SQL_QUERY)[1].strip()
                 result = self.database.run(sql_cmd)
                 intermediate_steps.append(str(result))  # output: sql exec
             else:
@@ -177,7 +183,7 @@ class SQLDatabaseChain(Chain):
                 _run_manager.on_text("\nAnswer:", verbose=self.verbose)
                 input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
                 llm_inputs["input"] = input_text
-                intermediate_steps.append(llm_inputs)  # input: final answer
+                intermediate_steps.append(llm_inputs.copy())  # input: final answer
                 final_result = self.llm_chain.predict(
                     callbacks=_run_manager.get_child(),
                     **llm_inputs,
@@ -242,15 +248,13 @@ class SQLDatabaseSequentialChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        database: SQLDatabase,
+        db: SQLDatabase,
         query_prompt: BasePromptTemplate = PROMPT,
         decider_prompt: BasePromptTemplate = DECIDER_PROMPT,
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
-        sql_chain = SQLDatabaseChain.from_llm(
-            llm, database, prompt=query_prompt, **kwargs
-        )
+        sql_chain = SQLDatabaseChain.from_llm(llm, db, prompt=query_prompt, **kwargs)
         decider_chain = LLMChain(
             llm=llm, prompt=decider_prompt, output_key="table_names"
         )

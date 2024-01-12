@@ -32,7 +32,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         *,
         answer_prefix_tokens: Optional[List[str]] = None,
         strip_tokens: bool = True,
-        stream_prefix: bool = False
+        stream_prefix: bool = False,
     ) -> None:
         """Instantiate FinalStreamingStdOutCallbackHandler.
 

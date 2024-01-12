@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Optional
 
-from langchain.schema import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser
 
 
 class GuardrailsOutputParser(BaseOutputParser):
@@ -11,11 +11,11 @@ class GuardrailsOutputParser(BaseOutputParser):
     guard: Any
     """The Guardrails object."""
     api: Optional[Callable]
-    """The API to use for the Guardrails object."""
+    """The LLM API passed to Guardrails during parsing. An example is `openai.completions.create`."""  # noqa: E501
     args: Any
-    """The arguments to pass to the API."""
+    """Positional arguments to pass to the above LLM API callable."""
     kwargs: Any
-    """The keyword arguments to pass to the API."""
+    """Keyword arguments to pass to the above LLM API callable."""
 
     @property
     def _type(self) -> str:

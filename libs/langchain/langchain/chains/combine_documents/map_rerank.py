@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
+
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
+from langchain_core.runnables.config import RunnableConfig
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
 from langchain.output_parsers.regex import RegexParser
-from langchain.pydantic_v1 import Extra, root_validator
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
@@ -23,8 +25,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         .. code-block:: python
 
             from langchain.chains import StuffDocumentsChain, LLMChain
-            from langchain.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_core.prompts import PromptTemplate
+            from langchain_community.llms import OpenAI
             from langchain.output_parsers.regex import RegexParser
 
             document_variable_name = "context"
@@ -76,6 +78,19 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        schema: Dict[str, Any] = {
+            self.output_key: (str, None),
+        }
+        if self.return_intermediate_steps:
+            schema["intermediate_steps"] = (List[str], None)
+        if self.metadata_keys:
+            schema.update({key: (Any, None) for key in self.metadata_keys})
+
+        return create_model("MapRerankOutput", **schema)
 
     @property
     def output_keys(self) -> List[str]:

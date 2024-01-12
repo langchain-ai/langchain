@@ -5,7 +5,16 @@ import inspect
 import warnings
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import RunnableConfig
+from langchain_core.vectorstores import VectorStore
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -18,11 +27,6 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.schema import BasePromptTemplate, BaseRetriever, Document
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage
-from langchain.vectorstores.base import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.
 # This needs to be consolidated.
@@ -50,6 +54,15 @@ def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
     return buffer
 
 
+class InputType(BaseModel):
+    """Input type for ConversationalRetrievalChain."""
+
+    question: str
+    """The question to answer."""
+    chat_history: List[CHAT_TURN_TYPE] = Field(default_factory=list)
+    """The chat history to use for retrieval."""
+
+
 class BaseConversationalRetrievalChain(Chain):
     """Chain for chatting with an index."""
 
@@ -74,6 +87,9 @@ class BaseConversationalRetrievalChain(Chain):
     get_chat_history: Optional[Callable[[List[CHAT_TURN_TYPE]], str]] = None
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
+    response_if_no_docs_found: Optional[str]
+    """If specified, the chain will return a fixed response if no docs 
+    are found for the question. """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -86,6 +102,11 @@ class BaseConversationalRetrievalChain(Chain):
     def input_keys(self) -> List[str]:
         """Input keys."""
         return ["question", "chat_history"]
+
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        return InputType
 
     @property
     def output_keys(self) -> List[str]:
@@ -134,14 +155,19 @@ class BaseConversationalRetrievalChain(Chain):
             docs = self._get_docs(new_question, inputs, run_manager=_run_manager)
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
-        new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = self.combine_docs_chain.run(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {}
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = self.combine_docs_chain.run(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
@@ -182,14 +208,19 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
-        new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = await self.combine_docs_chain.arun(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {}
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = await self.combine_docs_chain.arun(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
@@ -228,8 +259,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             from langchain.chains import (
                 StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
             )
-            from langchain.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_core.prompts import PromptTemplate
+            from langchain_community.llms import OpenAI
 
             combine_docs_chain = StuffDocumentsChain(...)
             vectorstore = ...
@@ -265,7 +296,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             self.combine_docs_chain, StuffDocumentsChain
         ):
             tokens = [
-                self.combine_docs_chain.llm_chain.llm.get_num_tokens(doc.page_content)
+                self.combine_docs_chain.llm_chain._get_num_tokens(doc.page_content)
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])

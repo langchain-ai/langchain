@@ -26,32 +26,38 @@
 
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
-from langchain.memory.buffer import (
-    ConversationBufferMemory,
-    ConversationStringBufferMemory,
-)
-from langchain.memory.buffer_window import ConversationBufferWindowMemory
-from langchain.memory.chat_message_histories import (
+from langchain_community.chat_message_histories import (
+    AstraDBChatMessageHistory,
     CassandraChatMessageHistory,
     ChatMessageHistory,
     CosmosDBChatMessageHistory,
     DynamoDBChatMessageHistory,
+    ElasticsearchChatMessageHistory,
     FileChatMessageHistory,
     MomentoChatMessageHistory,
     MongoDBChatMessageHistory,
     PostgresChatMessageHistory,
     RedisChatMessageHistory,
+    SingleStoreDBChatMessageHistory,
     SQLChatMessageHistory,
     StreamlitChatMessageHistory,
+    UpstashRedisChatMessageHistory,
     XataChatMessageHistory,
     ZepChatMessageHistory,
 )
+
+from langchain.memory.buffer import (
+    ConversationBufferMemory,
+    ConversationStringBufferMemory,
+)
+from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (
     ConversationEntityMemory,
     InMemoryEntityStore,
     RedisEntityStore,
     SQLiteEntityStore,
+    UpstashRedisEntityStore,
 )
 from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.motorhead_memory import MotorheadMemory
@@ -64,6 +70,7 @@ from langchain.memory.vectorstore import VectorStoreRetrieverMemory
 from langchain.memory.zep_memory import ZepMemory
 
 __all__ = [
+    "AstraDBChatMessageHistory",
     "CassandraChatMessageHistory",
     "ChatMessageHistory",
     "CombinedMemory",
@@ -77,6 +84,7 @@ __all__ = [
     "ConversationTokenBufferMemory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
+    "ElasticsearchChatMessageHistory",
     "FileChatMessageHistory",
     "InMemoryEntityStore",
     "MomentoChatMessageHistory",
@@ -86,6 +94,7 @@ __all__ = [
     "ReadOnlySharedMemory",
     "RedisChatMessageHistory",
     "RedisEntityStore",
+    "SingleStoreDBChatMessageHistory",
     "SQLChatMessageHistory",
     "SQLiteEntityStore",
     "SimpleMemory",
@@ -94,4 +103,6 @@ __all__ = [
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "ZepMemory",
+    "UpstashRedisEntityStore",
+    "UpstashRedisChatMessageHistory",
 ]

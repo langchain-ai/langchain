@@ -3,15 +3,15 @@
 from typing import Any, Dict
 
 import pytest
+from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_community.llms.openai import OpenAI
+from langchain_core.load.dump import dumps
+from langchain_core.load.serializable import Serializable
+from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.tracers.langchain import LangChainTracer
 
-from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.llm import LLMChain
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.llms.openai import OpenAI
-from langchain.load.dump import dumps
-from langchain.load.serializable import Serializable
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
 
 
 class Person(Serializable):
@@ -19,8 +19,8 @@ class Person(Serializable):
 
     you_can_see_me: str = "hello"
 
-    @property
-    def lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     @property
@@ -57,6 +57,14 @@ def test_person(snapshot: Any) -> None:
     assert dumps(p, pretty=True) == snapshot
     sp = SpecialPerson(another_secret="Wooo", secret="Hmm")
     assert dumps(sp, pretty=True) == snapshot
+    assert Person.lc_id() == ["tests", "unit_tests", "load", "test_dump", "Person"]
+
+
+def test_typeerror() -> None:
+    assert (
+        dumps({(1, 2): 3})
+        == """{"lc": 1, "type": "not_implemented", "id": ["builtins", "dict"], "repr": "{(1, 2): 3}"}"""  # noqa: E501
+    )
 
 
 @pytest.mark.requires("openai")
@@ -140,3 +148,14 @@ def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     assert dumps(chain, pretty=True) == snapshot
+
+
+def test_person_with_kwargs(snapshot: Any) -> None:
+    person = Person(secret="hello")
+    assert dumps(person, separators=(",", ":")) == snapshot
+
+
+def test_person_with_invalid_kwargs() -> None:
+    person = Person(secret="hello")
+    with pytest.raises(TypeError):
+        dumps(person, invalid_kwarg="hello")

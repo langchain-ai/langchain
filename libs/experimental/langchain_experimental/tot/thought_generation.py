@@ -13,7 +13,7 @@ from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
 
 from langchain_experimental.pydantic_v1 import Field
-from langchain_experimental.tot.prompts import COT_PROMPT, PROPOSE_PROMPT
+from langchain_experimental.tot.prompts import get_cot_prompt, get_propose_prompt
 
 
 class BaseThoughtGenerationStrategy(LLMChain):
@@ -29,7 +29,7 @@ class BaseThoughtGenerationStrategy(LLMChain):
         self,
         problem_description: str,
         thoughts_path: Tuple[str, ...] = (),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """
         Generate the next thought given the problem description and the thoughts
@@ -46,13 +46,13 @@ class SampleCoTStrategy(BaseThoughtGenerationStrategy):
     lead to diversity, which helps to avoid repetition.
     """
 
-    prompt: BasePromptTemplate = COT_PROMPT
+    prompt: BasePromptTemplate = Field(default_factory=get_cot_prompt)
 
     def next_thought(
         self,
         problem_description: str,
         thoughts_path: Tuple[str, ...] = (),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         response_text = self.predict_and_parse(
             problem_description=problem_description, thoughts=thoughts_path, **kwargs
@@ -69,21 +69,21 @@ class ProposePromptStrategy(BaseThoughtGenerationStrategy):
     in the same prompt completion helps to avoid duplication.
     """
 
-    prompt: BasePromptTemplate = PROPOSE_PROMPT
+    prompt: BasePromptTemplate = Field(default_factory=get_propose_prompt)
     tot_memory: Dict[Tuple[str, ...], List[str]] = Field(default_factory=dict)
 
     def next_thought(
         self,
         problem_description: str,
         thoughts_path: Tuple[str, ...] = (),
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         if thoughts_path not in self.tot_memory or not self.tot_memory[thoughts_path]:
             new_thoughts = self.predict_and_parse(
                 problem_description=problem_description,
                 thoughts=thoughts_path,
                 n=self.c,
-                **kwargs
+                **kwargs,
             )
             if not new_thoughts:
                 return ""

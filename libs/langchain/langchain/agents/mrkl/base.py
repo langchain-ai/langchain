@@ -3,6 +3,12 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
+from langchain_core._api import deprecated
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseTool
+
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
 from langchain.agents.mrkl.output_parser import MRKLOutputParser
@@ -11,10 +17,6 @@ from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools.base import BaseTool
 
 
 class ChainConfig(NamedTuple):
@@ -31,6 +33,7 @@ class ChainConfig(NamedTuple):
     action_description: str
 
 
+@deprecated("0.1.0", alternative="create_react_agent", removal="0.2.0")
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
 
@@ -136,19 +139,9 @@ class ZeroShotAgent(Agent):
         super()._validate_tools(tools)
 
 
+@deprecated("0.1.0", removal="0.2.0")
 class MRKLChain(AgentExecutor):
-    """Chain that implements the MRKL system.
-
-    Example:
-        .. code-block:: python
-
-            from langchain import OpenAI, MRKLChain
-            from langchain.chains.mrkl.base import ChainConfig
-            llm = OpenAI(temperature=0)
-            prompt = PromptTemplate(...)
-            chains = [...]
-            mrkl = MRKLChain.from_chains(llm=llm, prompt=prompt)
-    """
+    """[Deprecated] Chain that implements the MRKL system."""
 
     @classmethod
     def from_chains(
@@ -166,28 +159,6 @@ class MRKLChain(AgentExecutor):
 
         Returns:
             An initialized MRKL chain.
-
-        Example:
-            .. code-block:: python
-
-                from langchain import LLMMathChain, OpenAI, SerpAPIWrapper, MRKLChain
-                from langchain.chains.mrkl.base import ChainConfig
-                llm = OpenAI(temperature=0)
-                search = SerpAPIWrapper()
-                llm_math_chain = LLMMathChain(llm=llm)
-                chains = [
-                    ChainConfig(
-                        action_name = "Search",
-                        action=search.search,
-                        action_description="useful for searching"
-                    ),
-                    ChainConfig(
-                        action_name="Calculator",
-                        action=llm_math_chain.run,
-                        action_description="useful for doing math"
-                    )
-                ]
-                mrkl = MRKLChain.from_chains(llm, chains)
         """
         tools = [
             Tool(

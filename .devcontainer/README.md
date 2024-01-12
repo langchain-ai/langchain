@@ -5,10 +5,10 @@ This project includes a [dev container](https://containers.dev/), which lets you
 You can use the dev container configuration in this folder to build and run the app without needing to install any of its tools locally! You can use it in [GitHub Codespaces](https://github.com/features/codespaces) or the [VS Code Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
 ## GitHub Codespaces
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/hwchase17/langchain)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/langchain)
 
 You may use the button above, or follow these steps to open this repo in a Codespace:
-1. Click the **Code** drop-down menu at the top of https://github.com/hwchase17/langchain.
+1. Click the **Code** drop-down menu at the top of https://github.com/langchain-ai/langchain.
 1. Click on the **Codespaces** tab.
 1. Click **Create codespace on master** .
 
@@ -17,13 +17,16 @@ For more info, check out the [GitHub documentation](https://docs.github.com/en/f
 ## VS Code Dev Containers
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
 
-Note: If you click this link you will open the main repo and not your local cloned repo, you can use this link and replace with your username and cloned repo name: 
+Note: If you click the link above you will open the main repo (langchain-ai/langchain) and not your local cloned repo. This is fine if you only want to run and test the library, but if you want to contribute you can use the  link below and replace with your username and cloned repo name: 
+```
 https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/<yourusername>/<yourclonedreponame>
 
+```
+Then you will have a local cloned repo where you can contribute and then create pull requests.
 
 If you already have VS Code and Docker installed, you can use the button above to get started. This will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
 
-You can also follow these steps to open this repo in a container using the VS Code Dev Containers extension:
+Alternatively you can also follow these steps to open this repo in a container using the VS Code Dev Containers extension:
 
 1. If this is your first time using a development container, please ensure your system meets the pre-reqs (i.e. have Docker installed) in the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
 

@@ -22,7 +22,17 @@ UNARY_OPERATORS = [Operator.NOT]
 
 
 def process_value(value: Union[int, float, str]) -> str:
-    # required for comparators involving strings
+    """Convert a value to a string and add double quotes if it is a string.
+
+    It required for comparators involving strings.
+
+    Args:
+        value: The value to convert.
+
+    Returns:
+        The converted value as a string.
+    """
+    #
     if isinstance(value, str):
         # If the value is already a string, add double quotes
         return f'"{value}"'

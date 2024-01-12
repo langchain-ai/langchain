@@ -2,8 +2,8 @@
 from typing import List
 
 import pytest
+from langchain_community.embeddings.fake import FakeEmbeddings
 
-from langchain.embeddings.fake import FakeEmbeddings
 from langchain.evaluation.loading import EvaluatorType, load_evaluators
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
@@ -31,6 +31,7 @@ def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
     [
         [EvaluatorType.LABELED_CRITERIA],
         [EvaluatorType.LABELED_PAIRWISE_STRING],
+        [EvaluatorType.LABELED_SCORE_STRING],
         [EvaluatorType.QA],
         [EvaluatorType.CONTEXT_QA],
         [EvaluatorType.COT_QA],
@@ -41,6 +42,7 @@ def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
             EvaluatorType.LABELED_PAIRWISE_STRING,
         ],
         [EvaluatorType.JSON_EQUALITY],
+        [EvaluatorType.EXACT_MATCH, EvaluatorType.REGEX_MATCH],
     ],
 )
 def test_eval_chain_requires_references(evaluator_types: List[EvaluatorType]) -> None:

@@ -3,11 +3,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from langchain_community.utilities.requests import TextRequestsWrapper
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.utilities.requests import TextRequestsWrapper
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"  # noqa: E501
@@ -15,7 +16,16 @@ DEFAULT_HEADERS = {
 
 
 class LLMRequestsChain(Chain):
-    """Chain that requests a URL and then uses an LLM to parse results."""
+    """Chain that requests a URL and then uses an LLM to parse results.
+
+    **Security Note**: This chain can make GET requests to arbitrary URLs,
+        including internal URLs.
+
+        Control access to who can run this chain and what network access
+        this chain has.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     llm_chain: LLMChain
     requests_wrapper: TextRequestsWrapper = Field(
@@ -56,7 +66,7 @@ class LLMRequestsChain(Chain):
             from bs4 import BeautifulSoup  # noqa: F401
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import bs4 python package. "
                 "Please install it with `pip install bs4`."
             )

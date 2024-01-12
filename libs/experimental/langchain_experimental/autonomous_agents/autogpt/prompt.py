@@ -1,18 +1,41 @@
 import time
-from typing import Any, Callable, List
+from typing import Any, Callable, List, cast
 
 from langchain.prompts.chat import (
     BaseChatPromptTemplate,
 )
-from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
-from langchain.vectorstores.base import VectorStoreRetriever
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
 from langchain_experimental.pydantic_v1 import BaseModel
 
 
-class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
+# This class has a metaclass conflict: both `BaseChatPromptTemplate` and `BaseModel`
+# define a metaclass to use, and the two metaclasses attempt to define
+# the same functions but in mutually-incompatible ways.
+# It isn't clear how to resolve this, and this code predates mypy
+# beginning to perform that check.
+#
+# Mypy errors:
+# ```
+# Definition of "__private_attributes__" in base class "BaseModel" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__repr_name__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__pretty__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__repr_str__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Definition of "__rich_repr__" in base class "Representation" is
+#   incompatible with definition in base class "BaseModel"  [misc]
+# Metaclass conflict: the metaclass of a derived class must be
+#   a (non-strict) subclass of the metaclasses of all its bases  [misc]
+# ```
+#
+# TODO: look into refactoring this class in a way that avoids the mypy type errors
+class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
     """Prompt for AutoGPT."""
 
     ai_name: str
@@ -45,9 +68,9 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
         time_prompt = SystemMessage(
             content=f"The current time and date is {time.strftime('%c')}"
         )
-        used_tokens = self.token_counter(base_prompt.content) + self.token_counter(
-            time_prompt.content
-        )
+        used_tokens = self.token_counter(
+            cast(str, base_prompt.content)
+        ) + self.token_counter(cast(str, time_prompt.content))
         memory: VectorStoreRetriever = kwargs["memory"]
         previous_messages = kwargs["messages"]
         relevant_docs = memory.get_relevant_documents(str(previous_messages[-10:]))
@@ -65,7 +88,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
             f"from your past:\n{relevant_memory}\n\n"
         )
         memory_message = SystemMessage(content=content_format)
-        used_tokens += self.token_counter(memory_message.content)
+        used_tokens += self.token_counter(cast(str, memory_message.content))
         historical_messages: List[BaseMessage] = []
         for message in previous_messages[-10:][::-1]:
             message_tokens = self.token_counter(message.content)

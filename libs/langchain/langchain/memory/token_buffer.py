@@ -1,8 +1,9 @@
 from typing import Any, Dict, List
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage, get_buffer_string
+
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class ConversationTokenBufferMemory(BaseChatMemory):
@@ -21,7 +22,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
 
     @property
     def buffer_as_str(self) -> str:
-        """Exposes the buffer as a string in case return_messages is True."""
+        """Exposes the buffer as a string in case return_messages is False."""
         return get_buffer_string(
             self.chat_memory.messages,
             human_prefix=self.human_prefix,
@@ -30,7 +31,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
 
     @property
     def buffer_as_messages(self) -> List[BaseMessage]:
-        """Exposes the buffer as a list of messages in case return_messages is False."""
+        """Exposes the buffer as a list of messages in case return_messages is True."""
         return self.chat_memory.messages
 
     @property

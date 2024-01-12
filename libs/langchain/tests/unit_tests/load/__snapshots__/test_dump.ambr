@@ -5,6 +5,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
+      "tests",
+      "unit_tests",
+      "load",
       "test_dump",
       "Person"
     ],
@@ -27,6 +30,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
+      "tests",
+      "unit_tests",
+      "load",
       "test_dump",
       "SpecialPerson"
     ],
@@ -50,6 +56,9 @@
     }
   }
   '''
+# ---
+# name: test_person_with_kwargs
+  '{"lc":1,"type":"constructor","id":["tests","unit_tests","load","test_dump","Person"],"kwargs":{"secret":{"lc":1,"type":"secret","id":["SECRET"]},"you_can_see_me":"hello"}}'
 # ---
 # name: test_serialize_llmchain
   '''
@@ -220,17 +229,6 @@
             "id": [
               "OPENAI_API_KEY"
             ]
-          },
-          "client": {
-            "lc": 1,
-            "type": "not_implemented",
-            "id": [
-              "openai",
-              "api_resources",
-              "completion",
-              "Completion"
-            ],
-            "repr": "<class 'openai.api_resources.completion.Completion'>"
           }
         }
       },

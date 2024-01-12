@@ -1,6 +1,8 @@
-import pytest
+from typing import Any, AsyncIterator, Iterator
 
-from langchain.output_parsers.json import parse_json_markdown
+from langchain_core.messages import AIMessageChunk
+
+from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 
 GOOD_JSON = """```json
 {
@@ -143,24 +145,6 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize("json_string", TEST_CASES)
-def test_parse_json(json_string: str) -> None:
-    parsed = parse_json_markdown(json_string)
-    assert parsed == {"foo": "bar"}
-
-
-def test_parse_json_with_code_blocks() -> None:
-    parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK)
-    assert parsed == {"foo": "```bar```"}
-
-    parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)
-
-    assert parsed == {
-        "action": "Final Answer",
-        "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
-    }
-
-
 TEST_CASES_ESCAPED_QUOTES = [
     JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON,
     JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON,
@@ -168,18 +152,298 @@ TEST_CASES_ESCAPED_QUOTES = [
 ]
 
 
-@pytest.mark.parametrize("json_string", TEST_CASES_ESCAPED_QUOTES)
-def test_parse_nested_json_with_escaped_quotes(json_string: str) -> None:
-    parsed = parse_json_markdown(json_string)
-    assert parsed == {
-        "action": "Final Answer",
-        "action_input": '{"foo": "bar", "bar": "foo"}',
-    }
+TEST_CASES_PARTIAL = [
+    ('{"foo": "bar", "bar": "foo"}', '{"foo": "bar", "bar": "foo"}'),
+    ('{"foo": "bar", "bar": "foo', '{"foo": "bar", "bar": "foo"}'),
+    ('{"foo": "bar", "bar": "foo}', '{"foo": "bar", "bar": "foo}"}'),
+    ('{"foo": "bar", "bar": "foo[', '{"foo": "bar", "bar": "foo["}'),
+    ('{"foo": "bar", "bar": "foo\\"', '{"foo": "bar", "bar": "foo\\""}'),
+]
 
 
-def test_parse_json_with_python_dict() -> None:
-    parsed = parse_json_markdown(JSON_WITH_PYTHON_DICT)
-    assert parsed == {
-        "action": "Final Answer",
-        "action_input": {"foo": "bar", "bar": "foo"},
-    }
+STREAMED_TOKENS = """
+{
+
+ "
+setup
+":
+ "
+Why
+ did
+ the
+ bears
+ start
+ a
+ band
+ called
+ Bears
+ Bears
+ Bears
+ ?
+"
+,
+ "
+punchline
+":
+ "
+Because
+ they
+ wanted
+ to
+ play
+ bear
+ -y
+ good
+ music
+ !
+"
+,
+ "
+audience
+":
+ [
+"
+Haha
+"
+,
+ "
+So
+ funny
+"
+]
+
+}
+""".splitlines()
+
+EXPECTED_STREAMED_JSON = [
+    {},
+    {"setup": ""},
+    {"setup": "Why"},
+    {"setup": "Why did"},
+    {"setup": "Why did the"},
+    {"setup": "Why did the bears"},
+    {"setup": "Why did the bears start"},
+    {"setup": "Why did the bears start a"},
+    {"setup": "Why did the bears start a band"},
+    {"setup": "Why did the bears start a band called"},
+    {"setup": "Why did the bears start a band called Bears"},
+    {"setup": "Why did the bears start a band called Bears Bears"},
+    {"setup": "Why did the bears start a band called Bears Bears Bears"},
+    {"setup": "Why did the bears start a band called Bears Bears Bears ?"},
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they wanted",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they wanted to",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they wanted to play",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they wanted to play bear",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they wanted to play bear -y",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they wanted to play bear -y good",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they wanted to play bear -y good music",
+    },
+    {
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "punchline": "Because they wanted to play bear -y good music !",
+    },
+    {
+        "punchline": "Because they wanted to play bear -y good music !",
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "audience": [],
+    },
+    {
+        "punchline": "Because they wanted to play bear -y good music !",
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "audience": [""],
+    },
+    {
+        "punchline": "Because they wanted to play bear -y good music !",
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "audience": ["Haha"],
+    },
+    {
+        "punchline": "Because they wanted to play bear -y good music !",
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "audience": ["Haha", ""],
+    },
+    {
+        "punchline": "Because they wanted to play bear -y good music !",
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "audience": ["Haha", "So"],
+    },
+    {
+        "punchline": "Because they wanted to play bear -y good music !",
+        "setup": "Why did the bears start a band called Bears Bears Bears ?",
+        "audience": ["Haha", "So funny"],
+    },
+]
+
+EXPECTED_STREAMED_JSON_DIFF = [
+    [{"op": "replace", "path": "", "value": {}}],
+    [{"op": "add", "path": "/setup", "value": ""}],
+    [{"op": "replace", "path": "/setup", "value": "Why"}],
+    [{"op": "replace", "path": "/setup", "value": "Why did"}],
+    [{"op": "replace", "path": "/setup", "value": "Why did the"}],
+    [{"op": "replace", "path": "/setup", "value": "Why did the bears"}],
+    [{"op": "replace", "path": "/setup", "value": "Why did the bears start"}],
+    [{"op": "replace", "path": "/setup", "value": "Why did the bears start a"}],
+    [{"op": "replace", "path": "/setup", "value": "Why did the bears start a band"}],
+    [
+        {
+            "op": "replace",
+            "path": "/setup",
+            "value": "Why did the bears start a band called",
+        }
+    ],
+    [
+        {
+            "op": "replace",
+            "path": "/setup",
+            "value": "Why did the bears start a band called Bears",
+        }
+    ],
+    [
+        {
+            "op": "replace",
+            "path": "/setup",
+            "value": "Why did the bears start a band called Bears Bears",
+        }
+    ],
+    [
+        {
+            "op": "replace",
+            "path": "/setup",
+            "value": "Why did the bears start a band called Bears Bears Bears",
+        }
+    ],
+    [
+        {
+            "op": "replace",
+            "path": "/setup",
+            "value": "Why did the bears start a band called Bears Bears Bears ?",
+        }
+    ],
+    [{"op": "add", "path": "/punchline", "value": ""}],
+    [{"op": "replace", "path": "/punchline", "value": "Because"}],
+    [{"op": "replace", "path": "/punchline", "value": "Because they"}],
+    [{"op": "replace", "path": "/punchline", "value": "Because they wanted"}],
+    [{"op": "replace", "path": "/punchline", "value": "Because they wanted to"}],
+    [{"op": "replace", "path": "/punchline", "value": "Because they wanted to play"}],
+    [
+        {
+            "op": "replace",
+            "path": "/punchline",
+            "value": "Because they wanted to play bear",
+        }
+    ],
+    [
+        {
+            "op": "replace",
+            "path": "/punchline",
+            "value": "Because they wanted to play bear -y",
+        }
+    ],
+    [
+        {
+            "op": "replace",
+            "path": "/punchline",
+            "value": "Because they wanted to play bear -y good",
+        }
+    ],
+    [
+        {
+            "op": "replace",
+            "path": "/punchline",
+            "value": "Because they wanted to play bear -y good music",
+        }
+    ],
+    [
+        {
+            "op": "replace",
+            "path": "/punchline",
+            "value": "Because they wanted to play bear -y good music !",
+        }
+    ],
+    [{"op": "add", "path": "/audience", "value": []}],
+    [{"op": "add", "path": "/audience/0", "value": ""}],
+    [{"op": "replace", "path": "/audience/0", "value": "Haha"}],
+    [{"op": "add", "path": "/audience/1", "value": ""}],
+    [{"op": "replace", "path": "/audience/1", "value": "So"}],
+    [{"op": "replace", "path": "/audience/1", "value": "So funny"}],
+]
+
+
+def test_partial_functions_json_output_parser() -> None:
+    def input_iter(_: Any) -> Iterator[AIMessageChunk]:
+        for token in STREAMED_TOKENS:
+            yield AIMessageChunk(
+                content="", additional_kwargs={"function_call": {"arguments": token}}
+            )
+
+    chain = input_iter | JsonOutputFunctionsParser()
+
+    assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
+
+
+def test_partial_functions_json_output_parser_diff() -> None:
+    def input_iter(_: Any) -> Iterator[AIMessageChunk]:
+        for token in STREAMED_TOKENS:
+            yield AIMessageChunk(
+                content="", additional_kwargs={"function_call": {"arguments": token}}
+            )
+
+    chain = input_iter | JsonOutputFunctionsParser(diff=True)
+
+    assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON_DIFF
+
+
+async def test_partial_functions_json_output_parser_async() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
+        for token in STREAMED_TOKENS:
+            yield AIMessageChunk(
+                content="", additional_kwargs={"function_call": {"arguments": token}}
+            )
+
+    chain = input_iter | JsonOutputFunctionsParser()
+
+    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
+
+
+async def test_partial_functions_json_output_parser_diff_async() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
+        for token in STREAMED_TOKENS:
+            yield AIMessageChunk(
+                content="", additional_kwargs={"function_call": {"arguments": token}}
+            )
+
+    chain = input_iter | JsonOutputFunctionsParser(diff=True)
+
+    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF

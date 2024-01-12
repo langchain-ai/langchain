@@ -1,5 +1,17 @@
 from typing import Any, List, Optional, Sequence, Tuple
 
+from langchain_core._api import deprecated
+from langchain_core.agents import AgentAction
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
+from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseTool
+
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.chat.output_parser import ChatOutputParser
 from langchain.agents.chat.prompt import (
@@ -11,17 +23,9 @@ from langchain.agents.chat.prompt import (
 from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
-from langchain.pydantic_v1 import Field
-from langchain.schema import AgentAction, BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools.base import BaseTool
 
 
+@deprecated("0.1.0", alternative="create_react_agent", removal="0.2.0")
 class ChatAgent(Agent):
     """Chat Agent."""
 
