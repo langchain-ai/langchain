@@ -19,7 +19,7 @@ pip install pypdf
 
 
 ```python
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 
 loader = PyPDFLoader("example_data/layout-parser-paper.pdf")
 pages = loader.load_and_split()
@@ -60,8 +60,8 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 
 ```python
-from langchain.vectorstores import FAISS
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
 
 faiss_index = FAISS.from_documents(pages, OpenAIEmbeddings())
 docs = faiss_index.similarity_search("How will the community be engaged?", k=2)
@@ -114,7 +114,7 @@ Inspired by Daniel Gross's [https://gist.github.com/danielgross/3ab4104e14faccc1
 
 
 ```python
-from langchain.document_loaders import MathpixPDFLoader
+from langchain_community.document_loaders import MathpixPDFLoader
 ```
 
 
@@ -131,7 +131,7 @@ data = loader.load()
 
 
 ```python
-from langchain.document_loaders import UnstructuredPDFLoader
+from langchain_community.document_loaders import UnstructuredPDFLoader
 ```
 
 
@@ -180,7 +180,7 @@ Note: all other PDF loaders can also be used to fetch remote PDFs, but `OnlinePD
 
 
 ```python
-from langchain.document_loaders import OnlinePDFLoader
+from langchain_community.document_loaders import OnlinePDFLoader
 ```
 
 
@@ -210,7 +210,7 @@ print(data)
 
 
 ```python
-from langchain.document_loaders import PyPDFium2Loader
+from langchain_community.document_loaders import PyPDFium2Loader
 ```
 
 
@@ -227,7 +227,7 @@ data = loader.load()
 
 
 ```python
-from langchain.document_loaders import PDFMinerLoader
+from langchain_community.document_loaders import PDFMinerLoader
 ```
 
 
@@ -246,7 +246,7 @@ This can be helpful for chunking texts semantically into sections as the output 
 
 
 ```python
-from langchain.document_loaders import PDFMinerPDFasHTMLLoader
+from langchain_community.document_loaders import PDFMinerPDFasHTMLLoader
 ```
 
 
@@ -345,7 +345,7 @@ This is the fastest of the PDF parsing options, and contains detailed metadata a
 
 
 ```python
-from langchain.document_loaders import PyMuPDFLoader
+from langchain_community.document_loaders import PyMuPDFLoader
 ```
 
 
@@ -379,7 +379,7 @@ Load PDFs from directory
 
 
 ```python
-from langchain.document_loaders import PyPDFDirectoryLoader
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 ```
 
 
@@ -398,7 +398,7 @@ Like PyMuPDF, the output Documents contain detailed metadata about the PDF and i
 
 
 ```python
-from langchain.document_loaders import PDFPlumberLoader
+from langchain_community.document_loaders import PDFPlumberLoader
 ```
 
 
@@ -433,7 +433,7 @@ For the call to be successful an AWS account is required, similar to the [AWS CL
 Besides the AWS configuration, it is very similar to the other PDF loaders, while also supporting JPEG, PNG and TIFF and non-native PDF formats.
 
 ```python
-from langchain.document_loaders import AmazonTextractPDFLoader
+from langchain_community.document_loaders import AmazonTextractPDFLoader
 loader = AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
 documents = loader.load()
 ```

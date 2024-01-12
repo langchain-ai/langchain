@@ -1,10 +1,8 @@
-import asyncio
 import platform
 import warnings
 from typing import Any, List, Optional, Type, Union
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
@@ -77,13 +75,3 @@ class ShellTool(BaseTool):
     ) -> str:
         """Run commands and return final output."""
         return self.process.run(commands)
-
-    async def _arun(
-        self,
-        commands: Union[str, List[str]],
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Run commands asynchronously and return final output."""
-        return await asyncio.get_event_loop().run_in_executor(
-            None, self.process.run, commands
-        )
