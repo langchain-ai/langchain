@@ -42,6 +42,7 @@ from vertexai.preview.generative_models import (  # type: ignore
 )
 
 from langchain_google_vertexai._utils import (
+    get_generation_info,
     is_codey_model,
     is_gemini_model,
     load_image_from_gcs,
@@ -212,9 +213,16 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         is_gemini = is_gemini_model(values["model_name"])
+        safety_settings = values["safety_settings"]
+
+        if safety_settings and not is_gemini:
+            raise ValueError("Safety settings are only supported for Gemini models")
+
         cls._init_vertexai(values)
         if is_gemini:
-            values["client"] = GenerativeModel(model_name=values["model_name"])
+            values["client"] = GenerativeModel(
+                model_name=values["model_name"], safety_settings=safety_settings
+            )
         else:
             if is_codey_model(values["model_name"]):
                 model_cls = CodeChatModel
@@ -272,7 +280,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             chat = self._start_chat(history, **params)
             response = chat.send_message(question.content, **msg_params)
         generations = [
-            ChatGeneration(message=AIMessage(content=r.text))
+            ChatGeneration(
+                message=AIMessage(content=r.text),
+                generation_info=get_generation_info(r, self._is_gemini_model),
+            )
             for r in response.candidates
         ]
         return ChatResult(generations=generations)
@@ -322,7 +333,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             response = await chat.send_message_async(question.content, **msg_params)
 
         generations = [
-            ChatGeneration(message=AIMessage(content=r.text))
+            ChatGeneration(
+                message=AIMessage(content=r.text),
+                generation_info=get_generation_info(r, self._is_gemini_model),
+            )
             for r in response.candidates
         ]
         return ChatResult(generations=generations)
@@ -353,7 +367,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         for response in responses:
             if run_manager:
                 run_manager.on_llm_new_token(response.text)
-            yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content=response.text),
+                generation_info=get_generation_info(response, self._is_gemini_model),
+            )
 
     def _start_chat(
         self, history: _ChatHistory, **kwargs: Any
