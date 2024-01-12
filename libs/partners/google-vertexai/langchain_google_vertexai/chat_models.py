@@ -410,9 +410,21 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
+            raw_tools = params.pop("tools") if "tools" in params else None
+            tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
             responses = chat.send_message(
-                message, stream=True, generation_config=params
+                message, stream=True, generation_config=params, tools=tools
             )
+            for response in responses:
+                message = _parse_response_candidate(response.candidates[0])
+                if run_manager:
+                    run_manager.on_llm_new_token(message.content)
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=message.content,
+                        additional_kwargs=message.additional_kwargs,
+                    )
+                )
         else:
             question = _get_question(messages)
             history = _parse_chat_history(messages[:-1])

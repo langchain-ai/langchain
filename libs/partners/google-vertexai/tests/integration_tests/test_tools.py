@@ -2,6 +2,7 @@ import os
 from typing import List, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.messages import AIMessageChunk
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -83,6 +84,25 @@ def test_tools() -> None:
     assert isinstance(response, dict)
     assert response["input"] == "What is 6 raised to the 0.43 power?"
     assert round(float(response["output"]), 3) == 2.161
+
+
+def test_stream() -> None:
+    from langchain.chains import LLMMathChain
+
+    llm = ChatVertexAI(model_name="gemini-pro")
+    math_chain = LLMMathChain.from_llm(llm=llm)
+    tools = [
+        Tool(
+            name="Calculator",
+            func=math_chain.run,
+            description="useful for when you need to answer questions about math",
+        )
+    ]
+    response = list(llm.stream("What is 6 raised to the 0.43 power?", tools=tools))
+    assert len(response) == 1
+    # for chunk in response:
+    assert isinstance(response[0], AIMessageChunk)
+    assert "function_call" in response[0].additional_kwargs
 
 
 def test_multiple_tools() -> None:
