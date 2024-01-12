@@ -394,7 +394,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
     @abstractmethod
     def pretty_repr(self, html: bool = False) -> str:
-        """"""
+        """Human-readable representation."""
 
     def pretty_print(self) -> None:
         print(self.pretty_repr(html=is_interactive_env()))
