@@ -112,7 +112,7 @@ def test_parse_chat_history_correct() -> None:
         ChatMessage(content=text_answer, author="bot"),
     ]
 
-    
+
 def test_parse_history_gemini() -> None:
     system_input = "You're supposed to answer math questions."
     text_question1, text_answer1 = "How much is 2+2?", "4"

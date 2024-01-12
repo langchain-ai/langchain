@@ -175,6 +175,7 @@ def test_vertexai_single_call_fails_no_message() -> None:
         == "You should provide at least one message to start the chat!"
     )
 
+
 @pytest.mark.parametrize("model_name", model_names_to_test)
 def test_chat_google_genai_system_message_error(model_name: str) -> None:
     if model_name:
@@ -194,7 +195,9 @@ def test_chat_google_genai_system_message_error(model_name: str) -> None:
 @pytest.mark.parametrize("model_name", model_names_to_test)
 def test_chat_google_genai_system_message(model_name: str) -> None:
     if model_name:
-        model = ChatVertexAI(model_name=model_name, convert_system_message_to_human=True)
+        model = ChatVertexAI(
+            model_name=model_name, convert_system_message_to_human=True
+        )
     else:
         model = ChatVertexAI()
 
