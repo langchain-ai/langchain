@@ -85,7 +85,7 @@ class RivaBase(Generic[_InputT, _OutputT], RunnableSerializable[_InputT, _Output
 
         def _consumer() -> None:
             """Consume the input with transform."""
-            input_iterator = cast(iter(input_queue.get, _TRANSFORM_END), _InputT)
+            input_iterator = cast(_InputT, iter(input_queue.get, _TRANSFORM_END))
             for val in self.transform(input_iterator):
                 out_queue.put_nowait(val)
             out_queue.put_nowait(_TRANSFORM_END)
