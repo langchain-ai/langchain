@@ -16,8 +16,6 @@ from typing import (
 )
 from uuid import UUID
 
-from langchain_core.runnables.base import RunnableSerializable
-
 import pytest
 from freezegun import freeze_time
 from pytest_mock import MockerFixture
@@ -72,6 +70,7 @@ from langchain_core.runnables import (
     add,
     chain,
 )
+from langchain_core.runnables.base import RunnableSerializable
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
