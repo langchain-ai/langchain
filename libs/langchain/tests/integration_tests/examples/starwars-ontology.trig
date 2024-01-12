@@ -1,0 +1,761 @@
+@prefix agg: <http://jena.apache.org/ARQ/function/aggregate#> .
+@prefix pq: <http://www.wikidata.org/prop/qualifier/> .
+@prefix ps: <http://www.wikidata.org/prop/statement/> .
+@prefix sail: <http://www.openrdf.org/config/sail#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix geof: <http://www.opengis.net/def/function/geosparql/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix wds: <http://www.wikidata.org/entity/statement/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix fn: <http://www.w3.org/2005/xpath-functions> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix voc: <https://swapi.co/vocabulary/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix commons: <https://commons.wikimedia.org/wiki/Special:FilePath/> .
+@prefix spif: <http://spinrdf.org/spif#> .
+@prefix path: <http://www.ontotext.com/path#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix array: <http://www.w3.org/2005/xpath-functions/array> .
+@prefix apf: <http://jena.apache.org/ARQ/property#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix rep: <http://www.openrdf.org/config/repository#> .
+@prefix map: <http://www.w3.org/2005/xpath-functions/map> .
+@prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+@prefix rdf4j: <http://rdf4j.org/schema/rdf4j#> .
+@prefix wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix gn: <http://www.geonames.org/ontology#> .
+@prefix wikibase: <http://wikiba.se/ontology#> .
+@prefix afn: <http://jena.apache.org/ARQ/function#> .
+@prefix list: <http://jena.apache.org/ARQ/list#> .
+@prefix p: <http://www.wikidata.org/prop/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ofn: <http://www.ontotext.com/sparql/functions/> .
+@prefix geoext: <http://rdf.useekm.com/ext#> .
+@prefix graphdb: <http://www.ontotext.com/config/graphdb#> .
+@prefix sesame: <http://www.openrdf.org/schema/sesame#> .
+@prefix math: <http://www.w3.org/2005/xpath-functions/math> .
+@prefix omgeo: <http://www.ontotext.com/owlim/geo#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix swapi: <https://swapi.co/ontology/> .
+
+{
+  voc:Aleena a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Reptile;
+    rdfs:label "Aleena";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 80.0;
+    voc:averageLifespan "79";
+    voc:character <https://swapi.co/resource/aleena/47>;
+    voc:film <https://swapi.co/resource/film/4>;
+    voc:language "Aleena";
+    voc:planet <https://swapi.co/resource/planet/38>;
+    voc:skinColor "gray", "blue" .
+  
+  voc:Species a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:averageHeight a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:averageLifespan a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:character a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:film a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:language a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:planet a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:skinColor a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Besalisk a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Amphibian;
+    rdfs:label "Besalisk";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 178.0;
+    voc:averageLifespan "75";
+    voc:character <https://swapi.co/resource/besalisk/71>;
+    voc:film <https://swapi.co/resource/film/5>;
+    voc:language "besalisk";
+    voc:planet <https://swapi.co/resource/planet/55>;
+    voc:skinColor "brown";
+    voc:eyeColor "yellow" .
+  
+  voc:eyeColor a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Cerean a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Cerean";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 200.0;
+    voc:character <https://swapi.co/resource/cerean/52>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/6>;
+    voc:language "Cerean";
+    voc:planet <https://swapi.co/resource/planet/43>;
+    voc:skinColor "pale pink";
+    voc:eyeColor "hazel";
+    voc:hairColor "white", "blond", "red", "black" .
+  
+  voc:hairColor a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Chagrian a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Amphibian;
+    rdfs:label "Chagrian";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 190.0;
+    voc:character <https://swapi.co/resource/chagrian/59>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/6>;
+    voc:language "Chagria";
+    voc:planet <https://swapi.co/resource/planet/50>;
+    voc:skinColor "blue";
+    voc:eyeColor "blue" .
+  
+  voc:Clawdite a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Reptilian;
+    rdfs:label "Clawdite";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:averageLifespan "70";
+    voc:character <https://swapi.co/resource/clawdite/70>;
+    voc:film <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>;
+    voc:language "Clawdite";
+    voc:planet <https://swapi.co/resource/planet/54>;
+    voc:skinColor "yellow", "green";
+    voc:eyeColor "yellow" .
+  
+  voc:Droid a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Artificial;
+    rdfs:label "Droid";
+    rdfs:isDefinedBy swapi:;
+    voc:averageLifespan "indefinite";
+    voc:character <https://swapi.co/resource/droid/23>, <https://swapi.co/resource/droid/3>,
+      <https://swapi.co/resource/droid/8>, <https://swapi.co/resource/droid/2>, <https://swapi.co/resource/droid/87>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>,
+      <https://swapi.co/resource/film/2>, <https://swapi.co/resource/film/7>, <https://swapi.co/resource/film/3>,
+      <https://swapi.co/resource/film/1>;
+    voc:desc "A droid is a fictional robot possessing some degree of artificial intelligence in the Star Wars science fiction franchise. Coined by special effects artist John Stears, the term is a clipped form of \"android\", a word originally reserved for robots designed to look and act like a human. The word \"droid\" has been a registered trademark of Lucasfilm Ltd since 1977." .
+  
+  voc:desc a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Dug a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Dug";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 100.0;
+    voc:character <https://swapi.co/resource/dug/41>;
+    voc:film <https://swapi.co/resource/film/4>;
+    voc:language "Dugese";
+    voc:planet <https://swapi.co/resource/planet/35>;
+    voc:skinColor "brown", "red", "grey", "purple";
+    voc:eyeColor "blue", "yellow" .
+  
+  voc:Ewok a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Ewok";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 100.0;
+    voc:character <https://swapi.co/resource/ewok/30>;
+    voc:film <https://swapi.co/resource/film/3>;
+    voc:language "Ewokese";
+    voc:planet <https://swapi.co/resource/planet/7>;
+    voc:skinColor "brown";
+    voc:eyeColor "brown", "orange";
+    voc:hairColor "brown", "white", "black";
+    voc:desc "Ewoks are a fictional race of small, mammaloid bipeds that appear in the Star Wars universe. They are hunter-gatherers resembling teddy bears that inhabit the forest moon of Endor and live in various arboreal huts and other simple dwellings. They first appeared in the 1983 film Return of the Jedi and have since appeared in two made-for-television films, Caravan of Courage: An Ewok Adventure (1984) and Ewoks: The Battle for Endor (1985), as well as a short-lived animated series and several books and games." .
+  
+  voc:Geonosian a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Insectoid;
+    rdfs:label "Geonosian";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 178.0;
+    voc:character <https://swapi.co/resource/geonosian/63>;
+    voc:film <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>;
+    voc:language "Geonosian";
+    voc:planet <https://swapi.co/resource/planet/11>;
+    voc:skinColor "brown", "green";
+    voc:eyeColor "hazel", "green" .
+  
+  voc:Gungan a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Amphibian;
+    rdfs:label "Gungan";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 190.0;
+    voc:character <https://swapi.co/resource/gungan/38>, <https://swapi.co/resource/gungan/36>,
+      <https://swapi.co/resource/gungan/37>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/5>;
+    voc:language "Gungan basic";
+    voc:planet <https://swapi.co/resource/planet/8>;
+    voc:skinColor "brown", "green";
+    voc:eyeColor "orange" .
+  
+  voc:Human a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Human";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:averageLifespan "120";
+    voc:character <https://swapi.co/resource/human/5>, <https://swapi.co/resource/human/18>,
+      <https://swapi.co/resource/human/6>, <https://swapi.co/resource/human/19>, <https://swapi.co/resource/human/1>,
+      <https://swapi.co/resource/human/69>, <https://swapi.co/resource/human/12>, <https://swapi.co/resource/human/86>,
+      <https://swapi.co/resource/human/35>, <https://swapi.co/resource/human/81>, <https://swapi.co/resource/human/67>,
+      <https://swapi.co/resource/human/84>, <https://swapi.co/resource/human/32>, <https://swapi.co/resource/human/4>,
+      <https://swapi.co/resource/human/29>, <https://swapi.co/resource/human/43>, <https://swapi.co/resource/human/14>,
+      <https://swapi.co/resource/human/60>, <https://swapi.co/resource/human/10>, <https://swapi.co/resource/human/11>,
+      <https://swapi.co/resource/human/74>, <https://swapi.co/resource/human/7>, <https://swapi.co/resource/human/66>,
+      <https://swapi.co/resource/human/9>, <https://swapi.co/resource/human/68>, <https://swapi.co/resource/human/51>,
+      <https://swapi.co/resource/human/85>, <https://swapi.co/resource/human/34>, <https://swapi.co/resource/human/25>,
+      <https://swapi.co/resource/human/26>, <https://swapi.co/resource/human/21>, <https://swapi.co/resource/human/22>,
+      <https://swapi.co/resource/human/28>, <https://swapi.co/resource/human/61>, <https://swapi.co/resource/human/62>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>,
+      <https://swapi.co/resource/film/2>, <https://swapi.co/resource/film/7>, <https://swapi.co/resource/film/3>,
+      <https://swapi.co/resource/film/1>;
+    voc:language "Galactic Basic";
+    voc:planet <https://swapi.co/resource/planet/9>;
+    voc:skinColor "black", "caucasian", "asian", "hispanic";
+    voc:eyeColor "blue", "brown", "hazel", "green", "grey", "amber";
+    voc:hairColor "brown", "red", "black", "blonde";
+    voc:desc "Modern humans (Homo sapiens, primarily ssp. Homo sapiens sapiens) are the only extant members of the subtribe Hominina, a branch of the tribe Hominini belonging to the family of great apes. They are characterized by erect posture and bipedal locomotion; high manual dexterity and heavy tool use compared to other animals; and a general trend toward larger, more complex brains and societies.34, Early hominins—particularly the australopithecines, whose brains and anatomy are in many ways more similar to ancestral non-human apes—are less often referred to as \"human\" than hominins of the genus Homo. Several of these hominins used fire, occupied much of Eurasia, and gave rise to anatomically modern Homo sapiens in Africa about 200,000 years ago. They began to exhibit evidence of behavioral modernity around 50,000 years ago. In several waves of migration, anatomically modern humans ventured out of Africa and populated most of the world. The spread of humans and their large and increasing population has had a profound impact on large areas of the environment and millions of native species worldwide. Advantages that explain this evolutionary success include a relatively larger brain with a particularly well-developed neocortex, prefrontal cortex and temporal lobes, which enable high levels of abstract reasoning, language, problem solving, sociality, and culture through social learning. Humans use tools to a much higher degree than any other animal, are the only extant species known to build fires and cook their food, and are the only extant species to clothe themselves and create and use numerous other technologies and arts. Humans are uniquely adept at using systems of symbolic communication (such as language and art) for self-expression and the exchange of ideas, and for organizing themselves into purposeful groups. Humans create complex social structures composed of many cooperating and competing groups, from families and kinship networks to political states. Social interactions between humans have established an extremely wide variety of values, social norms, and rituals, which together form the basis of human society. Curiosity and the human desire to understand and influence the environment and to explain and manipulate phenomena (or events) has provided the foundation for developing science, philosophy, mythology, religion, anthropology, and numerous other fields of knowledge. Though most of human existence has been sustained by hunting and gathering in band societies, increasing numbers of human societies began to practice sedentary agriculture approximately some 10,000 years ago, domesticating plants and animals, thus allowing for the growth of civilization. These human societies subsequently expanded in size, establishing various forms of government, religion, and culture around the world, unifying people within regions to form states and empires. The rapid advancement of scientific and medical understanding in the 19th and 20th centuries led to the development of fuel-driven technologies and increased lifespans, causing the human population to rise exponentially. Today the global human population is estimated by the United Nations to be near 7.6 billion." .
+  
+  voc:Hutt a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Gastropod;
+    rdfs:label "Hutt";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 300.0;
+    voc:averageLifespan "1000";
+    voc:character <https://swapi.co/resource/hutt/16>;
+    voc:film <https://swapi.co/resource/film/3>, <https://swapi.co/resource/film/1>;
+    voc:language "Huttese";
+    voc:planet <https://swapi.co/resource/planet/24>;
+    voc:skinColor "brown", "green", "tan";
+    voc:eyeColor "yellow", "red";
+    voc:desc "The Hutts are a fictional alien race in the Star Wars universe. They appear in The Phantom Menace, Return of the Jedi and The Clone Wars, as well as the special edition release of A New Hope. They also appear in various Star Wars games, including those based on the movies, and the Knights of the Old Republic series. None of these are very friendly and all are criminally involved. In the comic book series Tales of the Jedi: Golden Age of the Sith and Tales of the Jedi: The Fall of the Sith Empire, however, there is a Hutt character named Aarrba who is sympathetic to the main characters, Gav and Jori Daragon." .
+  
+  voc:Iktotchi a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Unknown;
+    rdfs:label "Iktotchi";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:character <https://swapi.co/resource/iktotchi/56>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/6>;
+    voc:language "Iktotchese";
+    voc:planet <https://swapi.co/resource/planet/47>;
+    voc:skinColor "pink";
+    voc:eyeColor "orange" .
+  
+  voc:Kaleesh a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Reptile;
+    rdfs:label "Kaleesh";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 170.0;
+    voc:averageLifespan "80";
+    voc:character <https://swapi.co/resource/kaleesh/79>;
+    voc:film <https://swapi.co/resource/film/6>;
+    voc:language "Kaleesh";
+    voc:planet <https://swapi.co/resource/planet/59>;
+    voc:skinColor "brown", "orange", "tan";
+    voc:eyeColor "yellow" .
+  
+  voc:Kaminoan a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Amphibian;
+    rdfs:label "Kaminoan";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 220.0;
+    voc:averageLifespan "80";
+    voc:character <https://swapi.co/resource/kaminoan/73>, <https://swapi.co/resource/kaminoan/72>;
+    voc:film <https://swapi.co/resource/film/5>;
+    voc:language "Kaminoan";
+    voc:planet <https://swapi.co/resource/planet/10>;
+    voc:skinColor "blue", "grey";
+    voc:eyeColor "black" .
+  
+  voc:Keldor a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Unknown;
+    rdfs:label "Keldor";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:averageLifespan "70";
+    voc:character <https://swapi.co/resource/keldor/58>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/6>;
+    voc:language "Kel Dor";
+    voc:planet <https://swapi.co/resource/planet/49>;
+    voc:skinColor "red", "orange", "peach";
+    voc:eyeColor "black", "silver" .
+  
+  voc:Mirialan a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Mirialan";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:character <https://swapi.co/resource/mirialan/64>, <https://swapi.co/resource/mirialan/65>;
+    voc:film <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>;
+    voc:language "Mirialan";
+    voc:planet <https://swapi.co/resource/planet/51>;
+    voc:skinColor "yellow", "green";
+    voc:eyeColor "blue", "yellow", "brown", "red", "green", "orange";
+    voc:hairColor "brown", "black" .
+  
+  voc:Moncalamari a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Amphibian;
+    rdfs:label "Moncalamari";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 160.0;
+    voc:character <https://swapi.co/resource/moncalamari/27>;
+    voc:film <https://swapi.co/resource/film/3>;
+    voc:language "Mon Calamarian";
+    voc:planet <https://swapi.co/resource/planet/31>;
+    voc:skinColor "blue", "brown", "red", "magenta";
+    voc:eyeColor "yellow" .
+  
+  voc:Muun a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Muun";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 190.0;
+    voc:averageLifespan "100";
+    voc:character <https://swapi.co/resource/muun/77>;
+    voc:film <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>;
+    voc:language "Muun";
+    voc:planet <https://swapi.co/resource/planet/57>;
+    voc:skinColor "white", "grey";
+    voc:eyeColor "black" .
+  
+  voc:Nautolan a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Amphibian;
+    rdfs:label "Nautolan";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:averageLifespan "70";
+    voc:character <https://swapi.co/resource/nautolan/53>;
+    voc:film <https://swapi.co/resource/film/4>;
+    voc:language "Nautila";
+    voc:planet <https://swapi.co/resource/planet/44>;
+    voc:skinColor "blue", "brown", "red", "green";
+    voc:eyeColor "black" .
+  
+  voc:Neimodian a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Unknown;
+    rdfs:label "Neimodian";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:character <https://swapi.co/resource/neimodian/33>;
+    voc:film <https://swapi.co/resource/film/4>;
+    voc:language "Neimoidia";
+    voc:planet <https://swapi.co/resource/planet/18>;
+    voc:skinColor "green", "grey";
+    voc:eyeColor "red", "pink" .
+  
+  voc:Pauan a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Pauan";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 190.0;
+    voc:averageLifespan "700";
+    voc:character <https://swapi.co/resource/pauan/83>;
+    voc:film <https://swapi.co/resource/film/6>;
+    voc:language "Utapese";
+    voc:planet <https://swapi.co/resource/planet/12>;
+    voc:skinColor "grey";
+    voc:eyeColor "black" .
+  
+  voc:Quermian a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Quermian";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 240.0;
+    voc:averageLifespan "86";
+    voc:character <https://swapi.co/resource/quermian/57>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/6>;
+    voc:language "Quermian";
+    voc:planet <https://swapi.co/resource/planet/48>;
+    voc:skinColor "white";
+    voc:eyeColor "yellow" .
+  
+  voc:Rodian a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Reptilian;
+    rdfs:label "Rodian";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 170.0;
+    voc:character <https://swapi.co/resource/rodian/15>;
+    voc:film <https://swapi.co/resource/film/1>;
+    voc:language "Galactic Basic";
+    voc:planet <https://swapi.co/resource/planet/23>;
+    voc:skinColor "blue", "green";
+    voc:eyeColor "black" .
+  
+  voc:Skakoan a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Skakoan";
+    rdfs:isDefinedBy swapi:;
+    voc:character <https://swapi.co/resource/skakoan/76>;
+    voc:film <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>;
+    voc:language "Skakoan";
+    voc:planet <https://swapi.co/resource/planet/56>;
+    voc:skinColor "green", "grey" .
+  
+  voc:Sullustan a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Sullustan";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:character <https://swapi.co/resource/sullustan/31>;
+    voc:film <https://swapi.co/resource/film/3>;
+    voc:language "Sullutese";
+    voc:planet <https://swapi.co/resource/planet/33>;
+    voc:skinColor "pale";
+    voc:eyeColor "black" .
+  
+  voc:Tholothian a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Tholothian";
+    rdfs:isDefinedBy swapi:;
+    voc:character <https://swapi.co/resource/tholothian/55>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/6>;
+    voc:planet <https://swapi.co/resource/planet/46>;
+    voc:skinColor "dark";
+    voc:eyeColor "blue", "indigo" .
+  
+  voc:Togruta a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Togruta";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:averageLifespan "94";
+    voc:character <https://swapi.co/resource/togruta/78>;
+    voc:film <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>;
+    voc:language "Togruti";
+    voc:planet <https://swapi.co/resource/planet/58>;
+    voc:skinColor "blue", "yellow", "white", "red", "green", "orange";
+    voc:eyeColor "blue", "yellow", "red", "black", "green", "orange" .
+  
+  voc:Toong a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Unknown;
+    rdfs:label "Toong";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 200.0;
+    voc:character <https://swapi.co/resource/toong/50>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/6>;
+    voc:language "Tundan";
+    voc:planet <https://swapi.co/resource/planet/41>;
+    voc:skinColor "yellow", "green", "grey";
+    voc:eyeColor "orange" .
+  
+  voc:Toydarian a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Toydarian";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 120.0;
+    voc:averageLifespan "91";
+    voc:character <https://swapi.co/resource/toydarian/40>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/5>;
+    voc:language "Toydarian";
+    voc:planet <https://swapi.co/resource/planet/34>;
+    voc:skinColor "blue", "green", "grey";
+    voc:eyeColor "yellow" .
+  
+  voc:Trandoshan a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Reptile;
+    rdfs:label "Trandoshan";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 200.0;
+    voc:character <https://swapi.co/resource/trandoshan/24>;
+    voc:film <https://swapi.co/resource/film/2>;
+    voc:language "Dosh";
+    voc:planet <https://swapi.co/resource/planet/29>;
+    voc:skinColor "brown", "green";
+    voc:eyeColor "yellow", "orange" .
+  
+  voc:Twilek a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Twilek";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 200.0;
+    voc:character <https://swapi.co/resource/twilek/46>, <https://swapi.co/resource/twilek/45>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>,
+      <https://swapi.co/resource/film/3>;
+    voc:language "Twi'leki";
+    voc:planet <https://swapi.co/resource/planet/37>;
+    voc:skinColor "blue", "yellow", "green", "purple", "orange", "tan", "pink";
+    voc:eyeColor "blue", "brown", "orange", "pink" .
+  
+  voc:Umbaran a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Umbaran";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 170.0;
+    voc:character <https://swapi.co/resource/rodian/15>;
+    voc:film <https://swapi.co/resource/film/1>;
+    voc:language "Umbaran";
+    voc:planet <https://swapi.co/resource/planet/60>;
+    voc:skinColor "pale blue";
+    voc:eyeColor "colourless" .
+  
+  voc:Vulptereen a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Unknown;
+    rdfs:label "Vulptereen";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 100.0;
+    voc:character <https://swapi.co/resource/vulptereen/48>;
+    voc:film <https://swapi.co/resource/film/4>;
+    voc:language "vulpterish";
+    voc:planet <https://swapi.co/resource/planet/39>;
+    voc:skinColor "grey";
+    voc:eyeColor "yellow" .
+  
+  voc:Wookiee a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Wookiee";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 210.0;
+    voc:averageLifespan "400";
+    voc:character <https://swapi.co/resource/wookiee/13>, <https://swapi.co/resource/wookiee/80>;
+    voc:film <https://swapi.co/resource/film/6>, <https://swapi.co/resource/film/2>, <https://swapi.co/resource/film/7>,
+      <https://swapi.co/resource/film/3>, <https://swapi.co/resource/film/1>;
+    voc:language "Shyriiwook";
+    voc:planet <https://swapi.co/resource/planet/14>;
+    voc:skinColor "gray";
+    voc:eyeColor "blue", "yellow", "brown", "red", "green", "golden";
+    voc:hairColor "brown", "black";
+    voc:desc "Wookiees (/ˈwʊkiːz/) are a fictional species of intelligent bipeds from the planet Kashyyyk in the Star Wars universe. They are taller, stronger, and hairier than humans and most (if not all) other humanoid species. The most notable Wookiee is Chewbacca, the copilot of Han Solo, who first appeared in the 1977 film Star Wars Episode IV: A New Hope." .
+  
+  voc:Xexto a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Unknown;
+    rdfs:label "Xexto";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 125.0;
+    voc:character <https://swapi.co/resource/xexto/49>;
+    voc:film <https://swapi.co/resource/film/4>;
+    voc:language "Xextese";
+    voc:planet <https://swapi.co/resource/planet/40>;
+    voc:skinColor "yellow", "grey", "purple";
+    voc:eyeColor "black" .
+  
+  voc:Yodasspecies a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Yodasspecies";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 66.0;
+    voc:averageLifespan "900";
+    voc:character <https://swapi.co/resource/yodasspecies/20>;
+    voc:film <https://swapi.co/resource/film/4>, <https://swapi.co/resource/film/5>, <https://swapi.co/resource/film/6>,
+      <https://swapi.co/resource/film/2>, <https://swapi.co/resource/film/3>;
+    voc:language "Galactic basic";
+    voc:planet <https://swapi.co/resource/planet/28>;
+    voc:skinColor "yellow", "green";
+    voc:eyeColor "yellow", "brown", "green";
+    voc:hairColor "brown", "white" .
+  
+  voc:Zabrak a voc:Species, owl:Class;
+    rdfs:subClassOf voc:Sentient, voc:Mammal;
+    rdfs:label "Zabrak";
+    rdfs:isDefinedBy swapi:;
+    voc:averageHeight 180.0;
+    voc:character <https://swapi.co/resource/zabrak/44>, <https://swapi.co/resource/zabrak/54>;
+    voc:film <https://swapi.co/resource/film/4>;
+    voc:language "Zabraki";
+    voc:planet <https://swapi.co/resource/planet/45>;
+    voc:skinColor "yellow", "brown", "red", "orange", "pale";
+    voc:eyeColor "brown", "orange";
+    voc:hairColor "black" .
+  
+  voc:Character a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Film a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Planet a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Vehicle a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Location a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Country a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Starship a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Award a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:Person a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:AwardRecognition a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:FilmRole a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:FilmRelease a owl:Class;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:crew a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:surfaceWater a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:awardDate a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:awardStatus a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:cost a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:openingCrawl a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:population a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:hyperdriveRating a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:orbitalPeriod a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:starshipClass a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:manufacturer a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:role a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:forWork a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:gender a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:episodeId a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:climate a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:birthYear a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:boxOffice a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:costInCredits a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:vehicleClass a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:returnOnInvestment a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:cybernetics a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:passengers a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:gravity a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:releaseDate a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:mass a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:rotationPeriod a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:cargoCapacity a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:birthDate a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:mglt a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:degree a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:diameter a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:consumables a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:terrain a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:height a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:model a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:length a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:maxAtmospheringSpeed a owl:DatatypeProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:image a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:person a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:wikidataLink a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:residentOf a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:homeworld a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:country a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:birthPlace a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:location a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:award a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:starship a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:pilot a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:resident a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:vehicle a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+  
+  voc:citizenOf a owl:ObjectProperty;
+    rdfs:isDefinedBy swapi: .
+}

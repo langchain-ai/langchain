@@ -3829,6 +3829,10 @@
       "destination": "/docs/use_cases/graph/graph_cypher_qa"
     },
     {
+      "source": "/docs/modules/chains/additional/graph_graphdb_qa",
+      "destination": "/docs/use_cases/graph/graph_graphdb_qa"
+    },
+    {
       "source": "/docs/modules/chains/additional/graph_hugegraph_qa",
       "destination": "/docs/use_cases/graph/graph_hugegraph_qa"
     },

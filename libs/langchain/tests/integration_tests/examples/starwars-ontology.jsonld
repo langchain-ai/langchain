@@ -1,0 +1,2347 @@
+[ {
+  "@id" : "https://swapi.co/vocabulary/Aleena",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Aleena"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Reptile"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "80.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "79"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/aleena/47"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Aleena"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/38"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "gray"
+  }, {
+    "@value" : "blue"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Award",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/AwardRecognition",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Besalisk",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Besalisk"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Amphibian"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "178.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "75"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/besalisk/71"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/5"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "besalisk"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/55"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Cerean",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Cerean"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "200.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/cerean/52"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "hazel"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/hairColor" : [ {
+    "@value" : "white"
+  }, {
+    "@value" : "blond"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Cerean"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/43"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "pale pink"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Chagrian",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Chagrian"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Amphibian"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "190.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/chagrian/59"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "blue"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Chagria"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/50"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "blue"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Character",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Clawdite",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Clawdite"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Reptilian"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "70"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/clawdite/70"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Clawdite"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/54"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "yellow"
+  }, {
+    "@value" : "green"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Country",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Droid",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Droid"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Artificial"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "indefinite"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/droid/23"
+  }, {
+    "@id" : "https://swapi.co/resource/droid/3"
+  }, {
+    "@id" : "https://swapi.co/resource/droid/8"
+  }, {
+    "@id" : "https://swapi.co/resource/droid/2"
+  }, {
+    "@id" : "https://swapi.co/resource/droid/87"
+  } ],
+  "https://swapi.co/vocabulary/desc" : [ {
+    "@value" : "A droid is a fictional robot possessing some degree of artificial intelligence in the Star Wars science fiction franchise. Coined by special effects artist John Stears, the term is a clipped form of \"android\", a word originally reserved for robots designed to look and act like a human. The word \"droid\" has been a registered trademark of Lucasfilm Ltd since 1977."
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  }, {
+    "@id" : "https://swapi.co/resource/film/2"
+  }, {
+    "@id" : "https://swapi.co/resource/film/7"
+  }, {
+    "@id" : "https://swapi.co/resource/film/3"
+  }, {
+    "@id" : "https://swapi.co/resource/film/1"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Dug",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Dug"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "100.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/dug/41"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "yellow"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Dugese"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/35"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "grey"
+  }, {
+    "@value" : "purple"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Ewok",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Ewok"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "100.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/ewok/30"
+  } ],
+  "https://swapi.co/vocabulary/desc" : [ {
+    "@value" : "Ewoks are a fictional race of small, mammaloid bipeds that appear in the Star Wars universe. They are hunter-gatherers resembling teddy bears that inhabit the forest moon of Endor and live in various arboreal huts and other simple dwellings. They first appeared in the 1983 film Return of the Jedi and have since appeared in two made-for-television films, Caravan of Courage: An Ewok Adventure (1984) and Ewoks: The Battle for Endor (1985), as well as a short-lived animated series and several books and games."
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "orange"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/3"
+  } ],
+  "https://swapi.co/vocabulary/hairColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "white"
+  }, {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Ewokese"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/7"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Film",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/FilmRelease",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/FilmRole",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Geonosian",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Geonosian"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Insectoid"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "178.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/geonosian/63"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "hazel"
+  }, {
+    "@value" : "green"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Geonosian"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/11"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "green"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Gungan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Gungan"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Amphibian"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "190.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/gungan/38"
+  }, {
+    "@id" : "https://swapi.co/resource/gungan/36"
+  }, {
+    "@id" : "https://swapi.co/resource/gungan/37"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "orange"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/5"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Gungan basic"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/8"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "green"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Human",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Human"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "120"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/human/5"
+  }, {
+    "@id" : "https://swapi.co/resource/human/18"
+  }, {
+    "@id" : "https://swapi.co/resource/human/6"
+  }, {
+    "@id" : "https://swapi.co/resource/human/19"
+  }, {
+    "@id" : "https://swapi.co/resource/human/1"
+  }, {
+    "@id" : "https://swapi.co/resource/human/69"
+  }, {
+    "@id" : "https://swapi.co/resource/human/12"
+  }, {
+    "@id" : "https://swapi.co/resource/human/86"
+  }, {
+    "@id" : "https://swapi.co/resource/human/35"
+  }, {
+    "@id" : "https://swapi.co/resource/human/81"
+  }, {
+    "@id" : "https://swapi.co/resource/human/67"
+  }, {
+    "@id" : "https://swapi.co/resource/human/84"
+  }, {
+    "@id" : "https://swapi.co/resource/human/32"
+  }, {
+    "@id" : "https://swapi.co/resource/human/4"
+  }, {
+    "@id" : "https://swapi.co/resource/human/29"
+  }, {
+    "@id" : "https://swapi.co/resource/human/43"
+  }, {
+    "@id" : "https://swapi.co/resource/human/14"
+  }, {
+    "@id" : "https://swapi.co/resource/human/60"
+  }, {
+    "@id" : "https://swapi.co/resource/human/10"
+  }, {
+    "@id" : "https://swapi.co/resource/human/11"
+  }, {
+    "@id" : "https://swapi.co/resource/human/74"
+  }, {
+    "@id" : "https://swapi.co/resource/human/7"
+  }, {
+    "@id" : "https://swapi.co/resource/human/66"
+  }, {
+    "@id" : "https://swapi.co/resource/human/9"
+  }, {
+    "@id" : "https://swapi.co/resource/human/68"
+  }, {
+    "@id" : "https://swapi.co/resource/human/51"
+  }, {
+    "@id" : "https://swapi.co/resource/human/85"
+  }, {
+    "@id" : "https://swapi.co/resource/human/34"
+  }, {
+    "@id" : "https://swapi.co/resource/human/25"
+  }, {
+    "@id" : "https://swapi.co/resource/human/26"
+  }, {
+    "@id" : "https://swapi.co/resource/human/21"
+  }, {
+    "@id" : "https://swapi.co/resource/human/22"
+  }, {
+    "@id" : "https://swapi.co/resource/human/28"
+  }, {
+    "@id" : "https://swapi.co/resource/human/61"
+  }, {
+    "@id" : "https://swapi.co/resource/human/62"
+  } ],
+  "https://swapi.co/vocabulary/desc" : [ {
+    "@value" : "Modern humans (Homo sapiens, primarily ssp. Homo sapiens sapiens) are the only extant members of the subtribe Hominina, a branch of the tribe Hominini belonging to the family of great apes. They are characterized by erect posture and bipedal locomotion; high manual dexterity and heavy tool use compared to other animals; and a general trend toward larger, more complex brains and societies.34, Early hominins—particularly the australopithecines, whose brains and anatomy are in many ways more similar to ancestral non-human apes—are less often referred to as \"human\" than hominins of the genus Homo. Several of these hominins used fire, occupied much of Eurasia, and gave rise to anatomically modern Homo sapiens in Africa about 200,000 years ago. They began to exhibit evidence of behavioral modernity around 50,000 years ago. In several waves of migration, anatomically modern humans ventured out of Africa and populated most of the world. The spread of humans and their large and increasing population has had a profound impact on large areas of the environment and millions of native species worldwide. Advantages that explain this evolutionary success include a relatively larger brain with a particularly well-developed neocortex, prefrontal cortex and temporal lobes, which enable high levels of abstract reasoning, language, problem solving, sociality, and culture through social learning. Humans use tools to a much higher degree than any other animal, are the only extant species known to build fires and cook their food, and are the only extant species to clothe themselves and create and use numerous other technologies and arts. Humans are uniquely adept at using systems of symbolic communication (such as language and art) for self-expression and the exchange of ideas, and for organizing themselves into purposeful groups. Humans create complex social structures composed of many cooperating and competing groups, from families and kinship networks to political states. Social interactions between humans have established an extremely wide variety of values, social norms, and rituals, which together form the basis of human society. Curiosity and the human desire to understand and influence the environment and to explain and manipulate phenomena (or events) has provided the foundation for developing science, philosophy, mythology, religion, anthropology, and numerous other fields of knowledge. Though most of human existence has been sustained by hunting and gathering in band societies, increasing numbers of human societies began to practice sedentary agriculture approximately some 10,000 years ago, domesticating plants and animals, thus allowing for the growth of civilization. These human societies subsequently expanded in size, establishing various forms of government, religion, and culture around the world, unifying people within regions to form states and empires. The rapid advancement of scientific and medical understanding in the 19th and 20th centuries led to the development of fuel-driven technologies and increased lifespans, causing the human population to rise exponentially. Today the global human population is estimated by the United Nations to be near 7.6 billion."
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "brown"
+  }, {
+    "@value" : "hazel"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "grey"
+  }, {
+    "@value" : "amber"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  }, {
+    "@id" : "https://swapi.co/resource/film/2"
+  }, {
+    "@id" : "https://swapi.co/resource/film/7"
+  }, {
+    "@id" : "https://swapi.co/resource/film/3"
+  }, {
+    "@id" : "https://swapi.co/resource/film/1"
+  } ],
+  "https://swapi.co/vocabulary/hairColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "black"
+  }, {
+    "@value" : "blonde"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Galactic Basic"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/9"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "black"
+  }, {
+    "@value" : "caucasian"
+  }, {
+    "@value" : "asian"
+  }, {
+    "@value" : "hispanic"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Hutt",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Hutt"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Gastropod"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "300.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "1000"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/hutt/16"
+  } ],
+  "https://swapi.co/vocabulary/desc" : [ {
+    "@value" : "The Hutts are a fictional alien race in the Star Wars universe. They appear in The Phantom Menace, Return of the Jedi and The Clone Wars, as well as the special edition release of A New Hope. They also appear in various Star Wars games, including those based on the movies, and the Knights of the Old Republic series. None of these are very friendly and all are criminally involved. In the comic book series Tales of the Jedi: Golden Age of the Sith and Tales of the Jedi: The Fall of the Sith Empire, however, there is a Hutt character named Aarrba who is sympathetic to the main characters, Gav and Jori Daragon."
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  }, {
+    "@value" : "red"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/3"
+  }, {
+    "@id" : "https://swapi.co/resource/film/1"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Huttese"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/24"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "tan"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Iktotchi",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Iktotchi"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Unknown"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/iktotchi/56"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "orange"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Iktotchese"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/47"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "pink"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Kaleesh",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Kaleesh"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Reptile"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "170.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "80"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/kaleesh/79"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Kaleesh"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/59"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "orange"
+  }, {
+    "@value" : "tan"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Kaminoan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Kaminoan"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Amphibian"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "220.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "80"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/kaminoan/73"
+  }, {
+    "@id" : "https://swapi.co/resource/kaminoan/72"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/5"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Kaminoan"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/10"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "grey"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Keldor",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Keldor"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Unknown"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "70"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/keldor/58"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "black"
+  }, {
+    "@value" : "silver"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Kel Dor"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/49"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "red"
+  }, {
+    "@value" : "orange"
+  }, {
+    "@value" : "peach"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Location",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Mirialan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Mirialan"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/mirialan/64"
+  }, {
+    "@id" : "https://swapi.co/resource/mirialan/65"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "brown"
+  }, {
+    "@value" : "yellow"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "orange"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/hairColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Mirialan"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/51"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "yellow"
+  }, {
+    "@value" : "green"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Moncalamari",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Moncalamari"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Amphibian"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "160.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/moncalamari/27"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/3"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Mon Calamarian"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/31"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "brown"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "magenta"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Muun",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Muun"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "190.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "100"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/muun/77"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Muun"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/57"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "white"
+  }, {
+    "@value" : "grey"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Nautolan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Nautolan"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Amphibian"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "70"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/nautolan/53"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Nautila"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/44"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "brown"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "green"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Neimodian",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Neimodian"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Unknown"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/neimodian/33"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "red"
+  }, {
+    "@value" : "pink"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Neimoidia"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/18"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "green"
+  }, {
+    "@value" : "grey"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Pauan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Pauan"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "190.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "700"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/pauan/83"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Utapese"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/12"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "grey"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Person",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Planet",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Quermian",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Quermian"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "240.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "86"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/quermian/57"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Quermian"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/48"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "white"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Rodian",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Rodian"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Reptilian"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "170.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/rodian/15"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/1"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Galactic Basic"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/23"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "green"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Skakoan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Skakoan"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/skakoan/76"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Skakoan"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/56"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "green"
+  }, {
+    "@value" : "grey"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Species",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Starship",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Sullustan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Sullustan"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/sullustan/31"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/3"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Sullutese"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/33"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "pale"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Tholothian",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Tholothian"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/tholothian/55"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "indigo"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/46"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "dark"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Togruta",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Togruta"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "94"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/togruta/78"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "yellow"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "black"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "orange"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Togruti"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/58"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "yellow"
+  }, {
+    "@value" : "white"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "orange"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Toong",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Toong"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Unknown"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "200.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/toong/50"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "orange"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Tundan"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/41"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "yellow"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "grey"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Toydarian",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Toydarian"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "120.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "91"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/toydarian/40"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/5"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Toydarian"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/34"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "grey"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Trandoshan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Trandoshan"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Reptile"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "200.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/trandoshan/24"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  }, {
+    "@value" : "orange"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/2"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Dosh"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/29"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "green"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Twilek",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Twilek"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "200.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/twilek/46"
+  }, {
+    "@id" : "https://swapi.co/resource/twilek/45"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "brown"
+  }, {
+    "@value" : "orange"
+  }, {
+    "@value" : "pink"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  }, {
+    "@id" : "https://swapi.co/resource/film/3"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Twi'leki"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/37"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "yellow"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "purple"
+  }, {
+    "@value" : "orange"
+  }, {
+    "@value" : "tan"
+  }, {
+    "@value" : "pink"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Umbaran",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Umbaran"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "170.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/rodian/15"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "colourless"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/1"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Umbaran"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/60"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "pale blue"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Vehicle",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Vulptereen",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Vulptereen"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Unknown"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "100.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/vulptereen/48"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "yellow"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "vulpterish"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/39"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "grey"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Wookiee",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Wookiee"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "210.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "400"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/wookiee/13"
+  }, {
+    "@id" : "https://swapi.co/resource/wookiee/80"
+  } ],
+  "https://swapi.co/vocabulary/desc" : [ {
+    "@value" : "Wookiees (/ˈwʊkiːz/) are a fictional species of intelligent bipeds from the planet Kashyyyk in the Star Wars universe. They are taller, stronger, and hairier than humans and most (if not all) other humanoid species. The most notable Wookiee is Chewbacca, the copilot of Han Solo, who first appeared in the 1977 film Star Wars Episode IV: A New Hope."
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "blue"
+  }, {
+    "@value" : "brown"
+  }, {
+    "@value" : "yellow"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "green"
+  }, {
+    "@value" : "golden"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/6"
+  }, {
+    "@id" : "https://swapi.co/resource/film/2"
+  }, {
+    "@id" : "https://swapi.co/resource/film/7"
+  }, {
+    "@id" : "https://swapi.co/resource/film/3"
+  }, {
+    "@id" : "https://swapi.co/resource/film/1"
+  } ],
+  "https://swapi.co/vocabulary/hairColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Shyriiwook"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/14"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "gray"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Xexto",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Xexto"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Unknown"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "125.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/xexto/49"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Xextese"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/40"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "yellow"
+  }, {
+    "@value" : "grey"
+  }, {
+    "@value" : "purple"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Yodasspecies",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Yodasspecies"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "66.0"
+  } ],
+  "https://swapi.co/vocabulary/averageLifespan" : [ {
+    "@value" : "900"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/yodasspecies/20"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "yellow"
+  }, {
+    "@value" : "green"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  }, {
+    "@id" : "https://swapi.co/resource/film/5"
+  }, {
+    "@id" : "https://swapi.co/resource/film/6"
+  }, {
+    "@id" : "https://swapi.co/resource/film/2"
+  }, {
+    "@id" : "https://swapi.co/resource/film/3"
+  } ],
+  "https://swapi.co/vocabulary/hairColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "white"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Galactic basic"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/28"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "yellow"
+  }, {
+    "@value" : "green"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/Zabrak",
+  "@type" : [ "http://www.w3.org/2002/07/owl#Class" ],
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ {
+    "@id" : "https://swapi.co/vocabulary/Species"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#label" : [ {
+    "@value" : "Zabrak"
+  } ],
+  "http://www.w3.org/2000/01/rdf-schema#subClassOf" : [ {
+    "@id" : "https://swapi.co/vocabulary/Sentient"
+  }, {
+    "@id" : "https://swapi.co/vocabulary/Mammal"
+  } ],
+  "https://swapi.co/vocabulary/averageHeight" : [ {
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal",
+    "@value" : "180.0"
+  } ],
+  "https://swapi.co/vocabulary/character" : [ {
+    "@id" : "https://swapi.co/resource/zabrak/44"
+  }, {
+    "@id" : "https://swapi.co/resource/zabrak/54"
+  } ],
+  "https://swapi.co/vocabulary/eyeColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "orange"
+  } ],
+  "https://swapi.co/vocabulary/film" : [ {
+    "@id" : "https://swapi.co/resource/film/4"
+  } ],
+  "https://swapi.co/vocabulary/hairColor" : [ {
+    "@value" : "black"
+  } ],
+  "https://swapi.co/vocabulary/language" : [ {
+    "@value" : "Zabraki"
+  } ],
+  "https://swapi.co/vocabulary/planet" : [ {
+    "@id" : "https://swapi.co/resource/planet/45"
+  } ],
+  "https://swapi.co/vocabulary/skinColor" : [ {
+    "@value" : "brown"
+  }, {
+    "@value" : "yellow"
+  }, {
+    "@value" : "red"
+  }, {
+    "@value" : "orange"
+  }, {
+    "@value" : "pale"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/averageHeight",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/averageLifespan",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/award",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/awardDate",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/awardStatus",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/birthDate",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/birthPlace",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/birthYear",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/boxOffice",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/cargoCapacity",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/character",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/citizenOf",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/climate",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/consumables",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/cost",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/costInCredits",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/country",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/crew",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/cybernetics",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/degree",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/desc",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/diameter",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/episodeId",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/eyeColor",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/film",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/forWork",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/gender",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/gravity",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/hairColor",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/height",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/homeworld",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/hyperdriveRating",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/image",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/language",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/length",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/location",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/manufacturer",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/mass",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/maxAtmospheringSpeed",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/mglt",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/model",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/openingCrawl",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/orbitalPeriod",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/passengers",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/person",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/pilot",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/planet",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/population",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/releaseDate",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/resident",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/residentOf",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/returnOnInvestment",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/role",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/rotationPeriod",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/skinColor",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/starship",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/starshipClass",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/surfaceWater",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/terrain",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/vehicle",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/vehicleClass",
+  "@type" : [ "http://www.w3.org/2002/07/owl#DatatypeProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+}, {
+  "@id" : "https://swapi.co/vocabulary/wikidataLink",
+  "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
+  "http://www.w3.org/2000/01/rdf-schema#isDefinedBy" : [ {
+    "@id" : "https://swapi.co/ontology/"
+  } ]
+} ]

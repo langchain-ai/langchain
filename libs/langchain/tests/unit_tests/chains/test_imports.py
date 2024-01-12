@@ -13,6 +13,7 @@ EXPECTED_ALL = [
     "GraphCypherQAChain",
     "GraphQAChain",
     "GraphSparqlQAChain",
+    "GraphDBQAChain",
     "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
