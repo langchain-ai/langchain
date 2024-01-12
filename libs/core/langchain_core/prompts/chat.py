@@ -76,11 +76,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """"""
 
     def pretty_print(self) -> None:
-        if is_interactive_env():
-            import IPython.display
-
-            IPython.display.HTML(self.pretty_repr(html=True))
-        print(self.pretty_repr())
+        print(self.pretty_repr(html=is_interactive_env()))
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
@@ -259,20 +255,10 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         return self.prompt.input_variables
 
     def pretty_repr(self, html: bool = False) -> str:
+        # TODO: Handle partials
         title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
-
-        dummy_vars = {
-            input_var: "{" + f"{input_var}" + "}"
-            for input_var in self.prompt.input_variables
-        }
-        if html:
-            title = get_msg_title_repr(title, bold=True)
-            dummy_vars = {
-                k: get_colored_text(v, "yellow") for k, v in dummy_vars.items()
-            }
-        else:
-            title = get_msg_title_repr(title)
-        return f"{title}\n\n{self.prompt.format(**dummy_vars)}"
+        title = get_msg_title_repr(title, bold=html)
+        return f"{title}\n\n{self.prompt.pretty_repr(html=html)}"
 
 
 class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
@@ -411,11 +397,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """"""
 
     def pretty_print(self) -> None:
-        if is_interactive_env():
-            import IPython.display
-
-            IPython.display.HTML(self.pretty_repr(html=True))
-        print(self.pretty_repr())
+        print(self.pretty_repr(html=is_interactive_env()))
 
 
 MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate]
@@ -750,6 +732,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         raise NotImplementedError()
 
     def pretty_repr(self, html: bool = False) -> str:
+        # TODO: handle partials
         return "\n\n".join(msg.pretty_repr(html=html) for msg in self.messages)
 
 

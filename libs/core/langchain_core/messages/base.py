@@ -45,19 +45,12 @@ class BaseMessage(Serializable):
         return prompt + other
 
     def pretty_repr(self, html: bool = False) -> str:
-        title = self.type.title() + " Message"
-        if html:
-            title = get_msg_title_repr(title, bold=True)
-        else:
-            title = get_msg_title_repr(title)
+        title = get_msg_title_repr(self.type.title() + " Message", bold=html)
+        # TODO: handle non-string content.
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
-        if is_interactive_env():
-            import IPython.display
-
-            IPython.display.HTML(self.pretty_repr(html=True))
-        print(self.pretty_repr())
+        print(self.pretty_repr(html=is_interactive_env()))
 
 
 def merge_content(
