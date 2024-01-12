@@ -342,5 +342,4 @@ class FewShotChatMessagePromptTemplate(
         return get_buffer_string(messages)
 
     def pretty_repr(self, html: bool = False) -> str:
-        # TODO
-        return ""
+        raise NotImplementedError()
