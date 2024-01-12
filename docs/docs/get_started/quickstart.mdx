@@ -182,7 +182,14 @@ You can then use a retriever to fetch only the most relevant pieces and pass tho
 In this process, we will look up relevant documents from a *Retriever* and then pass them into the prompt.
 A Retriever can be backed by anything - a SQL table, the internet, etc - but in this instance we will populate a vector store and use that as a retriever. For more information on vectorstores, see [this documentation](/docs/modules/data_connection/vectorstores).
 
-First, we need to load the data that we want to index:
+First, we need to load the data that we want to index. In order to do this, we will use the WebBaseLoader. This requires installing [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/):
+
+```
+```shell
+pip install beautifulsoup4
+```
+
+After that, we can import and use WebBaseLoader.
 
 
 ```python

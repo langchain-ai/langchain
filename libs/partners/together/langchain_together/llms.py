@@ -2,8 +2,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+import requests
 from aiohttp import ClientSession
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -12,14 +12,11 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-from langchain_community.utilities.requests import Requests
+from langchain_together.version import __version__
 
 logger = logging.getLogger(__name__)
 
 
-@deprecated(
-    since="0.0.12", removal="0.2", alternative_import="langchain_together.Together"
-)
 class Together(LLM):
     """LLM models from `Together`.
 
@@ -88,9 +85,7 @@ class Together(LLM):
 
     @staticmethod
     def get_user_agent() -> str:
-        from langchain_community import __version__
-
-        return f"langchain/{__version__}"
+        return f"langchain-together/{__version__}"
 
     @property
     def default_params(self) -> Dict[str, Any]:
@@ -133,8 +128,7 @@ class Together(LLM):
 
         # filter None values to not pass them to the http payload
         payload = {k: v for k, v in payload.items() if v is not None}
-        request = Requests(headers=headers)
-        response = request.post(url=self.base_url, data=payload)
+        response = requests.post(url=self.base_url, json=payload, headers=headers)
 
         if response.status_code >= 500:
             raise Exception(f"Together Server: Error {response.status_code}")

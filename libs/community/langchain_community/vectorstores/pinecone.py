@@ -4,16 +4,7 @@ import logging
 import os
 import uuid
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 from langchain_core.documents import Document
@@ -31,6 +22,26 @@ if TYPE_CHECKING:
     from pinecone import Index
 
 logger = logging.getLogger(__name__)
+
+
+def _import_pinecone() -> Any:
+    try:
+        import pinecone
+    except ImportError as e:
+        raise ImportError(
+            "Could not import pinecone python package. "
+            "Please install it with `pip install pinecone-client`."
+        ) from e
+    return pinecone
+
+
+def _is_pinecone_v3() -> bool:
+    pinecone = _import_pinecone()
+    pinecone_client_version = pinecone.__version__
+    if version.parse(pinecone_client_version) >= version.parse("3.0.0.dev"):
+        return True
+    else:
+        return False
 
 
 class Pinecone(VectorStore):
@@ -62,13 +73,7 @@ class Pinecone(VectorStore):
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
     ):
         """Initialize with Pinecone client."""
-        try:
-            import pinecone
-        except ImportError:
-            raise ImportError(
-                "Could not import pinecone python package. "
-                "Please install it with `pip install pinecone-client`."
-            )
+        pinecone = _import_pinecone()
         if not isinstance(embedding, Embeddings):
             warnings.warn(
                 "Passing in `embedding` as a Callable is deprecated. Please pass in an"
@@ -361,17 +366,9 @@ class Pinecone(VectorStore):
         Returns:
             Pinecone Index instance."""
 
-        try:
-            import pinecone
-        except ImportError:
-            raise ValueError(
-                "Could not import pinecone python package. "
-                "Please install it with `pip install pinecone-client`."
-            )
+        pinecone = _import_pinecone()
 
-        pinecone_client_version = pinecone.__version__
-
-        if version.parse(pinecone_client_version) >= version.parse("3.0.0.dev"):
+        if _is_pinecone_v3():
             pinecone_instance = pinecone.Pinecone(
                 api_key=os.environ.get("PINECONE_API_KEY"), pool_threads=pool_threads
             )
@@ -383,7 +380,7 @@ class Pinecone(VectorStore):
         if index_name in index_names:
             index = (
                 pinecone_instance.Index(index_name)
-                if version.parse(pinecone_client_version) >= version.parse("3.0.0")
+                if not _is_pinecone_v3()
                 else pinecone.Index(index_name, pool_threads=pool_threads)
             )
         elif len(index_names) == 0:
