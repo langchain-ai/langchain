@@ -11,8 +11,6 @@ EXPECTED_ALL = [
     "create_kv_docstore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
-    "SQLDocStore",
-    "SQLStrStore",
 ]
 
 

@@ -44,6 +44,4 @@ __all__ = [
     "create_kv_docstore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
-    "SQLDocStore",
-    "SQLStrStore",
 ]
