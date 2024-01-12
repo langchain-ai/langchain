@@ -6,9 +6,8 @@ import json
 from typing import Dict, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import root_validator
 
 POLYGON_BASE_URL = "https://api.polygon.io/"
 
@@ -29,7 +28,7 @@ class PolygonAPIWrapper(BaseModel):
         return values
 
     def get_last_quote(self, ticker: str) -> Optional[dict]:
-        """Get the most recent National Best Bid and Offer (price quote) tick for a given stock."""
+        """Get the most recent National Best Bid and Offer (Quote) for a ticker."""
         url = f"{POLYGON_BASE_URL}v2/last/nbbo/{ticker}?apiKey={self.polygon_api_key}"
         response = requests.get(url)
         data = response.json()
