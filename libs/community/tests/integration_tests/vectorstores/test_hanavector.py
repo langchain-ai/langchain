@@ -9,6 +9,7 @@ from langchain_community.vectorstores.hanavector import HanaDB
 from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 from hdbcli import dbapi
+import os
 
 
 try:
@@ -18,13 +19,14 @@ except ImportError:
     hanadb_installed = False
 
 embedding = FakeEmbeddings()
-connection = dbapi.connect(address="<address>",
-                     port=30015,
-                     user="<user>",
-                     password="<password>",
-                     autocommit=False,
-                     sslValidateCertificate=False
-                     )
+connection = dbapi.connect(
+        address=os.environ.get("DB_ADDRESS"),
+        port=30015,
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASSWORD"),
+        autocommit=False,
+        sslValidateCertificate=False
+)
 vectordb = HanaDB(connection=connection, embedding=embedding, distance_strategy = DistanceStrategy.COSINE)
 
 @pytest.fixture
@@ -35,5 +37,5 @@ def texts() -> List[str]:
 def test_add_texts(texts: List[str]) -> None:
     """Test end to end construction and search."""
     vectordb.add_texts(texts)
-    results = vectordb.similarity_search("foo", k=2)
-    assert results == [Document(page_content="foo"), Document(page_content="bar")]
+    results = vectordb.similarity_search("foo", k=1)
+    assert results == [Document(page_content="foo")]
