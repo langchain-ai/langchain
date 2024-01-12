@@ -102,7 +102,9 @@ def _is_url(s: str) -> bool:
 
 
 def _parse_chat_history_gemini(
-    history: List[BaseMessage], project: Optional[str]
+    history: List[BaseMessage], 
+    project: Optional[str] = None,
+    convert_system_message_to_human: Optional[bool] = False
 ) -> List[Content]:
     def _convert_to_prompt(part: Union[str, Dict]) -> Part:
         if isinstance(part, str):
@@ -141,8 +143,22 @@ def _parse_chat_history_gemini(
 
     vertex_messages = []
     for i, message in enumerate(history):
-        if i == 0 and isinstance(message, SystemMessage):
-            raise ValueError("SystemMessages are not yet supported!")
+        if (i == 0 
+            and isinstance(message, SystemMessage)
+            and not convert_system_message_to_human
+           ):
+            raise ValueError(
+                """SystemMessages are not yet supported!
+                
+To automatically convert the leading SystemMessage to a HumanMessage,
+set  `convert_system_message_to_human` to True. Example:
+
+llm = ChatVertexAI(model_name="gemini-pro", convert_system_message_to_human=True)
+"""
+            )
+        elif i == 0 and isinstance(message, SystemMessage):
+            raw_system_message = message
+            continue
         elif isinstance(message, AIMessage):
             role = "model"
         elif isinstance(message, HumanMessage):
@@ -156,6 +172,16 @@ def _parse_chat_history_gemini(
         if isinstance(raw_content, str):
             raw_content = [raw_content]
         parts = [_convert_to_prompt(part) for part in raw_content]
+
+        if raw_system_message:
+            if role == "model":
+                raise ValueError(
+                    "SystemMessage should be followed by a HumanMessage and "
+                    "not by AIMessage."
+                )
+            parts = [_convert_to_prompt(raw_system_message.content)] + parts
+            raw_system_message = None
+
         vertex_message = Content(role=role, parts=parts)
         vertex_messages.append(vertex_message)
     return vertex_messages
@@ -207,6 +233,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     model_name: str = "chat-bison"
     "Underlying model name."
     examples: Optional[List[BaseMessage]] = None
+    convert_system_message_to_human: bool = False
+    """Whether to merge any leading SystemMessage into the following HumanMessage.
+    
+    Gemini does not support system messages; any unsupported messages will 
+    raise an error."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -260,7 +291,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             msg_params["candidate_count"] = params.pop("candidate_count")
 
         if self._is_gemini_model:
-            history_gemini = _parse_chat_history_gemini(messages, project=self.project)
+            history_gemini = _parse_chat_history_gemini(
+                messages, 
+                project=self.project,
+                convert_system_message_to_human=self.convert_system_message_to_human
+            )
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
             response = chat.send_message(message, generation_config=params)
@@ -308,7 +343,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             msg_params["candidate_count"] = params.pop("candidate_count")
 
         if self._is_gemini_model:
-            history_gemini = _parse_chat_history_gemini(messages, project=self.project)
+            history_gemini = _parse_chat_history_gemini(
+                messages, 
+                project=self.project,
+                convert_system_message_to_human=self.convert_system_message_to_human
+            )
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
             response = await chat.send_message_async(message, generation_config=params)
@@ -336,7 +375,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         params = self._prepare_params(stop=stop, stream=True, **kwargs)
         if self._is_gemini_model:
-            history_gemini = _parse_chat_history_gemini(messages, project=self.project)
+            history_gemini = _parse_chat_history_gemini(
+                messages, 
+                project=self.project,
+                convert_system_message_to_human=self.convert_system_message_to_human
+            )
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
             responses = chat.send_message(
