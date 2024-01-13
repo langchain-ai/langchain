@@ -52,13 +52,13 @@ def test_search() -> None:
         distance_strategy="cosine",
     )
 
-    with docsearch._make_session() as session:
-        records = list(session.query(docsearch._table_model).all())
+    with docsearch._tidb._make_session() as session:
+        records = list(session.query(docsearch._tidb._table_model).all())
         assert len([record.id for record in records]) == 3  # type: ignore
         session.close()
 
     output = docsearch.similarity_search("foo", k=1)
-    docsearch.drop_table()
+    docsearch.drop_collection()
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
@@ -187,7 +187,7 @@ def test_search_with_filter() -> None:
     )
     assert output == []
 
-    docsearch.drop_table()
+    docsearch.drop_collection()
 
 
 def test_search_with_score() -> None:
@@ -204,7 +204,7 @@ def test_search_with_score() -> None:
         distance_strategy="cosine",
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
-    docsearch.drop_table()
+    docsearch.drop_collection()
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
@@ -231,7 +231,7 @@ def test_load_from_existing_collection() -> None:
         connection_string=TiDB_CONNECT_URL,
     )
     output = docsearch_copy.similarity_search_with_score("foo", k=1)
-    docsearch.drop_table()
+    docsearch.drop_collection()
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
     # load from non-existing collection
@@ -264,7 +264,7 @@ def test_delete_doc() -> None:
     output = docsearch.similarity_search_with_score("foo", k=1)
     docsearch.delete(["1", "2"])
     output_after_deleted = docsearch.similarity_search_with_score("foo", k=1)
-    docsearch.drop_table()
+    docsearch.drop_collection()
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0)]
     assert output_after_deleted == [
         (Document(page_content="baz", metadata={"page": "2"}), 0.004691842206844599)
@@ -321,7 +321,7 @@ def test_relevance_score() -> None:
     except ValueError:
         pass
 
-    docsearch_l2.drop_table()
+    docsearch_l2.drop_collection()
 
 
 def test_retriever_search_threshold() -> None:
@@ -346,3 +346,5 @@ def test_retriever_search_threshold() -> None:
         Document(page_content="foo", metadata={"page": "0"}),
         Document(page_content="bar", metadata={"page": "1"}),
     ]
+
+    docsearch.drop_collection()
