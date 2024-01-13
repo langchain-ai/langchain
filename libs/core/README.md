@@ -32,7 +32,7 @@ Rather than having to write multiple implementations for all of those, LCEL allo
 
 For more check out the [LCEL docs](https://python.langchain.com/docs/expression_language/).
 
-![LangChain Stack](../../docs/static/img/langchain_stack.png)
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](../../docs/static/img/langchain_stack.png "LangChain Framework Overview")
 
 ## 📕 Releases & Versioning
 
