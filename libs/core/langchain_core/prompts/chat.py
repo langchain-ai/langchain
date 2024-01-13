@@ -71,9 +71,9 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of input variables.
         """
 
-    @abstractmethod
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation."""
+        raise NotImplementedError
 
     def pretty_print(self) -> None:
         print(self.pretty_repr(html=is_interactive_env()))
@@ -392,9 +392,9 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages."""
 
-    @abstractmethod
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation."""
+        raise NotImplementedError
 
     def pretty_print(self) -> None:
         print(self.pretty_repr(html=is_interactive_env()))
