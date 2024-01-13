@@ -4,7 +4,14 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from tidb_vector.integrations.vectorstore import DistanceStrategy, TiDBCollection
+
+try:
+    from tidb_vector.integrations.vectorstore import DistanceStrategy, TiDBCollection
+except ImportError:
+    raise ImportError(
+        "Could not import tidbvec python package. "
+        "Please install it with `pip install tidbvec`."
+    )
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
 DEFAULT_COLLECTION_NAME = "langchain_tidb_vector"
