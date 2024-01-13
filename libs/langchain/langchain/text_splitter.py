@@ -1436,10 +1436,12 @@ class KonlpyTextSplitter(TextSplitter):
 
     def __init__(
         self,
+        separator: str = "\n\n",
         **kwargs: Any,
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
+        self._separator = separator
         try:
             from konlpy.tag import Kkma
         except ImportError:
