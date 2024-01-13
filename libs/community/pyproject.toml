@@ -236,6 +236,7 @@ extended_testing = [
  "sqlite-vss",
  "rapidocr-onnxruntime",
  "motor",
+ "tidbvec",
  "timescale-vector",
  "anthropic",
  "upstash-redis",
@@ -250,7 +251,6 @@ extended_testing = [
  "azure-ai-documentintelligence",
  "oracle-ads",
  "zhipuai",
- "tidbvec",
 ]
 
 [tool.ruff]

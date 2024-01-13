@@ -4,9 +4,8 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from tidb_vector.integrations.vectorstore import DistanceStrategy, TiDBCollection
 
-DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
+DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
 DEFAULT_COLLECTION_NAME = "langchain_tidb_vector"
 
 
@@ -15,9 +14,9 @@ class TiDBVector(VectorStore):
         self,
         connection_string: str,
         embedding_function: Embeddings,
-        collection: Optional[TiDBCollection] = None,
+        collection: Optional[Any] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,
-        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
+        distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
         pre_delete_collection: bool = False,
@@ -67,6 +66,15 @@ class TiDBVector(VectorStore):
         self._connection_string = connection_string
         self._embedding_function = embedding_function
         self._distance_strategy = distance_strategy
+
+        try:
+            from tidb_vector.integrations.vectorstore import TiDBCollection
+        except ImportError:
+            raise ImportError(
+                "Could not import tidbvec python package. "
+                "Please install it with `pip install tidbvec`."
+            )
+
         self._tidb = collection or TiDBCollection(
             connection_string=connection_string,
             collection_name=collection_name,
@@ -96,7 +104,7 @@ class TiDBVector(VectorStore):
         connection_string: str,
         metadatas: Optional[List[dict]] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,
-        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
+        distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
@@ -153,7 +161,7 @@ class TiDBVector(VectorStore):
         embedding: Embeddings,
         connection_string: str,
         collection_name: str = DEFAULT_COLLECTION_NAME,
-        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
+        distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
@@ -178,6 +186,14 @@ class TiDBVector(VectorStore):
         Raises:
             NoSuchTableError: If the specified table does not exist in the TiDB.
         """
+
+        try:
+            from tidb_vector.integrations.vectorstore import TiDBCollection
+        except ImportError:
+            raise ImportError(
+                "Could not import tidbvec python package. "
+                "Please install it with `pip install tidbvec`."
+            )
 
         tidb_collection = TiDBCollection.get_collection(
             connection_string=connection_string,
@@ -308,9 +324,9 @@ class TiDBVector(VectorStore):
         """
         Select the relevance score function based on the distance strategy.
         """
-        if self._distance_strategy == DistanceStrategy.COSINE:
+        if self._distance_strategy == "cosine":
             return self._cosine_relevance_score_fn
-        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+        elif self._distance_strategy == "l2":
             return self._euclidean_relevance_score_fn
         else:
             raise ValueError(
