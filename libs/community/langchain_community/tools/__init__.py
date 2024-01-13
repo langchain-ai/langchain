@@ -1093,6 +1093,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonLastQuote",
     "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
