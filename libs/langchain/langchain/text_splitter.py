@@ -1439,7 +1439,7 @@ class KonlpyTextSplitter(TextSplitter):
         separator: str = "\n\n",
         **kwargs: Any,
     ) -> None:
-        """Initialize the spacy text splitter."""
+        """Initialize the Konlpy text splitter."""
         super().__init__(**kwargs)
         self._separator = separator
         try:
