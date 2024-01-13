@@ -24,7 +24,6 @@ class ChatGLM(LLM):
                 endpoint_url=endpoint_url
             )
     """
-
     endpoint_url: str = "http://127.0.0.1:8000/"
     """Endpoint URL to use."""
     model_kwargs: Optional[dict] = None
@@ -42,7 +41,7 @@ class ChatGLM(LLM):
 
     @property
     def _llm_type(self) -> str:
-        return "chat_glm"
+        return "chat_glm3"
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -79,25 +78,27 @@ class ChatGLM(LLM):
 
         # HTTP headers for authorization
         headers = {"Content-Type": "application/json"}
-
+        chat_messages = [
+        {"role": "system","content": "Speak in a professional tone"},
+        {"role": "user", "content": prompt}
+        ]    
         payload = {
-            "prompt": prompt,
-            "temperature": self.temperature,
-            "history": self.history,
-            "max_length": self.max_token,
-            "top_p": self.top_p,
-        }
+        	"model": "chatglm3", 
+        	"messages": chat_messages, 
+        	"stream": False, 
+        	"max_tokens": 2000, 
+        	"temperature": self.temperature, 
+        	"top_p": self.top_p, 
+    }
         payload.update(_model_kwargs)
         payload.update(kwargs)
 
         logger.debug(f"ChatGLM payload: {payload}")
-
         # call api
         try:
-            response = requests.post(self.endpoint_url, headers=headers, json=payload)
+            response = requests.post(f"{self.endpoint_url}v1/chat/completions", headers=headers, json=payload,stream=False)
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
-
         logger.debug(f"ChatGLM response: {response}")
 
         if response.status_code != 200:
@@ -105,16 +106,7 @@ class ChatGLM(LLM):
 
         try:
             parsed_response = response.json()
-
-            # Check if response content does exists
-            if isinstance(parsed_response, dict):
-                content_keys = "response"
-                if content_keys in parsed_response:
-                    text = parsed_response[content_keys]
-                else:
-                    raise ValueError(f"No content in response : {parsed_response}")
-            else:
-                raise ValueError(f"Unexpected response type: {parsed_response}")
+            text = parsed_response.get("choices", [{}])[0].get("message", "").get("content", "")
 
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
