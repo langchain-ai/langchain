@@ -29,6 +29,7 @@ _EXPECTED = [
     "FAISS",
     "Hologres",
     "LanceDB",
+    "Lantern",
     "LLMRails",
     "Marqo",
     "MatchingEngine",
