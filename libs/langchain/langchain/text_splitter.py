@@ -1429,7 +1429,11 @@ class SpacyTextSplitter(TextSplitter):
 
 
 class KonlpyTextSplitter(TextSplitter):
-    """Splitting text using Konlpy package. It is the best option for splitting Korean text."""
+    """Splitting text using Konlpy package.
+
+
+    It is good for splitting Korean text.
+    """
 
     def __init__(
         self,
@@ -1440,9 +1444,7 @@ class KonlpyTextSplitter(TextSplitter):
         try:
             from konlpy.tag import Kkma
         except ImportError:
-            raise ImportError(
-                "Konlpy is not installed. This is needed to for KonlpyTextSplitter. Please install it with `pip install konlpy`."
-            )
+            raise ImportError("Konlpy is not installed. `.")
         self.kkma = Kkma()
 
     def split_text(self, text: str) -> List[str]:
