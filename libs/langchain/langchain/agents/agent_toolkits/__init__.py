@@ -87,6 +87,7 @@ __all__ = [
     "O365Toolkit",
     "OpenAPIToolkit",
     "PlayWrightBrowserToolkit",
+    "PolygonToolkit",
     "PowerBIToolkit",
     "SlackToolkit",
     "SteamToolkit",
