@@ -21,7 +21,6 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 """
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import inspect
 import json
@@ -440,7 +439,6 @@ class RedisCache(RedisCacheBase):
         return self._get_generations(results)
 
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        logger.warning("Consider using `AsyncRedisCache` for async cache operations.")
         return await super().alookup(prompt, llm_string)
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -455,7 +453,6 @@ class RedisCache(RedisCacheBase):
     async def aupdate(
         self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
-        logger.warning("Consider using `AsyncRedisCache` for async cache operations.")
         return await super().aupdate(prompt, llm_string, return_val)
 
     def clear(self, **kwargs: Any) -> None:
@@ -464,7 +461,6 @@ class RedisCache(RedisCacheBase):
         self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
     async def aclear(self, **kwargs: Any) -> None:
-        logger.warning("Consider using `AsyncRedisCache` for async cache operations.")
         return await super().aclear(**kwargs)
 
 
@@ -507,22 +503,10 @@ class AsyncRedisCache(RedisCacheBase):
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
-        logger.warning(
-            "This an async Redis cache. Did you mean to use `alookup()` method?"
+        raise NotImplementedError(
+            "This async Redis cache does not implement `lookup()` method. "
+            "Consider using the async `alookup()` version."
         )
-        try:
-            if asyncio.get_running_loop():
-                # There is no nice way to run async code from sync function if there is
-                # an already existing event loop. Error out as the only option.
-                raise NotImplementedError(
-                    "Cannot use sync `lookup()` in async context. "
-                    "Consider using `alookup()`."
-                )
-        except RuntimeError:
-            # At this point, somebody tries to run async redis cache in a
-            # non-async environment with no event loop.
-            # Weird, but it's techically possible.
-            return asyncio.run(self.alookup(prompt, llm_string))
 
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string. Async version."""
@@ -531,17 +515,10 @@ class AsyncRedisCache(RedisCacheBase):
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        logger.warning(
-            "This an async Redis cache. Did you mean to use `aupdate()` method?"
+        raise NotImplementedError(
+            "This async Redis cache does not implement `update()` method. "
+            "Consider using the async `aupdate()` version."
         )
-        try:
-            if asyncio.get_running_loop():
-                raise NotImplementedError(
-                    "Cannot use sync `update()` in async context. "
-                    "Consider using `aupdate()`."
-                )
-        except RuntimeError:
-            return asyncio.run(self.aupdate(prompt, llm_string, return_val))
 
     async def aupdate(
         self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
@@ -556,17 +533,10 @@ class AsyncRedisCache(RedisCacheBase):
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
-        logger.warning(
-            "This an async Redis cache. Did you mean to use `aclear()` method?"
+        raise NotImplementedError(
+            "This async Redis cache does not implement `clear()` method. "
+            "Consider using the async `aclear()` version."
         )
-        try:
-            if asyncio.get_running_loop():
-                raise NotImplementedError(
-                    "Cannot use sync `clear()` in async context. "
-                    "Consider using `aclear()`."
-                )
-        except RuntimeError:
-            return asyncio.run(self.aclear(**kwargs))
 
     async def aclear(self, **kwargs: Any) -> None:
         """
