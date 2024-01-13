@@ -9,7 +9,7 @@ from langchain_community.utilities.polygon import PolygonAPIWrapper
 class PolygonLastQuote(BaseTool):
     """Tool that gets the last quote of a ticker from Polygon"""
 
-    mode: str
+    mode: str = "get_last_quote"
     name: str = "polygon_last_quote"
     description: str = (
         "A wrapper around Polygon's Last Quote API."
