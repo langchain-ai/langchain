@@ -1,11 +1,3 @@
-"""
-How to deal with:
-[] Verify that each event has the correct shape, no unintuitive type coercions to dict should happen!
-[] We don't want the event data to be overly nested. It only needs to be dict when it must.
-[] inputs=inputs if isinstance(inputs, dict) else {"input": inputs},
-    We should re-write the BaseTracer to stop doing this
-[] Take care of root run information otherwise simple cases like streaming a single function fail
-"""
 from itertools import cycle
 from typing import Any, AsyncIterator, List, Optional, Sequence
 
