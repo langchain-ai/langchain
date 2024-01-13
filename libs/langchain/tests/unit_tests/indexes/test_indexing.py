@@ -1251,5 +1251,6 @@ def test_compatible_vectorstore_documentation() -> None:
         "VespaStore",
         "Weaviate",
         "ZepVectorStore",
+        "Lantern",
     }
     assert compatible == documented
