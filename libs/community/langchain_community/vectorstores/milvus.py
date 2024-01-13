@@ -124,6 +124,7 @@ class Milvus(VectorStore):
         text_field: str = "text",
         vector_field: str = "vector",
         metadata_field: Optional[str] = None,
+        partition_key_field: Optional[str] = None,
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
@@ -166,6 +167,7 @@ class Milvus(VectorStore):
         # In order for compatibility, the vector field needs to be called "vector"
         self._vector_field = vector_field
         self._metadata_field = metadata_field
+        self._partition_key_field = partition_key_field
         self.fields: list[str] = []
         self.partition_names = partition_names
         self.replica_number = replica_number
@@ -336,7 +338,11 @@ class Milvus(VectorStore):
         )
 
         # Create the schema for the collection
-        schema = CollectionSchema(fields, description=self.collection_description)
+        schema = CollectionSchema(
+            fields,
+            description=self.collection_description,
+            partition_key_field=self._partition_key_field,
+        )
 
         # Create the collection
         try:
