@@ -438,9 +438,6 @@ class RedisCache(RedisCacheBase):
         results = self.redis.hgetall(self._key(prompt, llm_string))
         return self._get_generations(results)
 
-    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        return await super().alookup(prompt, llm_string)
-
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         self._ensure_generation_type(return_val)
@@ -450,18 +447,10 @@ class RedisCache(RedisCacheBase):
             self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
             pipe.execute()
 
-    async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
-    ) -> None:
-        return await super().aupdate(prompt, llm_string, return_val)
-
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
         asynchronous = kwargs.get("asynchronous", False)
         self.redis.flushdb(asynchronous=asynchronous, **kwargs)
-
-    async def aclear(self, **kwargs: Any) -> None:
-        return await super().aclear(**kwargs)
 
 
 class AsyncRedisCache(RedisCacheBase):
