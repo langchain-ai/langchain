@@ -21,6 +21,7 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
 
     Useful when the parsed output may include unicode characters or new lines.
     """
+    return_id: bool = False
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         generation = result[0]
@@ -38,7 +39,7 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
         exceptions = []
         for tool_call in tool_calls:
             if "function" not in tool_call:
-                pass
+                continue
             try:
                 function_args = json.loads(
                     tool_call["function"]["arguments"], strict=self.strict
@@ -50,12 +51,13 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
                     f"Received JSONDecodeError {e}"
                 )
                 continue
-            final_tools.append(
-                {
-                    "type": tool_call["function"]["name"],
-                    "args": function_args,
-                }
-            )
+            parsed = {
+                "type": tool_call["function"]["name"],
+                "args": function_args,
+            }
+            if self.return_id:
+                parsed["id"] = tool_call["id"]
+            final_tools.append(parsed)
         if exceptions:
             raise OutputParserException("\n\n".join(exceptions))
         return final_tools
@@ -69,7 +71,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         results = super().parse_result(result)
-        return [res["args"] for res in results if results["type"] == self.key_name]
+        return [res["args"] for res in results if res["type"] == self.key_name]
 
 
 class PydanticToolsParser(JsonOutputToolsParser):
