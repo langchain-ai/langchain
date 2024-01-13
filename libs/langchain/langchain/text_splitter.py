@@ -1448,7 +1448,8 @@ class KonlpyTextSplitter(TextSplitter):
             raise ImportError(
                 """Konlpy is not installed, please 
                 install it with `pip install konlpy`
-                """)
+                """
+            )
         self.kkma = Kkma()
 
     def split_text(self, text: str) -> List[str]:
