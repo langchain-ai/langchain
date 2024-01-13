@@ -367,7 +367,7 @@ class Vectara(VectorStore):
                 {
                     "maxSummarizedResults": config.summary_config.max_results,
                     "responseLang": config.summary_config.response_lang,
-                    "promptName": config.summary_config.prompt_name,
+                    "summarizerPromptName": config.summary_config.prompt_name,
                 }
             ]
 
