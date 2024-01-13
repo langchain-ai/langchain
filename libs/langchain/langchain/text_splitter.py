@@ -433,7 +433,8 @@ class MarkdownHeaderTextSplitter:
                 if stripped_line.startswith(sep) and (
                     # Header with no text OR header is followed by space
                     # Both are valid conditions that sep is being used a header
-                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
+                    len(stripped_line) == len(sep)
+                    or stripped_line[len(sep)] == " "
                 ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
@@ -1424,6 +1425,30 @@ class SpacyTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         splits = (s.text for s in self._tokenizer(text).sents)
+        return self._merge_splits(splits, self._separator)
+
+
+class KonlpyTextSplitter(TextSplitter):
+    """Splitting text using Konlpy package. It is the best option for splitting Korean text."""
+
+    def __init__(
+        self,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the spacy text splitter."""
+        super().__init__(**kwargs)
+        try:
+            from konlpy.tag import Kkma
+        except ImportError:
+            raise ImportError(
+                "Konlpy is not installed. This is needed to for KonlpyTextSplitter. Please install it with `pip install konlpy`."
+            )
+        self.kkma = Kkma()
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        # First we split the large input into its component sentences.
+        splits = self.kkma.sentences(text)
         return self._merge_splits(splits, self._separator)
 
 
