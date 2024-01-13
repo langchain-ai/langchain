@@ -9,32 +9,6 @@ DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
 DEFAULT_COLLECTION_NAME = "langchain_tidb_vector"
 
 
-def get_or_create_collection(
-    connection_string: str,
-    collection_name: str = DEFAULT_COLLECTION_NAME,
-    distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
-    *,
-    engine_args: Optional[Dict[str, Any]] = None,
-    pre_delete_collection: bool = False,
-    **kwargs: Any,
-):
-    try:
-        from tidb_vector.integrations.vectorstore import TiDBCollection
-    except ImportError:
-        raise ImportError(
-            "Could not import tidbvec python package. "
-            "Please install it with `pip install tidbvec`."
-        )
-    return TiDBCollection.get_collection(
-        connection_string=connection_string,
-        collection_name=collection_name,
-        distance_strategy=distance_strategy,
-        engine_args=engine_args,
-        pre_delete_collection=pre_delete_collection,
-        **kwargs,
-    )
-
-
 class TiDBVector(VectorStore):
     def __init__(
         self,
@@ -92,7 +66,16 @@ class TiDBVector(VectorStore):
         self._connection_string = connection_string
         self._embedding_function = embedding_function
         self._distance_strategy = distance_strategy
-        self._tidb = collection or get_or_create_collection(
+
+        try:
+            from tidb_vector.integrations.vectorstore import TiDBCollection
+        except ImportError:
+            raise ImportError(
+                "Could not import tidbvec python package. "
+                "Please install it with `pip install tidbvec`."
+            )
+
+        self._tidb = collection or TiDBCollection(
             connection_string=connection_string,
             collection_name=collection_name,
             distance_strategy=distance_strategy,
@@ -204,7 +187,15 @@ class TiDBVector(VectorStore):
             NoSuchTableError: If the specified table does not exist in the TiDB.
         """
 
-        tidb_collection = get_or_create_collection(
+        try:
+            from tidb_vector.integrations.vectorstore import TiDBCollection
+        except ImportError:
+            raise ImportError(
+                "Could not import tidbvec python package. "
+                "Please install it with `pip install tidbvec`."
+            )
+
+        tidb_collection = TiDBCollection.get_collection(
             connection_string=connection_string,
             collection_name=collection_name,
             distance_strategy=distance_strategy,
