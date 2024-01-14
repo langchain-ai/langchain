@@ -97,7 +97,7 @@ def create_react_agent(
         tools=render_text_description(list(tools)),
         tool_names=", ".join([t.name for t in tools]),
     )
-    llm_with_stop = llm.bind(stop=["\nObservation"])
+    llm_with_stop = llm.bind(stop=["\nObservation", "Question"])
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
