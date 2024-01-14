@@ -468,10 +468,24 @@ async def as_event_stream(
     Returns:
         An async stream of events.
     """
-    state = RunLog(state=None)  # type: ignore[arg-type]
+    run_log = RunLog(state=None)  # type: ignore[arg-type]
+    yielded_start_event = False
 
     async for log in run_log_patches:
-        state = state + log
+        run_log = run_log + log
+
+        if not yielded_start_event:
+            state = run_log.state.copy()
+            if "id" in state:
+                yield Event(
+                    event=f"on_root_start",
+                    name="placeholder",
+                    run_id=state["id"],
+                    tags=[],
+                    metadata={},
+                    data=state["inputs"],
+                )
+                yielded_start_event = True
 
         paths = {
             op["path"].split("/")[2]
@@ -481,7 +495,7 @@ async def as_event_stream(
         # TODO iteration here is in the same order
         for path in paths:
             data = {}
-            log = state.state["logs"][path]
+            log = run_log.state["logs"][path]
             if log["end_time"] is None:
                 if log["streamed_output"]:
                     event_type = "stream"
@@ -518,3 +532,44 @@ async def as_event_stream(
                 metadata=log["metadata"],
                 data=data,
             )
+
+        state = run_log.state.copy()
+        if state["streamed_output"]:
+            type_ = "_root_"
+            state.update(
+                {
+                    "name": "placeholder",
+                    "tags": [],
+                    "metadata": {},
+                }
+            )
+
+            yield Event(
+                event=f"on_{type_}_stream",  # TODO: fix this
+                name=state["name"],
+                run_id=state["id"],
+                tags=state["tags"],
+                metadata=state["metadata"],
+                data=list(state["streamed_output"]),
+            )
+            # Clean up the stream since we don't need it anymore?
+            state["streamed_output"] = []
+
+    type_ = "_root_"
+    state = run_log.state.copy()
+    state.update(
+        {
+            "name": "placeholder",
+            "tags": [],
+            "metadata": {},
+        }
+    )
+
+    yield Event(
+        event=f"on_{type_}_end",  # TODO: fix this
+        name=state["name"],
+        run_id=state["id"],
+        tags=state["tags"],
+        metadata=state["metadata"],
+        data=state["final_output"],
+    )

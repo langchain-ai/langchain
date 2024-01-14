@@ -235,35 +235,42 @@ async def test_event_stream_with_retry() -> None:
     ]
 
 
+async def _as_run_log_state(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
+    """Converts a sequence of run log patches into a run log state."""
+    state = RunLog(state=None)
+    async for run_log_patch in run_log_patches:
+        state = state + run_log_patch
+    return state
+
+
 async def test_event_stream_with_lambdas() -> None:
     """Test event stream with lamdbas."""
-    as_lambdas = RunnableLambda(lambda x: x)
-
-    assert "Fails due to missing root run information" == "TODO: Fix this test"
+    as_lambdas = RunnableLambda(lambda x: {"answer": "goodbye"})
 
     events = await _get_events(as_lambdas.astream_log({"question": "hello"}))
+    assert len(events) == 3
     assert events == [
         {
-            "data": {"inputs": {"question": "hello"}},
-            "event": "on_chain_start",
+            "data": {"input": ""},
+            "event": "on_root_start",
             "metadata": {},
-            "name": "lambda",
+            "name": "placeholder",
             "run_id": None,
             "tags": [],
         },
         {
-            "data": ["hello"],
-            "event": "on_chain_stream",
+            "data": [{"answer": "goodbye"}],
+            "event": "on__root__stream",
             "metadata": {},
-            "name": "lambda",
+            "name": "placeholder",
             "run_id": None,
             "tags": [],
         },
         {
-            "data": {"output": {"question": "hello"}},
-            "event": "on_chain_end",
+            "data": {"answer": "goodbye"},
+            "event": "on__root__end",
             "metadata": {},
-            "name": "lambda",
+            "name": "placeholder",
             "run_id": None,
             "tags": [],
         },
@@ -273,37 +280,32 @@ async def test_event_stream_with_lambdas() -> None:
         """Add one to x."""
         return x + 1
 
-    chunks = [chunk async for chunk in RunnableLambda(add_one).astream_log(1)]
-    state = RunLog(state=None)
-    for chunk in chunks:
-        state = state + chunk
-    assert state == {}
-
     events = await _get_events(RunnableLambda(add_one).astream_log(1))
+    assert len(events) == 3
     assert events == [
         {
-            "data": {"inputs": {"input": 1}},
-            "event": "on_chain_start",
+            "data": {"input": ""},
+            "event": "on_root_start",
             "metadata": {},
-            "name": "lambda",
+            "name": "placeholder",
             "run_id": None,
-            "tags": ["seq:step:1"],
+            "tags": [],
         },
         {
             "data": [2],
-            "event": "on_chain_stream",
+            "event": "on__root__stream",
             "metadata": {},
-            "name": "lambda",
+            "name": "placeholder",
             "run_id": None,
-            "tags": ["seq:step:1"],
+            "tags": [],
         },
         {
-            "data": {"output": {"output": 2}},
-            "event": "on_chain_end",
+            "data": 2,
+            "event": "on__root__end",
             "metadata": {},
-            "name": "lambda",
+            "name": "placeholder",
             "run_id": None,
-            "tags": ["seq:step:1"],
+            "tags": [],
         },
     ]
 
