@@ -93,30 +93,6 @@ async def test_event_stream_with_lambdas_from_function() -> None:
     events = await _get_events(RunnableLambda(add_one).astream_log(1))
     assert len(events) == 3
     assert events == [
-        {
-            "data": {"input": ""},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "add_one",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": [2],
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "add_one",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": 2,
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "add_one",
-            "run_id": None,
-            "tags": [],
-        },
     ]
 
 

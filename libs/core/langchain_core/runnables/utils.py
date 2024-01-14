@@ -476,6 +476,11 @@ async def as_event_stream(
 
         if not yielded_start_event:
             state = run_log.state.copy()
+            # TODO(FIX): Start event still does not capture inputs.
+            # Need to figure out best logic for this.
+            # Likely need to check when the root chain is updated (rather than created)
+            # and only
+            # then yield the start event.
             if "id" in state:
                 yield Event(
                     event=f"on_{state['type']}_start",
@@ -483,7 +488,7 @@ async def as_event_stream(
                     run_id=state["id"],
                     tags=[],
                     metadata={},
-                    data=state["inputs"],
+                    data=state["inputs"]['input'],
                 )
                 yielded_start_event = True
 
@@ -492,6 +497,7 @@ async def as_event_stream(
             for op in log.ops
             if op["path"].startswith("/logs/")
         }
+
         # TODO iteration here is in the same order
         for path in paths:
             data = {}
@@ -508,7 +514,10 @@ async def as_event_stream(
 
             if event_type == "start":
                 if log["inputs"]:
-                    data["inputs"] = log["inputs"]
+                    try:
+                        data["inputs"] = log["inputs"]['input']
+                    except KeyError:
+                        raise ValueError(log)
                     # Clean up the inputs since we don't need them anymore
                     del log["inputs"]
 

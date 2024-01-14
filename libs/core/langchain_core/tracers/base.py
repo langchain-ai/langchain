@@ -40,8 +40,23 @@ logger = logging.getLogger(__name__)
 class BaseTracer(BaseCallbackHandler, ABC):
     """Base interface for tracers."""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(
+        self, *, apply_conditional_coercion: bool = True, **kwargs: Any
+    ) -> None:
+        """Initialize the tracer.
+
+        Args:
+            apply_conditional_coercion: if True, inputs and outputs that are not
+                dicts will be coerced to a dict.
+                True for backwards compatibility; however, this is incorrect behavior
+                since it makes it difficult to recover the original inputs/outputs
+                in callbacks.
+                Use False when possible.
+            kwargs: Additional keyword arguments that will be passed to
+                    the super class.
+        """
         super().__init__(**kwargs)
+        self.apply_conditional_coercion = apply_conditional_coercion
         self.run_map: Dict[str, Run] = {}
 
     @staticmethod
@@ -145,6 +160,17 @@ class BaseTracer(BaseCallbackHandler, ABC):
             )
         return run
 
+    def _update_inputs(self, inputs):
+        if self.apply_conditional_coercion:
+            return inputs
+        else:
+            # Everything is coerced
+            return {
+                "input": inputs,
+            }
+
+
+
     def on_llm_start(
         self,
         serialized: Dict[str, Any],
@@ -167,7 +193,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs={"prompts": prompts},
+            inputs=self._update_inputs({"prompts": prompts}),
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
@@ -292,7 +318,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs=inputs if isinstance(inputs, dict) else {"input": inputs},
+            inputs=self._get_input(inputs),
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
@@ -307,6 +333,24 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._on_chain_start(chain_run)
         return chain_run
 
+    def _get_input(self, inputs: Any) -> Any:
+        """Get the inputs for a chain run."""
+        if self.apply_conditional_coercion:
+            return inputs if isinstance(inputs, dict) else {"input": inputs}
+        else:
+            return {
+                "input": inputs,
+            }
+
+    def _get_output(self, outputs: Any) -> Any:
+        """Get the outputs for a chain run."""
+        if self.apply_conditional_coercion:
+            return outputs if isinstance(outputs, dict) else {"output": outputs}
+        else:
+            return {
+                "output": outputs,
+            }
+
     def on_chain_end(
         self,
         outputs: Dict[str, Any],
@@ -317,13 +361,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> Run:
         """End a trace for a chain run."""
         chain_run = self._get_run(run_id)
-        chain_run.outputs = (
-            outputs if isinstance(outputs, dict) else {"output": outputs}
-        )
+        chain_run.outputs = self._get_output(outputs)
         chain_run.end_time = datetime.now(timezone.utc)
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
-            chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
+            chain_run.inputs = self._get_input(inputs)
         self._end_trace(chain_run)
         self._on_chain_end(chain_run)
         return chain_run
@@ -342,7 +384,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         chain_run.end_time = datetime.now(timezone.utc)
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
-            chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
+            chain_run.inputs = self._get_input(inputs)
         self._end_trace(chain_run)
         self._on_chain_error(chain_run)
         return chain_run

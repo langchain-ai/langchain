@@ -158,7 +158,7 @@ class LogStreamCallbackHandler(BaseTracer):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
     ) -> None:
-        super().__init__()
+        super().__init__(apply_conditional_coercion=False)
 
         self.auto_close = auto_close
         self.include_names = include_names
