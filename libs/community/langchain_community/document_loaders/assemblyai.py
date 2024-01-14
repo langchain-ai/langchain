@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import requests
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
@@ -110,3 +110,39 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
             return [Document(page_content=transcript.export_subtitles_vtt())]
         else:
             raise ValueError("Unknown transcript format.")
+
+def load_by_existing_id(self, transcript_id):
+    HEADERS = {
+    "authorization": assemblyai.settings.api_key
+    }
+
+    try:
+        transcript_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{transcript_id}", headers=HEADERS)
+        transcript_response.raise_for_status()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise
+
+    try:
+        paragraphs_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{transcript_id}/paragraphs", headers=HEADERS)
+        paragraphs_response.raise_for_status()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise 
+
+    transcript = transcript_response.json()['text']
+    paragraphs = paragraphs_response.json()['paragraphs']
+
+
+    if self.transcript_format == TranscriptFormat.TEXT:
+            return [
+                Document(
+                    page_content=transcript, metadata=transcript_response.json()
+                )
+            ]
+    elif self.transcript_format == TranscriptFormat.PARAGRAPHS:
+            return [
+                Document(page_content=p["text"], metadata=p.dict(exclude={"text"}))
+                for p in paragraphs
+            ]
+
