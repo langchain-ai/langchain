@@ -478,8 +478,8 @@ async def as_event_stream(
             state = run_log.state.copy()
             if "id" in state:
                 yield Event(
-                    event=f"on_root_start",
-                    name="placeholder",
+                    event=f"on_{state['type']}_start",
+                    name=state["name"],
                     run_id=state["id"],
                     tags=[],
                     metadata={},
@@ -535,17 +535,15 @@ async def as_event_stream(
 
         state = run_log.state.copy()
         if state["streamed_output"]:
-            type_ = "_root_"
             state.update(
                 {
-                    "name": "placeholder",
                     "tags": [],
                     "metadata": {},
                 }
             )
 
             yield Event(
-                event=f"on_{type_}_stream",  # TODO: fix this
+                event=f"on_{state['type']}_stream",  # TODO: fix this
                 name=state["name"],
                 run_id=state["id"],
                 tags=state["tags"],
@@ -555,18 +553,16 @@ async def as_event_stream(
             # Clean up the stream since we don't need it anymore?
             state["streamed_output"] = []
 
-    type_ = "_root_"
     state = run_log.state.copy()
     state.update(
         {
-            "name": "placeholder",
             "tags": [],
             "metadata": {},
         }
     )
 
     yield Event(
-        event=f"on_{type_}_end",  # TODO: fix this
+        event=f"on_{state['type']}_end",  # TODO: fix this
         name=state["name"],
         run_id=state["id"],
         tags=state["tags"],

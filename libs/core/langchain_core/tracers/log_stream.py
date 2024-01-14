@@ -69,6 +69,14 @@ class RunState(TypedDict):
     """Final output of the run, usually the result of aggregating (`+`) streamed_output.
     Updated throughout the run when supported by the Runnable."""
 
+    name: str
+    """Name of the object being run."""
+    type: str
+    """Type of the object being run, eg. prompt, chain, llm, etc."""
+
+    # Do we want tags/metadata on the root run? Client kinda knows it in most situations
+    # tags: List[str]
+
     logs: Dict[str, LogEntry]
     """Map of run names to sub-runs. If filters were supplied, this list will
     contain only the runs that matched the filters."""
@@ -246,6 +254,8 @@ class LogStreamCallbackHandler(BaseTracer):
                             final_output=None,
                             inputs=run.inputs,
                             logs={},
+                            name=run.name,
+                            type=run.run_type,
                         ),
                     }
                 )
