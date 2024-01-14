@@ -3,6 +3,7 @@ name = "langchain-anthropic"
 version = "0.0.1.post1"
 description = "An integration package connecting AnthropicMessages and LangChain"
 authors = []
+license = "MIT"
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
