@@ -255,6 +255,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             ValueError: if the last message in the list is not from human.
         """
         should_stream = stream if stream is not None else self.streaming
+        safety_settings = kwargs.pop("safety_settings", None)
         if should_stream:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
@@ -271,7 +272,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            response = chat.send_message(message, generation_config=params)
+            response = chat.send_message(
+                message, generation_config=params, safety_settings=safety_settings
+            )
         else:
             history = _parse_chat_history(messages[:-1])
             examples = kwargs.get("examples") or self.examples
@@ -286,6 +289,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             )
             for r in response.candidates
         ]
+
         return ChatResult(generations=generations)
 
     async def _agenerate(
@@ -314,6 +318,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             logger.warning("ChatVertexAI does not currently support async streaming.")
 
         params = self._prepare_params(stop=stop, **kwargs)
+        safety_settings = kwargs.pop("safety_settings", None)
         msg_params = {}
         if "candidate_count" in params:
             msg_params["candidate_count"] = params.pop("candidate_count")
@@ -322,7 +327,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            response = await chat.send_message_async(message, generation_config=params)
+            response = await chat.send_message_async(
+                message, generation_config=params, safety_settings=safety_settings
+            )
         else:
             question = _get_question(messages)
             history = _parse_chat_history(messages[:-1])

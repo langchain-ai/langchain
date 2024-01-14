@@ -68,6 +68,7 @@ def _completion_with_retry(
             return llm.client.generate_content(
                 prompt,
                 stream=stream,
+                safety_settings=kwargs.pop("safety_settings", None),
                 generation_config=kwargs,
             )
         else:
@@ -96,7 +97,9 @@ async def _acompletion_with_retry(
     ) -> Any:
         if is_gemini:
             return await llm.client.generate_content_async(
-                prompt, generation_config=kwargs
+                prompt,
+                generation_config=kwargs,
+                safety_settings=kwargs.pop("safety_settings", None),
             )
         return await llm.client.predict_async(prompt, **kwargs)
 
