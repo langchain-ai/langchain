@@ -70,6 +70,7 @@ from langchain_core.runnables import (
     add,
     chain,
 )
+from langchain_core.runnables.base import RunnableSerializable
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -134,6 +135,17 @@ class FakeTracer(BaseTracer):
 
 
 class FakeRunnable(Runnable[str, int]):
+    def invoke(
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+    ) -> int:
+        return len(input)
+
+
+class FakeRunnableSerializable(RunnableSerializable[str, int]):
+    hello: str = ""
+
     def invoke(
         self,
         input: str,
@@ -1300,6 +1312,30 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     ]
     assert mock.call_args_list == [mocker.call(5)]
     mock.reset_mock()
+
+
+async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
+    fake = FakeRunnableSerializable()
+    spy = mocker.spy(fake.__class__, "invoke")
+    fakew = fake.configurable_fields(hello=ConfigurableField(id="hello", name="Hello"))
+
+    assert (
+        fakew.with_config(tags=["a-tag"]).invoke(
+            "hello", {"configurable": {"hello": "there"}, "metadata": {"bye": "now"}}
+        )
+        == 5
+    )
+    assert spy.call_args_list[0].args[1:] == (
+        "hello",
+        dict(
+            tags=["a-tag"],
+            callbacks=None,
+            recursion_limit=25,
+            configurable={"hello": "there"},
+            metadata={"hello": "there", "bye": "now"},
+        ),
+    )
+    spy.reset_mock()
 
 
 async def test_with_config(mocker: MockerFixture) -> None:
