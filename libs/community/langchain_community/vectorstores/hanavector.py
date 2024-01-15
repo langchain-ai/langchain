@@ -26,6 +26,16 @@ HANA_DISTANCE_FUNCTION: dict = {
     DistanceStrategy.EUCLIDEAN_DISTANCE: ("L2DISTANCE", "ASC"),
 }
 
+
+default_distance_strategy = DistanceStrategy.COSINE
+default_table_name: str = "EMBEDDINGS"
+default_content_field: str = "DOC_TEXT"
+default_content_field_length: int = 2048
+default_metadata_field: str = "DOC_META"
+default_metadata_field_length: int = 2048
+default_vector_field: str = "DOC_VECTOR"
+default_vector_field_length: int = -1 # -1 means dynamic length
+
 class HanaDB(VectorStore):
     """`HANA DB` vector store.
 
@@ -41,14 +51,14 @@ class HanaDB(VectorStore):
         self,
         connection: dbapi.Connection,
         embedding: Embeddings,
-        distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
-        table_name: str = "EMBEDDINGS",
-        content_field: str = "DOC_TEXT",
-        content_field_length: int = 2048,
-        metadata_field: str = "DOC_META",
-        metadata_field_length: int = 2048,
-        vector_field: str = "DOC_VECTOR",
-        vector_field_length: int = -1, # -1 means dynamic length
+        distance_strategy: DistanceStrategy = default_distance_strategy,
+        table_name: str = default_table_name,
+        content_field: str = default_content_field,
+        content_field_length: int = default_content_field_length,
+        metadata_field: str = default_metadata_field,
+        metadata_field_length: int = default_metadata_field_length,
+        vector_field: str = default_vector_field,
+        vector_field_length: int = default_vector_field_length, # -1 means dynamic length
         **kwargs: Any,
     ):
         try:
@@ -191,9 +201,18 @@ class HanaDB(VectorStore):
     @classmethod
     def from_texts(
         cls: Type[HanaDB],
+        connection: dbapi.Connection,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        distance_strategy: DistanceStrategy = default_distance_strategy,
+        table_name: str = default_table_name,
+        content_field: str = default_content_field,
+        content_field_length: int = default_content_field_length,
+        metadata_field: str = default_metadata_field,
+        metadata_field_length: int = default_metadata_field_length,
+        vector_field: str = default_vector_field,
+        vector_field_length: int = default_vector_field_length, # -1 means dynamic length
         **kwargs: Any,
     ):
         """Create a HANA vectorstore from raw documents.
@@ -205,12 +224,21 @@ class HanaDB(VectorStore):
         """
 
         instance = cls(
-            texts,
-            metadatas,
-            embedding,
+            connection=connection,
+            texts=texts,
+            metadatas=metadatas,
+            embedding=embedding,
+            distance_strategy=distance_strategy,
+            table_name=table_name,
+            content_field=content_field,
+            content_field_length=content_field_length,
+            metadata_field=metadata_field,
+            metadata_field_length=metadata_field_length,
+            vector_field=vector_field,
+            vector_field_length=vector_field_length, # -1 means dynamic length
             **kwargs,
         )
-        instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
+        instance.add_texts(texts, metadatas, **kwargs)
         return instance
 
     def similarity_search(

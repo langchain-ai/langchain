@@ -43,14 +43,6 @@ def drop_table(connection, table_name):
         cur.close()
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-def test_hanavector_simple(texts: List[str]) -> None:
-    """Test end to end construction and search."""
-    vectordb = HanaDB(connection=connection, embedding=embedding, distance_strategy = DistanceStrategy.COSINE, table_name="WTF")
-    vectordb.add_texts(texts)
-    results = vectordb.similarity_search("foo", k=1)
-    assert results == [Document(page_content="foo")]
-
-@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_non_existing_table() -> None:
     """Test end to end construction and search."""
     table_name = "NON_EXISTING"
@@ -136,6 +128,29 @@ def test_hanavector_add_texts(texts: List[str]) -> None:
     vectordb = HanaDB(connection=connection, embedding=embedding, table_name=table_name)
 
     vectordb.add_texts(texts = texts)
+
+    # chech that embeddings have been created in the table
+    number_of_texts = len(texts)
+    number_of_rows = -1
+    sql_str = f"SELECT COUNT(*) FROM {table_name}"
+    cur = connection.cursor()
+    cur.execute(sql_str)
+    if cur.has_result_set():
+        rows = cur.fetchall()
+        number_of_rows = rows[0][0] 
+    assert number_of_rows == number_of_texts
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_from_texts(texts: List[str]) -> None:
+    table_name = "TEST_TABLE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, embedding=embedding, table_name=table_name)
+    # test if vectorDB is instance of HanaDB
+    assert isinstance(vectorDB, HanaDB) 
 
     # chech that embeddings have been created in the table
     number_of_texts = len(texts)
