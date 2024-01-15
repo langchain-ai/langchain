@@ -1,3 +1,3 @@
-from langchain_community.embeddings.mlflow import MlflowEmbeddings, _chunk
+from langchain_community.embeddings.mlflow import MlflowEmbeddings
 
-__all__ = ["_chunk", "MlflowEmbeddings"]
+__all__ = ["MlflowEmbeddings"]

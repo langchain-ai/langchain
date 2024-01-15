@@ -6,7 +6,7 @@ This page covers how to use the [Helicone](https://helicone.ai) ecosystem within
 
 Helicone is an [open-source](https://github.com/Helicone/helicone) observability platform that proxies your OpenAI traffic and provides you key insights into your spend, latency and usage.
 
-![Helicone](/img/HeliconeDashboard.png)
+![Screenshot of the Helicone dashboard showing average requests per day, response time, tokens per response, total cost, and a graph of requests over time.](/img/HeliconeDashboard.png "Helicone Dashboard")
 
 ## Quick start
 
@@ -18,12 +18,12 @@ export OPENAI_API_BASE="https://oai.hconeai.com/v1"
 
 Now head over to [helicone.ai](https://helicone.ai/onboarding?step=2) to create your account, and add your OpenAI API key within our dashboard to view your logs.
 
-![Helicone](/img/HeliconeKeys.png)
+![Interface for entering and managing OpenAI API keys in the Helicone dashboard.](/img/HeliconeKeys.png "Helicone API Key Input")
 
 ## How to enable Helicone caching
 
 ```python
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 import openai
 openai.api_base = "https://oai.hconeai.com/v1"
 
@@ -37,7 +37,7 @@ print(llm(text))
 ## How to use Helicone custom properties
 
 ```python
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 import openai
 openai.api_base = "https://oai.hconeai.com/v1"
 

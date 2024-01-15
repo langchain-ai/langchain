@@ -5,6 +5,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+from langchain_community.llms.openai import OpenAI
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.outputs import Generation
 from langchain_core.prompts import BasePromptTemplate
@@ -21,7 +22,6 @@ from langchain.chains.flare.prompts import (
     FinishedOutputParser,
 )
 from langchain.chains.llm import LLMChain
-from langchain.llms.openai import OpenAI
 
 
 class _ResponseChain(LLMChain):

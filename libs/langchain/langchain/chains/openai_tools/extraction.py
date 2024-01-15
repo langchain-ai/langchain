@@ -19,6 +19,16 @@ def create_extraction_chain_pydantic(
     llm: BaseLanguageModel,
     system_message: str = _EXTRACTION_TEMPLATE,
 ) -> Runnable:
+    """Creates a chain that extracts information from a passage.
+
+    Args:
+        pydantic_schemas: The schema of the entities to extract.
+        llm: The language model to use.
+        system_message: The system message to use for extraction.
+
+    Returns:
+        A runnable that extracts information from a passage.
+    """
     if not isinstance(pydantic_schemas, list):
         pydantic_schemas = [pydantic_schemas]
     prompt = ChatPromptTemplate.from_messages(

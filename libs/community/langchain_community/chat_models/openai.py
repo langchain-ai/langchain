@@ -20,6 +20,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -143,6 +144,9 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
+@deprecated(
+    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.ChatOpenAI"
+)
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
@@ -367,11 +371,12 @@ class ChatOpenAI(BaseChatModel):
                 # Happens in streaming
                 continue
             token_usage = output["token_usage"]
-            for k, v in token_usage.items():
-                if k in overall_token_usage:
-                    overall_token_usage[k] += v
-                else:
-                    overall_token_usage[k] = v
+            if token_usage is not None:
+                for k, v in token_usage.items():
+                    if k in overall_token_usage:
+                        overall_token_usage[k] += v
+                    else:
+                        overall_token_usage[k] = v
             if system_fingerprint is None:
                 system_fingerprint = output.get("system_fingerprint")
         combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
@@ -453,9 +458,12 @@ class ChatOpenAI(BaseChatModel):
             response = response.dict()
         for res in response["choices"]:
             message = convert_dict_to_message(res["message"])
+            generation_info = dict(finish_reason=res.get("finish_reason"))
+            if "logprobs" in res:
+                generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(
                 message=message,
-                generation_info=dict(finish_reason=res.get("finish_reason")),
+                generation_info=generation_info,
             )
             generations.append(gen)
         token_usage = response.get("usage", {})

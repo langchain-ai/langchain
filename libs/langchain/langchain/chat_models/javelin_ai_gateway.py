@@ -3,4 +3,4 @@ from langchain_community.chat_models.javelin_ai_gateway import (
     ChatParams,
 )
 
-__all__ = ["ChatParams", "ChatJavelinAIGateway"]
+__all__ = ["ChatJavelinAIGateway", "ChatParams"]

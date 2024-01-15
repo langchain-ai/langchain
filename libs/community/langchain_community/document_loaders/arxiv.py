@@ -25,3 +25,6 @@ class ArxivLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         return self.client.load(self.query)
+
+    def get_summaries_as_docs(self) -> List[Document]:
+        return self.client.get_summaries_as_docs(self.query)
