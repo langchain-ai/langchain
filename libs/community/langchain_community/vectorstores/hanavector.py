@@ -199,10 +199,10 @@ class HanaDB(VectorStore):
     @classmethod
     def from_texts(
         cls: Type[HanaDB],
-        connection: dbapi.Connection,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        connection: dbapi.Connection = None,
         distance_strategy: DistanceStrategy = default_distance_strategy,
         table_name: str = default_table_name,
         content_field: str = default_content_field,
