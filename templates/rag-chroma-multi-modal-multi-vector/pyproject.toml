@@ -14,7 +14,7 @@ openai = "<2"
 tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
 pypdfium2 = ">=4.20.0"
-gigachain-experimental = "^0.0.43"
+gigachain-experimental = ">=0.0.43"
 upstash-redis = ">=1.0.0"
 pillow = ">=10.1.0"
 
