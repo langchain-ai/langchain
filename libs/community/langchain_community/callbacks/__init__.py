@@ -8,6 +8,9 @@
 """
 
 from langchain_community.callbacks.aim_callback import AimCallbackHandler
+from langchain_community.callbacks.apigateway_callback import (
+    StreamingAPIGatewayWebSocketCallbackHandler,
+)
 from langchain_community.callbacks.argilla_callback import ArgillaCallbackHandler
 from langchain_community.callbacks.arize_callback import ArizeCallbackHandler
 from langchain_community.callbacks.arthur_callback import ArthurCallbackHandler
@@ -41,6 +44,7 @@ from langchain_community.callbacks.whylabs_callback import WhyLabsCallbackHandle
 
 __all__ = [
     "AimCallbackHandler",
+    "StreamingAPIGatewayWebSocketCallbackHandler",
     "ArgillaCallbackHandler",
     "ArizeCallbackHandler",
     "PromptLayerCallbackHandler",
