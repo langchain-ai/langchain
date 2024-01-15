@@ -1,10 +1,10 @@
 import os
-import requests
 import tempfile
-
 from abc import ABC
 from typing import List
 from urllib.parse import urlparse
+
+import requests
 
 from langchain_community.docstore.document import Document
 from langchain_community.document_loaders.base import BaseLoader
@@ -34,8 +34,7 @@ class VsdxLoader(BaseLoader, ABC):
             self.temp_file.write(r.content)
             self.file_path = self.temp_file.name
         elif not os.path.isfile(self.file_path):
-            raise ValueError(
-                "File path %s is not a valid file or url" % self.file_path)
+            raise ValueError("File path %s is not a valid file or url" % self.file_path)
 
         self.parser = VsdxParser()
 
