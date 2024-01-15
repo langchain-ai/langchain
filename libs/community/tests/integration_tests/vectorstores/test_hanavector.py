@@ -3,9 +3,8 @@ from typing import List
 
 import numpy as np
 import pytest
-from langchain_core.documents import Document
 
-from langchain_community.vectorstores.hanavector import HanaDB
+from langchain_community.vectorstores import HanaDB
 from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import ConsistentFakeEmbeddings
 from hdbcli import dbapi
