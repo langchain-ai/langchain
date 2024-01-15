@@ -2293,6 +2293,21 @@ type = "directory"
 url = "../core"
 
 [[package]]
+name = "gigachat"
+version = "0.1.13"
+description = "GigaChat. Python-library for GigaChain and LangChain"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "gigachat-0.1.13-py3-none-any.whl", hash = "sha256:1e2135f73699f191cbd50efd5973bd5348766b9214f0f79faf368bdccbda24e0"},
+    {file = "gigachat-0.1.13.tar.gz", hash = "sha256:cb1a67011ad6bdd35949545ca3ce4da1c827734aa2bde5bb03e35e7eede9b4ef"},
+]
+
+[package.dependencies]
+httpx = "<1"
+pydantic = ">=1,<3"
+
+[[package]]
 name = "gitdb"
 version = "4.0.11"
 description = "Git Object Database"
@@ -9171,4 +9186,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "65b28ec88ea09a043225ef4693b7dac70861bef1e0f21802731cedd287ba625a"
+content-hash = "82995e724b0691127b74a49e4214f42b36cfc20fc21017a20d200b35cd50079c"

@@ -2202,21 +2202,6 @@ type = "directory"
 url = "../core"
 
 [[package]]
-name = "gigachat"
-version = "0.1.12.1"
-description = "GigaChat. Python-library for GigaChain and LangChain"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "gigachat-0.1.12.1-py3-none-any.whl", hash = "sha256:82fd12535e982cfe4b58fc357eed68898531d4a30ad11ac205c34c788a9fdc41"},
-    {file = "gigachat-0.1.12.1.tar.gz", hash = "sha256:3b235255b1989cbd1c31e69e695198fa227c1499ed8a402da11fc11d06a406fc"},
-]
-
-[package.dependencies]
-httpx = "<1"
-pydantic = ">=1,<3"
-
-[[package]]
 name = "gitdb"
 version = "4.0.11"
 description = "Git Object Database"
@@ -3529,7 +3514,7 @@ files = [
 ]
 
 [package.dependencies]
-gigachain-core = ">=0.1.7,<0.2"
+langchain-core = ">=0.1.7,<0.2"
 numpy = ">=1,<2"
 openai = ">=1.6.1,<2.0.0"
 tiktoken = ">=0.5.2,<0.6.0"
@@ -9204,4 +9189,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b35dfe5df998ef7dc70935b23f96967d5b0a17690224cc869be723ee8a9a7579"
+content-hash = "bfcaab10b4b1dcdc2e3e844297908cf296c8fcad9637a6a16ead47a0763cc35a"
