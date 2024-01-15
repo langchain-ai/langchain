@@ -78,3 +78,113 @@ async def test_fallbacks(
     assert list(await runnable.ainvoke("hello")) == list("bar")
     if sys.version_info >= (3, 9):
         assert dumps(runnable, pretty=True) == snapshot
+
+
+def _runnable(inputs: dict) -> str:
+    if inputs["text"] == "foo":
+        return "first"
+    if "exception" not in inputs:
+        raise ValueError()
+    if inputs["text"] == "bar":
+        return "second"
+    if isinstance(inputs["exception"], ValueError):
+        raise RuntimeError()
+    return "third"
+
+
+def _assert_potential_error(actual: list, expected: list) -> None:
+    for x, y in zip(actual, expected):
+        if isinstance(x, Exception):
+            assert isinstance(y, type(x))
+        else:
+            assert x == y
+
+
+def test_batch() -> None:
+    runnable = RunnableLambda(_runnable)
+    with pytest.raises(ValueError):
+        runnable.batch([{"text": "foo"}, {"text": "bar"}, {"text": "baz"}])
+    actual = runnable.batch(
+        [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
+    )
+    expected = ["first", ValueError(), ValueError()]
+    _assert_potential_error(actual, expected)
+
+    runnable_with_single = runnable.with_fallbacks(
+        [runnable], exception_key="exception"
+    )
+    with pytest.raises(RuntimeError):
+        runnable_with_single.batch([{"text": "foo"}, {"text": "bar"}, {"text": "baz"}])
+    actual = runnable_with_single.batch(
+        [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
+    )
+    expected = ["first", "second", RuntimeError()]
+    _assert_potential_error(actual, expected)
+
+    runnable_with_double = runnable.with_fallbacks(
+        [runnable, runnable], exception_key="exception"
+    )
+    actual = runnable_with_double.batch(
+        [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
+    )
+
+    expected = ["first", "second", "third"]
+    _assert_potential_error(actual, expected)
+
+    runnable_with_double = runnable.with_fallbacks(
+        [runnable, runnable],
+        exception_key="exception",
+        exceptions_to_handle=(ValueError,),
+    )
+    actual = runnable_with_double.batch(
+        [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
+    )
+
+    expected = ["first", "second", RuntimeError()]
+    _assert_potential_error(actual, expected)
+
+
+async def test_abatch() -> None:
+    runnable = RunnableLambda(_runnable)
+    with pytest.raises(ValueError):
+        await runnable.abatch([{"text": "foo"}, {"text": "bar"}, {"text": "baz"}])
+    actual = await runnable.abatch(
+        [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
+    )
+    expected = ["first", ValueError(), ValueError()]
+    _assert_potential_error(actual, expected)
+
+    runnable_with_single = runnable.with_fallbacks(
+        [runnable], exception_key="exception"
+    )
+    with pytest.raises(RuntimeError):
+        await runnable_with_single.abatch(
+            [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}]
+        )
+    actual = await runnable_with_single.abatch(
+        [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
+    )
+    expected = ["first", "second", RuntimeError()]
+    _assert_potential_error(actual, expected)
+
+    runnable_with_double = runnable.with_fallbacks(
+        [runnable, runnable], exception_key="exception"
+    )
+    actual = await runnable_with_double.abatch(
+        [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
+    )
+
+    expected = ["first", "second", "third"]
+    _assert_potential_error(actual, expected)
+
+    runnable_with_double = runnable.with_fallbacks(
+        [runnable, runnable],
+        exception_key="exception",
+        exceptions_to_handle=(ValueError,),
+    )
+    actual = await runnable_with_double.abatch(
+        [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
+    )
+
+    expected = ["first", "second", RuntimeError()]
+    _assert_potential_error(actual, expected)

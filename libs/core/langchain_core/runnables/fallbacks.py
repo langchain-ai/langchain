@@ -271,6 +271,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         to_return: Dict[int, Any] = {}
         run_again = {i: input for i, input in enumerate(inputs)}
         handled_exceptions: Dict[int, BaseException] = {}
+        first_to_raise = None
         for runnable in self.runnables:
             outputs = runnable.batch(
                 [input for _, input in sorted(run_again.items())],
@@ -282,14 +283,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 return_exceptions=True,
                 **kwargs,
             )
-            first_to_raise = None
-            handled_exceptions = {}
-            for (i, input), output in zip(sorted(run_again.items()), outputs):
+            for (i, input), output in zip(sorted(run_again.copy().items()), outputs):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
-                    first_to_raise = first_to_raise or output
-                    run_managers[i].on_chain_error(output)
+                    if not return_exceptions:
+                        first_to_raise = first_to_raise or output
+                    else:
+                        handled_exceptions[i] = cast(BaseException, output)
+                    run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
                         input[self.exception_key] = output  # type: ignore
@@ -298,18 +300,17 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_managers[i].on_chain_end(output)
                     to_return[i] = output
                     run_again.pop(i)
+                    handled_exceptions.pop(i, None)
             if first_to_raise:
                 raise first_to_raise
             if not run_again:
                 break
 
         sorted_handled_exceptions = sorted(handled_exceptions.items())
-        if handled_exceptions and not return_exceptions:
-            for i, error in sorted_handled_exceptions:
-                run_managers[i].on_chain_error(error)
-            raise sorted_handled_exceptions[0][1]
         for i, error in sorted_handled_exceptions:
-            run_managers[i].on_chain_end(error)
+            run_managers[i].on_chain_error(error)
+        if not return_exceptions and sorted_handled_exceptions:
+            raise sorted_handled_exceptions[0][1]
         to_return.update(handled_exceptions)
         return [output for _, output in sorted(to_return.items())]
 
@@ -362,6 +363,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         to_return = {}
         run_again = {i: input for i, input in enumerate(inputs)}
         handled_exceptions: Dict[int, BaseException] = {}
+        first_to_raise = None
         for runnable in self.runnables:
             outputs = await runnable.abatch(
                 [input for _, input in sorted(run_again.items())],
@@ -374,14 +376,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 **kwargs,
             )
 
-            first_to_raise = None
-            handled_exceptions = {}
-            for (i, input), output in zip(sorted(run_again.items()), outputs):
+            for (i, input), output in zip(sorted(run_again.copy().items()), outputs):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
-                    first_to_raise = first_to_raise or output
-                    await run_managers[i].on_chain_error(output)
+                    if not return_exceptions:
+                        first_to_raise = first_to_raise or output
+                    else:
+                        handled_exceptions[i] = cast(BaseException, output)
+                    run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
                         input[self.exception_key] = output  # type: ignore
@@ -390,6 +393,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     to_return[i] = output
                     await run_managers[i].on_chain_end(output)
                     run_again.pop(i)
+                    handled_exceptions.pop(i, None)
 
             if first_to_raise:
                 raise first_to_raise
@@ -397,20 +401,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 break
 
         sorted_handled_exceptions = sorted(handled_exceptions.items())
-        if handled_exceptions and not return_exceptions:
-            await asyncio.gather(
-                *(
-                    run_managers[i].on_chain_error(error)
-                    for i, error in sorted_handled_exceptions
-                )
-            )
-            raise sorted_handled_exceptions[0][1]
-
         await asyncio.gather(
             *(
-                run_managers[i].on_chain_end(error)
+                run_managers[i].on_chain_error(error)
                 for i, error in sorted_handled_exceptions
             )
         )
+        if not return_exceptions and sorted_handled_exceptions:
+            raise sorted_handled_exceptions[0][1]
         to_return.update(handled_exceptions)
         return [output for _, output in sorted(to_return.items())]  # type: ignore
