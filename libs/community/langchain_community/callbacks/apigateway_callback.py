@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Dict, List, Callable
+from typing import TYPE_CHECKING, Any, Callable, Dict, List
 from boto3 import Session
 from langchain_core.callbacks.base import BaseCallbackHandler
 
