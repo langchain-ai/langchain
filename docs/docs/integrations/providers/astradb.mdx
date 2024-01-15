@@ -70,6 +70,19 @@ message_history = AstraDBChatMessageHistory(
 
 Learn more in the [example notebook](/docs/integrations/memory/astradb_chat_message_history).
 
+### Document loader
+
+```python
+from langchain_community.document_loaders import AstraDBLoader
+loader = AstraDBLoader(
+    api_endpoint="...",
+    token="...",
+    collection_name="my_collection"
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/document_loaders/astradb).
+
 
 ## Apache Cassandra and Astra DB through CQL
 

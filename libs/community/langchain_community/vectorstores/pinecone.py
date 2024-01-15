@@ -38,10 +38,7 @@ def _import_pinecone() -> Any:
 def _is_pinecone_v3() -> bool:
     pinecone = _import_pinecone()
     pinecone_client_version = pinecone.__version__
-    if version.parse(pinecone_client_version) >= version.parse("3.0.0.dev"):
-        return True
-    else:
-        return False
+    return version.parse(pinecone_client_version) >= version.parse("3.0.0.dev")
 
 
 class Pinecone(VectorStore):
@@ -61,7 +58,7 @@ class Pinecone(VectorStore):
             pinecone.init(api_key="***", environment="...")
             index = pinecone.Index("langchain-demo")
             embeddings = OpenAIEmbeddings()
-            vectorstore = Pinecone(index, embeddings.embed_query, "text")
+            vectorstore = Pinecone(index, embeddings, "text")
     """
 
     def __init__(
@@ -380,7 +377,7 @@ class Pinecone(VectorStore):
         if index_name in index_names:
             index = (
                 pinecone_instance.Index(index_name)
-                if not _is_pinecone_v3()
+                if _is_pinecone_v3()
                 else pinecone.Index(index_name, pool_threads=pool_threads)
             )
         elif len(index_names) == 0:
