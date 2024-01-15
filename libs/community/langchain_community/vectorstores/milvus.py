@@ -42,6 +42,10 @@ class Milvus(VectorStore):
             "LangChainCollection".
         collection_description (str): The description of the collection. Defaults to
             "".
+        collection_properties (Optional[dict[str, any]]): The collection properties.
+            Defaults to None.
+            If set, will override collection existing properties.
+            For example: {"collection.ttl.seconds": 60}.
         connection_args (Optional[dict[str, any]]): The connection args used for
             this class comes in the form of a dict.
         consistency_level (str): The consistency level to use for a collection.
@@ -109,6 +113,7 @@ class Milvus(VectorStore):
         embedding_function: Embeddings,
         collection_name: str = "LangChainCollection",
         collection_description: str = "",
+        collection_properties: Optional[dict[str, Any]] = None,
         connection_args: Optional[dict[str, Any]] = None,
         consistency_level: str = "Session",
         index_params: Optional[dict] = None,
@@ -119,6 +124,10 @@ class Milvus(VectorStore):
         text_field: str = "text",
         vector_field: str = "vector",
         metadata_field: Optional[str] = None,
+        partition_key_field: Optional[str] = None,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -146,6 +155,7 @@ class Milvus(VectorStore):
         self.embedding_func = embedding_function
         self.collection_name = collection_name
         self.collection_description = collection_description
+        self.collection_properties = collection_properties
         self.index_params = index_params
         self.search_params = search_params
         self.consistency_level = consistency_level
@@ -157,7 +167,12 @@ class Milvus(VectorStore):
         # In order for compatibility, the vector field needs to be called "vector"
         self._vector_field = vector_field
         self._metadata_field = metadata_field
+        self._partition_key_field = partition_key_field
         self.fields: list[str] = []
+        self.partition_names = partition_names
+        self.replica_number = replica_number
+        self.timeout = timeout
+
         # Create the connection to the server
         if connection_args is None:
             connection_args = DEFAULT_MILVUS_CONNECTION
@@ -170,13 +185,19 @@ class Milvus(VectorStore):
                 self.collection_name,
                 using=self.alias,
             )
+            if self.collection_properties is not None:
+                self.col.set_properties(self.collection_properties)
         # If need to drop old, drop it
         if drop_old and isinstance(self.col, Collection):
             self.col.drop()
             self.col = None
 
         # Initialize the vector store
-        self._init()
+        self._init(
+            partition_names=partition_names,
+            replica_number=replica_number,
+            timeout=timeout,
+        )
 
     @property
     def embeddings(self) -> Embeddings:
@@ -197,7 +218,13 @@ class Milvus(VectorStore):
         if host is not None and port is not None:
             given_address = str(host) + ":" + str(port)
         elif uri is not None:
-            given_address = uri.split("https://")[1]
+            if uri.startswith("https://"):
+                given_address = uri.split("https://")[1]
+            elif uri.startswith("http://"):
+                given_address = uri.split("http://")[1]
+            else:
+                logger.error("Invalid Milvus URI: %s", uri)
+                raise ValueError("Invalid Milvus URI: %s", uri)
         elif address is not None:
             given_address = address
         else:
@@ -235,14 +262,23 @@ class Milvus(VectorStore):
             raise e
 
     def _init(
-        self, embeddings: Optional[list] = None, metadatas: Optional[list[dict]] = None
+        self,
+        embeddings: Optional[list] = None,
+        metadatas: Optional[list[dict]] = None,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
     ) -> None:
         if embeddings is not None:
             self._create_collection(embeddings, metadatas)
         self._extract_fields()
         self._create_index()
         self._create_search_params()
-        self._load()
+        self._load(
+            partition_names=partition_names,
+            replica_number=replica_number,
+            timeout=timeout,
+        )
 
     def _create_collection(
         self, embeddings: list, metadatas: Optional[list[dict]] = None
@@ -302,7 +338,11 @@ class Milvus(VectorStore):
         )
 
         # Create the schema for the collection
-        schema = CollectionSchema(fields, description=self.collection_description)
+        schema = CollectionSchema(
+            fields,
+            description=self.collection_description,
+            partition_key_field=self._partition_key_field,
+        )
 
         # Create the collection
         try:
@@ -312,6 +352,9 @@ class Milvus(VectorStore):
                 consistency_level=self.consistency_level,
                 using=self.alias,
             )
+            # Set the collection properties if they exist
+            if self.collection_properties is not None:
+                self.col.set_properties(self.collection_properties)
         except MilvusException as e:
             logger.error(
                 "Failed to create collection: %s error: %s", self.collection_name, e
@@ -396,12 +439,27 @@ class Milvus(VectorStore):
                 self.search_params = self.default_search_params[index_type]
                 self.search_params["metric_type"] = metric_type
 
-    def _load(self) -> None:
+    def _load(
+        self,
+        partition_names: Optional[list] = None,
+        replica_number: int = 1,
+        timeout: Optional[float] = None,
+    ) -> None:
         """Load the collection if available."""
-        from pymilvus import Collection
+        from pymilvus import Collection, utility
+        from pymilvus.client.types import LoadState
 
-        if isinstance(self.col, Collection) and self._get_index() is not None:
-            self.col.load()
+        if (
+            isinstance(self.col, Collection)
+            and self._get_index() is not None
+            and utility.load_state(self.collection_name, using=self.alias)
+            == LoadState.NotLoad
+        ):
+            self.col.load(
+                partition_names=partition_names,
+                replica_number=replica_number,
+                timeout=timeout,
+            )
 
     def add_texts(
         self,
@@ -417,7 +475,7 @@ class Milvus(VectorStore):
         in creating a new Collection. The data of the first entity decides
         the schema of the new collection, the dim is extracted from the first
         embedding and the columns are decided by the first metadata dict.
-        Metada keys will need to be present for all inserted values. At
+        Metadata keys will need to be present for all inserted values. At
         the moment there is no None equivalent in Milvus.
 
         Args:
@@ -451,7 +509,14 @@ class Milvus(VectorStore):
 
         # If the collection hasn't been initialized yet, perform all steps to do so
         if not isinstance(self.col, Collection):
-            self._init(embeddings, metadatas)
+            kwargs = {"embeddings": embeddings, "metadatas": metadatas}
+            if self.partition_names:
+                kwargs["partition_names"] = self.partition_names
+            if self.replica_number:
+                kwargs["replica_number"] = self.replica_number
+            if self.timeout:
+                kwargs["timeout"] = self.timeout
+            self._init(**kwargs)
 
         # Dict to hold all insert columns
         insert_dict: dict[str, list] = {
@@ -492,6 +557,7 @@ class Milvus(VectorStore):
                     "Failed to insert batch starting at entity: %s/%s", i, total_count
                 )
                 raise e
+        self.col.flush()
         return pks
 
     def similarity_search(

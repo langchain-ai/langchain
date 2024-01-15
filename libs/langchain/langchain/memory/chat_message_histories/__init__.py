@@ -1,45 +1,27 @@
-from langchain_community.chat_message_histories.astradb import (
-    AstraDBChatMessageHistory,
-)
-from langchain_community.chat_message_histories.cassandra import (
-    CassandraChatMessageHistory,
-)
-from langchain_community.chat_message_histories.cosmos_db import (
-    CosmosDBChatMessageHistory,
-)
-from langchain_community.chat_message_histories.dynamodb import (
-    DynamoDBChatMessageHistory,
-)
-from langchain_community.chat_message_histories.elasticsearch import (
-    ElasticsearchChatMessageHistory,
-)
-from langchain_community.chat_message_histories.file import FileChatMessageHistory
-from langchain_community.chat_message_histories.firestore import (
-    FirestoreChatMessageHistory,
-)
-from langchain_community.chat_message_histories.in_memory import ChatMessageHistory
-from langchain_community.chat_message_histories.momento import MomentoChatMessageHistory
-from langchain_community.chat_message_histories.mongodb import MongoDBChatMessageHistory
-from langchain_community.chat_message_histories.neo4j import Neo4jChatMessageHistory
-from langchain_community.chat_message_histories.postgres import (
-    PostgresChatMessageHistory,
-)
-from langchain_community.chat_message_histories.redis import RedisChatMessageHistory
-from langchain_community.chat_message_histories.rocksetdb import (
-    RocksetChatMessageHistory,
-)
-from langchain_community.chat_message_histories.singlestoredb import (
-    SingleStoreDBChatMessageHistory,
-)
-from langchain_community.chat_message_histories.sql import SQLChatMessageHistory
-from langchain_community.chat_message_histories.streamlit import (
-    StreamlitChatMessageHistory,
-)
-from langchain_community.chat_message_histories.upstash_redis import (
-    UpstashRedisChatMessageHistory,
-)
-from langchain_community.chat_message_histories.xata import XataChatMessageHistory
-from langchain_community.chat_message_histories.zep import ZepChatMessageHistory
+import warnings
+from typing import Any
+
+from langchain_core._api import LangChainDeprecationWarning
+
+from langchain.utils.interactive_env import is_interactive_env
+
+
+def __getattr__(name: str) -> Any:
+    from langchain_community import chat_message_histories
+
+    # If not in interactive env, raise warning.
+    if not is_interactive_env():
+        warnings.warn(
+            "Importing chat message histories from langchain is deprecated. Importing "
+            "from langchain will no longer be supported as of langchain==0.2.0. "
+            "Please import from langchain-community instead:\n\n"
+            f"`from langchain_community.chat_message_histories import {name}`.\n\n"
+            "To install langchain-community run `pip install -U langchain-community`.",
+            category=LangChainDeprecationWarning,
+        )
+
+    return getattr(chat_message_histories, name)
+
 
 __all__ = [
     "AstraDBChatMessageHistory",
