@@ -92,8 +92,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
     exception_key: Optional[str] = None
-    """Pass handled exception to the fallback under this input key. If None, exception 
-        will not be passed to fallback. If used, the base runnable and its fallbacks 
+    """If string is specified then exceptions will be passed to fallbacks as part of 
+        the input under the specified key. If None, exceptions
+        will not be passed to fallbacks. If used, the base runnable and its fallbacks 
         must accept a dictionary as input."""
 
     class Config:
@@ -142,6 +143,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
+        if self.exception_key is not None and not isinstance(input, dict):
+            raise ValueError(
+                "If 'exception_key' is specified then input must be a dictionary."
+            )
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -181,6 +186,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
+        if self.exception_key is not None and not isinstance(input, dict):
+            raise ValueError(
+                "If 'exception_key' is specified then input must be a dictionary."
+            )
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -224,6 +233,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> List[Output]:
         from langchain_core.callbacks.manager import CallbackManager
+
+        if self.exception_key is not None and not all(
+            isinstance(input, dict) for input in inputs
+        ):
+            raise ValueError(
+                "If 'exception_key' is specified then inputs must be dictionaries."
+            )
 
         if not inputs:
             return []
@@ -307,8 +323,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     ) -> List[Output]:
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
-        if return_exceptions:
-            raise NotImplementedError()
+        if self.exception_key is not None and not all(
+            isinstance(input, dict) for input in inputs
+        ):
+            raise ValueError(
+                "If 'exception_key' is specified then inputs must be dictionaries."
+            )
 
         if not inputs:
             return []
