@@ -72,7 +72,6 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
     return_single: bool = False
     """Whether to return only the first tool call."""
 
-
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         results = super().parse_result(result)
         results = [res for res in results if res["type"] == self.key_name]
