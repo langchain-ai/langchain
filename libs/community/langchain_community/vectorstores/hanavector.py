@@ -48,6 +48,7 @@ class HanaDB(VectorStore):
         metadata_field: str = "DOC_META",
         metadata_field_length: int = 2048,
         vector_field: str = "DOC_VECTOR",
+        vector_field_length: int = -1, # -1 means dynamic length
         **kwargs: Any,
     ):
         try:
@@ -74,13 +75,16 @@ class HanaDB(VectorStore):
         self.metadata_field = self._sanitize_input(metadata_field)
         self.metadata_field_length = HanaDB._sanitize_int(metadata_field_length)
         self.vector_field = self._sanitize_input(vector_field)
-
-        # Pass the rest of the kwargs to the connection.
-        self.connection_kwargs = kwargs
+        self.vector_field_length = HanaDB._sanitize_int(vector_field_length)
 
         # Check if the table exists, and eventually create it
         if not self._table_exists(self.table_name):
-            sql_str = f"CREATE TABLE {self.table_name}({self.content_field} NVARCHAR({self.content_field_length}), {self.metadata_field} NVARCHAR({self.metadata_field_length}), {self.vector_field} REAL_VECTOR);"
+            sql_str = f"CREATE TABLE {self.table_name}({self.content_field} NVARCHAR({self.content_field_length}), {self.metadata_field} NVARCHAR({self.metadata_field_length}), {self.vector_field} REAL_VECTOR"
+            if self.vector_field_length == -1:
+                sql_str += f");"
+            else:
+                sql_str += f"({self.vector_field_length}));"
+
             try:
                 cur = self.connection.cursor()
                 cur.execute(sql_str)
@@ -90,10 +94,10 @@ class HanaDB(VectorStore):
         # Check if the needed columns exists
         self._check_column(self.table_name, self.content_field, "NVARCHAR", self.content_field_length)
         self._check_column(self.table_name, self.metadata_field, "NVARCHAR", self.metadata_field_length)
-        self._check_column(self.table_name, self.vector_field, "REAL_VECTOR", -1)
+        self._check_column(self.table_name, self.vector_field, "REAL_VECTOR", self.vector_field_length)
 
     def _table_exists(self, table_name) -> bool:
-        sql_str = "SELECT COUNT(*) as NUM FROM TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ?"
+        sql_str = "SELECT COUNT(*) FROM TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ?"
         try:
             cur = self.connection.cursor()
             cur.execute(sql_str, (table_name))
@@ -125,7 +129,6 @@ class HanaDB(VectorStore):
                 raise AttributeError(f"Column {column_name} does not exist")
         finally:
             cur.close()
-        return False
 
 
     @property
@@ -137,6 +140,9 @@ class HanaDB(VectorStore):
         return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
     def _sanitize_int(input_int: any) -> int:
+        value = int(str(input_int))
+        if value < -1:
+            raise ValueError(f"Value ({value}) must not be smaller than -1")
         return int(str(input_int))
 
     def add_texts(

@@ -110,3 +110,20 @@ def test_hanavector_table_with_wrong_typed_columns(texts: List[str]) -> None:
         print(err)
         exception_occured = True
     assert exception_occured
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_non_existing_table_fixed_vector_length(texts: List[str]) -> None:
+    """Test end to end construction and search."""
+    table_name = "NON_EXISTING"
+    vector_field = "MY_VECTOR"
+    vector_field_length = 42
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectordb = HanaDB(connection=connection, embedding=embedding, distance_strategy = DistanceStrategy.COSINE, table_name=table_name, 
+                      vector_field = vector_field, vector_field_length = vector_field_length)
+
+    assert vectordb._table_exists(table_name)
+    vectordb._check_column(table_name, vector_field, "REAL_VECTOR", vector_field_length)
+
