@@ -267,9 +267,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 **kwargs,
             )
             first_to_raise = None
-            run_again = {}
             handled_exceptions = {}
-            for (i, input), output in zip(run_again.items(), outputs):
+            for (i, input), output in zip(sorted(run_again.items()), outputs):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
@@ -278,11 +277,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
                         input[self.exception_key] = output  # type: ignore
-                    run_again[i] = input
                     handled_exceptions[i] = cast(BaseException, output)
                 else:
                     run_managers[i].on_chain_end(output)
                     to_return[i] = output
+                    run_again.pop(i)
             if first_to_raise:
                 raise first_to_raise
             if not run_again:
@@ -356,9 +355,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             )
 
             first_to_raise = None
-            run_again = {}
             handled_exceptions = {}
-            for (i, input), output in zip(run_again.items(), outputs):
+            for (i, input), output in zip(sorted(run_again.items()), outputs):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
@@ -367,11 +365,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
                         input[self.exception_key] = output  # type: ignore
-                    run_again[i] = input
                     handled_exceptions[i] = cast(BaseException, output)
                 else:
                     to_return[i] = output
                     await run_managers[i].on_chain_end(output)
+                    run_again.pop(i)
 
             if first_to_raise:
                 raise first_to_raise
