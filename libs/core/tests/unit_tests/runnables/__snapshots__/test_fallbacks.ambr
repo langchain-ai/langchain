@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_llm_with_fallbacks[chain]
+# name: test_fallbacks[chain]
   '''
   {
     "lc": 1,
@@ -156,7 +156,7 @@
   }
   '''
 # ---
-# name: test_llm_with_fallbacks[chain_pass_exceptions]
+# name: test_fallbacks[chain_pass_exceptions]
   '''
   {
     "lc": 1,
@@ -251,7 +251,7 @@
   }
   '''
 # ---
-# name: test_llm_with_fallbacks[llm]
+# name: test_fallbacks[llm]
   '''
   {
     "lc": 1,
@@ -305,7 +305,7 @@
   }
   '''
 # ---
-# name: test_llm_with_fallbacks[llm_multi]
+# name: test_fallbacks[llm_multi]
   '''
   {
     "lc": 1,
