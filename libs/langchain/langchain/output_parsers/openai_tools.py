@@ -22,6 +22,7 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
     Useful when the parsed output may include unicode characters or new lines.
     """
     return_id: bool = False
+    """Whether to return the tool call id."""
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         generation = result[0]
@@ -68,10 +69,18 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 
     key_name: str
     """The type of tools to return."""
+    return_single: bool = False
+    """Whether to return only the first tool call."""
+
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         results = super().parse_result(result)
-        return [res["args"] for res in results if res["type"] == self.key_name]
+        results = [res for res in results if res["type"] == self.key_name]
+        if not self.return_id:
+            results = [res["args"] for res in results]
+        if self.return_single:
+            return results[0] if results else None
+        return results
 
 
 class PydanticToolsParser(JsonOutputToolsParser):
