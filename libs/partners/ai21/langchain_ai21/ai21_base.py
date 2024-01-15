@@ -8,7 +8,10 @@ from langchain_core.utils import convert_to_secret_str
 
 
 class AI21Base(BaseModel):
-    _client: AI21Client = Field(default_factory=AI21Client)
+    class Config:
+        arbitrary_types_allowed = True
+
+    client: Optional[AI21Client] = Field(default=None)
     api_key: Optional[SecretStr] = None
     api_host: Optional[str] = None
     timeout_sec: Optional[float] = None
@@ -32,10 +35,12 @@ class AI21Base(BaseModel):
         timeout_sec = values.get("timeout_sec") or os.getenv("AI21_TIMEOUT_SEC")
         values["timeout_sec"] = timeout_sec
 
-        values["_client"] = AI21Client(
-            api_key=api_key.get_secret_value(),
-            api_host=api_host,
-            timeout_sec=timeout_sec,
-        )
+        if values.get('client') is None:
+            values["client"] = AI21Client(
+                api_key=api_key.get_secret_value(),
+                api_host=api_host,
+                timeout_sec=timeout_sec,
+                via="langchain",
+            )
 
         return values
