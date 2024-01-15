@@ -101,7 +101,9 @@ In addition to Pathway's built-in dashboard, you can use Prometheus to monitor y
 
 ## Resources
 
-See also: Pathway Documentation (https://pathway.com/developers/) webpage (including API Docs).
+See also:
+* Pathway Documentation (https://pathway.com/developers/) webpage (including API Docs);
+* Real-time hosted document indexing [sandbox](https://pathway-indexer.staging.deploys.pathway.com/) powered by Pathway.
 
 ### Videos about Pathway<a id="videos-about-pathway"></a>
 [▶️ Building an LLM Application without a vector database](https://www.youtube.com/watch?v=kcrJSk00duw) - by [Jan Chorowski](https://scholar.google.com/citations?user=Yc94070AAAAJ) (7min 56s)
