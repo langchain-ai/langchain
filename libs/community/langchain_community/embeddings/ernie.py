@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.1.0",
+    since="0.0.13",
     alternative="langchain_community.embeddings.QianfanEmbeddingsEndpoint",
 )
 class ErnieEmbeddings(BaseModel, Embeddings):
