@@ -528,6 +528,7 @@ class Runnable(Generic[Input, Output], ABC):
         with get_executor_for_config(configs[0]) as executor:
             return cast(List[Output], list(executor.map(invoke, inputs, configs)))
 
+    @overload
     async def abatch(
         self,
         inputs: List[Input],
@@ -536,6 +537,27 @@ class Runnable(Generic[Input, Output], ABC):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
+        ...
+
+    @overload
+    async def abatch(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = True,
+        **kwargs: Optional[Any],
+    ) -> List[Union[Output, BaseException]]:
+        ...
+
+    async def abatch(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> List[Union[Output, BaseException]]:
         """Default implementation runs ainvoke in parallel using asyncio.gather.
 
         The default implementation of batch works well for IO bound runnables.
