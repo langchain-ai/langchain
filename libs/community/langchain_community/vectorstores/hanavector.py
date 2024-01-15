@@ -171,6 +171,10 @@ class HanaDB(VectorStore):
         Returns:
             List[str]: empty list
         """
+        # Create all embeddings of the texts beforehand to improve performance
+        if embeddings == None:
+            embeddings = self.embedding.embed_documents(list(texts))
+
         cur = self.connection.cursor()
         try:
             # Write data to singlestore db
