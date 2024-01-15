@@ -89,6 +89,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
+    exception_key: Optional[str] = None
+    """"""
 
     class Config:
         arbitrary_types_allowed = True
@@ -136,6 +138,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
+        if self.exception_key and not isinstance(input, dict):
+            raise ValueError
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -144,8 +148,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             dumpd(self), input, name=config.get("run_name")
         )
         first_error = None
+        last_error = None
         for runnable in self.runnables:
             try:
+                if self.exception_key and last_error is not None:
+                    input[self.exception_key] = last_error
                 output = runnable.invoke(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
@@ -154,6 +161,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             except self.exceptions_to_handle as e:
                 if first_error is None:
                     first_error = e
+                last_error = e
             except BaseException as e:
                 run_manager.on_chain_error(e)
                 raise e
