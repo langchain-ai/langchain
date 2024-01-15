@@ -51,7 +51,7 @@ def test_hanavector_add_texts(texts: List[str]) -> None:
     assert results == [Document(page_content="foo")]
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-def test_hanavector_non_existing_table(texts: List[str]) -> None:
+def test_hanavector_non_existing_table() -> None:
     """Test end to end construction and search."""
     table_name = "NON_EXISTING"
     # Delete table if it exists
@@ -63,7 +63,7 @@ def test_hanavector_non_existing_table(texts: List[str]) -> None:
     assert vectordb._table_exists(table_name)
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-def test_hanavector_table_with_missing_columns(texts: List[str]) -> None:
+def test_hanavector_table_with_missing_columns() -> None:
     table_name = "EXISTING_WRONG"
     try:
         drop_table(connection, table_name)
@@ -86,7 +86,7 @@ def test_hanavector_table_with_missing_columns(texts: List[str]) -> None:
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-def test_hanavector_table_with_wrong_typed_columns(texts: List[str]) -> None:
+def test_hanavector_table_with_wrong_typed_columns() -> None:
     table_name = "EXISTING_WRONG"
     content_field = "DOC_TEXT"
     metadata_field = "DOC_META"
@@ -112,7 +112,7 @@ def test_hanavector_table_with_wrong_typed_columns(texts: List[str]) -> None:
     assert exception_occured
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-def test_hanavector_non_existing_table_fixed_vector_length(texts: List[str]) -> None:
+def test_hanavector_non_existing_table_fixed_vector_length() -> None:
     """Test end to end construction and search."""
     table_name = "NON_EXISTING"
     vector_field = "MY_VECTOR"
@@ -126,4 +126,29 @@ def test_hanavector_non_existing_table_fixed_vector_length(texts: List[str]) -> 
 
     assert vectordb._table_exists(table_name)
     vectordb._check_column(table_name, vector_field, "REAL_VECTOR", vector_field_length)
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_add_texts(texts: List[str]) -> None:
+    table_name = "TEST_TABLE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectordb = HanaDB(connection=connection, embedding=embedding, table_name=table_name)
+
+    vectordb.add_texts(texts = texts)
+
+    # chech that embeddings have been created in the table
+    number_of_texts = len(texts)
+    number_of_rows = -1
+    sql_str = f"SELECT COUNT(*) FROM {table_name}"
+    cur = connection.cursor()
+    cur.execute(sql_str)
+    if cur.has_result_set():
+        rows = cur.fetchall()
+        number_of_rows = rows[0][0] 
+    assert number_of_rows == number_of_texts
+
+
+
 
