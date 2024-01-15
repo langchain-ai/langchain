@@ -6,10 +6,11 @@ import tempfile
 import traceback
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
 from langchain_core.utils import get_from_dict_or_env
 
@@ -52,6 +53,8 @@ def mlflow_callback_metrics() -> List[str]:
         "tool_starts",
         "tool_ends",
         "agent_ends",
+        "retriever_starts",
+        "retriever_ends",
     ]
 
 
@@ -309,6 +312,8 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             "on_text_records": [],
             "on_agent_finish_records": [],
             "on_agent_action_records": [],
+            "on_retriever_start_records": [],
+            "on_retriever_end_records": [],
             "action_records": [],
         }
 
@@ -572,6 +577,69 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.records["action_records"].append(resp)
         self.mlflg.jsonf(resp, f"agent_action_{tool_starts}")
 
+    def on_retriever_start(
+        self,
+        serialized: Dict[str, Any],
+        query: str,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when Retriever starts running."""
+        self.metrics["step"] += 1
+        self.metrics["retriever_starts"] += 1
+        self.metrics["starts"] += 1
+
+        retriever_starts = self.metrics["retriever_starts"]
+
+        resp: Dict[str, Any] = {}
+        resp.update({"action": "on_retriever_start", "query": query})
+        resp.update(flatten_dict(serialized))
+        resp.update(self.metrics)
+
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
+
+        self.records["on_retriever_start_records"].append(resp)
+        self.records["action_records"].append(resp)
+        self.mlflg.jsonf(resp, f"retriever_start_{retriever_starts}")
+
+    def on_retriever_end(
+        self,
+        documents: Sequence[Document],
+        **kwargs: Any,
+    ) -> Any:
+        """Run when Retriever ends running."""
+        self.metrics["step"] += 1
+        self.metrics["retriever_ends"] += 1
+        self.metrics["ends"] += 1
+
+        retriever_ends = self.metrics["retriever_ends"]
+
+        resp: Dict[str, Any] = {}
+        retriever_documents = [
+            {
+                "page_content": doc.page_content,
+                "metadata": {
+                    k: str(v)
+                    if not isinstance(v, list)
+                    else ",".join(str(x) for x in v)
+                    for k, v in doc.metadata.items()
+                },
+            }
+            for doc in documents
+        ]
+        resp.update({"action": "on_retriever_end", "documents": retriever_documents})
+        resp.update(self.metrics)
+
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
+
+        self.records["on_retriever_end_records"].append(resp)
+        self.records["action_records"].append(resp)
+        self.mlflg.jsonf(resp, f"retriever_end_{retriever_ends}")
+
+    def on_retriever_error(self, error: BaseException, **kwargs: Any) -> Any:
+        """Run when Retriever errors."""
+        self.metrics["step"] += 1
+        self.metrics["errors"] += 1
+
     def _create_session_analysis_df(self) -> Any:
         """Create a dataframe with all the information from the session."""
         pd = import_pandas()
@@ -650,14 +718,18 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         return session_analysis_df
 
+    def _contain_llm_records(self):
+        return len(self.records["on_llm_start_records"]) >= 1
+
     def flush_tracker(self, langchain_asset: Any = None, finish: bool = False) -> None:
         pd = import_pandas()
         self.mlflg.table("action_records", pd.DataFrame(self.records["action_records"]))
-        session_analysis_df = self._create_session_analysis_df()
-        chat_html = session_analysis_df.pop("chat_html")
-        chat_html = chat_html.replace("\n", "", regex=True)
-        self.mlflg.table("session_analysis", pd.DataFrame(session_analysis_df))
-        self.mlflg.html("".join(chat_html.tolist()), "chat_html")
+        if self._contain_llm_records():
+            session_analysis_df = self._create_session_analysis_df()
+            chat_html = session_analysis_df.pop("chat_html")
+            chat_html = chat_html.replace("\n", "", regex=True)
+            self.mlflg.table("session_analysis", pd.DataFrame(session_analysis_df))
+            self.mlflg.html("".join(chat_html.tolist()), "chat_html")
 
         if langchain_asset:
             # To avoid circular import error
