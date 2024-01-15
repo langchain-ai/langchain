@@ -110,7 +110,6 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
-
     def _check_column(self, table_name, column_name, column_type, column_length):
         sql_str = "SELECT DATA_TYPE_NAME, LENGTH FROM TABLE_COLUMNS WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ? AND COLUMN_NAME = ?"
         try:
@@ -129,7 +128,6 @@ class HanaDB(VectorStore):
                 raise AttributeError(f"Column {column_name} does not exist")
         finally:
             cur.close()
-
 
     @property
     def embeddings(self) -> Embeddings:
@@ -175,16 +173,14 @@ class HanaDB(VectorStore):
                     if embeddings
                     else self.embedding.embed_documents([text])[0]
                 )
-                sql_str = "INSERT INTO {} (DOC_TEXT, DOC_META, DOC_VECTOR) VALUES (?, ?, TO_REAL_VECTOR (ARRAY({})));".format(
-                        self.table_name,
-                        "{}".format(",".join(map(str, embedding)))
-                    )
+                sql_str = f"INSERT INTO {self.table_name} ({self.content_field}, {self.metadata_field}, {self.vector_field}) VALUES (?, ?, TO_REAL_VECTOR (?));"
                 # print(sql_str)
                 cur.execute(
                     sql_str,
                     (
                         text,
-                        json.dumps(metadata)
+                        json.dumps(metadata),
+                        '[{}]'.format(','.join(map(str, embedding)))
                     ),
                 )
             self.connection.commit()

@@ -43,7 +43,7 @@ def drop_table(connection, table_name):
         cur.close()
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-def test_hanavector_add_texts(texts: List[str]) -> None:
+def test_hanavector_simple(texts: List[str]) -> None:
     """Test end to end construction and search."""
     vectordb = HanaDB(connection=connection, embedding=embedding, distance_strategy = DistanceStrategy.COSINE, table_name="WTF")
     vectordb.add_texts(texts)
@@ -83,7 +83,6 @@ def test_hanavector_table_with_missing_columns() -> None:
     except:
         exception_occured = True
     assert exception_occured
-
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_table_with_wrong_typed_columns() -> None:
