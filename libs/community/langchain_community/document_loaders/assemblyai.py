@@ -115,15 +115,10 @@ class AssemblyAIAudioLoaderById(BaseLoader):
     """
     Loader for AssemblyAI audio transcripts.
 
-    It uses the AssemblyAI API to transcribe audio files
+    It uses the AssemblyAI API to get an existing transcription
     and loads the transcribed text into one or more Documents,
     depending on the specified format.
 
-    To use, you should have the ``assemblyai`` python package installed, and the
-    environment variable ``ASSEMBLYAI_API_KEY`` set with your API key.
-    Alternatively, the API key can also be passed as an argument.
-
-    Audio files can be specified via an URL or a local file path.
     """
 
     def __init__(
@@ -133,14 +128,12 @@ class AssemblyAIAudioLoaderById(BaseLoader):
         transcript_format
     ):
         """
-        Initializes the AssemblyAI AudioTranscriptLoader.
+        Initializes the AssemblyAI AssemblyAIAudioLoaderById.
 
         Args:
-            file_path: An URL or a local file path.
+            transcript_id: Id of an existing transcription.
             transcript_format: Transcript format to use.
                 See class ``TranscriptFormat`` for more info.
-            config: Transcription options and features. If ``None`` is given,
-                the Transcriber's default configuration will be used.
             api_key: AssemblyAI API key.
         """
 
@@ -201,7 +194,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
             sentences = sentences_response.json()['sentences']
 
             return [
-                Document(page_content=s.text, metadata=s)
+                Document(page_content=s["text"], metadata=s)
                 for s in sentences
             ]
 
@@ -210,17 +203,24 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
             try:
                 srt_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/srt", headers=HEADERS)
-                srt_response.raise_for_status()
+                srt = srt_response.text 
             except Exception as e:
                 print(f"An error occurred: {e}")
                 raise 
+
+            return [Document(page_content=srt)]
 
         elif self.transcript_format == TranscriptFormat.SUBTITLES_VTT:
 
             try:
                 vtt_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/vtt", headers=HEADERS)
-                vtt_response.raise_for_status()
             except Exception as e:
                 print(f"An error occurred: {e}")
                 raise 
+
+            vtt = vtt_response.text
+
+            return [Document(page_content=vtt)]
+        else:
+            raise ValueError("Unknown transcript format.")
 
