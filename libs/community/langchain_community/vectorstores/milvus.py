@@ -446,9 +446,15 @@ class Milvus(VectorStore):
         timeout: Optional[float] = None,
     ) -> None:
         """Load the collection if available."""
-        from pymilvus import Collection
+        from pymilvus import Collection, utility
+        from pymilvus.client.types import LoadState
 
-        if isinstance(self.col, Collection) and self._get_index() is not None:
+        if (
+            isinstance(self.col, Collection)
+            and self._get_index() is not None
+            and utility.load_state(self.collection_name, using=self.alias)
+            == LoadState.NotLoad
+        ):
             self.col.load(
                 partition_names=partition_names,
                 replica_number=replica_number,
