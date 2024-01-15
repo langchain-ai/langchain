@@ -488,7 +488,7 @@ async def as_event_stream(
                     run_id=state["id"],
                     tags=[],
                     metadata={},
-                    data=state["inputs"]['input'],
+                    data=state["inputs"],
                 )
                 yielded_start_event = True
 
@@ -513,19 +513,26 @@ async def as_event_stream(
                 event_type = "end"
 
             if event_type == "start":
-                if log["inputs"]:
-                    try:
-                        data["inputs"] = log["inputs"]['input']
-                    except KeyError:
-                        raise ValueError(log)
+                if log["type"] == "chain":
+                    data["inputs"] = log["inputs"]["input"]
                     # Clean up the inputs since we don't need them anymore
                     del log["inputs"]
+                else:
+                    if log["inputs"]:
+                        data["inputs"] = log["inputs"]
+                        # Clean up the inputs since we don't need them anymore
+                        del log["inputs"]
 
             if event_type == "end":
-                if log["final_output"]:
-                    data["output"] = log["final_output"]
+                if log["type"] == "chain":
+                    data["output"] = log["final_output"]["output"]
                     # Clean up the final output since we don't need it anymore
                     del log["final_output"]
+                else:
+                    if log["final_output"]:
+                        data["output"] = log["final_output"]
+                        # Clean up the final output since we don't need it anymore
+                        del log["final_output"]
 
             if event_type == "stream":
                 data = list(log["streamed_output"])

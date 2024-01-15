@@ -47,10 +47,22 @@ class LogEntry(TypedDict):
     streamed_output: List[Any]
     """List of output chunks streamed by this run, if available."""
     inputs: Optional[Any]
-    """Inputs to this run."""
+    """Inputs to this run.
+    
+    The inputs will be a dictionary, matching
+    
+    """
     final_output: Optional[Any]
     """Final output of this run.
-    Only available after the run has finished successfully."""
+    Only available after the run has finished successfully.
+    
+    Schema:
+    
+    Retriever: 
+        - Sequence[Document] 
+    
+    
+    """
     end_time: Optional[str]
     """ISO-8601 timestamp of when the run ended.
     Only available after the run has finished."""
@@ -158,7 +170,7 @@ class LogStreamCallbackHandler(BaseTracer):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
     ) -> None:
-        super().__init__(apply_conditional_coercion=False)
+        super().__init__(schema_format="stream_events")
 
         self.auto_close = auto_close
         self.include_names = include_names

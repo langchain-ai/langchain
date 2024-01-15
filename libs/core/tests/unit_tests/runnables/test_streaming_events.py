@@ -281,7 +281,7 @@ async def test_event_stream_with_retry() -> None:
     ]
 
 
-async def _as_run_log_state(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
+async def _as_run_log_state(run_log_patches: Sequence[RunLogPatch]) -> dict:
     """Converts a sequence of run log patches into a run log state."""
     state = RunLog(state=None)
     async for run_log_patch in run_log_patches:
@@ -382,59 +382,8 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
         return ", ".join([doc.page_content for doc in docs])
 
     chain = retriever | format_docs
-
     events = await _get_events(chain.astream_log("hello"))
     assert events == [
-        {
-            "data": {"inputs": {"query": "hello"}},
-            "event": "on_retriever_start",
-            "metadata": {},
-            "name": "Retriever",
-            "run_id": None,
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {
-                "output": {
-                    # TODO: This output is likely overly nested
-                    "documents": [
-                        Document(page_content="hello world!", metadata={"foo": "bar"}),
-                        Document(
-                            page_content="goodbye world!", metadata={"food": "spare"}
-                        ),
-                    ]
-                }
-            },
-            "event": "on_retriever_end",
-            "metadata": {},
-            "name": "Retriever",
-            "run_id": None,
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"inputs": {"input": ""}},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "format_docs",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": ["hello world!, goodbye world!"],  # TODO: How??
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "format_docs",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"output": {"output": "hello world!, goodbye world!"}},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "format_docs",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
     ]
 
 
@@ -453,47 +402,14 @@ async def test_event_stream_on_chain_with_tool() -> None:
     chain = concat | reverse
 
     assert chain.invoke({"a": "hello", "b": "world"}) == "dlrowolleh"
+    chunks = [
+        chunk async for chunk in chain.astream_log({"a": "hello", "b": "world"})
+    ]
+    assert chunks == []
+
+    state = await _as_run_log_state(chain.astream_log({"a": "hello", "b": "world"}))
+    assert state == {}
 
     events = await _get_events(chain.astream_log({"a": "hello", "b": "world"}))
     assert events == [
-        {
-            "data": {"inputs": {"input": "{'a': 'hello', 'b': 'world'}"}},  # WHAT??
-            "event": "on_tool_start",
-            "metadata": {},
-            "name": "concat",
-            "run_id": None,
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"output": {"output": "helloworld"}},
-            "event": "on_tool_end",
-            "metadata": {},
-            "name": "concat",
-            "run_id": None,
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"inputs": {"input": ""}},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": ["dlrowolleh"],
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"output": {"output": "dlrowolleh"}},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
     ]
