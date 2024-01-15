@@ -988,8 +988,8 @@ class FAISS(VectorStore):
         """
         texts, embeddings = zip(*text_embeddings)
         return cls.__from(
-            texts,
-            embeddings,
+            list(texts),
+            list(embeddings),
             embedding,
             metadatas=metadatas,
             ids=ids,
