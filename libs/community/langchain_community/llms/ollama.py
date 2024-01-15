@@ -190,8 +190,9 @@ class _OllamaCommon(BaseLanguageModel):
 
         params = self._default_params
 
-        if "model" in kwargs:
-            params["model"] = kwargs["model"]
+        for key in self._default_params:
+            if key in kwargs:
+                params[key] = kwargs[key]
 
         if "options" in kwargs:
             params["options"] = kwargs["options"]
@@ -199,7 +200,7 @@ class _OllamaCommon(BaseLanguageModel):
             params["options"] = {
                 **params["options"],
                 "stop": stop,
-                **kwargs,
+                **{k: v for k, v in kwargs.items() if k not in self._default_params},
             }
 
         if payload.get("messages"):
@@ -253,8 +254,9 @@ class _OllamaCommon(BaseLanguageModel):
 
         params = self._default_params
 
-        if "model" in kwargs:
-            params["model"] = kwargs["model"]
+        for key in self._default_params:
+            if key in kwargs:
+                params[key] = kwargs[key]
 
         if "options" in kwargs:
             params["options"] = kwargs["options"]
@@ -262,7 +264,7 @@ class _OllamaCommon(BaseLanguageModel):
             params["options"] = {
                 **params["options"],
                 "stop": stop,
-                **kwargs,
+                **{k: v for k, v in kwargs.items() if k not in self._default_params},
             }
 
         if payload.get("messages"):
