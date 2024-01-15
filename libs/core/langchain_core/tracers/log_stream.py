@@ -20,7 +20,7 @@ from uuid import UUID
 import jsonpatch  # type: ignore[import]
 from anyio import create_memory_object_stream
 
-from langchain_core.load.load import _load_suppress_warning
+from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
@@ -293,7 +293,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         "op": "add",
                         "path": f"/logs/{index}/final_output",
                         # to undo the dumpd done by some runnables / tracer / etc
-                        "value": _load_suppress_warning(run.outputs),
+                        "value": load(run.outputs),
                     },
                     {
                         "op": "add",
