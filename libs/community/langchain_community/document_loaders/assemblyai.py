@@ -197,6 +197,14 @@ class AssemblyAIAudioLoaderById(BaseLoader):
             except Exception as e:
                 print(f"An error occurred: {e}")
                 raise 
+            
+            sentences = sentences_response.json()['sentences']
+
+            return [
+                Document(page_content=s.text, metadata=s)
+                for s in sentences
+            ]
+
 
         elif self.transcript_format == TranscriptFormat.SUBTITLES_SRT:
 
