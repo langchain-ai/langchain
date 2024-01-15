@@ -250,7 +250,17 @@ class HanaDB(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
-        # Creates embedding vector from user query
+        """Return docs most similar to query. Expects the embeddings in the database to be normalized.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: A dictionary of metadata fields and values to filter by.
+                    Defaults to None.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
         embedding = self.embedding.embed_query(query)
         result = []
         sql_str = f"SELECT TOP {k} {self.content_field}, {self.metadata_field} , {HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} ({self.vector_field}, TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) AS CS FROM {self.table_name}"
@@ -266,18 +276,24 @@ class HanaDB(VectorStore):
                 where_str = where_str + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter[key]}'"
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
-        print(sql_str)
         try:
             cur = self.connection.cursor()
             cur.execute(sql_str)
             if cur.has_result_set():
                 rows = cur.fetchall()
-                # print(rows)
                 for row in rows:
                     js = json.loads(row[1])
                     doc = Document(page_content=row[0], metadata=js)
-                    result.append((doc, row[-1]))
+                    result.append((doc, self._normalize_similarity_value(row[-1])))
         finally:
             cur.close()
         return result
+    
+    def _normalize_similarity_value(self, value: float) -> float:
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return value
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+            return HanaDB._euclidean_relevance_score_fn(value)
+        else:
+            raise ValueError("Unsupported distance_strategy: {}".format(self.distance_strategy))
 

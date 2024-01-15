@@ -11,14 +11,26 @@ from tests.integration_tests.vectorstores.fake_embeddings import ConsistentFakeE
 from hdbcli import dbapi
 import os
 
-
 try:
     from hdbcli import dbapi
     hanadb_installed = True
 except ImportError:
     hanadb_installed = False
 
-embedding = ConsistentFakeEmbeddings()
+class NormalizedFakeEmbeddings(ConsistentFakeEmbeddings):
+    """Fake embeddings with normalization. For testing purposes."""
+
+    def normalize(self, vector: List[float]) -> List[float]:
+        """Normalize vector."""
+        return [float(v / np.linalg.norm(vector)) for v in vector]
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.normalize(v) for v in super().embed_documents(texts)]
+
+    def embed_query(self, text: str) -> List[float]:
+        return self.normalize(super().embed_query(text))
+
+embedding = NormalizedFakeEmbeddings()
 connection = dbapi.connect(
         address=os.environ.get("DB_ADDRESS"),
         port=30015,
@@ -233,6 +245,42 @@ def test_hanavector_similarity_search_with_metadata_filter(texts: List[str], met
     assert texts[1] == search_result[0].page_content
     assert metadatas[1]["start"] == search_result[0].metadata["start"]
     assert metadatas[1]["end"] == search_result[0].metadata["end"]
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_score(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, embedding=embedding, table_name=table_name)
+
+    search_result = vectorDB.similarity_search_with_score(texts[0], 3)
+
+    assert search_result[0][0].page_content == texts[0]
+    assert search_result[0][1] == 1.0
+    assert search_result[1][1] <= search_result[0][1]
+    assert search_result[2][1] <= search_result[1][1]
+    assert search_result[2][1] >= 0.0
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_score_with_euclidian_distance(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, embedding=embedding, table_name=table_name, distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE)
+
+    search_result = vectorDB.similarity_search_with_score(texts[0], 3)
+
+    assert search_result[0][0].page_content == texts[0]
+    assert search_result[0][1] == 1.0
+    assert search_result[1][1] <= search_result[0][1]
+    assert search_result[2][1] <= search_result[1][1]
+    assert search_result[2][1] >= 0.0
+
+
 
 
 
