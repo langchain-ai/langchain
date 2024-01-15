@@ -113,7 +113,6 @@ class HanaDB(VectorStore):
             cur.execute(sql_str, (table_name))
             if cur.has_result_set():
                 rows = cur.fetchall()
-                print(rows)
                 if rows[0][0] == 1:
                     return True
         finally:
@@ -184,7 +183,6 @@ class HanaDB(VectorStore):
                     else self.embedding.embed_documents([text])[0]
                 )
                 sql_str = f"INSERT INTO {self.table_name} ({self.content_field}, {self.metadata_field}, {self.vector_field}) VALUES (?, ?, TO_REAL_VECTOR (?));"
-                # print(sql_str)
                 cur.execute(
                     sql_str,
                     (
@@ -255,11 +253,9 @@ class HanaDB(VectorStore):
         # Creates embedding vector from user query
         embedding = self.embedding.embed_query(query)
         result = []
-        sql_str = "SELECT TOP {} * , {} (DOC_VECTOR, TO_REAL_VECTOR (ARRAY({}))) AS CS FROM {}".format(
-            k, HANA_DISTANCE_FUNCTION[self.distance_strategy][0], "{}".format(",".join(map(str, embedding))), self.table_name)
-        order_str = " order by CS {}".format(
-            HANA_DISTANCE_FUNCTION[self.distance_strategy][1])
-        where_str = " "
+        sql_str = f"SELECT TOP {k} {self.content_field}, {self.metadata_field} , {HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} ({self.vector_field}, TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) AS CS FROM {self.table_name}"
+        order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
+        where_str = ""
         if filter:
             for i, key in enumerate(filter.keys()):
                 if i == 0:
@@ -267,7 +263,7 @@ class HanaDB(VectorStore):
                 else:
                     where_str = where_str + " AND "
 
-                where_str = where_str + " JSON_QUERY({}, '$.{}') = '{}'".format(self.metadata_field, key, filter[key])
+                where_str = where_str + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter}'"
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
@@ -275,8 +271,10 @@ class HanaDB(VectorStore):
             cur.execute(sql_str)
             if cur.has_result_set():
                 rows = cur.fetchall()
+                # print(rows)
                 for row in rows:
-                    doc = Document(page_content=row[0])
+                    js = json.loads(row[1])
+                    doc = Document(page_content=row[0], metadata=js)
                     result.append((doc, row[-1]))
         finally:
             cur.close()

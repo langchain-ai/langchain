@@ -32,6 +32,10 @@ connection = dbapi.connect(
 def texts() -> List[str]:
     return ["foo", "bar", "baz"]
 
+@pytest.fixture
+def metadatas() -> List[str]:
+    return [{"start": 0, "end": 100}, {"start": 100, "end": 200},  {"start": 200, "end": 300}]
+
 def drop_table(connection, table_name):
     try:
         cur = connection.cursor()
@@ -162,6 +166,47 @@ def test_hanavector_from_texts(texts: List[str]) -> None:
         rows = cur.fetchall()
         number_of_rows = rows[0][0] 
     assert number_of_rows == number_of_texts
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_simple(texts: List[str]) -> None:
+    table_name = "TEST_TABLE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, embedding=embedding, table_name=table_name)
+
+    assert texts[0] == vectorDB.similarity_search(texts[0], 1)[0].page_content
+    assert texts[1] != vectorDB.similarity_search(texts[0], 1)[0].page_content
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_simple_euclidean_distance(texts: List[str]) -> None:
+    table_name = "TEST_TABLE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, embedding=embedding, table_name=table_name, distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE)
+
+    assert texts[0] == vectorDB.similarity_search(texts[0], 1)[0].page_content
+    assert texts[1] != vectorDB.similarity_search(texts[0], 1)[0].page_content
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_metadata(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, metadatas=metadatas, embedding=embedding, table_name=table_name)
+
+    assert texts[0] == vectorDB.similarity_search(texts[0], 3)[0].page_content
+    assert metadatas[0]["start"] == vectorDB.similarity_search(texts[0], 1)[0].metadata["start"]
+    assert metadatas[0]["end"] == vectorDB.similarity_search(texts[0], 1)[0].metadata["end"]
+    assert texts[1] != vectorDB.similarity_search(texts[0], 1)[0].page_content
+    assert metadatas[1]["start"] != vectorDB.similarity_search(texts[0], 1)[0].metadata["start"]
+    assert metadatas[1]["end"] != vectorDB.similarity_search(texts[0], 1)[0].metadata["end"]
+
 
 
 
