@@ -1,8 +1,9 @@
 import uuid
-from typing import List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain_core.documents import Document
 
+from langchain.indexes import IndexingResult, index
 from langchain.retrievers import MultiVectorRetriever
 from langchain.text_splitter import TextSplitter
 
@@ -56,19 +57,47 @@ class ParentDocumentRetriever(MultiVectorRetriever):
             )
     """
 
-    child_splitter: TextSplitter
-    """The text splitter to use to create child documents."""
+    child_splitter: Optional[TextSplitter] = None
+    """The text splitter to use to create child documents.
+    If none, you will have to provide a list of text splitters corresponding
+    to each document when calling `add_documents`."""
 
+    id_key: str = "doc_id"
     """The key to use to track the parent id. This will be stored in the
     metadata of child documents."""
+
     parent_splitter: Optional[TextSplitter] = None
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
+
+    index_args: Optional[Dict[str, Any]] = None
+    """If defined, indexing will be used when storing split documents to the
+    vectorstore. This should contain the arguments that you would pass to
+    `index`, but without `docs_source` and `vector_store`, both of which will
+    be passed automatically."""
+
+    @property
+    def _add_documents(
+        self
+    ) -> Callable[[List[Document]], Union[List[str], IndexingResult]]:
+        if self.index_args is None:
+            return self.vectorstore.add_documents
+
+        index_args = self.index_args
+        index_args.update(
+            vector_store=self.vectorstore,
+        )
+
+        def _index(docs: List[Document]):
+            return index(docs, **index_args)
+
+        return _index
 
     def add_documents(
         self,
         documents: List[Document],
         ids: Optional[List[str]] = None,
+        child_splitters: Optional[List[TextSplitter]] = None,
         add_to_docstore: bool = True,
     ) -> None:
         """Adds documents to the docstore and vectorstores.
@@ -80,6 +109,8 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 are already in the document store and you don't want to re-add
                 to the docstore. If not provided, random UUIDs will be used as
                 ids.
+            child_splitters: Optional list of splitters to use for each document.
+                If provided, it should be the same length as the list of documents.
             add_to_docstore: Boolean of whether to add documents to docstore.
                 This can be false if and only if `ids` are provided. You may want
                 to set this to False if the documents are already in the docstore
@@ -101,15 +132,35 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 )
             doc_ids = ids
 
+        if self.child_splitter is None and child_splitters is None:
+            raise ValueError(
+                "Either one child splitter must be defined when instantiating "
+                "this class, or a list of child splitters must be provided when "
+                "calling this method."
+            )
+
+        if child_splitters is None:
+            child_splitters = [self.child_splitter] * len(documents)
+        else:
+            if len(documents) != len(child_splitters):
+                raise ValueError(
+                    "Got uneven list of documents and child splitters. "
+                    "If `child_spliiters` is provided, should be same length "
+                    "as `documents`."
+                )
+
         docs = []
         full_docs = []
         for i, doc in enumerate(documents):
             _id = doc_ids[i]
-            sub_docs = self.child_splitter.split_documents([doc])
+            splitter = child_splitters[i]
+            sub_docs = splitter.split_documents([doc])
             for _doc in sub_docs:
                 _doc.metadata[self.id_key] = _id
             docs.extend(sub_docs)
             full_docs.append((_id, doc))
-        self.vectorstore.add_documents(docs)
+
+        self._add_documents(docs)
+
         if add_to_docstore:
             self.docstore.mset(full_docs)
