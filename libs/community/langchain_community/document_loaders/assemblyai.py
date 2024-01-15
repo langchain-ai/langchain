@@ -203,10 +203,12 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
             try:
                 srt_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/srt", headers=HEADERS)
-                srt = srt_response.text 
+                srt_response.raise_for_status()
             except Exception as e:
                 print(f"An error occurred: {e}")
                 raise 
+
+            srt = srt_response.text 
 
             return [Document(page_content=srt)]
 
@@ -214,6 +216,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
             try:
                 vtt_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/vtt", headers=HEADERS)
+                vtt_response.raise_for_status()
             except Exception as e:
                 print(f"An error occurred: {e}")
                 raise 
