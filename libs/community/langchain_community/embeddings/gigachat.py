@@ -97,7 +97,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         diff = set(values.keys()) - fields
         if diff:
             logger.warning(f"Extra fields {diff} in GigaChat class")
-        if "profanity" in fields and values.get("profanity") == False:
+        if "profanity" in fields and values.get("profanity") is False:
             logger.warning(
                 "Profanity field is deprecated. Use 'profanity_check' instead."
             )
