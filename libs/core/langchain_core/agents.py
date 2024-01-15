@@ -12,7 +12,16 @@ from langchain_core.messages import (
 )
 
 
-class AgentAction(Serializable):
+class ToolInvocation(Serializable):
+    """Information about how to invoke a tool."""
+
+    tool: str
+    """The name of the Tool to execute."""
+    tool_input: Union[str, dict]
+    """The input to pass in to the Tool."""
+
+
+class AgentAction(ToolInvocation):
     """A full description of an action for an ActionAgent to execute."""
 
     tool: str
