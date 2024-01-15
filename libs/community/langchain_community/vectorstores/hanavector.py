@@ -263,9 +263,10 @@ class HanaDB(VectorStore):
                 else:
                     where_str = where_str + " AND "
 
-                where_str = where_str + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter}'"
+                where_str = where_str + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter[key]}'"
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
+        print(sql_str)
         try:
             cur = self.connection.cursor()
             cur.execute(sql_str)

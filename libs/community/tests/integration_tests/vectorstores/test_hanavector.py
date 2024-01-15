@@ -200,12 +200,41 @@ def test_hanavector_similarity_search_with_metadata(texts: List[str], metadatas:
     # Check if table is created
     vectorDB = HanaDB.from_texts(connection=connection, texts = texts, metadatas=metadatas, embedding=embedding, table_name=table_name)
 
-    assert texts[0] == vectorDB.similarity_search(texts[0], 3)[0].page_content
-    assert metadatas[0]["start"] == vectorDB.similarity_search(texts[0], 1)[0].metadata["start"]
-    assert metadatas[0]["end"] == vectorDB.similarity_search(texts[0], 1)[0].metadata["end"]
-    assert texts[1] != vectorDB.similarity_search(texts[0], 1)[0].page_content
-    assert metadatas[1]["start"] != vectorDB.similarity_search(texts[0], 1)[0].metadata["start"]
-    assert metadatas[1]["end"] != vectorDB.similarity_search(texts[0], 1)[0].metadata["end"]
+    search_result = vectorDB.similarity_search(texts[0], 3)
+
+    assert texts[0] == search_result[0].page_content
+    assert metadatas[0]["start"] == search_result[0].metadata["start"]
+    assert metadatas[0]["end"] == search_result[0].metadata["end"]
+    assert texts[1] != search_result[0].page_content
+    assert metadatas[1]["start"] != search_result[0].metadata["start"]
+    assert metadatas[1]["end"] != search_result[0].metadata["end"]
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_metadata_filter(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, metadatas=metadatas, embedding=embedding, table_name=table_name)
+
+    search_result = vectorDB.similarity_search(texts[0], 3, filter={"start": 100})
+
+    assert len(search_result) == 1
+    assert texts[1] == search_result[0].page_content
+    assert metadatas[1]["start"] == search_result[0].metadata["start"]
+    assert metadatas[1]["end"] == search_result[0].metadata["end"]
+
+    search_result = vectorDB.similarity_search(texts[0], 3, filter={"start": 100, "end": 150})
+    assert len(search_result) == 0
+
+    search_result = vectorDB.similarity_search(texts[0], 3, filter={"start": 100, "end": 200})
+    assert len(search_result) == 1
+    assert texts[1] == search_result[0].page_content
+    assert metadatas[1]["start"] == search_result[0].metadata["start"]
+    assert metadatas[1]["end"] == search_result[0].metadata["end"]
+
+
 
 
 
