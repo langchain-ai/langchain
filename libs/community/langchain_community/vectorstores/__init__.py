@@ -464,6 +464,12 @@ def _import_lantern() -> Any:
     return Lantern
 
 
+def _import_couchbase() -> Any:
+    from langchain_community.vectorstores.couchbase import CouchbaseVectorStore
+
+    return CouchbaseVectorStore
+
+
 def __getattr__(name: str) -> Any:
     if name == "AnalyticDB":
         return _import_analyticdb()
@@ -607,6 +613,8 @@ def __getattr__(name: str) -> Any:
         return _import_vespa()
     elif name == "Lantern":
         return _import_lantern()
+    elif name == "CouchbaseVectorStore":
+        return _import_couchbase()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -682,4 +690,5 @@ __all__ = [
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "Lantern",
+    "CouchbaseVectorStore",
 ]
