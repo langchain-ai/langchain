@@ -206,6 +206,7 @@ from langchain_community.document_loaders.unstructured import (
 from langchain_community.document_loaders.url import UnstructuredURLLoader
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain_community.document_loaders.url_selenium import SeleniumURLLoader
+from langchain_community.document_loaders.vsdx import VsdxLoader
 from langchain_community.document_loaders.weather import WeatherDataLoader
 from langchain_community.document_loaders.web_base import WebBaseLoader
 from langchain_community.document_loaders.whatsapp_chat import WhatsAppChatLoader
@@ -392,6 +393,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
