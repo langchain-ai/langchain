@@ -98,7 +98,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         last_system_message_str = system_messages[-1].content if system_messages else ""
         ai21_messages = [_convert_to_ai21_message(message) for message in messages]
 
-        response = self._client.chat.create(
+        response = self.client.chat.create(
             model=self.model,
             messages=ai21_messages,
             system=last_system_message_str,
