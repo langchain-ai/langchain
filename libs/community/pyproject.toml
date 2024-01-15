@@ -249,6 +249,7 @@ extended_testing = [
  "azure-ai-documentintelligence",
  "oracle-ads",
  "zhipuai",
+ "xmltodict",
 ]
 
 [tool.ruff]

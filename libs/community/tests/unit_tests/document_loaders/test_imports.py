@@ -164,6 +164,7 @@ EXPECTED_ALL = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
