@@ -3,7 +3,9 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import beta
 from langchain_core.load.mapping import (
+    _OG_SERIALIZABLE_MAPPING,
     OLD_PROMPT_TEMPLATE_FORMATS,
     SERIALIZABLE_MAPPING,
 )
@@ -11,7 +13,11 @@ from langchain_core.load.serializable import Serializable
 
 DEFAULT_NAMESPACES = ["langchain", "langchain_core", "langchain_community"]
 
-ALL_SERIALIZABLE_MAPPINGS = {**SERIALIZABLE_MAPPING, **OLD_PROMPT_TEMPLATE_FORMATS}
+ALL_SERIALIZABLE_MAPPINGS = {
+    **SERIALIZABLE_MAPPING,
+    **OLD_PROMPT_TEMPLATE_FORMATS,
+    **_OG_SERIALIZABLE_MAPPING,
+}
 
 
 class Reviver:
@@ -102,6 +108,7 @@ class Reviver:
         return value
 
 
+@beta()
 def loads(
     text: str,
     *,
@@ -123,6 +130,7 @@ def loads(
     return json.loads(text, object_hook=Reviver(secrets_map, valid_namespaces))
 
 
+@beta()
 def load(
     obj: Any,
     *,
