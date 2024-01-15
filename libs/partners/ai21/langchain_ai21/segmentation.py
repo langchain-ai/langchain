@@ -9,7 +9,7 @@ class AI21Segmentation(BaseDocumentTransformer, AI21Base):
         new_documents = []
 
         for document in documents:
-            segments = self._client.segmentation.create(source=document.page_content)
+            segments = self.client.segmentation.create(source=document.page_content)
             for segment in segments.segments:
                 new_documents.append(Document(page_content=segment, metadata={"segment_type": segment.segment_type}))
 
