@@ -9,7 +9,7 @@ from langchain.chains.graph_qa.graphdb import GraphDBQAChain
 from langchain.graphs import GraphDBGraph
 
 """
-cd libs/community/tests/integration_tests/graphs/graphdb
+cd libs/langchain/tests/integration_tests/chains/docker-compose-graphdb
 ./start.sh
 """
 
@@ -17,7 +17,7 @@ cd libs/community/tests/integration_tests/graphs/graphdb
 @pytest.mark.parametrize("max_regeneration_attempts", [-2, -1, 0, 1, 2])
 def test_valid_sparql(max_regeneration_attempts: int) -> None:
     graph = GraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_endpoint="http://localhost:7200/repositories/starwars",
         local_file=str(Path(__file__).parent.parent / "examples/starwars-ontology.ttl"),
     )
     chain = GraphDBQAChain.from_llm(
@@ -55,7 +55,7 @@ def test_invalid_sparql_non_positive_max_regeneration_attempts(
     max_regeneration_attempts: int,
 ) -> None:
     graph = GraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_endpoint="http://localhost:7200/repositories/starwars",
         local_file=str(Path(__file__).parent.parent / "examples/starwars-ontology.ttl"),
     )
     chain = GraphDBQAChain.from_llm(
@@ -85,7 +85,7 @@ def test_invalid_sparql_non_positive_max_regeneration_attempts(
 @pytest.mark.parametrize("max_regeneration_attempts", [1, 2, 3])
 def test_valid_sparql_after_first_retry(max_regeneration_attempts: int) -> None:
     graph = GraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_endpoint="http://localhost:7200/repositories/starwars",
         local_file=str(Path(__file__).parent.parent / "examples/starwars-ontology.ttl"),
     )
     chain = GraphDBQAChain.from_llm(
@@ -123,7 +123,7 @@ def test_valid_sparql_after_first_retry(max_regeneration_attempts: int) -> None:
 @pytest.mark.parametrize("max_regeneration_attempts", [1, 2, 3])
 def test_invalid_sparql_after_all_retries(max_regeneration_attempts: int) -> None:
     graph = GraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_endpoint="http://localhost:7200/repositories/starwars",
         local_file=str(Path(__file__).parent.parent / "examples/starwars-ontology.ttl"),
     )
     chain = GraphDBQAChain.from_llm(
@@ -160,7 +160,7 @@ def test_valid_sparql_after_some_retries(
     max_regeneration_attempts: int, number_of_invalid_responses: int
 ) -> None:
     graph = GraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_endpoint="http://localhost:7200/repositories/starwars",
         local_file=str(Path(__file__).parent.parent / "examples/starwars-ontology.ttl"),
     )
     chain = GraphDBQAChain.from_llm(
@@ -215,7 +215,7 @@ def query_examples(model_name: str, graph: GraphDBGraph) -> None:
 @pytest.mark.parametrize("model_name", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"])
 def test_chain_run_graphdb_query_ontology(model_name: str) -> None:
     graph = GraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_endpoint="http://localhost:7200/repositories/starwars",
         query_ontology="CONSTRUCT {?s ?p ?o} "
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
@@ -225,7 +225,7 @@ def test_chain_run_graphdb_query_ontology(model_name: str) -> None:
 @pytest.mark.parametrize("model_name", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"])
 def test_chain_run_graphdb_local_file(model_name: str) -> None:
     graph = GraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_endpoint="http://localhost:7200/repositories/starwars",
         local_file=str(Path(__file__).parent.parent / "examples/starwars-ontology.ttl"),
     )
     query_examples(model_name, graph)

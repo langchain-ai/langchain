@@ -4,7 +4,7 @@ from pathlib import Path
 from langchain_community.graphs import GraphDBGraph
 
 """
-cd libs/community/tests/integration_tests/graphs/graphdb
+cd libs/community/tests/integration_tests/graphs/docker-compose-graphdb
 ./start.sh
 """
 
