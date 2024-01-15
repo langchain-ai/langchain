@@ -2,6 +2,7 @@ import asyncio
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterator,
     List,
     Optional,
@@ -9,6 +10,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from langchain_core.load.dump import dumpd
@@ -90,7 +92,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
     exception_key: Optional[str] = None
-    """"""
+    """Pass handled exception to the fallback under this input key. If None, exception 
+        will not be passed to fallback. If used, the base runnable and its fallbacks 
+        must accept a dictionary as input."""
 
     class Config:
         arbitrary_types_allowed = True
@@ -138,8 +142,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        if self.exception_key and not isinstance(input, dict):
-            raise ValueError
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -188,8 +190,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
 
         first_error = None
+        last_error = None
         for runnable in self.runnables:
             try:
+                if self.exception_key and last_error is not None:
+                    input[self.exception_key] = last_error
                 output = await runnable.ainvoke(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
@@ -198,6 +203,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             except self.exceptions_to_handle as e:
                 if first_error is None:
                     first_error = e
+                last_error = e
             except BaseException as e:
                 await run_manager.on_chain_error(e)
                 raise e
@@ -218,9 +224,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> List[Output]:
         from langchain_core.callbacks.manager import CallbackManager
-
-        if return_exceptions:
-            raise NotImplementedError()
 
         if not inputs:
             return []
@@ -249,35 +252,51 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
 
-        first_error = None
+        to_return: Dict[int, Any] = {}
+        run_again = {i: input for i, input in enumerate(inputs)}
+        handled_exceptions: Dict[int, BaseException] = {}
         for runnable in self.runnables:
-            try:
-                outputs = runnable.batch(
-                    inputs,
-                    [
-                        # each step a child run of the corresponding root run
-                        patch_config(config, callbacks=rm.get_child())
-                        for rm, config in zip(run_managers, configs)
-                    ],
-                    return_exceptions=return_exceptions,
-                    **kwargs,
-                )
-            except self.exceptions_to_handle as e:
-                if first_error is None:
-                    first_error = e
-            except BaseException as e:
-                for rm in run_managers:
-                    rm.on_chain_error(e)
-                raise e
-            else:
-                for rm, output in zip(run_managers, outputs):
-                    rm.on_chain_end(output)
-                return outputs
-        if first_error is None:
-            raise ValueError("No error stored at end of fallbacks.")
-        for rm in run_managers:
-            rm.on_chain_error(first_error)
-        raise first_error
+            outputs = runnable.batch(
+                [input for _, input in sorted(run_again.items())],
+                [
+                    # each step a child run of the corresponding root run
+                    patch_config(configs[i], callbacks=run_managers[i].get_child())
+                    for i in sorted(run_again)
+                ],
+                return_exceptions=True,
+                **kwargs,
+            )
+            first_to_raise = None
+            run_again = {}
+            handled_exceptions = {}
+            for (i, input), output in zip(run_again.items(), outputs):
+                if isinstance(output, BaseException) and not isinstance(
+                    output, self.exceptions_to_handle
+                ):
+                    first_to_raise = first_to_raise or output
+                    run_managers[i].on_chain_error(output)
+                elif isinstance(output, self.exceptions_to_handle):
+                    if self.exception_key:
+                        input[self.exception_key] = output  # type: ignore
+                    run_again[i] = input
+                    handled_exceptions[i] = cast(BaseException, output)
+                else:
+                    run_managers[i].on_chain_end(output)
+                    to_return[i] = output
+            if first_to_raise:
+                raise first_to_raise
+            if not run_again:
+                break
+
+        sorted_handled_exceptions = sorted(handled_exceptions.items())
+        if handled_exceptions and not return_exceptions:
+            for i, error in sorted_handled_exceptions:
+                run_managers[i].on_chain_error(error)
+            raise sorted_handled_exceptions[0][1]
+        for i, error in sorted_handled_exceptions:
+            run_managers[i].on_chain_end(error)
+        to_return.update(handled_exceptions)
+        return [output for _, output in sorted(to_return.items())]
 
     async def abatch(
         self,
@@ -321,33 +340,59 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             )
         )
 
-        first_error = None
+        to_return = {}
+        run_again = {i: input for i, input in enumerate(inputs)}
+        handled_exceptions: Dict[int, BaseException] = {}
         for runnable in self.runnables:
-            try:
-                outputs = await runnable.abatch(
-                    inputs,
-                    [
-                        # each step a child run of the corresponding root run
-                        patch_config(config, callbacks=rm.get_child())
-                        for rm, config in zip(run_managers, configs)
-                    ],
-                    return_exceptions=return_exceptions,
-                    **kwargs,
+            outputs = await runnable.abatch(
+                [input for _, input in sorted(run_again.items())],
+                [
+                    # each step a child run of the corresponding root run
+                    patch_config(configs[i], callbacks=run_managers[i].get_child())
+                    for i in sorted(run_again)
+                ],
+                return_exceptions=True,
+                **kwargs,
+            )
+
+            first_to_raise = None
+            run_again = {}
+            handled_exceptions = {}
+            for (i, input), output in zip(run_again.items(), outputs):
+                if isinstance(output, BaseException) and not isinstance(
+                    output, self.exceptions_to_handle
+                ):
+                    first_to_raise = first_to_raise or output
+                    await run_managers[i].on_chain_error(output)
+                elif isinstance(output, self.exceptions_to_handle):
+                    if self.exception_key:
+                        input[self.exception_key] = output  # type: ignore
+                    run_again[i] = input
+                    handled_exceptions[i] = cast(BaseException, output)
+                else:
+                    to_return[i] = output
+                    await run_managers[i].on_chain_end(output)
+
+            if first_to_raise:
+                raise first_to_raise
+            if not run_again:
+                break
+
+        sorted_handled_exceptions = sorted(handled_exceptions.items())
+        if handled_exceptions and not return_exceptions:
+            await asyncio.gather(
+                *(
+                    run_managers[i].on_chain_error(error)
+                    for i, error in sorted_handled_exceptions
                 )
-            except self.exceptions_to_handle as e:
-                if first_error is None:
-                    first_error = e
-            except BaseException as e:
-                await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
-            else:
-                await asyncio.gather(
-                    *(
-                        rm.on_chain_end(output)
-                        for rm, output in zip(run_managers, outputs)
-                    )
-                )
-                return outputs
-        if first_error is None:
-            raise ValueError("No error stored at end of fallbacks.")
-        await asyncio.gather(*(rm.on_chain_error(first_error) for rm in run_managers))
-        raise first_error
+            )
+            raise sorted_handled_exceptions[0][1]
+
+        await asyncio.gather(
+            *(
+                run_managers[i].on_chain_end(error)
+                for i, error in sorted_handled_exceptions
+            )
+        )
+        to_return.update(handled_exceptions)
+        return [output for _, output in sorted(to_return.items())]  # type: ignore
