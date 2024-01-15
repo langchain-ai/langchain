@@ -34,6 +34,7 @@ from langchain_core.tracers.evaluation import (
 )
 from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
+from langsmith.env import get_git_info
 from langsmith.evaluation import EvaluationResult, RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example, TracerSession
@@ -673,15 +674,14 @@ async def _arun_llm(
     """
     if input_mapper is not None:
         prompt_or_messages = input_mapper(inputs)
-        if isinstance(prompt_or_messages, str):
-            return await llm.apredict(
-                prompt_or_messages, callbacks=callbacks, tags=tags
-            )
-        elif isinstance(prompt_or_messages, list) and all(
-            isinstance(msg, BaseMessage) for msg in prompt_or_messages
+        if (
+            isinstance(prompt_or_messages, str)
+            or isinstance(prompt_or_messages, list)
+            and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
-            return await llm.apredict_messages(
-                prompt_or_messages, callbacks=callbacks, tags=tags
+            return await llm.ainvoke(
+                prompt_or_messages,
+                config=RunnableConfig(callbacks=callbacks, tags=tags or []),
             )
         else:
             raise InputFormatError(
@@ -693,13 +693,13 @@ async def _arun_llm(
     else:
         try:
             prompt = _get_prompt(inputs)
-            llm_output: Union[str, BaseMessage] = await llm.apredict(
-                prompt, callbacks=callbacks, tags=tags
+            llm_output: Union[str, BaseMessage] = await llm.ainvoke(
+                prompt, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
             )
         except InputFormatError:
             messages = _get_messages(inputs)
-            llm_output = await llm.apredict_messages(
-                messages, callbacks=callbacks, tags=tags
+            llm_output = await llm.ainvoke(
+                messages, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
             )
     return llm_output
 
@@ -721,7 +721,9 @@ async def _arun_chain(
         and chain.input_keys
     ):
         val = next(iter(inputs_.values()))
-        output = await chain.acall(val, callbacks=callbacks, tags=tags)
+        output = await chain.ainvoke(
+            val, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
+        )
     else:
         runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = await chain.ainvoke(inputs_, config=runnable_config)
@@ -806,17 +808,17 @@ def _run_llm(
         ValueError: If the LLM type is unsupported.
         InputFormatError: If the input format is invalid.
     """
+    # Most of this is legacy code; we could probably remove a lot of it.
     if input_mapper is not None:
         prompt_or_messages = input_mapper(inputs)
-        if isinstance(prompt_or_messages, str):
-            llm_output: Union[str, BaseMessage] = llm.predict(
-                prompt_or_messages, callbacks=callbacks, tags=tags
-            )
-        elif isinstance(prompt_or_messages, list) and all(
-            isinstance(msg, BaseMessage) for msg in prompt_or_messages
+        if (
+            isinstance(prompt_or_messages, str)
+            or isinstance(prompt_or_messages, list)
+            and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
-            llm_output = llm.predict_messages(
-                prompt_or_messages, callbacks=callbacks, tags=tags
+            llm_output: Union[str, BaseMessage] = llm.invoke(
+                prompt_or_messages,
+                config=RunnableConfig(callbacks=callbacks, tags=tags or []),
             )
         else:
             raise InputFormatError(
@@ -827,10 +829,14 @@ def _run_llm(
     else:
         try:
             llm_prompts = _get_prompt(inputs)
-            llm_output = llm.predict(llm_prompts, callbacks=callbacks, tags=tags)
+            llm_output = llm.invoke(
+                llm_prompts, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
+            )
         except InputFormatError:
             llm_messages = _get_messages(inputs)
-            llm_output = llm.predict_messages(llm_messages, callbacks=callbacks)
+            llm_output = llm.invoke(
+                llm_messages, config=RunnableConfig(callbacks=callbacks)
+            )
     return llm_output
 
 
@@ -851,7 +857,9 @@ def _run_chain(
         and chain.input_keys
     ):
         val = next(iter(inputs_.values()))
-        output = chain(val, callbacks=callbacks, tags=tags)
+        output = chain.invoke(
+            val, config=RunnableConfig(callbacks=callbacks, tags=tags or [])
+        )
     else:
         runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = chain.invoke(inputs_, config=runnable_config)
@@ -930,13 +938,18 @@ def _prepare_eval_run(
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
 
     try:
-        project_extra: dict = {"metadata": project_metadata} if project_metadata else {}
-        if tags:
-            project_extra["tags"] = tags
+        git_info = get_git_info()
+        if git_info:
+            project_metadata = project_metadata or {}
+            project_metadata = {
+                **project_metadata,
+                "git": git_info,
+            }
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
-            project_extra=project_extra,
+            project_extra={"tags": tags} if tags else {},
+            metadata=project_metadata,
         )
     except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
@@ -1079,6 +1092,9 @@ class _DatasetRunContainer:
             project_metadata=project_metadata,
             tags=tags,
         )
+        tags = tags or []
+        for k, v in (project.metadata.get("git") or {}).items():
+            tags.append(f"git:{k}={v}")
         wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
         run_evaluators = _setup_evaluation(
             wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
@@ -1102,7 +1118,7 @@ class _DatasetRunContainer:
                     ),
                     progress_bar,
                 ],
-                tags=tags or [],
+                tags=tags,
                 max_concurrency=concurrency_level,
             )
             for example in examples
@@ -1304,7 +1320,7 @@ Examples
 .. code-block:: python
 
     from langsmith import Client
-    from langchain_community.chat_models import ChatOpenAI
+    from langchain_openai import ChatOpenAI
     from langchain.chains import LLMChain
     from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
 
