@@ -5,7 +5,6 @@ import json
 import time
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
-import pandas as pd
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -91,6 +90,8 @@ class AthenaLoader(BaseLoader):
         return json.loads(result_set.to_json(orient="records"))
 
     def get_result_set(self, session, query_execution_id):
+        import pandas as pd
+
         s3c = session.client("s3")
 
         tokens = self.s3_output_uri.removeprefix("s3://").removesuffix("/").split("/")
