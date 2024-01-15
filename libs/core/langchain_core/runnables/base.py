@@ -534,7 +534,7 @@ class Runnable(Generic[Input, Output], ABC):
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
-        return_exceptions: bool = False,
+        return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
         ...
@@ -545,7 +545,7 @@ class Runnable(Generic[Input, Output], ABC):
         inputs: List[Input],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
-        return_exceptions: bool = True,
+        return_exceptions: Literal[True] = True,
         **kwargs: Optional[Any],
     ) -> List[Union[Output, BaseException]]:
         ...
