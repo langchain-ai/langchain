@@ -2,6 +2,7 @@ import asyncio
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Iterator,
     List,
     Optional,
@@ -343,3 +344,74 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             raise ValueError("No error stored at end of fallbacks.")
         await asyncio.gather(*(rm.on_chain_error(first_error) for rm in run_managers))
         raise first_error
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        # setup callbacks
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
+        # start the root run
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self), input, name=config.get("run_name")
+        )
+        first_error = None
+        for runnable in self.runnables:
+            try:
+                stream = runnable.stream(
+                    input,
+                    patch_config(config, callbacks=run_manager.get_child()),
+                    **kwargs,
+                )
+                chunk = next(stream)
+            except self.exceptions_to_handle as e:
+                first_error = e if first_error is None else first_error
+            except BaseException as e:
+                run_manager.on_chain_error(e)
+                raise e
+            else:
+                first_error = None
+                yield chunk
+                yield from stream
+        if first_error:
+            run_manager.on_chain_error(first_error)
+            raise first_error
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        # setup callbacks
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
+        # start the root run
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self), input, name=config.get("run_name")
+        )
+        first_error = None
+        for runnable in self.runnables:
+            try:
+                stream = runnable.astream(
+                    input,
+                    patch_config(config, callbacks=run_manager.get_child()),
+                    **kwargs,
+                )
+                chunk = await anext(stream)
+            except self.exceptions_to_handle as e:
+                first_error = e if first_error is None else first_error
+            except BaseException as e:
+                await run_manager.on_chain_error(e)
+                raise e
+            else:
+                first_error = None
+                yield chunk
+                async for chunk in stream:
+                    yield chunk
+        if first_error:
+            await run_manager.on_chain_error(first_error)
+            raise first_error
