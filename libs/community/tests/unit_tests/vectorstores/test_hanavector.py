@@ -11,8 +11,9 @@ def test_int_sanitation_with_illegal_value() -> None:
         successful = False
     except:
         pass
-    
+
     assert successful
+
 
 def test_int_sanitation_with_legal_values() -> None:
     """Test sanitization of int with legal values"""
@@ -27,6 +28,7 @@ def test_int_sanitation_with_negative_values() -> None:
 
     assert HanaDB._sanitize_int("-1") == -1
 
+
 def test_int_sanitation_with_illegal_negative_value() -> None:
     """Test sanitization of int with illegal value"""
     successful = True
@@ -35,10 +37,10 @@ def test_int_sanitation_with_illegal_negative_value() -> None:
         successful = False
     except:
         pass
-    
+
     assert successful
+
 
 def test_parse_float_array_from_string() -> None:
     array_as_string = "[0.1, 0.2, 0.3]"
     assert HanaDB._parse_float_array_from_string(array_as_string) == [0.1, 0.2, 0.3]
-

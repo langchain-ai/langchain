@@ -12,12 +12,16 @@ from typing import (
     Tuple,
     Type,
 )
-import numpy as np
 
+import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from langchain_community.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
+
+from langchain_community.vectorstores.utils import (
+    DistanceStrategy,
+    maximal_marginal_relevance,
+)
 
 if TYPE_CHECKING:
     from hdbcli import dbapi
@@ -35,7 +39,8 @@ default_content_field_length: int = 2048
 default_metadata_field: str = "DOC_META"
 default_metadata_field_length: int = 2048
 default_vector_field: str = "DOC_VECTOR"
-default_vector_field_length: int = -1 # -1 means dynamic length
+default_vector_field_length: int = -1  # -1 means dynamic length
+
 
 class HanaDB(VectorStore):
     """`HANA DB` vector store.
@@ -59,7 +64,7 @@ class HanaDB(VectorStore):
         metadata_field: str = default_metadata_field,
         metadata_field_length: int = default_metadata_field_length,
         vector_field: str = default_vector_field,
-        vector_field_length: int = default_vector_field_length, # -1 means dynamic length
+        vector_field_length: int = default_vector_field_length,  # -1 means dynamic length
         **kwargs: Any,
     ):
         try:
@@ -69,14 +74,16 @@ class HanaDB(VectorStore):
                 "Could not import hdbcli python package. "
                 "Please install it with `pip install hdbcli`."
             )
-        
+
         valid_distance = False
         for key in HANA_DISTANCE_FUNCTION.keys():
             if key is distance_strategy:
                 valid_distance = True
         if not valid_distance:
-            raise ValueError("Unsupported distance_strategy: {}".format(distance_strategy))
-        
+            raise ValueError(
+                "Unsupported distance_strategy: {}".format(distance_strategy)
+            )
+
         self.connection = connection
         self.embedding = embedding
         self.distance_strategy = distance_strategy
@@ -103,9 +110,15 @@ class HanaDB(VectorStore):
                 cur.close()
 
         # Check if the needed columns exists
-        self._check_column(self.table_name, self.content_field, "NVARCHAR", self.content_field_length)
-        self._check_column(self.table_name, self.metadata_field, "NVARCHAR", self.metadata_field_length)
-        self._check_column(self.table_name, self.vector_field, "REAL_VECTOR", self.vector_field_length)
+        self._check_column(
+            self.table_name, self.content_field, "NVARCHAR", self.content_field_length
+        )
+        self._check_column(
+            self.table_name, self.metadata_field, "NVARCHAR", self.metadata_field_length
+        )
+        self._check_column(
+            self.table_name, self.vector_field, "REAL_VECTOR", self.vector_field_length
+        )
 
     def _table_exists(self, table_name) -> bool:
         sql_str = "SELECT COUNT(*) FROM TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ?"
@@ -131,10 +144,14 @@ class HanaDB(VectorStore):
                     raise AttributeError(f"Column {column_name} does not exist")
                 # Check data type
                 if rows[0][0] != column_type:
-                    raise AttributeError(f"Column {column_name} has the wrong type: {rows[0][0]}")
+                    raise AttributeError(
+                        f"Column {column_name} has the wrong type: {rows[0][0]}"
+                    )
                 if rows[0][1] != column_length:
-                    raise AttributeError(f"Column {column_name} has the wrong length: {rows[0][1]}")
-            else: 
+                    raise AttributeError(
+                        f"Column {column_name} has the wrong length: {rows[0][1]}"
+                    )
+            else:
                 raise AttributeError(f"Column {column_name} does not exist")
         finally:
             cur.close()
@@ -193,7 +210,7 @@ class HanaDB(VectorStore):
                     (
                         text,
                         json.dumps(metadata),
-                        '[{}]'.format(','.join(map(str, embedding)))
+                        "[{}]".format(",".join(map(str, embedding))),
                     ),
                 )
             self.connection.commit()
@@ -215,7 +232,7 @@ class HanaDB(VectorStore):
         metadata_field: str = default_metadata_field,
         metadata_field_length: int = default_metadata_field_length,
         vector_field: str = default_vector_field,
-        vector_field_length: int = default_vector_field_length, # -1 means dynamic length
+        vector_field_length: int = default_vector_field_length,  # -1 means dynamic length
         **kwargs: Any,
     ):
         """Create a HANA vectorstore from raw documents.
@@ -238,7 +255,7 @@ class HanaDB(VectorStore):
             metadata_field=metadata_field,
             metadata_field_length=metadata_field_length,
             vector_field=vector_field,
-            vector_field_length=vector_field_length, # -1 means dynamic length
+            vector_field_length=vector_field_length,  # -1 means dynamic length
             **kwargs,
         )
         instance.add_texts(texts, metadatas, **kwargs)
@@ -295,18 +312,25 @@ class HanaDB(VectorStore):
                 else:
                     where_str = where_str + " AND "
 
-                where_str = where_str + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter[key]}'"
+                where_str = (
+                    where_str
+                    + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter[key]}'"
+                )
         return where_str
-    
+
     def _normalize_similarity_value(self, value: float) -> float:
         if self.distance_strategy == DistanceStrategy.COSINE:
             return value
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             return HanaDB._euclidean_relevance_score_fn(value)
         else:
-            raise ValueError("Unsupported distance_strategy: {}".format(self.distance_strategy))
+            raise ValueError(
+                "Unsupported distance_strategy: {}".format(self.distance_strategy)
+            )
 
-    def delete(self, ids: Optional[List[str]] = None, filter: Optional[dict] = None) -> Optional[bool]:
+    def delete(
+        self, ids: Optional[List[str]] = None, filter: Optional[dict] = None
+    ) -> Optional[bool]:
         """Delete by filter with metadata values
 
         Args:
@@ -335,7 +359,6 @@ class HanaDB(VectorStore):
             cur.close()
 
         return True
-
 
     def max_marginal_relevance_search(
         self,
@@ -369,15 +392,17 @@ class HanaDB(VectorStore):
         """
         embedding = self.embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            embedding = embedding,
-            k = k,
-            fetch_k = fetch_k,
-            lambda_mult = lambda_mult,
-            filter = filter
+            embedding=embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
         )
 
     @classmethod
-    def _parse_float_array_from_string(cls: Type[HanaDB], array_as_string: str) -> List[float]:
+    def _parse_float_array_from_string(
+        cls: Type[HanaDB], array_as_string: str
+    ) -> List[float]:
         array_wo_brackets = array_as_string[1:-1]
         return [float(x) for x in array_wo_brackets.split(",")]
 
