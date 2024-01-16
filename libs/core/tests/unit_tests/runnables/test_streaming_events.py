@@ -13,7 +13,7 @@ from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
-from langchain_core.runnables.utils import Input, Output, StreamEvent, as_event_stream
+from langchain_core.runnables.utils import Input, Output, StreamEvent
 from langchain_core.tools import tool
 from langchain_core.tracers import RunLog, RunLogPatch
 from tests.unit_tests.fake.chat_model import GenericFakeChatModel
@@ -30,24 +30,13 @@ async def _as_async_iterator(iterable: List) -> AsyncIterator:
         yield item
 
 
-async def _get_events(run_log_patches: AsyncIterator[RunLogPatch]) -> List[StreamEvent]:
-    """A helper function to facilitate testing.
-
-    The goal is to consume the astream log, and then refeed it into the
-    as_event_stream function. This helps makes sure that exceptions in the
-    as_event_stream function are surfaced in an obvious way.
-
-    In addition, the run ids are nulled out so that the test is not dependent
-    on the run id (which is randomly generated).
-    """
-    run_log_patches = [patch async for patch in run_log_patches]
-    events = [
-        event async for event in as_event_stream(_as_async_iterator(run_log_patches))
-    ]
-
+async def _collect_events(events: AsyncIterator[StreamEvent]) -> List[StreamEvent]:
+    """Collect the events and remove the run ids."""
+    events = [event async for event in events]
+    events = _with_nulled_run_id(events)
     for event in events:
         event["tags"] = sorted(event["tags"])
-    return _with_nulled_run_id(events)
+    return events
 
 
 async def _as_run_log_state(run_log_patches: Sequence[RunLogPatch]) -> dict:
@@ -58,14 +47,188 @@ async def _as_run_log_state(run_log_patches: Sequence[RunLogPatch]) -> dict:
     return state
 
 
-async def test_event_stream_with_lambdas_from_function() -> None:
-    def add_one(x: int) -> int:
-        """Add one to x."""
-        return x + 1
+async def test_event_stream_with_single_lambda() -> None:
+    """Test the event stream with a tool."""
 
-    events = await _get_events(RunnableLambda(add_one).astream_log(1))
-    assert len(events) == 3
-    assert events == []
+    def reverse(s: str) -> str:
+        """Reverse a string."""
+        return s[::-1]
+
+    chain = RunnableLambda(func=reverse)
+
+    events = await _collect_events(chain.astream_events("hello"))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "reverse",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "olleh"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "reverse",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"output": "olleh"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "reverse",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
+
+
+async def test_event_stream_with_triple_lambda() -> None:
+    def reverse(s: str) -> str:
+        """Reverse a string."""
+        return s[::-1]
+
+    r = RunnableLambda(func=reverse)
+
+    chain = (
+        r.with_config({"run_name": "1"})
+        | r.with_config({"run_name": "2"})
+        | r.with_config({"run_name": "3"})
+    )
+    events = await _collect_events(chain.astream_events("hello"))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "1",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"chunk": "olleh"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "1",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "2",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"input": "hello", "output": "olleh"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "1",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"chunk": "hello"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "2",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "3",
+            "run_id": None,
+            "tags": ["seq:step:3"],
+        },
+        {
+            "data": {"input": "olleh", "output": "hello"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "2",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"chunk": "olleh"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "3",
+            "run_id": None,
+            "tags": ["seq:step:3"],
+        },
+        {
+            "data": {"chunk": "olleh"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"input": "hello", "output": "olleh"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "3",
+            "run_id": None,
+            "tags": ["seq:step:3"],
+        },
+        {
+            "data": {"output": "olleh"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
+
+
+async def test_event_stream_with_lambdas_from_lambda() -> None:
+    as_lambdas = RunnableLambda(lambda x: {"answer": "goodbye"}).with_config(
+        {"run_name": "my_lambda"}
+    )
+    events = await _collect_events(as_lambdas.astream_events({"question": "hello"}))
+    assert events == [
+        {
+            "data": {"input": {"question": "hello"}},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "my_lambda",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": {"answer": "goodbye"}},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "my_lambda",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"output": {"answer": "goodbye"}},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "my_lambda",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
 
 
 async def test_event_stream_with_simple_chain() -> None:
@@ -98,10 +261,10 @@ async def test_event_stream_with_simple_chain() -> None:
         }
     )
 
-    events = await _get_events(chain.astream_log({"question": "hello"}))
+    events = await _collect_events(chain.astream_events({"question": "hello"}))
     assert events == [
         {
-            "data": {},
+            "data": {"input": {"question": "hello"}},
             "event": "on_chain_start",
             "metadata": {},
             "name": "my_chain",
@@ -230,96 +393,11 @@ async def test_event_stream_with_simple_chain() -> None:
         },
         {
             "data": {
-                "input": {"question": "hello"},
                 "output": AIMessageChunk(content="hello world!"),
             },
             "event": "on_chain_end",
             "metadata": {},
             "name": "my_chain",
-            "run_id": None,
-            "tags": [],
-        },
-    ]
-
-
-async def test_event_stream_with_retry() -> None:
-    """Test the event stream with a tool."""
-
-    def success(inputs) -> str:
-        return "success"
-
-    def fail(inputs) -> None:
-        """Simple func."""
-        raise Exception("fail")
-
-    chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
-        stop_after_attempt=1,
-    )
-    iterable = chain.astream_log("q")
-
-    chunks = []
-
-    for _ in range(10):
-        try:
-            next_chunk = await iterable.__anext__()
-            chunks.append(next_chunk)
-        except Exception:
-            break
-
-    assert await _get_events(_as_async_iterator(chunks)) == [
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "success",
-            "run_id": None,
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"chunk": "success"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "success",
-            "run_id": None,
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "fail",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"input": "q", "output": "success"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "success",
-            "run_id": None,
-            "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"input": "success", "output": None},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "fail",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"input": "q", "output": None},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "RunnableSequence",
             "run_id": None,
             "tags": [],
         },
@@ -366,9 +444,6 @@ async def test_event_stream_with_tool() -> None:
     async for run_log_patch in custom_runnable.astream_log({}):
         state = state + run_log_patch
 
-    events = await _get_events(custom_runnable.astream_log({}))
-    assert events == []
-
 
 class HardCodedRetriever(BaseRetriever):
     documents: List[Document]
@@ -393,10 +468,12 @@ async def test_event_stream_with_retriever() -> None:
             ),
         ]
     )
-    events = await _get_events(retriever.astream_log({"query": "hello"}))
+    events = await _collect_events(retriever.astream_events({"query": "hello"}))
     assert events == [
         {
-            "data": {},
+            "data": {
+                "input": {"query": "hello"},
+            },
             "event": "on_retriever_start",
             "metadata": {},
             "name": "Retriever",
@@ -418,7 +495,6 @@ async def test_event_stream_with_retriever() -> None:
         },
         {
             "data": {
-                "input": {"query": {"query": "hello"}},
                 "output": [
                     Document(page_content="hello world!", metadata={"foo": "bar"}),
                     Document(page_content="goodbye world!", metadata={"food": "spare"}),
@@ -453,10 +529,10 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
         return ", ".join([doc.page_content for doc in docs])
 
     chain = retriever | format_docs
-    events = await _get_events(chain.astream_log("hello"))
+    events = await _collect_events(chain.astream_events("hello"))
     assert events == [
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "RunnableSequence",
@@ -528,7 +604,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "tags": ["seq:step:2"],
         },
         {
-            "data": {"input": "hello", "output": "hello world!, goodbye world!"},
+            "data": {"output": "hello world!, goodbye world!"},
             "event": "on_chain_end",
             "metadata": {},
             "name": "RunnableSequence",
@@ -552,10 +628,10 @@ async def test_event_stream_on_chain_with_tool() -> None:
 
     chain = concat | reverse
 
-    events = await _get_events(chain.astream_log({"a": "hello", "b": "world"}))
+    events = await _collect_events(chain.astream_events({"a": "hello", "b": "world"}))
     assert events == [
         {
-            "data": {},
+            "data": {"input": {"a": "hello", "b": "world"}},
             "event": "on_chain_start",
             "metadata": {},
             "name": "RunnableSequence",
@@ -611,7 +687,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "tags": ["seq:step:2"],
         },
         {
-            "data": {"input": {"a": "hello", "b": "world"}, "output": "dlrowolleh"},
+            "data": {"output": "dlrowolleh"},
             "event": "on_chain_end",
             "metadata": {},
             "name": "RunnableSequence",
@@ -621,60 +697,37 @@ async def test_event_stream_on_chain_with_tool() -> None:
     ]
 
 
-async def test_event_stream_with_single_lambda() -> None:
+async def test_event_stream_with_retry() -> None:
     """Test the event stream with a tool."""
 
-    def reverse(s: str) -> str:
-        """Reverse a string."""
-        return s[::-1]
+    def success(inputs) -> str:
+        return "success"
 
-    chain = RunnableLambda(func=reverse)
+    def fail(inputs) -> None:
+        """Simple func."""
+        raise Exception("fail")
 
-    events = await _get_events(chain.astream_log("hello"))
-    assert events == [
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": {"input": "hello", "output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "reverse",
-            "run_id": None,
-            "tags": [],
-        },
-    ]
-
-
-async def test_event_stream_with_triple_lambda() -> None:
-    def reverse(s: str) -> str:
-        """Reverse a string."""
-        return s[::-1]
-
-    r = RunnableLambda(func=reverse)
-
-    chain = (
-        r.with_config({"run_name": "1"})
-        | r.with_config({"run_name": "2"})
-        | r.with_config({"run_name": "3"})
+    chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
+        stop_after_attempt=1,
     )
-    events = await _get_events(chain.astream_log("hello"))
+    iterable = chain.astream_events("q")
+
+    events = []
+
+    for _ in range(10):
+        try:
+            next_chunk = await iterable.__anext__()
+            events.append(next_chunk)
+        except Exception:
+            break
+
+    events = _with_nulled_run_id(events)
+    for event in events:
+        event["tags"] = sorted(event["tags"])
+
     assert events == [
         {
-            "data": {},
+            "data": {"input": "q"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "RunnableSequence",
@@ -685,15 +738,15 @@ async def test_event_stream_with_triple_lambda() -> None:
             "data": {},
             "event": "on_chain_start",
             "metadata": {},
-            "name": "1",
+            "name": "success",
             "run_id": None,
             "tags": ["seq:step:1"],
         },
         {
-            "data": {"chunk": "olleh"},
+            "data": {"chunk": "success"},
             "event": "on_chain_stream",
             "metadata": {},
-            "name": "1",
+            "name": "success",
             "run_id": None,
             "tags": ["seq:step:1"],
         },
@@ -701,105 +754,24 @@ async def test_event_stream_with_triple_lambda() -> None:
             "data": {},
             "event": "on_chain_start",
             "metadata": {},
-            "name": "2",
+            "name": "fail",
             "run_id": None,
             "tags": ["seq:step:2"],
         },
         {
-            "data": {"input": "hello", "output": "olleh"},
+            "data": {"input": "q", "output": "success"},
             "event": "on_chain_end",
             "metadata": {},
-            "name": "1",
+            "name": "success",
             "run_id": None,
             "tags": ["seq:step:1"],
         },
         {
-            "data": {"chunk": "hello"},
-            "event": "on_chain_stream",
+            "data": {"input": "success", "output": None},
+            "event": "on_chain_end",
             "metadata": {},
-            "name": "2",
+            "name": "fail",
             "run_id": None,
             "tags": ["seq:step:2"],
-        },
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "3",
-            "run_id": None,
-            "tags": ["seq:step:3"],
-        },
-        {
-            "data": {"input": "olleh", "output": "hello"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "2",
-            "run_id": None,
-            "tags": ["seq:step:2"],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "3",
-            "run_id": None,
-            "tags": ["seq:step:3"],
-        },
-        {
-            "data": {"chunk": "olleh"},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": {"input": "hello", "output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "3",
-            "run_id": None,
-            "tags": ["seq:step:3"],
-        },
-        {
-            "data": {"input": "hello", "output": "olleh"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": None,
-            "tags": [],
-        },
-    ]
-
-
-async def test_event_stream_with_lambdas_from_lambda() -> None:
-    as_lambdas = RunnableLambda(lambda x: {"answer": "goodbye"}).with_config(
-        {"run_name": "my_lambda"}
-    )
-    events = await _get_events(as_lambdas.astream_log({"question": "hello"}))
-    assert events == [
-        {
-            "data": {},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": {"chunk": {"answer": "goodbye"}},
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": {"input": {"question": "hello"}, "output": {"answer": "goodbye"}},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": None,
-            "tags": [],
         },
     ]

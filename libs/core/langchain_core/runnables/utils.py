@@ -10,7 +10,6 @@ from itertools import groupby
 from typing import (
     Any,
     AsyncIterable,
-    AsyncIterator,
     Callable,
     Coroutine,
     Dict,
@@ -28,7 +27,6 @@ from typing import (
 
 from typing_extensions import NotRequired, TypedDict
 
-from langchain_core.tracers import RunLog, RunLogPatch
 from langchain_core.tracers.log_stream import LogEntry
 
 Input = TypeVar("Input", contravariant=True)
@@ -498,143 +496,3 @@ async def _get_outputs(log: LogEntry) -> Optional[Any]:
     if isinstance(final_output, dict):
         return final_output.get("output", None)
     return None
-
-
-async def as_event_stream(
-    run_log_patches: AsyncIterator[RunLogPatch]
-) -> AsyncIterator[StreamEvent]:
-    """Convert a stream of run log patches to a stream of events.
-
-    This is a utility function that can be used to convert the output of a runnable's
-    astream_log method to a stream of events that should be easier to work with.
-
-    Example:
-
-        .. code-block:: python
-
-    Args:
-        run_log_patches: The output from astream_log method of a runnable.
-
-    Returns:
-        An async stream of events.
-    """
-    run_log = RunLog(state=None)  # type: ignore[arg-type]
-    yielded_start_event = False
-
-    async for log in run_log_patches:
-        run_log = run_log + log
-
-        if not yielded_start_event:
-            state = run_log.state.copy()
-            yield StreamEvent(
-                event=f"on_{state['type']}_start",
-                name=state["name"],
-                run_id=state["id"],
-                tags=[],
-                metadata={},
-                data={},
-            )
-            yielded_start_event = True
-
-        paths = {
-            op["path"].split("/")[2]
-            for op in log.ops
-            if op["path"].startswith("/logs/")
-        }
-
-        for path in paths:
-            data = {}
-            log: LogEntry = run_log.state["logs"][path]
-            if log["end_time"] is None:
-                if log["streamed_output"]:
-                    event_type = "stream"
-                else:
-                    event_type = "start"
-            # elif log["error"] is not None:
-            #     event_type = "error"
-            else:
-                event_type = "end"
-
-            if event_type == "start":
-                # Include the inputs with the start event if they are available.
-                # Usually they will NOT be available for components that operate
-                # on streams, since those components stream the input and
-                # don't know its final value until the end of the stream.
-                inputs = await _get_inputs(log)
-                if inputs:
-                    data["input"] = inputs
-
-            if event_type == "end":
-                inputs = await _get_inputs(log)
-                if inputs:
-                    data["input"] = inputs
-
-                outputs = await _get_outputs(log)
-                # Always include outputs in end events. None is a valid output.
-                data["output"] = outputs
-
-            if event_type == "stream":
-                num_chunks = len(log["streamed_output"])
-                if num_chunks != 1:
-                    raise AssertionError(
-                        f"Expected exactly one chunk of streamed output, got {num_chunks}"
-                        f" instead. This is impossible. Encountered in: {log['name']}"
-                    )
-
-                data = {"chunk": log["streamed_output"][0]}
-                # Clean up the stream, we don't need it anymore.
-                # And this avoids duplicates as well!
-                log["streamed_output"] = []
-
-            yield StreamEvent(
-                event=f"on_{log['type']}_{event_type}",
-                name=log["name"],
-                run_id=log["id"],
-                tags=log["tags"],
-                metadata=log["metadata"],
-                data=data,
-            )
-
-        # Finally, we take care of the streaming output from the root chain
-        # if there is any.
-        state = run_log.state
-        if state["streamed_output"]:
-            num_chunks = len(state["streamed_output"])
-            if num_chunks != 1:
-                raise AssertionError(
-                    f"Expected exactly one chunk of streamed output, got {num_chunks}"
-                    f" instead. This is impossible. Encountered in: {state['name']}"
-                )
-
-            data = {"chunk": state["streamed_output"][0]}
-            # Clean up the stream, we don't need it anymore.
-            state["streamed_output"] = []
-
-            yield StreamEvent(
-                event=f"on_{state['type']}_stream",  # TODO: fix this
-                name=state["name"],
-                run_id=state["id"],
-                tags=state.get("tags", []),
-                metadata=state.get("metadata", {}),
-                data=data,
-            )
-
-    state = run_log.state.copy()
-    state.update(
-        {
-            "tags": [],
-            "metadata": {},
-        }
-    )
-
-    data = {"output": state["final_output"]}
-    data["input"] = await _get_inputs(state)
-
-    yield StreamEvent(
-        event=f"on_{state['type']}_end",  # TODO: fix this
-        name=state["name"],
-        run_id=state["id"],
-        tags=state["tags"],
-        metadata=state["metadata"],
-        data=data,
-    )
