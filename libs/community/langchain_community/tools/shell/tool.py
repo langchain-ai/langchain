@@ -1,3 +1,4 @@
+import sys
 import logging
 import platform
 import warnings
@@ -9,7 +10,7 @@ from langchain_core.callbacks import (
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.tools import BaseTool
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class ShellInput(BaseModel):
@@ -85,12 +86,17 @@ class ShellTool(BaseTool):
         """Run commands and return final output."""
 
         logger.info(f"Executing command:\n {commands}")
-
-        if not self.ask_human_input:
-            return self.process.run(commands)
-        else:
-            user_input = input("Proceed with command execution? (y/n): ").lower()
-            if user_input == "y":
+        
+        try:
+            if not self.ask_human_input:
                 return self.process.run(commands)
             else:
-                return "Operation canceled by user."
+                user_input = input("Proceed with command execution? (y/n): ").lower()
+                if user_input == "y":
+                    return self.process.run(commands)
+                else:
+                    logger.info("User aborted command execution.")
+                    return None
+                
+        except Exception as e:
+            logger.error(f"Error during command execution: {e}")
