@@ -769,21 +769,31 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[StreamEvent]:
-        """
-        Convert a stream of run log patches to a stream of events.
+        """Generate a stream of events.
 
-        This is a utility function that can be used to convert the output of a runnable's
-        astream_log method to a stream of events that should be easier to work with.
+        Use to create an iterator ove StreamEvents that provide real-time information
+        about the progress of the runnable, including StreamEvents from intermediate
+        results.
 
         Example:
 
         .. code-block:: python
 
         Args:
-        run_log_patches: The output from astream_log method of a runnable.
+            input: The input to the runnable.
+            config: The config to use for the runnable.
+            include_names: Only include events from runnables with matching names.
+            include_types: Only include events from runnables with matching types.
+            include_tags: Only include events from runnables with matching tags.
+            exclude_names: Exclude events from runnables with matching names.
+            exclude_types: Exclude events from runnables with matching types.
+            exclude_tags: Exclude events from runnables with matching tags.
+            kwargs: Additional keyword arguments to pass to the runnable.
+                These will be passed to astream_log as this implementation
+                of astream_events is built on top of astream_log.
 
         Returns:
-        An async stream of events.
+            An async stream of events.
         """
         from langchain_core.runnables.utils import (
             _get_standardized_inputs,
@@ -795,6 +805,11 @@ class Runnable(Generic[Input, Output], ABC):
 
         run_log = RunLog(state=None)  # type: ignore[arg-type]
         yielded_start_event = False
+        config = ensure_config(config)
+
+        root_tags = config.get("tags", [])
+        root_metadata = config.get("metadata", {})
+
         async for log in self.astream_log(
             input,
             config=config,
@@ -804,6 +819,7 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_names=exclude_names,
             exclude_types=exclude_types,
             exclude_tags=exclude_tags,
+            **kwargs,
         ):
             run_log = run_log + log
 
@@ -813,8 +829,8 @@ class Runnable(Generic[Input, Output], ABC):
                     event=f"on_{state['type']}_start",
                     name=state["name"],
                     run_id=state["id"],
-                    tags=[],
-                    metadata={},
+                    tags=root_tags,
+                    metadata=root_metadata,
                     data={
                         "input": input,
                     },
@@ -904,15 +920,13 @@ class Runnable(Generic[Input, Output], ABC):
                 )
 
         state = run_log.state
-        tags = config.get("tags", []) if config else []
-        metadata = config.get("metadata", {}) if config else {}
 
         yield StreamEvent(
             event=f"on_{state['type']}_end",
             name=state["name"],
             run_id=state["id"],
-            tags=tags,
-            metadata=metadata,
+            tags=root_tags,
+            metadata=root_metadata,
             data={
                 "output": state["final_output"],
             },

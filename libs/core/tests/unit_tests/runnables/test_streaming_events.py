@@ -198,6 +198,73 @@ async def test_event_stream_with_triple_lambda() -> None:
     ]
 
 
+async def test_event_stream_with_triple_lambda_test_filtering() -> None:
+    """Test filtering based on tags / names"""
+
+    def reverse(s: str) -> str:
+        """Reverse a string."""
+        return s[::-1]
+
+    r = RunnableLambda(func=reverse)
+
+    chain = (
+        r.with_config({"run_name": "1"})
+        | r.with_config({"run_name": "2"})
+        | r.with_config({"run_name": "3"})
+    )
+    events = await _collect_events(chain.astream_events("hello", include_names=["1"]))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "1",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"chunk": "olleh"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "1",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"input": "hello", "output": "olleh"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "1",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"chunk": "olleh"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"output": "olleh"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
+
+
 async def test_event_stream_with_lambdas_from_lambda() -> None:
     as_lambdas = RunnableLambda(lambda x: {"answer": "goodbye"}).with_config(
         {"run_name": "my_lambda"}
