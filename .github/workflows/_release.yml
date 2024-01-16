@@ -117,11 +117,18 @@ jobs:
         #   are not found on test PyPI can be resolved and installed anyway.
         #   (https://test.pypi.org/simple). This will include the PKG_NAME==VERSION
         #   package because VERSION will not have been uploaded to regular PyPI yet.
-        #
+        # - attempt install again after 5 seconds if it fails because there is
+        #   sometimes a delay in availability on test pypi
         run: |
           poetry run pip install \
             --extra-index-url https://test.pypi.org/simple/ \
-            "$PKG_NAME==$VERSION"
+            "$PKG_NAME==$VERSION" || \
+          ( \
+            sleep 5 && \
+            poetry run pip install \
+              --extra-index-url https://test.pypi.org/simple/ \
+              "$PKG_NAME==$VERSION" \
+          )
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
