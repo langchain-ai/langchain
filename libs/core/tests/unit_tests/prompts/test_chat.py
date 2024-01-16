@@ -369,3 +369,18 @@ def test_messages_placeholder() -> None:
         prompt.format_messages()
     prompt = MessagesPlaceholder("history", optional=True)
     assert prompt.format_messages() == []
+
+
+def test_messages_placeholder_with_max() -> None:
+    history = [
+        AIMessage(content="1"),
+        AIMessage(content="2"),
+        AIMessage(content="3"),
+    ]
+    prompt = MessagesPlaceholder("history")
+    assert prompt.format_messages(history=history) == history
+    prompt = MessagesPlaceholder("history", max_messages=2)
+    assert prompt.format_messages(history=history) == [
+        AIMessage(content="2"),
+        AIMessage(content="3"),
+    ]
