@@ -269,15 +269,7 @@ class HanaDB(VectorStore):
         result = []
         sql_str = f"SELECT TOP {k} {self.content_field}, {self.metadata_field} , {HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} ({self.vector_field}, TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) AS CS FROM {self.table_name}"
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
-        where_str = ""
-        if filter:
-            for i, key in enumerate(filter.keys()):
-                if i == 0:
-                    where_str = where_str + " WHERE "
-                else:
-                    where_str = where_str + " AND "
-
-                where_str = where_str + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter[key]}'"
+        where_str = self.create_where_by_filter(filter)
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
@@ -292,6 +284,18 @@ class HanaDB(VectorStore):
         finally:
             cur.close()
         return result
+
+    def create_where_by_filter(self, filter):
+        where_str = ""
+        if filter:
+            for i, key in enumerate(filter.keys()):
+                if i == 0:
+                    where_str = where_str + " WHERE "
+                else:
+                    where_str = where_str + " AND "
+
+                where_str = where_str + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter[key]}'"
+        return where_str
     
     def _normalize_similarity_value(self, value: float) -> float:
         if self.distance_strategy == DistanceStrategy.COSINE:
@@ -301,3 +305,32 @@ class HanaDB(VectorStore):
         else:
             raise ValueError("Unsupported distance_strategy: {}".format(self.distance_strategy))
 
+    def delete(self, filter: Optional[dict] = None, ids: Optional[List[str]] = None) -> Optional[bool]:
+        """Delete by filter with metadata values
+
+        Args:
+            ids: Deletion with ids is not supported! A ValueError will be raised,
+            filter: A dictionary of metadata fields and values to filter by.
+                    An empty filter ({}) will delete all entries in the given table
+
+        Returns:
+            Optional[bool]: True, if deletion is technically successful.
+                            Deletion of zero entries, due to non-matching filters is considered successs.
+        """
+
+        if ids != None:
+            raise ValueError("Deletion via ids is not supported")
+
+        if filter == None:
+            raise ValueError("Parameter 'filter' is required when calling 'delete'")
+
+        where_str = self.create_where_by_filter(filter)
+        sql_str = f"DELETE FROM {self.table_name}" + where_str
+
+        try:
+            cur = self.connection.cursor()
+            cur.execute(sql_str)
+        finally:
+            cur.close()
+
+        return True

@@ -35,7 +35,7 @@ connection = dbapi.connect(
         port=30015,
         user=os.environ.get("DB_USER"),
         password=os.environ.get("DB_PASSWORD"),
-        autocommit=False,
+        autocommit=True,
         sslValidateCertificate=False
 )
 
@@ -71,7 +71,7 @@ def test_hanavector_non_existing_table() -> None:
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_table_with_missing_columns() -> None:
-    table_name = "EXISTING_WRONG"
+    table_name = "EXISTING_MISSING_COLS"
     try:
         drop_table(connection, table_name)
         cur = connection.cursor()
@@ -93,7 +93,7 @@ def test_hanavector_table_with_missing_columns() -> None:
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_table_with_wrong_typed_columns() -> None:
-    table_name = "EXISTING_WRONG"
+    table_name = "EXISTING_WRONG_TYPES"
     content_field = "DOC_TEXT"
     metadata_field = "DOC_META"
     vector_field = "DOC_VECTOR"
@@ -135,7 +135,7 @@ def test_hanavector_non_existing_table_fixed_vector_length() -> None:
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_add_texts(texts: List[str]) -> None:
-    table_name = "TEST_TABLE"
+    table_name = "TEST_TABLE_ADD_TEXTS"
     # Delete table if it exists
     drop_table(connection, table_name)
 
@@ -158,7 +158,7 @@ def test_hanavector_add_texts(texts: List[str]) -> None:
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_from_texts(texts: List[str]) -> None:
-    table_name = "TEST_TABLE"
+    table_name = "TEST_TABLE_FROM_TEXTS"
     # Delete table if it exists
     drop_table(connection, table_name)
 
@@ -180,7 +180,7 @@ def test_hanavector_from_texts(texts: List[str]) -> None:
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_simple(texts: List[str]) -> None:
-    table_name = "TEST_TABLE"
+    table_name = "TEST_TABLE_SEARCH_SIMPLE"
     # Delete table if it exists
     drop_table(connection, table_name)
 
@@ -192,7 +192,7 @@ def test_hanavector_similarity_search_simple(texts: List[str]) -> None:
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_simple_euclidean_distance(texts: List[str]) -> None:
-    table_name = "TEST_TABLE"
+    table_name = "TEST_TABLE_SEARCH_EUCLIDIAN"
     # Delete table if it exists
     drop_table(connection, table_name)
 
@@ -204,7 +204,7 @@ def test_hanavector_similarity_search_simple_euclidean_distance(texts: List[str]
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_with_metadata(texts: List[str], metadatas: List[dict]) -> None:
-    table_name = "TEST_TABLE"
+    table_name = "TEST_TABLE_METADATA"
     # Delete table if it exists
     drop_table(connection, table_name)
 
@@ -222,7 +222,7 @@ def test_hanavector_similarity_search_with_metadata(texts: List[str], metadatas:
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_with_metadata_filter(texts: List[str], metadatas: List[dict]) -> None:
-    table_name = "TEST_TABLE"
+    table_name = "TEST_TABLE_FILTER"
     # Delete table if it exists
     drop_table(connection, table_name)
 
@@ -247,7 +247,7 @@ def test_hanavector_similarity_search_with_metadata_filter(texts: List[str], met
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_with_score(texts: List[str], metadatas: List[dict]) -> None:
-    table_name = "TEST_TABLE"
+    table_name = "TEST_TABLE_SCORE"
     # Delete table if it exists
     drop_table(connection, table_name)
 
@@ -264,7 +264,7 @@ def test_hanavector_similarity_search_with_score(texts: List[str], metadatas: Li
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_with_score_with_euclidian_distance(texts: List[str], metadatas: List[dict]) -> None:
-    table_name = "TEST_TABLE"
+    table_name = "TEST_TABLE_SCORE_DISTANCE"
     # Delete table if it exists
     drop_table(connection, table_name)
 
@@ -279,11 +279,64 @@ def test_hanavector_similarity_search_with_score_with_euclidian_distance(texts: 
     assert search_result[2][1] <= search_result[1][1]
     assert search_result[2][1] >= 0.0
 
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_delete_with_filter(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE_DELETE_FILTER"
+    # Delete table if it exists
+    drop_table(connection, table_name)
 
+    # Fill table
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, metadatas=metadatas, embedding=embedding, table_name=table_name)
 
+    search_result = vectorDB.similarity_search(texts[0], 3)
+    assert len(search_result) == 3
 
+    # Delete one of the three entries
+    assert vectorDB.delete(filter={"start": 100, "end": 200})
 
+    search_result = vectorDB.similarity_search(texts[0], 3)
+    assert len(search_result) == 2
 
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_delete_all_with_empty_filter(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE_DELETE_ALL"
+    # Delete table if it exists
+    drop_table(connection, table_name)
 
+    # Fill table
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, metadatas=metadatas, embedding=embedding, table_name=table_name)
 
+    search_result = vectorDB.similarity_search(texts[0], 3)
+    assert len(search_result) == 3
 
+    # Delete all entries
+    assert vectorDB.delete(filter={})
+
+    search_result = vectorDB.similarity_search(texts[0], 3)
+    assert len(search_result) == 0
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_delete_called_wrong(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE_DELETE_FILTER_WRONG"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Fill table
+    vectorDB = HanaDB.from_texts(connection=connection, texts = texts, metadatas=metadatas, embedding=embedding, table_name=table_name)
+
+    # Delete without filter parameter
+    exception_occured = False
+    try:
+        vectorDB.delete()
+    except ValueError:
+        exception_occured = True
+    assert exception_occured
+    
+    # Delete with ids parameter
+    exception_occured = False
+    try:
+        vectorDB.delete(ids=["id1", "id"], filter={"start": 100, "end": 200})
+    except ValueError:
+        exception_occured = True
+    assert exception_occured
+    
