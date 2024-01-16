@@ -29,6 +29,7 @@ from typing import (
 from typing_extensions import TypedDict
 
 from langchain_core.tracers import RunLog, RunLogPatch
+from typing_extensions import NotRequired
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -436,9 +437,9 @@ class StreamEvent(TypedDict):
     """The name of the runnable that generated the event."""
     run_id: str
     """The run id."""
-    tags: List[str]
+    tags: NotRequired[List[str]]
     """The tags."""
-    metadata: dict
+    metadata: NotRequired[Dict[str, Any]]
     """The metadata."""
     data: Any
     """Event data.
@@ -474,14 +475,15 @@ async def as_event_stream(
         if not yielded_start_event:
             state = run_log.state.copy()
             # TODO(FIX): Start event still does not capture inputs.
-            # Need to figure out best logic for this.
-            # Likely need to check when the root chain is updated (rather than created)
-            # and only
-            # then yield the start event.
-            if state["type"] == "chain":
-                data = state["inputs"]["input"]
-            else:
-                data = state["inputs"]
+            # We could either assume the client already has this information,
+            # or else propagate some information to the start event
+            # _atransform_stream_with_config, we need to propagate the inputs
+            # if state["type"] == "chain":
+            #     data = state["inputs"]["input"]
+            # else:
+            #     data = state["inputs"]
+            # For now, we'll just set the data to an empty dict
+            data = {}
             if "id" in state:
                 yield StreamEvent(
                     event=f"on_{state['type']}_start",
@@ -514,16 +516,20 @@ async def as_event_stream(
                 event_type = "end"
 
             if event_type == "start":
+                # Propagate the inputs to the start event if they are available
+                # They will usually NOT be available for components that are able
+                # to operate on a stream since the input value won't be known
+                # until the end of the stream.
                 # Old style
                 if log["type"] in {"retriever", "tool", "llm"}:
                     if log["inputs"]:
                         data["input"] = log["inputs"]
                         # Clean up the inputs since we don't need them anymore
-                        del log["inputs"]
+                        # del log["inputs"]
                 else:  # new style chains
                     data["input"] = log["inputs"]["input"]
                     # Clean up the inputs since we don't need them anymore
-                    del log["inputs"]
+                    # del log["inputs"]
 
             if event_type == "end":
                 # Adapter for old style chains
@@ -531,8 +537,14 @@ async def as_event_stream(
                     data["output"] = log["final_output"]
                     # Clean up the final output since we don't need it anymore
                     del log["final_output"]
+                    # For runnables that implementing streaming, the input to
+                    # the runnable may be available at this stage, if it is
+                    # then we'll add them to the event data.
+                    if log["inputs"]:
+                        data["input"] = log["inputs"]
+                        del log["inputs"]
                 else:  # New style chains
-                    final_output = log['final_output']
+                    final_output = log["final_output"]
                     if final_output is None:
                         data["output"] = None
                     elif isinstance(final_output, dict):
@@ -542,12 +554,22 @@ async def as_event_stream(
                     else:
                         # Ignore unrecognized final output type
                         pass
+                    # For runnables that implementing streaming, the input to
+                    # the runnable may be available at this stage, if it is
+                    # then we'll add them to the event data.
+                    if log["inputs"]:
+                        data["input"] = log["inputs"]["input"]
+                        del log["inputs"]
 
             if event_type == "stream":
-                if len(log["streamed_output"]) > 1:
-                    raise AssertionError()
-                    data = log["streamed_output"][0]
-                data = list(log["streamed_output"])
+                num_chunks = len(log["streamed_output"])
+                if num_chunks != 1:
+                    raise AssertionError(
+                        f"Expected exactly one chunk of streamed output, got {num_chunks}"
+                        f" instead. This is impossible. Encountered in: {log['name']}"
+                    )
+
+                data = {"chunk": log["streamed_output"][0]}
                 # Clean up the stream, we don't need it anymore.
                 # And this avoids duplicates as well!
                 log["streamed_output"] = []
@@ -561,25 +583,27 @@ async def as_event_stream(
                 data=data,
             )
 
-        state = run_log.state.copy()
+        state = run_log.state
         if state["streamed_output"]:
-            state.update(
-                {
-                    "tags": [],
-                    "metadata": {},
-                }
-            )
+            num_chunks = len(state["streamed_output"])
+            if num_chunks != 1:
+                raise AssertionError(
+                    f"Expected exactly one chunk of streamed output, got {num_chunks}"
+                    f" instead. This is impossible. Encountered in: {state['name']}"
+                )
+
+            data = {"chunk": state["streamed_output"][0]}
+            # Clean up the stream, we don't need it anymore.
+            state["streamed_output"] = []
 
             yield StreamEvent(
                 event=f"on_{state['type']}_stream",  # TODO: fix this
                 name=state["name"],
                 run_id=state["id"],
-                tags=state["tags"],
-                metadata=state["metadata"],
-                data=list(state["streamed_output"]),
+                tags=state.get("tags", []),
+                metadata=state.get("metadata", {}),
+                data=data,
             )
-            # Clean up the stream since we don't need it anymore?
-            state["streamed_output"] = []
 
     state = run_log.state.copy()
     state.update(
@@ -588,7 +612,8 @@ async def as_event_stream(
             "metadata": {},
         }
     )
-    data = state["final_output"]
+
+    data = {"output": state["final_output"]}
 
     yield StreamEvent(
         event=f"on_{state['type']}_end",  # TODO: fix this

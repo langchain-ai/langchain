@@ -56,32 +56,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
     )
     events = await _get_events(as_lambdas.astream_log({"question": "hello"}))
     assert len(events) == 3
-    assert [
-        {
-            "data": {"input": ""},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": [{"answer": "goodbye"}],
-            "event": "on_chain_stream",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": None,
-            "tags": [],
-        },
-        {
-            "data": {"answer": "goodbye"},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "my_lambda",
-            "run_id": None,
-            "tags": [],
-        },
-    ] == events
+    assert [] == events
 
 
 async def test_event_stream_with_lambdas_from_function() -> None:
@@ -125,7 +100,132 @@ async def test_event_stream_with_simple_chain() -> None:
     )
 
     events = await _get_events(chain.astream_log({"question": "hello"}))
-    assert events == []
+    assert events == [
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "my_chain",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"input": {"question": "hello"}},
+            "event": "on_prompt_start",
+            "metadata": {"foo": "bar"},
+            "name": "my_template",
+            "run_id": None,
+            "tags": ["my_chain", "my_template", "seq:step:1"],
+        },
+        {
+            "data": {
+                "input": {"question": "hello"},
+                "output": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are Cat Agent 007"),
+                        HumanMessage(content="hello"),
+                    ]
+                ),
+            },
+            "event": "on_prompt_end",
+            "metadata": {"foo": "bar"},
+            "name": "my_template",
+            "run_id": None,
+            "tags": ["my_chain", "my_template", "seq:step:1"],
+        },
+        {
+            "data": {
+                "input": {"prompts": ["System: You are Cat Agent 007\n" "Human: hello"]}
+            },
+            "event": "on_llm_start",
+            "metadata": {"a": "b", "foo": "bar"},
+            "name": "my_model",
+            "run_id": None,
+            "tags": ["my_chain", "my_model", "seq:step:2"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="hello")},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "my_chain",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="hello")},
+            "event": "on_llm_stream",
+            "metadata": {"a": "b", "foo": "bar"},
+            "name": "my_model",
+            "run_id": None,
+            "tags": ["my_chain", "my_model", "seq:step:2"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content=" ")},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "my_chain",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content=" ")},
+            "event": "on_llm_stream",
+            "metadata": {"a": "b", "foo": "bar"},
+            "name": "my_model",
+            "run_id": None,
+            "tags": ["my_chain", "my_model", "seq:step:2"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!")},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "my_chain",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!")},
+            "event": "on_llm_stream",
+            "metadata": {"a": "b", "foo": "bar"},
+            "name": "my_model",
+            "run_id": None,
+            "tags": ["my_chain", "my_model", "seq:step:2"],
+        },
+        {
+            "data": {
+                "input": {
+                    "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                },
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessageChunk(content="hello world!"),
+                                "text": "hello world!",
+                                "type": "ChatGenerationChunk",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_llm_end",
+            "metadata": {"a": "b", "foo": "bar"},
+            "name": "my_model",
+            "run_id": None,
+            "tags": ["my_chain", "my_model", "seq:step:2"],
+        },
+        {
+            "data": {"output": AIMessageChunk(content="hello world!")},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "my_chain",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
 
 
 async def test_event_stream_with_retry() -> None:
@@ -152,7 +252,64 @@ async def test_event_stream_with_retry() -> None:
         except Exception:
             break
 
-    assert [] == await _get_events(_as_async_iterator(chunks))
+    assert await _get_events(_as_async_iterator(chunks)) == [
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"input": {"input": ""}},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "success",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"chunk": "success"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "success",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"input": {"input": ""}},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "fail",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"input": {"input": ""}, "output": "success"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "success",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"input": {"input": ""}, "output": None},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "fail",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"output": None},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
 
 
 async def _as_run_log_state(run_log_patches: Sequence[RunLogPatch]) -> dict:
@@ -219,7 +376,6 @@ class HardCodedRetriever(BaseRetriever):
 
 async def test_event_stream_with_retriever() -> None:
     """Test the event stream with a retriever."""
-    assert "Fails due to missing root run information" == "TODO: Fix this test"
     retriever = HardCodedRetriever(
         documents=[
             Document(
@@ -233,7 +389,42 @@ async def test_event_stream_with_retriever() -> None:
         ]
     )
     events = await _get_events(retriever.astream_log({"query": "hello"}))
-    assert events == []
+    assert events == [
+        {
+            "data": {},
+            "event": "on_retriever_start",
+            "metadata": {},
+            "name": "Retriever",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {
+                "chunk": [
+                    Document(page_content="hello world!", metadata={"foo": "bar"}),
+                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
+                ]
+            },
+            "event": "on_retriever_stream",
+            "metadata": {},
+            "name": "Retriever",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {
+                "output": [
+                    Document(page_content="hello world!", metadata={"foo": "bar"}),
+                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
+                ]
+            },
+            "event": "on_retriever_end",
+            "metadata": {},
+            "name": "Retriever",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
 
 
 async def test_event_stream_with_retriever_and_formatter() -> None:
@@ -257,7 +448,82 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
 
     chain = retriever | format_docs
     events = await _get_events(chain.astream_log("hello"))
-    assert events == []
+    assert events == [
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"input": {"query": "hello"}},
+            "event": "on_retriever_start",
+            "metadata": {},
+            "name": "Retriever",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {
+                "input": {"query": "hello"},
+                "output": {
+                    "documents": [
+                        Document(page_content="hello world!", metadata={"foo": "bar"}),
+                        Document(
+                            page_content="goodbye world!", metadata={"food": "spare"}
+                        ),
+                    ]
+                },
+            },
+            "event": "on_retriever_end",
+            "metadata": {},
+            "name": "Retriever",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"input": {"input": ""}},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "format_docs",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"chunk": "hello world!, goodbye world!"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "format_docs",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"chunk": "hello world!, goodbye world!"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"input": {"input": ""}, "output": "hello world!, goodbye world!"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "format_docs",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"output": "hello world!, goodbye world!"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
 
 
 async def test_event_stream_on_chain_with_tool() -> None:
@@ -277,4 +543,72 @@ async def test_event_stream_on_chain_with_tool() -> None:
     assert chain.invoke({"a": "hello", "b": "world"}) == "dlrowolleh"
 
     events = await _get_events(chain.astream_log({"a": "hello", "b": "world"}))
-    assert events == []
+    assert events == [
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"input": {"input": "{'a': 'hello', 'b': 'world'}"}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "concat",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {
+                "input": {"input": "{'a': 'hello', 'b': 'world'}"},
+                "output": {"output": "helloworld"},
+            },
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "concat",
+            "run_id": None,
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"input": {"input": ""}},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "reverse",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"chunk": "dlrowolleh"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "reverse",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"chunk": "dlrowolleh"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"input": {"input": ""}, "output": "dlrowolleh"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "reverse",
+            "run_id": None,
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"output": "dlrowolleh"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
