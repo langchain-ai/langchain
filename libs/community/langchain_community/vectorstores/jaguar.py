@@ -158,12 +158,19 @@ class Jaguar(VectorStore):
         """
         vcol = self._vector_index
         filecol = kwargs.get("file_column", "")
+        text_tag = kwargs.get("text_tag", "")
         podstorevcol = self._pod + "." + self._store + "." + vcol
         q = "textcol " + podstorevcol
         js = self.run(q)
         if js == "":
             return []
         textcol = js["data"]
+
+        if text_tag != "":
+            tag_texts = []
+            for t in texts:
+                tag_texts.append(text_tag + " " + t)
+            texts = tag_texts
 
         embeddings = self._embedding.embed_documents(list(texts))
         ids = []
@@ -444,4 +451,5 @@ class Jaguar(VectorStore):
                     nvec.append(k)
                     vvec.append(v)
 
-        return nvec, vvec, filepath
+        vvec_s = [str(e) for e in vvec]
+        return nvec, vvec_s, filepath
