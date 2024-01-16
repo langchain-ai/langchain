@@ -427,14 +427,11 @@ def get_unique_config_specs(
     return unique
 
 
-class Event(TypedDict):
-    """An event in an event stream."""
+class StreamEvent(TypedDict):
+    """TODO: Document me."""
 
     event: str
-    """The event type. 
-
-    TODO: Document some examples
-    """
+    """The event type."""
     name: str
     """The name of the runnable that generated the event."""
     run_id: str
@@ -452,7 +449,7 @@ class Event(TypedDict):
 
 async def as_event_stream(
     run_log_patches: AsyncIterator[RunLogPatch]
-) -> AsyncIterator[Event]:
+) -> AsyncIterator[StreamEvent]:
     """Convert a stream of run log patches to a stream of events.
 
     This is a utility function that can be used to convert the output of a runnable's
@@ -486,7 +483,7 @@ async def as_event_stream(
             else:
                 data = state["inputs"]
             if "id" in state:
-                yield Event(
+                yield StreamEvent(
                     event=f"on_{state['type']}_start",
                     name=state["name"],
                     run_id=state["id"],
@@ -523,29 +520,39 @@ async def as_event_stream(
                         data["input"] = log["inputs"]
                         # Clean up the inputs since we don't need them anymore
                         del log["inputs"]
-                else: # new style chains
+                else:  # new style chains
                     data["input"] = log["inputs"]["input"]
                     # Clean up the inputs since we don't need them anymore
                     del log["inputs"]
 
             if event_type == "end":
-                if log["type"] == "chain":
-                    data["output"] = log["final_output"]["output"]
+                # Adapter for old style chains
+                if log["type"] in {"retriever", "tool", "llm"}:
+                    data["output"] = log["final_output"]
                     # Clean up the final output since we don't need it anymore
                     del log["final_output"]
-                else:
-                    if log["final_output"]:
-                        data["output"] = log["final_output"]
+                else:  # New style chains
+                    final_output = log['final_output']
+                    if final_output is None:
+                        data["output"] = None
+                    elif isinstance(final_output, dict):
+                        data["output"] = final_output.get("output", None)
                         # Clean up the final output since we don't need it anymore
                         del log["final_output"]
+                    else:
+                        # Ignore unrecognized final output type
+                        pass
 
             if event_type == "stream":
+                if len(log["streamed_output"]) > 1:
+                    raise AssertionError()
+                    data = log["streamed_output"][0]
                 data = list(log["streamed_output"])
                 # Clean up the stream, we don't need it anymore.
                 # And this avoids duplicates as well!
                 log["streamed_output"] = []
 
-            yield Event(
+            yield StreamEvent(
                 event=f"on_{log['type']}_{event_type}",
                 name=log["name"],
                 run_id=log["id"],
@@ -563,7 +570,7 @@ async def as_event_stream(
                 }
             )
 
-            yield Event(
+            yield StreamEvent(
                 event=f"on_{state['type']}_stream",  # TODO: fix this
                 name=state["name"],
                 run_id=state["id"],
@@ -583,7 +590,7 @@ async def as_event_stream(
     )
     data = state["final_output"]
 
-    yield Event(
+    yield StreamEvent(
         event=f"on_{state['type']}_end",  # TODO: fix this
         name=state["name"],
         run_id=state["id"],
