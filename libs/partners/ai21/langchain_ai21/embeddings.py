@@ -19,6 +19,7 @@ class AI21Embeddings(Embeddings, AI21Base):
             embeddings = AI21Embeddings()
             query_result = embeddings.embed_query("Hello embeddings world!")
     """
+
     def embed_documents(self, texts: List[str], **kwargs: Any) -> List[List[float]]:
         """Embed search docs."""
         response = self.client.embed.create(
