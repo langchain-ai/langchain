@@ -100,6 +100,47 @@ def _assert_potential_error(actual: list, expected: list) -> None:
             assert x == y
 
 
+def test_invoke_with_exception_key() -> None:
+    runnable = RunnableLambda(_runnable)
+    runnable_with_single = runnable.with_fallbacks(
+        [runnable], exception_key="exception"
+    )
+    with pytest.raises(ValueError):
+        runnable_with_single.invoke({"text": "baz"})
+
+    actual = runnable_with_single.invoke({"text": "bar"})
+    expected = "second"
+    _assert_potential_error([actual], [expected])
+
+    runnable_with_double = runnable.with_fallbacks(
+        [runnable, runnable], exception_key="exception"
+    )
+    actual = runnable_with_double.invoke({"text": "baz"})
+
+    expected = "third"
+    _assert_potential_error([actual], [expected])
+
+
+async def test_ainvoke_with_exception_key() -> None:
+    runnable = RunnableLambda(_runnable)
+    runnable_with_single = runnable.with_fallbacks(
+        [runnable], exception_key="exception"
+    )
+    with pytest.raises(ValueError):
+        await runnable_with_single.ainvoke({"text": "baz"})
+
+    actual = await runnable_with_single.ainvoke({"text": "bar"})
+    expected = "second"
+    _assert_potential_error([actual], [expected])
+
+    runnable_with_double = runnable.with_fallbacks(
+        [runnable, runnable], exception_key="exception"
+    )
+    actual = await runnable_with_double.ainvoke({"text": "baz"})
+    expected = "third"
+    _assert_potential_error([actual], [expected])
+
+
 def test_batch() -> None:
     runnable = RunnableLambda(_runnable)
     with pytest.raises(ValueError):

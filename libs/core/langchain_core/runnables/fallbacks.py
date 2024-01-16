@@ -92,8 +92,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
     exception_key: Optional[str] = None
-    """If string is specified then exceptions will be passed to fallbacks as part of 
-        the input under the specified key. If None, exceptions
+    """If string is specified then handled exceptions will be passed to fallbacks as 
+        part of the input under the specified key. If None, exceptions
         will not be passed to fallbacks. If used, the base runnable and its fallbacks 
         must accept a dictionary as input."""
 
@@ -146,6 +146,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if self.exception_key is not None and not isinstance(input, dict):
             raise ValueError(
                 "If 'exception_key' is specified then input must be a dictionary."
+                f"However found a type of {type(input)} for input"
             )
         # setup callbacks
         config = ensure_config(config)
@@ -189,6 +190,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if self.exception_key is not None and not isinstance(input, dict):
             raise ValueError(
                 "If 'exception_key' is specified then input must be a dictionary."
+                f"However found a type of {type(input)} for input"
             )
         # setup callbacks
         config = ensure_config(config)
@@ -239,6 +241,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         ):
             raise ValueError(
                 "If 'exception_key' is specified then inputs must be dictionaries."
+                f"However found a type of {type(inputs[0])} for input"
             )
 
         if not inputs:
@@ -329,6 +332,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         ):
             raise ValueError(
                 "If 'exception_key' is specified then inputs must be dictionaries."
+                f"However found a type of {type(inputs[0])} for input"
             )
 
         if not inputs:

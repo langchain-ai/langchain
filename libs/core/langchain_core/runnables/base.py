@@ -930,8 +930,8 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             fallbacks: A sequence of runnables to try if the original runnable fails.
             exceptions_to_handle: A tuple of exception types to handle.
-            exception_key: If string is specified then exceptions will be passed to
-                fallbacks as part of the input under the specified key. If None,
+            exception_key: If string is specified then handled exceptions will be passed
+                to fallbacks as part of the input under the specified key. If None,
                 exceptions will not be passed to fallbacks. If used, the base runnable
                 and its fallbacks must accept a dictionary as input.
 
