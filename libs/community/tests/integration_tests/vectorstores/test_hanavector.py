@@ -358,6 +358,54 @@ def test_hanavector_similarity_search_with_score(
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_relevance_score(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "TEST_TABLE_REL_SCORE"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(
+        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+    )
+
+    search_result = vectorDB.similarity_search_with_relevance_scores(texts[0], 3)
+
+    assert search_result[0][0].page_content == texts[0]
+    assert search_result[0][1] == 1.0
+    assert search_result[1][1] <= search_result[0][1]
+    assert search_result[2][1] <= search_result[1][1]
+    assert search_result[2][1] >= 0.0
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_relevance_score_with_euclidian_distance(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "TEST_TABLE_REL_SCORE_EUCLIDIAN"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(
+        connection=connection,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
+        distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
+    )
+
+    search_result = vectorDB.similarity_search_with_relevance_scores(texts[0], 3)
+
+    assert search_result[0][0].page_content == texts[0]
+    assert search_result[0][1] == 1.0
+    assert search_result[1][1] <= search_result[0][1]
+    assert search_result[2][1] <= search_result[1][1]
+    assert search_result[2][1] >= 0.0
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_with_score_with_euclidian_distance(
     texts: List[str], metadatas: List[dict]
 ) -> None:
@@ -377,10 +425,9 @@ def test_hanavector_similarity_search_with_score_with_euclidian_distance(
     search_result = vectorDB.similarity_search_with_score(texts[0], 3)
 
     assert search_result[0][0].page_content == texts[0]
-    assert search_result[0][1] == 1.0
-    assert search_result[1][1] <= search_result[0][1]
-    assert search_result[2][1] <= search_result[1][1]
-    assert search_result[2][1] >= 0.0
+    assert search_result[0][1] == 0.0
+    assert search_result[1][1] >= search_result[0][1]
+    assert search_result[2][1] >= search_result[1][1]
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")

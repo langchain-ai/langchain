@@ -6,6 +6,7 @@ import re
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Iterable,
     List,
     Optional,
@@ -284,7 +285,9 @@ class HanaDB(VectorStore):
             List of Documents most similar to the query and score for each
         """
         embedding = self.embedding.embed_query(query)
-        return self.similarity_search_with_score_by_vector(embedding=embedding, k=k, filter=filter)
+        return self.similarity_search_with_score_by_vector(
+            embedding=embedding, k=k, filter=filter
+        )
 
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
@@ -314,7 +317,7 @@ class HanaDB(VectorStore):
                 for row in rows:
                     js = json.loads(row[1])
                     doc = Document(page_content=row[0], metadata=js)
-                    result.append((doc, self._normalize_similarity_value(row[-1])))
+                    result.append((doc, row[-1]))
         finally:
             cur.close()
         return result
@@ -335,7 +338,7 @@ class HanaDB(VectorStore):
             embedding=embedding, k=k, filter=filter
         )
         return [doc for doc, _ in docs_and_scores]
-    
+
     def create_where_by_filter(self, filter):
         where_str = ""
         if filter:
@@ -350,16 +353,6 @@ class HanaDB(VectorStore):
                     + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter[key]}'"
                 )
         return where_str
-
-    def _normalize_similarity_value(self, value: float) -> float:
-        if self.distance_strategy == DistanceStrategy.COSINE:
-            return value
-        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-            return HanaDB._euclidean_relevance_score_fn(value)
-        else:
-            raise ValueError(
-                "Unsupported distance_strategy: {}".format(self.distance_strategy)
-            )
 
     def delete(
         self, ids: Optional[List[str]] = None, filter: Optional[dict] = None
@@ -463,7 +456,7 @@ class HanaDB(VectorStore):
                 for row in rows:
                     js = json.loads(row[1])
                     doc = Document(page_content=row[0], metadata=js)
-                    docs.append((doc, self._normalize_similarity_value(row[-1])))
+                    docs.append((doc, row[-1]))
                     embeddings.append(HanaDB._parse_float_array_from_string(row[2]))
         finally:
             cur.close()
@@ -473,3 +466,27 @@ class HanaDB(VectorStore):
         )
 
         return [docs[i][0] for i in mmr_doc_indexes]
+
+    @staticmethod
+    def _cosine_relevance_score_fn(distance: float) -> float:
+        return distance
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+
+        Vectorstores should define their own selection based method of relevance.
+        """
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return HanaDB._cosine_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+            return HanaDB._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unsupported distance_strategy: {}".format(self.distance_strategy)
+            )
