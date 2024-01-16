@@ -68,14 +68,27 @@ def test_shell_tool_run_str() -> None:
     assert result.strip() == "hello"
 
 
+async def test_shell_tool_arun_with_user_confirmation() -> None:
+    placeholder = PlaceholderProcess(output="hello")
+    shell_tool = ShellTool(process=placeholder, ask_human_input=True)
+
+    with patch("builtins.input", return_value="y"):
+        result = await shell_tool._arun(commands=test_commands)
+        assert result.strip() == "hello"
+
+    with patch("builtins.input", return_value="n"):
+        result = await shell_tool._arun(commands=test_commands)
+        assert result is None
+
+
 def test_shell_tool_run_with_user_confirmation() -> None:
     placeholder = PlaceholderProcess(output="hello")
     shell_tool = ShellTool(process=placeholder, ask_human_input=True)
 
     with patch("builtins.input", return_value="y"):
-        result = shell_tool._run(commands=test_commands)
+        result = shell_tool._run(commands="echo 'Hello, World!'")
         assert result.strip() == "hello"
 
     with patch("builtins.input", return_value="n"):
-        result = shell_tool._run(commands=test_commands)
+        result = shell_tool._run(commands="echo 'Hello, World!'")
         assert result is None
