@@ -158,8 +158,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         curr_error: Optional[BaseException] = None
         for runnable in self.runnables:
             try:
-                if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                if self.exception_key and curr_error is not None:
+                    input[self.exception_key] = curr_error
                 output = runnable.invoke(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
