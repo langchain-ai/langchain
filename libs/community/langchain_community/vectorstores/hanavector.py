@@ -284,6 +284,22 @@ class HanaDB(VectorStore):
             List of Documents most similar to the query and score for each
         """
         embedding = self.embedding.embed_query(query)
+        return self.similarity_search_with_score_by_vector(embedding=embedding, k=k, filter=filter)
+
+    def similarity_search_with_score_by_vector(
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query. Expects the embeddings in the database to be normalized.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: A dictionary of metadata fields and values to filter by.
+                    Defaults to None.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
         result = []
         sql_str = f"SELECT TOP {k} {self.content_field}, {self.metadata_field} , {HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} ({self.vector_field}, TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) AS CS FROM {self.table_name}"
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
@@ -303,6 +319,23 @@ class HanaDB(VectorStore):
             cur.close()
         return result
 
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        docs_and_scores = self.similarity_search_with_score_by_vector(
+            embedding=embedding, k=k, filter=filter
+        )
+        return [doc for doc, _ in docs_and_scores]
+    
     def create_where_by_filter(self, filter):
         where_str = ""
         if filter:

@@ -37,7 +37,7 @@ class NormalizedFakeEmbeddings(ConsistentFakeEmbeddings):
 embedding = NormalizedFakeEmbeddings()
 connection = dbapi.connect(
     address=os.environ.get("DB_ADDRESS"),
-    port=30015,
+    port=os.environ.get("DB_PORT"),
     user=os.environ.get("DB_USER"),
     password=os.environ.get("DB_PASSWORD"),
     autocommit=True,
@@ -232,6 +232,21 @@ def test_hanavector_similarity_search_simple(texts: List[str]) -> None:
 
     assert texts[0] == vectorDB.similarity_search(texts[0], 1)[0].page_content
     assert texts[1] != vectorDB.similarity_search(texts[0], 1)[0].page_content
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_by_vector_simple(texts: List[str]) -> None:
+    table_name = "TEST_TABLE_SEARCH_SIMPLE_VECTOR"
+    # Delete table if it exists
+    drop_table(connection, table_name)
+
+    vectorDB = HanaDB.from_texts(
+        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+    )
+
+    vector = embedding.embed_query(texts[0])
+    assert texts[0] == vectorDB.similarity_search_by_vector(vector, 1)[0].page_content
+    assert texts[1] != vectorDB.similarity_search_by_vector(vector, 1)[0].page_content
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
