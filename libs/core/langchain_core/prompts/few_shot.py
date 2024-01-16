@@ -340,3 +340,6 @@ class FewShotChatMessagePromptTemplate(
         """
         messages = self.format_messages(**kwargs)
         return get_buffer_string(messages)
+
+    def pretty_repr(self, html: bool = False) -> str:
+        raise NotImplementedError()
