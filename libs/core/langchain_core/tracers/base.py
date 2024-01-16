@@ -11,11 +11,11 @@ from typing import (
     Any,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Union,
     cast,
-    Literal,
 )
 from uuid import UUID
 

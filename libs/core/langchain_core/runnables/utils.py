@@ -26,8 +26,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import NotRequired
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.tracers import RunLog, RunLogPatch
 from langchain_core.tracers.log_stream import LogEntry
@@ -640,7 +639,7 @@ async def as_event_stream(
     )
 
     data = {"output": state["final_output"]}
-    data['input'] = await _get_inputs(state)
+    data["input"] = await _get_inputs(state)
 
     yield StreamEvent(
         event=f"on_{state['type']}_end",  # TODO: fix this
