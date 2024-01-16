@@ -640,6 +640,7 @@ async def as_event_stream(
     )
 
     data = {"output": state["final_output"]}
+    data['input'] = await _get_inputs(state)
 
     yield StreamEvent(
         event=f"on_{state['type']}_end",  # TODO: fix this

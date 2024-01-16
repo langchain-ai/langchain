@@ -317,6 +317,15 @@ class LogStreamCallbackHandler(BaseTracer):
 
             self.send_stream.send_nowait(
                 RunLogPatch(
+                    # Replace 'inputs' with final aggregated inputs
+                    # This is needed because in many cases the inputs are not
+                    # known until after the run is finished and the entire
+                    # input stream is processed.
+                    {
+                        "op": "replace",
+                        "path": f"/logs/{index}/inputs",
+                        "value": load(run.inputs),
+                    },
                     {
                         "op": "add",
                         "path": f"/logs/{index}/final_output",
@@ -334,6 +343,16 @@ class LogStreamCallbackHandler(BaseTracer):
             )
         finally:
             if run.id == self.root_id:
+                self.send_stream.send_nowait(
+                    RunLogPatch(
+                        {
+                            "op": "replace",
+                            "path": "/inputs",
+                            "value": run.inputs
+                        }
+                    )
+                )
+
                 if self.auto_close:
                     self.send_stream.close()
 
