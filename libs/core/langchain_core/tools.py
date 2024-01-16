@@ -333,6 +333,7 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            inputs=tool_input,
             **kwargs,
         )
         try:
@@ -407,6 +408,7 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            inputs=tool_input,
             **kwargs,
         )
         try:
