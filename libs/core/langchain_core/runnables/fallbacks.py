@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    Awaitable,
     Iterator,
     List,
     Optional,
@@ -10,6 +11,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from langchain_core.load.dump import dumpd
@@ -402,7 +404,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     patch_config(config, callbacks=run_manager.get_child()),
                     **kwargs,
                 )
-                chunk = await py_anext(stream)
+                chunk = await cast(Awaitable[Output], py_anext(stream))
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
             except BaseException as e:
