@@ -17,8 +17,18 @@ def create_openai_tools_agent(
 ) -> Runnable:
     """Create an agent that uses OpenAI tools.
 
-    Examples:
+    Args:
+        llm: LLM to use as the agent.
+        tools: Tools this agent has access to.
+        prompt: The prompt to use, must have input key `agent_scratchpad`, which will
+            contain agent action and tool output messages.
 
+    Returns:
+        A Runnable sequence representing an agent. It takes as input all the same input
+        variables as the prompt passed in does. It returns as output either an
+        AgentAction or AgentFinish.
+
+    Example:
 
         .. code-block:: python
 
@@ -47,16 +57,20 @@ def create_openai_tools_agent(
                 }
             )
 
-    Args:
-        llm: LLM to use as the agent.
-        tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input keys of `agent_scratchpad`.
+    Creating prompt example:
 
-    Returns:
-        A runnable sequence representing an agent. It takes as input all the same input
-        variables as the prompt passed in does. It returns as output either an
-        AgentAction or AgentFinish.
+        .. code-block:: python
 
+            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are a helpful assistant"),
+                    MessagesPlaceholder("chat_history", optional=True),
+                    ("human", "{input}"),
+                    MessagesPlaceholder("agent_scratchpad"),
+                ]
+            )
     """
     missing_vars = {"agent_scratchpad"}.difference(prompt.input_variables)
     if missing_vars:
