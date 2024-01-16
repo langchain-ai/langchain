@@ -170,7 +170,7 @@ class LogStreamCallbackHandler(BaseTracer):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
     ) -> None:
-        super().__init__(schema_format="stream_events")
+        super().__init__(schema_format="streaming_events")
 
         self.auto_close = auto_close
         self.include_names = include_names

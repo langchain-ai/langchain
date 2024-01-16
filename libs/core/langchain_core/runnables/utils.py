@@ -481,6 +481,10 @@ async def as_event_stream(
             # Likely need to check when the root chain is updated (rather than created)
             # and only
             # then yield the start event.
+            if state["type"] == "chain":
+                data = state["inputs"]["input"]
+            else:
+                data = state["inputs"]
             if "id" in state:
                 yield Event(
                     event=f"on_{state['type']}_start",
@@ -488,7 +492,7 @@ async def as_event_stream(
                     run_id=state["id"],
                     tags=[],
                     metadata={},
-                    data=state["inputs"],
+                    data=data,
                 )
                 yielded_start_event = True
 
@@ -513,15 +517,16 @@ async def as_event_stream(
                 event_type = "end"
 
             if event_type == "start":
-                if log["type"] == "chain":
-                    data["inputs"] = log["inputs"]["input"]
-                    # Clean up the inputs since we don't need them anymore
-                    del log["inputs"]
-                else:
+                # Old style
+                if log["type"] in {"retriever", "tool", "llm"}:
                     if log["inputs"]:
-                        data["inputs"] = log["inputs"]
+                        data["input"] = log["inputs"]
                         # Clean up the inputs since we don't need them anymore
                         del log["inputs"]
+                else: # new style chains
+                    data["input"] = log["inputs"]["input"]
+                    # Clean up the inputs since we don't need them anymore
+                    del log["inputs"]
 
             if event_type == "end":
                 if log["type"] == "chain":
@@ -576,6 +581,7 @@ async def as_event_stream(
             "metadata": {},
         }
     )
+    data = state["final_output"]
 
     yield Event(
         event=f"on_{state['type']}_end",  # TODO: fix this
@@ -583,5 +589,5 @@ async def as_event_stream(
         run_id=state["id"],
         tags=state["tags"],
         metadata=state["metadata"],
-        data=state["final_output"],
+        data=data,
     )

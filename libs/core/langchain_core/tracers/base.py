@@ -185,11 +185,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
-
         llm_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
+            # TODO: Figure out how to expose kwargs here
             inputs={"prompts": prompts},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
@@ -357,7 +357,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         outputs: Dict[str, Any],
         *,
         run_id: UUID,
-        inputs: Optional[Dict[str, Any]] = None,  # Why are inputs passed here?
+        inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Run:
         """End a trace for a chain run."""

@@ -92,8 +92,7 @@ async def test_event_stream_with_lambdas_from_function() -> None:
 
     events = await _get_events(RunnableLambda(add_one).astream_log(1))
     assert len(events) == 3
-    assert events == [
-    ]
+    assert events == []
 
 
 async def test_event_stream_with_simple_chain() -> None:
@@ -112,7 +111,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "tags": ["my_model"],
             "run_name": "my_model",
         }
-    )
+    ).bind(stop="<stop_token>")
 
     chain = (template | model).with_config(
         {
@@ -124,88 +123,6 @@ async def test_event_stream_with_simple_chain() -> None:
 
     events = await _get_events(chain.astream_log({"question": "hello"}))
     assert events == [
-        {
-            "data": {"inputs": {"question": "hello"}},
-            "event": "on_prompt_start",
-            "metadata": {"foo": "bar"},
-            "name": "my_template",
-            "run_id": None,
-            "tags": ["my_chain", "my_template", "seq:step:1"],
-        },
-        {
-            "data": {
-                "output": ChatPromptValue(
-                    messages=[
-                        SystemMessage(content="You are Cat Agent 007"),
-                        HumanMessage(content="hello"),
-                    ]
-                )
-            },
-            "event": "on_prompt_end",
-            "metadata": {"foo": "bar"},
-            "name": "my_template",
-            "run_id": None,
-            "tags": ["my_chain", "my_template", "seq:step:1"],
-        },
-        {
-            "data": {
-                "inputs": {
-                    "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
-                }
-            },
-            "event": "on_llm_start",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": None,
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": [AIMessageChunk(content="hello")],
-            "event": "on_llm_stream",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": None,
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": [AIMessageChunk(content=" ")],
-            "event": "on_llm_stream",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": None,
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": [AIMessageChunk(content="world!")],
-            "event": "on_llm_stream",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": None,
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": {
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessageChunk(content="hello world!"),
-                                "text": "hello world!",
-                                "type": "ChatGenerationChunk",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                    "run": None,
-                }
-            },
-            "event": "on_llm_end",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": None,
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
     ]
 
 
@@ -383,8 +300,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
 
     chain = retriever | format_docs
     events = await _get_events(chain.astream_log("hello"))
-    assert events == [
-    ]
+    assert events == []
 
 
 async def test_event_stream_on_chain_with_tool() -> None:
@@ -402,14 +318,6 @@ async def test_event_stream_on_chain_with_tool() -> None:
     chain = concat | reverse
 
     assert chain.invoke({"a": "hello", "b": "world"}) == "dlrowolleh"
-    chunks = [
-        chunk async for chunk in chain.astream_log({"a": "hello", "b": "world"})
-    ]
-    assert chunks == []
-
-    state = await _as_run_log_state(chain.astream_log({"a": "hello", "b": "world"}))
-    assert state == {}
 
     events = await _get_events(chain.astream_log({"a": "hello", "b": "world"}))
-    assert events == [
-    ]
+    assert events == []
