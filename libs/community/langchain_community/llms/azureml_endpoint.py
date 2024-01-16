@@ -5,9 +5,10 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core.language_models.llms import BaseLLM
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
+from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
 
 
@@ -27,7 +28,12 @@ class AzureMLEndpointClient(object):
         self.endpoint_api_key = endpoint_api_key
         self.deployment_name = deployment_name
 
-    def call(self, body: bytes, **kwargs: Any) -> bytes:
+    def call(
+        self,
+        body: bytes,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> bytes:
         """call."""
 
         # The azureml-model-deployment header will force the request to go to a
@@ -95,6 +101,10 @@ class ContentFormatterBase:
     accepts: Optional[str] = "application/json"
     """The MIME type of the response data returned from the endpoint"""
 
+    format_error_msg: Optional[
+        str
+    ] = "Error while formatting response payload for chat model of type `{api_type}`. Are you using the right formatter for the deployed model and endpoint type?"
+
     @staticmethod
     def escape_special_characters(prompt: str) -> str:
         """Escapes any special characters in `prompt`"""
@@ -139,7 +149,7 @@ class ContentFormatterBase:
         self,
         output: bytes,
         api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime,
-    ) -> str:
+    ) -> Generation:
         """Formats the response body according to the output
         schema of the model. Returns the data type that is
         received from the response.
@@ -164,8 +174,12 @@ class GPT2ContentFormatter(ContentFormatterBase):
 
     def format_response_payload(
         self, output: bytes, api_type: AzureMLEndpointApiType
-    ) -> str:
-        return json.loads(output)[0]["0"]
+    ) -> Generation:
+        try:
+            choice = json.loads(output)[0]["0"]
+        except (KeyError, IndexError, TypeError) as e:
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+        return Generation(text=choice)
 
 
 class OSSContentFormatter(GPT2ContentFormatter):
@@ -202,8 +216,12 @@ class HFContentFormatter(ContentFormatterBase):
 
     def format_response_payload(
         self, output: bytes, api_type: AzureMLEndpointApiType
-    ) -> str:
-        return json.loads(output)[0]["generated_text"]
+    ) -> Generation:
+        try:
+            choice = json.loads(output)[0]["0"]["generated_text"]
+        except (KeyError, IndexError, TypeError) as e:
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+        return Generation(text=choice)
 
 
 class DollyContentFormatter(ContentFormatterBase):
@@ -227,8 +245,12 @@ class DollyContentFormatter(ContentFormatterBase):
 
     def format_response_payload(
         self, output: bytes, api_type: AzureMLEndpointApiType
-    ) -> str:
-        return json.loads(output)[0]
+    ) -> Generation:
+        try:
+            choice = json.loads(output)[0]
+        except (KeyError, IndexError, TypeError) as e:
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+        return Generation(text=choice)
 
 
 class LlamaContentFormatter(ContentFormatterBase):
@@ -262,12 +284,30 @@ class LlamaContentFormatter(ContentFormatterBase):
 
     def format_response_payload(
         self, output: bytes, api_type: AzureMLEndpointApiType
-    ) -> str:
+    ) -> Generation:
         """Formats response"""
         if api_type == AzureMLEndpointApiType.realtime:
-            return json.loads(output)[0]["0"]
+            try:
+                choice = json.loads(output)[0]["0"]
+            except (KeyError, IndexError, TypeError) as e:
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+            return Generation(text=choice)
         if api_type == AzureMLEndpointApiType.serverless:
-            return json.loads(output)["choices"][0]["text"].strip()
+            try:
+                choice = json.loads(output)["choices"][0]
+                if not isinstance(choice, dict):
+                    raise TypeError(
+                        f"Endpoint response is not well formed for a chat model. Expected `dict` but `{type(choice)}` was received."
+                    )
+            except (KeyError, IndexError, TypeError) as e:
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+            return Generation(
+                text=choice["text"].strip(),
+                generation_info=dict(
+                    finish_reason=choice.get("finish_reason"),
+                    logprobs=choice.get("logprobs"),
+                ),
+            )
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
 
 
@@ -360,7 +400,7 @@ class AzureMLBaseEndpoint(BaseModel):
         return http_client
 
 
-class AzureMLOnlineEndpoint(LLM, AzureMLBaseEndpoint):
+class AzureMLOnlineEndpoint(BaseLLM, AzureMLBaseEndpoint):
     """Azure ML Online Endpoint models.
 
     Example:
@@ -387,16 +427,17 @@ class AzureMLOnlineEndpoint(LLM, AzureMLBaseEndpoint):
         """Return type of llm."""
         return "azureml_endpoint"
 
-    def _call(
+    def _generate(
         self,
-        prompt: str,
+        prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
-        """Call out to an AzureML Managed Online endpoint.
+    ) -> LLMResult:
+        """Run the LLM on the given prompts.
+
         Args:
-            prompt: The prompt to pass into the model.
+            prompts: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
         Returns:
             The string generated by the model.
@@ -405,12 +446,21 @@ class AzureMLOnlineEndpoint(LLM, AzureMLBaseEndpoint):
                 response = azureml_model("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
+        _model_kwargs.update(kwargs)
+        if stop:
+            _model_kwargs["stop"] = stop
+        generations = []
 
-        request_payload = self.content_formatter.format_request_payload(
-            prompt, _model_kwargs, self.endpoint_api_type
-        )
-        response_payload = self.http_client.call(request_payload, **kwargs)
-        generated_text = self.content_formatter.format_response_payload(
-            response_payload, self.endpoint_api_type
-        )
-        return generated_text
+        for prompt in prompts:
+            request_payload = self.content_formatter.format_request_payload(
+                prompt, _model_kwargs, self.endpoint_api_type
+            )
+            response_payload = self.http_client.call(
+                body=request_payload, run_manager=run_manager
+            )
+            generated_text = self.content_formatter.format_response_payload(
+                response_payload, self.endpoint_api_type
+            )
+            generations.append([generated_text])
+
+        return LLMResult(generations=generations)

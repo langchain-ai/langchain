@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from langchain.chat_models.base import SimpleChatModel
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.messages import (
     AIMessage,
@@ -10,6 +10,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 from langchain_community.llms.azureml_endpoint import (
     AzureMLBaseEndpoint,
@@ -101,16 +102,43 @@ class LlamaChatContentFormatter(ContentFormatterBase):
 
     def format_response_payload(
         self, output: bytes, api_type: AzureMLEndpointApiType
-    ) -> str:
+    ) -> ChatGeneration:
         """Formats response"""
         if api_type == AzureMLEndpointApiType.realtime:
-            return json.loads(output)["output"]
+            try:
+                choice = json.loads(output)["output"]
+            except (KeyError, IndexError, TypeError) as e:
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+            return ChatGeneration(
+                message=BaseMessage(
+                    content=choice.strip(),
+                    type="assistant",
+                ),
+                generation_info=None,
+            )
         if api_type == AzureMLEndpointApiType.serverless:
-            return json.loads(output)["choices"][0]["message"]["content"].strip()
+            try:
+                choice = json.loads(output)["choices"][0]
+                if not isinstance(choice, dict):
+                    raise TypeError(
+                        f"Endpoint response is not well formed for a chat model. Expected `dict` but `{type(choice)}` was received."
+                    )
+            except (KeyError, IndexError, TypeError) as e:
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+            return ChatGeneration(
+                message=BaseMessage(
+                    content=choice["message"]["content"].strip(),
+                    type=choice["message"]["role"],
+                ),
+                generation_info=dict(
+                    finish_reason=choice.get("finish_reason"),
+                    logprobs=choice.get("logprobs"),
+                ),
+            )
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
 
 
-class AzureMLChatOnlineEndpoint(SimpleChatModel, AzureMLBaseEndpoint):
+class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
     """Azure ML Online Endpoint chat models.
 
     Example:
@@ -136,13 +164,13 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel, AzureMLBaseEndpoint):
         """Return type of llm."""
         return "azureml_chat_endpoint"
 
-    def _call(
+    def _generate(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> ChatResult:
         """Call out to an AzureML Managed Online endpoint.
         Args:
             messages: The messages in the conversation with the chat model.
@@ -154,12 +182,17 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel, AzureMLBaseEndpoint):
                 response = azureml_model("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
+        _model_kwargs.update(kwargs)
+        if stop:
+            _model_kwargs["stop"] = stop
 
         request_payload = self.content_formatter.format_request_payload(
             messages, _model_kwargs, self.endpoint_api_type
         )
-        response_payload = self.http_client.call(request_payload, **kwargs)
-        generated_text = self.content_formatter.format_response_payload(
+        response_payload = self.http_client.call(
+            body=request_payload, run_manager=run_manager
+        )
+        generations = self.content_formatter.format_response_payload(
             response_payload, self.endpoint_api_type
         )
-        return generated_text
+        return ChatResult(generations=[generations])
