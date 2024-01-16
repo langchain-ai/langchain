@@ -17,12 +17,11 @@ from typing import (
 )
 
 import numpy as np
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
-
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 ADBVST = TypeVar("ADBVST", bound="AstraDB")
 T = TypeVar("T")
@@ -131,7 +130,8 @@ class AstraDB(VectorStore):
                     if isinstance(v, list):
                         metadata_filter[k] = [AstraDB._filter_to_metadata(f) for f in v]
                     else:
-                        metadata_filter[k] = AstraDB._filter_to_metadata(v)
+                        # assume each list item can be fed back to this function
+                        metadata_filter[k] = AstraDB._filter_to_metadata(v)  # type: ignore
                 else:
                     metadata_filter[f"metadata.{k}"] = v
 
