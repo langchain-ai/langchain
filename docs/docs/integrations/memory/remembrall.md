@@ -6,7 +6,7 @@ This page covers how to use the [Remembrall](https://remembrall.dev) ecosystem w
 
 Remembrall gives your language model long-term memory, retrieval augmented generation, and complete observability with just a few lines of code.
 
-![Remembrall Dashboard](/img/RemembrallDashboard.png)
+![Screenshot of the Remembrall dashboard showing request statistics and model interactions.](/img/RemembrallDashboard.png "Remembrall Dashboard Interface")
 
 It works as a light-weight proxy on top of your OpenAI calls and simply augments the context of the chat calls at runtime with relevant facts that have been collected.
 
