@@ -216,7 +216,13 @@ class Milvus(VectorStore):
         if host is not None and port is not None:
             given_address = str(host) + ":" + str(port)
         elif uri is not None:
-            given_address = uri.split("https://")[1]
+            if uri.startswith("https://"):
+                given_address = uri.split("https://")[1]
+            elif uri.startswith("http://"):
+                given_address = uri.split("http://")[1]
+            else:
+                logger.error("Invalid Milvus URI: %s", uri)
+                raise ValueError("Invalid Milvus URI: %s", uri)
         elif address is not None:
             given_address = address
         else:
