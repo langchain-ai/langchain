@@ -66,7 +66,7 @@ class HanaDB(VectorStore):
         metadata_field: str = default_metadata_field,
         metadata_field_length: int = default_metadata_field_length,
         vector_field: str = default_vector_field,
-        vector_field_length: int = default_vector_field_length  # -1 means dynamic length
+        vector_field_length: int = default_vector_field_length,  # -1 means dynamic length
     ):
         try:
             from hdbcli import dbapi
@@ -175,7 +175,7 @@ class HanaDB(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        embeddings: Optional[List[List[float]]] = None
+        embeddings: Optional[List[List[float]]] = None,
     ) -> List[str]:
         """Add more texts to the vectorstore.
 
@@ -232,7 +232,7 @@ class HanaDB(VectorStore):
         metadata_field: str = default_metadata_field,
         metadata_field_length: int = default_metadata_field_length,
         vector_field: str = default_vector_field,
-        vector_field_length: int = default_vector_field_length  # -1 means dynamic length
+        vector_field_length: int = default_vector_field_length,  # -1 means dynamic length
     ):
         """Create a HANA vectorstore from raw documents.
         This is a user-friendly interface that:
@@ -252,7 +252,7 @@ class HanaDB(VectorStore):
             metadata_field=metadata_field,
             metadata_field_length=metadata_field_length,
             vector_field=vector_field,
-            vector_field_length=vector_field_length  # -1 means dynamic length
+            vector_field_length=vector_field_length,  # -1 means dynamic length
         )
         instance.add_texts(texts, metadatas)
         return instance
@@ -382,9 +382,7 @@ class HanaDB(VectorStore):
         return True
 
     async def adelete(
-        self,
-        ids: Optional[List[str]] = None,
-        filter: Optional[dict] = None
+        self, ids: Optional[List[str]] = None, filter: Optional[dict] = None
     ) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
@@ -395,9 +393,7 @@ class HanaDB(VectorStore):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        return await run_in_executor(
-            None, self.delete, ids=ids, filter=filter
-        )
+        return await run_in_executor(None, self.delete, ids=ids, filter=filter)
 
     def max_marginal_relevance_search(
         self,
@@ -405,7 +401,7 @@ class HanaDB(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[dict] = None
+        filter: Optional[dict] = None,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -450,7 +446,7 @@ class HanaDB(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[dict] = None
+        filter: Optional[dict] = None,
     ) -> List[Document]:
         docs = []
         embeddings = []
@@ -483,7 +479,7 @@ class HanaDB(VectorStore):
         embedding: List[float],
         k: int = 4,
         fetch_k: int = 20,
-        lambda_mult: float = 0.5
+        lambda_mult: float = 0.5,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
         return await run_in_executor(
@@ -492,7 +488,7 @@ class HanaDB(VectorStore):
             embedding=embedding,
             k=k,
             fetch_k=fetch_k,
-            lambda_mult=lambda_mult
+            lambda_mult=lambda_mult,
         )
 
     @staticmethod

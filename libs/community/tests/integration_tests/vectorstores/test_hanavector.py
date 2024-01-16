@@ -454,8 +454,11 @@ def test_hanavector_delete_with_filter(texts: List[str], metadatas: List[dict]) 
     search_result = vectorDB.similarity_search(texts[0], 3)
     assert len(search_result) == 2
 
+
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-async def test_hanavector_delete_with_filter_async(texts: List[str], metadatas: List[dict]) -> None:
+async def test_hanavector_delete_with_filter_async(
+    texts: List[str], metadatas: List[dict]
+) -> None:
     table_name = "TEST_TABLE_DELETE_FILTER_ASYNC"
     # Delete table if it exists
     drop_table(connection, table_name)
@@ -477,6 +480,7 @@ async def test_hanavector_delete_with_filter_async(texts: List[str], metadatas: 
 
     search_result = vectorDB.similarity_search(texts[0], 3)
     assert len(search_result) == 2
+
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_delete_all_with_empty_filter(
@@ -576,6 +580,7 @@ def test_hanavector_max_marginal_relevance_search_vector(texts: List[str]) -> No
     assert search_result[0].page_content == texts[0]
     assert search_result[1].page_content != texts[0]
 
+
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 async def test_hanavector_max_marginal_relevance_search_async(texts: List[str]) -> None:
     table_name = "TEST_TABLE_MAX_RELEVANCE_ASYNC"
@@ -587,7 +592,9 @@ async def test_hanavector_max_marginal_relevance_search_async(texts: List[str]) 
         connection=connection, texts=texts, embedding=embedding, table_name=table_name
     )
 
-    search_result = await vectorDB.amax_marginal_relevance_search(texts[0], k=2, fetch_k=20)
+    search_result = await vectorDB.amax_marginal_relevance_search(
+        texts[0], k=2, fetch_k=20
+    )
 
     assert len(search_result) == 2
     assert search_result[0].page_content == texts[0]
