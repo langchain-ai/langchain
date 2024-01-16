@@ -29,6 +29,7 @@ from langchain_core.runnables.utils import (
     Output,
     get_unique_config_specs,
 )
+from langchain_core.utils.aiter import py_anext
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
@@ -401,7 +402,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     patch_config(config, callbacks=run_manager.get_child()),
                     **kwargs,
                 )
-                chunk = await anext(stream)
+                chunk = await py_anext(stream)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
             except BaseException as e:
