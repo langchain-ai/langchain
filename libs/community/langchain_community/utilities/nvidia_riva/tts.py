@@ -5,9 +5,9 @@ import tempfile
 import wave
 from typing import TYPE_CHECKING, Any, Generator, Iterator, Optional, Tuple, Union, cast
 
-from langchain.pydantic_v1 import Field, validator
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.prompt_values import PromptValue
+from langchain_core.pydantic_v1 import Field, validator
 from langchain_core.runnables import RunnableConfig
 
 from .common import RivaAuthMixin, RivaBase, RivaCommonConfigMixin, _import_riva_client
