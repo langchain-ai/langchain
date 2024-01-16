@@ -1147,9 +1147,11 @@ class Qdrant(VectorStore):
             points_selector=ids,
         )
         return result.status == rest.UpdateStatus.COMPLETED
-    
+
     @sync_call_fallback
-    async def adelete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
         Args:
