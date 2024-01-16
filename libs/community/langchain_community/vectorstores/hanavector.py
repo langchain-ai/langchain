@@ -12,11 +12,12 @@ from typing import (
     Tuple,
     Type,
 )
+import numpy as np
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
-from langchain_community.vectorstores.utils import DistanceStrategy
+from langchain_core.vectorstores import VectorStore
+from langchain_community.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from hdbcli import dbapi
@@ -305,7 +306,7 @@ class HanaDB(VectorStore):
         else:
             raise ValueError("Unsupported distance_strategy: {}".format(self.distance_strategy))
 
-    def delete(self, filter: Optional[dict] = None, ids: Optional[List[str]] = None) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, filter: Optional[dict] = None) -> Optional[bool]:
         """Delete by filter with metadata values
 
         Args:
@@ -334,3 +335,83 @@ class HanaDB(VectorStore):
             cur.close()
 
         return True
+
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: search query text.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = self.embedding.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding = embedding,
+            k = k,
+            fetch_k = fetch_k,
+            lambda_mult = lambda_mult,
+            filter = filter
+        )
+
+    @classmethod
+    def _parse_float_array_from_string(cls: Type[HanaDB], array_as_string: str) -> List[float]:
+        array_wo_brackets = array_as_string[1:-1]
+        return [float(x) for x in array_wo_brackets.split(",")]
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        docs = []
+        embeddings = []
+        sql_str = f"SELECT TOP {k} {self.content_field}, {self.metadata_field}, TO_NVARCHAR({self.vector_field}), {HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} ({self.vector_field}, TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) AS CS FROM {self.table_name}"
+        order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
+        where_str = self.create_where_by_filter(filter)
+        sql_str = sql_str + where_str
+        sql_str = sql_str + order_str
+        try:
+            cur = self.connection.cursor()
+            cur.execute(sql_str)
+            if cur.has_result_set():
+                rows = cur.fetchall()
+                for row in rows:
+                    js = json.loads(row[1])
+                    doc = Document(page_content=row[0], metadata=js)
+                    docs.append((doc, self._normalize_similarity_value(row[-1])))
+                    embeddings.append(HanaDB._parse_float_array_from_string(row[2]))
+        finally:
+            cur.close()
+
+        mmr_doc_indexes = maximal_marginal_relevance(
+            np.array(embedding), embeddings, lambda_mult=lambda_mult, k=k
+        )
+
+        return [docs[i][0] for i in mmr_doc_indexes]

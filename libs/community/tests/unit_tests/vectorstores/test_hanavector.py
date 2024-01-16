@@ -38,3 +38,7 @@ def test_int_sanitation_with_illegal_negative_value() -> None:
     
     assert successful
 
+def test_parse_float_array_from_string() -> None:
+    array_as_string = "[0.1, 0.2, 0.3]"
+    assert HanaDB._parse_float_array_from_string(array_as_string) == [0.1, 0.2, 0.3]
+
