@@ -142,6 +142,7 @@ def test_visit_structured_query_with_date_range() -> None:
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
+
 def test_visit_structured_query_with_date() -> None:
     query = "Who was the president of France on 1st of January 1995?"
     operation = Operation(
