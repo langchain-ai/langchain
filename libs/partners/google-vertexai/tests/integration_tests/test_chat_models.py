@@ -177,7 +177,7 @@ def test_vertexai_single_call_fails_no_message() -> None:
 
 
 @pytest.mark.parametrize("model_name", model_names_to_test)
-def test_chat_google_genai_system_message_error(model_name: str) -> None:
+def test_chat_vertexai_system_message_error(model_name: str) -> None:
     if model_name:
         model = ChatVertexAI(model_name=model_name)
     else:
@@ -193,7 +193,7 @@ def test_chat_google_genai_system_message_error(model_name: str) -> None:
 
 
 @pytest.mark.parametrize("model_name", model_names_to_test)
-def test_chat_google_genai_system_message(model_name: str) -> None:
+def test_chat_vertexai_system_message(model_name: str) -> None:
     if model_name:
         model = ChatVertexAI(
             model_name=model_name, convert_system_message_to_human=True

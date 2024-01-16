@@ -142,6 +142,7 @@ def _parse_chat_history_gemini(
         return Part.from_image(image)
 
     vertex_messages = []
+    raw_system_message = None
     for i, message in enumerate(history):
         if (
             i == 0
@@ -180,7 +181,10 @@ llm = ChatVertexAI(model_name="gemini-pro", convert_system_message_to_human=True
                     "SystemMessage should be followed by a HumanMessage and "
                     "not by AIMessage."
                 )
-            parts = [_convert_to_prompt(raw_system_message.content)] + parts
+            raw_sys_msg_c = raw_system_message.content
+            if isinstance(raw_sys_msg_c, str):
+                raw_sys_msg_c = [raw_sys_msg_c]
+            parts = [_convert_to_prompt(part) for part in raw_sys_msg_c] + parts
             raw_system_message = None
 
         vertex_message = Content(role=role, parts=parts)
