@@ -446,7 +446,7 @@ class StreamEvent(TypedDict):
     """
 
 
-async def _get_inputs(log: LogEntry) -> Optional[Dict[str, Any]]:
+async def _get_standardized_inputs(log: LogEntry) -> Optional[Dict[str, Any]]:
     """Extract standardized inputs from a log entry.
 
     Standardizes the inputs based on the type of the runnable used.
@@ -477,7 +477,7 @@ async def _get_inputs(log: LogEntry) -> Optional[Dict[str, Any]]:
     return inputs
 
 
-async def _get_outputs(log: LogEntry) -> Optional[Any]:
+async def _get_standardized_outputs(log: LogEntry) -> Optional[Any]:
     """Extract standardized output from a log entry.
 
     Standardizes the outputs based on the type of the runnable used.

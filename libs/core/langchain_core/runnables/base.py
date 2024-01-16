@@ -72,8 +72,6 @@ from langchain_core.runnables.utils import (
     get_unique_config_specs,
     indent_lines_after_first,
     StreamEvent,
-    _get_inputs,
-    _get_outputs,
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
@@ -790,6 +788,10 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain_core.tracers.log_stream import (
             RunLog,
         )
+        from langchain_core.runnables.utils import (
+            _get_standardized_inputs,
+            _get_standardized_outputs,
+        )
 
         run_log = RunLog(state=None)  # type: ignore[arg-type]
         yielded_start_event = False
@@ -842,16 +844,16 @@ class Runnable(Generic[Input, Output], ABC):
                     # Usually they will NOT be available for components that operate
                     # on streams, since those components stream the input and
                     # don't know its final value until the end of the stream.
-                    inputs = await _get_inputs(log)
+                    inputs = await _get_standardized_inputs(log)
                     if inputs:
                         data["input"] = inputs
 
                 if event_type == "end":
-                    inputs = await _get_inputs(log)
+                    inputs = await _get_standardized_inputs(log)
                     if inputs:
                         data["input"] = inputs
 
-                    outputs = await _get_outputs(log)
+                    outputs = await _get_standardized_outputs(log)
                     # Always include outputs in end events. None is a valid output.
                     data["output"] = outputs
 
