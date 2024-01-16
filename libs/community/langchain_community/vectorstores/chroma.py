@@ -231,7 +231,7 @@ class Chroma(VectorStore):
                     else:
                         raise e
             if empty_ids:
-                images_without_metadatas = [uris[j] for j in empty_ids]
+                images_without_metadatas = [b64_texts[j] for j in empty_ids]
                 embeddings_without_metadatas = (
                     [embeddings[j] for j in empty_ids] if embeddings else None
                 )
