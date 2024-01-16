@@ -30,6 +30,7 @@ _EXPECTED = [
     "Hologres",
     "KDBAI",
     "LanceDB",
+    "Lantern",
     "LLMRails",
     "Marqo",
     "MatchingEngine",

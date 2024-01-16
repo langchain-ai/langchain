@@ -34,6 +34,7 @@ from langchain_community.document_loaders.arxiv import ArxivLoader
 from langchain_community.document_loaders.assemblyai import (
     AssemblyAIAudioTranscriptLoader,
 )
+from langchain_community.document_loaders.astradb import AstraDBLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
@@ -179,6 +180,7 @@ from langchain_community.document_loaders.snowflake_loader import SnowflakeLoade
 from langchain_community.document_loaders.spreedly import SpreedlyLoader
 from langchain_community.document_loaders.srt import SRTLoader
 from langchain_community.document_loaders.stripe import StripeLoader
+from langchain_community.document_loaders.surrealdb import SurrealDBLoader
 from langchain_community.document_loaders.telegram import (
     TelegramChatApiLoader,
     TelegramChatFileLoader,
@@ -248,6 +250,7 @@ __all__ = [
     "ArcGISLoader",
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
+    "AstraDBLoader",
     "AsyncHtmlLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
@@ -358,6 +361,7 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "SurrealDBLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
