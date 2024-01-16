@@ -85,18 +85,19 @@ class ShellTool(BaseTool):
     ) -> str:
         """Run commands and return final output."""
 
-        logger.info(f"Executing command:\n {commands}")
+        print(f"Executing command:\n {commands}")
         
         try:
-            if not self.ask_human_input:
-                return self.process.run(commands)
-            else:
+            if self.ask_human_input:
                 user_input = input("Proceed with command execution? (y/n): ").lower()
                 if user_input == "y":
                     return self.process.run(commands)
                 else:
-                    logger.info("User aborted command execution.")
+                    logger.info("Invalid input. User aborted command execution.")
                     return None
-                
+            else:
+                return self.process.run(commands)
+                 
         except Exception as e:
             logger.error(f"Error during command execution: {e}")
+            return None
