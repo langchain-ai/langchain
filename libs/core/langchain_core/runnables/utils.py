@@ -26,10 +26,11 @@ from typing import (
     Union,
 )
 
+from typing_extensions import NotRequired
 from typing_extensions import TypedDict
 
 from langchain_core.tracers import RunLog, RunLogPatch
-from typing_extensions import NotRequired
+from langchain_core.tracers.log_stream import LogEntry
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -448,6 +449,58 @@ class StreamEvent(TypedDict):
     """
 
 
+async def _get_inputs(log: LogEntry) -> Optional[Dict[str, Any]]:
+    """Extract standardized inputs from a log entry.
+
+    Standardizes the inputs based on the type of the runnable used.
+
+    Args:
+        log: The log entry.
+
+    Returns:
+        Valid inputs are only dict. By conventions, inputs always represented
+        invocation using named arguments.
+        A None means that the input is not yet known!
+    """
+    inputs = log["inputs"]
+
+    if log["type"] in {"retriever", "llm"}:
+        return inputs
+
+    # new style chains
+    # These nest an additional 'input' key inside the 'inputs' to make sure
+    # the input is always a dict. We need to unpack and user the inner value.
+    inputs = log["inputs"]["input"]
+    # We should try to fix this in Runnables and callbacks/tracers
+    # Runnables should be using a None type here not a placeholder
+    # dict.
+    if inputs == {"input": ""}:  # Workaround for Runnables not using None
+        # The input is not known, so we don't assign data['input']
+        return None
+    return inputs
+
+
+async def _get_outputs(log: LogEntry) -> Optional[Any]:
+    """Extract standardized output from a log entry.
+
+    Standardizes the outputs based on the type of the runnable used.
+
+    Args:
+        log: The log entry.
+
+    Returns:
+        An output if returned, otherwise a None
+    """
+    final_output = log["final_output"]
+    if log["type"] in {"retriever", "llm"}:
+        return final_output
+    # New style chains
+    final_output = log["final_output"]
+    if isinstance(final_output, dict):
+        return final_output.get("output", None)
+    return None
+
+
 async def as_event_stream(
     run_log_patches: AsyncIterator[RunLogPatch]
 ) -> AsyncIterator[StreamEvent]:
@@ -501,10 +554,9 @@ async def as_event_stream(
             if op["path"].startswith("/logs/")
         }
 
-        # TODO iteration here is in the same order
         for path in paths:
             data = {}
-            log = run_log.state["logs"][path]
+            log: LogEntry = run_log.state["logs"][path]
             if log["end_time"] is None:
                 if log["streamed_output"]:
                     event_type = "stream"
@@ -516,50 +568,22 @@ async def as_event_stream(
                 event_type = "end"
 
             if event_type == "start":
-                # Propagate the inputs to the start event if they are available
-                # They will usually NOT be available for components that are able
-                # to operate on a stream since the input value won't be known
-                # until the end of the stream.
-                # Old style
-                if log["type"] in {"retriever", "tool", "llm"}:
-                    if log["inputs"]:
-                        data["input"] = log["inputs"]
-                        # Clean up the inputs since we don't need them anymore
-                        # del log["inputs"]
-                else:  # new style chains
-                    data["input"] = log["inputs"]["input"]
-                    # Clean up the inputs since we don't need them anymore
-                    # del log["inputs"]
+                # Include the inputs with the start event if they are available.
+                # Usually they will NOT be available for components that operate
+                # on streams, since those components stream the input and
+                # don't know its final value until the end of the stream.
+                inputs = await _get_inputs(log)
+                if inputs:
+                    data["input"] = inputs
 
             if event_type == "end":
-                # Adapter for old style chains
-                if log["type"] in {"retriever", "tool", "llm"}:
-                    data["output"] = log["final_output"]
-                    # Clean up the final output since we don't need it anymore
-                    del log["final_output"]
-                    # For runnables that implementing streaming, the input to
-                    # the runnable may be available at this stage, if it is
-                    # then we'll add them to the event data.
-                    if log["inputs"]:
-                        data["input"] = log["inputs"]
-                        del log["inputs"]
-                else:  # New style chains
-                    final_output = log["final_output"]
-                    if final_output is None:
-                        data["output"] = None
-                    elif isinstance(final_output, dict):
-                        data["output"] = final_output.get("output", None)
-                        # Clean up the final output since we don't need it anymore
-                        del log["final_output"]
-                    else:
-                        # Ignore unrecognized final output type
-                        pass
-                    # For runnables that implementing streaming, the input to
-                    # the runnable may be available at this stage, if it is
-                    # then we'll add them to the event data.
-                    if log["inputs"]:
-                        data["input"] = log["inputs"]["input"]
-                        del log["inputs"]
+                inputs = await _get_inputs(log)
+                if inputs:
+                    data["input"] = inputs
+
+                outputs = await _get_outputs(log)
+                # Always include outputs in end events. None is a valid output.
+                data["output"] = outputs
 
             if event_type == "stream":
                 num_chunks = len(log["streamed_output"])
@@ -583,6 +607,8 @@ async def as_event_stream(
                 data=data,
             )
 
+        # Finally, we take care of the streaming output from the root chain
+        # if there is any.
         state = run_log.state
         if state["streamed_output"]:
             num_chunks = len(state["streamed_output"])
