@@ -95,7 +95,7 @@ class RivaASR(
                         _LOGGER.debug("Riva ASR returned: %s", transcript)
                         return transcript
 
-        # no responses left in the output genrator
+        # no responses left in the output generator
         # if the input generator is complete, then so is the output
         if stream.hungup and stream.empty:
             stream.transcript_complete.set()

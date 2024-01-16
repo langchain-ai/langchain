@@ -191,5 +191,5 @@ class RivaCommonConfigMixin(BaseModel):
     )
     language_code: str = Field(
         default="en-US",
-        description="The [BCP-47 language code](https://www.rfc-editor.org/rfc/bcp/bcp47.txt) for the target lanauge.",
+        description="The [BCP-47 language code](https://www.rfc-editor.org/rfc/bcp/bcp47.txt) for the target langauge.",
     )
