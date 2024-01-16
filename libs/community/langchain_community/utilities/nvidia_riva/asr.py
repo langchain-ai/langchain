@@ -3,7 +3,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional, cast
 
-from langchain.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import RunnableConfig
 
 from .common import RivaAuthMixin, RivaBase, RivaCommonConfigMixin, _import_riva_client

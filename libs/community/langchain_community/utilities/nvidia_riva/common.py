@@ -16,7 +16,7 @@ from typing import (
     cast,
 )
 
-from langchain.pydantic_v1 import (
+from langchain_core.pydantic_v1 import (
     AnyHttpUrl,
     BaseModel,
     Field,
@@ -85,7 +85,9 @@ class RivaBase(Generic[_InputT, _OutputT], RunnableSerializable[_InputT, _Output
 
         def _consumer() -> None:
             """Consume the input with transform."""
-            input_iterator = cast(Iterator[_InputT], iter(input_queue.get, _TRANSFORM_END))
+            input_iterator = cast(
+                Iterator[_InputT], iter(input_queue.get, _TRANSFORM_END)
+            )
             for val in self.transform(input_iterator):
                 out_queue.put_nowait(val)
             out_queue.put_nowait(_TRANSFORM_END)
