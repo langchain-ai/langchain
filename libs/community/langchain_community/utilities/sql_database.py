@@ -5,6 +5,8 @@ import warnings
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence
 
 import sqlalchemy
+
+from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
@@ -272,11 +274,9 @@ class SQLDatabase:
             return sorted(self._include_tables)
         return sorted(self._all_tables - self._ignore_tables)
 
+    @deprecated("0.0.1", alternative="get_usable_table_name", removal="0.2.0")
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
-        warnings.warn(
-            "This method is deprecated - please use `get_usable_table_names`."
-        )
         return self.get_usable_table_names()
 
     @property
