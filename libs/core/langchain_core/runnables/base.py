@@ -36,8 +36,8 @@ from typing import (
 
 from typing_extensions import Literal, get_args
 
-from langchain_core.load.dump import dumpd, dumps
 from langchain_core._api import beta_decorator
+from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import BaseConfig, BaseModel, Field, create_model
 from langchain_core.runnables.config import (
@@ -62,6 +62,7 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
+    StreamEvent,
     accepts_config,
     accepts_context,
     accepts_run_manager,
@@ -71,7 +72,6 @@ from langchain_core.runnables.utils import (
     get_lambda_source,
     get_unique_config_specs,
     indent_lines_after_first,
-    StreamEvent,
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
@@ -85,7 +85,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
-    from langchain_core.tracers.log_stream import RunLog, RunLogPatch, LogEntry
+    from langchain_core.tracers.log_stream import LogEntry, RunLog, RunLogPatch
     from langchain_core.tracers.root_listeners import Listener
 
 
@@ -785,12 +785,12 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
         An async stream of events.
         """
-        from langchain_core.tracers.log_stream import (
-            RunLog,
-        )
         from langchain_core.runnables.utils import (
             _get_standardized_inputs,
             _get_standardized_outputs,
+        )
+        from langchain_core.tracers.log_stream import (
+            RunLog,
         )
 
         run_log = RunLog(state=None)  # type: ignore[arg-type]
