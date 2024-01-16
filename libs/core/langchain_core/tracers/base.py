@@ -44,18 +44,18 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def __init__(
         self,
         *,
-        schema_format: Literal["original", "streaming_events"] = "original",
+        _schema_format: Literal["original", "streaming_events"] = "original",
         **kwargs: Any,
     ) -> None:
         """Initialize the tracer.
 
         Args:
-            schema_format: Primarily changes how the inputs and outputs are
-                handled.
+            _schema_format: Primarily changes how the inputs and outputs are
+                handled. For internal use only. This API will change.
                 - 'original' is the format used by all current tracers.
                    This format is slightly inconsistent with respect to inputs
                    and outputs.
-                - 'streaming_events' is used for supporting streaming events, and is reserved
+                - 'streaming_events' is used for supporting streaming events,
                    for internal usage. It will likely change in the future, or
                    be deprecated entirely in favor of a dedicated async tracer
                    for streaming events.
@@ -63,7 +63,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
                     the super class.
         """
         super().__init__(**kwargs)
-        self.schema_format = schema_format
+        self.schema_format = _schema_format  # For internal use only API will change.
         self.run_map: Dict[str, Run] = {}
 
     @staticmethod
@@ -400,6 +400,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
         name: Optional[str] = None,
+        inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a tool run."""
@@ -408,11 +409,20 @@ class BaseTracer(BaseCallbackHandler, ABC):
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
+
+        if self.schema_format == "original":
+            inputs = {"input": input_str}
+        elif self.schema_format == "streaming_events":
+            inputs = {"input": inputs}
+        else:
+            raise AssertionError(f"Invalid format: {self.schema_format}")
+
         tool_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs={"input": input_str},
+            # Wrapping in dict since Run requires a dict object.
+            inputs=inputs,
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
