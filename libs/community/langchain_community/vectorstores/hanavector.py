@@ -66,8 +66,7 @@ class HanaDB(VectorStore):
         metadata_field: str = default_metadata_field,
         metadata_field_length: int = default_metadata_field_length,
         vector_field: str = default_vector_field,
-        vector_field_length: int = default_vector_field_length,  # -1 means dynamic length
-        **kwargs: Any,
+        vector_field_length: int = default_vector_field_length  # -1 means dynamic length
     ):
         try:
             from hdbcli import dbapi
@@ -176,8 +175,7 @@ class HanaDB(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        embeddings: Optional[List[List[float]]] = None,
-        **kwargs: Any,
+        embeddings: Optional[List[List[float]]] = None
     ) -> List[str]:
         """Add more texts to the vectorstore.
 
@@ -234,8 +232,7 @@ class HanaDB(VectorStore):
         metadata_field: str = default_metadata_field,
         metadata_field_length: int = default_metadata_field_length,
         vector_field: str = default_vector_field,
-        vector_field_length: int = default_vector_field_length,  # -1 means dynamic length
-        **kwargs: Any,
+        vector_field_length: int = default_vector_field_length  # -1 means dynamic length
     ):
         """Create a HANA vectorstore from raw documents.
         This is a user-friendly interface that:
@@ -247,8 +244,6 @@ class HanaDB(VectorStore):
 
         instance = cls(
             connection=connection,
-            texts=texts,
-            metadatas=metadatas,
             embedding=embedding,
             distance_strategy=distance_strategy,
             table_name=table_name,
@@ -257,14 +252,13 @@ class HanaDB(VectorStore):
             metadata_field=metadata_field,
             metadata_field_length=metadata_field_length,
             vector_field=vector_field,
-            vector_field_length=vector_field_length,  # -1 means dynamic length
-            **kwargs,
+            vector_field_length=vector_field_length  # -1 means dynamic length
         )
-        instance.add_texts(texts, metadatas, **kwargs)
+        instance.add_texts(texts, metadatas)
         return instance
 
     def similarity_search(
-        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score(
             query=query, k=k, filter=filter
@@ -390,21 +384,19 @@ class HanaDB(VectorStore):
     async def adelete(
         self,
         ids: Optional[List[str]] = None,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        filter: Optional[dict] = None
     ) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
         Args:
             ids: List of ids to delete.
-            **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
         return await run_in_executor(
-            None, self.delete, ids=ids, filter=filter, **kwargs
+            None, self.delete, ids=ids, filter=filter
         )
 
     def max_marginal_relevance_search(
@@ -413,8 +405,7 @@ class HanaDB(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        filter: Optional[dict] = None
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -459,8 +450,7 @@ class HanaDB(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        filter: Optional[dict] = None
     ) -> List[Document]:
         docs = []
         embeddings = []
@@ -493,8 +483,7 @@ class HanaDB(VectorStore):
         embedding: List[float],
         k: int = 4,
         fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
+        lambda_mult: float = 0.5
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
         return await run_in_executor(
@@ -503,8 +492,7 @@ class HanaDB(VectorStore):
             embedding=embedding,
             k=k,
             fetch_k=fetch_k,
-            lambda_mult=lambda_mult,
-            **kwargs,
+            lambda_mult=lambda_mult
         )
 
     @staticmethod
