@@ -87,6 +87,7 @@ datasets = {version = "^2.15.0", optional = true}
 azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 oracle-ads = {version = "^2.9.1", optional = true}
 zhipuai = {version = "^1.0.7", optional = true}
+prometheus-client = "0.19.0"
 
 [tool.poetry.group.test]
 optional = true

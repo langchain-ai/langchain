@@ -27,6 +27,7 @@ from langchain_community.callbacks.manager import (
 )
 from langchain_community.callbacks.mlflow_callback import MlflowCallbackHandler
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
+from langchain_community.callbacks.metrics_callback import MetricsCallbackHandler
 from langchain_community.callbacks.promptlayer_callback import (
     PromptLayerCallbackHandler,
 )
@@ -53,6 +54,7 @@ __all__ = [
     "MlflowCallbackHandler",
     "LLMonitorCallbackHandler",
     "OpenAICallbackHandler",
+    "MetricsCallbackHandler",
     "LLMThoughtLabeler",
     "StreamlitCallbackHandler",
     "WandbCallbackHandler",
