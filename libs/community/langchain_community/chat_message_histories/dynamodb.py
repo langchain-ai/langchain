@@ -54,6 +54,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         boto3_session: Optional[Session] = None,
         kms_key_id: Optional[str] = None,
         ttl: Optional[int] = None,
+        ttl_key_name: str = "expireAt"
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -72,6 +73,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.session_id = session_id
         self.key: Dict = key or {primary_key_name: session_id}
         self.ttl = ttl
+        self.ttl_key_name = ttl_key_name
 
         if kms_key_id:
             try:
@@ -142,8 +144,10 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         try:
             if self.ttl:
                 import time
-                expireAt=int(time.time()) + self.ttl
-                self.table.put_item(Item={**self.key, "History": messages, "expireAt": expireAt})
+                expireAt = int(time.time()) + self.ttl
+                self.table.put_item(
+                    Item={**self.key, "History": messages, self.ttl_key_name: expireAt}
+                )
             else:
                 self.table.put_item(Item={**self.key, "History": messages})
         except ClientError as err:
