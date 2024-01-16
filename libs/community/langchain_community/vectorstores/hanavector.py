@@ -309,9 +309,9 @@ class HanaDB(VectorStore):
         """Delete by filter with metadata values
 
         Args:
-            ids: Deletion with ids is not supported! A ValueError will be raised,
+            ids: Deletion with ids is not supported! A ValueError will be raised.
             filter: A dictionary of metadata fields and values to filter by.
-                    An empty filter ({}) will delete all entries in the given table
+                    An empty filter ({}) will delete all entries in the table.
 
         Returns:
             Optional[bool]: True, if deletion is technically successful.
@@ -325,7 +325,7 @@ class HanaDB(VectorStore):
             raise ValueError("Parameter 'filter' is required when calling 'delete'")
 
         where_str = self.create_where_by_filter(filter)
-        sql_str = f"DELETE FROM {self.table_name}" + where_str
+        sql_str = f"DELETE FROM {self.table_name} {where_str}"
 
         try:
             cur = self.connection.cursor()
