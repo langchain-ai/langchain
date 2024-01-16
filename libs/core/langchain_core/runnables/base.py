@@ -779,6 +779,16 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. code-block:: python
 
+            from langchain_core.runnables import RunnableLambda
+
+            def add_one(x: int) -> int:
+                return x + 1
+
+            chain = RunnableLambda(add_one)
+
+            async for event in chain.astream_events(1):
+                print(event)
+
         Args:
             input: The input to the runnable.
             config: The config to use for the runnable.
