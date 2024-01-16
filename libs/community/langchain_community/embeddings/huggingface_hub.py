@@ -144,5 +144,5 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        response = await self.aembed_documents([text])[0]
+        response = (await self.aembed_documents([text]))[0]
         return response
