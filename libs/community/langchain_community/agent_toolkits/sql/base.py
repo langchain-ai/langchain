@@ -1,7 +1,8 @@
 """SQL agent."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+import warnings
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
@@ -21,7 +22,7 @@ from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.tools import BaseTool
 
 if TYPE_CHECKING:
-    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.agent import AgentExecutor, RunnableAgent
     from langchain.agents.agent_types import AgentType
 
 
@@ -44,16 +45,20 @@ def create_sql_agent(
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct an SQL agent from an LLM and tools."""
-    from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
+    from langchain.agents.agent import AgentExecutor
     from langchain.agents.agent_types import AgentType
     from langchain.agents.mrkl.base import ZeroShotAgent
-    from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-    from langchain.chains.llm import LLMChain
+    from langchain.agents import create_openai_functions_agent, create_react_agent
+    from langchain.agents.agent import RunnableAgent
+
+    if kwargs:
+        warnings.warning(
+            f"Received additional kwargs {kwargs} which are no longer supported."
+        )
 
     agent_type = agent_type or AgentType.ZERO_SHOT_REACT_DESCRIPTION
     tools = toolkit.get_tools() + list(extra_tools)
     prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
-    agent: BaseSingleActionAgent
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         prompt_params = (
@@ -68,13 +73,7 @@ def create_sql_agent(
             input_variables=input_variables,
             **prompt_params,
         )
-        llm_chain = LLMChain(
-            llm=llm,
-            prompt=prompt,
-            callback_manager=callback_manager,
-        )
-        tool_names = [tool.name for tool in tools]
-        agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+        agent = RunnableAgent(runnable=create_react_agent(llm, tools, prompt), input_keys_arg=["input"])
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
         messages = [
@@ -83,20 +82,12 @@ def create_sql_agent(
             AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        input_variables = ["input", "agent_scratchpad"]
-        _prompt = ChatPromptTemplate(input_variables=input_variables, messages=messages)
-
-        agent = OpenAIFunctionsAgent(
-            llm=llm,
-            prompt=_prompt,
-            tools=tools,
-            callback_manager=callback_manager,
-            **kwargs,
-        )
+        prompt = ChatPromptTemplate.from_messages(messages)
+        agent = RunnableAgent(runnable=create_openai_functions_agent(llm, tools, prompt), input_keys_arg=["input"])
     else:
         raise ValueError(f"Agent type {agent_type} not supported at the moment.")
 
-    return AgentExecutor.from_agent_and_tools(
+    return AgentExecutor(
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,

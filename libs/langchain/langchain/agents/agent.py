@@ -30,7 +30,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
@@ -343,7 +343,7 @@ class RunnableAgent(BaseSingleActionAgent):
 
     runnable: Runnable[dict, Union[AgentAction, AgentFinish]]
     """Runnable to call to get agent action."""
-    _input_keys: List[str] = []
+    input_keys_arg: List[str] = []
     """Input keys."""
 
     class Config:
@@ -358,12 +358,7 @@ class RunnableAgent(BaseSingleActionAgent):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
-
-        Returns:
-            List of input keys.
-        """
-        return self._input_keys
+        return self.input_keys_arg
 
     def plan(
         self,
