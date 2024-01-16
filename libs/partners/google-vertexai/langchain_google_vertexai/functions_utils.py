@@ -1,8 +1,8 @@
 from typing import List
 
 from langchain_core.tools import Tool
+from langchain_core.utils.function_calling import FunctionDescription
 from langchain_core.utils.json_schema import dereference_refs
-from typing_extensions import TypedDict
 from vertexai.preview.generative_models import (  # type: ignore
     FunctionDeclaration,
 )
@@ -11,26 +11,26 @@ from vertexai.preview.generative_models import (
 )
 
 
-class FunctionDescription(TypedDict):
-    """Representation of a callable function to the OpenAI API."""
-
-    name: str
-    """The name of the function."""
-    description: str
-    """A description of the function."""
-    parameters: dict
-    """The parameters of the function."""
-
-
 def _format_tool_to_vertex_function(tool: Tool) -> FunctionDescription:
     "Format tool into the Vertex function API."
     if tool.args_schema:
         schema = dereference_refs(tool.args_schema.schema())
         schema.pop("definitions", None)
+
         return {
             "name": tool.name or schema["title"],
             "description": tool.description or schema["description"],
-            "parameters": schema,
+            "parameters": {
+                "properties": {
+                    k: {
+                        "type": v["type"],
+                        "description": v.get("description"),
+                    }
+                    for k, v in schema["properties"].items()
+                },
+                "required": schema["required"],
+                "type": schema["type"],
+            },
         }
     else:
         return {
@@ -50,8 +50,7 @@ def _format_tools_to_vertex_tool(tools: List[Tool]) -> List[VertexTool]:
     "Format tool into the Vertex Tool instance."
     function_declarations = []
     for tool in tools:
-        function_declarations.append(
-            FunctionDeclaration(**_format_tool_to_vertex_function(tool))
-        )
+        func = _format_tool_to_vertex_function(tool)
+        function_declarations.append(FunctionDeclaration(**func))
 
     return [VertexTool(function_declarations=function_declarations)]

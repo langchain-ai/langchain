@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import logging
 import re
 from dataclasses import dataclass, field
@@ -129,9 +130,7 @@ def _parse_chat_history_gemini(
                 # extract base64 component from image uri
                 try:
                     regexp = r"data:image/\w{2,4};base64,(.*)"
-                    encoded = (
-                        re.search(regexp, path).group(1)  # type: ignore
-                    )
+                    encoded = re.search(regexp, path).group(1)  # type: ignore
                 except AttributeError:
                     raise ValueError(
                         "Invalid image uri. It should be in the format "
@@ -243,9 +242,11 @@ def _parse_response_candidate(response_candidate: "Candidate") -> AIMessage:
     first_part = response_candidate.content.parts[0]
     if first_part.function_call:
         function_call = {"name": first_part.function_call.name}
-        function_call["arguments"] = {
-            k: first_part.function_call.args[k] for k in first_part.function_call.args
-        }
+
+        # dump to match other function calling llm for now
+        function_call["arguments"] = json.dumps(
+            {k: first_part.function_call.args[k] for k in first_part.function_call.args}
+        )
         additional_kwargs["function_call"] = function_call
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
@@ -320,7 +321,9 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            raw_tools = params.pop("tools") if "tools" in params else None
+
+            # set param to `functions` until core tool/function calling implemented
+            raw_tools = params.pop("functions") if "functions" in params else None
             tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
             response = chat.send_message(message, generation_config=params, tools=tools)
             generations = [
@@ -375,7 +378,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            raw_tools = params.pop("tools") if "tools" in params else None
+            # set param to `functions` until core tool/function calling implemented
+            raw_tools = params.pop("functions") if "functions" in params else None
             tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
             response = await chat.send_message_async(
                 message, generation_config=params, tools=tools
@@ -410,7 +414,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             history_gemini = _parse_chat_history_gemini(messages, project=self.project)
             message = history_gemini.pop()
             chat = self.client.start_chat(history=history_gemini)
-            raw_tools = params.pop("tools") if "tools" in params else None
+            # set param to `functions` until core tool/function calling implemented
+            raw_tools = params.pop("functions") if "functions" in params else None
             tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
             responses = chat.send_message(
                 message, stream=True, generation_config=params, tools=tools
