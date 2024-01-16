@@ -17,6 +17,7 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import (
@@ -386,6 +387,26 @@ class HanaDB(VectorStore):
 
         return True
 
+    async def adelete(
+        self,
+        ids: Optional[List[str]] = None,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        return await run_in_executor(
+            None, self.delete, ids=ids, filter=filter, **kwargs
+        )
+
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -466,6 +487,25 @@ class HanaDB(VectorStore):
         )
 
         return [docs[i][0] for i in mmr_doc_indexes]
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+        return await run_in_executor(
+            None,
+            self.max_marginal_relevance_search_by_vector,
+            embedding=embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
+        )
 
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
