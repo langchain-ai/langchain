@@ -25,7 +25,6 @@ from langchain.pydantic_v1 import (
     validator,
 )
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
-from pydantic import AnyUrl as AnyUrlv2
 
 if TYPE_CHECKING:
     import riva.client
@@ -175,8 +174,6 @@ class RivaAuthMixin(BaseModel):
     @classmethod
     def _validate_url(cls, val: Any) -> AnyHttpUrl:
         """Do some initial conversations for the URL before checking."""
-        if isinstance(val, AnyUrlv2):
-            return cast(AnyHttpUrl, AnyHttpUrl(str(val), scheme=val.scheme))
         if isinstance(val, str):
             return cast(AnyHttpUrl, parse_obj_as(AnyHttpUrl, val))
         return cast(AnyHttpUrl, val)
