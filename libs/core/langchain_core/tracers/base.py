@@ -24,6 +24,7 @@ from tenacity import RetryCallState
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
+from langchain_core.messages import BaseMessage
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -166,6 +167,46 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 f"Found {run.run_type} run at ID {run_id}, but expected {run_type} run."
             )
         return run
+
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Run:
+        """Start a trace for an LLM run."""
+        if self.schema_format != "streaming_events":
+            raise NotImplementedError(
+                f"Chat model tracing is not supported in for {self.schema_format} format."
+            )
+        parent_run_id_ = str(parent_run_id) if parent_run_id else None
+        execution_order = self._get_execution_order(parent_run_id_)
+        start_time = datetime.now(timezone.utc)
+        if metadata:
+            kwargs.update({"metadata": metadata})
+        chat_model_run = Run(
+            id=run_id,
+            parent_run_id=parent_run_id,
+            serialized=serialized,
+            inputs={"messages": [[dumpd(msg) for msg in batch] for batch in messages]},
+            extra=kwargs,
+            events=[{"name": "start", "time": start_time}],
+            start_time=start_time,
+            execution_order=execution_order,
+            child_execution_order=execution_order,
+            run_type="llm",
+            tags=tags,
+            name=name,
+        )
+        self._start_trace(chat_model_run)
+        self._on_chat_model_start(chat_model_run)
+        return Run
 
     def on_llm_start(
         self,

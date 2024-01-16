@@ -299,7 +299,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         start_time=run.start_time.isoformat(timespec="milliseconds"),
                         streamed_output=[],
                         streamed_output_str=[],
-                        inputs=run.inputs,
+                        inputs=load(run.inputs),
                         final_output=None,
                         end_time=None,
                     ),
@@ -345,7 +345,7 @@ class LogStreamCallbackHandler(BaseTracer):
             if run.id == self.root_id:
                 self.send_stream.send_nowait(
                     RunLogPatch(
-                        {"op": "replace", "path": "/inputs", "value": run.inputs}
+                        {"op": "replace", "path": "/inputs", "value": load(run.inputs)}
                     )
                 )
 

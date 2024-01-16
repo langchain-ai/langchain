@@ -526,26 +526,15 @@ async def as_event_stream(
 
         if not yielded_start_event:
             state = run_log.state.copy()
-            # TODO(FIX): Start event still does not capture inputs.
-            # We could either assume the client already has this information,
-            # or else propagate some information to the start event
-            # _atransform_stream_with_config, we need to propagate the inputs
-            # if state["type"] == "chain":
-            #     data = state["inputs"]["input"]
-            # else:
-            #     data = state["inputs"]
-            # For now, we'll just set the data to an empty dict
-            data = {}
-            if "id" in state:
-                yield StreamEvent(
-                    event=f"on_{state['type']}_start",
-                    name=state["name"],
-                    run_id=state["id"],
-                    tags=[],
-                    metadata={},
-                    data=data,
-                )
-                yielded_start_event = True
+            yield StreamEvent(
+                event=f"on_{state['type']}_start",
+                name=state["name"],
+                run_id=state["id"],
+                tags=[],
+                metadata={},
+                data={},
+            )
+            yielded_start_event = True
 
         paths = {
             op["path"].split("/")[2]
