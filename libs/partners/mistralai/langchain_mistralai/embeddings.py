@@ -2,16 +2,20 @@ import logging
 from typing import Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-
-# TODO: Remove 'type: ignore' once mistralai has stubs or py.typed marker.
-from mistralai.async_client import MistralAsyncClient  # type: ignore[import]
-from mistralai.client import MistralClient  # type: ignore[import]
-from mistralai.constants import (  # type: ignore[import]
+from mistralai.async_client import MistralAsyncClient
+from mistralai.client import MistralClient
+from mistralai.constants import (
     ENDPOINT as DEFAULT_MISTRAL_ENDPOINT,
 )
-from mistralai.exceptions import MistralException  # type: ignore[import]
+from mistralai.exceptions import MistralException
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +23,8 @@ logger = logging.getLogger(__name__)
 class MistralAIEmbeddings(BaseModel, Embeddings):
     """MistralAI embedding models.
 
-    To use, ensure the `mistralai` python package is installed, and the
-    environment variable `MISTRAL_API_KEY` is set with your API key or pass it
-    as a named parameter to the constructor.
+    To use, set the environment variable `MISTRAL_API_KEY` is set with your API key or
+    pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
@@ -33,8 +36,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: MistralClient = None  #: :meta private:
-    async_client: MistralAsyncClient = None  #: :meta private:
+    client: MistralClient = Field(default=None)  #: :meta private:
+    async_client: MistralAsyncClient = Field(default=None)  #: :meta private:
     mistral_api_key: Optional[SecretStr] = None
     endpoint: str = DEFAULT_MISTRAL_ENDPOINT
     max_retries: int = 5
@@ -45,6 +48,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
     class Config:
         extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
