@@ -1,4 +1,3 @@
-import sys
 import logging
 import platform
 import warnings
@@ -86,7 +85,7 @@ class ShellTool(BaseTool):
         """Run commands and return final output."""
 
         print(f"Executing command:\n {commands}")
-        
+
         try:
             if self.ask_human_input:
                 user_input = input("Proceed with command execution? (y/n): ").lower()
@@ -97,7 +96,7 @@ class ShellTool(BaseTool):
                     return None
             else:
                 return self.process.run(commands)
-                 
+
         except Exception as e:
             logger.error(f"Error during command execution: {e}")
             return None
