@@ -97,6 +97,7 @@ class TestResult(dict):
             for col in df.columns
             if col.startswith("inputs.")
             or col.startswith("outputs.")
+            or col in {"input", "output"}
             or col.startswith("reference")
         ]
         return df.describe(include="all").drop(to_drop, axis=1)
