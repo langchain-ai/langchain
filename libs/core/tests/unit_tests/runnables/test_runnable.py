@@ -1651,8 +1651,6 @@ async def test_prompt() -> None:
             "type": "prompt",
         },
     )
-    # nested inside trace_with_chain_group
-    assert "Fix equality on runlog" == "something is happening in correctly"
 
     async with atrace_as_chain_group("a_group") as manager:
         stream_log_nested = [

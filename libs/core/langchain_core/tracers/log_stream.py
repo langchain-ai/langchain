@@ -150,6 +150,15 @@ class RunLog(RunLogPatch):
 
         return f"RunLog({pformat(self.state)})"
 
+    def __eq__(self, other: object) -> bool:
+        # First compare that the state is the same
+        if not isinstance(other, RunLog):
+            return False
+        if self.state != other.state:
+            return False
+        # Then compare that the ops are the same
+        return super().__eq__(other)
+
 
 T = TypeVar("T")
 
