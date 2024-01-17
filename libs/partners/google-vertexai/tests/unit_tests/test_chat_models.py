@@ -145,7 +145,8 @@ def test_default_params_gemini() -> None:
 
     with patch("langchain_google_vertexai.chat_models.GenerativeModel") as gm:
         mock_response = MagicMock()
-        mock_response.candidates = [Mock(text="Goodbye")]
+        content = Mock(parts=[Mock(function_call=None)])
+        mock_response.candidates = [Mock(text="Goodbye", content=content)]
         mock_chat = MagicMock()
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message

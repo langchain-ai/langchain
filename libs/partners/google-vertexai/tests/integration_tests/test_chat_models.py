@@ -51,7 +51,7 @@ def test_candidates() -> None:
     assert len(response.generations[0]) == 2
 
 
-@pytest.mark.parametrize("model_name", ["chat-bison@001"])
+@pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
 async def test_vertexai_agenerate(model_name: str) -> None:
     model = ChatVertexAI(temperature=0, model_name=model_name)
     message = HumanMessage(content="Hello")
