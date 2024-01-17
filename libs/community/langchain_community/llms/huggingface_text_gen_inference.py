@@ -135,7 +135,7 @@ class HuggingFaceTextGenInference(LLM):
         huggingfacehub_api_token = get_from_dict_or_env(
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
-        # When TGI make requests to Huggingface's Inference Enpoints,
+        # When TGI make requests to Huggingface's Inference Endpoints,
         # a bearer token must be included into the request header for authorization
         # https://github.com/huggingface/text-generation-inference/issues/747
         if huggingfacehub_api_token:
