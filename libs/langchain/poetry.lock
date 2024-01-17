@@ -2177,7 +2177,7 @@ url = "../community"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.9"
+version = "0.1.9.1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -2200,6 +2200,21 @@ extended-testing = ["jinja2 (>=3,<4)"]
 [package.source]
 type = "directory"
 url = "../core"
+
+[[package]]
+name = "gigachat"
+version = "0.1.13"
+description = "GigaChat. Python-library for GigaChain and LangChain"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "gigachat-0.1.13-py3-none-any.whl", hash = "sha256:1e2135f73699f191cbd50efd5973bd5348766b9214f0f79faf368bdccbda24e0"},
+    {file = "gigachat-0.1.13.tar.gz", hash = "sha256:cb1a67011ad6bdd35949545ca3ce4da1c827734aa2bde5bb03e35e7eede9b4ef"},
+]
+
+[package.dependencies]
+httpx = "<1"
+pydantic = ">=1,<3"
 
 [[package]]
 name = "gitdb"
@@ -9189,4 +9204,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "bfcaab10b4b1dcdc2e3e844297908cf296c8fcad9637a6a16ead47a0763cc35a"
+content-hash = "c78716ab1f374812ba3b2aed54b62aa1eee1b581e01ea74770bcfd955a8546d9"
