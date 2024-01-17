@@ -9,7 +9,7 @@ def test_int_sanitation_with_illegal_value() -> None:
     try:
         HanaDB._sanitize_int("HUGO")
         successful = False
-    except:
+    except ValueError:
         pass
 
     assert successful
@@ -35,7 +35,7 @@ def test_int_sanitation_with_illegal_negative_value() -> None:
     try:
         HanaDB._sanitize_int(-2)
         successful = False
-    except:
+    except ValueError:
         pass
 
     assert successful

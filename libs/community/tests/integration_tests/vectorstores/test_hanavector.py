@@ -4,7 +4,6 @@ from typing import List
 
 import numpy as np
 import pytest
-from hdbcli import dbapi
 
 from langchain_community.vectorstores import HanaDB
 from langchain_community.vectorstores.utils import DistanceStrategy
@@ -64,7 +63,7 @@ def drop_table(connection, table_name):
         cur = connection.cursor()
         sql_str = f"DROP TABLE {table_name}"
         cur.execute(sql_str)
-    except:
+    except dbapi.ProgrammingError:
         pass
     finally:
         cur.close()
@@ -96,22 +95,20 @@ def test_hanavector_table_with_missing_columns() -> None:
         cur = connection.cursor()
         sql_str = f"CREATE TABLE {table_name}(WRONG_COL NVARCHAR(500));"
         cur.execute(sql_str)
-    except:
-        pass
     finally:
         cur.close()
 
     # Check if table is created
     exception_occured = False
     try:
-        vectordb = HanaDB(
+        HanaDB(
             connection=connection,
             embedding=embedding,
             distance_strategy=DistanceStrategy.COSINE,
             table_name=table_name,
         )
         exception_occured = False
-    except:
+    except AttributeError:
         exception_occured = True
     assert exception_occured
 
@@ -125,17 +122,18 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
     try:
         drop_table(connection, table_name)
         cur = connection.cursor()
-        sql_str = f"CREATE TABLE {table_name}({content_field} INTEGER, {metadata_field} INTEGER, {vector_field} INTEGER);"
+        sql_str = (
+            f"CREATE TABLE {table_name}({content_field} INTEGER, "
+            f"{metadata_field} INTEGER, {vector_field} INTEGER);"
+        )
         cur.execute(sql_str)
-    except:
-        pass
     finally:
         cur.close()
 
     # Check if table is created
     exception_occured = False
     try:
-        vectordb = HanaDB(
+        HanaDB(
             connection=connection,
             embedding=embedding,
             distance_strategy=DistanceStrategy.COSINE,
