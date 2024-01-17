@@ -253,9 +253,8 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "ChatGooglePalm",
     ),
     ("langchain", "chat_models", "vertexai", "ChatVertexAI"): (
-        "langchain",
+        "langchain_google_vertexai",
         "chat_models",
-        "vertexai",
         "ChatVertexAI",
     ),
     ("langchain", "schema", "output", "ChatGenerationChunk"): (
@@ -337,9 +336,8 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "Replicate",
     ),
     ("langchain", "llms", "vertexai", "VertexAI"): (
-        "langchain",
+        "langchain_vertexai",
         "llms",
-        "vertexai",
         "VertexAI",
     ),
     ("langchain", "output_parsers", "combining", "CombiningOutputParser"): (
