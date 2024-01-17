@@ -6,7 +6,9 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
-test:
+test_integration: TEST_FILE = tests/integration_tests/
+
+test test_integration:
 	poetry run pytest $(TEST_FILE)
 
 tests:
