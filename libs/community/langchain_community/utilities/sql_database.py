@@ -1,11 +1,9 @@
 """SQLAlchemy wrapper around a database."""
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence
 
 import sqlalchemy
-
 from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text

@@ -434,7 +434,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 
     runnable: Runnable[dict, Union[List[AgentAction], AgentFinish]]
     """Runnable to call to get agent actions."""
-    _input_keys: List[str] = []
+    input_keys_arg: List[str] = []
     """Input keys."""
 
     class Config:
@@ -454,7 +454,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         Returns:
             List of input keys.
         """
-        return self._input_keys
+        return self.input_keys_arg
 
     def plan(
         self,
