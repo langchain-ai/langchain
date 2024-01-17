@@ -25,6 +25,7 @@ The concept of a Runnable is central to LangChain Core – it is the interface t
 
 - a common invocation interface (invoke, batch, stream, etc.)
 - built-in utilities for retries, fallbacks, schemas and runtime configurability
+- easy deployment with [LangServe](https://github.com/langchain-ai/langserve)
 
 For more check out the [runnable docs](https://python.langchain.com/docs/expression_language/interface). Examples of components that implement the interface include: LLMs, Chat Models, Prompts, Retrievers, Tools, Output Parsers.
 
