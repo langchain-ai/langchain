@@ -12,7 +12,6 @@ from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
-from pyparsing import ParseException
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -114,6 +113,8 @@ class GraphDBQAChain(Chain):
         callbacks: CallbackManager,
         generated_sparql: str,
     ) -> str:
+        from pyparsing import ParseException
+
         try:
             return self._parse_sparql_query(_run_manager, generated_sparql)
         except ParseException as e:

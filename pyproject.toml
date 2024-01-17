@@ -51,7 +51,7 @@ langchain-experimental = { path = "libs/experimental/", develop = true }
 [tool.poetry.group.typing.dependencies]
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates'
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
