@@ -82,6 +82,6 @@ For detailed information on how to contribute, see the [Contributing Guide](http
 The whole LangChain ecosystem is built on top of LangChain Core, so you're in good company when building on top of it. Some of the benefits:
 
 - **Modularity**: LangChain Core is designed around abstractions that are independent of each other, and not tied to any specific model provider.
-- **Stability**: We are commited to a stable versioning scheme, and will communicate any breaking changes with advance notice and version bumps.
+- **Stability**: We are committed to a stable versioning scheme, and will communicate any breaking changes with advance notice and version bumps.
 - **Battle-tested**: LangChain Core components have the largest install base in the LLM ecosystem, and are used in production by many companies.
 - **Community**: LangChain Core is developed in the open, and we welcome contributions from the community.
