@@ -31,6 +31,33 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
+def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    The idea is to remove all internal properties which are irrelevant for generating answers
+    """
+    LIST_LIMIT = 128
+    # Create a new dictionary to avoid changing size during iteration
+    new_dict = {}
+    for key, value in d.items():
+        if isinstance(value, dict):
+            # Recurse to handle nested dictionaries
+            new_dict[key] = value_sanitize(value)
+        elif isinstance(value, list):
+            # check if it has less than LIST_LIMIT values
+            if len(value) < LIST_LIMIT:
+                # if value is a list, check if it contains dictionaries to clean
+                cleaned_list = []
+                for item in value:
+                    if isinstance(item, dict):
+                        cleaned_list.append(value_sanitize(item))
+                    else:
+                        cleaned_list.append(item)
+                new_dict[key] = cleaned_list
+        else:
+            new_dict[key] = value
+    return new_dict
+
+
 class Neo4jGraph(GraphStore):
     """Neo4j wrapper for graph operations.
 
@@ -52,6 +79,8 @@ class Neo4jGraph(GraphStore):
         username: Optional[str] = None,
         password: Optional[str] = None,
         database: str = "neo4j",
+        timeout: Optional[float] = None,
+        sanitize: bool = False,
     ) -> None:
         """Create a new Neo4j graph wrapper instance."""
         try:
@@ -69,6 +98,8 @@ class Neo4jGraph(GraphStore):
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
+        self.timeout = timeout
+        self.sanitize = sanitize
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
         # Verify connection
@@ -106,12 +137,16 @@ class Neo4jGraph(GraphStore):
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Neo4j database."""
+        from neo4j import Query
         from neo4j.exceptions import CypherSyntaxError
 
         with self._driver.session(database=self._database) as session:
             try:
-                data = session.run(query, params)
-                return [r.data() for r in data]
+                data = session.run(Query(text=query, timeout=self.timeout), params)
+                json_data = [r.data() for r in data]
+                if self.sanitize:
+                    json_data = value_sanitize(json_data)
+                return json_data
             except CypherSyntaxError as e:
                 raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
 
