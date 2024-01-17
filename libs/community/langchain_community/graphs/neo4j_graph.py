@@ -33,8 +33,11 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 
 def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
     """
-    The idea is to remove all internal properties which
-    are irrelevant for generating answers
+    Sanitizes the input dictionary by removing embedding-like values,
+    lists with more than 128 elements, that are mostly irrelevant for
+    generating answers in a LLM context. These properties, if left in
+    results, can occupy significant context space and detract from
+    the LLM's performance by introducing unnecessary noise and cost.
     """
     LIST_LIMIT = 128
     # Create a new dictionary to avoid changing size during iteration
@@ -60,7 +63,18 @@ def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class Neo4jGraph(GraphStore):
-    """Neo4j wrapper for graph operations.
+    """Provides a connection to a Neo4j database for various graph operations.
+    Parameters:
+    url (Optional[str]): The URL of the Neo4j database server.
+    username (Optional[str]): The username for database authentication.
+    password (Optional[str]): The password for database authentication.
+    database (str): The name of the database to connect to. Default is 'neo4j'.
+    timeout (Optional[float]): The timeout for transactions in seconds.
+            Useful for terminating long-running queries.
+            By default, there is no timeout set.
+    sanitize (bool): A flag to indicate whether to remove lists with
+            more than 128 elements from results. Useful for removing
+            embedding-like properties from database responses. Default is False.
 
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
