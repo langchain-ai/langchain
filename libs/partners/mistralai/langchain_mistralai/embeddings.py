@@ -1,11 +1,16 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 # TODO: Remove 'type: ignore' once mistralai has stubs or py.typed marker.
+from mistralai.async_client import MistralAsyncClient  # type: ignore[import]
 from mistralai.client import MistralClient  # type: ignore[import]
+from mistralai.constants import (  # type: ignore[import]
+    ENDPOINT as DEFAULT_MISTRAL_ENDPOINT,
+)
 from mistralai.exceptions import MistralException  # type: ignore[import]
 
 logger = logging.getLogger(__name__)
@@ -28,9 +33,15 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: MistralClient = None  #: :meta private:
+    async_client: MistralAsyncClient = None  #: :meta private:
+    mistral_api_key: Optional[SecretStr] = None
+    endpoint: str = DEFAULT_MISTRAL_ENDPOINT
+    max_retries: int = 5
+    timeout: int = 120
+    max_concurrent_requests: int = 64
+
     model: str = "mistral-embed"
-    mistral_api_key: Optional[str] = None
 
     class Config:
         extra = Extra.forbid
@@ -39,11 +50,35 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate configuration."""
 
-        mistral_api_key = values.get("mistral_api_key")
-        values["client"] = MistralClient(api_key=mistral_api_key)
+        values["mistral_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values, "mistral_api_key", "MISTRAL_API_KEY", default=""
+            )
+        )
+        values["client"] = MistralClient(
+            api_key=values["mistral_api_key"].get_secret_value(),
+            endpoint=values["endpoint"],
+            max_retries=values["max_retries"],
+            timeout=values["timeout"],
+        )
+        values["async_client"] = MistralAsyncClient(
+            api_key=values["mistral_api_key"].get_secret_value(),
+            endpoint=values["endpoint"],
+            max_retries=values["max_retries"],
+            timeout=values["timeout"],
+            max_concurrent_requests=values["max_concurrent_requests"],
+        )
         return values
 
-    def _embed(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed a list of document texts.
+
+        Args:
+            texts: The list of texts to embed.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
         try:
             embeddings_batch_response = self.client.embeddings(
                 model=self.model,
@@ -57,7 +92,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             logger.error(f"An error occurred with MistralAI: {e}")
             raise
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of document texts.
 
         Args:
@@ -66,7 +101,18 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        return self._embed(texts)
+        try:
+            embeddings_batch_response = await self.async_client.embeddings(
+                model=self.model,
+                input=texts,
+            )
+            return [
+                list(map(float, embedding_obj.embedding))
+                for embedding_obj in embeddings_batch_response.data
+            ]
+        except MistralException as e:
+            logger.error(f"An error occurred with MistralAI: {e}")
+            raise
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a single query text.
@@ -77,4 +123,15 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        return self._embed([text])[0]
+        return self.embed_documents([text])[0]
+
+    async def aembed_query(self, text: str) -> List[float]:
+        """Embed a single query text.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embedding for the text.
+        """
+        return (await self.aembed_documents([text]))[0]
