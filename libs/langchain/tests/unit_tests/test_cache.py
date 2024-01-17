@@ -119,6 +119,7 @@ async def test_chat_model_caching() -> None:
         result = llm(prompt)
         assert isinstance(result, AIMessage)
         assert result.content == cached_response
+
         # async test
         await llm_cache.aupdate(
             prompt=dumps(prompt),
@@ -154,6 +155,7 @@ async def test_chat_model_caching_params() -> None:
         assert result.content == cached_response
         assert isinstance(result_no_params, AIMessage)
         assert result_no_params.content == response
+
         # async test
         await llm_cache.aupdate(
             prompt=dumps(prompt),
@@ -188,6 +190,7 @@ async def test_llm_cache_clear() -> None:
         llm_cache.clear()
         response = llm(prompt)
         assert response == expected_response
+
         # async test
         await llm_cache.aupdate(
             prompt=prompt,
