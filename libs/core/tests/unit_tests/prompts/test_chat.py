@@ -21,7 +21,7 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-    _convert_to_message,
+    _convert_to_message_template,
 )
 
 
@@ -291,7 +291,7 @@ def test_convert_to_message(
     args: Any, expected: Union[BaseMessage, BaseMessagePromptTemplate]
 ) -> None:
     """Test convert to message."""
-    assert _convert_to_message(args) == expected
+    assert _convert_to_message_template(args) == expected
 
 
 def test_chat_prompt_template_indexing() -> None:
@@ -331,12 +331,12 @@ def test_chat_prompt_template_append_and_extend() -> None:
 
 
 def test_convert_to_message_is_strict() -> None:
-    """Verify that _convert_to_message is strict."""
+    """Verify that _convert_to_message_template is strict."""
     with pytest.raises(ValueError):
         # meow does not correspond to a valid message type.
         # this test is here to ensure that functionality to interpret `meow`
         # as a role is NOT added.
-        _convert_to_message(("meow", "question"))
+        _convert_to_message_template(("meow", "question"))
 
 
 def test_chat_message_partial() -> None:
@@ -369,3 +369,29 @@ def test_messages_placeholder() -> None:
         prompt.format_messages()
     prompt = MessagesPlaceholder("history", optional=True)
     assert prompt.format_messages() == []
+
+
+def test_messages_placeholder_with_coercion() -> None:
+    prompt = MessagesPlaceholder("history")
+    assert prompt.format_messages(history=[]) == []
+    assert prompt.format_messages(
+        history=[
+            ("system", "Foo"),
+            ("user", "Bar"),
+            ("ai", "Baz"),
+            "well",
+            (SystemMessage, "Qux"),
+            (HumanMessage, "Quux"),
+            (AIMessage, "Quuz"),
+            ("human", ["Corge", {"type": "text", "content": "Grault"}]),
+        ]
+    ) == [
+        SystemMessage(content="Foo"),
+        HumanMessage(content="Bar"),
+        AIMessage(content="Baz"),
+        HumanMessage(content="well"),
+        SystemMessage(content="Qux"),
+        HumanMessage(content="Quux"),
+        AIMessage(content="Quuz"),
+        HumanMessage(content=["Corge", {"type": "text", "content": "Grault"}]),
+    ]

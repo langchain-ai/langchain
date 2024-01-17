@@ -124,15 +124,20 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         if not isinstance(value, list):
             raise ValueError(
                 f"variable {self.variable_name} should be a list of base messages, "
-                f"got {value}"
+                " or message-like tuples (role, content).\n"
+                f"Got {value}"
             )
+        coerced_value = []
         for v in value:
-            if not isinstance(v, BaseMessage):
+            try:
+                coerced_value.append(_convert_to_message(v))
+            except ValueError:
                 raise ValueError(
-                    f"variable {self.variable_name} should be a list of base messages,"
-                    f" got {value}"
+                    f"variable {self.variable_name} should be a list of base messages, "
+                    " or message-like tuples (role, content).\n"
+                    f"Got {value}"
                 )
-        return value
+        return coerced_value
 
     @property
     def input_variables(self) -> List[str]:
@@ -408,6 +413,12 @@ MessageLikeRepresentation = Union[
     Tuple[Type, str],
     str,
 ]
+FormattedMessageLikeRepresentation = Union[
+    BaseMessage,
+    Tuple[str, str],
+    Tuple[Type, str],
+    str,
+]
 
 
 class ChatPromptTemplate(BaseChatPromptTemplate):
@@ -599,7 +610,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template
         """
-        _messages = [_convert_to_message(message) for message in messages]
+        _messages = [_convert_to_message_template(message) for message in messages]
 
         # Automatically infer input variables from messages
         input_vars: Set[str] = set()
@@ -689,11 +700,13 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Args:
             message: representation of a message to append.
         """
-        self.messages.append(_convert_to_message(message))
+        self.messages.append(_convert_to_message_template(message))
 
     def extend(self, messages: Sequence[MessageLikeRepresentation]) -> None:
         """Extend the chat template with a sequence of messages."""
-        self.messages.extend([_convert_to_message(message) for message in messages])
+        self.messages.extend(
+            [_convert_to_message_template(message) for message in messages]
+        )
 
     @overload
     def __getitem__(self, index: int) -> MessageLike:
@@ -764,10 +777,33 @@ def _create_template_from_message_type(
     return message
 
 
-def _convert_to_message(
+def _create_message_from_message_type(message_type: str, content: str) -> BaseMessage:
+    """Create a message from a message type and template string.
+
+    Args:
+        message_type: str the type of the message template (e.g., "human", "ai", etc.)
+        content: the content of the message.
+
+    Returns:
+        a message of the appropriate type.
+    """
+    if message_type in ("human", "user"):
+        return HumanMessage(content=content)
+    elif message_type in ("ai", "assistant"):
+        return AIMessage(content=content)
+    elif message_type == "system":
+        return SystemMessage(content=content)
+    else:
+        raise ValueError(
+            f"Unexpected message type: {message_type}. Use one of 'human',"
+            f" 'user', 'ai', 'assistant', or 'system'."
+        )
+
+
+def _convert_to_message_template(
     message: MessageLikeRepresentation,
 ) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
-    """Instantiate a message from a variety of message formats.
+    """Instantiate a template or message from a variety of message formats.
 
     The message format can be one of the following:
 
@@ -794,12 +830,46 @@ def _convert_to_message(
     elif isinstance(message, tuple):
         if len(message) != 2:
             raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
-        message_type_str, template = message
+        message_type_str, content = message
         if isinstance(message_type_str, str):
-            _message = _create_template_from_message_type(message_type_str, template)
+            _message = _create_template_from_message_type(message_type_str, content)
         else:
-            _message = message_type_str(prompt=PromptTemplate.from_template(template))
+            _message = message_type_str(content=content)
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 
     return _message
+
+
+def _convert_to_message(
+    message: FormattedMessageLikeRepresentation,
+) -> BaseMessage:
+    """Instantiate a message from a variety of message formats.
+
+    This will never return a message template, but rather a finalized message.
+    The message format can be one of the following:
+
+    - BaseMessage
+    - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
+    - 2-tuple of (message class, template)
+    - string: shorthand for ("human", template); e.g., "{user_input}"
+
+    Args:
+        message: a representation of a message in one of the supported formats
+
+    Returns:
+        an instance of a message
+    """
+    if isinstance(message, BaseMessage):
+        return message
+    if isinstance(message, str):
+        return HumanMessage(content=message)
+    if isinstance(message, tuple):
+        if len(message) != 2:
+            raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
+        message_type_str, content = message
+        if isinstance(message_type_str, str):
+            return _create_message_from_message_type(message_type_str, content)
+        else:
+            return message_type_str(content=content)
+    raise NotImplementedError(f"Unsupported message type: {type(message)}")
