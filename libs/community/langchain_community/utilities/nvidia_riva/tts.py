@@ -74,6 +74,10 @@ def _process_chunks(inputs: Iterator[TTSInputType]) -> Generator[str, None, None
                 yield buffer[idx : idx + 5]
             buffer = ""
 
+    # return any remaining buffer
+    if buffer:
+        yield buffer
+
 
 class RivaTTS(
     RivaAuthMixin, RivaCommonConfigMixin, RivaBase[TTSInputType, TTSOutputType]

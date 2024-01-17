@@ -229,6 +229,7 @@ extended_testing = [
  "jinja2",
  "gitpython",
  "newspaper3k",
+ "nvidia-riva-client",
  "feedparser",
  "xata",
  "xmltodict",
