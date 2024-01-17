@@ -606,7 +606,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_names: Optional[Sequence[str]] = None,
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> AsyncIterator[RunLogPatch]:
         ...
 
@@ -624,7 +624,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_names: Optional[Sequence[str]] = None,
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> AsyncIterator[RunLog]:
         ...
 
@@ -641,7 +641,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_names: Optional[Sequence[str]] = None,
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
         """
         Stream all output from a runnable, as reported to the callback system.
@@ -771,7 +771,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_names: Optional[Sequence[str]] = None,
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> AsyncIterator[StreamEvent]:
         """Generate a stream of events.
 
@@ -818,11 +818,6 @@ class Runnable(Generic[Input, Output], ABC):
 
         run_log = RunLog(state=None)  # type: ignore[arg-type]
         encountered_start_event = False
-        config = ensure_config(config)
-
-        root_tags = config.get("tags", [])
-        root_metadata = config.get("metadata", {})
-        root_name = config.get("run_name", self.get_name())
 
         _root_event_filter = _RootEventFilter(
             include_names=include_names,
@@ -833,9 +828,18 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_tags=exclude_tags,
         )
 
-        async for log in self.astream_log(
+        config = ensure_config(config)
+        root_tags = config.get("tags", [])
+        root_metadata = config.get("metadata", {})
+        root_name = config.get("run_name", self.get_name())
+
+        # Ignoring mypy complaint about too many different union combinations
+        # This arises because many of the argument types are unions
+        async for log in self.astream_log(  # type: ignore[misc]
             input,
             config=config,
+            diff=True,
+            with_streamed_output_list=True,
             include_names=include_names,
             include_types=include_types,
             include_tags=include_tags,
@@ -874,9 +878,9 @@ class Runnable(Generic[Input, Output], ABC):
             # as they were inserted in modern python versions.
             for path in paths:
                 data = {}
-                log: LogEntry = run_log.state["logs"][path]
-                if log["end_time"] is None:
-                    if log["streamed_output"]:
+                log_entry: LogEntry = run_log.state["logs"][path]
+                if log_entry["end_time"] is None:
+                    if log_entry["streamed_output"]:
                         event_type = "stream"
                     else:
                         event_type = "start"
@@ -888,39 +892,39 @@ class Runnable(Generic[Input, Output], ABC):
                     # Usually they will NOT be available for components that operate
                     # on streams, since those components stream the input and
                     # don't know its final value until the end of the stream.
-                    inputs = log["inputs"]
+                    inputs = log_entry["inputs"]
                     if inputs is not None:
                         data["input"] = inputs
                     pass
 
                 if event_type == "end":
-                    inputs = log["inputs"]
+                    inputs = log_entry["inputs"]
                     if inputs is not None:
                         data["input"] = inputs
 
                     # None is a VALID output for an end event
-                    data["output"] = log["final_output"]
+                    data["output"] = log_entry["final_output"]
 
                 if event_type == "stream":
-                    num_chunks = len(log["streamed_output"])
+                    num_chunks = len(log_entry["streamed_output"])
                     if num_chunks != 1:
                         raise AssertionError(
                             f"Expected exactly one chunk of streamed output, "
                             f"got {num_chunks} instead. This is impossible. "
-                            f"Encountered in: {log['name']}"
+                            f"Encountered in: {log_entry['name']}"
                         )
 
-                    data = {"chunk": log["streamed_output"][0]}
+                    data = {"chunk": log_entry["streamed_output"][0]}
                     # Clean up the stream, we don't need it anymore.
                     # And this avoids duplicates as well!
-                    log["streamed_output"] = []
+                    log_entry["streamed_output"] = []
 
                 yield StreamEvent(
-                    event=f"on_{log['type']}_{event_type}",
-                    name=log["name"],
-                    run_id=log["id"],
-                    tags=log["tags"],
-                    metadata=log["metadata"],
+                    event=f"on_{log_entry['type']}_{event_type}",
+                    name=log_entry["name"],
+                    run_id=log_entry["id"],
+                    tags=log_entry["tags"],
+                    metadata=log_entry["metadata"],
                     data=data,
                 )
 

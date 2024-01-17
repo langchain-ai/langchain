@@ -214,7 +214,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
-        return Run
+        return chat_model_run
 
     def on_llm_start(
         self,

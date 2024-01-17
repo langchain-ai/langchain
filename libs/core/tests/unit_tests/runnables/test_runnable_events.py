@@ -1,6 +1,6 @@
 """Module that contains tests for runnable.astream_events API."""
 from itertools import cycle
-from typing import AsyncIterator, List, Sequence
+from typing import AsyncIterator, List, Sequence, cast
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.documents import Document
@@ -18,13 +18,12 @@ from langchain_core.runnables import (
 )
 from langchain_core.runnables.utils import StreamEvent
 from langchain_core.tools import tool
-from langchain_core.tracers import RunLog, RunLogPatch
 from tests.unit_tests.fake.chat_model import GenericFakeChatModel
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
     """Removes the run ids from events."""
-    return [{**event, "run_id": None} for event in events]
+    return cast(List[StreamEvent], [{**event, "run_id": ""} for event in events])
 
 
 async def _as_async_iterator(iterable: List) -> AsyncIterator:
@@ -35,19 +34,11 @@ async def _as_async_iterator(iterable: List) -> AsyncIterator:
 
 async def _collect_events(events: AsyncIterator[StreamEvent]) -> List[StreamEvent]:
     """Collect the events and remove the run ids."""
-    events = [event async for event in events]
-    events = _with_nulled_run_id(events)
-    for event in events:
+    materialized_events = [event async for event in events]
+    events_ = _with_nulled_run_id(materialized_events)
+    for event in events_:
         event["tags"] = sorted(event["tags"])
-    return events
-
-
-async def _as_run_log_state(run_log_patches: Sequence[RunLogPatch]) -> dict:
-    """Converts a sequence of run log patches into a run log state."""
-    state = RunLog(state=None)
-    async for run_log_patch in run_log_patches:
-        state = state + run_log_patch
-    return state
+    return events_
 
 
 async def test_event_stream_with_single_lambda() -> None:
@@ -66,7 +57,7 @@ async def test_event_stream_with_single_lambda() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "reverse",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -74,7 +65,7 @@ async def test_event_stream_with_single_lambda() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "reverse",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -82,7 +73,7 @@ async def test_event_stream_with_single_lambda() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "reverse",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
@@ -107,7 +98,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -115,7 +106,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "1",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -123,7 +114,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "1",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -131,7 +122,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "2",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -139,7 +130,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "1",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -147,7 +138,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "2",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -155,7 +146,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "3",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:3"],
         },
         {
@@ -163,7 +154,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "2",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -171,7 +162,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "3",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:3"],
         },
         {
@@ -179,7 +170,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -187,7 +178,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "3",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:3"],
         },
         {
@@ -195,7 +186,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
@@ -222,7 +213,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "1",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -230,7 +221,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "1",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -238,7 +229,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "1",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
     ]
@@ -252,7 +243,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "3",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_tag", "seq:step:3"],
         },
         {
@@ -260,7 +251,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "3",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_tag", "seq:step:3"],
         },
         {
@@ -268,7 +259,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "3",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_tag", "seq:step:3"],
         },
     ]
@@ -285,7 +276,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "my_lambda",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -293,7 +284,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "my_lambda",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -301,7 +292,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "my_lambda",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
@@ -344,7 +335,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_chain_start",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain"],
         },
         {
@@ -352,7 +343,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_prompt_start",
             "metadata": {"foo": "bar"},
             "name": "my_template",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain", "my_template", "seq:step:1"],
         },
         {
@@ -368,7 +359,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_prompt_end",
             "metadata": {"foo": "bar"},
             "name": "my_template",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain", "my_template", "seq:step:1"],
         },
         {
@@ -385,7 +376,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_llm_start",
             "metadata": {"a": "b", "foo": "bar"},
             "name": "my_model",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -393,7 +384,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_chain_stream",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain"],
         },
         {
@@ -401,7 +392,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_llm_stream",
             "metadata": {"a": "b", "foo": "bar"},
             "name": "my_model",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -409,7 +400,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_chain_stream",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain"],
         },
         {
@@ -417,7 +408,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_llm_stream",
             "metadata": {"a": "b", "foo": "bar"},
             "name": "my_model",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -425,7 +416,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_chain_stream",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain"],
         },
         {
@@ -433,7 +424,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_llm_stream",
             "metadata": {"a": "b", "foo": "bar"},
             "name": "my_model",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -464,7 +455,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_llm_end",
             "metadata": {"a": "b", "foo": "bar"},
             "name": "my_model",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -472,7 +463,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "event": "on_chain_end",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
-            "run_id": None,
+            "run_id": "",
             "tags": ["my_chain"],
         },
     ]
@@ -501,14 +492,16 @@ async def test_event_streaming_with_tools() -> None:
         """A tool that does nothing."""
         return {"x": x, "y": y}
 
-    events = await _collect_events(parameterless.astream_events({}))
+    # type ignores below because the tools don't appear to be runnables to type checkers
+    # we can remove as soon as that's fixed
+    events = await _collect_events(parameterless.astream_events({}))  # type: ignore
     assert events == [
         {
             "data": {"input": {}},
             "event": "on_tool_start",
             "metadata": {},
             "name": "parameterless",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -516,7 +509,7 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_stream",
             "metadata": {},
             "name": "parameterless",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -524,19 +517,19 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_end",
             "metadata": {},
             "name": "parameterless",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
 
-    events = await _collect_events(with_callbacks.astream_events({}))
+    events = await _collect_events(with_callbacks.astream_events({}))  # type: ignore
     assert events == [
         {
             "data": {"input": {}},
             "event": "on_tool_start",
             "metadata": {},
             "name": "with_callbacks",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -544,7 +537,7 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_stream",
             "metadata": {},
             "name": "with_callbacks",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -552,18 +545,18 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_end",
             "metadata": {},
             "name": "with_callbacks",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
-    events = await _collect_events(with_parameters.astream_events({"x": 1, "y": "2"}))
+    events = await _collect_events(with_parameters.astream_events({"x": 1, "y": "2"}))  # type: ignore
     assert events == [
         {
             "data": {"input": {"x": 1, "y": "2"}},
             "event": "on_tool_start",
             "metadata": {},
             "name": "with_parameters",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -571,7 +564,7 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_stream",
             "metadata": {},
             "name": "with_parameters",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -579,13 +572,13 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_end",
             "metadata": {},
             "name": "with_parameters",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
 
     events = await _collect_events(
-        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"})
+        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"})  # type: ignore
     )
     assert events == [
         {
@@ -593,7 +586,7 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_start",
             "metadata": {},
             "name": "with_parameters_and_callbacks",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -601,7 +594,7 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_stream",
             "metadata": {},
             "name": "with_parameters_and_callbacks",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -609,7 +602,7 @@ async def test_event_streaming_with_tools() -> None:
             "event": "on_tool_end",
             "metadata": {},
             "name": "with_parameters_and_callbacks",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
@@ -647,7 +640,7 @@ async def test_event_stream_with_retriever() -> None:
             "event": "on_retriever_start",
             "metadata": {},
             "name": "HardCodedRetriever",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -660,7 +653,7 @@ async def test_event_stream_with_retriever() -> None:
             "event": "on_retriever_stream",
             "metadata": {},
             "name": "HardCodedRetriever",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -673,7 +666,7 @@ async def test_event_stream_with_retriever() -> None:
             "event": "on_retriever_end",
             "metadata": {},
             "name": "HardCodedRetriever",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
@@ -706,7 +699,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -714,7 +707,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "event": "on_retriever_start",
             "metadata": {},
             "name": "Retriever",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -732,7 +725,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "event": "on_retriever_end",
             "metadata": {},
             "name": "Retriever",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -740,7 +733,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "format_docs",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -748,7 +741,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "format_docs",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -756,7 +749,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -770,7 +763,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "format_docs",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -778,7 +771,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
@@ -796,7 +789,9 @@ async def test_event_stream_on_chain_with_tool() -> None:
         """Reverse a string."""
         return s[::-1]
 
-    chain = concat | reverse
+    # For whatever reason type annotations fail here because reverse
+    # does not appear to be a runnable
+    chain = concat | reverse  # type: ignore
 
     events = await _collect_events(chain.astream_events({"a": "hello", "b": "world"}))
     assert events == [
@@ -805,7 +800,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -813,7 +808,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "event": "on_tool_start",
             "metadata": {},
             "name": "concat",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -821,7 +816,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "event": "on_tool_end",
             "metadata": {},
             "name": "concat",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -829,7 +824,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "reverse",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -837,7 +832,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "reverse",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -845,7 +840,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -853,7 +848,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "reverse",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -861,7 +856,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
     ]
@@ -870,10 +865,10 @@ async def test_event_stream_on_chain_with_tool() -> None:
 async def test_event_stream_with_retry() -> None:
     """Test the event stream with a tool."""
 
-    def success(inputs) -> str:
+    def success(inputs: str) -> str:
         return "success"
 
-    def fail(inputs) -> None:
+    def fail(inputs: str) -> None:
         """Simple func."""
         raise Exception("fail")
 
@@ -901,7 +896,7 @@ async def test_event_stream_with_retry() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "RunnableSequence",
-            "run_id": None,
+            "run_id": "",
             "tags": [],
         },
         {
@@ -909,7 +904,7 @@ async def test_event_stream_with_retry() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "success",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -917,7 +912,7 @@ async def test_event_stream_with_retry() -> None:
             "event": "on_chain_stream",
             "metadata": {},
             "name": "success",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -925,7 +920,7 @@ async def test_event_stream_with_retry() -> None:
             "event": "on_chain_start",
             "metadata": {},
             "name": "fail",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
         {
@@ -933,7 +928,7 @@ async def test_event_stream_with_retry() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "success",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
@@ -941,7 +936,11 @@ async def test_event_stream_with_retry() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "fail",
-            "run_id": None,
+            "run_id": "",
             "tags": ["seq:step:2"],
         },
     ]
+
+
+def test_foo() -> None:
+    assert "Add tool test with single input (old style)" == 1
