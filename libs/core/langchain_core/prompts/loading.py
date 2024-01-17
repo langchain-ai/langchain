@@ -161,7 +161,9 @@ def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
     config.pop("input_variables")
     text_messages = []
     for message in messages:
-        text_messages.append((message.get("role", "user"), message["prompt"].pop("template")))
+        text_messages.append(
+            (message.get("role", "user"), message["prompt"].pop("template"))
+        )
     return ChatPromptTemplate.from_messages(text_messages, **config)
 
 

@@ -532,8 +532,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     @classmethod
     def from_messages(
-        cls,
-        messages: Sequence[MessageLikeRepresentation], **config: Any
+        cls, messages: Sequence[MessageLikeRepresentation], **config: Any
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -762,9 +761,13 @@ def _convert_to_message(
             raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
         message_type_str, template = message
         if isinstance(message_type_str, str):
-            _message = _create_template_from_message_type(message_type_str, template, **config)
+            _message = _create_template_from_message_type(
+                message_type_str, template, **config
+            )
         else:
-            _message = message_type_str(prompt=PromptTemplate.from_template(template, **config))
+            _message = message_type_str(
+                prompt=PromptTemplate.from_template(template, **config)
+            )
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 
