@@ -173,6 +173,7 @@ def create_sql_agent(
         raise ValueError(f"Agent type {agent_type} not supported at the moment.")
 
     return AgentExecutor(
+        name="SQL Agent Executor",
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,
