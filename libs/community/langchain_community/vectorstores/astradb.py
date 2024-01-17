@@ -131,7 +131,8 @@ class AstraDB(VectorStore):
                     if isinstance(v, list):
                         metadata_filter[k] = [AstraDB._filter_to_metadata(f) for f in v]
                     else:
-                        metadata_filter[k] = AstraDB._filter_to_metadata(v)
+                        # assume each list item can be fed back to this function
+                        metadata_filter[k] = AstraDB._filter_to_metadata(v)  # type: ignore
                 else:
                     metadata_filter[f"metadata.{k}"] = v
 
