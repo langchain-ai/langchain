@@ -48,7 +48,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             expected_keys = ["query", "filter"]
             allowed_keys = ["query", "filter", "limit"]
             parsed = parse_and_check_json_markdown(text, expected_keys)
-            if len(parsed["query"]) == 0:
+            if parsed["query"] is None or len(parsed["query"]) == 0:
                 parsed["query"] = " "
             if parsed["filter"] == "NO_FILTER" or not parsed["filter"]:
                 parsed["filter"] = None

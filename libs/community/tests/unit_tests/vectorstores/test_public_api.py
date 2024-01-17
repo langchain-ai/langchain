@@ -32,6 +32,7 @@ _EXPECTED = [
     "Kinetica",
     "KineticaSettings",
     "LanceDB",
+    "Lantern",
     "LLMRails",
     "Marqo",
     "MatchingEngine",

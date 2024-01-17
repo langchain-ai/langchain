@@ -476,6 +476,12 @@ def _import_zilliz() -> Any:
     return Zilliz
 
 
+def _import_lantern() -> Any:
+    from langchain_community.vectorstores.lantern import Lantern
+
+    return Lantern
+
+
 def __getattr__(name: str) -> Any:
     if name == "AnalyticDB":
         return _import_analyticdb()
@@ -623,6 +629,8 @@ def __getattr__(name: str) -> Any:
         return _import_zilliz()
     elif name == "VespaStore":
         return _import_vespa()
+    elif name == "Lantern":
+        return _import_lantern()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -700,4 +708,5 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "Lantern",
 ]
