@@ -1,18 +1,19 @@
 [tool.poetry]
 name = "langchain-google-vertexai"
-version = "0.0.1.post1"
+version = "0.0.2"
 description = "An integration package connecting GoogleVertexAI and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/google-vertexai"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1,<0.2"
-google-cloud-aiplatform = "1.38.1"
+langchain-core = ">=0.1.7,<0.2"
+google-cloud-aiplatform = "^1.39.0"
 google-cloud-storage = "^2.14.0"
 types-requests = "^2.31.0.20231231"
 types-protobuf = "^4.24.0.4"
@@ -41,6 +42,9 @@ codespell = "^2.2.0"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
+langchain = {path = "../../langchain"}
+numexpr = {version = "^2.8.8", python = ">=3.9,<4.0"}
+google-api-python-client = "^2.114.0"
 
 [tool.poetry.group.lint]
 optional = true
@@ -51,6 +55,7 @@ ruff = "^0.1.5"
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
 langchain-core = {path = "../../core", develop = true}
+types-google-cloud-ndb = "^2.2.0.20240106"
 
 [tool.poetry.group.dev]
 optional = true
