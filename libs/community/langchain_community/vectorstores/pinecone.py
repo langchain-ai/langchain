@@ -58,7 +58,7 @@ class Pinecone(VectorStore):
             pinecone.init(api_key="***", environment="...")
             index = pinecone.Index("langchain-demo")
             embeddings = OpenAIEmbeddings()
-            vectorstore = Pinecone(index, embeddings.embed_query, "text")
+            vectorstore = Pinecone(index, embeddings, "text")
     """
 
     def __init__(
@@ -201,7 +201,7 @@ class Pinecone(VectorStore):
             namespace = self._namespace
         docs = []
         results = self._index.query(
-            [embedding],
+            vector=[embedding],
             top_k=k,
             include_metadata=True,
             namespace=namespace,
@@ -299,7 +299,7 @@ class Pinecone(VectorStore):
         if namespace is None:
             namespace = self._namespace
         results = self._index.query(
-            [embedding],
+            vector=[embedding],
             top_k=fetch_k,
             include_values=True,
             include_metadata=True,

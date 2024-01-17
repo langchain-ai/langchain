@@ -9,6 +9,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
     BaseLLMOutputParser,
@@ -106,7 +107,7 @@ def create_openai_fn_runnable(
 
                 from typing import Optional
 
-                from langchain.chains.openai_functions import create_openai_fn_chain
+                from langchain.chains.openai_functions import create_openai_fn_runnable
                 from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
                 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -180,7 +181,7 @@ def create_structured_output_runnable(
 
                 from typing import Optional
 
-                from langchain.chains.openai_functions import create_structured_output_chain
+                from langchain.chains.openai_functions import create_structured_output_runnable
                 from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
                 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -200,7 +201,7 @@ def create_structured_output_runnable(
                         ("human", "Tip: Make sure to answer in the correct format"),
                     ]
                 )
-                chain = create_structured_output_chain(Dog, llm, prompt)
+                chain = create_structured_output_runnable(Dog, llm, prompt)
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
@@ -236,6 +237,7 @@ def create_structured_output_runnable(
 """ --- Legacy --- """
 
 
+@deprecated(since="0.1.1", removal="0.2.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
     functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
     llm: BaseLanguageModel,
@@ -336,6 +338,9 @@ def create_openai_fn_chain(
     return llm_chain
 
 
+@deprecated(
+    since="0.1.1", removal="0.2.0", alternative="create_structured_output_runnable"
+)
 def create_structured_output_chain(
     output_schema: Union[Dict[str, Any], Type[BaseModel]],
     llm: BaseLanguageModel,
