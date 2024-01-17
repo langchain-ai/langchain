@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-google-vertexai"
-version = "0.0.1.post1"
+version = "0.0.2"
 description = "An integration package connecting GoogleVertexAI and LangChain"
 authors = []
 readme = "README.md"
@@ -55,6 +55,7 @@ ruff = "^0.1.5"
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
 langchain-core = {path = "../../core", develop = true}
+types-google-cloud-ndb = "^2.2.0.20240106"
 
 [tool.poetry.group.dev]
 optional = true

@@ -2021,6 +2021,17 @@ files = [
 ]
 
 [[package]]
+name = "types-google-cloud-ndb"
+version = "2.2.0.20240106"
+description = "Typing stubs for google-cloud-ndb"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-google-cloud-ndb-2.2.0.20240106.tar.gz", hash = "sha256:b81d4ea35f212dc845429d08f1981eb011fe78cee3eebba81157d18b7f6e4616"},
+    {file = "types_google_cloud_ndb-2.2.0.20240106-py3-none-any.whl", hash = "sha256:c76efa97b17c15865784fb4e54da56cad805acf81f908dfe4f962a957cb84555"},
+]
+
+[[package]]
 name = "types-protobuf"
 version = "4.24.0.4"
 description = "Typing stubs for protobuf"
@@ -2243,4 +2254,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a37b4d8ff76ba8de92cffb3d3ae396b82be8faf03f9a78bd6d96d01fb915b22c"
+content-hash = "f86059ed812a97d68a0a9715c2f6d9f7687b5c07685ae224a63ff35f06e55a70"
