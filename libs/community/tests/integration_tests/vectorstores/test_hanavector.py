@@ -1,5 +1,6 @@
 """Test HANA vectorstore functionality."""
 import os
+import random
 from typing import List
 
 import numpy as np
@@ -34,14 +35,48 @@ class NormalizedFakeEmbeddings(ConsistentFakeEmbeddings):
 
 
 embedding = NormalizedFakeEmbeddings()
-connection = dbapi.connect(
-    address=os.environ.get("DB_ADDRESS"),
-    port=os.environ.get("DB_PORT"),
-    user=os.environ.get("DB_USER"),
-    password=os.environ.get("DB_PASSWORD"),
-    autocommit=True,
-    sslValidateCertificate=False,
-)
+
+
+class ConfigData:
+    def __init__(self):
+        self.conn = None
+        self.schema_name = ""
+
+
+test_setup = ConfigData()
+
+
+def setup_module(module):
+    test_setup.conn = dbapi.connect(
+        address=os.environ.get("DB_ADDRESS"),
+        port=os.environ.get("DB_PORT"),
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASSWORD"),
+        autocommit=True,
+        sslValidateCertificate=False,
+    )
+    try:
+        test_setup.schema_name = random.randint(1, 100000000)
+        cur = test_setup.conn.cursor()
+        sql_str = f"CREATE SCHEMA {test_setup.schema_name}"
+        cur.execute(sql_str)
+        sql_str = f"SET SCHEMA {test_setup.schema_name}"
+        cur.execute(sql_str)
+    except dbapi.ProgrammingError:
+        pass
+    finally:
+        cur.close()
+
+
+def teardown_module(module):
+    try:
+        cur = test_setup.conn.cursor()
+        sql_str = f"DROP SCHEMA {test_setup.schema_name} CASCADE"
+        cur.execute(sql_str)
+    except dbapi.ProgrammingError:
+        pass
+    finally:
+        cur.close()
 
 
 @pytest.fixture
@@ -74,11 +109,11 @@ def test_hanavector_non_existing_table() -> None:
     """Test end to end construction and search."""
     table_name = "NON_EXISTING"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectordb = HanaDB(
-        connection=connection,
+        connection=test_setup.conn,
         embedding=embedding,
         distance_strategy=DistanceStrategy.COSINE,
         table_name=table_name,
@@ -91,8 +126,8 @@ def test_hanavector_non_existing_table() -> None:
 def test_hanavector_table_with_missing_columns() -> None:
     table_name = "EXISTING_MISSING_COLS"
     try:
-        drop_table(connection, table_name)
-        cur = connection.cursor()
+        drop_table(test_setup.conn, table_name)
+        cur = test_setup.conn.cursor()
         sql_str = f"CREATE TABLE {table_name}(WRONG_COL NVARCHAR(500));"
         cur.execute(sql_str)
     finally:
@@ -102,7 +137,7 @@ def test_hanavector_table_with_missing_columns() -> None:
     exception_occured = False
     try:
         HanaDB(
-            connection=connection,
+            connection=test_setup.conn,
             embedding=embedding,
             distance_strategy=DistanceStrategy.COSINE,
             table_name=table_name,
@@ -120,8 +155,8 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
     metadata_field = "DOC_META"
     vector_field = "DOC_VECTOR"
     try:
-        drop_table(connection, table_name)
-        cur = connection.cursor()
+        drop_table(test_setup.conn, table_name)
+        cur = test_setup.conn.cursor()
         sql_str = (
             f"CREATE TABLE {table_name}({content_field} INTEGER, "
             f"{metadata_field} INTEGER, {vector_field} INTEGER);"
@@ -134,7 +169,7 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
     exception_occured = False
     try:
         HanaDB(
-            connection=connection,
+            connection=test_setup.conn,
             embedding=embedding,
             distance_strategy=DistanceStrategy.COSINE,
             table_name=table_name,
@@ -153,11 +188,11 @@ def test_hanavector_non_existing_table_fixed_vector_length() -> None:
     vector_field = "MY_VECTOR"
     vector_field_length = 42
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectordb = HanaDB(
-        connection=connection,
+        connection=test_setup.conn,
         embedding=embedding,
         distance_strategy=DistanceStrategy.COSINE,
         table_name=table_name,
@@ -173,10 +208,12 @@ def test_hanavector_non_existing_table_fixed_vector_length() -> None:
 def test_hanavector_add_texts(texts: List[str]) -> None:
     table_name = "TEST_TABLE_ADD_TEXTS"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
-    vectordb = HanaDB(connection=connection, embedding=embedding, table_name=table_name)
+    vectordb = HanaDB(
+        connection=test_setup.conn, embedding=embedding, table_name=table_name
+    )
 
     vectordb.add_texts(texts=texts)
 
@@ -184,7 +221,7 @@ def test_hanavector_add_texts(texts: List[str]) -> None:
     number_of_texts = len(texts)
     number_of_rows = -1
     sql_str = f"SELECT COUNT(*) FROM {table_name}"
-    cur = connection.cursor()
+    cur = test_setup.conn.cursor()
     cur.execute(sql_str)
     if cur.has_result_set():
         rows = cur.fetchall()
@@ -196,11 +233,14 @@ def test_hanavector_add_texts(texts: List[str]) -> None:
 def test_hanavector_from_texts(texts: List[str]) -> None:
     table_name = "TEST_TABLE_FROM_TEXTS"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
     )
     # test if vectorDB is instance of HanaDB
     assert isinstance(vectorDB, HanaDB)
@@ -209,7 +249,7 @@ def test_hanavector_from_texts(texts: List[str]) -> None:
     number_of_texts = len(texts)
     number_of_rows = -1
     sql_str = f"SELECT COUNT(*) FROM {table_name}"
-    cur = connection.cursor()
+    cur = test_setup.conn.cursor()
     cur.execute(sql_str)
     if cur.has_result_set():
         rows = cur.fetchall()
@@ -221,11 +261,14 @@ def test_hanavector_from_texts(texts: List[str]) -> None:
 def test_hanavector_similarity_search_simple(texts: List[str]) -> None:
     table_name = "TEST_TABLE_SEARCH_SIMPLE"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
     )
 
     assert texts[0] == vectorDB.similarity_search(texts[0], 1)[0].page_content
@@ -236,10 +279,13 @@ def test_hanavector_similarity_search_simple(texts: List[str]) -> None:
 def test_hanavector_similarity_search_by_vector_simple(texts: List[str]) -> None:
     table_name = "TEST_TABLE_SEARCH_SIMPLE_VECTOR"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     vectorDB = HanaDB.from_texts(
-        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
     )
 
     vector = embedding.embed_query(texts[0])
@@ -253,11 +299,11 @@ def test_hanavector_similarity_search_simple_euclidean_distance(
 ) -> None:
     table_name = "TEST_TABLE_SEARCH_EUCLIDIAN"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
         table_name=table_name,
@@ -274,11 +320,11 @@ def test_hanavector_similarity_search_with_metadata(
 ) -> None:
     table_name = "TEST_TABLE_METADATA"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
@@ -301,11 +347,11 @@ def test_hanavector_similarity_search_with_metadata_filter(
 ) -> None:
     table_name = "TEST_TABLE_FILTER"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
@@ -339,11 +385,14 @@ def test_hanavector_similarity_search_with_score(
 ) -> None:
     table_name = "TEST_TABLE_SCORE"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
     )
 
     search_result = vectorDB.similarity_search_with_score(texts[0], 3)
@@ -361,11 +410,14 @@ def test_hanavector_similarity_search_with_relevance_score(
 ) -> None:
     table_name = "TEST_TABLE_REL_SCORE"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
     )
 
     search_result = vectorDB.similarity_search_with_relevance_scores(texts[0], 3)
@@ -383,11 +435,11 @@ def test_hanavector_similarity_search_with_relevance_score_with_euclidian_distan
 ) -> None:
     table_name = "TEST_TABLE_REL_SCORE_EUCLIDIAN"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
         table_name=table_name,
@@ -409,11 +461,11 @@ def test_hanavector_similarity_search_with_score_with_euclidian_distance(
 ) -> None:
     table_name = "TEST_TABLE_SCORE_DISTANCE"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
         table_name=table_name,
@@ -432,11 +484,11 @@ def test_hanavector_similarity_search_with_score_with_euclidian_distance(
 def test_hanavector_delete_with_filter(texts: List[str], metadatas: List[dict]) -> None:
     table_name = "TEST_TABLE_DELETE_FILTER"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Fill table
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
@@ -459,11 +511,11 @@ async def test_hanavector_delete_with_filter_async(
 ) -> None:
     table_name = "TEST_TABLE_DELETE_FILTER_ASYNC"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Fill table
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
@@ -486,11 +538,11 @@ def test_hanavector_delete_all_with_empty_filter(
 ) -> None:
     table_name = "TEST_TABLE_DELETE_ALL"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Fill table
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
@@ -513,11 +565,11 @@ def test_hanavector_delete_called_wrong(
 ) -> None:
     table_name = "TEST_TABLE_DELETE_FILTER_WRONG"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Fill table
     vectorDB = HanaDB.from_texts(
-        connection=connection,
+        connection=test_setup.conn,
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
@@ -545,11 +597,14 @@ def test_hanavector_delete_called_wrong(
 def test_hanavector_max_marginal_relevance_search(texts: List[str]) -> None:
     table_name = "TEST_TABLE_MAX_RELEVANCE"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
     )
 
     search_result = vectorDB.max_marginal_relevance_search(texts[0], k=2, fetch_k=20)
@@ -563,11 +618,14 @@ def test_hanavector_max_marginal_relevance_search(texts: List[str]) -> None:
 def test_hanavector_max_marginal_relevance_search_vector(texts: List[str]) -> None:
     table_name = "TEST_TABLE_MAX_RELEVANCE_VECTOR"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
     )
 
     search_result = vectorDB.max_marginal_relevance_search_by_vector(
@@ -583,11 +641,14 @@ def test_hanavector_max_marginal_relevance_search_vector(texts: List[str]) -> No
 async def test_hanavector_max_marginal_relevance_search_async(texts: List[str]) -> None:
     table_name = "TEST_TABLE_MAX_RELEVANCE_ASYNC"
     # Delete table if it exists
-    drop_table(connection, table_name)
+    drop_table(test_setup.conn, table_name)
 
     # Check if table is created
     vectorDB = HanaDB.from_texts(
-        connection=connection, texts=texts, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        texts=texts,
+        embedding=embedding,
+        table_name=table_name,
     )
 
     search_result = await vectorDB.amax_marginal_relevance_search(
