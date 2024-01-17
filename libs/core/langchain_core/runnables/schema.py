@@ -84,9 +84,10 @@ class StreamEvent(TypedDict):
     """Event names are of the format: on_[runnable_type]_(start|stream|end).
     
     Runnable types are one of: 
-    * llm - both chat and non chat models
+    * llm - used by non chat models
+    * chat_model - used by chat models
     * prompt --  e.g., ChatPromptTemplate
-    * tool -- from tools defined via @tool decorator or inherting from Tool/BaseTool
+    * tool -- from tools defined via @tool decorator or inheriting from Tool/BaseTool
     * chain - most Runnables are of this type
     
     Further, the events are categorized as one of:

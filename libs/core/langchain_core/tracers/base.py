@@ -208,7 +208,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
             start_time=start_time,
             execution_order=execution_order,
             child_execution_order=execution_order,
-            run_type="llm",
+            # WARNING: This is valid ONLY for streaming_events.
+            # run_type="llm" is what's used by virtually all tracers.
+            run_type="chat_model",
             tags=tags,
             name=name,
         )

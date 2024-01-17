@@ -397,7 +397,7 @@ def _get_standardized_inputs(run: Run) -> Optional[Dict[str, Any]]:
     """
     inputs = load(run.inputs)
 
-    if run.run_type in {"retriever", "llm"}:
+    if run.run_type in {"retriever", "llm", "chat_model"}:
         return inputs
 
     # new style chains
@@ -426,7 +426,7 @@ def _get_standardized_outputs(run: Run) -> Optional[Any]:
     """
     outputs = load(run.outputs)
 
-    if run.run_type in {"retriever", "llm"}:
+    if run.run_type in {"retriever", "llm", "chat_model"}:
         return outputs
 
     if isinstance(outputs, dict):
