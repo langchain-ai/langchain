@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )

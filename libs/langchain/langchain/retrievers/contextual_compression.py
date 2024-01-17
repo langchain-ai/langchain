@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )

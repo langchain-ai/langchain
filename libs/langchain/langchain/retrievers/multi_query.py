@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import List, Sequence
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
