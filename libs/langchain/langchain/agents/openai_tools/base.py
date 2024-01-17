@@ -63,6 +63,8 @@ def create_openai_tools_agent(
             ``MessagesPlaceholder``. Intermediate agent actions and tool output
             messages will be passed in here.
 
+        Here's an example:
+
         .. code-block:: python
 
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder

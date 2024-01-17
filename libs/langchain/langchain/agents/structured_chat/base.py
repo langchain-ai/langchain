@@ -197,7 +197,14 @@ def create_structured_chat_agent(
                 }
             )
 
-    Creating prompt example:
+    Prompt:
+    
+        The prompt must have input keys:
+            * `tools`: contains descriptions and arguments for each tool.
+            * `tool_names`: contains all tool names.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as a string.
+            
+        Here's an example:
 
         .. code-block:: python
 
