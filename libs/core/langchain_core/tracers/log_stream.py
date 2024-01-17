@@ -296,7 +296,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         start_time=run.start_time.isoformat(timespec="milliseconds"),
                         streamed_output=[],
                         streamed_output_str=[],
-                        inputs=load(run.inputs),
+                        inputs=_get_standardized_inputs(run),
                         final_output=None,
                         end_time=None,
                     ),
@@ -321,13 +321,13 @@ class LogStreamCallbackHandler(BaseTracer):
                     {
                         "op": "replace",
                         "path": f"/logs/{index}/inputs",
-                        "value": load(run.inputs),
+                        "value": _get_standardized_inputs(run),
                     },
                     {
                         "op": "add",
                         "path": f"/logs/{index}/final_output",
                         # to undo the dumpd done by some runnables / tracer / etc
-                        "value": load(run.outputs),
+                        "value": _get_standardized_outputs(run),
                     },
                     {
                         "op": "add",
@@ -373,28 +373,28 @@ class LogStreamCallbackHandler(BaseTracer):
         )
 
 
-async def _get_standardized_inputs(log: LogEntry) -> Optional[Dict[str, Any]]:
-    """Extract standardized inputs from a log entry.
+def _get_standardized_inputs(run: Run) -> Optional[Dict[str, Any]]:
+    """Extract standardized inputs from a run.
 
     Standardizes the inputs based on the type of the runnable used.
 
     Args:
-        log: The log entry.
+        run: Run object
 
     Returns:
         Valid inputs are only dict. By conventions, inputs always represented
         invocation using named arguments.
         A None means that the input is not yet known!
     """
-    inputs = log["inputs"]
+    inputs = load(run.inputs)
 
-    if log["type"] in {"retriever", "llm"}:
+    if run.run_type in {"retriever", "llm"}:
         return inputs
 
     # new style chains
     # These nest an additional 'input' key inside the 'inputs' to make sure
     # the input is always a dict. We need to unpack and user the inner value.
-    inputs = log["inputs"]["input"]
+    inputs = inputs["input"]
     # We should try to fix this in Runnables and callbacks/tracers
     # Runnables should be using a None type here not a placeholder
     # dict.
@@ -404,8 +404,8 @@ async def _get_standardized_inputs(log: LogEntry) -> Optional[Dict[str, Any]]:
     return inputs
 
 
-async def _get_standardized_outputs(log: LogEntry) -> Optional[Any]:
-    """Extract standardized output from a log entry.
+def _get_standardized_outputs(run: Run) -> Optional[Any]:
+    """Extract standardized output from a run.
 
     Standardizes the outputs based on the type of the runnable used.
 
@@ -415,11 +415,12 @@ async def _get_standardized_outputs(log: LogEntry) -> Optional[Any]:
     Returns:
         An output if returned, otherwise a None
     """
-    final_output = log["final_output"]
-    if log["type"] in {"retriever", "llm"}:
-        return final_output
-    # New style chains
-    final_output = log["final_output"]
-    if isinstance(final_output, dict):
-        return final_output.get("output", None)
+    outputs = load(run.outputs)
+
+    if run.run_type in {"retriever", "llm"}:
+        return outputs
+
+    if isinstance(outputs, dict):
+        return outputs.get("output", None)
+
     return None

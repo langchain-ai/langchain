@@ -2107,7 +2107,7 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "inputs": {"input": {"question": "What is your name?"}},
+                    "inputs": {"question": "What is your name?"},
                     "metadata": {},
                     "name": "ChatPromptTemplate",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2122,19 +2122,17 @@ async def test_prompt_with_llm(
             {
                 "op": "replace",
                 "path": "/logs/ChatPromptTemplate/inputs",
-                "value": {"input": {"question": "What is your name?"}},
+                "value": {"question": "What is your name?"},
             },
             {
                 "op": "add",
                 "path": "/logs/ChatPromptTemplate/final_output",
-                "value": {
-                    "output": ChatPromptValue(
-                        messages=[
-                            SystemMessage(content="You are a nice assistant."),
-                            HumanMessage(content="What is your name?"),
-                        ]
-                    )
-                },
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
             },
             {
                 "op": "add",
@@ -2335,7 +2333,7 @@ async def test_prompt_with_llm_parser(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "inputs": {"input": {"question": "What is your name?"}},
+                    "inputs": {"question": "What is your name?"},
                     "metadata": {},
                     "name": "ChatPromptTemplate",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2350,19 +2348,17 @@ async def test_prompt_with_llm_parser(
             {
                 "op": "replace",
                 "path": "/logs/ChatPromptTemplate/inputs",
-                "value": {"input": {"question": "What is your name?"}},
+                "value": {"question": "What is your name?"},
             },
             {
                 "op": "add",
                 "path": "/logs/ChatPromptTemplate/final_output",
-                "value": {
-                    "output": ChatPromptValue(
-                        messages=[
-                            SystemMessage(content="You are a nice assistant."),
-                            HumanMessage(content="What is your name?"),
-                        ]
-                    )
-                },
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
             },
             {
                 "op": "add",
@@ -2434,7 +2430,7 @@ async def test_prompt_with_llm_parser(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "inputs": {"input": {"input": ""}},
+                    "inputs": None,
                     "metadata": {},
                     "name": "CommaSeparatedListOutputParser",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2482,12 +2478,12 @@ async def test_prompt_with_llm_parser(
             {
                 "op": "replace",
                 "path": "/logs/CommaSeparatedListOutputParser/inputs",
-                "value": {"input": "bear, dog, cat"},
+                "value": "bear, dog, cat",
             },
             {
                 "op": "add",
                 "path": "/logs/CommaSeparatedListOutputParser/final_output",
-                "value": {"output": ["bear", "dog", "cat"]},
+                "value": ["bear", "dog", "cat"],
             },
             {
                 "op": "add",
@@ -2496,6 +2492,7 @@ async def test_prompt_with_llm_parser(
             },
         ),
     ]
+
     assert stream_log == expected
 
 

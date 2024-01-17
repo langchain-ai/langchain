@@ -89,8 +89,6 @@ if TYPE_CHECKING:
         LogEntry,
         RunLog,
         RunLogPatch,
-        _get_standardized_inputs,
-        _get_standardized_outputs,
     )
     from langchain_core.tracers.root_listeners import Listener
 
@@ -890,18 +888,18 @@ class Runnable(Generic[Input, Output], ABC):
                     # Usually they will NOT be available for components that operate
                     # on streams, since those components stream the input and
                     # don't know its final value until the end of the stream.
-                    inputs = await _get_standardized_inputs(log)
-                    if inputs:
+                    inputs = log["inputs"]
+                    if inputs is not None:
                         data["input"] = inputs
+                    pass
 
                 if event_type == "end":
-                    inputs = await _get_standardized_inputs(log)
-                    if inputs:
+                    inputs = log["inputs"]
+                    if inputs is not None:
                         data["input"] = inputs
 
-                    outputs = await _get_standardized_outputs(log)
-                    # Always include outputs in end events. None is a valid output.
-                    data["output"] = outputs
+                    # None is a VALID output for an end event
+                    data["output"] = log["final_output"]
 
                 if event_type == "stream":
                     num_chunks = len(log["streamed_output"])
