@@ -17,7 +17,7 @@ from langchain_core.runnables import (
     RunnableLambda,
 )
 from langchain_core.runnables.utils import StreamEvent
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from tests.unit_tests.fake.chat_model import GenericFakeChatModel
 
 
@@ -942,5 +942,41 @@ async def test_event_stream_with_retry() -> None:
     ]
 
 
-def test_foo() -> None:
-    assert "Add tool test with single input (old style)" == 1
+async def test_with_inheritance_based_tool() -> None:
+    """Test with a tool created using inheritance."""
+
+    class CustomTool(BaseTool):
+        name = "is_cat_good_for_me"
+        description = "Find out what having a cat leads to!"
+
+        def _run(self, inputs: str) -> str:
+            return "success"
+
+    tool = CustomTool()
+    events = await _collect_events(tool.astream_events("q"))
+    assert events == [
+        {
+            "data": {"input": "q"},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "is_cat_good_for_me",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "success"},
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "is_cat_good_for_me",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": "success"},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "is_cat_good_for_me",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
