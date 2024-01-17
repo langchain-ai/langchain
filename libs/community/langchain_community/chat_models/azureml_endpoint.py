@@ -68,7 +68,7 @@ class LlamaContentFormatter(ContentFormatterBase):
             for message in messages
         ]
         prompt = json.dumps(
-            {"input_data": {"input_string": chat_messages, "parameters": model_kwargs}}
+            {"messages": chat_messages, **model_kwargs}
         )
         return self.format_request_payload(prompt=prompt, model_kwargs=model_kwargs)
 
@@ -78,7 +78,7 @@ class LlamaContentFormatter(ContentFormatterBase):
 
     def format_response_payload(self, output: bytes) -> str:
         """Formats response"""
-        return json.loads(output)["output"]
+        return json.loads(output)['choices'][0]["message"]['content']
 
 
 class AzureMLChatOnlineEndpoint(SimpleChatModel):
