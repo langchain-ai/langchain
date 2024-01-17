@@ -1,9 +1,9 @@
 """Module contains typedefs that are used with runnables."""
 from __future__ import annotations
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from typing_extensions import TypedDict, NotRequired
+from typing_extensions import NotRequired, TypedDict
 
 
 class _EventData(TypedDict):

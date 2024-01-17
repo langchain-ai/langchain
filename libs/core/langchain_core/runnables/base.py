@@ -55,6 +55,7 @@ from langchain_core.runnables.config import (
     var_child_runnable_config,
 )
 from langchain_core.runnables.graph import Graph
+from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -72,7 +73,6 @@ from langchain_core.runnables.utils import (
     get_unique_config_specs,
     indent_lines_after_first,
 )
-from langchain_core.runnables.schema import StreamEvent
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
 
