@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 class GigaChatEmbeddings(BaseModel, Embeddings):
     """GigaChat Embeddings models.
-    To use, you should initialize GigaChat from chat_models
 
     Example:
         .. code-block:: python

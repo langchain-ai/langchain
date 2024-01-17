@@ -170,7 +170,11 @@ class LLMChain(Chain):
             stop = input_list[0]["stop"]
         prompts = []
         for inputs in input_list:
-            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+            all_inputs = self.prompt.input_variables + list(
+                self.prompt.partial_variables.keys()
+            )
+            selected_inputs = {k: inputs[k] for k in all_inputs if k in inputs}
+
             prompt = self.prompt.format_prompt(**selected_inputs)
             _colored_text = get_colored_text(prompt.to_string(), "green")
             _text = "Prompt after formatting:\n" + _colored_text
@@ -196,7 +200,11 @@ class LLMChain(Chain):
             stop = input_list[0]["stop"]
         prompts = []
         for inputs in input_list:
-            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+            all_inputs = self.prompt.input_variables + list(
+                self.prompt.partial_variables.keys()
+            )
+            selected_inputs = {k: inputs[k] for k in all_inputs if k in inputs}
+
             prompt = self.prompt.format_prompt(**selected_inputs)
             _colored_text = get_colored_text(prompt.to_string(), "green")
             _text = "Prompt after formatting:\n" + _colored_text
