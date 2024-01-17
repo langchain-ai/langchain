@@ -14,6 +14,7 @@ from typing import (
     Literal,
     Optional,
     Sequence,
+    Set,
     Union,
     cast,
 )
@@ -157,14 +158,22 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         return parent_run.child_execution_order + 1
 
-    def _get_run(self, run_id: UUID, run_type: Optional[str] = None) -> Run:
+    def _get_run(
+        self, run_id: UUID, run_type: Union[str, Set[str], None] = None
+    ) -> Run:
         try:
             run = self.run_map[str(run_id)]
         except KeyError as exc:
             raise TracerException(f"No indexed run ID {run_id}.") from exc
-        if run_type is not None and run.run_type != run_type:
+
+        if isinstance(run_type, str):
+            run_types: Union[Set[str], None] = {run_type}
+        else:
+            run_types = run_type
+        if run_types is not None and run.run_type not in run_types:
             raise TracerException(
-                f"Found {run.run_type} run at ID {run_id}, but expected {run_type} run."
+                f"Found {run.run_type} run at ID {run_id}, "
+                f"but expected {run_types} run."
             )
         return run
 
@@ -211,7 +220,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             # WARNING: This is valid ONLY for streaming_events.
             # run_type="llm" is what's used by virtually all tracers.
             # Changing this to "chat_model" may break triggering on_llm_start
-            run_type="llm",
+            run_type="chat_model",
             tags=tags,
             name=name,
         )
@@ -266,7 +275,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> Run:
         """Run on new LLM token. Only available when streaming is enabled."""
-        llm_run = self._get_run(run_id, run_type="llm")
+        # "chat_model" is only used for the experimental new streaming_events format.
+        # This change should not affect any existing tracers.
+        llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         event_kwargs: Dict[str, Any] = {"token": token}
         if chunk:
             event_kwargs["chunk"] = chunk
@@ -313,7 +324,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for an LLM run."""
-        llm_run = self._get_run(run_id, run_type="llm")
+        # "chat_model" is only used for the experimental new streaming_events format.
+        # This change should not affect any existing tracers.
+        llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         llm_run.outputs = response.dict()
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
@@ -336,7 +349,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> Run:
         """Handle an error for an LLM run."""
-        llm_run = self._get_run(run_id, run_type="llm")
+        # "chat_model" is only used for the experimental new streaming_events format.
+        # This change should not affect any existing tracers.
+        llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         llm_run.error = self._get_stacktrace(error)
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})

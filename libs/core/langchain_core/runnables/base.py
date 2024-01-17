@@ -55,7 +55,7 @@ from langchain_core.runnables.config import (
     var_child_runnable_config,
 )
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.schema import StreamEvent
+from langchain_core.runnables.schema import StreamEvent, _EventData
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -958,7 +958,7 @@ class Runnable(Generic[Input, Output], ABC):
             # Elements in a set should be iterated in the same order
             # as they were inserted in modern python versions.
             for path in paths:
-                data = {}
+                data: _EventData = {}
                 log_entry: LogEntry = run_log.state["logs"][path]
                 if log_entry["end_time"] is None:
                     if log_entry["streamed_output"]:

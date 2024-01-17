@@ -1,6 +1,6 @@
 """Module that contains tests for runnable.astream_events API."""
 from itertools import cycle
-from typing import Any, AsyncIterator, List, Sequence, cast
+from typing import AsyncIterator, List, Sequence, cast
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.documents import Document
@@ -17,7 +17,7 @@ from langchain_core.runnables import (
     RunnableLambda,
 )
 from langchain_core.runnables.schema import StreamEvent
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import tool
 from tests.unit_tests.fake.chat_model import GenericFakeChatModel
 from tests.unit_tests.fake.llm import FakeStreamingListLLM
 

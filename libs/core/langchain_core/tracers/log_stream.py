@@ -9,6 +9,7 @@ from typing import (
     AsyncIterator,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     TypedDict,
@@ -176,8 +177,31 @@ class LogStreamCallbackHandler(BaseTracer):
         exclude_names: Optional[Sequence[str]] = None,
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
+        # Schema format is for internal use only.
+        _schema_format: Literal["original", "streaming_events"] = "original",
     ) -> None:
-        super().__init__(_schema_format="streaming_events")
+        """A tracer that streams run logs to a stream.
+
+        Args:
+            auto_close: Whether to close the stream when the root run finishes.
+            include_names: Only include runs from Runnables with matching names.
+            include_types: Only include runs from Runnables with matching types.
+            include_tags: Only include runs from Runnables with matching tags.
+            exclude_names: Exclude runs from Runnables with matching names.
+            exclude_types: Exclude runs from Runnables with matching types.
+            exclude_tags: Exclude runs from Runnables with matching tags.
+            _schema_format: Primarily changes how the inputs and outputs are
+                handled.
+                **For internal use only. This API will change.**
+                - 'original' is the format used by all current tracers.
+                   This format is slightly inconsistent with respect to inputs
+                   and outputs.
+                - 'streaming_events' is used for supporting streaming events,
+                   for internal usage. It will likely change in the future, or
+                   be deprecated entirely in favor of a dedicated async tracer
+                   for streaming events.
+        """
+        super().__init__(_schema_format=_schema_format)
 
         self.auto_close = auto_close
         self.include_names = include_names
