@@ -903,8 +903,9 @@ class Runnable(Generic[Input, Output], ABC):
                     num_chunks = len(log["streamed_output"])
                     if num_chunks != 1:
                         raise AssertionError(
-                            f"Expected exactly one chunk of streamed output, got {num_chunks}"
-                            f" instead. This is impossible. Encountered in: {log['name']}"
+                            f"Expected exactly one chunk of streamed output, "
+                            f"got {num_chunks} instead. This is impossible. "
+                            f"Encountered in: {log['name']}"
                         )
 
                     data = {"chunk": log["streamed_output"][0]}
@@ -928,8 +929,9 @@ class Runnable(Generic[Input, Output], ABC):
                 num_chunks = len(state["streamed_output"])
                 if num_chunks != 1:
                     raise AssertionError(
-                        f"Expected exactly one chunk of streamed output, got {num_chunks}"
-                        f" instead. This is impossible. Encountered in: {state['name']}"
+                        f"Expected exactly one chunk of streamed output, "
+                        f"got {num_chunks} instead. This is impossible. "
+                        f"Encountered in: {state['name']}"
                     )
 
                 data = {"chunk": state["streamed_output"][0]}

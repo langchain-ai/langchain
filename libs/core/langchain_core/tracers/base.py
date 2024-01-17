@@ -182,8 +182,16 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> Run:
         """Start a trace for an LLM run."""
         if self.schema_format != "streaming_events":
+            # Please keep this un-implemented for backwards compatibility.
+            # When it's unimplemented old tracers that use the "original" format
+            # fallback on the on_llm_start method implementation if they
+            # find that the on_chat_model_start method is not implemented.
+            # This can eventually be cleaned up by writing a "modern" tracer
+            # that has all the updated schema changes corresponding to
+            # the "streaming_events" format.
             raise NotImplementedError(
-                f"Chat model tracing is not supported in for {self.schema_format} format."
+                f"Chat model tracing is not supported in "
+                f"for {self.schema_format} format."
             )
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
