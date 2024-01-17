@@ -808,17 +808,28 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain_core.runnables.utils import (
             _get_standardized_inputs,
             _get_standardized_outputs,
+            _RootEventFilter,
         )
         from langchain_core.tracers.log_stream import (
             RunLog,
         )
 
         run_log = RunLog(state=None)  # type: ignore[arg-type]
-        yielded_start_event = False
+        encountered_start_event = False
         config = ensure_config(config)
 
         root_tags = config.get("tags", [])
         root_metadata = config.get("metadata", {})
+        root_name = config.get("run_name", self.get_name())
+
+        _root_event_filter = _RootEventFilter(
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+        )
 
         async for log in self.astream_log(
             input,
@@ -833,19 +844,24 @@ class Runnable(Generic[Input, Output], ABC):
         ):
             run_log = run_log + log
 
-            if not yielded_start_event:
+            if not encountered_start_event:
+                # Yield the start event for the root runnable.
+                encountered_start_event = True
                 state = run_log.state.copy()
-                yield StreamEvent(
+
+                event = StreamEvent(
                     event=f"on_{state['type']}_start",
-                    name=state["name"],
                     run_id=state["id"],
+                    name=root_name,
                     tags=root_tags,
                     metadata=root_metadata,
                     data={
                         "input": input,
                     },
                 )
-                yielded_start_event = True
+
+                if _root_event_filter.include_event(event, state["type"]):
+                    yield event
 
             paths = {
                 op["path"].split("/")[2]
@@ -920,20 +936,23 @@ class Runnable(Generic[Input, Output], ABC):
                 # Clean up the stream, we don't need it anymore.
                 state["streamed_output"] = []
 
-                yield StreamEvent(
+                event = StreamEvent(
                     event=f"on_{state['type']}_stream",
-                    name=state["name"],
                     run_id=state["id"],
-                    tags=state.get("tags", []),
-                    metadata=state.get("metadata", {}),
+                    tags=root_tags,
+                    metadata=root_metadata,
+                    name=root_name,
                     data=data,
                 )
+                if _root_event_filter.include_event(event, state["type"]):
+                    yield event
 
         state = run_log.state
 
-        yield StreamEvent(
+        # Finally yield the end event for the root runnable.
+        event = StreamEvent(
             event=f"on_{state['type']}_end",
-            name=state["name"],
+            name=root_name,
             run_id=state["id"],
             tags=root_tags,
             metadata=root_metadata,
@@ -941,6 +960,8 @@ class Runnable(Generic[Input, Output], ABC):
                 "output": state["final_output"],
             },
         )
+        if _root_event_filter.include_event(event, state["type"]):
+            yield event
 
     def transform(
         self,
@@ -3872,6 +3893,17 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             input,
             self._merge_configs(config),
             **{**self.kwargs, **kwargs},
+        ):
+            yield item
+
+    async def astream_events(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[StreamEvent]:
+        async for item in self.bound.astream_events(
+            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         ):
             yield item
 

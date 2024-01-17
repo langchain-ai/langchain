@@ -209,19 +209,11 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
 
     chain = (
         r.with_config({"run_name": "1"})
-        | r.with_config({"run_name": "2"})
-        | r.with_config({"run_name": "3"})
+        | r.with_config({"run_name": "2", "tags": ["my_tag"]})
+        | r.with_config({"run_name": "3", "tags": ["my_tag"]})
     )
     events = await _collect_events(chain.astream_events("hello", include_names=["1"]))
     assert events == [
-        {
-            "data": {"input": "hello"},
-            "event": "on_chain_start",
-            "metadata": {},
-            "name": "RunnableSequence",
-            "run_id": None,
-            "tags": [],
-        },
         {
             "data": {},
             "event": "on_chain_start",
@@ -246,21 +238,35 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "run_id": None,
             "tags": ["seq:step:1"],
         },
+    ]
+
+    events = await _collect_events(
+        chain.astream_events("hello", include_tags=["my_tag"], exclude_names=["2"])
+    )
+    assert events == [
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "3",
+            "run_id": None,
+            "tags": ["my_tag", "seq:step:3"],
+        },
         {
             "data": {"chunk": "olleh"},
             "event": "on_chain_stream",
             "metadata": {},
-            "name": "RunnableSequence",
+            "name": "3",
             "run_id": None,
-            "tags": [],
+            "tags": ["my_tag", "seq:step:3"],
         },
         {
-            "data": {"output": "olleh"},
+            "data": {"input": "hello", "output": "olleh"},
             "event": "on_chain_end",
             "metadata": {},
-            "name": "RunnableSequence",
+            "name": "3",
             "run_id": None,
-            "tags": [],
+            "tags": ["my_tag", "seq:step:3"],
         },
     ]
 
@@ -333,10 +339,10 @@ async def test_event_stream_with_simple_chain() -> None:
         {
             "data": {"input": {"question": "hello"}},
             "event": "on_chain_start",
-            "metadata": {},
+            "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": None,
-            "tags": [],
+            "tags": ["my_chain"],
         },
         {
             "data": {"input": {"question": "hello"}},
@@ -382,10 +388,10 @@ async def test_event_stream_with_simple_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="hello")},
             "event": "on_chain_stream",
-            "metadata": {},
+            "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": None,
-            "tags": [],
+            "tags": ["my_chain"],
         },
         {
             "data": {"chunk": AIMessageChunk(content="hello")},
@@ -398,10 +404,10 @@ async def test_event_stream_with_simple_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content=" ")},
             "event": "on_chain_stream",
-            "metadata": {},
+            "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": None,
-            "tags": [],
+            "tags": ["my_chain"],
         },
         {
             "data": {"chunk": AIMessageChunk(content=" ")},
@@ -414,10 +420,10 @@ async def test_event_stream_with_simple_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="world!")},
             "event": "on_chain_stream",
-            "metadata": {},
+            "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": None,
-            "tags": [],
+            "tags": ["my_chain"],
         },
         {
             "data": {"chunk": AIMessageChunk(content="world!")},
@@ -459,14 +465,12 @@ async def test_event_stream_with_simple_chain() -> None:
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
-            "data": {
-                "output": AIMessageChunk(content="hello world!"),
-            },
+            "data": {"output": AIMessageChunk(content="hello world!")},
             "event": "on_chain_end",
-            "metadata": {},
+            "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": None,
-            "tags": [],
+            "tags": ["my_chain"],
         },
     ]
 
@@ -543,7 +547,7 @@ async def test_event_stream_with_retriever() -> None:
             },
             "event": "on_retriever_start",
             "metadata": {},
-            "name": "Retriever",
+            "name": "HardCodedRetriever",
             "run_id": None,
             "tags": [],
         },
@@ -556,7 +560,7 @@ async def test_event_stream_with_retriever() -> None:
             },
             "event": "on_retriever_stream",
             "metadata": {},
-            "name": "Retriever",
+            "name": "HardCodedRetriever",
             "run_id": None,
             "tags": [],
         },
@@ -569,7 +573,7 @@ async def test_event_stream_with_retriever() -> None:
             },
             "event": "on_retriever_end",
             "metadata": {},
-            "name": "Retriever",
+            "name": "HardCodedRetriever",
             "run_id": None,
             "tags": [],
         },
