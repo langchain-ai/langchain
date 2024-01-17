@@ -5,8 +5,6 @@ from abc import ABC
 from pathlib import Path
 from typing import Iterator, List, Set, Tuple
 
-import xmltodict
-
 from langchain_community.docstore.document import Document
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
@@ -42,7 +40,7 @@ class VsdxParser(BaseBlobParser, ABC):
     ) -> List[Tuple[int, str, str]]:
         """Get the content of the pages of a vsdx file.
 
-        Atrributes:
+        Attributes:
             zfile (zipfile.ZipFile): The vsdx file under zip format.
             source (str): The path of the vsdx file.
 
@@ -51,6 +49,14 @@ class VsdxParser(BaseBlobParser, ABC):
             the name of the page and the content of the page
             for each page of the vsdx file.
         """
+
+        try:
+            import xmltodict
+        except ImportError:
+            raise ImportError(
+                "The xmltodict library is required to parse vsdx files. "
+                "Please install it with `pip install xmltodict`."
+            )
 
         if "visio/pages/pages.xml" not in zfile.namelist():
             print("WARNING - No pages.xml file found in {}".format(source))
@@ -62,8 +68,7 @@ class VsdxParser(BaseBlobParser, ABC):
             print("WARNING - No app.xml file found in {}".format(source))
             return
 
-        pagesxml_content: dict = xmltodict.parse(
-            zfile.read("visio/pages/pages.xml"))
+        pagesxml_content: dict = xmltodict.parse(zfile.read("visio/pages/pages.xml"))
         appxml_content: dict = xmltodict.parse(zfile.read("docProps/app.xml"))
         pagesxmlrels_content: dict = xmltodict.parse(
             zfile.read("visio/pages/_rels/pages.xml.rels")
@@ -118,15 +123,28 @@ class VsdxParser(BaseBlobParser, ABC):
                 for key, value in map_symboles.items():
                     page_content = page_content.replace(key, value)
 
-                disordered_pages.append(
-                    {"page": path, "page_content": page_content})
+                disordered_pages.append({"page": path, "page_content": page_content})
 
-        # Pages in order and with content of their relationships
+        # Direct relationships of each page in a dict format
+        pagexml_rels = [
+            {
+                "path": page_path,
+                "content": xmltodict.parse(
+                    zfile.read(f"visio/pages/_rels/{Path(page_path).stem}.xml.rels")
+                ),
+            }
+            for page_path in ordered_paths
+            if f"visio/pages/_rels/{Path(page_path).stem}.xml.rels" in zfile.namelist()
+        ]
+
+        # Pages in order and with content of their relationships (direct and indirect)
         ordered_pages: List[Tuple[int, str, str]] = []
         for page_number, (path, page_name) in enumerate(
             zip(ordered_paths, ordered_names)
         ):
-            relationships = self.get_relationships(path, zfile, ordered_paths)
+            relationships = self.get_relationships(
+                path, zfile, ordered_paths, pagexml_rels
+            )
             page_content = "\n".join(
                 [
                     page_["page_content"]
@@ -144,7 +162,11 @@ class VsdxParser(BaseBlobParser, ABC):
         return ordered_pages
 
     def get_relationships(
-        self, page: str, zfile: zipfile.ZipFile, filelist: List[str]
+        self,
+        page: str,
+        zfile: zipfile.ZipFile,
+        filelist: List[str],
+        pagexml_rels: List[dict],
     ) -> Set[str]:
         """Get the relationships of a page and the relationships of its relationships,
         etc... recursively.
@@ -159,16 +181,17 @@ class VsdxParser(BaseBlobParser, ABC):
         if str(rels_path) not in zfile.namelist():
             return set()
 
-        pagexmlrels_content = xmltodict.parse(zfile.read(str(rels_path)))
+        pagexml_rels_content = next(
+            page_["content"] for page_ in pagexml_rels if page_["path"] == page
+        )
 
-        if isinstance(pagexmlrels_content["Relationships"]["Relationship"], list):
+        if isinstance(pagexml_rels_content["Relationships"]["Relationship"], list):
             targets = [
                 rel["@Target"]
-                for rel in pagexmlrels_content["Relationships"]["Relationship"]
+                for rel in pagexml_rels_content["Relationships"]["Relationship"]
             ]
         else:
-            targets = [pagexmlrels_content["Relationships"]
-                       ["Relationship"]["@Target"]]
+            targets = [pagexml_rels_content["Relationships"]["Relationship"]["@Target"]]
 
         relationships = set(
             [str(parent_path / target) for target in targets]
@@ -176,6 +199,7 @@ class VsdxParser(BaseBlobParser, ABC):
 
         for rel in relationships:
             relationships = relationships | self.get_relationships(
-                rel, zfile, filelist)
+                rel, zfile, filelist, pagexml_rels
+            )
 
         return relationships
