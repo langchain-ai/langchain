@@ -1,8 +1,10 @@
 """Test for Serializable base class"""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
+from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_community.llms.openai import OpenAI
 from langchain_core.load.dump import dumps
 from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
@@ -10,8 +12,6 @@ from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.langchain import LangChainTracer
 
 from langchain.chains.llm import LLMChain
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.llms.openai import OpenAI
 
 
 class Person(Serializable):
@@ -37,6 +37,10 @@ class SpecialPerson(Person):
 
     another_visible: str = "bye"
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return ["my", "special", "namespace"]
+
     # Gets merged with parent class's secrets
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -58,6 +62,14 @@ def test_person(snapshot: Any) -> None:
     sp = SpecialPerson(another_secret="Wooo", secret="Hmm")
     assert dumps(sp, pretty=True) == snapshot
     assert Person.lc_id() == ["tests", "unit_tests", "load", "test_dump", "Person"]
+    assert SpecialPerson.lc_id() == ["my", "special", "namespace", "SpecialPerson"]
+
+
+def test_typeerror() -> None:
+    assert (
+        dumps({(1, 2): 3})
+        == """{"lc": 1, "type": "not_implemented", "id": ["builtins", "dict"], "repr": "{(1, 2): 3}"}"""  # noqa: E501
+    )
 
 
 @pytest.mark.requires("openai")
