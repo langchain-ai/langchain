@@ -1,5 +1,7 @@
 """SQL storage that persists data in a SQL database
 and supports data isolation using collections."""
+from __future__ import annotations
+
 import uuid
 from typing import Any, Generic, Iterator, List, Optional, Sequence, Tuple, TypeVar
 
