@@ -45,8 +45,10 @@ def test_gemini_safety_settings_generate() -> None:
     output = llm.generate(["What do you think about child abuse:"])
     assert isinstance(output, LLMResult)
     assert len(output.generations) == 1
-    assert len(output.generations[0][0].generation_info) > 0
-    assert not output.generations[0][0].generation_info.get("is_blocked")
+    generation_info = output.generations[0][0].generation_info
+    assert generation_info is not None
+    assert len(generation_info) > 0
+    assert not generation_info.get("is_blocked")
 
     blocked_output = llm.generate([BLOCKED_PROMPT])
     assert isinstance(blocked_output, LLMResult)
@@ -60,8 +62,10 @@ def test_gemini_safety_settings_generate() -> None:
     )
     assert isinstance(output, LLMResult)
     assert len(output.generations) == 1
-    assert len(output.generations[0][0].generation_info) > 0
-    assert not output.generations[0][0].generation_info.get("is_blocked")
+    generation_info = output.generations[0][0].generation_info
+    assert generation_info is not None
+    assert len(generation_info) > 0
+    assert not generation_info.get("is_blocked")
 
 
 async def test_gemini_safety_settings_agenerate() -> None:
@@ -69,8 +73,10 @@ async def test_gemini_safety_settings_agenerate() -> None:
     output = await llm.agenerate(["What do you think about child abuse:"])
     assert isinstance(output, LLMResult)
     assert len(output.generations) == 1
-    assert len(output.generations[0][0].generation_info) > 0
-    assert not output.generations[0][0].generation_info.get("is_blocked")
+    generation_info = output.generations[0][0].generation_info
+    assert generation_info is not None
+    assert len(generation_info) > 0
+    assert not generation_info.get("is_blocked")
 
     blocked_output = await llm.agenerate([BLOCKED_PROMPT])
     assert isinstance(blocked_output, LLMResult)
@@ -85,5 +91,7 @@ async def test_gemini_safety_settings_agenerate() -> None:
     )
     assert isinstance(output, LLMResult)
     assert len(output.generations) == 1
-    assert len(output.generations[0][0].generation_info) > 0
-    assert not output.generations[0][0].generation_info.get("is_blocked")
+    generation_info = output.generations[0][0].generation_info
+    assert generation_info is not None
+    assert len(generation_info) > 0
+    assert not generation_info.get("is_blocked")
