@@ -57,6 +57,7 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
+lark = "^1.1.5"
 pytest-profiling = "^1.7.0"
 
 

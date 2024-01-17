@@ -1,15 +1,7 @@
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.sql_constructor.schema import (
+    AttributeInfo,
+)
 
-
-class AttributeInfo(BaseModel):
-    """Information about a data source attribute."""
-
-    name: str
-    description: str
-    type: str
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-        frozen = True
+__all__ = [
+    "AttributeInfo",
+]
