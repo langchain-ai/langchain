@@ -176,8 +176,9 @@ def test_vertexai_single_call_fails_no_message() -> None:
     )
 
 
-def test_chat_vertexai_gemini_system_message_error() -> None:
-    model = ChatVertexAI(model_name="gemini-pro")
+@pytest.mark.parametrize("model_name", ["gemini-pro"])
+def test_chat_vertexai_gemini_system_message_error(model_name: str) -> None:
+    model = ChatVertexAI(model_name=model_name)
     text_question1, text_answer1 = "How much is 2+2?", "4"
     text_question2 = "How much is 3+3?"
     system_message = SystemMessage(content="You're supposed to answer math questions.")
