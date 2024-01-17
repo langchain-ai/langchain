@@ -1,6 +1,6 @@
 """Module that contains tests for runnable.astream_events API."""
 from itertools import cycle
-from typing import AsyncIterator, List, Sequence, cast
+from typing import Any, AsyncIterator, List, Sequence, cast
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.documents import Document
@@ -19,6 +19,7 @@ from langchain_core.runnables import (
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool, tool
 from tests.unit_tests.fake.chat_model import GenericFakeChatModel
+from tests.unit_tests.fake.llm import FakeStreamingListLLM
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
@@ -940,6 +941,112 @@ async def test_event_stream_with_retry() -> None:
     ]
 
 
+async def test_with_llm() -> None:
+    """Test with regular llm."""
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+    ).with_config({"run_name": "my_template", "tags": ["my_template"]})
+    llm = FakeStreamingListLLM(responses=["abc"])
+
+    chain = prompt | llm
+    events = await _collect_events(chain.astream_events({"question": "hello"}))
+    assert events == [
+        {
+            "data": {"input": {"question": "hello"}},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": {"question": "hello"}},
+            "event": "on_prompt_start",
+            "metadata": {},
+            "name": "my_template",
+            "run_id": "",
+            "tags": ["my_template", "seq:step:1"],
+        },
+        {
+            "data": {
+                "input": {"question": "hello"},
+                "output": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are Cat Agent 007"),
+                        HumanMessage(content="hello"),
+                    ]
+                ),
+            },
+            "event": "on_prompt_end",
+            "metadata": {},
+            "name": "my_template",
+            "run_id": "",
+            "tags": ["my_template", "seq:step:1"],
+        },
+        {
+            "data": {
+                "input": {"prompts": ["System: You are Cat Agent 007\n" "Human: hello"]}
+            },
+            "event": "on_llm_start",
+            "metadata": {},
+            "name": "FakeStreamingListLLM",
+            "run_id": "",
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {
+                "input": {
+                    "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                },
+                "output": {
+                    "generations": [
+                        [{"generation_info": None, "text": "abc", "type": "Generation"}]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_llm_end",
+            "metadata": {},
+            "name": "FakeStreamingListLLM",
+            "run_id": "",
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"chunk": "a"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "b"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "c"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": "abc"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
+
+
 async def test_with_inheritance_based_tool() -> None:
     """Test with a tool created using inheritance."""
 
@@ -974,6 +1081,247 @@ async def test_with_inheritance_based_tool() -> None:
             "event": "on_tool_end",
             "metadata": {},
             "name": "is_cat_good_for_me",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
+
+
+async def test_batch_use_within_tool() -> None:
+    """Test usage of .batch inside a runnable."""
+    # Use identical messages to make sure the results of the test are not
+    # order dependent.
+    # (otherwise can re-write the test to be more clever.)
+    infinite_cycle = cycle(
+        [AIMessage(content="goodbye!"), AIMessage(content="goodbye!")]
+    )
+    # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
+    model = GenericFakeChatModel(messages=infinite_cycle)
+
+    @tool()
+    def my_weird_tool(x: str, y: str, callbacks: Callbacks) -> Any:
+        """My weird tool"""
+        result = model.batch([x, y], {"callbacks": callbacks})
+        return sorted(result, key=lambda msg: msg.content)
+
+    events = await _collect_events(
+        my_weird_tool.astream_events({"x": "hello", "y": "hello"})
+    )
+    assert events == [
+        {
+            "data": {"input": {"x": "hello", "y": "hello"}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "my_weird_tool",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+            "event": "on_llm_start",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {
+                "input": {"messages": [[HumanMessage(content="hello")]]},
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessage(content="goodbye!"),
+                                "text": "goodbye!",
+                                "type": "ChatGeneration",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_llm_end",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+            "event": "on_llm_start",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {
+                "input": {"messages": [[HumanMessage(content="hello")]]},
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessage(content="goodbye!"),
+                                "text": "goodbye!",
+                                "type": "ChatGeneration",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_llm_end",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {
+                "chunk": [AIMessage(content="goodbye!"), AIMessage(content="goodbye!")]
+            },
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "my_weird_tool",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {
+                "output": [AIMessage(content="goodbye!"), AIMessage(content="goodbye!")]
+            },
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "my_weird_tool",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
+
+
+async def test_stream_events_use_within_tool() -> None:
+    """Test usage of .batch inside a runnable."""
+    # Use identical messages to make sure the results of the test are not
+    # order dependent.
+    # (otherwise can re-write the test to be more clever.)
+    infinite_cycle = cycle(
+        [AIMessage(content="hello world!"), AIMessage(content="goodbye!")]
+    )
+    # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
+    model = GenericFakeChatModel(messages=infinite_cycle)
+
+    @tool()
+    async def my_weird_tool(x: str, y: str, callbacks: Callbacks) -> Any:
+        """My weird tool"""
+        events = [
+            event
+            async for event in model.astream_events(x + y, {"callbacks": callbacks})
+        ]
+        return events[-1]
+
+    events = await _collect_events(
+        my_weird_tool.astream_events({"x": "abc", "y": "def"})
+    )
+    assert events == [
+        {
+            "data": {"input": {"x": "abc", "y": "def"}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "my_weird_tool",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": {"messages": [[HumanMessage(content="abcdef")]]}},
+            "event": "on_llm_start",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="hello")},
+            "event": "on_llm_stream",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content=" ")},
+            "event": "on_llm_stream",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!")},
+            "event": "on_llm_stream",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {
+                "input": {"messages": [[HumanMessage(content="abcdef")]]},
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessageChunk(content="hello world!"),
+                                "text": "hello world!",
+                                "type": "ChatGenerationChunk",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_llm_end",
+            "metadata": {},
+            "name": "GenericFakeChatModel",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {
+                "chunk": {
+                    "data": {"output": AIMessageChunk(content="hello world!")},
+                    "event": "on_llm_end",
+                    "metadata": {},
+                    "name": "GenericFakeChatModel",
+                    "run_id": "ae4229c2-c14d-43f8-b892-ee0936d261ac",
+                    "tags": [],
+                }
+            },
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "my_weird_tool",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {
+                "output": {
+                    "data": {"output": AIMessageChunk(content="hello world!")},
+                    "event": "on_llm_end",
+                    "metadata": {},
+                    "name": "GenericFakeChatModel",
+                    "run_id": "ae4229c2-c14d-43f8-b892-ee0936d261ac",
+                    "tags": [],
+                }
+            },
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "my_weird_tool",
             "run_id": "",
             "tags": [],
         },
