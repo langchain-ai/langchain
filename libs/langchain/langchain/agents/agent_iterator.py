@@ -20,7 +20,7 @@ from langchain_core.agents import (
     AgentFinish,
     AgentStep,
 )
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
     CallbackManager,

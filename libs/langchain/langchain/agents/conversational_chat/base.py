@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
-from langchain_core.callbacks.base import BaseCallbackManager
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import BaseOutputParser

@@ -23,10 +23,10 @@ from typing import (
 import yaml
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish, AgentStep
-from langchain_core.callbacks.base import BaseCallbackManager
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     AsyncCallbackManagerForToolRun,
+    BaseCallbackManager,
     CallbackManagerForChainRun,
     CallbackManagerForToolRun,
     Callbacks,
