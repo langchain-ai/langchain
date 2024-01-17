@@ -96,8 +96,8 @@ class RivaBase(Generic[_InputT, _OutputT], RunnableSerializable[_InputT, _Output
             """Coroutine that wraps the consumer."""
             await loop.run_in_executor(None, _consumer)
 
-        loop.create_task(_producer())
-        loop.create_task(_consumer_coro())
+        producer_task = loop.create_task(_producer())
+        consumer_task = loop.create_task(_consumer_coro())
 
         while True:
             try:
@@ -110,6 +110,9 @@ class RivaBase(Generic[_InputT, _OutputT], RunnableSerializable[_InputT, _Output
                 break
 
             yield val
+
+        await producer_task
+        await consumer_task
 
 
 class RivaAudioEncoding(str, Enum):
