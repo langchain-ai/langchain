@@ -16,7 +16,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     RunnableLambda,
 )
-from langchain_core.runnables.utils import StreamEvent
+from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool, tool
 from tests.unit_tests.fake.chat_model import GenericFakeChatModel
 

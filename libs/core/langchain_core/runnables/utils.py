@@ -25,7 +25,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import NotRequired, TypedDict
+from langchain_core.runnables.schema import StreamEvent
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -422,26 +422,6 @@ def get_unique_config_specs(
                 f"for {id}: {[first] + others}"
             )
     return unique
-
-
-class StreamEvent(TypedDict):
-    """TODO: Document me."""
-
-    event: str
-    """The event type."""
-    name: str
-    """The name of the runnable that generated the event."""
-    run_id: str
-    """The run id."""
-    tags: NotRequired[List[str]]
-    """The tags."""
-    metadata: NotRequired[Dict[str, Any]]
-    """The metadata."""
-    data: Any
-    """Event data.
-
-    The contents of the event data depend on the event type.
-    """
 
 
 class _RootEventFilter:
