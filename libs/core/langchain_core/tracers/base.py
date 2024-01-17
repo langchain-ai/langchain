@@ -210,7 +210,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             # WARNING: This is valid ONLY for streaming_events.
             # run_type="llm" is what's used by virtually all tracers.
-            run_type="chat_model",
+            # Changing this to "chat_model" may break triggering on_llm_start
+            run_type="llm",
             tags=tags,
             name=name,
         )
