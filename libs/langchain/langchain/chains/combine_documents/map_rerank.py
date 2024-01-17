@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
 from langchain_core.runnables.config import RunnableConfig
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.regex import RegexParser
@@ -26,7 +26,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
             from langchain.chains import StuffDocumentsChain, LLMChain
             from langchain_core.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from langchain.output_parsers.regex import RegexParser
 
             document_variable_name = "context"

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class TextGen(LLM):
-    """text-generation-webui models.
+    """Text generation models from WebUI.
 
     To use, you should have the text-generation-webui installed, a model loaded,
     and --api added as a command-line option.

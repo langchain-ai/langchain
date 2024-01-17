@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import Dict, Optional, Union
+from typing import Callable, Dict, Optional, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -12,6 +13,11 @@ from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.utils.openai import is_openai_v1
 
 
+@deprecated(
+    since="0.1.0",
+    removal="0.2.0",
+    alternative_import="langchain_openai.AzureOpenAIEmbeddings",
+)
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     """`Azure OpenAI` Embeddings API."""
 
@@ -38,7 +44,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """  # noqa: E501
-    azure_ad_token_provider: Union[str, None] = None
+    azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every request.

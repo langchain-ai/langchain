@@ -37,7 +37,13 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
             data = json.load(f)
         sorted_data = sorted(data["messages"], key=lambda x: x["timestamp_ms"])
         messages = []
-        for m in sorted_data:
+        for index, m in enumerate(sorted_data):
+            if "content" not in m:
+                logger.info(
+                    f"""Skipping Message No.
+                    {index+1} as no content is present in the message"""
+                )
+                continue
             messages.append(
                 HumanMessage(
                     content=m["content"], additional_kwargs={"sender": m["sender_name"]}
