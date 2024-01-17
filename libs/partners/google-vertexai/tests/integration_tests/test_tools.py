@@ -64,7 +64,7 @@ def test_tools() -> None:
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
-    llm_with_tools = llm.bind(tools=tools)
+    llm_with_tools = llm.bind(functions=tools)
 
     agent = (
         {  # type: ignore
@@ -98,7 +98,7 @@ def test_stream() -> None:
             description="useful for when you need to answer questions about math",
         )
     ]
-    response = list(llm.stream("What is 6 raised to the 0.43 power?", tools=tools))
+    response = list(llm.stream("What is 6 raised to the 0.43 power?", functions=tools))
     assert len(response) == 1
     # for chunk in response:
     assert isinstance(response[0], AIMessageChunk)
@@ -141,7 +141,7 @@ def test_multiple_tools() -> None:
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
-    llm_with_tools = llm.bind(tools=tools)
+    llm_with_tools = llm.bind(functions=tools)
 
     agent = (
         {  # type: ignore

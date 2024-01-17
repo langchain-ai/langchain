@@ -164,7 +164,7 @@ def _parse_chat_history_gemini(
                 function_call = FunctionCall(
                     {
                         "name": raw_function_call["name"],
-                        "args": raw_function_call["arguments"],
+                        "args": json.loads(raw_function_call["arguments"]),
                     }
                 )
                 gapic_part = GapicPart(function_call=function_call)
