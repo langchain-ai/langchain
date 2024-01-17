@@ -1,6 +1,7 @@
 import os
 from math import ceil
 from typing import Any, Dict, List, Optional
+from langchain_community.graphs.graph_store import GraphStore
 
 
 class TigerGraph(GraphStore):
