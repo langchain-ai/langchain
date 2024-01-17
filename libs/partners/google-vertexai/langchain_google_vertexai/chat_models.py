@@ -57,8 +57,6 @@ from langchain_google_vertexai.functions_utils import (
 )
 from langchain_google_vertexai.llms import (
     _VertexAICommon,
-    is_codey_model,
-    is_gemini_model,
 )
 
 logger = logging.getLogger(__name__)
@@ -336,7 +334,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             # set param to `functions` until core tool/function calling implemented
             raw_tools = params.pop("functions") if "functions" in params else None
             tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
-            response = chat.send_message(message, generation_config=params, tools=tools, safety_settings=safety_settings)
+            response = chat.send_message(
+                message,
+                generation_config=params,
+                tools=tools,
+                safety_settings=safety_settings,
+            )
             generations = [
                 ChatGeneration(message=_parse_response_candidate(c))
                 for c in response.candidates
@@ -350,7 +353,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             chat = self._start_chat(history, **params)
             response = chat.send_message(question.content, **msg_params)
             generations = [
-                ChatGeneration(message=AIMessage(content=r.text), generation_info=get_generation_info(r, self._is_gemini_model))
+                ChatGeneration(
+                    message=AIMessage(content=r.text),
+                    generation_info=get_generation_info(r, self._is_gemini_model),
+                )
                 for r in response.candidates
             ]
         return ChatResult(generations=generations)
@@ -394,7 +400,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             raw_tools = params.pop("functions") if "functions" in params else None
             tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
             response = await chat.send_message_async(
-                message, generation_config=params, tools=tools, safety_settings=safety_settings
+                message,
+                generation_config=params,
+                tools=tools,
+                safety_settings=safety_settings,
             )
             generations = [
                 ChatGeneration(message=_parse_response_candidate(c))
@@ -409,7 +418,12 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             chat = self._start_chat(history, **params)
             response = await chat.send_message_async(question.content, **msg_params)
             generations = [
-                ChatGeneration(message=AIMessage(content=r.text, generation_info=get_generation_info(r, self._is_gemini_model)))
+                ChatGeneration(
+                    message=AIMessage(
+                        content=r.text,
+                        generation_info=get_generation_info(r, self._is_gemini_model),
+                    )
+                )
                 for r in response.candidates
             ]
         return ChatResult(generations=generations)
