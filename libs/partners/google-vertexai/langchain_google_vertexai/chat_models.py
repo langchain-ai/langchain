@@ -341,7 +341,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
                 safety_settings=safety_settings,
             )
             generations = [
-                ChatGeneration(message=_parse_response_candidate(c))
+                ChatGeneration(
+                    message=_parse_response_candidate(c),
+                    generation_info=get_generation_info(c, self._is_gemini_model),
+                )
                 for c in response.candidates
             ]
         else:
@@ -406,23 +409,24 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
                 safety_settings=safety_settings,
             )
             generations = [
-                ChatGeneration(message=_parse_response_candidate(c))
+                ChatGeneration(
+                    message=_parse_response_candidate(c),
+                    generation_info=get_generation_info(c, self._is_gemini_model),
+                )
                 for c in response.candidates
             ]
         else:
             question = _get_question(messages)
             history = _parse_chat_history(messages[:-1])
-            examples = kwargs.get("examples", None)
+            examples = kwargs.get("examples", None) or self.examples
             if examples:
                 params["examples"] = _parse_examples(examples)
             chat = self._start_chat(history, **params)
             response = await chat.send_message_async(question.content, **msg_params)
             generations = [
                 ChatGeneration(
-                    message=AIMessage(
-                        content=r.text,
-                        generation_info=get_generation_info(r, self._is_gemini_model),
-                    )
+                    message=AIMessage(content=r.text),
+                    generation_info=get_generation_info(r, self._is_gemini_model),
                 )
                 for r in response.candidates
             ]

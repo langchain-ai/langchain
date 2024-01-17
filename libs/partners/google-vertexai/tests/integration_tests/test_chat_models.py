@@ -60,7 +60,10 @@ async def test_vertexai_agenerate(model_name: str) -> None:
     assert isinstance(response.generations[0][0].message, AIMessage)  # type: ignore
 
     sync_response = model.generate([[message]])
-    assert response.generations[0][0] == sync_response.generations[0][0]
+    sync_generation = sync_response.generations[0][0]
+    async_generation = response.generations[0][0]
+    assert sync_generation.message.content == async_generation.message.content
+    assert sync_generation.generation_info == async_generation.generation_info
 
 
 @pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
