@@ -366,10 +366,8 @@ async def test_event_stream_with_simple_chain() -> None:
             "data": {
                 "input": {
                     "messages": [
-                        [
-                            SystemMessage(content="You are Cat Agent 007"),
-                            HumanMessage(content="hello"),
-                        ]
+                        SystemMessage(content="You are Cat Agent 007"),
+                        HumanMessage(content="hello"),
                     ]
                 }
             },

@@ -779,19 +779,100 @@ class Runnable(Generic[Input, Output], ABC):
         about the progress of the runnable, including StreamEvents from intermediate
         results.
 
+        A StreamEvent is a dictionary with the following schema:
+
+        * ``event``: str - Event names are of the
+            format: on_[runnable_type]_(start|stream|end).
+        * ``name``: str - The name of the runnable that generated the event.
+        * ``run_id``: str - randomly generated ID associated with the given execution of
+            the runnable that emitted the event.
+            A child runnable that gets invoked as part of the execution of a
+            parent runnable is assigned its own unique ID.
+        * ``tags``: Optional[List[str]] - The tags of the runnable that generated
+            the event.
+        * ``metadata``: Optional[Dict[str, Any]] - The metadata of the runnable
+            that generated the event.
+        * ``data``: Dict[str, Any]
+
+
+        Below is a table that illustrates some evens that might be emitted by various
+        chains. Metadata fields have been omitted from the table for brevity.
+        Chain definitions have been included after the table.
+
+        | event              | name             | chunk                           | input                                         | output                                          |
+        |--------------------|------------------|---------------------------------|-----------------------------------------------|-------------------------------------------------|
+        | on_retriever_start | [retriever name] |                                 | {"query": "hello"}                            |                                                 |
+        | on_retriever_chunk | [retriever name] | {documents: [...]}              |                                               |                                                 |
+        | on_retriever_end   | [retriever name] |                                 | {"query": "hello"}                            | {documents: [...]}                              |
+        | on_chain_start     | format_docs      |                                 |                                               |                                                 |
+        | on_chain_stream    | format_docs      | "hello world!, goodbye world!"  |                                               |                                                 |
+        | on_chain_end       | format_docs      |                                 | [Document(...)]                               | "hello world!, goodbye world!"                  |
+        | on_tool_start      | some_tool        |                                 | {"x": 1, "y": "2"}                            |                                                 |
+        | on_tool_stream     | some_tool        | {"x": 1, "y": "2"}              |                                               |                                                 |
+        | on_tool_end        | some_tool        |                                 |                                               | {"x": 1, "y": "2"}                              |
+        | on_prompt_start    | [template_name]  |                                 | {"question": "hello"}                         |                                                 |
+        | on_prompt_end      | [template_name]  |                                 | {"question": "hello"}                         | ChatPromptValue(messages: [SystemMessage, ...]) |
+        | on_llm_start       | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} |                                                 |
+        | on_llm_stream      | [model name]     | AIMessageChunk(content="hello") |                                               |                                                 |
+        | on_llm_end         | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} | {"generations": [...], "llm_output": None, ...} |
+
+        ```python
+        def format_docs(docs: List[Document]) -> str:
+            '''Format the docs.'''
+            return ", ".join([doc.page_content for doc in docs])
+
+        format_docs = RunnableLambda(format_docs)
+        ```
+
+        @tool
+        def some_tool(x: int, y: str) -> dict:
+            '''Some_tool.'''
+            return {"x": x, "y": y}
+
+
+        template = ChatPromptTemplate.from_messages(
+            [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        ).with_config({"run_name": "my_template", "tags": ["my_template"]})
+        ```
+
+
         Example:
 
         .. code-block:: python
 
             from langchain_core.runnables import RunnableLambda
 
-            def add_one(x: int) -> int:
-                return x + 1
+            async def reverse(s: str) -> str:
+                return s[::-1]
 
-            chain = RunnableLambda(add_one)
+            chain = RunnableLambda(func=reverse)
 
-            async for event in chain.astream_events(1):
-                print(event)
+            events = [event async for event in chain.astream_events("hello")]
+
+            # will produce the following events (run_id has been omitted for brevity):
+            [
+                {
+                    "data": {"input": "hello"},
+                    "event": "on_chain_start",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+                {
+                    "data": {"chunk": "olleh"},
+                    "event": "on_chain_stream",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+                {
+                    "data": {"output": "olleh"},
+                    "event": "on_chain_end",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+            ]
 
         Args:
             input: The input to the runnable.
@@ -807,8 +888,8 @@ class Runnable(Generic[Input, Output], ABC):
                 of astream_events is built on top of astream_log.
 
         Returns:
-            An async stream of events.
-        """
+            An async stream of StreamEvents.
+        """  # noqa: E501
         from langchain_core.runnables.utils import (
             _RootEventFilter,
         )
