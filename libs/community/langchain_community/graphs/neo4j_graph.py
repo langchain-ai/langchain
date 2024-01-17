@@ -33,7 +33,7 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 
 def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
     """
-    The idea is to remove all internal properties which 
+    The idea is to remove all internal properties which
     are irrelevant for generating answers
     """
     LIST_LIMIT = 128
