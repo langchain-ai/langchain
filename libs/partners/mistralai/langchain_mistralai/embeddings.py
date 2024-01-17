@@ -1,11 +1,12 @@
-from typing import Any, Dict, List, Optional, ClassVar, Type
 import logging
+from typing import Any, ClassVar, Dict, List, Optional, Type
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
+
 
 class MistralAIEmbeddings(BaseModel, Embeddings):
     """MistralAI embedding models.
@@ -56,7 +57,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 model=self.model,
                 input=texts,
             )
-            return [list(map(float, embedding_obj.embedding)) for embedding_obj in embeddings_batch_response.data]
+            return [
+                list(map(float, embedding_obj.embedding))
+                for embedding_obj in embeddings_batch_response.data
+            ]
         except self.MistralException as e:
             logger.error(f"An error occurred with MistralAI: {e}")
             raise
