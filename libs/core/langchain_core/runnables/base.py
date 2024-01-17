@@ -923,12 +923,17 @@ class Runnable(Generic[Input, Output], ABC):
         fallbacks: Sequence[Runnable[Input, Output]],
         *,
         exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,),
+        exception_key: Optional[str] = None,
     ) -> RunnableWithFallbacksT[Input, Output]:
         """Add fallbacks to a runnable, returning a new Runnable.
 
         Args:
             fallbacks: A sequence of runnables to try if the original runnable fails.
             exceptions_to_handle: A tuple of exception types to handle.
+            exception_key: If string is specified then handled exceptions will be passed
+                to fallbacks as part of the input under the specified key. If None,
+                exceptions will not be passed to fallbacks. If used, the base runnable
+                and its fallbacks must accept a dictionary as input.
 
         Returns:
             A new Runnable that will try the original runnable, and then each
@@ -940,6 +945,7 @@ class Runnable(Generic[Input, Output], ABC):
             runnable=self,
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
+            exception_key=exception_key,
         )
 
     """ --- Helper methods for Subclasses --- """

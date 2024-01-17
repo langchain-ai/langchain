@@ -545,13 +545,13 @@ class PGVector(VectorStore):
                 self._create_filter_clause(key, sub_value)
                 for sub_value in value_case_insensitive[OR]
             ]
-            filter_by_metadata = sqlalchemy.or_(or_clauses)
+            filter_by_metadata = sqlalchemy.or_(*or_clauses)
         elif AND in map(str.lower, value):
             and_clauses = [
                 self._create_filter_clause(key, sub_value)
                 for sub_value in value_case_insensitive[AND]
             ]
-            filter_by_metadata = sqlalchemy.and_(and_clauses)
+            filter_by_metadata = sqlalchemy.and_(*and_clauses)
 
         else:
             filter_by_metadata = None
