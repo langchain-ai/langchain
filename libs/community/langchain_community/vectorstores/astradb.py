@@ -269,8 +269,7 @@ class AstraDB(VectorStore):
 
     def clear(self) -> None:
         """Empty the collection of all its stored entries."""
-        self._drop_collection()
-        self._provision_collection()
+        self.collection.delete_many(filter={})
         return None
 
     def delete_by_document_id(self, document_id: str) -> bool:
