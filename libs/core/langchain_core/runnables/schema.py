@@ -24,8 +24,9 @@ class _EventData(TypedDict):
     
     Outputs will only be available at the *END* of the runnable.
     
-    This field is technically not required since it can be inferred from the
-    `chunk` field, but it is included for convenience.
+    For most runnables, this field can be inferred from the `chunk` field,
+    though there might be some exceptions for special cased runnables (e.g., like
+    chat models), which may return more information.
     """
     chunk: NotRequired[Any]
     """A streaming chunk from the output that generated the event.
