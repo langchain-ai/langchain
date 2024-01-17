@@ -1,9 +1,12 @@
 import logging
-from typing import Any, ClassVar, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+
+# TODO: Remove 'type: ignore' once mistralai has stubs or py.typed marker.
+from mistralai.client import MistralClient  # type: ignore[import]
+from mistralai.exceptions import MistralException  # type: ignore[import]
 
 logger = logging.getLogger(__name__)
 
@@ -28,27 +31,16 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model: str = "mistral-embed"
     mistral_api_key: Optional[str] = None
-    MistralException: ClassVar[Type[BaseException]]
 
     class Config:
         extra = Extra.forbid
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that mistralai library is installed."""
-
-        try:
-            from mistralai.client import MistralClient
-            from mistralai.exceptions import MistralException
-        except ImportError as exc:
-            raise ImportError(
-                "Could not import mistralai library. "
-                "Please install it with `pip install mistralai`"
-            ) from exc
+        """Validate configuration."""
 
         mistral_api_key = values.get("mistral_api_key")
         values["client"] = MistralClient(api_key=mistral_api_key)
-        cls.MistralException = MistralException
         return values
 
     def _embed(self, texts: List[str]) -> List[List[float]]:
@@ -61,7 +53,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 list(map(float, embedding_obj.embedding))
                 for embedding_obj in embeddings_batch_response.data
             ]
-        except self.MistralException as e:
+        except MistralException as e:
             logger.error(f"An error occurred with MistralAI: {e}")
             raise
 
