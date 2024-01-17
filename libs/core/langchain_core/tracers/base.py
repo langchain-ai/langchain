@@ -65,7 +65,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
                     the super class.
         """
         super().__init__(**kwargs)
-        self.schema_format = _schema_format  # For internal use only API will change.
+        self._schema_format = _schema_format  # For internal use only API will change.
         self.run_map: Dict[str, Run] = {}
 
     @staticmethod
@@ -190,7 +190,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run."""
-        if self.schema_format != "streaming_events":
+        if self._schema_format != "streaming_events":
             # Please keep this un-implemented for backwards compatibility.
             # When it's unimplemented old tracers that use the "original" format
             # fallback on the on_llm_start method implementation if they
@@ -200,7 +200,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             # the "streaming_events" format.
             raise NotImplementedError(
                 f"Chat model tracing is not supported in "
-                f"for {self.schema_format} format."
+                f"for {self._schema_format} format."
             )
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
@@ -399,25 +399,25 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _get_chain_inputs(self, inputs: Any) -> Any:
         """Get the inputs for a chain run."""
-        if self.schema_format == "original":
+        if self._schema_format == "original":
             return inputs if isinstance(inputs, dict) else {"input": inputs}
-        elif self.schema_format == "streaming_events":
+        elif self._schema_format == "streaming_events":
             return {
                 "input": inputs,
             }
         else:
-            raise ValueError(f"Invalid format: {self.schema_format}")
+            raise ValueError(f"Invalid format: {self._schema_format}")
 
     def _get_chain_outputs(self, outputs: Any) -> Any:
         """Get the outputs for a chain run."""
-        if self.schema_format == "original":
+        if self._schema_format == "original":
             return outputs if isinstance(outputs, dict) else {"output": outputs}
-        elif self.schema_format == "streaming_events":
+        elif self._schema_format == "streaming_events":
             return {
                 "output": outputs,
             }
         else:
-            raise ValueError(f"Invalid format: {self.schema_format}")
+            raise ValueError(f"Invalid format: {self._schema_format}")
 
     def on_chain_end(
         self,
@@ -477,12 +477,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if metadata:
             kwargs.update({"metadata": metadata})
 
-        if self.schema_format == "original":
+        if self._schema_format == "original":
             inputs = {"input": input_str}
-        elif self.schema_format == "streaming_events":
+        elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}
         else:
-            raise AssertionError(f"Invalid format: {self.schema_format}")
+            raise AssertionError(f"Invalid format: {self._schema_format}")
 
         tool_run = Run(
             id=run_id,

@@ -87,10 +87,10 @@ if TYPE_CHECKING:
     )
     from langchain_core.tracers.log_stream import (
         LogEntry,
+        LogStreamCallbackHandler,
         RunLog,
         RunLogPatch,
         _astream_log_implementation,
-        LogStreamCallbackHandler,
     )
     from langchain_core.tracers.root_listeners import Listener
 
@@ -667,7 +667,11 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_types: Exclude logs with these types.
             exclude_tags: Exclude logs with these tags.
         """
-        # Create a stream handler that will emit Log objects
+        from langchain_core.tracers.log_stream import (
+            LogStreamCallbackHandler,
+            _astream_log_implementation,
+        )
+
         stream = LogStreamCallbackHandler(
             auto_close=False,
             include_names=include_names,
@@ -676,6 +680,7 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_names=exclude_names,
             exclude_types=exclude_types,
             exclude_tags=exclude_tags,
+            _schema_format="original",
         )
 
         async for item in _astream_log_implementation(
@@ -823,7 +828,20 @@ class Runnable(Generic[Input, Output], ABC):
             _RootEventFilter,
         )
         from langchain_core.tracers.log_stream import (
+            LogStreamCallbackHandler,
             RunLog,
+            _astream_log_implementation,
+        )
+
+        stream = LogStreamCallbackHandler(
+            auto_close=False,
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+            _schema_format="streaming_events",
         )
 
         run_log = RunLog(state=None)  # type: ignore[arg-type]
@@ -845,17 +863,13 @@ class Runnable(Generic[Input, Output], ABC):
 
         # Ignoring mypy complaint about too many different union combinations
         # This arises because many of the argument types are unions
-        async for log in self.astream_log(  # type: ignore[misc]
+        async for log in _astream_log_implementation(  # type: ignore[misc]
+            self,
             input,
             config=config,
+            stream=stream,
             diff=True,
             with_streamed_output_list=True,
-            include_names=include_names,
-            include_types=include_types,
-            include_tags=include_tags,
-            exclude_names=exclude_names,
-            exclude_types=exclude_types,
-            exclude_tags=exclude_tags,
             **kwargs,
         ):
             run_log = run_log + log

@@ -205,6 +205,11 @@ class LogStreamCallbackHandler(BaseTracer):
                    be deprecated entirely in favor of a dedicated async tracer
                    for streaming events.
         """
+        if _schema_format not in {"original", "streaming_events"}:
+            raise ValueError(
+                f"Invalid schema format: {_schema_format}. "
+                f"Expected one of 'original', 'streaming_events'."
+            )
         super().__init__(_schema_format=_schema_format)
 
         self.auto_close = auto_close
@@ -333,7 +338,7 @@ class LogStreamCallbackHandler(BaseTracer):
                         start_time=run.start_time.isoformat(timespec="milliseconds"),
                         streamed_output=[],
                         streamed_output_str=[],
-                        inputs=_get_standardized_inputs(run),
+                        inputs=_get_standardized_inputs(run, self._schema_format),
                         final_output=None,
                         end_time=None,
                     ),
@@ -349,22 +354,28 @@ class LogStreamCallbackHandler(BaseTracer):
             if index is None:
                 return
 
-            self.send_stream.send_nowait(
-                RunLogPatch(
+            ops = []
+
+            if self._schema_format == "streaming_events":
+                ops.append(
+                    {
+                        "op": "replace",
+                        "path": f"/logs/{index}/inputs",
+                        "value": _get_standardized_inputs(run, self._schema_format),
+                    }
+                )
+
+            ops.extend(
+                [
                     # Replace 'inputs' with final inputs
                     # This is needed because in many cases the inputs are not
                     # known until after the run is finished and the entire
                     # input stream has been processed by the runnable.
                     {
-                        "op": "replace",
-                        "path": f"/logs/{index}/inputs",
-                        "value": _get_standardized_inputs(run),
-                    },
-                    {
                         "op": "add",
                         "path": f"/logs/{index}/final_output",
                         # to undo the dumpd done by some runnables / tracer / etc
-                        "value": _get_standardized_outputs(run),
+                        "value": _get_standardized_outputs(run, self._schema_format),
                     },
                     {
                         "op": "add",
@@ -373,8 +384,10 @@ class LogStreamCallbackHandler(BaseTracer):
                         if run.end_time is not None
                         else None,
                     },
-                )
+                ]
             )
+
+            self.send_stream.send_nowait(RunLogPatch(*ops))
         finally:
             if run.id == self.root_id:
                 if self.auto_close:
@@ -410,13 +423,16 @@ class LogStreamCallbackHandler(BaseTracer):
         )
 
 
-def _get_standardized_inputs(run: Run) -> Optional[Dict[str, Any]]:
+def _get_standardized_inputs(
+    run: Run, schema_format: Literal["original", "streaming_events"]
+) -> Optional[Dict[str, Any]]:
     """Extract standardized inputs from a run.
 
     Standardizes the inputs based on the type of the runnable used.
 
     Args:
         run: Run object
+        schema_format: The schema format to use.
 
     Returns:
         Valid inputs are only dict. By conventions, inputs always represented
@@ -424,6 +440,10 @@ def _get_standardized_inputs(run: Run) -> Optional[Dict[str, Any]]:
         A None means that the input is not yet known!
     """
     inputs = load(run.inputs)
+
+    if schema_format == "original":
+        # Return the old schema, without standardizing anything
+        return inputs
 
     if run.run_type in {"retriever", "llm", "chat_model"}:
         return inputs
@@ -441,18 +461,24 @@ def _get_standardized_inputs(run: Run) -> Optional[Dict[str, Any]]:
     return inputs
 
 
-def _get_standardized_outputs(run: Run) -> Optional[Any]:
+def _get_standardized_outputs(
+    run: Run, schema_format: Literal["original", "streaming_events"]
+) -> Optional[Any]:
     """Extract standardized output from a run.
 
     Standardizes the outputs based on the type of the runnable used.
 
     Args:
         log: The log entry.
+        schema_format: The schema format to use.
 
     Returns:
         An output if returned, otherwise a None
     """
     outputs = load(run.outputs)
+    if schema_format == "original":
+        # Return the old schema, without standardizing anything
+        return outputs
 
     if run.run_type in {"retriever", "llm", "chat_model"}:
         return outputs
@@ -474,6 +500,7 @@ async def _astream_log_implementation(
     **kwargs: Any,
 ):
     import jsonpatch  # type: ignore[import]
+
     from langchain_core.callbacks.base import BaseCallbackManager
     from langchain_core.tracers.log_stream import (
         RunLog,
