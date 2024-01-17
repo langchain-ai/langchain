@@ -45,6 +45,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "jsonpatch",
             "gigachain-community",
             "gigachain-core",
+            "gigachat",
             "langsmith",
             "numpy",
             "pydantic",
