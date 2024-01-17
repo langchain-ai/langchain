@@ -11,7 +11,7 @@ pip install langchain-core
 
 ## What is it?
 
-LangChain Core contains the base abstractions that power the rest of the LangChain ecosystem.\
+LangChain Core contains the base abstractions that power the rest of the LangChain ecosystem.
 
 These abstractions are designed to be as modular and simple as possible. Examples of these abstractions include those for language models, document loaders, embedding models, vectorstores, retrievers, and more.
 
@@ -21,7 +21,7 @@ For full documentation see the [API reference](https://api.python.langchain.com/
 
 ## 1️⃣ Core Interface: Runnables
 
-The concept of a Runnable is central to LangChain Core – it is the interface that all LangChain Core components implement, giving them
+The concept of a Runnable is central to LangChain Core – it is the interface that most LangChain Core components implement, giving them
 
 - a common invocation interface (invoke, batch, stream, etc.)
 - built-in utilities for retries, fallbacks, schemas and runtime configurability
@@ -31,7 +31,7 @@ For more check out the [runnable docs](https://python.langchain.com/docs/express
 
 You can use LangChain Core objects in two ways:
 
-1. **imperative**, ie. call them directly
+1. **imperative**, ie. call them directly, eg. `model.invoke(...)`
 
 2. **declarative**, with LangChain Expression Language (LCEL)
 
