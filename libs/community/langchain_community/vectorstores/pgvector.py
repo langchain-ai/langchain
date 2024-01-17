@@ -62,7 +62,7 @@ class BaseModel(Base):
 _classes: Any = None
 
 
-def _get_embedding_collection_store() -> Any:
+def _get_embedding_collection_store(vector_dimension: Optional[int] = None) -> Any:
     global _classes
     if _classes is not None:
         return _classes
@@ -125,7 +125,7 @@ def _get_embedding_collection_store() -> Any:
         )
         collection = relationship(CollectionStore, back_populates="embeddings")
 
-        embedding: Vector = sqlalchemy.Column(Vector(None))
+        embedding: Vector = sqlalchemy.Column(Vector(vector_dimension))
         document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
         cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
@@ -183,6 +183,7 @@ class PGVector(VectorStore):
         self,
         connection_string: str,
         embedding_function: Embeddings,
+        embedding_length: Optional[int] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -195,6 +196,7 @@ class PGVector(VectorStore):
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
+        self._embedding_length = embedding_length
         self.collection_name = collection_name
         self.collection_metadata = collection_metadata
         self._distance_strategy = distance_strategy
@@ -211,7 +213,9 @@ class PGVector(VectorStore):
         """Initialize the store."""
         self.create_vector_extension()
 
-        EmbeddingStore, CollectionStore = _get_embedding_collection_store()
+        EmbeddingStore, CollectionStore = _get_embedding_collection_store(
+            self._embedding_length
+        )
         self.CollectionStore = CollectionStore
         self.EmbeddingStore = EmbeddingStore
         self.create_tables_if_not_exists()
