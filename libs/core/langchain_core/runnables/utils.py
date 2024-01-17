@@ -27,8 +27,6 @@ from typing import (
 
 from typing_extensions import NotRequired, TypedDict
 
-from langchain_core.tracers.log_stream import LogEntry
-
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
 Output = TypeVar("Output", covariant=True)
@@ -499,55 +497,3 @@ class _RootEventFilter:
             )
 
         return include
-
-
-async def _get_standardized_inputs(log: LogEntry) -> Optional[Dict[str, Any]]:
-    """Extract standardized inputs from a log entry.
-
-    Standardizes the inputs based on the type of the runnable used.
-
-    Args:
-        log: The log entry.
-
-    Returns:
-        Valid inputs are only dict. By conventions, inputs always represented
-        invocation using named arguments.
-        A None means that the input is not yet known!
-    """
-    inputs = log["inputs"]
-
-    if log["type"] in {"retriever", "llm"}:
-        return inputs
-
-    # new style chains
-    # These nest an additional 'input' key inside the 'inputs' to make sure
-    # the input is always a dict. We need to unpack and user the inner value.
-    inputs = log["inputs"]["input"]
-    # We should try to fix this in Runnables and callbacks/tracers
-    # Runnables should be using a None type here not a placeholder
-    # dict.
-    if inputs == {"input": ""}:  # Workaround for Runnables not using None
-        # The input is not known, so we don't assign data['input']
-        return None
-    return inputs
-
-
-async def _get_standardized_outputs(log: LogEntry) -> Optional[Any]:
-    """Extract standardized output from a log entry.
-
-    Standardizes the outputs based on the type of the runnable used.
-
-    Args:
-        log: The log entry.
-
-    Returns:
-        An output if returned, otherwise a None
-    """
-    final_output = log["final_output"]
-    if log["type"] in {"retriever", "llm"}:
-        return final_output
-    # New style chains
-    final_output = log["final_output"]
-    if isinstance(final_output, dict):
-        return final_output.get("output", None)
-    return None

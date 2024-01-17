@@ -85,7 +85,13 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
-    from langchain_core.tracers.log_stream import LogEntry, RunLog, RunLogPatch
+    from langchain_core.tracers.log_stream import (
+        LogEntry,
+        RunLog,
+        RunLogPatch,
+        _get_standardized_inputs,
+        _get_standardized_outputs,
+    )
     from langchain_core.tracers.root_listeners import Listener
 
 
@@ -806,8 +812,6 @@ class Runnable(Generic[Input, Output], ABC):
             An async stream of events.
         """
         from langchain_core.runnables.utils import (
-            _get_standardized_inputs,
-            _get_standardized_outputs,
             _RootEventFilter,
         )
         from langchain_core.tracers.log_stream import (

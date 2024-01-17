@@ -556,7 +556,6 @@ async def test_event_streaming_with_tools() -> None:
             "tags": [],
         },
     ]
-
     events = await _collect_events(with_parameters.astream_events({"x": 1, "y": "2"}))
     assert events == [
         {
