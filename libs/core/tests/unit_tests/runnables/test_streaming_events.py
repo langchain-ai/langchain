@@ -1,7 +1,7 @@
 from itertools import cycle
 from typing import Any, AsyncIterator, List, Optional, Sequence
 
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.documents import Document
 from langchain_core.messages import (
     AIMessage,
@@ -12,7 +12,13 @@ from langchain_core.messages import (
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableLambda,
+    ensure_config,
+    patch_config,
+)
 from langchain_core.runnables.utils import Input, Output, StreamEvent
 from langchain_core.tools import tool
 from langchain_core.tracers import RunLog, RunLogPatch
@@ -475,45 +481,142 @@ async def test_event_stream_with_simple_chain() -> None:
     ]
 
 
-async def test_event_stream_with_tool() -> None:
-    """Test the event stream with a tool."""
+async def test_event_streaming_with_tools() -> None:
+    """Test streaming events with different tool definitions."""
 
     @tool
-    def say_what() -> str:
+    def parameterless() -> str:
         """A tool that does nothing."""
-        return "what"
+        return "hello"
 
-    class CustomRunnable(Runnable):
-        """A custom runnable that uses the tool."""
+    @tool
+    def with_callbacks(callbacks: Callbacks) -> str:
+        """A tool that does nothing."""
+        return "world"
 
-        def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None
-        ) -> Output:
-            return "hello"
+    @tool
+    def with_parameters(x: int, y: str) -> dict:
+        """A tool that does nothing."""
+        return {"x": x, "y": y}
 
-        async def astream(
-            self,
-            input: Input,
-            config: Optional[RunnableConfig] = None,
-            **kwargs: Optional[Any],
-        ) -> AsyncIterator[Output]:
-            """A custom async stream."""
-            result = say_what.run({"foo": "bar"})
-            for char in result:
-                yield char
+    @tool
+    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
+        """A tool that does nothing."""
+        return {"x": x, "y": y}
 
-    custom_runnable = CustomRunnable().with_config(
+    events = await _collect_events(parameterless.astream_events({}))
+    assert events == [
         {
-            "metadata": {"foo": "bar"},
-            "tags": ["my_runnable"],
-            "run_name": "my_runnable",
-        }
+            "data": {"input": {}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "parameterless",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "hello"},
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "parameterless",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"output": "hello"},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "parameterless",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
+
+    events = await _collect_events(with_callbacks.astream_events({}))
+    assert events == [
+        {
+            "data": {"input": {}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "with_callbacks",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "world"},
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "with_callbacks",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"output": "world"},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "with_callbacks",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
+
+    events = await _collect_events(with_parameters.astream_events({"x": 1, "y": "2"}))
+    assert events == [
+        {
+            "data": {"input": {"x": 1, "y": "2"}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "with_parameters",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": {"x": 1, "y": "2"}},
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "with_parameters",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"output": {"x": 1, "y": "2"}},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "with_parameters",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
+
+    events = await _collect_events(
+        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"})
     )
-
-    state = RunLog(state=None)
-
-    async for run_log_patch in custom_runnable.astream_log({}):
-        state = state + run_log_patch
+    assert events == [
+        {
+            "data": {"input": {"x": 1, "y": "2"}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "with_parameters_and_callbacks",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": {"x": 1, "y": "2"}},
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "with_parameters_and_callbacks",
+            "run_id": None,
+            "tags": [],
+        },
+        {
+            "data": {"output": {"x": 1, "y": "2"}},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "with_parameters_and_callbacks",
+            "run_id": None,
+            "tags": [],
+        },
+    ]
 
 
 class HardCodedRetriever(BaseRetriever):

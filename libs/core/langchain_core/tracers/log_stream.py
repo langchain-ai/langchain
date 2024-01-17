@@ -75,8 +75,6 @@ class RunState(TypedDict):
     """ID of the run."""
     streamed_output: List[Any]
     """List of output chunks streamed by Runnable.stream()"""
-    inputs: Optional[Any]
-    """Inputs to the run."""
     final_output: Optional[Any]
     """Final output of the run, usually the result of aggregating (`+`) streamed_output.
     Updated throughout the run when supported by the Runnable."""
@@ -264,7 +262,6 @@ class LogStreamCallbackHandler(BaseTracer):
                             id=str(run.id),
                             streamed_output=[],
                             final_output=None,
-                            inputs=run.inputs,
                             logs={},
                             name=run.name,
                             type=run.run_type,
@@ -317,10 +314,10 @@ class LogStreamCallbackHandler(BaseTracer):
 
             self.send_stream.send_nowait(
                 RunLogPatch(
-                    # Replace 'inputs' with final aggregated inputs
+                    # Replace 'inputs' with final inputs
                     # This is needed because in many cases the inputs are not
                     # known until after the run is finished and the entire
-                    # input stream is processed.
+                    # input stream has been processed by the runnable.
                     {
                         "op": "replace",
                         "path": f"/logs/{index}/inputs",
@@ -343,12 +340,6 @@ class LogStreamCallbackHandler(BaseTracer):
             )
         finally:
             if run.id == self.root_id:
-                self.send_stream.send_nowait(
-                    RunLogPatch(
-                        {"op": "replace", "path": "/inputs", "value": load(run.inputs)}
-                    )
-                )
-
                 if self.auto_close:
                     self.send_stream.close()
 
