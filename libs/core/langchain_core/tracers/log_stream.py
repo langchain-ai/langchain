@@ -178,7 +178,7 @@ class LogStreamCallbackHandler(BaseTracer):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         # Schema format is for internal use only.
-        _schema_format: Literal["original", "streaming_events"] = "original",
+        _schema_format: Literal["original", "streaming_events"] = "streaming_events",
     ) -> None:
         """A tracer that streams run logs to a stream.
 
