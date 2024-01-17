@@ -128,7 +128,7 @@ class RivaTTS(
             ) from err
 
     def invoke(
-        self, input: TTSInputType, _: RunnableConfig | None = None
+        self, input: TTSInputType, _: Union[RunnableConfig, None] = None
     ) -> TTSOutputType:
         """Perform TTS by taking a string and outputting the entire audio file."""
         return b"".join(self.transform(iter([input])))
