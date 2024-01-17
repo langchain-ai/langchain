@@ -3311,21 +3311,21 @@ async def test_map_astream() -> None:
             final_state += chunk
     final_state = cast(RunLog, final_state)
 
-    # assert final_state.state["final_output"] == final_value
-    # assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
-    # assert isinstance(final_state.state["id"], str)
-    # assert len(final_state.ops) == len(streamed_ops)
-    # assert len(final_state.state["logs"]) == 5
-    # assert (
-    #     final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
-    # )
-    # assert final_state.state["logs"]["ChatPromptTemplate"][
-    #     "final_output"
-    # ] == prompt.invoke({"question": "What is your name?"})
-    # assert (
-    #     final_state.state["logs"]["RunnableParallel<chat,llm,passthrough>"]["name"]
-    #     == "RunnableParallel<chat,llm,passthrough>"
-    # )
+    assert final_state.state["final_output"] == final_value
+    assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
+    assert isinstance(final_state.state["id"], str)
+    assert len(final_state.ops) == len(streamed_ops)
+    assert len(final_state.state["logs"]) == 5
+    assert (
+        final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
+    )
+    assert final_state.state["logs"]["ChatPromptTemplate"][
+        "final_output"
+    ] == prompt.invoke({"question": "What is your name?"})
+    assert (
+        final_state.state["logs"]["RunnableParallel<chat,llm,passthrough>"]["name"]
+        == "RunnableParallel<chat,llm,passthrough>"
+    )
     assert sorted(final_state.state["logs"]) == [
         "ChatPromptTemplate",
         "FakeListChatModel",
