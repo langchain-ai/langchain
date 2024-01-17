@@ -89,6 +89,8 @@ if TYPE_CHECKING:
         LogEntry,
         RunLog,
         RunLogPatch,
+        _astream_log_implementation,
+        LogStreamCallbackHandler,
     )
     from langchain_core.tracers.root_listeners import Listener
 
@@ -665,15 +667,6 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_types: Exclude logs with these types.
             exclude_tags: Exclude logs with these tags.
         """
-        import jsonpatch  # type: ignore[import]
-
-        from langchain_core.callbacks.base import BaseCallbackManager
-        from langchain_core.tracers.log_stream import (
-            LogStreamCallbackHandler,
-            RunLog,
-            RunLogPatch,
-        )
-
         # Create a stream handler that will emit Log objects
         stream = LogStreamCallbackHandler(
             auto_close=False,
@@ -685,79 +678,15 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_tags=exclude_tags,
         )
 
-        # Assign the stream handler to the config
-        config = ensure_config(config)
-        callbacks = config.get("callbacks")
-        if callbacks is None:
-            config["callbacks"] = [stream]
-        elif isinstance(callbacks, list):
-            config["callbacks"] = callbacks + [stream]
-        elif isinstance(callbacks, BaseCallbackManager):
-            callbacks = callbacks.copy()
-            callbacks.add_handler(stream, inherit=True)
-            config["callbacks"] = callbacks
-        else:
-            raise ValueError(
-                f"Unexpected type for callbacks: {callbacks}."
-                "Expected None, list or AsyncCallbackManager."
-            )
-
-        # Call the runnable in streaming mode,
-        # add each chunk to the output stream
-        async def consume_astream() -> None:
-            try:
-                prev_final_output: Optional[Output] = None
-                final_output: Optional[Output] = None
-
-                async for chunk in self.astream(input, config, **kwargs):
-                    prev_final_output = final_output
-                    if final_output is None:
-                        final_output = chunk
-                    else:
-                        try:
-                            final_output = final_output + chunk  # type: ignore
-                        except TypeError:
-                            final_output = chunk
-                    patches: List[Dict[str, Any]] = []
-                    if with_streamed_output_list:
-                        patches.append(
-                            {
-                                "op": "add",
-                                "path": "/streamed_output/-",
-                                # chunk cannot be shared between
-                                # streamed_output and final_output
-                                # otherwise jsonpatch.apply will
-                                # modify both
-                                "value": deepcopy(chunk),
-                            }
-                        )
-                    for op in jsonpatch.JsonPatch.from_diff(
-                        prev_final_output, final_output, dumps=dumps
-                    ):
-                        patches.append({**op, "path": f"/final_output{op['path']}"})
-                    await stream.send_stream.send(RunLogPatch(*patches))
-            finally:
-                await stream.send_stream.aclose()
-
-        # Start the runnable in a task, so we can start consuming output
-        task = asyncio.create_task(consume_astream())
-
-        try:
-            # Yield each chunk from the output stream
-            if diff:
-                async for log in stream:
-                    yield log
-            else:
-                state = RunLog(state=None)  # type: ignore[arg-type]
-                async for log in stream:
-                    state = state + log
-                    yield state
-        finally:
-            # Wait for the runnable to finish, if not cancelled (eg. by break)
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+        async for item in _astream_log_implementation(
+            self,
+            input,
+            config,
+            diff=diff,
+            stream=stream,
+            with_streamed_output_list=with_streamed_output_list,
+        ):
+            yield item
 
     @beta_decorator.beta(message="This API is in beta and may change in the future.")
     async def astream_events(
