@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, Extra, create_model, root_validator
 from langchain_core.runnables.config import RunnableConfig

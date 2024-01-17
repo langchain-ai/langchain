@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Extra

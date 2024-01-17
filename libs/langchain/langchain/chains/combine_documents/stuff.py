@@ -1,7 +1,7 @@
 """Chain that combines documents by stuffing into context."""
 from typing import Any, Dict, List, Optional, Tuple
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser

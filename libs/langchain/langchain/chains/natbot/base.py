@@ -5,7 +5,7 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain_community.llms.openai import OpenAI
-from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Extra, root_validator
 

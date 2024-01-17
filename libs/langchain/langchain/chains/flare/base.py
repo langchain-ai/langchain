@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from langchain_community.llms.openai import OpenAI
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from langchain_core.language_models import BaseLanguageModel

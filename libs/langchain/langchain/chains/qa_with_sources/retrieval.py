@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )

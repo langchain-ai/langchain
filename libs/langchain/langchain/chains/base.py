@@ -9,10 +9,10 @@ from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import yaml
 from langchain_core._api import deprecated
-from langchain_core.callbacks.base import BaseCallbackManager
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
+    BaseCallbackManager,
     CallbackManager,
     CallbackManagerForChainRun,
     Callbacks,

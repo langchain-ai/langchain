@@ -6,7 +6,7 @@ import re
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )

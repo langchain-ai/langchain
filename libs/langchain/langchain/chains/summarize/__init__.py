@@ -1,7 +1,7 @@
 """Load summarizing chains."""
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 

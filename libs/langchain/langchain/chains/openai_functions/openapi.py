@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Un
 import requests
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.utilities.openapi import OpenAPISpec
-from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text

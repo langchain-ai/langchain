@@ -1,8 +1,7 @@
 """Load question answering chains."""
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain_core.callbacks.base import BaseCallbackManager
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 
