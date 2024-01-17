@@ -1,0 +1,13 @@
+input_variables: [text]
+partial_variables:
+    combine_size: '10-20 предложений'
+template: 'Суммаризируй части книги в один текст на {combine_size}.
+
+
+"{text}"
+
+
+Теперь суммаризируй части книги в один текст на {combine_size}.
+Краткое содержимое:'
+template_format: f-string
+_type: prompt

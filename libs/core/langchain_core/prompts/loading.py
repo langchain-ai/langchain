@@ -157,15 +157,12 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
 
 def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
     """Load chat prompt from config"""
-
     messages = config.pop("messages")
-    template = messages[0]["prompt"].pop("template") if messages else None
     config.pop("input_variables")
-
-    if not template:
-        raise ValueError("Can't load chat prompt without template")
-
-    return ChatPromptTemplate.from_template(template=template, **config)
+    text_messages = []
+    for message in messages:
+        text_messages.append((message.get("role", "user"), message["prompt"].pop("template")))
+    return ChatPromptTemplate.from_messages(text_messages, **config)
 
 
 type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {

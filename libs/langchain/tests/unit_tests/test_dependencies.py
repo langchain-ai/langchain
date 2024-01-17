@@ -43,6 +43,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "async-timeout",
             "dataclasses-json",
             "jsonpatch",
+            "gigachain-community",
             "gigachain-core",
             "langsmith",
             "numpy",

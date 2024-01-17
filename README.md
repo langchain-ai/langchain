@@ -64,6 +64,8 @@
 
   Включая управление промптами и их оптимизацию. GigaChain предоставляет универсальный интерфейс для всех LLM, а также стандартные инструменты для работы с ними.
 
+  Пример - [Работа с хабом промптов на примере задачи суммаризации книг](hub/prompts/summarize/map_reduce/summarize_examples.ipynb)
+
 - Создание цепочек (*Chains*).
 
   Цепочки представляют собой последовательность вызовов к LLM и/или другим инструментам. GigaChain предоставляет стандартный интерфейс для создания цепочек, различные интеграции с другими инструментами и готовые цепочки для популярных приложений.
@@ -72,6 +74,7 @@
 
   Генерация с дополнением данными включает в себя специфические типы цепочек, которые сначала получают данные от внешнего источника, а затем используют их в генерации. Примеры включают в себя суммирование больших текстов и ответы на вопросы по заданным источникам данных.
 
+  Пример - [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/use_cases/question_answering/gigachat_qa.ipynb)
   Пример — [Ответы на вопросы по статьям из Wikipedia](docs/docs/integrations/retrievers/wikipedia.ipynb)
 
 - Работа с агентами (*Agents*).
@@ -235,6 +238,7 @@ chat.get_num_tokens("Сколько токенов в этой строке")
 - [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/use_cases/question_answering/gigachat_qa.ipynb)
 - [Суммаризация по алгоритму MapReduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
 - [Работа с хабом промптов, цепочками и парсером JSON](docs/docs/modules/model_io/output_parsers/json.ipynb)
+- [Работа с хабом промптов на примере задачи суммаризации книг](hub/prompts/summarize/map_reduce/summarize_examples.ipynb)
 - [Парсинг списков, содержащихся в ответе](docs/docs/modules/model_io/output_parsers/list.ipynb)
 - [Асинхронная работа с LLM](docs/docs/modules/model_io/llms/async_llm.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/docs/integrations/retrievers/elastic_qna.ipynb)

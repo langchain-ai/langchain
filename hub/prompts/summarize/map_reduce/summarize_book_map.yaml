@@ -1,0 +1,12 @@
+input_variables: [text]
+partial_variables:
+    map_size: '2-3 предложения'
+template: 'Напиши краткое содержимое части книги объемом в {map_size}.
+
+    
+"{text}"
+
+
+Теперь напиши краткое содержимое части книги объемом в {map_size}:'
+template_format: f-string
+_type: prompt

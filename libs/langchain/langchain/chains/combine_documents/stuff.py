@@ -201,6 +201,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             k: v
             for k, v in kwargs.items()
             if k in self.llm_chain.prompt.input_variables
+            or k in self.llm_chain.prompt.partial_variables.keys()
         }
         inputs[self.document_variable_name] = self.document_separator.join(doc_strings)
         return inputs
