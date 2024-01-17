@@ -5,6 +5,10 @@ multiple retrievers by using weighted  Reciprocal Rank Fusion
 import asyncio
 from typing import Any, Dict, List, Optional
 
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
 from langchain_core.pydantic_v1 import root_validator
@@ -14,11 +18,6 @@ from langchain_core.runnables.config import ensure_config, patch_config
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     get_unique_config_specs,
-)
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
 )
 
 
@@ -57,7 +56,7 @@ class EnsembleRetriever(BaseRetriever):
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Document]:
-        from langchain_core.callbacks.manager import CallbackManager
+        from langchain_core.callbacks import CallbackManager
 
         config = ensure_config(config)
         callback_manager = CallbackManager.configure(
@@ -90,7 +89,7 @@ class EnsembleRetriever(BaseRetriever):
     async def ainvoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Document]:
-        from langchain_core.callbacks.manager import AsyncCallbackManager
+        from langchain_core.callbacks import AsyncCallbackManager
 
         config = ensure_config(config)
         callback_manager = AsyncCallbackManager.configure(
