@@ -1,6 +1,13 @@
 from langchain_google_vertexai import __all__
 
-EXPECTED_ALL = ["ChatVertexAI", "VertexAIEmbeddings", "VertexAI", "VertexAIModelGarden"]
+EXPECTED_ALL = [
+    "ChatVertexAI",
+    "VertexAIEmbeddings",
+    "VertexAI",
+    "VertexAIModelGarden",
+    "HarmBlockThreshold",
+    "HarmCategory",
+]
 
 
 def test_all_imports() -> None:
