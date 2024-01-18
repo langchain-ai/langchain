@@ -303,6 +303,7 @@ select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "T201", # print
 ]
 exclude = [
   "tests/integration_tests/examples/non-utf8-encoding.py",
