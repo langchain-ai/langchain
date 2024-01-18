@@ -94,3 +94,28 @@ def test_loader_page_content_mapper(keyspace: str) -> None:
             metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace},
         ),
     ]
+
+
+def test_loader_metadata_mapper(keyspace: str) -> None:
+    def mapper(row: Any) -> dict:
+        return {"id": row.row_id}
+
+    loader = CassandraLoader(table=CASSANDRA_TABLE, metadata_mapper=mapper)
+    assert loader.load() == [
+        Document(
+            page_content='{"row_id": "id1", "body_blob": "text1"}',
+            metadata={
+                "table": CASSANDRA_TABLE,
+                "keyspace": keyspace,
+                "id": "id1",
+            },
+        ),
+        Document(
+            page_content='{"row_id": "id2", "body_blob": "text2"}',
+            metadata={
+                "table": CASSANDRA_TABLE,
+                "keyspace": keyspace,
+                "id": "id2",
+            },
+        ),
+    ]

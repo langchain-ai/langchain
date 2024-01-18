@@ -37,6 +37,8 @@ class CassandraLoader(BaseLoader):
         keyspace: Optional[str] = None,
         query: Optional[Union[str, "Statement"]] = None,
         page_content_mapper: Callable[[Any], str] = default_page_content_mapper,
+        metadata_mapper: Callable[[Any], dict] = lambda _: {},
+        *,
         query_parameters: Union[dict, Sequence] = None,
         query_timeout: Optional[float] = _NOT_SET,
         query_trace: bool = False,
@@ -93,6 +95,7 @@ class CassandraLoader(BaseLoader):
 
         self.session = session or check_resolve_session(session)
         self.page_content_mapper = page_content_mapper
+        self.metadata_mapper = metadata_mapper
 
         self.query_kwargs = {
             "parameters": query_parameters,
@@ -113,6 +116,8 @@ class CassandraLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         for row in self.session.execute(self.query, **self.query_kwargs):
+            metadata = self.metadata.copy()
+            metadata.update(self.metadata_mapper(row))
             yield Document(
-                page_content=self.page_content_mapper(row), metadata=self.metadata
+                page_content=self.page_content_mapper(row), metadata=metadata
             )
