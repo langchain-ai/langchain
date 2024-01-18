@@ -21,6 +21,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -173,7 +174,7 @@ class BaseOpenAI(BaseLLM):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(default="text-davinci-003", alias="model")
+    model_name: str = Field(default="gpt-3.5-turbo-instruct", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -657,7 +658,7 @@ class BaseOpenAI(BaseLLM):
         Example:
             .. code-block:: python
 
-                max_tokens = openai.modelname_to_contextsize("text-davinci-003")
+                max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
             "gpt-4": 8192,
@@ -724,6 +725,9 @@ class BaseOpenAI(BaseLLM):
         return self.max_context_size - num_tokens
 
 
+@deprecated(
+    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.OpenAI"
+)
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
 
@@ -737,7 +741,7 @@ class OpenAI(BaseOpenAI):
         .. code-block:: python
 
             from langchain_community.llms import OpenAI
-            openai = OpenAI(model_name="text-davinci-003")
+            openai = OpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
     @classmethod
@@ -750,6 +754,9 @@ class OpenAI(BaseOpenAI):
         return {**{"model": self.model_name}, **super()._invocation_params}
 
 
+@deprecated(
+    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.AzureOpenAI"
+)
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
 
@@ -763,7 +770,7 @@ class AzureOpenAI(BaseOpenAI):
         .. code-block:: python
 
             from langchain_community.llms import AzureOpenAI
-            openai = AzureOpenAI(model_name="text-davinci-003")
+            openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
     azure_endpoint: Union[str, None] = None
@@ -953,6 +960,11 @@ class AzureOpenAI(BaseOpenAI):
         }
 
 
+@deprecated(
+    since="0.0.1",
+    removal="0.2.0",
+    alternative_import="langchain_openai.ChatOpenAI",
+)
 class OpenAIChat(BaseLLM):
     """OpenAI Chat large language models.
 

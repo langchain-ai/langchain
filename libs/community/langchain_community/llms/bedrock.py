@@ -1,9 +1,11 @@
 import asyncio
+from __future__ import annotations
+
 import json
 import warnings
 from abc import ABC
 from concurrent.futures import ThreadPoolExecutor
-from typing import (
+from typing import TYPE_CHECKING, (
     Any,
     AsyncGenerator,
     AsyncIterator,
@@ -28,6 +30,9 @@ from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
+
+if TYPE_CHECKING:
+    from botocore.config import Config
 
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
@@ -207,6 +212,9 @@ class BedrockBase(BaseModel, ABC):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
+    config: Optional[Config] = None
+    """An optional botocore.config.Config instance to pass to the client."""
+
     model_id: str
     """Id of the model to call, e.g., amazon.titan-text-express-v1, this is
     equivalent to the modelId property in the list-foundation-models api"""
@@ -256,6 +264,8 @@ class BedrockBase(BaseModel, ABC):
                 client_params["region_name"] = values["region_name"]
             if values["endpoint_url"]:
                 client_params["endpoint_url"] = values["endpoint_url"]
+            if values["config"]:
+                client_params["config"] = values["config"]
 
             values["client"] = session.client("bedrock-runtime", **client_params)
 
@@ -311,7 +321,9 @@ class BedrockBase(BaseModel, ABC):
             text = LLMInputOutputAdapter.prepare_output(provider, response)
 
         except Exception as e:
-            raise ValueError(f"Error raised by bedrock service: {e}")
+            raise ValueError(f"Error raised by bedrock service: {e}").with_traceback(
+                e.__traceback__
+            )
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)

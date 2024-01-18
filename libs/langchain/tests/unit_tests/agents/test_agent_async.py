@@ -5,11 +5,11 @@ from typing import Any, Dict, List, Optional
 from langchain_core.agents import AgentAction, AgentStep
 from langchain_core.language_models.llms import LLM
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.schema.runnable.utils import add
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

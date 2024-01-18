@@ -39,7 +39,7 @@ class GitLabAPIWrapper(BaseModel):
         """Validate that api key and python package exists in environment."""
 
         gitlab_url = get_from_dict_or_env(
-            values, "gitlab_url", "GITLAB_URL", default=None
+            values, "gitlab_url", "GITLAB_URL", default="https://gitlab.com"
         )
         gitlab_repository = get_from_dict_or_env(
             values, "gitlab_repository", "GITLAB_REPOSITORY"

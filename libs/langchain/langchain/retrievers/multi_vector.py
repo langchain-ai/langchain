@@ -1,13 +1,13 @@
 from enum import Enum
 from typing import Dict, List, Optional
 
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore, ByteStore
 from langchain_core.vectorstores import VectorStore
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.storage._lc_store import create_kv_docstore
 
 
@@ -67,7 +67,7 @@ class MultiVectorRetriever(BaseRetriever):
         # We do this to maintain the order of the ids that are returned
         ids = []
         for d in sub_docs:
-            if d.metadata[self.id_key] not in ids:
+            if self.id_key in d.metadata and d.metadata[self.id_key] not in ids:
                 ids.append(d.metadata[self.id_key])
         docs = self.docstore.mget(ids)
         return [d for d in docs if d is not None]
