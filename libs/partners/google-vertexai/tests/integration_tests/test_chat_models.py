@@ -182,3 +182,36 @@ def test_vertexai_single_call_fails_no_message() -> None:
         str(exc_info.value)
         == "You should provide at least one message to start the chat!"
     )
+
+
+@pytest.mark.parametrize("model_name", ["gemini-pro"])
+def test_chat_vertexai_gemini_system_message_error(model_name: str) -> None:
+    model = ChatVertexAI(model_name=model_name)
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    system_message = SystemMessage(content="You're supposed to answer math questions.")
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    with pytest.raises(ValueError):
+        model([system_message, message1, message2, message3])
+
+
+@pytest.mark.parametrize("model_name", model_names_to_test)
+def test_chat_vertexai_system_message(model_name: str) -> None:
+    if model_name:
+        model = ChatVertexAI(
+            model_name=model_name, convert_system_message_to_human=True
+        )
+    else:
+        model = ChatVertexAI()
+
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    system_message = SystemMessage(content="You're supposed to answer math questions.")
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    response = model([system_message, message1, message2, message3])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
