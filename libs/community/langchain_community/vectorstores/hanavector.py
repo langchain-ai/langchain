@@ -112,9 +112,7 @@ class HanaDB(VectorStore):
                 cur.close()
 
         # Check if the needed columns exists
-        self._check_column(
-            self.table_name, self.content_column, ["NCLOB", "NVARCHAR"]
-        )
+        self._check_column(self.table_name, self.content_column, ["NCLOB", "NVARCHAR"])
         self._check_column(
             self.table_name,
             self.metadata_column,
@@ -143,7 +141,7 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
-    def _check_column(self, table_name, column_name, column_type, column_length = None):
+    def _check_column(self, table_name, column_name, column_type, column_length=None):
         sql_str = (
             "SELECT DATA_TYPE_NAME, LENGTH FROM TABLE_COLUMNS WHERE "
             "SCHEMA_NAME = CURRENT_SCHEMA "
@@ -185,13 +183,13 @@ class HanaDB(VectorStore):
         if value < -1:
             raise ValueError(f"Value ({value}) must not be smaller than -1")
         return int(str(input_int))
-    
+
     def _sanitize_list_float(embedding: List[float]) -> List[float]:
         for value in embedding:
             if not isinstance(value, float):
                 raise ValueError(f"Value ({value}) does not have type float")
         return embedding
-    
+
     embedding: List[float]
 
     def add_texts(
@@ -324,11 +322,13 @@ class HanaDB(VectorStore):
             List of Documents most similar to the query and score for each
         """
         result = []
+        k = HanaDB._sanitize_int(k)
+        embedding = HanaDB._sanitize_list_float(embedding)
         sql_str = (
-            f"SELECT TOP {HanaDB._sanitize_int(k)} {self.content_column}, {self.metadata_column} , "
+            f"SELECT TOP {k} {self.content_column}, {self.metadata_column} , "
             f"{HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} "
             f"({self.vector_column}, TO_REAL_VECTOR "
-            f"(ARRAY({'{}'.format(','.join(map(str, HanaDB._sanitize_list_float(embedding))))}))) "
+            f"(ARRAY({'{}'.format(','.join(map(str, embedding)))}))) "
             f"AS CS FROM {self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
@@ -374,25 +374,19 @@ class HanaDB(VectorStore):
                 else:
                     where_str += " AND "
 
-                if isinstance(filter[key], str):
-                    where_str += (
-                        f" JSON_QUERY({self.metadata_column}, '$.{key}') = '\"{filter[key]}\"'"
-                    )
-                elif isinstance(filter[key], bool):
+                where_str += f" JSON_VALUE({self.metadata_column}, '$.{key}') = "
+
+                if isinstance(filter[key], bool):
                     if filter[key]:
-                        where_str += (
-                            f" JSON_QUERY({self.metadata_column}, '$.{key}') = true"
-                        )
+                        where_str += "true"
                     else:
-                        where_str += (
-                            f" JSON_QUERY({self.metadata_column}, '$.{key}') = false"
-                        )
-                elif  isinstance(filter[key], int):
-                    where_str += (
-                        f" JSON_QUERY({self.metadata_column}, '$.{key}') = '{filter[key]}'"
-                    )
+                        where_str += "false"
+                elif isinstance(filter[key], int) or isinstance(filter[key], str):
+                    where_str += f"'{filter[key]}'"
                 else:
-                    raise ValueError(f"Unsupported filter data-type: {type(filter[key])}")
+                    raise ValueError(
+                        f"Unsupported filter data-type: {type(filter[key])}"
+                    )
 
         return where_str
 
@@ -497,12 +491,14 @@ class HanaDB(VectorStore):
     ) -> List[Document]:
         docs = []
         embeddings = []
+        embedding = HanaDB._sanitize_list_float(embedding)
+        k = HanaDB._sanitize_int(k)
         sql_str = (
-            f"SELECT TOP {HanaDB._sanitize_int(k)} {self.content_column}, {self.metadata_column}, "
+            f"SELECT TOP {k} {self.content_column}, {self.metadata_column}, "
             f"TO_NVARCHAR({self.vector_column}), "
             f"{HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} "
             f"({self.vector_column}, "
-            f"TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, HanaDB._sanitize_list_float(embedding))))}))) "
+            f"TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) "
             f"AS CS FROM {self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"

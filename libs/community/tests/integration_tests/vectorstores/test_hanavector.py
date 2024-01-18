@@ -186,7 +186,6 @@ def test_hanavector_table_with_nvarchar_content(texts: List[str]) -> None:
     assert number_of_rows == number_of_texts
 
 
-
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_table_with_wrong_typed_columns() -> None:
     table_name = "EXISTING_WRONG_TYPES"
@@ -485,10 +484,11 @@ def test_hanavector_similarity_search_with_metadata_filter_invalid_type(
 
     exception_occured = False
     try:
-        search_result = vectorDB.similarity_search(texts[0], 3, filter={"wrong_type": 0.1})
+        vectorDB.similarity_search(texts[0], 3, filter={"wrong_type": 0.1})
     except ValueError:
         exception_occured = True
     assert exception_occured
+
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_with_score(
