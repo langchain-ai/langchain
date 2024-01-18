@@ -36,12 +36,12 @@ HANA_DISTANCE_FUNCTION: dict = {
 
 default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
-default_content_field: str = "DOC_TEXT"
-default_content_field_length: int = 2048
-default_metadata_field: str = "DOC_META"
-default_metadata_field_length: int = 2048
-default_vector_field: str = "DOC_VECTOR"
-default_vector_field_length: int = -1  # -1 means dynamic length
+default_content_column: str = "DOC_TEXT"
+default_content_column_length: int = 2048
+default_metadata_column: str = "DOC_META"
+default_metadata_column_length: int = 2048
+default_vector_column: str = "DOC_VECTOR"
+default_vector_column_length: int = -1  # -1 means dynamic length
 
 
 class HanaDB(VectorStore):
@@ -61,12 +61,12 @@ class HanaDB(VectorStore):
         embedding: Embeddings,
         distance_strategy: DistanceStrategy = default_distance_strategy,
         table_name: str = default_table_name,
-        content_field: str = default_content_field,
-        content_field_length: int = default_content_field_length,
-        metadata_field: str = default_metadata_field,
-        metadata_field_length: int = default_metadata_field_length,
-        vector_field: str = default_vector_field,
-        vector_field_length: int = default_vector_field_length,
+        content_column: str = default_content_column,
+        content_column_length: int = default_content_column_length,
+        metadata_column: str = default_metadata_column,
+        metadata_column_length: int = default_metadata_column_length,
+        vector_column: str = default_vector_column,
+        vector_column_length: int = default_vector_column_length,
     ):
         # Check if the hdbcli package is installed
         if importlib.util.find_spec("hdbcli") is None:
@@ -88,25 +88,25 @@ class HanaDB(VectorStore):
         self.embedding = embedding
         self.distance_strategy = distance_strategy
         self.table_name = self._sanitize_input(table_name)
-        self.content_field = self._sanitize_input(content_field)
-        self.content_field_length = HanaDB._sanitize_int(content_field_length)
-        self.metadata_field = self._sanitize_input(metadata_field)
-        self.metadata_field_length = HanaDB._sanitize_int(metadata_field_length)
-        self.vector_field = self._sanitize_input(vector_field)
-        self.vector_field_length = HanaDB._sanitize_int(vector_field_length)
+        self.content_column = self._sanitize_input(content_column)
+        self.content_column_length = HanaDB._sanitize_int(content_column_length)
+        self.metadata_column = self._sanitize_input(metadata_column)
+        self.metadata_column_length = HanaDB._sanitize_int(metadata_column_length)
+        self.vector_column = self._sanitize_input(vector_column)
+        self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
 
         # Check if the table exists, and eventually create it
         if not self._table_exists(self.table_name):
             sql_str = (
                 f"CREATE TABLE {self.table_name}("
-                f"{self.content_field} NVARCHAR({self.content_field_length}), "
-                f"{self.metadata_field} NVARCHAR({self.metadata_field_length}), "
-                f"{self.vector_field} REAL_VECTOR "
+                f"{self.content_column} NVARCHAR({self.content_column_length}), "
+                f"{self.metadata_column} NVARCHAR({self.metadata_column_length}), "
+                f"{self.vector_column} REAL_VECTOR "
             )
-            if self.vector_field_length == -1:
+            if self.vector_column_length == -1:
                 sql_str += ");"
             else:
-                sql_str += f"({self.vector_field_length}));"
+                sql_str += f"({self.vector_column_length}));"
 
             try:
                 cur = self.connection.cursor()
@@ -116,13 +116,19 @@ class HanaDB(VectorStore):
 
         # Check if the needed columns exists
         self._check_column(
-            self.table_name, self.content_field, "NVARCHAR", self.content_field_length
+            self.table_name, self.content_column, "NVARCHAR", self.content_column_length
         )
         self._check_column(
-            self.table_name, self.metadata_field, "NVARCHAR", self.metadata_field_length
+            self.table_name,
+            self.metadata_column,
+            "NVARCHAR",
+            self.metadata_column_length,
         )
         self._check_column(
-            self.table_name, self.vector_field, "REAL_VECTOR", self.vector_field_length
+            self.table_name,
+            self.vector_column,
+            "REAL_VECTOR",
+            self.vector_column_length,
         )
 
     def _table_exists(self, table_name) -> bool:
@@ -216,8 +222,8 @@ class HanaDB(VectorStore):
                     else self.embedding.embed_documents([text])[0]
                 )
                 sql_str = (
-                    f"INSERT INTO {self.table_name} ({self.content_field}, "
-                    f"{self.metadata_field}, {self.vector_field}) "
+                    f"INSERT INTO {self.table_name} ({self.content_column}, "
+                    f"{self.metadata_column}, {self.vector_column}) "
                     f"VALUES (?, ?, TO_REAL_VECTOR (?));"
                 )
                 cur.execute(
@@ -242,12 +248,12 @@ class HanaDB(VectorStore):
         connection: dbapi.Connection = None,
         distance_strategy: DistanceStrategy = default_distance_strategy,
         table_name: str = default_table_name,
-        content_field: str = default_content_field,
-        content_field_length: int = default_content_field_length,
-        metadata_field: str = default_metadata_field,
-        metadata_field_length: int = default_metadata_field_length,
-        vector_field: str = default_vector_field,
-        vector_field_length: int = default_vector_field_length,
+        content_column: str = default_content_column,
+        content_column_length: int = default_content_column_length,
+        metadata_column: str = default_metadata_column,
+        metadata_column_length: int = default_metadata_column_length,
+        vector_column: str = default_vector_column,
+        vector_column_length: int = default_vector_column_length,
     ):
         """Create a HANA vectorstore from raw documents.
         This is a user-friendly interface that:
@@ -262,12 +268,12 @@ class HanaDB(VectorStore):
             embedding=embedding,
             distance_strategy=distance_strategy,
             table_name=table_name,
-            content_field=content_field,
-            content_field_length=content_field_length,
-            metadata_field=metadata_field,
-            metadata_field_length=metadata_field_length,
-            vector_field=vector_field,
-            vector_field_length=vector_field_length,  # -1 means dynamic length
+            content_column=content_column,
+            content_column_length=content_column_length,
+            metadata_column=metadata_column,
+            metadata_column_length=metadata_column_length,
+            vector_column=vector_column,
+            vector_column_length=vector_column_length,  # -1 means dynamic length
         )
         instance.add_texts(texts, metadatas)
         return instance
@@ -315,9 +321,9 @@ class HanaDB(VectorStore):
         """
         result = []
         sql_str = (
-            f"SELECT TOP {k} {self.content_field}, {self.metadata_field} , "
+            f"SELECT TOP {k} {self.content_column}, {self.metadata_column} , "
             f"{HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} "
-            f"({self.vector_field}, TO_REAL_VECTOR "
+            f"({self.vector_column}, TO_REAL_VECTOR "
             f"(ARRAY({'{}'.format(','.join(map(str, embedding)))}))) "
             f"AS CS FROM {self.table_name}"
         )
@@ -360,14 +366,14 @@ class HanaDB(VectorStore):
         if filter:
             for i, key in enumerate(filter.keys()):
                 if i == 0:
-                    where_str = where_str + " WHERE "
+                    where_str += " WHERE "
                 else:
-                    where_str = where_str + " AND "
+                    where_str += " AND "
 
-                where_str = (
-                    where_str
-                    + f" JSON_QUERY({self.metadata_field}, '$.{key}') = '{filter[key]}'"
+                where_str += (
+                    f" JSON_QUERY({self.metadata_column}, '$.{key}') = '{filter[key]}'"
                 )
+
         return where_str
 
     def delete(
@@ -472,10 +478,10 @@ class HanaDB(VectorStore):
         docs = []
         embeddings = []
         sql_str = (
-            f"SELECT TOP {k} {self.content_field}, {self.metadata_field}, "
-            f"TO_NVARCHAR({self.vector_field}), "
+            f"SELECT TOP {k} {self.content_column}, {self.metadata_column}, "
+            f"TO_NVARCHAR({self.vector_column}), "
             f"{HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} "
-            f"({self.vector_field}, "
+            f"({self.vector_column}, "
             f"TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) "
             f"AS CS FROM {self.table_name}"
         )

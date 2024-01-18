@@ -151,15 +151,15 @@ def test_hanavector_table_with_missing_columns() -> None:
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_table_with_wrong_typed_columns() -> None:
     table_name = "EXISTING_WRONG_TYPES"
-    content_field = "DOC_TEXT"
-    metadata_field = "DOC_META"
-    vector_field = "DOC_VECTOR"
+    content_column = "DOC_TEXT"
+    metadata_column = "DOC_META"
+    vector_column = "DOC_VECTOR"
     try:
         drop_table(test_setup.conn, table_name)
         cur = test_setup.conn.cursor()
         sql_str = (
-            f"CREATE TABLE {table_name}({content_field} INTEGER, "
-            f"{metadata_field} INTEGER, {vector_field} INTEGER);"
+            f"CREATE TABLE {table_name}({content_column} INTEGER, "
+            f"{metadata_column} INTEGER, {vector_column} INTEGER);"
         )
         cur.execute(sql_str)
     finally:
@@ -185,8 +185,8 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
 def test_hanavector_non_existing_table_fixed_vector_length() -> None:
     """Test end to end construction and search."""
     table_name = "NON_EXISTING"
-    vector_field = "MY_VECTOR"
-    vector_field_length = 42
+    vector_column = "MY_VECTOR"
+    vector_column_length = 42
     # Delete table if it exists
     drop_table(test_setup.conn, table_name)
 
@@ -196,12 +196,14 @@ def test_hanavector_non_existing_table_fixed_vector_length() -> None:
         embedding=embedding,
         distance_strategy=DistanceStrategy.COSINE,
         table_name=table_name,
-        vector_field=vector_field,
-        vector_field_length=vector_field_length,
+        vector_column=vector_column,
+        vector_column_length=vector_column_length,
     )
 
     assert vectordb._table_exists(table_name)
-    vectordb._check_column(table_name, vector_field, "REAL_VECTOR", vector_field_length)
+    vectordb._check_column(
+        table_name, vector_column, "REAL_VECTOR", vector_column_length
+    )
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
