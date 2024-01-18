@@ -1,11 +1,11 @@
-import asyncio
 from __future__ import annotations
 
+import asyncio
 import json
 import warnings
 from abc import ABC
-from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, (
+from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     AsyncIterator,
@@ -398,15 +398,15 @@ class BedrockBase(BaseModel, ABC):
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
 
-        await asyncio.get_running_loop().run_in_executor(
-                None, 
-                lambda: self.client.invoke_model_with_response_stream(
-                    body=body,
-                    modelId=self.model_id,
-                    accept="application/json",
-                    contentType="application/json",
-                    )
-                )
+        response = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: self.client.invoke_model_with_response_stream(
+                body=body,
+                modelId=self.model_id,
+                accept="application/json",
+                contentType="application/json",
+            ),
+        )
 
         async for chunk in LLMInputOutputAdapter.aprepare_output_stream(
             provider, response, stop
