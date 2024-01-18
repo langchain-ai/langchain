@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "langchain-robocorp"
-version = "0.0.1.post2"
+version = "0.0.1.post3"
 description = "An integration package connecting Robocorp and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/robocorp"
