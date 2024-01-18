@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -275,7 +275,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     Requires a HuggingFace Inference API key and a model name.
     """
 
-    api_key: str
+    api_key: SecretStr
     """Your API key for the HuggingFace Inference API."""
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     """The name of the model to use for text embeddings."""
@@ -297,7 +297,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
 
     @property
     def _headers(self) -> dict:
-        return {"Authorization": f"Bearer {self.api_key}"}
+        return {"Authorization": f"Bearer {self.api_key.get_secret_value()}"}
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.
