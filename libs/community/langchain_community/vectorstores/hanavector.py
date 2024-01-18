@@ -37,7 +37,6 @@ HANA_DISTANCE_FUNCTION: dict = {
 default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
 default_content_column: str = "DOC_TEXT"
-default_content_column_length: int = 2048
 default_metadata_column: str = "DOC_META"
 default_metadata_column_length: int = 2048
 default_vector_column: str = "DOC_VECTOR"
@@ -62,7 +61,6 @@ class HanaDB(VectorStore):
         distance_strategy: DistanceStrategy = default_distance_strategy,
         table_name: str = default_table_name,
         content_column: str = default_content_column,
-        content_column_length: int = default_content_column_length,
         metadata_column: str = default_metadata_column,
         metadata_column_length: int = default_metadata_column_length,
         vector_column: str = default_vector_column,
@@ -89,7 +87,6 @@ class HanaDB(VectorStore):
         self.distance_strategy = distance_strategy
         self.table_name = self._sanitize_input(table_name)
         self.content_column = self._sanitize_input(content_column)
-        self.content_column_length = HanaDB._sanitize_int(content_column_length)
         self.metadata_column = self._sanitize_input(metadata_column)
         self.metadata_column_length = HanaDB._sanitize_int(metadata_column_length)
         self.vector_column = self._sanitize_input(vector_column)
@@ -99,7 +96,7 @@ class HanaDB(VectorStore):
         if not self._table_exists(self.table_name):
             sql_str = (
                 f"CREATE TABLE {self.table_name}("
-                f"{self.content_column} NVARCHAR({self.content_column_length}), "
+                f"{self.content_column} NCLOB, "
                 f"{self.metadata_column} NVARCHAR({self.metadata_column_length}), "
                 f"{self.vector_column} REAL_VECTOR "
             )
@@ -116,18 +113,17 @@ class HanaDB(VectorStore):
 
         # Check if the needed columns exists
         self._check_column(
-            self.table_name, self.content_column, "NVARCHAR", self.content_column_length
+            self.table_name, self.content_column, ["NCLOB", "NVARCHAR"]
         )
         self._check_column(
             self.table_name,
             self.metadata_column,
-            "NVARCHAR",
-            self.metadata_column_length,
+            ["NVARCHAR"],
         )
         self._check_column(
             self.table_name,
             self.vector_column,
-            "REAL_VECTOR",
+            ["REAL_VECTOR"],
             self.vector_column_length,
         )
 
@@ -147,7 +143,7 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
-    def _check_column(self, table_name, column_name, column_type, column_length):
+    def _check_column(self, table_name, column_name, column_type, column_length = None):
         sql_str = (
             "SELECT DATA_TYPE_NAME, LENGTH FROM TABLE_COLUMNS WHERE "
             "SCHEMA_NAME = CURRENT_SCHEMA "
@@ -161,14 +157,16 @@ class HanaDB(VectorStore):
                 if len(rows) == 0:
                     raise AttributeError(f"Column {column_name} does not exist")
                 # Check data type
-                if rows[0][0] != column_type:
+                if rows[0][0] not in column_type:
                     raise AttributeError(
                         f"Column {column_name} has the wrong type: {rows[0][0]}"
                     )
-                if rows[0][1] != column_length:
-                    raise AttributeError(
-                        f"Column {column_name} has the wrong length: {rows[0][1]}"
-                    )
+                # Check length, if parameter was provided
+                if column_length is not None:
+                    if rows[0][1] != column_length:
+                        raise AttributeError(
+                            f"Column {column_name} has the wrong length: {rows[0][1]}"
+                        )
             else:
                 raise AttributeError(f"Column {column_name} does not exist")
         finally:
@@ -249,7 +247,6 @@ class HanaDB(VectorStore):
         distance_strategy: DistanceStrategy = default_distance_strategy,
         table_name: str = default_table_name,
         content_column: str = default_content_column,
-        content_column_length: int = default_content_column_length,
         metadata_column: str = default_metadata_column,
         metadata_column_length: int = default_metadata_column_length,
         vector_column: str = default_vector_column,
@@ -269,7 +266,6 @@ class HanaDB(VectorStore):
             distance_strategy=distance_strategy,
             table_name=table_name,
             content_column=content_column,
-            content_column_length=content_column_length,
             metadata_column=metadata_column,
             metadata_column_length=metadata_column_length,
             vector_column=vector_column,

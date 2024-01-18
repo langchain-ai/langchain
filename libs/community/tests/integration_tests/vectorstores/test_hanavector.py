@@ -149,6 +149,45 @@ def test_hanavector_table_with_missing_columns() -> None:
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_table_with_nvarchar_content(texts: List[str]) -> None:
+    table_name = "EXISTING_NVARCHAR"
+    content_column = "DOC_TEXT"
+    metadata_column = "DOC_META"
+    vector_column = "DOC_VECTOR"
+    try:
+        drop_table(test_setup.conn, table_name)
+        cur = test_setup.conn.cursor()
+        sql_str = (
+            f"CREATE TABLE {table_name}({content_column} NVARCHAR(2048), "
+            f"{metadata_column} NVARCHAR(2048), {vector_column} REAL_VECTOR);"
+        )
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectordb = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        distance_strategy=DistanceStrategy.COSINE,
+        table_name=table_name,
+    )
+
+    vectordb.add_texts(texts=texts)
+
+    # check that embeddings have been created in the table
+    number_of_texts = len(texts)
+    number_of_rows = -1
+    sql_str = f"SELECT COUNT(*) FROM {table_name}"
+    cur = test_setup.conn.cursor()
+    cur.execute(sql_str)
+    if cur.has_result_set():
+        rows = cur.fetchall()
+        number_of_rows = rows[0][0]
+    assert number_of_rows == number_of_texts
+
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_table_with_wrong_typed_columns() -> None:
     table_name = "EXISTING_WRONG_TYPES"
     content_column = "DOC_TEXT"
