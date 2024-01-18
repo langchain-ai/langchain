@@ -31,6 +31,8 @@ class AI21LLM(BaseLLM, AI21Base):
     """
 
     model: str = "j2-ultra"
+    """Model type you wish to interact with."""
+
     num_results: Optional[int] = None
     """The number of responses to generate for a given prompt."""
 
