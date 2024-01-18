@@ -12,7 +12,6 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.langchain import LangChainTracer
-from langsmith import Client
 
 from langchain.chains.llm import LLMChain
 
