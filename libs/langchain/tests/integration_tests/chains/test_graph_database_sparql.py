@@ -2,9 +2,10 @@
 import os
 import re
 
+from langchain_community.graphs import RdfGraph
+from langchain_community.llms.openai import OpenAI
+
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
-from langchain.graphs import RdfGraph
-from langchain.llms.openai import OpenAI
 
 
 def test_connect_file_rdf() -> None:

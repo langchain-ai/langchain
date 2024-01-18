@@ -1,6 +1,9 @@
 blank_issues_enabled: true
 version: 2.1
 contact_links:
+  - name: 🤔 Question or Problem
+    about: Ask a question or ask about a problem in GitHub Discussions.
+    url: https://github.com/langchain-ai/langchain/discussions
   - name: Discord
     url: https://discord.gg/6adMQxSpJS
     about: General community discussions

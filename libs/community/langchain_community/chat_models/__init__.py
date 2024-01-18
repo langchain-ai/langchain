@@ -32,12 +32,14 @@ from langchain_community.chat_models.fireworks import ChatFireworks
 from langchain_community.chat_models.gigachat import GigaChat
 from langchain_community.chat_models.google_palm import ChatGooglePalm
 from langchain_community.chat_models.gpt_router import GPTRouter
+from langchain_community.chat_models.huggingface import ChatHuggingFace
 from langchain_community.chat_models.human import HumanInputChatModel
 from langchain_community.chat_models.hunyuan import ChatHunyuan
 from langchain_community.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
 from langchain_community.chat_models.jinachat import JinaChat
 from langchain_community.chat_models.konko import ChatKonko
 from langchain_community.chat_models.litellm import ChatLiteLLM
+from langchain_community.chat_models.llama_edge import LlamaEdgeChatService
 from langchain_community.chat_models.minimax import MiniMaxChat
 from langchain_community.chat_models.mlflow import ChatMlflow
 from langchain_community.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
@@ -45,11 +47,14 @@ from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain_community.chat_models.promptlayer_openai import PromptLayerChatOpenAI
+from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_community.chat_models.vertexai import ChatVertexAI
 from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain_community.chat_models.yandex import ChatYandexGPT
+from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
 __all__ = [
+    "LlamaEdgeChatService",
     "ChatOpenAI",
     "BedrockChat",
     "AzureChatOpenAI",
@@ -65,6 +70,7 @@ __all__ = [
     "ChatOllama",
     "ChatVertexAI",
     "JinaChat",
+    "ChatHuggingFace",
     "HumanInputChatModel",
     "MiniMaxChat",
     "ChatAnyscale",
@@ -74,6 +80,7 @@ __all__ = [
     "ChatKonko",
     "PaiEasChatEndpoint",
     "QianfanChatEndpoint",
+    "ChatTongyi",
     "ChatFireworks",
     "ChatYandexGPT",
     "ChatBaichuan",
@@ -81,4 +88,5 @@ __all__ = [
     "GigaChat",
     "VolcEngineMaasChat",
     "GPTRouter",
+    "ChatZhipuAI",
 ]

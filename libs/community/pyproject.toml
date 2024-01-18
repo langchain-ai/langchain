@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.5"
+version = "0.0.13"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1"
+langchain-core = ">=0.1.9,<0.2"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -84,7 +84,9 @@ msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 oracle-ads = {version = "^2.9.1", optional = true}
+zhipuai = {version = "^1.0.7", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -139,7 +141,7 @@ wrapt = "^1.15.0"
 openai = "^1"
 python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
-tiktoken = "^0.3.2"
+tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
@@ -244,7 +246,9 @@ extended_testing = [
  "databricks-vectorsearch",
  "dgml-utils",
  "cohere",
+ "azure-ai-documentintelligence",
  "oracle-ads",
+ "zhipuai",
 ]
 
 [tool.ruff]

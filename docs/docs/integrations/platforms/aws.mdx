@@ -20,7 +20,7 @@ The `LangChain` integrations related to [Amazon AWS](https://aws.amazon.com/) pl
 See a [usage example](/docs/integrations/llms/bedrock).
 
 ```python
-from langchain.llms.bedrock import Bedrock
+from langchain_community.llms.bedrock import Bedrock
 ```
 
 ### Amazon API Gateway
@@ -40,7 +40,7 @@ from langchain.llms.bedrock import Bedrock
 See a [usage example](/docs/integrations/llms/amazon_api_gateway).
 
 ```python
-from langchain.llms import AmazonAPIGateway
+from langchain_community.llms import AmazonAPIGateway
 ```
 
 ### SageMaker Endpoint
@@ -53,8 +53,8 @@ We use `SageMaker` to host our model and expose it as the `SageMaker Endpoint`.
 See a [usage example](/docs/integrations/llms/sagemaker).
 
 ```python
-from langchain.llms import SagemakerEndpoint
-from langchain.llms.sagemaker_endpoint import LLMContentHandler
+from langchain_community.llms import SagemakerEndpoint
+from langchain_community.llms.sagemaker_endpoint import LLMContentHandler
 ```
 
 ## Chat models
@@ -64,7 +64,7 @@ from langchain.llms.sagemaker_endpoint import LLMContentHandler
 See a [usage example](/docs/integrations/chat/bedrock).
 
 ```python
-from langchain.chat_models import BedrockChat
+from langchain_community.chat_models import BedrockChat
 ```
 
 ## Text Embedding Models
@@ -73,15 +73,15 @@ from langchain.chat_models import BedrockChat
 
 See a [usage example](/docs/integrations/text_embedding/bedrock).
 ```python
-from langchain.embeddings import BedrockEmbeddings
+from langchain_community.embeddings import BedrockEmbeddings
 ```
 
 ### SageMaker Endpoint
 
 See a [usage example](/docs/integrations/text_embedding/sagemaker-endpoint).
 ```python
-from langchain.embeddings import SagemakerEndpointEmbeddings
-from langchain.llms.sagemaker_endpoint import ContentHandlerBase
+from langchain_community.embeddings import SagemakerEndpointEmbeddings
+from langchain_community.llms.sagemaker_endpoint import ContentHandlerBase
 ```
 
 ## Chains
@@ -118,7 +118,7 @@ See a [usage example for S3DirectoryLoader](/docs/integrations/document_loaders/
 See a [usage example for S3FileLoader](/docs/integrations/document_loaders/aws_s3_file).
 
 ```python
-from langchain.document_loaders import S3DirectoryLoader, S3FileLoader
+from langchain_community.document_loaders import S3DirectoryLoader, S3FileLoader
 ```
 
 ### Amazon Textract
@@ -129,7 +129,7 @@ from langchain.document_loaders import S3DirectoryLoader, S3FileLoader
 See a [usage example](/docs/integrations/document_loaders/amazon_textract).
 
 ```python
-from langchain.document_loaders import AmazonTextractPDFLoader
+from langchain_community.document_loaders import AmazonTextractPDFLoader
 ```
 
 ## Memory
@@ -191,7 +191,7 @@ We need to install the `boto3` library.
 pip install boto3
 ```
 
-See a [usage example](/docs/integrations/retrievers/amazon_bedrock_knowledge_bases).
+See a [usage example](/docs/integrations/retrievers/bedrock).
 
 ```python
 from langchain.retrievers import AmazonKnowledgeBasesRetriever
@@ -217,7 +217,7 @@ pip install boto3 requests requests-aws4auth
 See a [usage example](/docs/integrations/vectorstores/opensearch#using-aos-amazon-opensearch-service).
 
 ```python
-from langchain.vectorstores import OpenSearchVectorSearch
+from langchain_community.vectorstores import OpenSearchVectorSearch
 ```
 
 ## Tools

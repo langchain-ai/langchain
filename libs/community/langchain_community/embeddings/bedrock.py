@@ -1,11 +1,11 @@
 import asyncio
 import json
 import os
-from functools import partial
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.runnables.config import run_in_executor
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):
@@ -181,9 +181,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
 
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.embed_query, text)
-        )
+        return await run_in_executor(None, self.embed_query, text)
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Asynchronous compute doc embeddings using a Bedrock model.
