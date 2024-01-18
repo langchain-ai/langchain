@@ -24,7 +24,7 @@ class LabelStudioMode(Enum):
 
 
 def get_default_label_configs(
-    mode: Union[str, LabelStudioMode]
+    mode: Union[str, LabelStudioMode],
 ) -> Tuple[str, LabelStudioMode]:
     """Get default Label Studio configs for the given mode.
 

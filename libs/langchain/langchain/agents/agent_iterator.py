@@ -46,7 +46,7 @@ class BaseAgentExecutorIterator(ABC):
 
 
 def rebuild_callback_manager_on_set(
-    setter_method: Callable[..., None]
+    setter_method: Callable[..., None],
 ) -> Callable[..., None]:
     """Decorator to force setters to rebuild callback mgr"""
 

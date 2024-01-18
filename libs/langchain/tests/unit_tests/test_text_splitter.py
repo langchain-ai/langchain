@@ -1058,6 +1058,7 @@ def test_solidity_code_splitter() -> None:
         "}\n  }",
     ]
 
+
 def test_haskell_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.HASKELL, chunk_size=CHUNK_SIZE, chunk_overlap=0
@@ -1076,7 +1077,7 @@ def test_haskell_code_splitter() -> None:
         "main ::",
         "IO ()",
         "main = do",
-        'putStrLn',
+        "putStrLn",
         '"Hello, World!"',
         "--",
         "Some sample",

@@ -35,7 +35,7 @@ def sql_histories(
 
 
 def test_add_messages(
-    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory]
+    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = sql_histories
     sql_history.add_user_message("Hello!")
@@ -50,7 +50,7 @@ def test_add_messages(
 
 
 def test_multiple_sessions(
-    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory]
+    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = sql_histories
     sql_history.add_user_message("Hello!")
@@ -74,7 +74,7 @@ def test_multiple_sessions(
 
 
 def test_clear_messages(
-    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory]
+    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = sql_histories
     sql_history.add_user_message("Hello!")

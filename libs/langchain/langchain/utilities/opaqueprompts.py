@@ -2,7 +2,7 @@ from typing import Dict, Union
 
 
 def sanitize(
-    input: Union[str, Dict[str, str]]
+    input: Union[str, Dict[str, str]],
 ) -> Dict[str, Union[str, Dict[str, str]]]:
     """
     Sanitize input string or dict of strings by replacing sensitive data with

@@ -233,7 +233,7 @@ def test_partial() -> None:
 
 @pytest.mark.requires("jinja2")
 def test_prompt_jinja2_functionality(
-    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
+    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]],
 ) -> None:
     prefix = "Starting with {{ foo }}"
     suffix = "Ending with {{ bar }}"
@@ -256,7 +256,7 @@ def test_prompt_jinja2_functionality(
 
 @pytest.mark.requires("jinja2")
 def test_prompt_jinja2_missing_input_variables(
-    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
+    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]],
 ) -> None:
     """Test error is raised when input variables are not provided."""
     prefix = "Starting with {{ foo }}"
@@ -303,7 +303,7 @@ def test_prompt_jinja2_missing_input_variables(
 
 @pytest.mark.requires("jinja2")
 def test_prompt_jinja2_extra_input_variables(
-    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
+    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]],
 ) -> None:
     """Test error is raised when there are too many input variables."""
     prefix = "Starting with {{ foo }}"
