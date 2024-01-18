@@ -42,7 +42,7 @@ def test_vertex_call(model_name: str) -> None:
     assert isinstance(output, str)
 
 
-@pytest.mark.xfail(reason="VertexAI doesnt always respect number of candidates")
+@pytest.mark.xfail(reason="VertexAI doesn't always respect number of candidates")
 def test_vertex_generate() -> None:
     llm = VertexAI(temperature=0.3, n=2, model_name="text-bison@001")
     output = llm.generate(["Say foo:"])
@@ -51,7 +51,7 @@ def test_vertex_generate() -> None:
     assert len(output.generations[0]) == 2
 
 
-@pytest.mark.xfail(reason="VertexAI doesnt always respect number of candidates")
+@pytest.mark.xfail(reason="VertexAI doesn't always respect number of candidates")
 def test_vertex_generate_code() -> None:
     llm = VertexAI(temperature=0.3, n=2, model_name="code-bison@001")
     output = llm.generate(["generate a python method that says foo:"])
