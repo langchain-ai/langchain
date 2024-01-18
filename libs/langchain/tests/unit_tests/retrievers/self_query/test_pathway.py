@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, Tuple
 
 from langchain.chains.query_constructor.ir import (
@@ -48,12 +49,15 @@ def test_visit_comparison_contain() -> None:
 
 
 def test_visit_comparison_datetime() -> None:
+    date_str = "2023-09-13"
+    expected_timestamp = int(datetime.strptime(date_str, "%Y-%m-%d").timestamp())
+
     comp = Comparison(
         comparator=Comparator.LTE,
         attribute="foo",
-        value={"type": "date", "date": "2023-09-13"},
+        value={"type": "date", "date": date_str},
     )
-    expected = "foo <= `1694556000`"
+    expected = f"foo <= `{expected_timestamp}`"
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
