@@ -11,11 +11,13 @@ from typing import (
     Dict,
     List,
     Literal,
+    NotRequired,
     Optional,
     Sequence,
     TypedDict,
     TypeVar,
     Union,
+    overload,
 )
 from uuid import UUID
 
@@ -26,7 +28,7 @@ from langchain_core.load import dumps
 from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
-from langchain_core.runnables.utils import Output
+from langchain_core.runnables.utils import Input, Output
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -51,23 +53,12 @@ class LogEntry(TypedDict):
     """List of LLM tokens streamed by this run, if applicable."""
     streamed_output: List[Any]
     """List of output chunks streamed by this run, if available."""
-    inputs: Optional[Any]
-    """Inputs to this run.
-    
-    The inputs will be a dictionary, matching
-    
-    """
+    inputs: NotRequired[Optional[Any]]
+    """Inputs to this run. Not available currently via astream_log."""
     final_output: Optional[Any]
-    """Final output of this run.
-    Only available after the run has finished successfully.
+    """Final output of this run. 
     
-    Schema:
-    
-    Retriever: 
-        - Sequence[Document] 
-    
-    
-    """
+    Only available after the run has finished successfully."""
     end_time: Optional[str]
     """ISO-8601 timestamp of when the run ended.
     Only available after the run has finished."""
@@ -323,25 +314,30 @@ class LogStreamCallbackHandler(BaseTracer):
                 run.name if count == 1 else f"{run.name}:{count}"
             )
 
+        entry = LogEntry(
+            id=str(run.id),
+            name=run.name,
+            type=run.run_type,
+            tags=run.tags or [],
+            metadata=(run.extra or {}).get("metadata", {}),
+            start_time=run.start_time.isoformat(timespec="milliseconds"),
+            streamed_output=[],
+            streamed_output_str=[],
+            final_output=None,
+            end_time=None,
+        )
+
+        if self._schema_format == "streaming_events":
+            # If using streaming events let's add inputs as well
+            entry["inputs"] = _get_standardized_inputs(run, self._schema_format)
+
         # Add the run to the stream
         self.send_stream.send_nowait(
             RunLogPatch(
                 {
                     "op": "add",
                     "path": f"/logs/{self._key_map_by_run_id[run.id]}",
-                    "value": LogEntry(
-                        id=str(run.id),
-                        name=run.name,
-                        type=run.run_type,
-                        tags=run.tags or [],
-                        metadata=(run.extra or {}).get("metadata", {}),
-                        start_time=run.start_time.isoformat(timespec="milliseconds"),
-                        streamed_output=[],
-                        streamed_output_str=[],
-                        inputs=_get_standardized_inputs(run, self._schema_format),
-                        final_output=None,
-                        end_time=None,
-                    ),
+                    "value": entry,
                 }
             )
         )
@@ -439,11 +435,14 @@ def _get_standardized_inputs(
         invocation using named arguments.
         A None means that the input is not yet known!
     """
-    inputs = load(run.inputs)
-
     if schema_format == "original":
-        # Return the old schema, without standardizing anything
-        return inputs
+        raise NotImplementedError(
+            "Do not assign inputs with original schema drop the key for now."
+            "When inputs are added to astream_log they should be added with "
+            "standardized schema for streaming events."
+        )
+
+    inputs = load(run.inputs)
 
     if run.run_type in {"retriever", "llm", "chat_model"}:
         return inputs
@@ -489,8 +488,36 @@ def _get_standardized_outputs(
     return None
 
 
+@overload
+def _astream_log_implementation(
+    runnable: Runnable[Input, Output],
+    input: Any,
+    config: Optional[RunnableConfig] = None,
+    *,
+    stream: LogStreamCallbackHandler,
+    diff: Literal[True] = True,
+    with_streamed_output_list: bool = True,
+    **kwargs: Any,
+) -> AsyncIterator[RunLogPatch]:
+    ...
+
+
+@overload
+def _astream_log_implementation(
+    runnable: Runnable[Input, Output],
+    input: Any,
+    config: Optional[RunnableConfig] = None,
+    *,
+    stream: LogStreamCallbackHandler,
+    diff: Literal[False],
+    with_streamed_output_list: bool = True,
+    **kwargs: Any,
+) -> AsyncIterator[RunLog]:
+    ...
+
+
 async def _astream_log_implementation(
-    runnable: Runnable,
+    runnable: Runnable[Input, Output],
     input: Any,
     config: Optional[RunnableConfig] = None,
     *,
@@ -498,7 +525,12 @@ async def _astream_log_implementation(
     diff: bool = True,
     with_streamed_output_list: bool = True,
     **kwargs: Any,
-):
+) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
+    """Implementation of astream_log for a given runnable.
+
+    The implementation has been factored out (at least temporarily) as both
+    astream_log and astream_events relies on it.
+    """
     import jsonpatch  # type: ignore[import]
 
     from langchain_core.callbacks.base import BaseCallbackManager

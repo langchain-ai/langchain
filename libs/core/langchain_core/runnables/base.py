@@ -7,7 +7,6 @@ import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from contextvars import copy_context
-from copy import deepcopy
 from functools import wraps
 from itertools import groupby, tee
 from operator import itemgetter
@@ -37,7 +36,7 @@ from typing import (
 from typing_extensions import Literal, get_args
 
 from langchain_core._api import beta_decorator
-from langchain_core.load.dump import dumpd, dumps
+from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import BaseConfig, BaseModel, Field, create_model
 from langchain_core.runnables.config import (
@@ -87,10 +86,8 @@ if TYPE_CHECKING:
     )
     from langchain_core.tracers.log_stream import (
         LogEntry,
-        LogStreamCallbackHandler,
         RunLog,
         RunLogPatch,
-        _astream_log_implementation,
     )
     from langchain_core.tracers.root_listeners import Listener
 
@@ -683,7 +680,10 @@ class Runnable(Generic[Input, Output], ABC):
             _schema_format="original",
         )
 
-        async for item in _astream_log_implementation(
+        # Mypy isn't resolving the overloads here
+        # Likely an issue b/c `self` is being passed through
+        # and it's can't map it to Runnable[Input,Output]?
+        async for item in _astream_log_implementation(  # type: ignore
             self,
             input,
             config,
@@ -735,20 +735,23 @@ class Runnable(Generic[Input, Output], ABC):
 
         | event                | name             | chunk                           | input                                         | output                                          |
         |----------------------|------------------|---------------------------------|-----------------------------------------------|-------------------------------------------------|
-        | on_retriever_start   | [retriever name] |                                 | {"query": "hello"}                            |                                                 |
-        | on_retriever_chunk   | [retriever name] | {documents: [...]}              |                                               |                                                 |
-        | on_retriever_end     | [retriever name] |                                 | {"query": "hello"}                            | {documents: [...]}                              |
+        | on_chat_model_start  | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} |                                                 |
+        | on_chat_model_stream | [model name]     | AIMessageChunk(content="hello") |                                               |                                                 |
+        | on_chat_model_end    | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} | {"generations": [...], "llm_output": None, ...} |
+        | on_llm_start         | [model name]     |                                 | {'input': 'hello'}                            |                                                 |
+        | on_llm_stream        | [model name]     | 'Hello'                         |                                               |                                                 |
+        | on_llm_end           | [model name]     |                                 | 'Hello human!'                                |
         | on_chain_start       | format_docs      |                                 |                                               |                                                 |
         | on_chain_stream      | format_docs      | "hello world!, goodbye world!"  |                                               |                                                 |
         | on_chain_end         | format_docs      |                                 | [Document(...)]                               | "hello world!, goodbye world!"                  |
         | on_tool_start        | some_tool        |                                 | {"x": 1, "y": "2"}                            |                                                 |
         | on_tool_stream       | some_tool        | {"x": 1, "y": "2"}              |                                               |                                                 |
         | on_tool_end          | some_tool        |                                 |                                               | {"x": 1, "y": "2"}                              |
+        | on_retriever_start   | [retriever name] |                                 | {"query": "hello"}                            |                                                 |
+        | on_retriever_chunk   | [retriever name] | {documents: [...]}              |                                               |                                                 |
+        | on_retriever_end     | [retriever name] |                                 | {"query": "hello"}                            | {documents: [...]}                              |
         | on_prompt_start      | [template_name]  |                                 | {"question": "hello"}                         |                                                 |
         | on_prompt_end        | [template_name]  |                                 | {"question": "hello"}                         | ChatPromptValue(messages: [SystemMessage, ...]) |
-        | on_chat_model_start  | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} |                                                 |
-        | on_chat_model_stream | [model name]     | AIMessageChunk(content="hello") |                                               |                                                 |
-        | on_chat_model_end    | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} | {"generations": [...], "llm_output": None, ...} |
 
         ```python
         def format_docs(docs: List[Document]) -> str:

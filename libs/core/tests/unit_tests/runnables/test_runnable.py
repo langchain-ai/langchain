@@ -1639,7 +1639,6 @@ async def test_prompt() -> None:
             ),
             "id": "00000000-0000-0000-0000-000000000000",
             "logs": {},
-            "name": "ChatPromptTemplate",
             "streamed_output": [
                 ChatPromptValue(
                     messages=[
@@ -1649,8 +1648,11 @@ async def test_prompt() -> None:
                 )
             ],
             "type": "prompt",
+            "name": "ChatPromptTemplate",
         },
     )
+
+    # nested inside trace_with_chain_group
 
     async with atrace_as_chain_group("a_group") as manager:
         stream_log_nested = [
@@ -2092,10 +2094,10 @@ async def test_prompt_with_llm(
                 "op": "replace",
                 "path": "",
                 "value": {
-                    "final_output": None,
                     "logs": {},
-                    "name": "RunnableSequence",
+                    "final_output": None,
                     "streamed_output": [],
+                    "name": "RunnableSequence",
                     "type": "chain",
                 },
             }
@@ -2107,7 +2109,6 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "inputs": {"question": "What is your name?"},
                     "metadata": {},
                     "name": "ChatPromptTemplate",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2119,11 +2120,6 @@ async def test_prompt_with_llm(
             }
         ),
         RunLogPatch(
-            {
-                "op": "replace",
-                "path": "/logs/ChatPromptTemplate/inputs",
-                "value": {"question": "What is your name?"},
-            },
             {
                 "op": "add",
                 "path": "/logs/ChatPromptTemplate/final_output",
@@ -2147,12 +2143,6 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "inputs": {
-                        "prompts": [
-                            "System: You are a nice assistant.\n"
-                            "Human: What is your name?"
-                        ]
-                    },
                     "metadata": {},
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2164,16 +2154,6 @@ async def test_prompt_with_llm(
             }
         ),
         RunLogPatch(
-            {
-                "op": "replace",
-                "path": "/logs/FakeListLLM/inputs",
-                "value": {
-                    "prompts": [
-                        "System: You are a nice assistant.\n"
-                        "Human: What is your name?"
-                    ]
-                },
-            },
             {
                 "op": "add",
                 "path": "/logs/FakeListLLM/final_output",
@@ -2318,10 +2298,10 @@ async def test_prompt_with_llm_parser(
                 "op": "replace",
                 "path": "",
                 "value": {
-                    "final_output": None,
                     "logs": {},
-                    "name": "RunnableSequence",
+                    "final_output": None,
                     "streamed_output": [],
+                    "name": "RunnableSequence",
                     "type": "chain",
                 },
             }
@@ -2333,7 +2313,6 @@ async def test_prompt_with_llm_parser(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "inputs": {"question": "What is your name?"},
                     "metadata": {},
                     "name": "ChatPromptTemplate",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2345,11 +2324,6 @@ async def test_prompt_with_llm_parser(
             }
         ),
         RunLogPatch(
-            {
-                "op": "replace",
-                "path": "/logs/ChatPromptTemplate/inputs",
-                "value": {"question": "What is your name?"},
-            },
             {
                 "op": "add",
                 "path": "/logs/ChatPromptTemplate/final_output",
@@ -2373,12 +2347,6 @@ async def test_prompt_with_llm_parser(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "inputs": {
-                        "prompts": [
-                            "System: You are a nice assistant.\n"
-                            "Human: What is your name?"
-                        ]
-                    },
                     "metadata": {},
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2390,16 +2358,6 @@ async def test_prompt_with_llm_parser(
             }
         ),
         RunLogPatch(
-            {
-                "op": "replace",
-                "path": "/logs/FakeStreamingListLLM/inputs",
-                "value": {
-                    "prompts": [
-                        "System: You are a nice assistant.\n"
-                        "Human: What is your name?"
-                    ]
-                },
-            },
             {
                 "op": "add",
                 "path": "/logs/FakeStreamingListLLM/final_output",
@@ -2430,7 +2388,6 @@ async def test_prompt_with_llm_parser(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "inputs": None,
                     "metadata": {},
                     "name": "CommaSeparatedListOutputParser",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2476,14 +2433,9 @@ async def test_prompt_with_llm_parser(
         ),
         RunLogPatch(
             {
-                "op": "replace",
-                "path": "/logs/CommaSeparatedListOutputParser/inputs",
-                "value": "bear, dog, cat",
-            },
-            {
                 "op": "add",
                 "path": "/logs/CommaSeparatedListOutputParser/final_output",
-                "value": ["bear", "dog", "cat"],
+                "value": {"output": ["bear", "dog", "cat"]},
             },
             {
                 "op": "add",
@@ -2492,7 +2444,6 @@ async def test_prompt_with_llm_parser(
             },
         ),
     ]
-
     assert stream_log == expected
 
 
@@ -2558,7 +2509,7 @@ async def test_stream_log_lists() -> None:
             ):
                 del op["value"]["id"]
 
-    expected = [
+    assert stream_log == [
         RunLogPatch(
             {
                 "op": "replace",
@@ -2566,8 +2517,8 @@ async def test_stream_log_lists() -> None:
                 "value": {
                     "final_output": None,
                     "logs": {},
-                    "name": "list_producer",
                     "streamed_output": [],
+                    "name": "list_producer",
                     "type": "chain",
                 },
             }
@@ -2589,8 +2540,6 @@ async def test_stream_log_lists() -> None:
             {"op": "add", "path": "/final_output/alist/3", "value": "3"},
         ),
     ]
-
-    assert stream_log == expected
 
     state = add(stream_log)
 
@@ -3358,21 +3307,15 @@ async def test_map_astream() -> None:
             final_state += chunk
     final_state = cast(RunLog, final_state)
 
+    assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
     assert len(final_state.state["logs"]) == 4
     assert (
         final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
     )
-
-    assert final_state.state["logs"]["ChatPromptTemplate"][
-        "final_output"
-    ] == ChatPromptValue(
-        messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
-        ]
+    assert final_state.state["logs"]["ChatPromptTemplate"]["final_output"] == (
+        prompt.invoke({"question": "What is your name?"})
     )
-
     assert (
         final_state.state["logs"]["RunnableParallel<chat,llm,passthrough>"]["name"]
         == "RunnableParallel<chat,llm,passthrough>"
@@ -5209,7 +5152,7 @@ async def test_astream_log_deep_copies() -> None:
     assert state == {
         "final_output": 2,
         "logs": {},
+        "streamed_output": [2],
         "name": "add_one",
         "type": "chain",
-        "streamed_output": [2],
     }
