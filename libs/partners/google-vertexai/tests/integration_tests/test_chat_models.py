@@ -1,4 +1,6 @@
 """Test ChatGoogleVertexAI chat model."""
+from typing import cast
+
 import pytest
 from langchain_core.messages import (
     AIMessage,
@@ -6,7 +8,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import LLMResult
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain_google_vertexai.chat_models import ChatVertexAI
 
@@ -60,8 +62,8 @@ async def test_vertexai_agenerate(model_name: str) -> None:
     assert isinstance(response.generations[0][0].message, AIMessage)  # type: ignore
 
     sync_response = model.generate([[message]])
-    sync_generation = sync_response.generations[0][0]
-    async_generation = response.generations[0][0]
+    sync_generation = cast(ChatGeneration, sync_response.generations[0][0])
+    async_generation = cast(ChatGeneration, response.generations[0][0])
 
     # assert some properties to make debugging easier
     assert sync_generation.message.content == async_generation.message.content
