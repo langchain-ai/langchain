@@ -6,6 +6,7 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
+from langchain.pydantic_v1 import BaseModel, Field
 
 
 def _import_elevenlabs() -> Any:
@@ -16,6 +17,12 @@ def _import_elevenlabs() -> Any:
             "Cannot import elevenlabs, please install `pip install elevenlabs`."
         ) from e
     return elevenlabs
+
+
+class ElevenLabsText2SpeechToolInput(BaseModel):
+    query: str = Field(description="Text that needs to be converted to speech")
+
+
 
 
 class ElevenLabsModel(str, Enum):
@@ -41,6 +48,7 @@ class ElevenLabsText2SpeechTool(BaseTool):
         "It supports multiple languages, including English, German, Polish, "
         "Spanish, Italian, French, Portuguese, and Hindi. "
     )
+    args_schema: Type[BaseModel] = ElevenLabsText2SpeechToolInput
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

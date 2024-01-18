@@ -16,7 +16,7 @@ clickup = ClickupAPIWrapper()
 toolkit = ClickupToolkit.from_clickup_api_wrapper(clickup)
 ```
 """
-from typing import Optional
+from typing import Optional,Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import Field
@@ -24,14 +24,21 @@ from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.clickup import ClickupAPIWrapper
 
+from langchain.pydantic_v1 import BaseModel, Field
+
+class ClickupActionInput(BaseModel):
+    instructions: str = Field(description="Instructions for the Click Up Action")
+
+
 
 class ClickupAction(BaseTool):
-    """Tool that queries the  Clickup API."""
+    """Tool that queries the Clickup API."""
 
     api_wrapper: ClickupAPIWrapper = Field(default_factory=ClickupAPIWrapper)
     mode: str
-    name: str = ""
-    description: str = ""
+    name: str = "clickup_action"
+    description: str = "Tool to execute action on ClickUp"
+    args_schema: Type[BaseModel] = ClickupActionInput
 
     def _run(
         self,

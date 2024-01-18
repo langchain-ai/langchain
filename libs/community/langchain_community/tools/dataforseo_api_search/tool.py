@@ -1,6 +1,6 @@
 """Tool for the DataForSeo SERP API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -10,6 +10,12 @@ from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
+
+from langchain.pydantic_v1 import BaseModel, Field
+
+class DataForSeoAPISearchInput(BaseModel):
+    query: str = Field(description="should be a search query")
+
 
 
 class DataForSeoAPISearchRun(BaseTool):
@@ -22,6 +28,7 @@ class DataForSeoAPISearchRun(BaseTool):
         "or current events."
     )
     api_wrapper: DataForSeoAPIWrapper
+    args_schema: Type[BaseModel] = DataForSeoAPISearchInput
 
     def _run(
         self,
@@ -53,6 +60,7 @@ class DataForSeoAPISearchResults(BaseTool):
         "of the query results."
     )
     api_wrapper: DataForSeoAPIWrapper = Field(default_factory=DataForSeoAPIWrapper)
+    args_schema: Type[BaseModel] = DataForSeoAPISearchInput
 
     def _run(
         self,
