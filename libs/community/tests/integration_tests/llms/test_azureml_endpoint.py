@@ -138,6 +138,7 @@ def test_incorrect_url() -> None:
         )
         llm.invoke("Foo")
 
+
 def test_incorrect_api_type() -> None:
     with pytest.raises(ValidationError):
         llm = AzureMLOnlineEndpoint(
@@ -148,6 +149,7 @@ def test_incorrect_api_type() -> None:
             content_formatter=OSSContentFormatter(),
         )
         llm.invoke("Foo")
+
 
 def test_incorrect_key() -> None:
     """Testing AzureML Endpoint for incorrect key"""

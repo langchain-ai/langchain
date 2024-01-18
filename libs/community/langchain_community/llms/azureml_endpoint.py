@@ -101,11 +101,11 @@ class ContentFormatterBase:
     accepts: Optional[str] = "application/json"
     """The MIME type of the response data returned from the endpoint"""
 
-    format_error_msg: Optional[
-        str
-    ] = ("Error while formatting response payload for chat model of type "
-         " `{api_type}`. Are you using the right formatter for the deployed "
-        " model and endpoint type?")
+    format_error_msg: Optional[str] = (
+        "Error while formatting response payload for chat model of type "
+        " `{api_type}`. Are you using the right formatter for the deployed "
+        " model and endpoint type?"
+    )
 
     @staticmethod
     def escape_special_characters(prompt: str) -> str:
@@ -356,17 +356,18 @@ class AzureMLBaseEndpoint(BaseModel):
             values, "deployment_name", "AZUREML_DEPLOYMENT_NAME", ""
         )
         values["endpoint_api_type"] = get_from_dict_or_env(
-            values, "endpoint_api_type", 
+            values,
+            "endpoint_api_type",
             "AZUREML_ENDPOINT_API_TYPE",
-            AzureMLEndpointApiType.realtime, 
+            AzureMLEndpointApiType.realtime,
         )
 
         return values
-    
+
     @validator("content_formatter")
     def validate_content_formatter(
-            cls, field_value: Any, values: Dict
-        ) -> ContentFormatterBase:
+        cls, field_value: Any, values: Dict
+    ) -> ContentFormatterBase:
         """Validate that content formatter is supported by endpoint type."""
         endpoint_api_type = values.get("endpoint_api_type")
         if endpoint_api_type not in field_value.supported_api_types:
@@ -376,7 +377,7 @@ class AzureMLBaseEndpoint(BaseModel):
                 f"but endpoint is {endpoint_api_type}."
             )
         return field_value
-    
+
     @validator("endpoint_url")
     def validate_endpoint_url(cls, field_value: Any) -> str:
         """Validate that endpoint url is complete."""
@@ -389,16 +390,15 @@ class AzureMLBaseEndpoint(BaseModel):
                 "or `/v1/chat/completions` for `endpoint_api_type='serverless'`"
             )
         return field_value
-    
+
     @validator("endpoint_api_type")
     def validate_endpoint_api_type(
-            cls, field_value: Any, values: Dict
-        ) -> AzureMLEndpointApiType:
+        cls, field_value: Any, values: Dict
+    ) -> AzureMLEndpointApiType:
         """Validate that endpoint api type is compatible with the URL format."""
         endpoint_url = values.get("endpoint_url")
-        if (
-            field_value == AzureMLEndpointApiType.realtime
-            and not endpoint_url.endswith("/score")
+        if field_value == AzureMLEndpointApiType.realtime and not endpoint_url.endswith(
+            "/score"
         ):
             raise ValueError(
                 "Endpoints of type `realtime` should follow the format "
@@ -415,7 +415,7 @@ class AzureMLBaseEndpoint(BaseModel):
                 "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/v1/chat/completions`"
                 " or `https://<your-endpoint>.<your_region>.inference.ml.azure.com/v1/chat/completions`"
             )
-        
+
         return field_value
 
     @validator("http_client", always=True)
