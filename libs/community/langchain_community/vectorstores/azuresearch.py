@@ -215,7 +215,6 @@ class AzureSearch(VectorStore):
         embedding_function: Callable,
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
-        semantic_query_language: str = "en-us",
         fields: Optional[List[SearchField]] = None,
         vector_search: Optional[VectorSearch] = None,
         semantic_configurations: Optional[SemanticConfiguration] = None,
@@ -275,7 +274,6 @@ class AzureSearch(VectorStore):
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name
-        self.semantic_query_language = semantic_query_language
         self.fields = fields if fields else default_fields
 
     @property
@@ -552,7 +550,6 @@ class AzureSearch(VectorStore):
             ],
             filter=filters,
             query_type="semantic",
-            query_language=self.semantic_query_language,
             semantic_configuration_name=self.semantic_configuration_name,
             query_caption="extractive",
             query_answer="extractive",
