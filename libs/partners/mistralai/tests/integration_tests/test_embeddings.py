@@ -43,3 +43,11 @@ def test_mistralai_embedding_documents_long() -> None:
     output = embedding.embed_documents(documents)
     assert len(output) == 2
     assert len(output[0]) == 1024
+
+
+def test_mistralai_embed_query_character() -> None:
+    """Test MistralAI embeddings for query."""
+    document = "😳"
+    embedding = MistralAIEmbeddings()
+    output = embedding.embed_query(document)
+    assert len(output) == 1024
