@@ -259,6 +259,11 @@ Supported examples:
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "google_palm"
+    
+    @property
+    def is_gemini(self) -> bool:
+        """Returns whether a model is belongs to a Gemini family or not."""
+        return _is_gemini_model(self.model)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.
@@ -272,6 +277,10 @@ Supported examples:
             The integer number of tokens in the text.
         """
         if self.is_gemini:
-            raise ValueError("Counting tokens is not yet supported!")
-        result = self.client.count_text_tokens(model=self.model, prompt=text)
-        return result["token_count"]
+            result = self.client.count_tokens(text)
+            token_count = result.total_tokens
+        else:
+            result = self.client.count_text_tokens(model=self.model, prompt=text)
+            token_count = result["token_count"]
+            
+        return token_count

@@ -74,6 +74,9 @@ class ChatGoogleGenerativeAIError(GoogleGenerativeAIError):
     message types or roles.
     """
 
+def _is_gemini_model(model_name: str) -> bool:
+    return "gemini" in model_name
+
 
 def _create_retry_decorator() -> Callable[[Any], Any]:
     """
@@ -650,3 +653,28 @@ Supported examples:
         message = history.pop()
         chat = self.client.start_chat(history=history)
         return params, chat, message
+    
+    @property
+    def is_gemini(self) -> bool:
+        """Returns whether a model is belongs to a Gemini family or not."""
+        return _is_gemini_model(self.model)
+
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        if self.is_gemini:
+            result = self.client.count_tokens(text)
+            token_count = result.total_tokens
+        else:
+            result = self.client.count_text_tokens(model=self.model, prompt=text)
+            token_count = result["token_count"]
+            
+        return token_count
