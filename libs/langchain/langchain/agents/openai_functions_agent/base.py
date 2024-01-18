@@ -18,7 +18,7 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
 )
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
 from langchain.agents import BaseSingleActionAgent
@@ -229,6 +229,15 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         )
 
 
+def _configure_prompt_llm(
+    inputs: dict, prompt: BasePromptTemplate, llm_with_tools: Runnable
+) -> Runnable:
+    tool_choice = inputs.pop("tool_choice")
+    if tool_choice:
+        llm_with_tools.bind(functional_call={"name": tool_choice})
+    return prompt | llm_with_tools
+
+
 def create_openai_functions_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ) -> Runnable:
@@ -307,8 +316,9 @@ def create_openai_functions_agent(
                 x["intermediate_steps"]
             )
         )
-        | prompt
-        | llm_with_tools
+        | RunnableLambda(_configure_prompt_llm).bind(
+            prompt=prompt, llm_with_tools=llm_with_tools
+        )
         | OpenAIFunctionsAgentOutputParser()
     )
     return agent

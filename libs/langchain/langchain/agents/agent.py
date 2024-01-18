@@ -925,6 +925,7 @@ class AgentExecutor(Chain):
     trim_intermediate_steps: Union[
         int, Callable[[List[Tuple[AgentAction, str]]], List[Tuple[AgentAction, str]]]
     ] = -1
+    initial_tool_choices: Sequence[Union[str, BaseTool]] = ()
 
     @classmethod
     def from_agent_and_tools(
@@ -954,6 +955,10 @@ class AgentExecutor(Chain):
                     f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
                 )
+        if values["max_iterations"] is not None:
+            values["max_iterations"] = max(
+                values["max_iterations"], len(values["initial_tool_choices"])
+            )
         return values
 
     @root_validator()
@@ -1373,10 +1378,19 @@ class AgentExecutor(Chain):
         start_time = time.time()
         # We now enter the agent loop (until it returns something).
         while self._should_continue(iterations, time_elapsed):
+            curr_inputs = inputs.copy()
+            if len(self.initial_tool_choices) > iterations:
+                tool_choice = self.initial_tool_choices[iterations]
+                tool_choice = (
+                    tool_choice.name
+                    if isinstance(tool_choice, BaseTool)
+                    else tool_choice
+                )
+                curr_inputs["tool_choice"] = tool_choice
             next_step_output = self._take_next_step(
                 name_to_tool_map,
                 color_mapping,
-                inputs,
+                curr_inputs,
                 intermediate_steps,
                 run_manager=run_manager,
             )
