@@ -12,6 +12,7 @@ env:
 
 jobs:
   build:
+    environment: Scheduled testing
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
