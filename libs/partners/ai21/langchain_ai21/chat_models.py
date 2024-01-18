@@ -57,22 +57,22 @@ class ChatAI21(BaseChatModel, AI21Base):
     """
 
     model: str = "j2-ultra"
-    num_results: Optional[int] = None
+    num_results: int = 1
     """The number of responses to generate for a given prompt."""
 
-    max_tokens: Optional[int] = None
+    max_tokens: int = 16
     """The maximum number of tokens to generate for each response."""
 
-    min_tokens: Optional[int] = None
+    min_tokens: int = 0
     """The minimum number of tokens to generate for each response."""
 
-    temperature: Optional[float] = None
+    temperature: float = 0.7
     """A value controlling the "creativity" of the model's responses."""
 
-    top_p: Optional[float] = None
+    top_p: float = 1
     """A value controlling the diversity of the model's responses."""
 
-    top_k_returns: Optional[int] = None
+    top_k_returns: int = 0
     """The number of top-scoring tokens to consider for each generation step."""
 
     frequency_penalty: Optional[Penalty] = None
