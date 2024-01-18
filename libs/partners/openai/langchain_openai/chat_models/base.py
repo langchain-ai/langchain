@@ -415,7 +415,7 @@ class ChatOpenAI(BaseChatModel):
             )
             yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
 
     def _generate(
         self,
@@ -498,7 +498,8 @@ class ChatOpenAI(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
-            if logprobs := choice.get("logprobs"):
+            logprobs = choice.get("logprobs")
+            if logprobs:
                 generation_info["logprobs"] = logprobs
             default_chunk_class = chunk.__class__
             chunk = ChatGenerationChunk(
@@ -506,7 +507,9 @@ class ChatOpenAI(BaseChatModel):
             )
             yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(token=chunk.text, chunk=chunk)
+                await run_manager.on_llm_new_token(
+                    token=chunk.text, chunk=chunk, logprobs=logprobs
+                )
 
     async def _agenerate(
         self,
