@@ -811,6 +811,7 @@ class Language(str, Enum):
     SOL = "sol"
     CSHARP = "csharp"
     COBOL = "cobol"
+    HASKELL = "haskell"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -1337,7 +1338,45 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
-
+        elif language == Language.HASKELL:
+            return [
+                # Split along function definitions
+                "\nmain :: ",
+                "\nmain = ",
+                "\nlet ",
+                "\nin ",
+                "\ndo ",
+                "\nwhere ",
+                "\n:: ",
+                "\n= ",
+                # Split along type declarations
+                "\ndata ",
+                "\nnewtype ",
+                "\ntype ",
+                "\n:: ",
+                # Split along module declarations
+                "\nmodule ",
+                # Split along import statements
+                "\nimport ",
+                "\nqualified ",
+                "\nimport qualified ",
+                # Split along typeclass declarations
+                "\nclass ",
+                "\ninstance ",
+                # Split along case expressions
+                "\ncase ",
+                # Split along guards in function definitions
+                "\n| ",
+                # Split along record field declarations
+                "\ndata ",
+                "\n= {",
+                "\n, ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         else:
             raise ValueError(
                 f"Language {language} is not supported! "
