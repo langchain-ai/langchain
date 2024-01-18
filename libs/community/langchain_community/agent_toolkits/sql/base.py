@@ -5,6 +5,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
 
 from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -17,6 +18,10 @@ from langchain_community.agent_toolkits.sql.prompt import (
     SQL_SUFFIX,
 )
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+from langchain_community.tools.sql_database.tool import (
+    InfoSQLDatabaseTool,
+    ListSQLDatabaseTool,
+)
 
 if TYPE_CHECKING:
     from langchain.agents.agent import AgentExecutor
@@ -33,7 +38,7 @@ def create_sql_agent(
     toolkit: Optional[SQLDatabaseToolkit] = None,
     agent_type: Optional[Union[AgentType, Literal["openai-tools"]]] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
-    prefix: str = SQL_PREFIX,
+    prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     format_instructions: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
@@ -46,6 +51,7 @@ def create_sql_agent(
     extra_tools: Sequence[BaseTool] = (),
     *,
     db: Optional[SQLDatabase] = None,
+    prompt: Optional[BasePromptTemplate] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a SQL agent from an LLM and toolkit or database.
@@ -60,7 +66,7 @@ def create_sql_agent(
             "openai-tools" is recommended over "openai-functions".
         callback_manager: DEPRECATED. Pass "callbacks" key into 'agent_executor_kwargs'
             instead to pass constructor callbacks to AgentExecutor.
-        prefix: Prompt prefix string. Should contain variables "top_k" and "dialect".
+        prefix: Prompt prefix string. Must contain variables "top_k" and "dialect".
         suffix: Prompt suffix string. Default depends on agent type.
         format_instructions: Formatting instructions to pass to
             ZeroShotAgent.create_prompt() when 'agent_type' is
@@ -78,6 +84,8 @@ def create_sql_agent(
             SQLDatabaseToolkit.
         db: SQLDatabase from which to create a SQLDatabaseToolkit. Toolkit is created
             using 'db' and 'llm'. Must provide exactly one of 'db' or 'toolkit'.
+        prompt: Complete agent prompt. prompt and {prefix, suffix, format_instructions,
+            input_variables} are mutually exclusive.
         **kwargs: DEPRECATED. Not used, kept for backwards compatibility.
 
     Returns:
@@ -125,45 +133,66 @@ def create_sql_agent(
     toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)
     agent_type = agent_type or AgentType.ZERO_SHOT_REACT_DESCRIPTION
     tools = toolkit.get_tools() + list(extra_tools)
-    prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
+    if prompt is None:
+        prefix = prefix or SQL_PREFIX
+        prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
+    else:
+        if "top_k" in prompt.input_variables:
+            prompt = prompt.partial(top_k=str(top_k))
+        if "dialect" in prompt.input_variables:
+            prompt = prompt.partial(dialect=toolkit.dialect)
+        db_context = toolkit.get_context()
+        if "table_info" in prompt.input_variables:
+            prompt = prompt.partial(table_info=db_context["table_info"])
+            tools = [
+                tool for tool in tools if not isinstance(tool, InfoSQLDatabaseTool)
+            ]
+        if "table_names" in prompt.input_variables:
+            prompt = prompt.partial(table_names=db_context["table_names"])
+            tools = [
+                tool for tool in tools if not isinstance(tool, ListSQLDatabaseTool)
+            ]
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
-        prompt_params = (
-            {"format_instructions": format_instructions}
-            if format_instructions is not None
-            else {}
-        )
-        prompt = ZeroShotAgent.create_prompt(
-            tools,
-            prefix=prefix,
-            suffix=suffix or SQL_SUFFIX,
-            input_variables=input_variables,
-            **prompt_params,
-        )
+        if prompt is None:
+            prompt_params = (
+                {"format_instructions": format_instructions}
+                if format_instructions is not None
+                else {}
+            )
+            prompt = ZeroShotAgent.create_prompt(
+                tools,
+                prefix=prefix,
+                suffix=suffix or SQL_SUFFIX,
+                input_variables=input_variables,
+                **prompt_params,
+            )
         agent = RunnableAgent(
             runnable=create_react_agent(llm, tools, prompt), input_keys_arg=["input"]
         )
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
-        messages = [
-            SystemMessage(content=prefix),
-            HumanMessagePromptTemplate.from_template("{input}"),
-            AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-        prompt = ChatPromptTemplate.from_messages(messages)
+        if prompt is None:
+            messages = [
+                SystemMessage(content=prefix),
+                HumanMessagePromptTemplate.from_template("{input}"),
+                AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
+            ]
+            prompt = ChatPromptTemplate.from_messages(messages)
         agent = RunnableAgent(
             runnable=create_openai_functions_agent(llm, tools, prompt),
             input_keys_arg=["input"],
         )
     elif agent_type == "openai-tools":
-        messages = [
-            SystemMessage(content=prefix),
-            HumanMessagePromptTemplate.from_template("{input}"),
-            AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-        prompt = ChatPromptTemplate.from_messages(messages)
+        if prompt is None:
+            messages = [
+                SystemMessage(content=prefix),
+                HumanMessagePromptTemplate.from_template("{input}"),
+                AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
+            ]
+            prompt = ChatPromptTemplate.from_messages(messages)
         agent = RunnableMultiActionAgent(
             runnable=create_openai_tools_agent(llm, tools, prompt),
             input_keys_arg=["input"],

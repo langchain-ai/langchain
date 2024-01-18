@@ -38,7 +38,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
