@@ -1,22 +1,24 @@
-from typing import List, Union, Type, Dict
+import json
+from typing import Dict, List, Type, Union
 
-from langchain_core.tools import Tool
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.outputs import Generation, ChatGeneration
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.tools import Tool
 from langchain_core.utils.function_calling import FunctionDescription
 from langchain_core.utils.json_schema import dereference_refs
 from vertexai.preview.generative_models import (  # type: ignore
     FunctionDeclaration,
 )
-import json
 from vertexai.preview.generative_models import (
     Tool as VertexTool,  # type: ignore
 )
 
 
-def _format_pydantic_to_vertex_function(pydantic_model: Type[BaseModel]) -> FunctionDescription:
+def _format_pydantic_to_vertex_function(
+    pydantic_model: Type[BaseModel],
+) -> FunctionDescription:
     schema = dereference_refs(pydantic_model.schema())
     schema.pop("definitions", None)
 
@@ -35,6 +37,7 @@ def _format_pydantic_to_vertex_function(pydantic_model: Type[BaseModel]) -> Func
             "type": schema["type"],
         },
     }
+
 
 def _format_tool_to_vertex_function(tool: Tool) -> FunctionDescription:
     "Format tool into the Vertex function API."
@@ -71,7 +74,9 @@ def _format_tool_to_vertex_function(tool: Tool) -> FunctionDescription:
         }
 
 
-def _format_tools_to_vertex_tool(tools: List[Union[Tool, Type[BaseModel]]]) -> List[VertexTool]:
+def _format_tools_to_vertex_tool(
+    tools: List[Union[Tool, Type[BaseModel]]],
+) -> List[VertexTool]:
     "Format tool into the Vertex Tool instance."
     function_declarations = []
     for tool in tools:
@@ -124,7 +129,9 @@ class PydanticFunctionsOutputParser(BaseOutputParser):
             )
             result = parser.parse_result([chat_generation])
     """
+
     pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
+
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> BaseModel:
@@ -143,7 +150,5 @@ class PydanticFunctionsOutputParser(BaseOutputParser):
         else:
             raise OutputParserException(f"Could not parse function call: {message}")
 
-
     def parse(self, text: str) -> BaseModel:
         raise ValueError("Can only parse messages")
-

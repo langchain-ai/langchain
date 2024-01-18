@@ -18,6 +18,7 @@ from langchain_core.output_parsers import (
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
+
 from langchain_google_vertexai.functions_utils import PydanticFunctionsOutputParser
 
 
@@ -50,17 +51,17 @@ def get_output_parser(
 def create_structured_runnable(
     function: Union[Type[BaseModel], Sequence[Type[BaseModel]]],
     llm: Runnable,
-        *,
+    *,
     prompt: Optional[BasePromptTemplate] = None,
 ) -> Runnable:
     """Create a runnable sequence that uses OpenAI functions.
 
     Args:
-        function: Either a single pydantic.BaseModel class or a sequence 
+        function: Either a single pydantic.BaseModel class or a sequence
             of pydantic.BaseModels classes.
             For best results, pydantic.BaseModels
             should have descriptions of the parameters.
-        llm: Language model to use, 
+        llm: Language model to use,
             assumed to support the Google Vertex function-calling API.
         prompt: BasePromptTemplate to pass to the model.
 
