@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 
-def merge_dicts(
-    left: Dict[str, Any], right: Dict[str, Any]
-) -> Dict[str, Any]:
+def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
     """Merge additional_kwargs from another BaseMessageChunk into this one,
     handling specific scenarios where a key exists in both dictionaries
     but has a value of None in 'left'. In such cases, the method uses the
@@ -30,7 +28,7 @@ def merge_dicts(
         elif type(merged[k]) != type(v):
             raise TypeError(
                 f'additional_kwargs["{k}"] already exists in this message,'
-            " but with a different type."
+                " but with a different type."
             )
         elif isinstance(merged[k], str):
             merged[k] += v

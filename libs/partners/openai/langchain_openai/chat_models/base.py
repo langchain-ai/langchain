@@ -410,7 +410,9 @@ class ChatOpenAI(BaseChatModel):
             if logprobs := choice.get("logprobs"):
                 generation_info["logprobs"] = logprobs
             default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info or None)
+            chunk = ChatGenerationChunk(
+                message=chunk, generation_info=generation_info or None
+            )
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
@@ -499,7 +501,9 @@ class ChatOpenAI(BaseChatModel):
             if logprobs := choice.get("logprobs"):
                 generation_info["logprobs"] = logprobs
             default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info or None)
+            chunk = ChatGenerationChunk(
+                message=chunk, generation_info=generation_info or None
+            )
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(token=chunk.text, chunk=chunk)
