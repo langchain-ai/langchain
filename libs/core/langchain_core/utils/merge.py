@@ -41,8 +41,8 @@ def merge_dicts(
             for i, e in enumerate(v):
                 if isinstance(e, dict) and isinstance(e.get("index"), int):
                     i = e["index"]
-                    if i < len(merged[k]):
-                        merged[k][i] = merge_dicts(merged[k][i], e)
+                if isinstance(e, dict) and i < len(merged[k]):
+                    merged[k][i] = merge_dicts(merged[k][i], e)
                 else:
                     merged[k] = merged[k] + [e]
         else:
