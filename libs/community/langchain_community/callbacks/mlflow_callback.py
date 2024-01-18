@@ -197,8 +197,6 @@ class MlflowLogger:
         """
         If run_id is provided, it will reuse the run with the given run_id.
         Otherwise, it starts a new run, auto generates the random suffix for name.
-        If there's already an active run, we will reuse the active run and ignore
-        the run_id parameter.
         """
         if run_id is None:
             if name.endswith("-%"):
