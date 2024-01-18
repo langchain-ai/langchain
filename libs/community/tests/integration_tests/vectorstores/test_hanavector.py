@@ -48,10 +48,10 @@ test_setup = ConfigData()
 
 def setup_module(module):
     test_setup.conn = dbapi.connect(
-        address=os.environ.get("DB_ADDRESS"),
-        port=os.environ.get("DB_PORT"),
-        user=os.environ.get("DB_USER"),
-        password=os.environ.get("DB_PASSWORD"),
+        address=os.environ.get("HANA_DB_ADDRESS"),
+        port=os.environ.get("HANA_DB_PORT"),
+        user=os.environ.get("HANA_DB_USER"),
+        password=os.environ.get("HANA_DB_PASSWORD"),
         autocommit=True,
         sslValidateCertificate=False,
     )
