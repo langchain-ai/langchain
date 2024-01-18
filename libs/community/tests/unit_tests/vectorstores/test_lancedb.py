@@ -1,7 +1,10 @@
+import pytest
+
 from langchain_community.vectorstores import LanceDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
+@pytest.mark.requires("lancedb")
 def test_lancedb_with_connection() -> None:
     import lancedb
 
@@ -23,6 +26,7 @@ def test_lancedb_with_connection() -> None:
     assert "text 1" in result_texts
 
 
+@pytest.mark.requires("lancedb")
 def test_lancedb_without_connection() -> None:
     embeddings = FakeEmbeddings()
     texts = ["text 1", "text 2", "item 3"]
@@ -34,6 +38,7 @@ def test_lancedb_without_connection() -> None:
     assert "text 1" in result_texts
 
 
+@pytest.mark.requires("lancedb")
 def test_lancedb_add_texts() -> None:
     embeddings = FakeEmbeddings()
 
