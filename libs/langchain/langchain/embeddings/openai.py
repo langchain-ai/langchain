@@ -36,7 +36,7 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
     import openai
 
     min_seconds = 4
-    max_seconds = 120
+    max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
     return retry(
@@ -58,7 +58,7 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
     import openai
 
     min_seconds = 4
-    max_seconds = 120
+    max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
     async_retrying = AsyncRetrying(
@@ -175,9 +175,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_organization: Optional[str] = None
     allowed_special: Union[Literal["all"], Set[str]] = set()
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
-    chunk_size: int = 16
+    chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
-    max_retries: int = 100000000000000000000000
+    max_retries: int = 6
     """Maximum number of retries to make when generating."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the OpenAPI request."""
@@ -264,7 +264,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         else:
             default_api_version = ""
             default_chunk_size = 1000
-        values["openai_api_version"] = default_api_version
+        values["openai_api_version"] = get_from_dict_or_env(
+            values,
+            "openai_api_version",
+            "OPENAI_API_VERSION",
+            default=default_api_version,
+        )
         values["openai_organization"] = get_from_dict_or_env(
             values,
             "openai_organization",
