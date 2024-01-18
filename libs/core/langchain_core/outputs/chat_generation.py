@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Literal
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils.merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts
 
 
 class ChatGeneration(Generation):
@@ -55,7 +55,9 @@ class ChatGenerationChunk(ChatGeneration):
     def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:
         if isinstance(other, ChatGenerationChunk):
             generation_info = merge_dicts(
-                self.generation_info or {}, other.generation_info or {}
+                self.generation_info or {},
+                other.generation_info or {},
+                merge_lists=False,
             )
             return ChatGenerationChunk(
                 message=self.message + other.message,

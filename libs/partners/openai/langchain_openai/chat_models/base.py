@@ -407,7 +407,8 @@ class ChatOpenAI(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
-            if logprobs := choice.get("logprobs"):
+            logprobs = choice.get("logprobs")
+            if logprobs:
                 generation_info["logprobs"] = logprobs
             default_chunk_class = chunk.__class__
             chunk = ChatGenerationChunk(

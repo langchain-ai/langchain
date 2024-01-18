@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Literal, Optional
 
 from langchain_core.load import Serializable
-from langchain_core.utils.merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts
 
 
 class Generation(Serializable):
@@ -42,7 +42,9 @@ class GenerationChunk(Generation):
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
         if isinstance(other, GenerationChunk):
             generation_info = merge_dicts(
-                self.generation_info or {}, other.generation_info or {}
+                self.generation_info or {},
+                other.generation_info or {},
+                merge_lists=False,
             )
             return GenerationChunk(
                 text=self.text + other.text,

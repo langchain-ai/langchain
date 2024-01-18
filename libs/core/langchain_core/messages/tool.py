@@ -5,7 +5,7 @@ from langchain_core.messages.base import (
     BaseMessageChunk,
     merge_content,
 )
-from langchain_core.utils.merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts
 
 
 class ToolMessage(BaseMessage):
