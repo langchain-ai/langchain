@@ -59,7 +59,8 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 f"SpaCy model '{spacy_model}' not found. "
                 f"Please install it with"
-                fq" `python -m spacy download {spacy_model}` or provide a valid spaCy model name."
+                f" `python -m spacy download {spacy_model}`"
+                "or provide a valid spaCy model name."
             )
         return values  # Return the validated values
 
