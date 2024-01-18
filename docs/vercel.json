@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/use_cases/qa_structured/sql",
+      "destination": "/docs/use_cases/sql/"
+    },
+    {
       "source": "/docs/contributing/packages",
       "destination": "/docs/packages"
     },
