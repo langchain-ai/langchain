@@ -365,6 +365,7 @@ class Runnable(Generic[Input, Output], ABC):
                         ),
                     )
                     for spec in config_specs
+                    if spec.annotation is not None
                 },
                 __config__=_SchemaConfig,
             )
