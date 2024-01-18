@@ -684,7 +684,7 @@ async def _arun_llm(
             return await llm.ainvoke(
                 prompt_or_messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
                 ),
             )
         else:
@@ -700,7 +700,7 @@ async def _arun_llm(
             llm_output: Union[str, BaseMessage] = await llm.ainvoke(
                 prompt,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
                 ),
             )
         except InputFormatError:
@@ -708,7 +708,7 @@ async def _arun_llm(
             llm_output = await llm.ainvoke(
                 messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
                 ),
             )
     return llm_output
@@ -735,12 +735,12 @@ async def _arun_chain(
         output = await chain.ainvoke(
             val,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata
+                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
             ),
         )
     else:
         runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, metadata=metadata
+            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
         )
         output = await chain.ainvoke(inputs_, config=runnable_config)
     return output
@@ -838,7 +838,7 @@ def _run_llm(
             llm_output: Union[str, BaseMessage] = llm.invoke(
                 prompt_or_messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
                 ),
             )
         else:
@@ -853,14 +853,14 @@ def _run_llm(
             llm_output = llm.invoke(
                 llm_prompts,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
                 ),
             )
         except InputFormatError:
             llm_messages = _get_messages(inputs)
             llm_output = llm.invoke(
                 llm_messages,
-                config=RunnableConfig(callbacks=callbacks, metadata=metadata),
+                config=RunnableConfig(callbacks=callbacks, metadata=metadata or {}),
             )
     return llm_output
 
@@ -886,12 +886,12 @@ def _run_chain(
         output = chain.invoke(
             val,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata
+                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
             ),
         )
     else:
         runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, metadata=metadata
+            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
         )
         output = chain.invoke(inputs_, config=runnable_config)
     return output
@@ -1158,7 +1158,7 @@ class _DatasetRunContainer:
                 ],
                 tags=tags,
                 max_concurrency=concurrency_level,
-                metadata={"revision_id": revision_id} if revision_id else None,
+                metadata={"revision_id": revision_id} if revision_id else {},
             )
             for example in examples
         ]
