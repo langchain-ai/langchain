@@ -1,10 +1,10 @@
-from typing import List, Optional, TypedDict, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.runnables import Runnable, RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
 
@@ -31,7 +31,7 @@ def create_sql_query_chain(
     db: SQLDatabase,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
-) -> Runnable[Union[SQLInput, SQLInputWithTables], str]:
+) -> Runnable[Union[SQLInput, SQLInputWithTables, Dict[str, Any]], str]:
     """Create a chain that generates SQL queries.
 
     *Security Note*: This chain generates SQL queries for the given database.
@@ -128,8 +128,14 @@ def create_sql_query_chain(
         ),
     }
     return (
-        RunnablePassthrough.assign(**inputs)
-        | (lambda x: {k: v for k, v in x.items() if k not in ("question", "table_names_to_use")})
+        RunnablePassthrough.assign(**inputs)  # type: ignore
+        | (
+            lambda x: {
+                k: v
+                for k, v in x.items()
+                if k not in ("question", "table_names_to_use")
+            }
+        )
         | prompt_to_use.partial(top_k=str(k))
         | llm.bind(stop=["\nSQLResult:"])
         | StrOutputParser()
