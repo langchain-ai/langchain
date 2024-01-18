@@ -295,7 +295,14 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
 
         self.action_records: list = []
-        self.nlp = spacy.load("en_core_web_sm")
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            logger.warning(
+                "Run `python -m spacy download en_core_web_sm` "
+                "to download en_core_web_sm"
+            )
+            raise
 
         self.metrics = {key: 0 for key in mlflow_callback_metrics()}
 
