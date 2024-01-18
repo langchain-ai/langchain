@@ -54,7 +54,7 @@ from langchain_core.runnables.config import (
     var_child_runnable_config,
 )
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.schema import StreamEvent, _EventData
+from langchain_core.runnables.schema import EventData, StreamEvent
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -913,7 +913,7 @@ class Runnable(Generic[Input, Output], ABC):
             # Elements in a set should be iterated in the same order
             # as they were inserted in modern python versions.
             for path in paths:
-                data: _EventData = {}
+                data: EventData = {}
                 log_entry: LogEntry = run_log.state["logs"][path]
                 if log_entry["end_time"] is None:
                     if log_entry["streamed_output"]:
@@ -3649,6 +3649,18 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
+
+    async def astream_events(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[StreamEvent]:
+        for _ in range(1):
+            raise NotImplementedError(
+                "RunnableEach does not support astream_events yet."
+            )
+            yield
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):

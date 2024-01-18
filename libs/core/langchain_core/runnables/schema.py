@@ -6,10 +6,10 @@ from typing import Any, Dict, List
 from typing_extensions import NotRequired, TypedDict
 
 
-class _EventData(TypedDict):
+class EventData(TypedDict, total=False):
     """Data associated with a streaming event."""
 
-    input: NotRequired[Any]
+    input: Any
     """The input passed to the runnable that generated the event.
     
     Inputs will sometimes be available at the *START* of the runnable, and 
@@ -19,7 +19,7 @@ class _EventData(TypedDict):
     won't be known until the *END* of the runnable when it has finished streaming
     its inputs.
     """
-    output: NotRequired[Any]
+    output: Any
     """The output of the runnable that generated the event.
     
     Outputs will only be available at the *END* of the runnable.
@@ -28,7 +28,7 @@ class _EventData(TypedDict):
     though there might be some exceptions for special cased runnables (e.g., like
     chat models), which may return more information.
     """
-    chunk: NotRequired[Any]
+    chunk: Any
     """A streaming chunk from the output that generated the event.
     
     chunks support addition in general, and adding them up should result
@@ -97,7 +97,7 @@ class StreamEvent(TypedDict):
     
     start, stream and end are associated with slightly different `data` payload.
     
-    Please see the documentation for `_EventData` for more details.
+    Please see the documentation for `EventData` for more details.
     """
     name: str
     """The name of the runnable that generated the event."""
@@ -126,7 +126,7 @@ class StreamEvent(TypedDict):
     
         `.astream_events(..., {"metadata": {"foo": "bar"}})`.
     """
-    data: _EventData
+    data: EventData
     """Event data.
 
     The contents of the event data depend on the event type.
