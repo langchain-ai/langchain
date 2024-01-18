@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import logging
+import numpy as np
 from enum import Enum
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple, Dict
 
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+
+from libs.core.langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 
 logger = logging.getLogger(__name__)
 
@@ -252,7 +256,10 @@ class Rockset(VectorStore):
         """Accepts a query_embedding (vector), and returns documents with
         similar embeddings along with their relevance scores."""
 
-        q_str = self._build_query_sql(embedding, distance_func, k, where_str)
+        exclude_embeddings = True
+        if "exclude_embeddings" in kwargs:
+            exclude_embeddings = kwargs["exclude_embedding"]
+        q_str = self._build_query_sql(embedding, distance_func, k, where_str, exclude_embeddings)
         try:
             query_response = self._client.Queries.query(sql={"query": q_str})
         except Exception as e:
@@ -288,6 +295,52 @@ class Rockset(VectorStore):
             )
         return finalResult
 
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        distance_func: DistanceFunction = DistanceFunction.COSINE_SIM,
+        where_str: Optional[str] = None,
+        lambda_mult: float = 0.5,
+        **kwargs: Any
+    ):
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            distance_func (DistanceFunction): how to compute distance between two
+                vectors in Rockset.
+            where_str: where clause for the sql query
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        query_embedding = self._embeddings.embed_query(query)
+        initial_docs = self.similarity_search_by_vector(
+            query_embedding,
+            k=fetch_k,
+            distance_func=distance_func,
+            where_str=where_str,
+            **kwargs
+        )
+
+        embeddings = [doc[self._embedding_key] for doc in initial_docs]
+
+        selected_indices = maximal_marginal_relevance(
+            np.array(query_embedding), embeddings, lambda_mult=lambda_mult, k=k,
+        )
+
+        return [initial_docs[i] for i in selected_indices]
+
     # Helper functions
 
     def _build_query_sql(
@@ -296,6 +349,7 @@ class Rockset(VectorStore):
         distance_func: DistanceFunction,
         k: int = 4,
         where_str: Optional[str] = None,
+        exclude_embeddings: bool = True,
     ) -> str:
         """Builds Rockset SQL query to query similar vectors to query_vector"""
 
@@ -303,8 +357,9 @@ class Rockset(VectorStore):
         distance_str = f"""{distance_func.value}({self._embedding_key}, \
 [{q_embedding_str}]) as dist"""
         where_str = f"WHERE {where_str}\n" if where_str else ""
+        select_embedding = f"EXCEPT({self._embedding_key})," if exclude_embeddings else ""
         return f"""\
-SELECT * EXCEPT({self._embedding_key}), {distance_str}
+SELECT * {select_embedding} {distance_str}
 FROM {self._workspace}.{self._collection_name}
 {where_str}\
 ORDER BY dist {distance_func.order_by()}
@@ -332,3 +387,47 @@ LIMIT {str(k)}
             data=[DeleteDocumentsRequestData(id=i) for i in ids],
             workspace=self._workspace,
         )
+
+
+class RocksetVectorStoreRetriever(VectorStoreRetriever):
+    """Retriever for Rockset VectorStore."""
+
+    search_type: str = "similarity"
+    vectorstore: Rockset
+
+    SIMILARITY = "similarity"
+    SIMILARITY_SCORE_THRESHOLD = "similarity_score_threshold"
+    MMR = "mmr"
+    allowed_search_types = [
+        SIMILARITY,
+        SIMILARITY_SCORE_THRESHOLD,
+        MMR,
+    ]
+
+    search_kwargs: Dict[str, Any] = {
+        "k": 4,
+        "score_threshold": 0.9,
+        # set to None to avoid distance used in score_threshold search
+        "distance_threshold": None,
+    }
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        if self.search_type == RocksetVectorStoreRetriever.SIMILARITY:
+            return self.vectorstore.similarity_search(query, **self.search_kwargs)
+        elif self.search_type == RocksetVectorStoreRetriever.SIMILARITY_SCORE_THRESHOLD:
+            docs_and_similarities = (
+                self.vectorstore.similarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            return [doc for doc, _ in docs_and_similarities]
+        elif self.search_type == RocksetVectorStoreRetriever.MMR:
+            return self.vectorstore.max_marginal_relevance_search(
+                query, exclude_embeddings=False, **self.search_kwargs
+            )
+        else:
+            error_msg = (f"search_type of {self.search_type} is unsupported. Select one of"
+                         f"{', '.join(RocksetVectorStoreRetriever.allowed_search_types)}.")
+            raise ValueError(error_msg)
