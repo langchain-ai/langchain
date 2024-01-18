@@ -11,10 +11,8 @@ from typing import (
     Dict,
     List,
     Literal,
-    NotRequired,
     Optional,
     Sequence,
-    TypedDict,
     TypeVar,
     Union,
     overload,
@@ -23,6 +21,7 @@ from uuid import UUID
 
 import jsonpatch  # type: ignore[import]
 from anyio import create_memory_object_stream
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.load import dumps
 from langchain_core.load.load import load
