@@ -341,6 +341,9 @@ class Rockset(VectorStore):
 
         return [initial_docs[i] for i in selected_indices]
 
+    def as_retriever(self, **kwargs: Any) -> RocksetVectorStoreRetriever:
+        return RocksetVectorStoreRetriever(vectorstore=self, **kwargs)
+
     # Helper functions
 
     def _build_query_sql(
