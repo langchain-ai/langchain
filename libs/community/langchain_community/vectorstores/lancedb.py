@@ -7,8 +7,6 @@ from langchain.docstore.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.vectorstore import VectorStore
 
-# from ..embeddings.openai import OpenAIEmbeddings
-
 
 class LanceDB(VectorStore):
     """`LanceDB` vector store.
