@@ -68,7 +68,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         mock_model.start_chat = mock_start_chat
         mg.return_value = mock_model
 
-        model = ChatVertexAI(**prompt_params)
+        model = ChatVertexAI(**prompt_params)  # type: ignore
         message = HumanMessage(content=user_prompt)
         if stop:
             response = model([message], stop=[stop])
@@ -110,3 +110,52 @@ def test_parse_chat_history_correct() -> None:
         ChatMessage(content=text_question, author="user"),
         ChatMessage(content=text_answer, author="bot"),
     ]
+
+
+def test_default_params_palm() -> None:
+    user_prompt = "Hello"
+
+    with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
+        mock_response = MagicMock()
+        mock_response.candidates = [Mock(text="Goodbye")]
+        mock_chat = MagicMock()
+        mock_send_message = MagicMock(return_value=mock_response)
+        mock_chat.send_message = mock_send_message
+
+        mock_model = MagicMock()
+        mock_start_chat = MagicMock(return_value=mock_chat)
+        mock_model.start_chat = mock_start_chat
+        mg.return_value = mock_model
+
+        model = ChatVertexAI(model_name="text-bison@001")
+        message = HumanMessage(content=user_prompt)
+        _ = model([message])
+        mock_start_chat.assert_called_once_with(
+            context=None,
+            message_history=[],
+            max_output_tokens=128,
+            top_k=40,
+            top_p=0.95,
+            stop_sequences=None,
+        )
+
+
+def test_default_params_gemini() -> None:
+    user_prompt = "Hello"
+
+    with patch("langchain_google_vertexai.chat_models.GenerativeModel") as gm:
+        mock_response = MagicMock()
+        content = Mock(parts=[Mock(function_call=None)])
+        mock_response.candidates = [Mock(text="Goodbye", content=content)]
+        mock_chat = MagicMock()
+        mock_send_message = MagicMock(return_value=mock_response)
+        mock_chat.send_message = mock_send_message
+
+        mock_model = MagicMock()
+        mock_start_chat = MagicMock(return_value=mock_chat)
+        mock_model.start_chat = mock_start_chat
+        gm.return_value = mock_model
+        model = ChatVertexAI(model_name="gemini-pro")
+        message = HumanMessage(content=user_prompt)
+        _ = model([message])
+        mock_start_chat.assert_called_once_with(history=[])
