@@ -116,6 +116,7 @@ def test_multimodal() -> None:
     assert isinstance(output.content, str)
 
 
+@pytest.mark.xfail("problem on vertex side")
 def test_multimodal_history() -> None:
     llm = ChatVertexAI(model_name="gemini-pro-vision")
     gcs_url = (
