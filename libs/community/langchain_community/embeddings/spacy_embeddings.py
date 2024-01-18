@@ -41,7 +41,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             ValueError: If the spaCy package or the
             model are not installed.
         """
-        nlp = values.get("nlp")
+        spacy_model = values.get("nlp")
 
         # Check if the spaCy package is installed
         if importlib.util.find_spec("spacy") is None:
@@ -53,13 +53,13 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             # Try to load the spaCy model
             import spacy
 
-            values["nlp"] = spacy.load(nlp)
+            values["nlp"] = spacy.load(spacy_model)
         except OSError:
             # If the model is not found, raise a ValueError
             raise ValueError(
-                f"SpaCy model '{nlp}' not found. "
+                f"SpaCy model '{spacy_model}' not found. "
                 f"Please install it with"
-                " `python -m spacy download {nlp}` or provide a valid spaCy model name."
+                fq" `python -m spacy download {spacy_model}` or provide a valid spaCy model name."
             )
         return values  # Return the validated values
 
