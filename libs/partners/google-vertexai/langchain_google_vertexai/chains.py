@@ -1,6 +1,4 @@
 from typing import (
-    Any,
-    Callable,
     Dict,
     Optional,
     Sequence,
@@ -8,11 +6,8 @@ from typing import (
     Union,
 )
 
-from langchain_core._api import deprecated
-from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
-    BaseLLMOutputParser,
     BaseOutputParser,
 )
 from langchain_core.prompts import BasePromptTemplate
