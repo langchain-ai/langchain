@@ -1057,3 +1057,65 @@ def test_solidity_code_splitter() -> None:
         "+ b;",
         "}\n  }",
     ]
+
+def test_haskell_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.HASKELL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+        main :: IO ()
+        main = do
+        putStrLn "Hello, World!"
+
+        -- Some sample functions
+        add :: Int -> Int -> Int
+        add x y = x + y
+
+        sub :: Int -> Int -> Int
+        sub x y = x - y
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "main",
+        "::",
+        "IO",
+        "()",
+        "main",
+        "=",
+        'do',
+        'putStrLn',
+        '"Hello,',
+        'World!"',
+        "-- Some",
+        "sample",
+        "functions",
+        "add",
+        "::",
+        "Int",
+        "->",
+        "Int",
+        "->",
+        "Int",
+        "add",
+        "x",
+        "y",
+        "=",
+        "x",
+        "+",
+        "y",
+        "sub",
+        "::",
+        "Int",
+        "->",
+        "Int",
+        "->",
+        "Int",
+        "sub",
+        "x",
+        "y",
+        "=",
+        "x",
+        "-",
+        "y",
+    ]
+
