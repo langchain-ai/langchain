@@ -31,16 +31,34 @@ class AI21LLM(BaseLLM, AI21Base):
     """
 
     model: str = "j2-ultra"
-    max_tokens: Optional[int] = None
     num_results: Optional[int] = None
+    """The number of responses to generate for a given prompt."""
+
+    max_tokens: Optional[int] = None
+    """The maximum number of tokens to generate for each response."""
+
     min_tokens: Optional[int] = None
+    """The minimum number of tokens to generate for each response."""
+
     temperature: Optional[float] = None
+    """A value controlling the "creativity" of the model's responses."""
+
     top_p: Optional[float] = None
+    """A value controlling the diversity of the model's responses."""
+
     top_k_returns: Optional[int] = None
-    custom_model: Optional[str] = None
+    """The number of top-scoring tokens to consider for each generation step."""
+
     frequency_penalty: Optional[Penalty] = None
+    """A penalty applied to tokens that are frequently generated."""
+
     presence_penalty: Optional[Penalty] = None
+    """ A penalty applied to tokens that are already present in the prompt."""
+
     count_penalty: Optional[Penalty] = None
+    """A penalty applied to tokens based on their frequency in the generated responses."""
+
+    custom_model: Optional[str] = None
     epoch: Optional[int] = None
 
     @property
