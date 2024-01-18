@@ -915,7 +915,7 @@ def _run_llm_or_chain(
                 config["callbacks"],
                 tags=config["tags"],
                 input_mapper=input_mapper,
-                revision_identifier=config.get("metadata"),
+                metadata=config.get("metadata"),
             )
         result = output
     except Exception as e:
@@ -1091,13 +1091,13 @@ class _DatasetRunContainer:
         input_mapper: Optional[Callable[[Dict], Any]] = None,
         concurrency_level: int = 5,
         project_metadata: Optional[Dict[str, Any]] = None,
-        revision_identifier: Optional[str] = None,
+        revision_id: Optional[str] = None,
     ) -> _DatasetRunContainer:
         project_name = project_name or name_generation.random_name()
-        if revision_identifier:
+        if revision_id:
             if not project_metadata:
                 project_metadata = {}
-            project_metadata.update({"revision_identifier": revision_identifier})
+            project_metadata.update({"revision_id": revision_id})
         wrapped_model, project, dataset, examples = _prepare_eval_run(
             client,
             dataset_name,
@@ -1134,7 +1134,7 @@ class _DatasetRunContainer:
                 ],
                 tags=tags,
                 max_concurrency=concurrency_level,
-                metadata={"revision_identifier": revision_identifier} if revision_identifier else None,
+                metadata={"revision_id": revision_id} if revision_id else None,
             )
             for example in examples
         ]
@@ -1197,7 +1197,7 @@ async def arun_on_dataset(
     project_metadata: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
     tags: Optional[List[str]] = None,
-    revision_identifier: Optional[str] = None,
+    revision_id: Optional[str] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
@@ -1223,7 +1223,7 @@ async def arun_on_dataset(
         input_mapper,
         concurrency_level,
         project_metadata=project_metadata,
-        revision_identifier=revision_identifier,
+        revision_id=revision_id,
     )
     batch_results = await runnable_utils.gather_with_concurrency(
         container.configs[0].get("max_concurrency"),
@@ -1251,7 +1251,7 @@ def run_on_dataset(
     project_metadata: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
     tags: Optional[List[str]] = None,
-    revision_identifier: Optional[str] = None,
+    revision_id: Optional[str] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
@@ -1277,7 +1277,7 @@ def run_on_dataset(
         input_mapper,
         concurrency_level,
         project_metadata=project_metadata,
-        revision_identifier=revision_identifier,
+        revision_id=revision_id,
     )
     if concurrency_level == 0:
         batch_results = [
@@ -1327,6 +1327,8 @@ Args:
         log feedback and run traces.
     verbose: Whether to print progress.
     tags: Tags to add to each run in the project.
+    revision_id: Optional revision identifier to assign this test run to
+        track the performance of different versions of your system.
 Returns:
     A dictionary containing the run's project name and the resulting model outputs.
 
