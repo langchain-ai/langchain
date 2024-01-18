@@ -52,6 +52,7 @@ from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain_community.chat_models.wasm_chat import WasmChatService
 from langchain_community.chat_models.yandex import ChatYandexGPT
 from langchain_community.chat_models.zhipuai import ChatZhipuAI
+from langchain_community.chat_models.sense_nova import ChatSenseNova
 
 __all__ = [
     "WasmChatService",
@@ -89,4 +90,5 @@ __all__ = [
     "VolcEngineMaasChat",
     "GPTRouter",
     "ChatZhipuAI",
+    "ChatSenseNova",
 ]
