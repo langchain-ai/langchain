@@ -485,3 +485,9 @@ class SQLDatabase:
         except SQLAlchemyError as e:
             """Format the error message"""
             return f"Error: {e}"
+
+    def get_context(self) -> Dict[str, Any]:
+        """Return db context that you may want in agent prompt."""
+        table_names = list(self.get_usable_table_names())
+        table_info = self.get_table_info_no_throw()
+        return {"table_info": table_info, "table_names": ", ".join(table_names)}
