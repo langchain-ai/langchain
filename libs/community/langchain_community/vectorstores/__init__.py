@@ -422,6 +422,12 @@ def _import_vald() -> Any:
     return Vald
 
 
+def _import_vdms() -> Any:
+    from langchain_community.vectorstores.vdms import VDMSVectorSearch
+
+    return VDMSVectorSearch
+
+
 def _import_vearch() -> Any:
     from langchain_community.vectorstores.vearch import Vearch
 
@@ -591,6 +597,8 @@ def __getattr__(name: str) -> Any:
         return _import_usearch()
     elif name == "Vald":
         return _import_vald()
+    elif name == "VDMSVectorSearch":
+        return _import_vdms()
     elif name == "Vearch":
         return _import_vearch()
     elif name == "Vectara":
@@ -671,6 +679,7 @@ __all__ = [
     "Typesense",
     "USearch",
     "Vald",
+    "VDMSVectorSearch",
     "Vearch",
     "Vectara",
     "VespaStore",

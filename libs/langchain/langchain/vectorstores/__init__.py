@@ -103,6 +103,7 @@ __all__ = [
     "Typesense",
     "USearch",
     "Vald",
+    "VDMSVectorSearch",
     "Vearch",
     "Vectara",
     "VespaStore",
