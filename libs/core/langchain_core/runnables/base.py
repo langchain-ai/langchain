@@ -753,6 +753,10 @@ class Runnable(Generic[Input, Output], ABC):
         | on_prompt_start      | [template_name]  |                                 | {"question": "hello"}                         |                                                 |
         | on_prompt_end        | [template_name]  |                                 | {"question": "hello"}                         | ChatPromptValue(messages: [SystemMessage, ...]) |
 
+        Here are declarations associated with the events shown above:
+
+        `format_docs`:
+
         ```python
         def format_docs(docs: List[Document]) -> str:
             '''Format the docs.'''
@@ -761,17 +765,22 @@ class Runnable(Generic[Input, Output], ABC):
         format_docs = RunnableLambda(format_docs)
         ```
 
+        `some_tool`:
+
+        ```python
         @tool
         def some_tool(x: int, y: str) -> dict:
             '''Some_tool.'''
             return {"x": x, "y": y}
+        ```
 
+        `prompt`:
 
+        ```python
         template = ChatPromptTemplate.from_messages(
             [("system", "You are Cat Agent 007"), ("human", "{question}")]
         ).with_config({"run_name": "my_template", "tags": ["my_template"]})
         ```
-
 
         Example:
 
