@@ -35,7 +35,7 @@ from langchain_core.tracers.evaluation import (
 )
 from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
-from langsmith.env import get_git_info
+from langsmith.env import get_git_info, get_langchain_env_var_metadata
 from langsmith.evaluation import EvaluationResult, RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example, TracerSession
@@ -1228,8 +1228,8 @@ async def arun_on_dataset(
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
-    if not revision_id:
-        revision_id = _get_default_revision_id()
+    if revision_id is not None:
+        revision_id = get_langchain_env_var_metadata().get("revision_id")
 
     if kwargs:
         warn_deprecated(
@@ -1284,8 +1284,8 @@ def run_on_dataset(
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
-    if not revision_id:
-        revision_id = _get_default_revision_id()
+    if revision_id is not None:
+        revision_id = get_langchain_env_var_metadata().get("revision_id")
 
     if kwargs:
         warn_deprecated(
@@ -1333,24 +1333,6 @@ def run_on_dataset(
             )
 
     return container.finish(batch_results, verbose=verbose)
-
-
-def _get_default_revision_id() -> Optional[str]:
-    langchain_revision_id = os.getenv("LANGCHAIN_REVISION_ID")
-    if langchain_revision_id:
-        return langchain_revision_id
-    import subprocess
-
-    try:
-        return (
-            subprocess.check_output(
-                ["git", "describe", "--tags", "--dirty"], stderr=subprocess.DEVNULL
-            )
-            .strip()
-            .decode()
-        )
-    except Exception:
-        return None
 
 
 _RUN_ON_DATASET_DOCSTRING = """
