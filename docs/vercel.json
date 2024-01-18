@@ -294,7 +294,7 @@
     },
     {
       "source": "/docs/use_cases/qa_structured/integrations/sqlite",
-      "destination": "/cookbook"
+      "destination": "/docs/use_cases/sql/"
     },
     {
       "source": "/docs/use_cases/more/graph/tot",
@@ -1422,7 +1422,7 @@
     },
     {
       "source": "/docs/integrations/tools/sqlite",
-      "destination": "/docs/use_cases/qa_structured/sql"
+      "destination": "/docs/use_cases/sql"
     },
     {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
@@ -3510,11 +3510,7 @@
     },
     {
       "source": "/en/latest/use_cases/tabular.html",
-      "destination": "/docs/use_cases/qa_structured"
-    },
-    {
-      "source": "/docs/use_cases/sql(/?)",
-      "destination": "/docs/use_cases/qa_structured/sql"
+      "destination": "/docs/use_cases/sql"
     },
     {
       "source": "/en/latest/youtube.html",
