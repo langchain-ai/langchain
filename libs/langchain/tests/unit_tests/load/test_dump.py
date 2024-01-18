@@ -1,5 +1,6 @@
 """Test for Serializable base class"""
 
+import unittest
 from typing import Any, Dict, List
 
 import pytest
@@ -10,6 +11,7 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.langchain import LangChainTracer
+from langsmith import Client
 
 from langchain.chains.llm import LLMChain
 
@@ -74,12 +76,13 @@ def test_typeerror() -> None:
 
 @pytest.mark.requires("openai")
 def test_serialize_openai_llm(snapshot: Any) -> None:
+    client = unittest.mock.MagicMock(spec=Client)
     llm = OpenAI(
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",
         # This is excluded from serialization
-        callbacks=[LangChainTracer(api_key="test")],
+        callbacks=[LangChainTracer(client)],
     )
     llm.temperature = 0.7  # this is reflected in serialization
     assert dumps(llm, pretty=True) == snapshot
