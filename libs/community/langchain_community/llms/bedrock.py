@@ -398,19 +398,15 @@ class BedrockBase(BaseModel, ABC):
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
 
-        loop = asyncio.get_running_loop()
-
-        # Use ThreadPoolExecutor to run the synchronous method in a separate thread
-        with ThreadPoolExecutor() as executor:
-            response = await loop.run_in_executor(
-                executor,
+        await asyncio.get_running_loop().run_in_executor(
+                None, 
                 lambda: self.client.invoke_model_with_response_stream(
                     body=body,
                     modelId=self.model_id,
                     accept="application/json",
                     contentType="application/json",
-                ),
-            )
+                    )
+                )
 
         async for chunk in LLMInputOutputAdapter.aprepare_output_stream(
             provider, response, stop
