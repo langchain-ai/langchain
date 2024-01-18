@@ -185,6 +185,14 @@ class HanaDB(VectorStore):
         if value < -1:
             raise ValueError(f"Value ({value}) must not be smaller than -1")
         return int(str(input_int))
+    
+    def _sanitize_list_float(embedding: List[float]) -> List[float]:
+        for value in embedding:
+            if not isinstance(value, float):
+                raise ValueError(f"Value ({value}) does not have type float")
+        return embedding
+    
+    embedding: List[float]
 
     def add_texts(
         self,
@@ -317,10 +325,10 @@ class HanaDB(VectorStore):
         """
         result = []
         sql_str = (
-            f"SELECT TOP {k} {self.content_column}, {self.metadata_column} , "
+            f"SELECT TOP {HanaDB._sanitize_int(k)} {self.content_column}, {self.metadata_column} , "
             f"{HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} "
             f"({self.vector_column}, TO_REAL_VECTOR "
-            f"(ARRAY({'{}'.format(','.join(map(str, embedding)))}))) "
+            f"(ARRAY({'{}'.format(','.join(map(str, HanaDB._sanitize_list_float(embedding))))}))) "
             f"AS CS FROM {self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
@@ -490,11 +498,11 @@ class HanaDB(VectorStore):
         docs = []
         embeddings = []
         sql_str = (
-            f"SELECT TOP {k} {self.content_column}, {self.metadata_column}, "
+            f"SELECT TOP {HanaDB._sanitize_int(k)} {self.content_column}, {self.metadata_column}, "
             f"TO_NVARCHAR({self.vector_column}), "
             f"{HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} "
             f"({self.vector_column}, "
-            f"TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) "
+            f"TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, HanaDB._sanitize_list_float(embedding))))}))) "
             f"AS CS FROM {self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
