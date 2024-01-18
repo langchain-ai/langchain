@@ -8,7 +8,7 @@ from typing import (
     Optional,
 )
 
-from ai21.models import CompletionsResponse
+from ai21.models import CompletionsResponse, Penalty
 
 from langchain_ai21.ai21_base import AI21Base
 from langchain_core.callbacks import (
@@ -31,6 +31,17 @@ class AI21LLM(BaseLLM, AI21Base):
     """
 
     model: str = "j2-ultra"
+    max_tokens: Optional[int] = None
+    num_results: Optional[int] = None
+    min_tokens: Optional[int] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k_returns: Optional[int] = None
+    custom_model: Optional[str] = None
+    frequency_penalty: Optional[Penalty] = None
+    presence_penalty: Optional[Penalty] = None
+    count_penalty: Optional[Penalty] = None
+    epoch: Optional[int] = None
 
     @property
     def _llm_type(self) -> str:
@@ -44,10 +55,16 @@ class AI21LLM(BaseLLM, AI21Base):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
+        generations: List[List[Generation]] = []
+
         for prompt in prompts:
             response = self._invoke_completion(
                 prompt=prompt, model=self.model, stop_sequences=stop, **kwargs
             )
+            generation = self._response_to_generation(response)
+            generations.append(generation)
+
+        return LLMResult(generations=generations)
 
     async def _agenerate(
         self,
@@ -90,29 +107,27 @@ class AI21LLM(BaseLLM, AI21Base):
         return self.client.completion.create(
             prompt=prompt,
             model=model,
-            max_tokens=kwargs.get("max_tokens"),
-            num_results=kwargs.get("num_results"),
-            min_tokens=kwargs.get("min_tokens"),
-            temperature=kwargs.get("temperature"),
-            top_p=kwargs.get("top_p"),
-            top_k_return=kwargs.get("top_k_returns"),
-            custom_model=kwargs.get("custom_model"),
+            max_tokens=self.max_tokens,
+            num_results=self.num_results,
+            min_tokens=self.min_tokens,
+            temperature=self.temperature,
+            top_p=self.top_p,
+            top_k_return=self.top_k_returns,
+            custom_model=self.custom_model,
             stop_sequences=stop_sequences,
-            frequency_penalty=kwargs.get("frequency_penalty"),
-            presence_penalty=kwargs.get("presence_penalty"),
-            count_penalty=kwargs.get("count_penalty"),
-            epoch=kwargs.get("epoch"),
+            frequency_penalty=self.frequency_penalty,
+            presence_penalty=self.presence_penalty,
+            count_penalty=self.count_penalty,
+            epoch=self.epoch,
         )
 
-    def _response_to_llm_result(self, response: CompletionsResponse):
-        generations = [
+    def _response_to_generation(
+        self, response: CompletionsResponse
+    ) -> List[Generation]:
+        return [
             Generation(
                 text=completion.data.text,
                 generation_info=completion.to_dict(),
             )
             for completion in response.completions
         ]
-        return LLMResult(
-            generations=[generations],
-            run=[RunInfo(run_id=response.id)],
-        )
