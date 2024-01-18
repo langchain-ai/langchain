@@ -79,7 +79,7 @@ def test_serialize_openai_llm(snapshot: Any) -> None:
         temperature=0.5,
         openai_api_key="hello",
         # This is excluded from serialization
-        callbacks=[LangChainTracer()],
+        callbacks=[LangChainTracer(api_key="test")],
     )
     llm.temperature = 0.7  # this is reflected in serialization
     assert dumps(llm, pretty=True) == snapshot
