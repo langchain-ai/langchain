@@ -366,9 +366,25 @@ class HanaDB(VectorStore):
                 else:
                     where_str += " AND "
 
-                where_str += (
-                    f" JSON_QUERY({self.metadata_column}, '$.{key}') = '{filter[key]}'"
-                )
+                if isinstance(filter[key], str):
+                    where_str += (
+                        f" JSON_QUERY({self.metadata_column}, '$.{key}') = '\"{filter[key]}\"'"
+                    )
+                elif isinstance(filter[key], bool):
+                    if filter[key]:
+                        where_str += (
+                            f" JSON_QUERY({self.metadata_column}, '$.{key}') = true"
+                        )
+                    else:
+                        where_str += (
+                            f" JSON_QUERY({self.metadata_column}, '$.{key}') = false"
+                        )
+                elif  isinstance(filter[key], int):
+                    where_str += (
+                        f" JSON_QUERY({self.metadata_column}, '$.{key}') = '{filter[key]}'"
+                    )
+                else:
+                    raise ValueError(f"Unsupported filter data-type: {type(filter[key])}")
 
         return where_str
 

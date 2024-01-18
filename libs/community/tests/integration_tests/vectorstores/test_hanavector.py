@@ -87,9 +87,9 @@ def texts() -> List[str]:
 @pytest.fixture
 def metadatas() -> List[str]:
     return [
-        {"start": 0, "end": 100},
-        {"start": 100, "end": 200},
-        {"start": 200, "end": 300},
+        {"start": 0, "end": 100, "quality": "good", "ready": True},
+        {"start": 100, "end": 200, "quality": "bad", "ready": False},
+        {"start": 200, "end": 300, "quality": "ugly", "ready": True},
     ]
 
 
@@ -419,6 +419,76 @@ def test_hanavector_similarity_search_with_metadata_filter(
     assert metadatas[1]["start"] == search_result[0].metadata["start"]
     assert metadatas[1]["end"] == search_result[0].metadata["end"]
 
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_metadata_filter_string(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "TEST_TABLE_FILTER_STRING"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    search_result = vectorDB.similarity_search(texts[0], 3, filter={"quality": "bad"})
+
+    assert len(search_result) == 1
+    assert texts[1] == search_result[0].page_content
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_metadata_filter_bool(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "TEST_TABLE_FILTER_BOOL"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    search_result = vectorDB.similarity_search(texts[0], 3, filter={"ready": False})
+
+    assert len(search_result) == 1
+    assert texts[1] == search_result[0].page_content
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_similarity_search_with_metadata_filter_invalid_type(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "TEST_TABLE_FILTER_INVALID_TYPE"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    # Check if table is created
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    exception_occured = False
+    try:
+        search_result = vectorDB.similarity_search(texts[0], 3, filter={"wrong_type": 0.1})
+    except ValueError:
+        exception_occured = True
+    assert exception_occured
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_similarity_search_with_score(
