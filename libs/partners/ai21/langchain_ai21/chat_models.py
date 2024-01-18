@@ -1,6 +1,6 @@
 from typing import Any, AsyncIterator, Iterator, List, Optional, cast
 
-from ai21.models import ChatMessage, RoleType
+from ai21.models import ChatMessage, RoleType, Penalty
 
 from langchain_ai21.ai21_base import AI21Base
 from langchain_core.callbacks import (
@@ -57,6 +57,32 @@ class ChatAI21(BaseChatModel, AI21Base):
     """
 
     model: str = "j2-ultra"
+    num_results: Optional[int] = None
+    """The number of responses to generate for a given prompt."""
+
+    max_tokens: Optional[int] = None
+    """The maximum number of tokens to generate for each response."""
+
+    min_tokens: Optional[int] = None
+    """The minimum number of tokens to generate for each response."""
+
+    temperature: Optional[float] = None
+    """A value controlling the "creativity" of the model's responses."""
+
+    top_p: Optional[float] = None
+    """A value controlling the diversity of the model's responses."""
+
+    top_k_returns: Optional[int] = None
+    """The number of top-scoring tokens to consider for each generation step."""
+
+    frequency_penalty: Optional[Penalty] = None
+    """A penalty applied to tokens that are frequently generated."""
+
+    presence_penalty: Optional[Penalty] = None
+    """ A penalty applied to tokens that are already present in the prompt."""
+
+    count_penalty: Optional[Penalty] = None
+    """A penalty applied to tokens based on their frequency in the generated responses."""
 
     @property
     def _llm_type(self) -> str:
@@ -102,6 +128,16 @@ class ChatAI21(BaseChatModel, AI21Base):
             model=self.model,
             messages=ai21_messages,
             system=last_system_message_str,
+            num_results=self.num_results,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            min_tokens=self.min_tokens,
+            top_p=self.top_p,
+            top_k_returns=self.top_k_returns,
+            stop_sequences=stop,
+            frequency_penalty=self.frequency_penalty,
+            presence_penalty=self.presence_penalty,
+            count_penalty=self.count_penalty,
             **kwargs,
         )
 
