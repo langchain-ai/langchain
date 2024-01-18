@@ -131,7 +131,7 @@ table = db.create_table(
 raw_documents = TextLoader('../../../state_of_the_union.txt').load()
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 documents = text_splitter.split_documents(raw_documents)
-db = LanceDB.from_documents(documents, OpenAIEmbeddings(), connection=table)
+db = LanceDB.from_documents(documents, OpenAIEmbeddings())
 ```
 
   </TabItem>
