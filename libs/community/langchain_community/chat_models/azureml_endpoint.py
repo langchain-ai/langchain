@@ -1,8 +1,8 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -121,7 +121,8 @@ class LlamaChatContentFormatter(ContentFormatterBase):
                 choice = json.loads(output)["choices"][0]
                 if not isinstance(choice, dict):
                     raise TypeError(
-                        f"Endpoint response is not well formed for a chat model. Expected `dict` but `{type(choice)}` was received."
+                        "Endpoint response is not well formed for a chat "
+                        "model. Expected `dict` but `{type(choice)}` was received."
                     )
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
