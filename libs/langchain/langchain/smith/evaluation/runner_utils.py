@@ -1227,7 +1227,7 @@ async def arun_on_dataset(
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
-    if revision_id is not None:
+    if revision_id is None:
         revision_id = get_langchain_env_var_metadata().get("revision_id")
 
     if kwargs:
@@ -1283,7 +1283,7 @@ def run_on_dataset(
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
-    if revision_id is not None:
+    if revision_id is None:
         revision_id = get_langchain_env_var_metadata().get("revision_id")
 
     if kwargs:
