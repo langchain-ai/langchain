@@ -105,7 +105,13 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         vectorstore = vectorstore_cls.from_texts(
             string_examples, embeddings, metadatas=examples, **vectorstore_cls_kwargs
         )
-        return cls(vectorstore=vectorstore, k=k, input_keys=input_keys, example_keys=example_keys, vectorstore_kwargs=vectorstore_kwargs)
+        return cls(
+            vectorstore=vectorstore,
+            k=k,
+            input_keys=input_keys,
+            example_keys=example_keys,
+            vectorstore_kwargs=vectorstore_kwargs,
+        )
 
 
 class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector):
