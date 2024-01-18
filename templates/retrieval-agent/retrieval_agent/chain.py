@@ -66,11 +66,16 @@ description = (
 arxiv_tool = create_retriever_tool(ArxivRetriever(), "arxiv", description)
 tools = [arxiv_tool]
 llm = AzureChatOpenAI(
+    """NEW SYNTAX WORKS FOR THIS"""
     temperature=0,
-    deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
-    openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
-    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-    openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
+    api_key=os.getenv("AZURE_OPENAI_KEY"),  
+    api_version=os.getenv("AZURE_OPENAI_VERSION"),
+    """OLD SYNTAX WORKS DOES NOT WORK WITH FUNCTION CALLING"""
+    # deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+    # openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
+    # openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+    # openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
 )
 assistant_system_message = """You are a helpful research assistant. \
 Lookup relevant information as needed."""
