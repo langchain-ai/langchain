@@ -37,7 +37,6 @@ default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
 default_content_column: str = "VEC_TEXT"
 default_metadata_column: str = "VEC_META"
-default_metadata_column_length: int = 2048
 default_vector_column: str = "VEC_VECTOR"
 default_vector_column_length: int = -1  # -1 means dynamic length
 
@@ -61,7 +60,6 @@ class HanaDB(VectorStore):
         table_name: str = default_table_name,
         content_column: str = default_content_column,
         metadata_column: str = default_metadata_column,
-        metadata_column_length: int = default_metadata_column_length,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
     ):
@@ -87,7 +85,6 @@ class HanaDB(VectorStore):
         self.table_name = HanaDB._sanitize_name(table_name)
         self.content_column = HanaDB._sanitize_name(content_column)
         self.metadata_column = HanaDB._sanitize_name(metadata_column)
-        self.metadata_column_length = HanaDB._sanitize_int(metadata_column_length)
         self.vector_column = HanaDB._sanitize_name(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
 
@@ -96,7 +93,7 @@ class HanaDB(VectorStore):
             sql_str = (
                 f"CREATE TABLE {self.table_name}("
                 f"{self.content_column} NCLOB, "
-                f"{self.metadata_column} NVARCHAR({self.metadata_column_length}), "
+                f"{self.metadata_column} NCLOB, "
                 f"{self.vector_column} REAL_VECTOR "
             )
             if self.vector_column_length == -1:
@@ -112,11 +109,7 @@ class HanaDB(VectorStore):
 
         # Check if the needed columns exist and have the correct type
         self._check_column(self.table_name, self.content_column, ["NCLOB", "NVARCHAR"])
-        self._check_column(
-            self.table_name,
-            self.metadata_column,
-            ["NVARCHAR"],
-        )
+        self._check_column(self.table_name, self.metadata_column, ["NCLOB", "NVARCHAR"])
         self._check_column(
             self.table_name,
             self.vector_column,
@@ -260,7 +253,6 @@ class HanaDB(VectorStore):
         table_name: str = default_table_name,
         content_column: str = default_content_column,
         metadata_column: str = default_metadata_column,
-        metadata_column_length: int = default_metadata_column_length,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
     ):
@@ -279,7 +271,6 @@ class HanaDB(VectorStore):
             table_name=table_name,
             content_column=content_column,
             metadata_column=metadata_column,
-            metadata_column_length=metadata_column_length,
             vector_column=vector_column,
             vector_column_length=vector_column_length,  # -1 means dynamic length
         )
