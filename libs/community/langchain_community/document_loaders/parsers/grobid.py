@@ -71,7 +71,7 @@ class GrobidParser(BaseBlobParser):
                                         "w": box[4],
                                     }
                                 )
-                        chunk_bboxes.append(sbboxes)
+                            chunk_bboxes.append(sbboxes)
                         if (segment_sentences is True) and (len(sbboxes) > 0):
                             fpage, lpage = sbboxes[0]["page"], sbboxes[-1]["page"]
                             sentence_dict = {
