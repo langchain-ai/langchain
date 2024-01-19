@@ -138,7 +138,7 @@ def test_deprecated_async_function() -> None:
     """Test deprecated async function."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
-        assert deprecated_function() == "This is a deprecated async function."
+        assert deprecated_async_function() == "This is a deprecated async function."
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
