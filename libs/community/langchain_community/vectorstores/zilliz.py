@@ -36,6 +36,9 @@ class Zilliz(Milvus):
             default of index.
         drop_old (Optional[bool]): Whether to drop the current collection. Defaults
             to False.
+        auto_id (bool): Whether to enable auto id for primary key. Defaults to False.
+            If False, you needs to provide text ids (string less than 65535 bytes).
+            If True, Milvus will generate unique integers as primary keys.
 
     The connection args used for this class comes in the form of a dict,
     here are a few of the options:
@@ -140,12 +143,14 @@ class Zilliz(Milvus):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         collection_name: str = "LangChainCollection",
         connection_args: Optional[Dict[str, Any]] = None,
         consistency_level: str = "Session",
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: bool = False,
+        auto_id: bool = False,
         **kwargs: Any,
     ) -> Zilliz:
         """Create a Zilliz collection, indexes it with HNSW, and insert data.
@@ -155,6 +160,7 @@ class Zilliz(Milvus):
             embedding (Embeddings): Embedding function.
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
+            ids (Optional[List[str]]): List of text ids.
             collection_name (str, optional): Collection name to use. Defaults to
                 "LangChainCollection".
             connection_args (dict[str, Any], optional): Connection args to use. Defaults
@@ -167,6 +173,9 @@ class Zilliz(Milvus):
                 Defaults to None.
             drop_old (Optional[bool], optional): Whether to drop the collection with
                 that name if it exists. Defaults to False.
+            auto_id (bool): Whether to enable auto id for primary key. Defaults to
+                False. If False, you needs to provide text ids (string less than 65535
+                bytes). If True, Milvus will generate unique integers as primary keys.
 
         Returns:
             Zilliz: Zilliz Vector Store
@@ -179,7 +188,8 @@ class Zilliz(Milvus):
             index_params=index_params,
             search_params=search_params,
             drop_old=drop_old,
+            auto_id=auto_id,
             **kwargs,
         )
-        vector_db.add_texts(texts=texts, metadatas=metadatas)
+        vector_db.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return vector_db
