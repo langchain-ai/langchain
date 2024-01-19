@@ -1,6 +1,7 @@
 """Chain that combines documents by stuffing into context."""
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
@@ -8,7 +9,6 @@ from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
     DEFAULT_DOCUMENT_SEPARATOR,
@@ -58,7 +58,7 @@ def create_stuff_documents_chain(
             from langchain.chains.combine_documents import create_stuff_documents_chain
 
             prompt = ChatPromptTemplate.from_messages(
-                [("system", "What are everyone's favorite colors:\n\n{context}")]
+                [("system", "What are everyone's favorite colors:\\n\\n{context}")]
             )
             llm = ChatOpenAI(model_name="gpt-3.5-turbo")
             chain = create_stuff_documents_chain(llm, prompt)
