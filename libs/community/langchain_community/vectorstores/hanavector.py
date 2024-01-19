@@ -332,12 +332,12 @@ class HanaDB(VectorStore):
             f"AS CS FROM {self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
-        where_str = self.create_where_by_filter(filter)
+        where_str, query_tuple = self.create_where_by_filter(filter)
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
             cur = self.connection.cursor()
-            cur.execute(sql_str)
+            cur.execute(sql_str, query_tuple)
             if cur.has_result_set():
                 rows = cur.fetchall()
                 for row in rows:
@@ -366,6 +366,7 @@ class HanaDB(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def create_where_by_filter(self, filter):
+        query_tuple = []
         where_str = ""
         if filter:
             for i, key in enumerate(filter.keys()):
@@ -374,21 +375,21 @@ class HanaDB(VectorStore):
                 else:
                     where_str += " AND "
 
-                where_str += f" JSON_VALUE({self.metadata_column}, '$.{key}') = "
+                where_str += f" JSON_VALUE({self.metadata_column}, '$.{key}') = ?"
 
                 if isinstance(filter[key], bool):
                     if filter[key]:
-                        where_str += "true"
+                        query_tuple.append("true")
                     else:
-                        where_str += "false"
+                        query_tuple.append("false")
                 elif isinstance(filter[key], int) or isinstance(filter[key], str):
-                    where_str += f"'{filter[key]}'"
+                    query_tuple.append(filter[key])
                 else:
                     raise ValueError(
                         f"Unsupported filter data-type: {type(filter[key])}"
                     )
 
-        return where_str
+        return where_str, query_tuple
 
     def delete(
         self, ids: Optional[List[str]] = None, filter: Optional[dict] = None
@@ -411,12 +412,12 @@ class HanaDB(VectorStore):
         if filter is None:
             raise ValueError("Parameter 'filter' is required when calling 'delete'")
 
-        where_str = self.create_where_by_filter(filter)
+        where_str, query_tuple = self.create_where_by_filter(filter)
         sql_str = f"DELETE FROM {self.table_name} {where_str}"
 
         try:
             cur = self.connection.cursor()
-            cur.execute(sql_str)
+            cur.execute(sql_str, query_tuple)
         finally:
             cur.close()
 
@@ -502,12 +503,12 @@ class HanaDB(VectorStore):
             f"AS CS FROM {self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
-        where_str = self.create_where_by_filter(filter)
+        where_str, query_tuple = self.create_where_by_filter(filter)
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
             cur = self.connection.cursor()
-            cur.execute(sql_str)
+            cur.execute(sql_str, query_tuple)
             if cur.has_result_set():
                 rows = cur.fetchall()
                 for row in rows:

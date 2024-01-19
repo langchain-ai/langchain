@@ -772,3 +772,69 @@ async def test_hanavector_max_marginal_relevance_search_async(texts: List[str]) 
     assert len(search_result) == 2
     assert search_result[0].page_content == texts[0]
     assert search_result[1].page_content != texts[0]
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_filter_prepared_statement_params(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "TEST_TABLE_FILTER_PARAM"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    # Check if table is created
+    HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    cur = test_setup.conn.cursor()
+    sql_str = (
+        f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.start') = '100'"
+    )
+    cur.execute(sql_str)
+    rows = cur.fetchall()
+    assert len(rows) == 1
+
+    query_value = 100
+    sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.start') = ?"
+    cur.execute(sql_str, (query_value))
+    rows = cur.fetchall()
+    assert len(rows) == 1
+
+    sql_str = (
+        f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.quality') = 'good'"
+    )
+    cur.execute(sql_str)
+    rows = cur.fetchall()
+    assert len(rows) == 1
+
+    query_value = "good"
+    sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.quality') = ?"
+    cur.execute(sql_str, (query_value))
+    rows = cur.fetchall()
+    assert len(rows) == 1
+
+    sql_str = (
+        f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = false"
+    )
+    cur.execute(sql_str)
+    rows = cur.fetchall()
+    assert len(rows) == 1
+
+    # query_value = True
+    query_value = "true"
+    sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
+    cur.execute(sql_str, (query_value))
+    rows = cur.fetchall()
+    assert len(rows) == 2
+
+    # query_value = False
+    query_value = "false"
+    sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
+    cur.execute(sql_str, (query_value))
+    rows = cur.fetchall()
+    assert len(rows) == 1
