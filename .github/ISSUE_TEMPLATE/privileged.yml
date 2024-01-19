@@ -1,5 +1,5 @@
-name: Privileged
-description: You are a LangChain maintainer, or was asked directly by a maintainer to create an issue here. If not, check the other options. 👇
+name: 🔒 Privileged
+description: You are a LangChain maintainer, or was asked directly by a maintainer to create an issue here. If not, check the other options.
 body:
   - type: markdown
     attributes:
