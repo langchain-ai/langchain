@@ -70,10 +70,10 @@ For this getting started guide, we will provide two options: using OpenAI (a pop
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
 
-First we'll need to install their Python package:
+First we'll need to import the LangChain x OpenAI integration package.
 
 ```shell
-pip install openai
+pip install langchain-openai
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -85,7 +85,7 @@ export OPENAI_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI()
 ```
@@ -93,7 +93,7 @@ llm = ChatOpenAI()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(openai_api_key="...")
 ```
@@ -128,7 +128,7 @@ We can also guide it's response with a prompt template.
 Prompt templates are used to convert raw user input to a better input to the LLM.
 
 ```python
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are world class technical documentation writer."),
     ("user", "{input}")
@@ -182,7 +182,14 @@ You can then use a retriever to fetch only the most relevant pieces and pass tho
 In this process, we will look up relevant documents from a *Retriever* and then pass them into the prompt.
 A Retriever can be backed by anything - a SQL table, the internet, etc - but in this instance we will populate a vector store and use that as a retriever. For more information on vectorstores, see [this documentation](/docs/modules/data_connection/vectorstores).
 
-First, we need to load the data that we want to index:
+First, we need to load the data that we want to index. In order to do this, we will use the WebBaseLoader. This requires installing [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/):
+
+```
+```shell
+pip install beautifulsoup4
+```
+
+After that, we can import and use WebBaseLoader.
 
 
 ```python
@@ -199,10 +206,10 @@ For embedding models, we once again provide examples for accessing via OpenAI or
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
   
-Make sure you have the openai package installed an the appropriate environment variables set (these are the same as needed for the LLM).
+Make sure you have the `langchain_openai` package installed an the appropriate environment variables set (these are the same as needed for the LLM).
 
 ```python
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
 embeddings = OpenAIEmbeddings()
 ```
@@ -221,25 +228,24 @@ embeddings = OllamaEmbeddings()
 </Tabs>
 
 Now, we can use this embedding model to ingest documents into a vectorstore.
-We will use a simple local vectorstore, [DocArray InMemorySearch](/docs/integrations/vectorstores/docarray_in_memory), for simplicity's sake.
+We will use a simple local vectorstore, [FAISS](/docs/integrations/vectorstores/faiss), for simplicity's sake.
 
 First we need to install the required packages for that:
 
 ```shell
-pip install docarray
-pip install tiktoken
+pip install faiss-cpu
 ```
 
 Then we can build our index:
 
 ```python
-from langchain_community.vectorstores import DocArrayInMemorySearch
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
-vector = DocArrayInMemorySearch.from_documents(documents, embeddings)
+vector = FAISS.from_documents(documents, embeddings)
 ```
 
 Now that we have this data indexed in a vectorstore, we will create a retrieval chain.
@@ -416,7 +422,7 @@ pip install langchainhub
 Now we can use it to get a predefined prompt
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
@@ -479,15 +485,15 @@ To create a server for our application we'll make a `serve.py` file. This will c
 from typing import List
 
 from fastapi import FastAPI
-from langchain.prompts import ChatPromptTemplate
-from langchain_community.chat_models import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import DocArrayInMemorySearch
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
@@ -501,7 +507,7 @@ docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
 embeddings = OpenAIEmbeddings()
-vector = DocArrayInMemorySearch.from_documents(documents, embeddings)
+vector = FAISS.from_documents(documents, embeddings)
 retriever = vector.as_retriever()
 
 # 2. Create Tools
