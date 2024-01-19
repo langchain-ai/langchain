@@ -38,7 +38,7 @@ class NLPCloud(LLM):
     """Whether or not to remove the end sequence token."""
     bad_words: List[str] = []
     """List of tokens not allowed to be generated."""
-    top_p: int = 1
+    top_p: float = 1.0
     """Total probability mass of tokens to consider at each step."""
     top_k: int = 50
     """The number of highest probability tokens to keep for top-k filtering."""

@@ -28,7 +28,7 @@ PYTHON_TO_JSON_TYPES = {
 
 
 class FunctionDescription(TypedDict):
-    """Representation of a callable function to the OpenAI API."""
+    """Representation of a callable function to send to an LLM."""
 
     name: str
     """The name of the function."""
