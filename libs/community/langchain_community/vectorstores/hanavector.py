@@ -1,4 +1,4 @@
-"""Test HANA functionality."""
+"""SAP HANA Cloud Vector Engine"""
 from __future__ import annotations
 
 import importlib.util
@@ -33,8 +33,6 @@ HANA_DISTANCE_FUNCTION: dict = {
     DistanceStrategy.EUCLIDEAN_DISTANCE: ("L2DISTANCE", "ASC"),
 }
 
-compiled_pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
-
 default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
 default_content_column: str = "VEC_TEXT"
@@ -45,14 +43,14 @@ default_vector_column_length: int = -1  # -1 means dynamic length
 
 
 class HanaDB(VectorStore):
-    """`HANA DB` vector store.
+    """SAP HANA Cloud Vector Engine
 
     The prerequisite for using this class is the installation of the ``hdbcli``
     Python package.
 
     The HanaDB vectorstore can be created by providing an embedding function and
-    the relevant parameters for the database connection, connection pool, and
-    optionally, the names of the table and the fields to use.
+    an existing database connection. Optionally, the names of the table and the
+    columns to use.
     """
 
     def __init__(
@@ -86,11 +84,11 @@ class HanaDB(VectorStore):
         self.connection = connection
         self.embedding = embedding
         self.distance_strategy = distance_strategy
-        self.table_name = HanaDB._sanitize_input(table_name)
-        self.content_column = HanaDB._sanitize_input(content_column)
-        self.metadata_column = HanaDB._sanitize_input(metadata_column)
+        self.table_name = HanaDB._sanitize_name(table_name)
+        self.content_column = HanaDB._sanitize_name(content_column)
+        self.metadata_column = HanaDB._sanitize_name(metadata_column)
         self.metadata_column_length = HanaDB._sanitize_int(metadata_column_length)
-        self.vector_column = HanaDB._sanitize_input(vector_column)
+        self.vector_column = HanaDB._sanitize_name(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
 
         # Check if the table exists, and eventually create it
@@ -112,7 +110,7 @@ class HanaDB(VectorStore):
             finally:
                 cur.close()
 
-        # Check if the needed columns exists
+        # Check if the needed columns exist and have the correct type
         self._check_column(self.table_name, self.content_column, ["NCLOB", "NVARCHAR"])
         self._check_column(
             self.table_name,
@@ -175,7 +173,7 @@ class HanaDB(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
-    def _sanitize_input(input_str: str) -> str:
+    def _sanitize_name(input_str: str) -> str:
         # Remove characters that are not alphanumeric or underscores
         return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
@@ -191,14 +189,15 @@ class HanaDB(VectorStore):
                 raise ValueError(f"Value ({value}) does not have type float")
         return embedding
 
+    # Compile pattern only once, for better performance
+    _compiled_pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
+
     def _sanitize_metadata_keys(metadata: dict) -> dict:
         for key in metadata.keys():
-            if not compiled_pattern.match(key):
+            if not HanaDB._compiled_pattern.match(key):
                 raise ValueError(f"Invalid metadata key {key}")
 
         return metadata
-
-    embedding: List[float]
 
     def add_texts(
         self,
@@ -224,7 +223,7 @@ class HanaDB(VectorStore):
 
         cur = self.connection.cursor()
         try:
-            # Write data to singlestore db
+            # Insert data into the table
             for i, text in enumerate(texts):
                 # Use provided values by default or fallback
                 metadata = metadatas[i] if metadatas else {}
@@ -246,7 +245,6 @@ class HanaDB(VectorStore):
                         "[{}]".format(",".join(map(str, embedding))),
                     ),
                 )
-            self.connection.commit()
         finally:
             cur.close()
         return []
@@ -266,11 +264,11 @@ class HanaDB(VectorStore):
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
     ):
-        """Create a HANA vectorstore from raw documents.
+        """Create a HanaDB instance from raw documents.
         This is a user-friendly interface that:
             1. Embeds documents.
-            2. Creates a new table for the embeddings in HANA.
-            3. Adds the documents to the newly created table.
+            2. Creates a table if it does not yet exist.
+            3. Adds the documents to the table.
         This is intended to be a quick way to get started.
         """
 
@@ -291,14 +289,6 @@ class HanaDB(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Document]:
-        docs_and_scores = self.similarity_search_with_score(
-            query=query, k=k, filter=filter
-        )
-        return [doc for doc, _ in docs_and_scores]
-
-    def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: Optional[dict] = None
-    ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
@@ -308,7 +298,27 @@ class HanaDB(VectorStore):
                     Defaults to None.
 
         Returns:
-            List of Documents most similar to the query and score for each
+            List of Documents most similar to the query
+        """
+        docs_and_scores = self.similarity_search_with_score(
+            query=query, k=k, filter=filter
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 4, filter: Optional[dict] = None
+    ) -> List[Tuple[Document, float]]:
+        """Return documents and score values most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: A dictionary of metadata fields and values to filter by.
+                    Defaults to None.
+
+        Returns:
+            List of tuples (containing a Document and a score) that are
+            most similar to the query
         """
         embedding = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
@@ -318,7 +328,7 @@ class HanaDB(VectorStore):
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query.
+        """Return docs most similar to the given embedding.
 
         Args:
             query: Text to look up documents similar to.
@@ -340,7 +350,7 @@ class HanaDB(VectorStore):
             f"AS CS FROM {self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
-        where_str, query_tuple = self.create_where_by_filter(filter)
+        where_str, query_tuple = self._create_where_by_filter(filter)
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
@@ -364,6 +374,8 @@ class HanaDB(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: A dictionary of metadata fields and values to filter by.
+                    Defaults to None.
 
         Returns:
             List of Documents most similar to the query vector.
@@ -373,7 +385,7 @@ class HanaDB(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def create_where_by_filter(self, filter):
+    def _create_where_by_filter(self, filter):
         query_tuple = []
         where_str = ""
         if filter:
@@ -402,7 +414,7 @@ class HanaDB(VectorStore):
     def delete(
         self, ids: Optional[List[str]] = None, filter: Optional[dict] = None
     ) -> Optional[bool]:
-        """Delete by filter with metadata values
+        """Delete entries by filter with metadata values
 
         Args:
             ids: Deletion with ids is not supported! A ValueError will be raised.
@@ -420,7 +432,7 @@ class HanaDB(VectorStore):
         if filter is None:
             raise ValueError("Parameter 'filter' is required when calling 'delete'")
 
-        where_str, query_tuple = self.create_where_by_filter(filter)
+        where_str, query_tuple = self._create_where_by_filter(filter)
         sql_str = f"DELETE FROM {self.table_name} {where_str}"
 
         try:
@@ -483,10 +495,7 @@ class HanaDB(VectorStore):
             filter=filter,
         )
 
-    @classmethod
-    def _parse_float_array_from_string(
-        cls: Type[HanaDB], array_as_string: str
-    ) -> List[float]:
+    def _parse_float_array_from_string(array_as_string: str) -> List[float]:
         array_wo_brackets = array_as_string[1:-1]
         return [float(x) for x in array_wo_brackets.split(",")]
 
@@ -511,7 +520,7 @@ class HanaDB(VectorStore):
             f"AS CS FROM {self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
-        where_str, query_tuple = self.create_where_by_filter(filter)
+        where_str, query_tuple = self._create_where_by_filter(filter)
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
