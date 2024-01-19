@@ -124,7 +124,8 @@ def test_deprecated_function() -> None:
         warning = warning_list[0].message
         assert str(warning) == (
             "The function `deprecated_function` was deprecated in LangChain 2.0.0 "
-            "and will be removed in 3.0.0")
+            "and will be removed in 3.0.0"
+        )
 
         doc = deprecated_function.__doc__
         assert isinstance(doc, str)
@@ -142,7 +143,8 @@ def test_deprecated_async_function() -> None:
         warning = warning_list[0].message
         assert str(warning) == (
             "The function `deprecated_async_function` was deprecated in LangChain 2.0.0 "
-            "and will be removed in 3.0.0")
+            "and will be removed in 3.0.0"
+        )
 
         doc = deprecated_function.__doc__
         assert isinstance(doc, str)
@@ -161,7 +163,8 @@ def test_deprecated_method() -> None:
         warning = warning_list[0].message
         assert str(warning) == (
             "The function `deprecated_method` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0")
+            "LangChain 2.0.0 and will be removed in 3.0.0"
+        )
 
         doc = obj.deprecated_method.__doc__
         assert isinstance(doc, str)
@@ -181,7 +184,8 @@ def test_deprecated_async_methond() -> None:
         warning = warning_list[0].message
         assert str(warning) == (
             "The function `deprecated_async_method` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0")
+            "LangChain 2.0.0 and will be removed in 3.0.0"
+        )
 
         doc = obj.deprecated_method.__doc__
         assert isinstance(doc, str)
