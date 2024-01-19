@@ -142,26 +142,26 @@ class LLMInputOutputAdapter:
         if not stream:
             return
 
-        if provider not in cls.provider_to_output_key_map:
+        output_key = cls.provider_to_output_key_map.get(provider, None)
+
+        if not output_key:
             raise ValueError(
                 f"Unknown streaming response output key for provider: {provider}"
             )
 
         for event in stream:
             chunk = event.get("chunk")
-            if chunk:
-                chunk_obj = json.loads(chunk.get("bytes").decode())
-                if provider == "cohere" and (
-                    chunk_obj["is_finished"]
-                    or chunk_obj[cls.provider_to_output_key_map[provider]]
-                    == "<EOS_TOKEN>"
-                ):
-                    return
+            if not chunk:
+                continue
 
-                # chunk obj format varies with provider
-                yield GenerationChunk(
-                    text=chunk_obj[cls.provider_to_output_key_map[provider]]
-                )
+            chunk_obj = json.loads(chunk.get("bytes").decode())
+
+            if provider == "cohere" and (
+                chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
+            ):
+                return
+
+            yield GenerationChunk(text=chunk_obj[output_key])
 
     @classmethod
     async def aprepare_output_stream(
@@ -172,26 +172,26 @@ class LLMInputOutputAdapter:
         if not stream:
             return
 
-        if provider not in cls.provider_to_output_key_map:
+        output_key = cls.provider_to_output_key_map.get(provider, None)
+
+        if not output_key:
             raise ValueError(
                 f"Unknown streaming response output key for provider: {provider}"
             )
 
         for event in stream:
             chunk = event.get("chunk")
-            if chunk:
-                chunk_obj = json.loads(chunk.get("bytes").decode())
+            if not chunk:
+                continue
 
-                if provider == "cohere" and (
-                    chunk_obj["is_finished"]
-                    or chunk_obj[cls.provider_to_output_key_map[provider]]
-                    == "<EOS_TOKEN>"
-                ):
-                    return
+            chunk_obj = json.loads(chunk.get("bytes").decode())
 
-                yield GenerationChunk(
-                    text=chunk_obj[cls.provider_to_output_key_map[provider]]
-                )
+            if provider == "cohere" and (
+                chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
+            ):
+                return
+
+            yield GenerationChunk(text=chunk_obj[output_key])
 
 
 class BedrockBase(BaseModel, ABC):
