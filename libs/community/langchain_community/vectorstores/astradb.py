@@ -206,15 +206,17 @@ class AstraDB(VectorStore):
                 api_endpoint=self.api_endpoint,
                 namespace=self.namespace,
             )
-        if not pre_delete_collection:
-            self._provision_collection()
-        else:
-            self.clear()
 
+        if pre_delete_collection:
+            # a full deletion is requested
+            self._drop_collection()
+
+        self._provision_collection()
         self.collection = LibAstraDBCollection(
             collection_name=self.collection_name,
             astra_db=self.astra_db,
         )
+
 
     def _get_embedding_dimension(self) -> int:
         if self._embedding_dimension is None:
