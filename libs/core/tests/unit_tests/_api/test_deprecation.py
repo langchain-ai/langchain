@@ -139,7 +139,8 @@ async def test_deprecated_async_function() -> None:
     """Test deprecated async function."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
-        assert await deprecated_async_function() == "This is a deprecated async function."
+        assert await deprecated_async_function() \
+            == "This is a deprecated async function."
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
@@ -180,7 +181,8 @@ async def test_deprecated_async_method() -> None:
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
         obj = ClassWithDeprecatedMethods()
-        assert await obj.deprecated_async_method() == "This is a deprecated async method."
+        assert await obj.deprecated_async_method() \
+            == "This is a deprecated async method."
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
