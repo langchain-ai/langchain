@@ -23,5 +23,5 @@ __all__ = [
     "RdfGraph",
     "ArangoGraph",
     "FalkorDBGraph",
-    "TigerGraph"
+    "TigerGraph",
 ]

@@ -1,6 +1,5 @@
-import os
-from math import ceil
 from typing import Any, Dict, List, Optional
+
 from langchain_community.graphs.graph_store import GraphStore
 
 
@@ -47,7 +46,8 @@ class TigerGraph(GraphStore):
             raise TypeError(msg)
 
         if conn.ai.nlqs_host is None:
-            msg = "**conn** parameter does not have nlqs_host parameter defined. Define hostname of NLQS service."
+            msg = """**conn** parameter does not have nlqs_host parameter defined.
+                     Define hostname of NLQS service."""
             raise ConnectionError(msg)
 
         self._conn: TigerGraphConnection = conn
@@ -74,21 +74,21 @@ class TigerGraph(GraphStore):
     def refresh_schema(self):
         self.generate_schema()
 
-    def query(
-        self, query: str
-    ) -> Dict[str, Any]:
+    def query(self, query: str) -> Dict[str, Any]:
         """Query the TigerGraph database."""
         ans = self._conn.ai.query(query)
         return ans
 
-    def register_query(self,
-                       function_header: str,
-                       description: str,
-                       docstring:str,
-                       param_types: dict = {}) -> List[str]:
-        """Wrapper function to register a custom GSQL query to the TigerGraph NLQS to be used in future `query()` calls."""
-        return self._conn.ai.registerCustomQuery(function_header,
-                                                 description,
-                                                 docstring,
-                                                 param_types)
-
+    def register_query(
+        self,
+        function_header: str,
+        description: str,
+        docstring: str,
+        param_types: dict = {},
+    ) -> List[str]:
+        """
+        Wrapper function to register a custom GSQL query to the TigerGraph NLQS. 
+        """
+        return self._conn.ai.registerCustomQuery(
+            function_header, description, docstring, param_types
+        )
