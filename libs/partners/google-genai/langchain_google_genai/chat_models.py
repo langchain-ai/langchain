@@ -314,6 +314,8 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro", convert_system_message_to_human
             role = "model"
         elif isinstance(message, HumanMessage):
             role = "user"
+        elif isinstance(message, ChatMessage):
+            role = message.role
         else:
             raise ValueError(
                 f"Unexpected message with type {type(message)} at the position {i}."
