@@ -5,7 +5,6 @@ from langchain_core.messages.base import (
     BaseMessageChunk,
     merge_content,
 )
-from langchain_core.utils._merge import merge_dicts
 
 
 class AIMessage(BaseMessage):
@@ -50,7 +49,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             return self.__class__(
                 example=self.example,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=merge_dicts(
+                additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs
                 ),
             )

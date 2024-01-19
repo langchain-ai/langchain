@@ -57,7 +57,6 @@ class ChatGenerationChunk(ChatGeneration):
             generation_info = merge_dicts(
                 self.generation_info or {},
                 other.generation_info or {},
-                merge_lists=False,
             )
             return ChatGenerationChunk(
                 message=self.message + other.message,

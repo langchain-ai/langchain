@@ -44,7 +44,6 @@ class GenerationChunk(Generation):
             generation_info = merge_dicts(
                 self.generation_info or {},
                 other.generation_info or {},
-                merge_lists=False,
             )
             return GenerationChunk(
                 text=self.text + other.text,
