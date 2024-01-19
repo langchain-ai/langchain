@@ -1,0 +1,39 @@
+# Template for the Integration Card file.
+# It should be added to each integration's company.
+# See <TODO> as an example.
+
+version: 0.0.1
+name: <INTEGRATION_NAME>
+company:
+  name: <COMPANY_NAME>
+  url: <COMPANY_URL>
+  description:
+    <COMPANY_DESCRIPTION>
+  pictures:  # optional
+    - path: <PATH_TO_PICTURE>
+      description: <PICTURE_DESCRIPTION>  # optional
+
+# Installation requirements for all integrations
+installation:  # optional
+  description:
+    <INSTALLATION_DESCRIPTION>
+  env_vars_instructions_url: <URL_TO_INSTRUCTIONS>  # optional
+  env_vars:  # optional
+    - name: <ENV_VAR_NAME>
+      description: <ENV_VAR_DESCRIPTION>  # optional
+  packages:  # optional
+    - pip_name: <name used in pip install>
+      instructions_url: <URL_TO_INSTRUCTIONS>  # optional
+
+# If only one integration per component, the following integration renders
+#  in a single component document section
+components:
+  - type: <COMPONENT_TYPE>
+    integrations:
+      - name: <INTEGRATION_NAME>
+        description: <INTEGRATION_DESCRIPTION>  # optional
+        example_path: <PATH_TO_EXAMPLE>
+        import_code:  # optional
+          <CODE_TO_IMPORT>
+        packages:  # optional
+          - pip_name: <name used in pip install>
