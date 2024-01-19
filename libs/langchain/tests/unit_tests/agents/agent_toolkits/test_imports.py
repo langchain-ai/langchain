@@ -15,7 +15,6 @@ EXPECTED_ALL = [
     "O365Toolkit",
     "OpenAPIToolkit",
     "PlayWrightBrowserToolkit",
-    "PolygonToolkit",
     "PowerBIToolkit",
     "SlackToolkit",
     "SteamToolkit",

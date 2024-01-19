@@ -1,1 +1,0 @@
-"""Polygon API toolkit."""

@@ -19,8 +19,6 @@ from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
 from langchain_core.tools import Tool
-from langchain_community.tools.polygon import PolygonLastQuote
-from langchain_community.utilities.polygon import PolygonAPIWrapper
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.callbacks import Callbacks
@@ -254,10 +252,6 @@ def _get_golden_query(**kwargs: Any) -> BaseTool:
 
 def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
-
-
-def _get_polygon_last_quote(**kwargs: Any) -> BaseTool:
-    return PolygonLastQuote(api_wrapper=PolygonAPIWrapper(**kwargs))
 
 
 def _get_google_jobs(**kwargs: Any) -> BaseTool:
