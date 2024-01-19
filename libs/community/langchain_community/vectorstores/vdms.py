@@ -65,7 +65,7 @@ DEFAULT_COLLECTION_NAME = "langchain"
 DEFAULT_DISTANCE_METRIC = DistanceMetric.L2
 DEFAULT_SEARCH_ENGINE = IndexEngine.FaissFlat
 DEFAULT_VDMS_CONNECTION = {"host": "localhost", "port": "55555"}
-DEFAULT_PROPERTIES = ["_distance", "id", "text"]
+DEFAULT_PROPERTIES = ["_distance", "id", "content"]
 
 
 class VDMSVectorSearch(VectorStore):
@@ -145,7 +145,7 @@ class VDMSVectorSearch(VectorStore):
             raise ValueError("distance_strategy must be either 'L2' or 'IP'")
 
         # Check Engines
-        if self.engine not in sorted(IndexEngine):
+        if self.similarity_search_engine not in sorted(IndexEngine):
             raise ValueError(
                 "engine must be either 'TileDBDense', 'TileDBSparse', "
                 + "'FaissFlat', 'FaissIVFFlat', or 'FLINNG'"
@@ -676,6 +676,100 @@ class VDMSVectorSearch(VectorStore):
         )
         return docs
 
+    def max_marginal_relevance_search_by_vector_with_relevance_scores(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        # if isinstance(embedding[0], float):
+        #     embedding = [embedding]
+        results = self.__query_collection(
+            query_embeddings=embedding,
+            n_results=fetch_k,
+            filter=filter,
+            where_document=where_document,
+            include=["metadatas", "documents", "distances", "embeddings"],
+        )
+
+        embedding_list = [list(bytes2embedding(result)) for result in results[0][1]]
+
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            embedding_list,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+
+        candidates = _results_to_docs_and_scores(results)
+
+        selected_results = [(r,s) for i, (r,s) in enumerate(candidates) if i in mmr_selected]
+        return selected_results
+
+    def max_marginal_relevance_search_with_score(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        if self._embedding_function is None:
+            raise ValueError(
+                "For MMR search, you must specify an embedding function on" "creation."
+            )
+
+        embedding = self._embedding_function.embed_query(query)
+        docs = self.max_marginal_relevance_search_by_vector_with_relevance_scores(
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            where_document=where_document,
+        )
+        return docs
+
     def update_document(
         self, collection_name: str, document_id: str, document: Document
     ) -> None:
@@ -973,7 +1067,7 @@ class VDMSVectorSearch(VectorStore):
                 collection_name, current_props, list(metadata.keys())
             )
         if document:
-            props["text"] = document
+            props["content"] = document
 
         # query = add_descriptor("AddDescriptor", collection_name, label=None,
         #                            ref=None, props=props, link=None, k_neighbors=None,
@@ -1024,7 +1118,7 @@ class VDMSVectorSearch(VectorStore):
         if query_embeddings is None:
             return all_responses
 
-        if isinstance(query_embeddings[0], float | int):
+        if isinstance(query_embeddings[0], (float, int)):
             query_embeddings = [query_embeddings]
 
         include = kwargs.get("include", ["metadatas"])
@@ -1318,8 +1412,8 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
         # result_blobs = qres[1]
         for ent in result_entities:
             distance = ent["_distance"]
-            txt_contents = ent["text"]
-            # del ent["_distance"], ent["text"], ent["id"]
+            txt_contents = ent["content"]
+            # del ent["_distance"], ent["content"], ent["id"]
             props = {}
             for mkey, mval in ent.items():
                 if mval != "Missing property" and mkey not in DEFAULT_PROPERTIES + [
@@ -1454,7 +1548,7 @@ def find_property_entity(
     results = {}
     results["blob"] = True
     results["count"] = ""
-    results["list"] = ["text"]
+    results["list"] = ["content"]
     entity["results"] = results
 
     constraints = {}
@@ -1483,7 +1577,7 @@ def add_entity_with_blob(
 
     props = {"name": collection_name}
     props["type"] = "queryable properties"
-    props["text"] = all_properties_str
+    props["content"] = all_properties_str
     entity["properties"] = props
 
     byte_data = str2bytes(all_properties_str)
@@ -1532,3 +1626,4 @@ def build_property_query(
         blob_arr.append(byte_data)
 
     return all_queries, blob_arr
+
