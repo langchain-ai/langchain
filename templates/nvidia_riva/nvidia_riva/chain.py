@@ -57,10 +57,6 @@ chain = {"user_input": riva_asr} | prompt | model | riva_tts  # type: ignore
 async def generate_audio_chunks() -> None:
     """Generates audio chunks from a .wav file
     to mimic streaming."""
-    audio_chunks = [
-        audio_data[0 + i : chunk_size + i]
-        for i in range(0, len(audio_data), chunk_size)
-    ]
 
     input_stream = AudioStream(maxsize=1000)
     # Send bytes into the stream
