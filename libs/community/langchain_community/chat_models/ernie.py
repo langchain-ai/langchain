@@ -3,6 +3,7 @@ import threading
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
@@ -30,6 +31,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
+@deprecated(
+    since="0.0.13",
+    alternative="langchain_community.chat_models.QianfanChatEndpoint",
+)
 class ErnieBotChat(BaseChatModel):
     """`ERNIE-Bot` large language model.
 

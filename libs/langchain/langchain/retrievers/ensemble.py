@@ -2,15 +2,22 @@
 Ensemble retriever that ensemble the results of 
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
-from typing import Any, Dict, List
+import asyncio
+from typing import Any, Dict, List, Optional
 
-from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.retrievers import BaseRetriever
-
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
+)
+from langchain_core.documents import Document
+from langchain_core.load.dump import dumpd
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.retrievers import BaseRetriever, RetrieverLike
+from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables.config import ensure_config, patch_config
+from langchain_core.runnables.utils import (
+    ConfigurableFieldSpec,
+    get_unique_config_specs,
 )
 
 
@@ -28,9 +35,16 @@ class EnsembleRetriever(BaseRetriever):
             Default is 60.
     """
 
-    retrievers: List[BaseRetriever]
+    retrievers: List[RetrieverLike]
     weights: List[float]
     c: int = 60
+
+    @property
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
+        """List configurable fields for this runnable."""
+        return get_unique_config_specs(
+            spec for retriever in self.retrievers for spec in retriever.config_specs
+        )
 
     @root_validator(pre=True)
     def set_weights(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -38,6 +52,74 @@ class EnsembleRetriever(BaseRetriever):
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers
         return values
+
+    def invoke(
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> List[Document]:
+        from langchain_core.callbacks import CallbackManager
+
+        config = ensure_config(config)
+        callback_manager = CallbackManager.configure(
+            config.get("callbacks"),
+            None,
+            verbose=kwargs.get("verbose", False),
+            inheritable_tags=config.get("tags", []),
+            local_tags=self.tags,
+            inheritable_metadata=config.get("metadata", {}),
+            local_metadata=self.metadata,
+        )
+        run_manager = callback_manager.on_retriever_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+            **kwargs,
+        )
+        try:
+            result = self.rank_fusion(input, run_manager=run_manager, config=config)
+        except Exception as e:
+            run_manager.on_retriever_error(e)
+            raise e
+        else:
+            run_manager.on_retriever_end(
+                result,
+                **kwargs,
+            )
+            return result
+
+    async def ainvoke(
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> List[Document]:
+        from langchain_core.callbacks import AsyncCallbackManager
+
+        config = ensure_config(config)
+        callback_manager = AsyncCallbackManager.configure(
+            config.get("callbacks"),
+            None,
+            verbose=kwargs.get("verbose", False),
+            inheritable_tags=config.get("tags", []),
+            local_tags=self.tags,
+            inheritable_metadata=config.get("metadata", {}),
+            local_metadata=self.metadata,
+        )
+        run_manager = await callback_manager.on_retriever_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+            **kwargs,
+        )
+        try:
+            result = await self.arank_fusion(
+                input, run_manager=run_manager, config=config
+            )
+        except Exception as e:
+            await run_manager.on_retriever_error(e)
+            raise e
+        else:
+            await run_manager.on_retriever_end(
+                result,
+                **kwargs,
+            )
+            return result
 
     def _get_relevant_documents(
         self,
@@ -82,7 +164,11 @@ class EnsembleRetriever(BaseRetriever):
         return fused_documents
 
     def rank_fusion(
-        self, query: str, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        run_manager: CallbackManagerForRetrieverRun,
+        *,
+        config: Optional[RunnableConfig] = None,
     ) -> List[Document]:
         """
         Retrieve the results of the retrievers and use rank_fusion_func to get
@@ -97,8 +183,11 @@ class EnsembleRetriever(BaseRetriever):
 
         # Get the results of all retrievers.
         retriever_docs = [
-            retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
+            retriever.invoke(
+                query,
+                patch_config(
+                    config, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
+                ),
             )
             for i, retriever in enumerate(self.retrievers)
         ]
@@ -116,7 +205,11 @@ class EnsembleRetriever(BaseRetriever):
         return fused_documents
 
     async def arank_fusion(
-        self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        *,
+        config: Optional[RunnableConfig] = None,
     ) -> List[Document]:
         """
         Asynchronously retrieve the results of the retrievers
@@ -130,12 +223,17 @@ class EnsembleRetriever(BaseRetriever):
         """
 
         # Get the results of all retrievers.
-        retriever_docs = [
-            await retriever.aget_relevant_documents(
-                query, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
-            )
-            for i, retriever in enumerate(self.retrievers)
-        ]
+        retriever_docs = await asyncio.gather(
+            *[
+                retriever.ainvoke(
+                    query,
+                    patch_config(
+                        config, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
+                    ),
+                )
+                for i, retriever in enumerate(self.retrievers)
+            ]
+        )
 
         # Enforce that retrieved docs are Documents for each list in retriever_docs
         for i in range(len(retriever_docs)):
