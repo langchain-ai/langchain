@@ -175,7 +175,7 @@ def test_deprecated_method() -> None:
 
 
 @pytest.mark.asyncio
-async def test_deprecated_async_methond() -> None:
+async def test_deprecated_async_method() -> None:
     """Test deprecated async method."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
