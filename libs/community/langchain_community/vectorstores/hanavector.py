@@ -33,6 +33,7 @@ HANA_DISTANCE_FUNCTION: dict = {
     DistanceStrategy.EUCLIDEAN_DISTANCE: ("L2DISTANCE", "ASC"),
 }
 
+compiled_pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
 
 default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
@@ -85,11 +86,11 @@ class HanaDB(VectorStore):
         self.connection = connection
         self.embedding = embedding
         self.distance_strategy = distance_strategy
-        self.table_name = self._sanitize_input(table_name)
-        self.content_column = self._sanitize_input(content_column)
-        self.metadata_column = self._sanitize_input(metadata_column)
+        self.table_name = HanaDB._sanitize_input(table_name)
+        self.content_column = HanaDB._sanitize_input(content_column)
+        self.metadata_column = HanaDB._sanitize_input(metadata_column)
         self.metadata_column_length = HanaDB._sanitize_int(metadata_column_length)
-        self.vector_column = self._sanitize_input(vector_column)
+        self.vector_column = HanaDB._sanitize_input(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
 
         # Check if the table exists, and eventually create it
@@ -174,7 +175,7 @@ class HanaDB(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
-    def _sanitize_input(self, input_str: str) -> str:
+    def _sanitize_input(input_str: str) -> str:
         # Remove characters that are not alphanumeric or underscores
         return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
@@ -189,6 +190,13 @@ class HanaDB(VectorStore):
             if not isinstance(value, float):
                 raise ValueError(f"Value ({value}) does not have type float")
         return embedding
+
+    def _sanitize_metadata_keys(metadata: dict) -> dict:
+        for key in metadata.keys():
+            if not compiled_pattern.match(key):
+                raise ValueError(f"Invalid metadata key {key}")
+
+        return metadata
 
     embedding: List[float]
 
@@ -234,7 +242,7 @@ class HanaDB(VectorStore):
                     sql_str,
                     (
                         text,
-                        json.dumps(metadata),
+                        json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
                         "[{}]".format(",".join(map(str, embedding))),
                     ),
                 )

@@ -838,3 +838,41 @@ def test_hanavector_filter_prepared_statement_params(
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
     assert len(rows) == 1
+
+
+def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE_INVALID_METADATA"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    invalid_metadatas = [
+        {"sta rt": 0, "end": 100, "quality": "good", "ready": True},
+    ]
+    exception_occured = False
+    try:
+        HanaDB.from_texts(
+            connection=test_setup.conn,
+            texts=texts,
+            metadatas=invalid_metadatas,
+            embedding=embedding,
+            table_name=table_name,
+        )
+    except ValueError:
+        exception_occured = True
+    assert exception_occured
+
+    invalid_metadatas = [
+        {"sta/nrt": 0, "end": 100, "quality": "good", "ready": True},
+    ]
+    exception_occured = False
+    try:
+        HanaDB.from_texts(
+            connection=test_setup.conn,
+            texts=texts,
+            metadatas=invalid_metadatas,
+            embedding=embedding,
+            table_name=table_name,
+        )
+    except ValueError:
+        exception_occured = True
+    assert exception_occured
