@@ -24,7 +24,7 @@ def _format_pydantic_to_vertex_function(
 
     return {
         "name": schema["title"],
-        "description": schema["description"],
+        "description": schema.get("description", ""),
         "parameters": {
             "properties": {
                 k: {
