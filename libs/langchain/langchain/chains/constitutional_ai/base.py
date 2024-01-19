@@ -1,10 +1,10 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
 from typing import Any, Dict, List, Optional
 
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.constitutional_ai.principles import PRINCIPLES
@@ -18,7 +18,7 @@ class ConstitutionalChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from langchain.chains import LLMChain, ConstitutionalChain
             from langchain.chains.constitutional_ai.models \
                 import ConstitutionalPrinciple

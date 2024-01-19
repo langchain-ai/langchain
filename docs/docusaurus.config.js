@@ -178,39 +178,35 @@ const config = {
             position: "left",
             items: [
               {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
+                to: "/docs/packages",
+                label: "Versioning",
               },
               {
-                to: "/docs/community",
-                label: "Community",
+                type: "docSidebar",
+                sidebarId: "changelog",
+                label: "Changelog",
               },
               {
                 to: "/docs/contributing",
                 label: "Developer's guide",
               },
               {
-                to: "/docs/additional_resources/dependents",
-                label: "Dependents",
-              },
-              {
-                label: "Integrations Hub",
-                href: "https://integrations.langchain.com/",
-              },
-              {
-                to: "/docs/additional_resources/tutorials",
-                label: "Tutorials"
+                type: "docSidebar",
+                sidebarId: "templates",
+                label: "Templates",
               },
               {
                 label: "Cookbooks",
                 href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
+                to: "/docs/additional_resources/tutorials",
+                label: "Tutorials"
+              },
+              {
                 to: "/docs/additional_resources/youtube",
                 label: "YouTube videos"
               },
-              { label: "Gallery", href: "https://github.com/kyrolabs/awesome-langchain" }
             ]
           },
           {

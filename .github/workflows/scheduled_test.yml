@@ -6,7 +6,7 @@ on:
     - cron:  '0 13 * * *'
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.7.1"
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
 
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
-        uses: 'google-github-actions/auth@v1'
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
