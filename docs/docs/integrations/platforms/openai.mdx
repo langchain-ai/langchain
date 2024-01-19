@@ -13,15 +13,13 @@ All functionality related to OpenAI
 >[ChatGPT](https://chat.openai.com) is the Artificial Intelligence (AI) chatbot developed by `OpenAI`.
 
 ## Installation and Setup
-- Install the Python SDK with
+
+Install the integration package with
 ```bash
-pip install openai
+pip install langchain-openai
 ```
-- Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
-- If you want to use OpenAI's tokenizer (only available for Python 3.9+), install it
-```bash
-pip install tiktoken
-```
+
+Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
 
 
 ## LLM
@@ -29,12 +27,12 @@ pip install tiktoken
 See a [usage example](/docs/integrations/llms/openai).
 
 ```python
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 ```
 
 If you are using a model hosted on `Azure`, you should use different wrapper for that:
 ```python
-from langchain_community.llms import AzureOpenAI
+from langchain_openai import AzureOpenAI
 ```
 For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/llms/azure_openai)
 
@@ -44,12 +42,12 @@ For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integra
 See a [usage example](/docs/integrations/chat/openai).
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 ```
 
 If you are using a model hosted on `Azure`, you should use different wrapper for that:
 ```python
-from langchain_community.llms import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI
 ```
 For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/chat/azure_chat_openai)
 
@@ -59,7 +57,7 @@ For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integra
 See a [usage example](/docs/integrations/text_embedding/openai)
 
 ```python
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 ```
 
 

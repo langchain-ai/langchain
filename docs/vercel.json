@@ -1,6 +1,14 @@
 {
   "redirects": [
     {
+      "source": "/docs/contributing/packages",
+      "destination": "/docs/packages"
+    },
+    {
+      "source": "/docs/community",
+      "destination": "/docs/contributing"
+    },
+    {
       "source": "/docs/modules/chains/(.+)",
       "destination": "/docs/modules/chains"
     },
@@ -1414,7 +1422,7 @@
     },
     {
       "source": "/docs/integrations/tools/sqlite",
-      "destination": "/docs/use_cases/qa_structured/sqlite"
+      "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
