@@ -1,6 +1,6 @@
 """Utilities to init Vertex AI."""
 from importlib import metadata
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import google.api_core
 from google.api_core.gapic_v1.client_info import ClientInfo
@@ -86,3 +86,29 @@ def is_codey_model(model_name: str) -> bool:
 def is_gemini_model(model_name: str) -> bool:
     """Returns True if the model name is a Gemini model."""
     return model_name is not None and "gemini" in model_name
+
+
+def get_generation_info(candidate: Any, is_gemini: bool) -> Optional[Dict[str, Any]]:
+    try:
+        if is_gemini:
+            # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini#response_body
+            return {
+                "is_blocked": any(
+                    [rating.blocked for rating in candidate.safety_ratings]
+                ),
+                "safety_ratings": [
+                    {
+                        "category": rating.category.name,
+                        "probability_label": rating.probability.name,
+                    }
+                    for rating in candidate.safety_ratings
+                ],
+            }
+        else:
+            # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/text-chat#response_body
+            return {
+                "is_blocked": candidate.is_blocked,
+                "safety_attributes": candidate.safety_attributes,
+            }
+    except Exception:
+        return None

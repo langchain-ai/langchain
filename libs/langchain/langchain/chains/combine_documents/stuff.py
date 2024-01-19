@@ -58,7 +58,7 @@ def create_stuff_documents_chain(
             from langchain.chains.combine_documents import create_stuff_documents_chain
 
             prompt = ChatPromptTemplate.from_messages(
-                [("system", "What are everyone's favorite colors:\n\n{context}")]
+                [("system", "What are everyone's favorite colors:\\n\\n{context}")]
             )
             llm = ChatOpenAI(model_name="gpt-3.5-turbo")
             chain = create_stuff_documents_chain(llm, prompt)
