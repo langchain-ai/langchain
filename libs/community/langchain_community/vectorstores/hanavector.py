@@ -36,10 +36,10 @@ HANA_DISTANCE_FUNCTION: dict = {
 
 default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
-default_content_column: str = "DOC_TEXT"
-default_metadata_column: str = "DOC_META"
+default_content_column: str = "VEC_TEXT"
+default_metadata_column: str = "VEC_META"
 default_metadata_column_length: int = 2048
-default_vector_column: str = "DOC_VECTOR"
+default_vector_column: str = "VEC_VECTOR"
 default_vector_column_length: int = -1  # -1 means dynamic length
 
 

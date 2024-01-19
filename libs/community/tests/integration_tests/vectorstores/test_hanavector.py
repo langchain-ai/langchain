@@ -151,9 +151,9 @@ def test_hanavector_table_with_missing_columns() -> None:
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_hanavector_table_with_nvarchar_content(texts: List[str]) -> None:
     table_name = "EXISTING_NVARCHAR"
-    content_column = "DOC_TEXT"
-    metadata_column = "DOC_META"
-    vector_column = "DOC_VECTOR"
+    content_column = "TEST_TEXT"
+    metadata_column = "TEST_META"
+    vector_column = "TEST_VECTOR"
     try:
         drop_table(test_setup.conn, table_name)
         cur = test_setup.conn.cursor()
@@ -170,6 +170,9 @@ def test_hanavector_table_with_nvarchar_content(texts: List[str]) -> None:
         embedding=embedding,
         distance_strategy=DistanceStrategy.COSINE,
         table_name=table_name,
+        content_column=content_column,
+        metadata_column=metadata_column,
+        vector_column=vector_column,
     )
 
     vectordb.add_texts(texts=texts)
