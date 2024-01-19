@@ -381,10 +381,6 @@
       "destination": "/docs/modules/agents/"
     },
     {
-      "source": "/docs/use_cases(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
       "source": "/docs/integrations(/?)",
       "destination": "/docs/integrations/providers/"
     },
