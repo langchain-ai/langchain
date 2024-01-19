@@ -379,6 +379,7 @@ class PGVector(VectorStore):
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
+            documents = []
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 embedding_store = self.EmbeddingStore(
                     embedding=embedding,
@@ -387,7 +388,8 @@ class PGVector(VectorStore):
                     custom_id=id,
                     collection_id=collection.uuid,
                 )
-                session.add(embedding_store)
+                documents.append(embedding_store)
+            session.bulk_save_objects(documents)
             session.commit()
 
         return ids

@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_community.docstore.base import Docstore
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.faiss import FAISS
+from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 _PAGE_CONTENT = """This is a page about LangChain.
@@ -685,6 +686,26 @@ def test_missing_normalize_score_fn() -> None:
     faiss_instance = FAISS.from_texts(texts, FakeEmbeddings(), distance_strategy="fake")
     with pytest.raises(ValueError):
         faiss_instance.similarity_search_with_relevance_scores("foo", k=2)
+
+
+@pytest.mark.skip(reason="old relevance score feature")
+@pytest.mark.requires("faiss")
+def test_ip_score() -> None:
+    embedding = FakeEmbeddings()
+    vector = embedding.embed_query("hi")
+    assert vector == [1] * 9 + [0], f"FakeEmbeddings() has changed, produced {vector}"
+
+    db = FAISS.from_texts(
+        ["sundays coming so i drive my car"],
+        embedding=FakeEmbeddings(),
+        distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
+    )
+    scores = db.similarity_search_with_relevance_scores("sundays", k=1)
+    assert len(scores) == 1, "only one vector should be in db"
+    _, score = scores[0]
+    assert (
+        score == 1
+    ), f"expected inner product of equivalent vectors to be 1, not {score}"
 
 
 @pytest.mark.requires("faiss")

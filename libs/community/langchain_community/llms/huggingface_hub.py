@@ -112,8 +112,10 @@ class HuggingFaceHub(LLM):
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
         if self.client.task == "text-generation":
-            # Text generation return includes the starter text.
-            text = response[0]["generated_text"][len(prompt) :]
+            # Text generation sometimes return includes the starter text.
+            text = response[0]["generated_text"]
+            if text.startswith(prompt):
+                text = response[0]["generated_text"][len(prompt) :]
         elif self.client.task == "text2text-generation":
             text = response[0]["generated_text"]
         elif self.client.task == "summarization":
