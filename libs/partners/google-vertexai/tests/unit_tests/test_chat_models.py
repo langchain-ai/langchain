@@ -13,6 +13,7 @@ from vertexai.language_models import ChatMessage, InputOutputTextPair  # type: i
 from langchain_google_vertexai.chat_models import (
     ChatVertexAI,
     _parse_chat_history,
+    _parse_chat_history_gemini,
     _parse_examples,
 )
 
@@ -110,6 +111,24 @@ def test_parse_chat_history_correct() -> None:
         ChatMessage(content=text_question, author="user"),
         ChatMessage(content=text_answer, author="bot"),
     ]
+
+
+def test_parse_history_gemini() -> None:
+    system_input = "You're supposed to answer math questions."
+    text_question1, text_answer1 = "How much is 2+2?", "4"
+    text_question2 = "How much is 3+3?"
+    system_message = SystemMessage(content=system_input)
+    message1 = HumanMessage(content=text_question1)
+    message2 = AIMessage(content=text_answer1)
+    message3 = HumanMessage(content=text_question2)
+    messages = [system_message, message1, message2, message3]
+    history = _parse_chat_history_gemini(messages, convert_system_message_to_human=True)
+    assert len(history) == 3
+    assert history[0].role == "user"
+    assert history[0].parts[0].text == system_input
+    assert history[0].parts[1].text == text_question1
+    assert history[1].role == "model"
+    assert history[1].parts[0].text == text_answer1
 
 
 def test_default_params_palm() -> None:

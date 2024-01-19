@@ -319,11 +319,14 @@ class VertexAI(_VertexAICommon, BaseLLM):
     ) -> GenerationChunk:
         """Converts a stream response to a generation chunk."""
         generation_info = get_generation_info(response, self._is_gemini_model)
-
+        try:
+            text = response.text
+        except AttributeError:
+            text = ""
+        except ValueError:
+            text = ""
         return GenerationChunk(
-            text=response.text
-            if hasattr(response, "text")
-            else "",  # might not exist if blocked
+            text=text,
             generation_info=generation_info,
         )
 
