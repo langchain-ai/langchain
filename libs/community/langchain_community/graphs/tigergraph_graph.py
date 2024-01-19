@@ -76,8 +76,8 @@ class TigerGraph(GraphStore):
 
     def query(self, query: str) -> Dict[str, Any]:
         """Query the TigerGraph database."""
-        ans = self._conn.ai.query(query)
-        return ans
+        answer = self._conn.ai.query(query)
+        return answer
 
     def register_query(
         self,
@@ -87,7 +87,7 @@ class TigerGraph(GraphStore):
         param_types: dict = {},
     ) -> List[str]:
         """
-        Wrapper function to register a custom GSQL query to the TigerGraph NLQS. 
+        Wrapper function to register a custom GSQL query to the TigerGraph NLQS.
         """
         return self._conn.ai.registerCustomQuery(
             function_header, description, docstring, param_types
