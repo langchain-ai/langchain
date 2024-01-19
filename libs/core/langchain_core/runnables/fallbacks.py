@@ -425,6 +425,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
+        """"""
+        if self.exception_key is not None and not isinstance(input, dict):
+            raise ValueError(
+                "If 'exception_key' is specified then input must be a dictionary."
+                f"However found a type of {type(input)} for input"
+            )
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -433,8 +439,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             dumpd(self), input, name=config.get("run_name")
         )
         first_error = None
+        last_error = None
         for runnable in self.runnables:
             try:
+                if self.exception_key and last_error is not None:
+                    input[self.exception_key] = last_error
                 stream = runnable.stream(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
@@ -443,6 +452,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 chunk = next(stream)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
+                last_error = e
             except BaseException as e:
                 run_manager.on_chain_error(e)
                 raise e
@@ -460,6 +470,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
+        if self.exception_key is not None and not isinstance(input, dict):
+            raise ValueError(
+                "If 'exception_key' is specified then input must be a dictionary."
+                f"However found a type of {type(input)} for input"
+            )
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -468,8 +483,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             dumpd(self), input, name=config.get("run_name")
         )
         first_error = None
+        last_error = None
         for runnable in self.runnables:
             try:
+                if self.exception_key and last_error is not None:
+                    input[self.exception_key] = last_error
                 stream = runnable.astream(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
@@ -478,6 +496,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 chunk = await cast(Awaitable[Output], py_anext(stream))
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
+                last_error = e
             except BaseException as e:
                 await run_manager.on_chain_error(e)
                 raise e
