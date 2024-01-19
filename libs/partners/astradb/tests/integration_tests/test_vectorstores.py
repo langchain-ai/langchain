@@ -16,16 +16,14 @@ Required to run this test:
 import json
 import math
 import os
-import pytest
 from typing import Iterable, List
 
+import pytest
 from astrapy.db import AstraDB as LibAstraDB
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
 from langchain_astradb.vectorstores import AstraDB
-
 
 # Faster testing (no actual collection deletions). On by default
 SKIP_COLLECTION_DELETE = int(os.environ.get("TEST_SKIP_COLLECTION_DELETE", "1")) != 0
@@ -112,9 +110,9 @@ def store_someemb() -> Iterable[AstraDB]:
         namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
     )
     v_store.clear()
-    
+
     yield v_store
-    
+
     if not SKIP_COLLECTION_DELETE:
         v_store.delete_collection()
     else:
@@ -132,9 +130,9 @@ def store_parseremb() -> Iterable[AstraDB]:
         namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
     )
     v_store.clear()
-    
+
     yield v_store
-    
+
     if not SKIP_COLLECTION_DELETE:
         v_store.delete_collection()
     else:

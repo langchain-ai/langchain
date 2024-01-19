@@ -17,11 +17,13 @@ from typing import (
 )
 
 import numpy as np
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
+
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
+
+from langchain_astradb.utils.mmr import maximal_marginal_relevance
 
 ADBVST = TypeVar("ADBVST", bound="AstraDB")
 T = TypeVar("T")
@@ -216,7 +218,6 @@ class AstraDB(VectorStore):
             collection_name=self.collection_name,
             astra_db=self.astra_db,
         )
-
 
     def _get_embedding_dimension(self) -> int:
         if self._embedding_dimension is None:

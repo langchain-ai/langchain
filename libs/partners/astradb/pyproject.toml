@@ -8,8 +8,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
-langchain-community = ">=0.0.13"
 astrapy = "^0.7.0"
+numpy = "^1"
 
 [tool.poetry.group.test]
 optional = true
