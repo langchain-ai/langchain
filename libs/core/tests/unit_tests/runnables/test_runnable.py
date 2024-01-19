@@ -66,10 +66,10 @@ from langchain_core.runnables import (
     RunnablePassthrough,
     RunnablePick,
     RunnableSequence,
-    RunnableWithFallbacks,
     add,
     chain,
 )
+from langchain_core.runnables.base import RunnableSerializable
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -134,6 +134,17 @@ class FakeTracer(BaseTracer):
 
 
 class FakeRunnable(Runnable[str, int]):
+    def invoke(
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+    ) -> int:
+        return len(input)
+
+
+class FakeRunnableSerializable(RunnableSerializable[str, int]):
+    hello: str = ""
+
     def invoke(
         self,
         input: str,
@@ -1302,6 +1313,30 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     mock.reset_mock()
 
 
+async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
+    fake = FakeRunnableSerializable()
+    spy = mocker.spy(fake.__class__, "invoke")
+    fakew = fake.configurable_fields(hello=ConfigurableField(id="hello", name="Hello"))
+
+    assert (
+        fakew.with_config(tags=["a-tag"]).invoke(
+            "hello", {"configurable": {"hello": "there"}, "metadata": {"bye": "now"}}
+        )
+        == 5
+    )
+    assert spy.call_args_list[0].args[1:] == (
+        "hello",
+        dict(
+            tags=["a-tag"],
+            callbacks=None,
+            recursion_limit=25,
+            configurable={"hello": "there"},
+            metadata={"hello": "there", "bye": "now"},
+        ),
+    )
+    spy.reset_mock()
+
+
 async def test_with_config(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
@@ -2135,6 +2170,272 @@ async def test_prompt_with_llm(
         RunLogPatch(
             {"op": "add", "path": "/streamed_output/-", "value": "foo"},
             {"op": "replace", "path": "/final_output", "value": "foo"},
+        ),
+    ]
+    assert stream_log == expected
+
+
+@freeze_time("2023-01-01")
+async def test_prompt_with_llm_parser(
+    mocker: MockerFixture, snapshot: SnapshotAssertion
+) -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["bear, dog, cat", "tomato, lettuce, onion"])
+    parser = CommaSeparatedListOutputParser()
+
+    chain: Runnable = prompt | llm | parser
+
+    assert isinstance(chain, RunnableSequence)
+    assert chain.first == prompt
+    assert chain.middle == [llm]
+    assert chain.last == parser
+    assert dumps(chain, pretty=True) == snapshot
+
+    # Test invoke
+    prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
+    llm_spy = mocker.spy(llm.__class__, "ainvoke")
+    parser_spy = mocker.spy(parser.__class__, "ainvoke")
+    tracer = FakeTracer()
+    assert await chain.ainvoke(
+        {"question": "What is your name?"}, dict(callbacks=[tracer])
+    ) == ["bear", "dog", "cat"]
+    assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
+    assert llm_spy.call_args.args[1] == ChatPromptValue(
+        messages=[
+            SystemMessage(content="You are a nice assistant."),
+            HumanMessage(content="What is your name?"),
+        ]
+    )
+    assert parser_spy.call_args.args[1] == "bear, dog, cat"
+    assert tracer.runs == snapshot
+    mocker.stop(prompt_spy)
+    mocker.stop(llm_spy)
+    mocker.stop(parser_spy)
+
+    # Test batch
+    prompt_spy = mocker.spy(prompt.__class__, "abatch")
+    llm_spy = mocker.spy(llm.__class__, "abatch")
+    parser_spy = mocker.spy(parser.__class__, "abatch")
+    tracer = FakeTracer()
+    assert await chain.abatch(
+        [
+            {"question": "What is your name?"},
+            {"question": "What is your favorite color?"},
+        ],
+        dict(callbacks=[tracer]),
+    ) == [["tomato", "lettuce", "onion"], ["bear", "dog", "cat"]]
+    assert prompt_spy.call_args.args[1] == [
+        {"question": "What is your name?"},
+        {"question": "What is your favorite color?"},
+    ]
+    assert llm_spy.call_args.args[1] == [
+        ChatPromptValue(
+            messages=[
+                SystemMessage(content="You are a nice assistant."),
+                HumanMessage(content="What is your name?"),
+            ]
+        ),
+        ChatPromptValue(
+            messages=[
+                SystemMessage(content="You are a nice assistant."),
+                HumanMessage(content="What is your favorite color?"),
+            ]
+        ),
+    ]
+    assert parser_spy.call_args.args[1] == [
+        "tomato, lettuce, onion",
+        "bear, dog, cat",
+    ]
+    assert tracer.runs == snapshot
+    mocker.stop(prompt_spy)
+    mocker.stop(llm_spy)
+    mocker.stop(parser_spy)
+
+    # Test stream
+    prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
+    llm_spy = mocker.spy(llm.__class__, "astream")
+    tracer = FakeTracer()
+    assert [
+        token
+        async for token in chain.astream(
+            {"question": "What is your name?"}, dict(callbacks=[tracer])
+        )
+    ] == [["tomato"], ["lettuce"], ["onion"]]
+    assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
+    assert llm_spy.call_args.args[1] == ChatPromptValue(
+        messages=[
+            SystemMessage(content="You are a nice assistant."),
+            HumanMessage(content="What is your name?"),
+        ]
+    )
+
+    prompt_spy.reset_mock()
+    llm_spy.reset_mock()
+    stream_log = [
+        part async for part in chain.astream_log({"question": "What is your name?"})
+    ]
+
+    # remove ids from logs
+    for part in stream_log:
+        for op in part.ops:
+            if (
+                isinstance(op["value"], dict)
+                and "id" in op["value"]
+                and not isinstance(op["value"]["id"], list)  # serialized lc id
+            ):
+                del op["value"]["id"]
+
+    expected = [
+        RunLogPatch(
+            {
+                "op": "replace",
+                "path": "",
+                "value": {
+                    "logs": {},
+                    "final_output": None,
+                    "streamed_output": [],
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/ChatPromptTemplate",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "ChatPromptTemplate",
+                    "start_time": "2023-01-01T00:00:00.000+00:00",
+                    "streamed_output": [],
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:1"],
+                    "type": "prompt",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/ChatPromptTemplate/final_output",
+                "value": ChatPromptValue(
+                    messages=[
+                        SystemMessage(content="You are a nice assistant."),
+                        HumanMessage(content="What is your name?"),
+                    ]
+                ),
+            },
+            {
+                "op": "add",
+                "path": "/logs/ChatPromptTemplate/end_time",
+                "value": "2023-01-01T00:00:00.000+00:00",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/FakeStreamingListLLM",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "FakeStreamingListLLM",
+                    "start_time": "2023-01-01T00:00:00.000+00:00",
+                    "streamed_output": [],
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:2"],
+                    "type": "llm",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/FakeStreamingListLLM/final_output",
+                "value": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "text": "bear, dog, cat",
+                                "type": "Generation",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            {
+                "op": "add",
+                "path": "/logs/FakeStreamingListLLM/end_time",
+                "value": "2023-01-01T00:00:00.000+00:00",
+            },
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/CommaSeparatedListOutputParser",
+                "value": {
+                    "end_time": None,
+                    "final_output": None,
+                    "metadata": {},
+                    "name": "CommaSeparatedListOutputParser",
+                    "start_time": "2023-01-01T00:00:00.000+00:00",
+                    "streamed_output": [],
+                    "streamed_output_str": [],
+                    "tags": ["seq:step:3"],
+                    "type": "parser",
+                },
+            }
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/CommaSeparatedListOutputParser/streamed_output/-",
+                "value": ["bear"],
+            }
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": ["bear"]},
+            {"op": "replace", "path": "/final_output", "value": ["bear"]},
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/CommaSeparatedListOutputParser/streamed_output/-",
+                "value": ["dog"],
+            }
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": ["dog"]},
+            {"op": "add", "path": "/final_output/1", "value": "dog"},
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/CommaSeparatedListOutputParser/streamed_output/-",
+                "value": ["cat"],
+            }
+        ),
+        RunLogPatch(
+            {"op": "add", "path": "/streamed_output/-", "value": ["cat"]},
+            {"op": "add", "path": "/final_output/2", "value": "cat"},
+        ),
+        RunLogPatch(
+            {
+                "op": "add",
+                "path": "/logs/CommaSeparatedListOutputParser/final_output",
+                "value": {"output": ["bear", "dog", "cat"]},
+            },
+            {
+                "op": "add",
+                "path": "/logs/CommaSeparatedListOutputParser/end_time",
+                "value": "2023-01-01T00:00:00.000+00:00",
+            },
         ),
     ]
     assert stream_log == expected
@@ -3381,52 +3682,6 @@ async def test_runnable_sequence_atransform() -> None:
     assert "".join(chunks) == "foo-lish"
 
 
-@pytest.fixture()
-def llm_with_fallbacks() -> RunnableWithFallbacks:
-    error_llm = FakeListLLM(responses=["foo"], i=1)
-    pass_llm = FakeListLLM(responses=["bar"])
-
-    return error_llm.with_fallbacks([pass_llm])
-
-
-@pytest.fixture()
-def llm_with_multi_fallbacks() -> RunnableWithFallbacks:
-    error_llm = FakeListLLM(responses=["foo"], i=1)
-    error_llm_2 = FakeListLLM(responses=["baz"], i=1)
-    pass_llm = FakeListLLM(responses=["bar"])
-
-    return error_llm.with_fallbacks([error_llm_2, pass_llm])
-
-
-@pytest.fixture()
-def llm_chain_with_fallbacks() -> Runnable:
-    error_llm = FakeListLLM(responses=["foo"], i=1)
-    pass_llm = FakeListLLM(responses=["bar"])
-
-    prompt = PromptTemplate.from_template("what did baz say to {buz}")
-    return RunnableParallel({"buz": lambda x: x}) | (prompt | error_llm).with_fallbacks(
-        [prompt | pass_llm]
-    )
-
-
-@pytest.mark.parametrize(
-    "runnable",
-    ["llm_with_fallbacks", "llm_with_multi_fallbacks", "llm_chain_with_fallbacks"],
-)
-async def test_llm_with_fallbacks(
-    runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
-) -> None:
-    runnable = request.getfixturevalue(runnable)
-    assert runnable.invoke("hello") == "bar"
-    assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
-    assert list(runnable.stream("hello")) == ["bar"]
-    assert await runnable.ainvoke("hello") == "bar"
-    assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
-    assert list(await runnable.ainvoke("hello")) == list("bar")
-    if sys.version_info >= (3, 9):
-        assert dumps(runnable, pretty=True) == snapshot
-
-
 class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
     """Parse the output of an LLM call to a comma-separated list."""
 
@@ -4600,6 +4855,14 @@ async def test_runnable_iter_context_config() -> None:
         2,
         3,
     ]
+    assert len(tracer.runs) == 1
+    assert tracer.runs[0].outputs == {"output": 6}
+    assert len(tracer.runs[0].child_runs) == 3
+    assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
+    assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+
+    tracer = FakeTracer()
+    assert [p async for p in agen.astream_log("a", {"callbacks": [tracer]})]
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3

@@ -923,12 +923,17 @@ class Runnable(Generic[Input, Output], ABC):
         fallbacks: Sequence[Runnable[Input, Output]],
         *,
         exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,),
+        exception_key: Optional[str] = None,
     ) -> RunnableWithFallbacksT[Input, Output]:
         """Add fallbacks to a runnable, returning a new Runnable.
 
         Args:
             fallbacks: A sequence of runnables to try if the original runnable fails.
             exceptions_to_handle: A tuple of exception types to handle.
+            exception_key: If string is specified then handled exceptions will be passed
+                to fallbacks as part of the input under the specified key. If None,
+                exceptions will not be passed to fallbacks. If used, the base runnable
+                and its fallbacks must accept a dictionary as input.
 
         Returns:
             A new Runnable that will try the original runnable, and then each
@@ -940,6 +945,7 @@ class Runnable(Generic[Input, Output], ABC):
             runnable=self,
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
+            exception_key=exception_key,
         )
 
     """ --- Helper methods for Subclasses --- """
@@ -1277,6 +1283,8 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
+        from langchain_core.tracers.log_stream import LogStreamCallbackHandler
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -1302,6 +1310,16 @@ class Runnable(Generic[Input, Output], ABC):
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            if stream_log := next(
+                (
+                    h
+                    for h in run_manager.handlers
+                    if isinstance(h, LogStreamCallbackHandler)
+                ),
+                None,
+            ):
+                # populates streamed_output in astream_log() output if needed
+                iterator = stream_log.tap_output_aiter(run_manager.run_id, iterator)
             try:
                 while True:
                     if accepts_context(asyncio.create_task):
@@ -1523,7 +1541,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         .. code-block:: python
 
             from langchain_core.output_parsers.json import SimpleJsonOutputParser
-            from langchain.chat_models.openai import ChatOpenAI
+            from langchain_openai import ChatOpenAI
 
             prompt = PromptTemplate.from_template(
                 'In JSON format, give me a list of {topic} and their '
@@ -2733,6 +2751,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 ],
             ]
         ] = None,
+        name: Optional[str] = None,
     ) -> None:
         """Create a RunnableLambda from a callable, and async callable or both.
 
@@ -2766,7 +2785,9 @@ class RunnableLambda(Runnable[Input, Output]):
             )
 
         try:
-            if func_for_name.__name__ != "<lambda>":
+            if name is not None:
+                self.name = name
+            elif func_for_name.__name__ != "<lambda>":
                 self.name = func_for_name.__name__
         except AttributeError:
             pass
@@ -2985,6 +3006,7 @@ class RunnableLambda(Runnable[Input, Output]):
                             except TypeError:
                                 output = chunk
                     return cast(Output, output)
+
             else:
 
                 def func(
@@ -3045,17 +3067,7 @@ class RunnableLambda(Runnable[Input, Output]):
     def _config(
         self, config: Optional[RunnableConfig], callable: Callable[..., Any]
     ) -> RunnableConfig:
-        config = ensure_config(config)
-
-        if config.get("run_name") is None:
-            try:
-                run_name = callable.__name__
-            except AttributeError:
-                run_name = None
-            if run_name is not None:
-                return patch_config(config, run_name=run_name)
-
-        return config
+        return ensure_config(config)
 
     def invoke(
         self,
@@ -3940,7 +3952,7 @@ def chain(
 
         from langchain_core.runnables import chain
         from langchain_core.prompts import PromptTemplate
-        from langchain.llms import OpenAI
+        from langchain_openai import OpenAI
 
         @chain
         def my_func(fields):

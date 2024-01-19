@@ -12,7 +12,7 @@ vectors, and then at query time to embed the unstructured query and retrieve the
 'most similar' to the embedded query. A vector store takes care of storing embedded data and performing vector search
 for you.
 
-![vector store diagram](/img/vector_stores.jpg)
+![Diagram illustrating the process of vector stores: 1. Load source data, 2. Query vector store, 3. Retrieve 'most similar' results.](/img/vector_stores.jpg "Vector Store Process Diagram")
 
 ## Get started
 
@@ -44,7 +44,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 ```python
 from langchain_community.document_loaders import TextLoader
-from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 
@@ -76,7 +76,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 ```python
 from langchain_community.document_loaders import TextLoader
-from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 
@@ -108,7 +108,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 ```python
 from langchain_community.document_loaders import TextLoader
-from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import LanceDB
 

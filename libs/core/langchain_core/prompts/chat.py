@@ -28,11 +28,14 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.messages.base import get_msg_title_repr
 from langchain_core.prompt_values import ChatPromptValue, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate
 from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import get_colored_text
+from langchain_core.utils.interactive_env import is_interactive_env
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
@@ -68,6 +71,13 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of input variables.
         """
 
+    def pretty_repr(self, html: bool = False) -> str:
+        """Human-readable representation."""
+        raise NotImplementedError
+
+    def pretty_print(self) -> None:
+        print(self.pretty_repr(html=is_interactive_env()))
+
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
 
@@ -95,9 +105,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         return ["langchain", "prompts", "chat"]
 
     def __init__(self, variable_name: str, *, optional: bool = False, **kwargs: Any):
-        return super().__init__(
-            variable_name=variable_name, optional=optional, **kwargs
-        )
+        super().__init__(variable_name=variable_name, optional=optional, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
@@ -134,6 +142,15 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             List of input variable names.
         """
         return [self.variable_name] if not self.optional else []
+
+    def pretty_repr(self, html: bool = False) -> str:
+        var = "{" + self.variable_name + "}"
+        if html:
+            title = get_msg_title_repr("Messages Placeholder", bold=True)
+            var = get_colored_text(var, "yellow")
+        else:
+            title = get_msg_title_repr("Messages Placeholder")
+        return f"{title}\n\n{var}"
 
 
 MessagePromptTemplateT = TypeVar(
@@ -236,6 +253,12 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
             List of input variable names.
         """
         return self.prompt.input_variables
+
+    def pretty_repr(self, html: bool = False) -> str:
+        # TODO: Handle partials
+        title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
+        title = get_msg_title_repr(title, bold=html)
+        return f"{title}\n\n{self.prompt.pretty_repr(html=html)}"
 
 
 class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
@@ -368,6 +391,13 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages."""
+
+    def pretty_repr(self, html: bool = False) -> str:
+        """Human-readable representation."""
+        raise NotImplementedError
+
+    def pretty_print(self) -> None:
+        print(self.pretty_repr(html=is_interactive_env()))
 
 
 MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate]
@@ -700,6 +730,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             file_path: path to file.
         """
         raise NotImplementedError()
+
+    def pretty_repr(self, html: bool = False) -> str:
+        # TODO: handle partials
+        return "\n\n".join(msg.pretty_repr(html=html) for msg in self.messages)
 
 
 def _create_template_from_message_type(
