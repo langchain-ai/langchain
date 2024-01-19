@@ -104,7 +104,7 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
         elif file_type.value == _FileType.PPTX:
             mime_types_mapping[
                 file_type.value
-            ] = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            ] = "application/vnd.openxmlformats-officedocument.presentationml.presentation"  # noqa: E501
         elif file_type.value == _FileType.TXT:
             mime_types_mapping[file_type.value] = "text/plain"
         elif file_type.value == _FileType.XLSX:
@@ -254,27 +254,30 @@ class O365BaseLoader(BaseLoader, BaseModel):
                 file=file, file_path=file_path, **self.file_loader_kwargs
             )
         else:
-            match file.extension:
-                case _FileExtension.DOC | _FileExtension.DOCX:
-                    loader = Docx2txtLoader(file_path)
-                case _FileExtension.PDF:
-                    loader = UnstructuredPDFLoader(file_path)
-                case _FileExtension.PPTX:
-                    loader = UnstructuredPowerPointLoader(file_path)
-                case _FileExtension.TXT:
-                    loader = TextLoader(file_path, None, True)
-                case _FileExtension.XLSX:
-                    loader = UnstructuredExcelLoader(file_path, mode="single")
-                case _:
-                    logger.error("Wrong file extension got:", file.extension)
-                    raise Exception(
-                        "File extension do not match any excepted file type: `"
-                        + file.extension
-                        + "`"
-                        + " for file: `"
-                        + file.name
-                        + "`"
-                    )
+            if (
+                file.extension
+                == _FileExtension.DOC | file.extension
+                == _FileExtension.DOCX
+            ):
+                loader = Docx2txtLoader(file_path)
+            elif file.extension == _FileExtension.PDF:
+                loader = UnstructuredPDFLoader(file_path)
+            elif file.extension == _FileExtension.PPTX:
+                loader = UnstructuredPowerPointLoader(file_path)
+            elif file.extension == _FileExtension.TXT:
+                loader = TextLoader(file_path, None, True)
+            elif file.extension == _FileExtension.XLSX:
+                loader = UnstructuredExcelLoader(file_path, mode="single")
+            else:
+                logger.error("Wrong file extension got:", file.extension)
+                raise Exception(
+                    "File extension do not match any excepted file type: `"
+                    + file.extension
+                    + "`"
+                    + " for file: `"
+                    + file.name
+                    + "`"
+                )
         docs = loader.load()
         if docs is None:
             raise Exception("Error when loading " + file.name)
