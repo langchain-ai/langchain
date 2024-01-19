@@ -561,8 +561,8 @@ async def test_event_streaming_with_tools() -> None:
         },
     ]
     events = await _collect_events(
-        with_parameters.astream_events({"x": 1, "y": "2"}, version="v1")
-    )  # type: ignore
+        with_parameters.astream_events({"x": 1, "y": "2"}, version="v1")  # type: ignore
+    )
     assert events == [
         {
             "data": {"input": {"x": 1, "y": "2"}},
