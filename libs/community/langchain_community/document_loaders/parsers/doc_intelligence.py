@@ -32,7 +32,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         )
         self.api_model = api_model
         self.mode = mode
-        assert self.mode in ["single", "page", "object", "markdown"]
+        assert self.mode in ["single", "page", "markdown"]
 
     def _generate_docs_page(self, result: Any) -> Iterator[Document]:
         for p in result.pages:
@@ -48,41 +48,6 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
     def _generate_docs_single(self, result: Any) -> Iterator[Document]:
         yield Document(page_content=result.content, metadata={})
-
-    def _generate_docs_object(self, result: Any) -> Iterator[Document]:
-        # record relationship between page id and span offset
-        page_offset = []
-        for page in result.pages:
-            # assume that spans only contain 1 element, to double check
-            page_offset.append(page.spans[0]["offset"])
-
-        # paragraph
-        # warning: paragraph content is overlapping with table content
-        for para in result.paragraphs:
-            yield Document(
-                page_content=para.content,
-                metadata={
-                    "role": para.role,
-                    "page": para.bounding_regions[0].page_number,
-                    "bounding_box": para.bounding_regions[0].polygon,
-                    "type": "paragraph",
-                },
-            )
-
-        # table
-        for table in result.tables:
-            yield Document(
-                page_content=table.cells,  # json object
-                metadata={
-                    "footnote": table.footnotes,
-                    "caption": table.caption,
-                    "page": para.bounding_regions[0].page_number,
-                    "bounding_box": para.bounding_regions[0].polygon,
-                    "row_count": table.row_count,
-                    "column_count": table.column_count,
-                    "type": "table",
-                },
-            )
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -101,7 +66,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             elif self.mode in ["page"]:
                 yield from self._generate_docs_page(result)
             else:
-                yield from self._generate_docs_object(result)
+                raise ValueError(f"Invalid mode: {self.mode}")
 
     def parse_url(self, url: str) -> Iterator[Document]:
         from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
@@ -119,4 +84,4 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         elif self.mode in ["page"]:
             yield from self._generate_docs_page(result)
         else:
-            yield from self._generate_docs_object(result)
+            raise ValueError(f"Invalid mode: {self.mode}")
