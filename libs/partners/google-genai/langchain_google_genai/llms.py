@@ -14,6 +14,13 @@ from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
+"""Constant to define family of models"""
+MODEL_FAMILY_MAPPING = {
+    "gemini-pro": "gemini",
+    "gemini-pro-vision": "gemini",
+    "models/text-bison-001": "google_palm",
+}
+
 
 def _create_retry_decorator(
     llm: BaseLLM,
@@ -84,17 +91,9 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
         return text
 
 
-class GoogleGenerativeAI(BaseLLM, BaseModel):
-    """Google GenerativeAI models.
+class _BaseGoogleGenerativeAI(BaseModel):
+    """Base class for Google Generative AI LLMs"""
 
-    Example:
-        .. code-block:: python
-
-            from langchain_google_genai import GoogleGenerativeAI
-            llm = GoogleGenerativeAI(model="gemini-pro")
-    """
-
-    client: Any  #: :meta private:
     model: str = Field(
         ...,
         description="""The name of the model to use.
@@ -141,6 +140,22 @@ Supported examples:
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
+
+    def _get_model_family(self) -> str:
+        return MODEL_FAMILY_MAPPING.get(self.model, "Unsupported Model Name")
+
+
+class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
+    """Google GenerativeAI models.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_google_genai import GoogleGenerativeAI
+            llm = GoogleGenerativeAI(model="gemini-pro")
+    """
+
+    client: Any  #: :meta private:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -259,11 +274,6 @@ Supported examples:
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "google_palm"
-    
-    @property
-    def is_gemini(self) -> bool:
-        """Returns whether a model is belongs to a Gemini family or not."""
-        return _is_gemini_model(self.model)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.
@@ -276,11 +286,11 @@ Supported examples:
         Returns:
             The integer number of tokens in the text.
         """
-        if self.is_gemini:
+        if self._get_model_family() == "gemini":
             result = self.client.count_tokens(text)
             token_count = result.total_tokens
         else:
             result = self.client.count_text_tokens(model=self.model, prompt=text)
             token_count = result["token_count"]
-            
+
         return token_count
