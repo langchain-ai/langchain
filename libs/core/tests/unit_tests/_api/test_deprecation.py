@@ -173,7 +173,7 @@ def test_deprecated_method() -> None:
         assert isinstance(doc, str)
         assert doc.startswith("[*Deprecated*]  original doc")
 
-    assert not inspect.iscoroutinefunction(obj.deprecated_async_method)
+    assert not inspect.iscoroutinefunction(obj.deprecated_method)
 
 
 @pytest.mark.asyncio
