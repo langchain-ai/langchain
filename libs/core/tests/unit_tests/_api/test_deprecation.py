@@ -134,11 +134,12 @@ def test_deprecated_function() -> None:
     assert not inspect.iscoroutinefunction(deprecated_function)
 
 
-def test_deprecated_async_function() -> None:
+@pytest.mark.asyncio
+async def test_deprecated_async_function() -> None:
     """Test deprecated async function."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
-        assert deprecated_async_function() == "This is a deprecated async function."
+        assert await deprecated_async_function() == "This is a deprecated async function."
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
@@ -173,12 +174,13 @@ def test_deprecated_method() -> None:
     assert not inspect.iscoroutinefunction(obj.deprecated_async_method)
 
 
-def test_deprecated_async_methond() -> None:
+@pytest.mark.asyncio
+async def test_deprecated_async_methond() -> None:
     """Test deprecated async method."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
         obj = ClassWithDeprecatedMethods()
-        assert obj.deprecated_async_method() == "This is a deprecated async method."
+        assert await obj.deprecated_async_method() == "This is a deprecated async method."
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
