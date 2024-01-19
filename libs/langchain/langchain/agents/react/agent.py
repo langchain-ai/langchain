@@ -23,10 +23,7 @@ def create_react_agent(
     Args:
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input keys:
-            `tools`: contains descriptions and arguments for each tool.
-            `tool_names`: contains all tool names.
-            `agent_scratchpad`: contains previous agent actions and tool outputs.
+        prompt: The prompt to use. See Prompt section below for more.
         stop: The list of stop sequences of the react agent.
 
     Returns:
@@ -62,7 +59,14 @@ def create_react_agent(
                 }
             )
 
-    Creating prompt example:
+    Prompt:
+
+        The prompt must have input keys:
+            * `tools`: contains descriptions and arguments for each tool.
+            * `tool_names`: contains all tool names.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as a string.
+
+        Here's an example:
 
         .. code-block:: python
 
