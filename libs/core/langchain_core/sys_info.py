@@ -4,10 +4,10 @@ from typing import Sequence
 
 def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     """Print information about the environment for debugging purposes."""
+    import pkgutil
     import platform
     import sys
     from importlib import metadata, util
-    import pkgutil
 
     # Packages that do not start with "langchain" prefix.
     other_langchain_packages = [
@@ -19,9 +19,9 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")
     ]
 
-    all_packages = sorted(set(
-        langchain_pkgs + other_langchain_packages + list(additional_pkgs)
-    ))
+    all_packages = sorted(
+        set(langchain_pkgs + other_langchain_packages + list(additional_pkgs))
+    )
 
     # Always surface these packages to the top
     order_by = ["langchain_core", "langchain", "langchain_community"]
