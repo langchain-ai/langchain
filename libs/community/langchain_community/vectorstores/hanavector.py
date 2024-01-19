@@ -242,7 +242,7 @@ class HanaDB(VectorStore):
                     (
                         text,
                         json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
-                        "[{}]".format(",".join(map(str, embedding))),
+                        f"[{','.join(map(str, embedding))}]",
                     ),
                 )
         finally:
@@ -325,6 +325,53 @@ class HanaDB(VectorStore):
             embedding=embedding, k=k, filter=filter
         )
 
+    def similarity_search_with_score_and_vector_by_vector(
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
+    ) -> List[Tuple[Document, float, List[float]]]:
+        """Return docs most similar to the given embedding.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: A dictionary of metadata fields and values to filter by.
+                    Defaults to None.
+
+        Returns:
+            List of Documents most similar to the query and
+            score and the document's embedding vector for each
+        """
+        result = []
+        k = HanaDB._sanitize_int(k)
+        embedding = HanaDB._sanitize_list_float(embedding)
+        distance_func_name = HANA_DISTANCE_FUNCTION[self.distance_strategy][0]
+        embedding_as_str = ",".join(map(str, embedding))
+        sql_str = (
+            f"SELECT TOP {k}"
+            f"  {self.content_column}, "  # row[0]
+            f"  {self.metadata_column}, "  # row[1]
+            f"  TO_NVARCHAR({self.vector_column}), "  # row[2]
+            f"  {distance_func_name}({self.vector_column}, TO_REAL_VECTOR "
+            f"     (ARRAY({embedding_as_str}))) AS CS "  # row[3]
+            f"FROM {self.table_name}"
+        )
+        order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
+        where_str, query_tuple = self._create_where_by_filter(filter)
+        sql_str = sql_str + where_str
+        sql_str = sql_str + order_str
+        try:
+            cur = self.connection.cursor()
+            cur.execute(sql_str, query_tuple)
+            if cur.has_result_set():
+                rows = cur.fetchall()
+                for row in rows:
+                    js = json.loads(row[1])
+                    doc = Document(page_content=row[0], metadata=js)
+                    result_vector = HanaDB._parse_float_array_from_string(row[2])
+                    result.append((doc, row[3], result_vector))
+        finally:
+            cur.close()
+        return result
+
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
@@ -339,32 +386,10 @@ class HanaDB(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        result = []
-        k = HanaDB._sanitize_int(k)
-        embedding = HanaDB._sanitize_list_float(embedding)
-        sql_str = (
-            f"SELECT TOP {k} {self.content_column}, {self.metadata_column} , "
-            f"{HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} "
-            f"({self.vector_column}, TO_REAL_VECTOR "
-            f"(ARRAY({'{}'.format(','.join(map(str, embedding)))}))) "
-            f"AS CS FROM {self.table_name}"
+        whole_result = self.similarity_search_with_score_and_vector_by_vector(
+            embedding=embedding, k=k, filter=filter
         )
-        order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
-        where_str, query_tuple = self._create_where_by_filter(filter)
-        sql_str = sql_str + where_str
-        sql_str = sql_str + order_str
-        try:
-            cur = self.connection.cursor()
-            cur.execute(sql_str, query_tuple)
-            if cur.has_result_set():
-                rows = cur.fetchall()
-                for row in rows:
-                    js = json.loads(row[1])
-                    doc = Document(page_content=row[0], metadata=js)
-                    result.append((doc, row[-1]))
-        finally:
-            cur.close()
-        return result
+        return [(result_item[0], result_item[1]) for result_item in whole_result]
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
@@ -507,40 +532,15 @@ class HanaDB(VectorStore):
         lambda_mult: float = 0.5,
         filter: Optional[dict] = None,
     ) -> List[Document]:
-        docs = []
-        embeddings = []
-        embedding = HanaDB._sanitize_list_float(embedding)
-        k = HanaDB._sanitize_int(k)
-        sql_str = (
-            f"SELECT TOP {k} {self.content_column}, {self.metadata_column}, "
-            f"TO_NVARCHAR({self.vector_column}), "
-            f"{HANA_DISTANCE_FUNCTION[self.distance_strategy][0]} "
-            f"({self.vector_column}, "
-            f"TO_REAL_VECTOR (ARRAY({'{}'.format(','.join(map(str, embedding)))}))) "
-            f"AS CS FROM {self.table_name}"
+        whole_result = self.similarity_search_with_score_and_vector_by_vector(
+            embedding=embedding, k=fetch_k, filter=filter
         )
-        order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
-        where_str, query_tuple = self._create_where_by_filter(filter)
-        sql_str = sql_str + where_str
-        sql_str = sql_str + order_str
-        try:
-            cur = self.connection.cursor()
-            cur.execute(sql_str, query_tuple)
-            if cur.has_result_set():
-                rows = cur.fetchall()
-                for row in rows:
-                    js = json.loads(row[1])
-                    doc = Document(page_content=row[0], metadata=js)
-                    docs.append((doc, row[-1]))
-                    embeddings.append(HanaDB._parse_float_array_from_string(row[2]))
-        finally:
-            cur.close()
-
+        embeddings = [result_item[2] for result_item in whole_result]
         mmr_doc_indexes = maximal_marginal_relevance(
             np.array(embedding), embeddings, lambda_mult=lambda_mult, k=k
         )
 
-        return [docs[i][0] for i in mmr_doc_indexes]
+        return [whole_result[i][0] for i in mmr_doc_indexes]
 
     async def amax_marginal_relevance_search_by_vector(
         self,
