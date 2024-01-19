@@ -178,8 +178,7 @@ def test_deprecated_async_methond() -> None:
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
         obj = ClassWithDeprecatedMethods()
-        assert obj.deprecated_async_method(
-        ) == "This is a deprecated async method."
+        assert obj.deprecated_async_method() == "This is a deprecated async method."
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
