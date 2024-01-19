@@ -5,7 +5,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
 
 from langchain_core.messages import AIMessage, SystemMessage
-from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -15,7 +15,6 @@ from langchain_core.prompts.chat import (
 from langchain_community.agent_toolkits.sql.prompt import (
     SQL_FUNCTIONS_SUFFIX,
     SQL_PREFIX,
-    SQL_SUFFIX,
 )
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.tools.sql_database.tool import (
@@ -115,7 +114,6 @@ def create_sql_agent(
         RunnableMultiActionAgent,
     )
     from langchain.agents.agent_types import AgentType
-    from langchain.agents.mrkl.base import ZeroShotAgent
 
     if toolkit is None and db is None:
         raise ValueError(
@@ -155,20 +153,24 @@ def create_sql_agent(
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         if prompt is None:
-            prompt_params = (
-                {"format_instructions": format_instructions}
-                if format_instructions is not None
-                else {}
+            from langchain.agents.mrkl import prompt as react_prompt
+
+            format_instructions = (
+                format_instructions or react_prompt.FORMAT_INSTRUCTIONS
             )
-            prompt = ZeroShotAgent.create_prompt(
-                tools,
-                prefix=prefix,
-                suffix=suffix or SQL_SUFFIX,
-                input_variables=input_variables,
-                **prompt_params,
+            template = "\n\n".join(
+                [
+                    react_prompt.PREFIX,
+                    "{tools}",
+                    format_instructions,
+                    react_prompt.SUFFIX,
+                ]
             )
+            prompt = PromptTemplate.from_template(template)
         agent = RunnableAgent(
-            runnable=create_react_agent(llm, tools, prompt), input_keys_arg=["input"]
+            runnable=create_react_agent(llm, tools, prompt),
+            input_keys_arg=["input"],
+            return_keys_arg=["output"],
         )
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
@@ -183,6 +185,7 @@ def create_sql_agent(
         agent = RunnableAgent(
             runnable=create_openai_functions_agent(llm, tools, prompt),
             input_keys_arg=["input"],
+            return_keys_arg=["output"],
         )
     elif agent_type == "openai-tools":
         if prompt is None:
@@ -196,6 +199,7 @@ def create_sql_agent(
         agent = RunnableMultiActionAgent(
             runnable=create_openai_tools_agent(llm, tools, prompt),
             input_keys_arg=["input"],
+            return_keys_arg=["output"],
         )
 
     else:
