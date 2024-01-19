@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Type, Union
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
     BaseMessage,
@@ -27,8 +28,6 @@ from langchain.agents.format_scratchpad.openai_functions import (
 from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
 )
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
 
 
 @deprecated("0.1.0", alternative="create_openai_functions_agent", removal="0.2.0")
@@ -240,8 +239,7 @@ def create_openai_functions_agent(
             so either be an OpenAI model that supports that or a wrapper of
             a different model that adds in equivalent support.
         tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input key `agent_scratchpad`, which will
-            contain agent action and tool output messages.
+        prompt: The prompt to use. See Prompt section below for more.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -279,7 +277,13 @@ def create_openai_functions_agent(
                 }
             )
 
-    Creating prompt example:
+    Prompt:
+
+        The agent prompt must have an `agent_scratchpad` key that is a
+            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            messages will be passed in here.
+
+        Here's an example:
 
         .. code-block:: python
 
