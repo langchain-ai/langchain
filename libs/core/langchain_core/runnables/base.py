@@ -699,6 +699,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
+        version: Literal["v1"],
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -793,7 +794,9 @@ class Runnable(Generic[Input, Output], ABC):
 
             chain = RunnableLambda(func=reverse)
 
-            events = [event async for event in chain.astream_events("hello")]
+            events = [
+                event async for event in chain.astream_events("hello", version="v1")
+            ]
 
             # will produce the following events (run_id has been omitted for brevity):
             [
@@ -823,6 +826,9 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the runnable.
             config: The config to use for the runnable.
+            version: The version of the schema to use.
+                     Currently only version 1 is available.
+                     No default will be assigned until the API is stabilized.
             include_names: Only include events from runnables with matching names.
             include_types: Only include events from runnables with matching types.
             include_tags: Only include events from runnables with matching tags.
@@ -836,6 +842,11 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             An async stream of StreamEvents.
         """  # noqa: E501
+        if version != "v1":
+            raise NotImplementedError(
+                'Only version "v1" of the schema is currently supported.'
+            )
+
         from langchain_core.runnables.utils import (
             _RootEventFilter,
         )
