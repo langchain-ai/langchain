@@ -142,8 +142,8 @@ def test_deprecated_async_function() -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
-            "The function `deprecated_async_function` was deprecated in LangChain 2.0.0 "
-            "and will be removed in 3.0.0"
+            "The function `deprecated_async_function` was deprecated "
+            "in LangChain 2.0.0 and will be removed in 3.0.0"
         )
 
         doc = deprecated_function.__doc__
