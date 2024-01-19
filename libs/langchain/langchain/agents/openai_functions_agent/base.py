@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Type, Union
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
     BaseMessage,
@@ -27,8 +28,6 @@ from langchain.agents.format_scratchpad.openai_functions import (
 from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
 )
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
 
 
 @deprecated("0.1.0", alternative="create_openai_functions_agent", removal="0.2.0")
