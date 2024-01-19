@@ -83,6 +83,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "pytest-socket",
             "pytest-watcher",
             "responses",
+            "sqlparse",
             "syrupy",
             "requests-mock",
         ]
