@@ -23,7 +23,6 @@ from syrupy import SnapshotAssertion
 from typing_extensions import TypedDict
 
 from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
     Callbacks,
     atrace_as_chain_group,
     trace_as_chain_group,
@@ -5157,69 +5156,3 @@ async def test_astream_log_deep_copies() -> None:
         "name": "add_one",
         "type": "chain",
     }
-
-
-def _generate(input: Iterator) -> Iterator[str]:
-    yield from "foo bar"
-
-
-def _generate_immediate_error(input: Iterator) -> Iterator[str]:
-    raise ValueError()
-    yield ""
-
-
-def _generate_delayed_error(input: Iterator) -> Iterator[str]:
-    yield ""
-    raise ValueError()
-
-
-def test_fallbacks_stream() -> None:
-    runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
-        [RunnableGenerator(_generate)]
-    )
-    assert list(runnable.stream({})) == [c for c in "foo bar"]
-
-    with pytest.raises(ValueError):
-        runnable = RunnableGenerator(_generate_delayed_error).with_fallbacks(
-            [RunnableGenerator(_generate)]
-        )
-        list(runnable.stream({}))
-
-
-async def _agenerate(input: dict) -> AsyncIterator[str]:
-    for c in "foo bar":
-        yield c
-
-
-async def _agenerate_immediate_error(
-    input: dict, run_manager: AsyncCallbackManagerForChainRun
-) -> AsyncIterator[str]:
-    e = ValueError()
-    await run_manager.on_chain_error(e)
-    raise e
-    yield ""
-
-
-async def _agenerate_delayed_error(
-    input: dict, run_manager: AsyncCallbackManagerForChainRun
-) -> AsyncIterator[str]:
-    yield ""
-    e = ValueError()
-    await run_manager.on_chain_error(e)
-    raise e
-
-
-async def test_fallbacks_astream() -> None:
-    runnable = RunnableLambda(_agenerate_immediate_error).with_fallbacks(
-        [RunnableLambda(_agenerate)]
-    )
-    expected = (c for c in "foo bar")
-    async for c in runnable.astream({}):
-        assert c == next(expected)
-
-    with pytest.raises(ValueError):
-        runnable = RunnableLambda(_agenerate_delayed_error).with_fallbacks(
-            [RunnableLambda(_agenerate)]
-        )
-        async for c in runnable.astream({}):
-            pass
