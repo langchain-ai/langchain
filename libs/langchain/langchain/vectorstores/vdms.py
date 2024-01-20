@@ -1,5 +1,5 @@
 from langchain_community.vectorstores.vdms import (
-    VDMSVectorSearch,
+    VDMS,
 )
 
-__all__ = ["VDMSVectorSearch"]
+__all__ = ["VDMS"]

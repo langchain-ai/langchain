@@ -5,7 +5,7 @@ import os
 import pytest
 from langchain_core.documents import Document
 
-from langchain_community.vectorstores import VDMSVectorSearch
+from langchain_community.vectorstores import VDMS
 from langchain_community.vectorstores.vdms import embedding2bytes
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -41,7 +41,7 @@ class TestVDMS:
     def test_init_from_client(self) -> None:
         embedding_function = FakeEmbeddings()
         embedding_dimension = 10
-        _ = VDMSVectorSearch(
+        _ = VDMS(
             embedding_function=embedding_function,
             embedding_dimension=embedding_dimension,
             connection_args=self.connection_args,
@@ -54,7 +54,7 @@ class TestVDMS:
         embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             metadatas=metadatas,
@@ -72,7 +72,7 @@ class TestVDMS:
         embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             metadatas=metadatas,
@@ -90,7 +90,7 @@ class TestVDMS:
         embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             metadatas=metadatas,
@@ -108,7 +108,7 @@ class TestVDMS:
         embedding_dimension = 10
         texts = ["far", "bar", "baz"]
         metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             metadatas=metadatas,
@@ -132,7 +132,7 @@ class TestVDMS:
         embedding_dimension = 10
         texts = ["far", "bar", "baz"]
         metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             metadatas=metadatas,
@@ -160,7 +160,7 @@ class TestVDMS:
         embedding_function = FakeEmbeddings()
         embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             embedding_dimension=embedding_dimension,
@@ -176,7 +176,7 @@ class TestVDMS:
         embedding_function = FakeEmbeddings()
         embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             embedding_dimension=embedding_dimension,
@@ -193,7 +193,7 @@ class TestVDMS:
         embedding_function = FakeEmbeddings()
         embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             embedding_dimension=embedding_dimension,
@@ -223,7 +223,7 @@ class TestVDMS:
         original_doc = Document(page_content=initial_content, metadata={"page": "0"})
 
         # Initialize a VDMS instance with the original document
-        docsearch = VDMSVectorSearch.from_documents(
+        docsearch = VDMS.from_documents(
             connection_args=self.connection_args,
             collection_name=collection_name,
             documents=[original_doc],
@@ -277,7 +277,7 @@ class TestVDMS:
         embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
-        docsearch = VDMSVectorSearch.from_texts(
+        docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
             metadatas=metadatas,
@@ -296,7 +296,7 @@ class TestVDMS:
         collection_name = "test_add_documents_no_metadata"
         embedding_function = FakeEmbeddings()
         embedding_dimension = 10
-        db = VDMSVectorSearch(
+        db = VDMS(
             collection_name=collection_name,
             embedding_function=embedding_function,
             embedding_dimension=embedding_dimension,
@@ -308,7 +308,7 @@ class TestVDMS:
         collection_name = "test_add_documents_mixed_metadata"
         embedding_function = FakeEmbeddings()
         embedding_dimension = 10
-        db = VDMSVectorSearch(
+        db = VDMS(
             collection_name=collection_name,
             embedding_function=embedding_function,
             embedding_dimension=embedding_dimension,

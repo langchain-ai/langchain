@@ -68,7 +68,7 @@ DEFAULT_VDMS_CONNECTION = {"host": "localhost", "port": "55555"}
 DEFAULT_PROPERTIES = ["_distance", "id", "content"]
 
 
-class VDMSVectorSearch(VectorStore):
+class VDMS(VectorStore):
     """`VDMS` vector store.
 
     To use, you should have both:
@@ -90,11 +90,11 @@ class VDMSVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain.vectorstores import VDMSVectorSearch
+            from langchain.vectorstores import VDMS
             from langchain.embeddings import HuggingFaceEmbeddings
             import vdms
 
-            vectorstore = VDMSVectorSearch(
+            vectorstore = VDMS(
                 collection_name="langchain_store",
                 embedding_function=HuggingFaceEmbeddings(),
                 connection_args={"host": "localhost", "port": 55555},
@@ -301,7 +301,7 @@ class VDMSVectorSearch(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[VDMSVectorSearch],
+        cls: Type[VDMS],
         texts: List[str],
         embedding_function: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -309,7 +309,7 @@ class VDMSVectorSearch(VectorStore):
         collection_name: str = DEFAULT_COLLECTION_NAME,
         connection_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> VDMSVectorSearch:
+    ) -> VDMS:
         """Create a VDMS vectorstore from a raw documents.
 
         If a persist_directory is specified, the collection will be persisted there.
@@ -323,7 +323,7 @@ class VDMSVectorSearch(VectorStore):
             collection_name (str): Name of the collection to create.
 
         Returns:
-            VDMSVectorSearch: VDMS vectorstore.
+            VDMS: VDMS vectorstore.
         """
         vdms_collection = cls(
             collection_name=collection_name,
@@ -355,14 +355,14 @@ class VDMSVectorSearch(VectorStore):
 
     @classmethod
     def from_documents(
-        cls: Type[VDMSVectorSearch],
+        cls: Type[VDMS],
         documents: List[Document],
         embedding_function: Embeddings,
         ids: Optional[List[str]] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # Add this line
         connection_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> VDMSVectorSearch:
+    ) -> VDMS:
         """Create a VDMS vectorstore from a list of documents.
 
         If a persist_directory is specified, the collection will be persisted there.
@@ -375,7 +375,7 @@ class VDMSVectorSearch(VectorStore):
             embedding_function (Embeddings): Embedding function. Defaults to None.
 
         Returns:
-            VDMSVectorSearch: VDMS vectorstore.
+            VDMS: VDMS vectorstore.
         """
 
         texts = [doc.page_content for doc in documents]
@@ -398,7 +398,7 @@ class VDMSVectorSearch(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Run similarity search with VDMSVectorSearch.
+        """Run similarity search with VDMS.
 
         Args:
             query (str): Query text to search for.
@@ -451,7 +451,7 @@ class VDMSVectorSearch(VectorStore):
         # normalize_distance=False,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Run similarity search with VDMSVectorSearch with distance.
+        """Run similarity search with VDMS with distance.
 
         Args:
             query (str): Query text to search for.
