@@ -458,11 +458,24 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 raise e
             else:
                 first_error = None
-                yield chunk
-                yield from stream
+                break
         if first_error:
             run_manager.on_chain_error(first_error)
             raise first_error
+
+        yield chunk
+        output: Optional[Output] = chunk
+        try:
+            for chunk in stream:
+                yield chunk
+                try:
+                    output = output + chunk  # type: ignore
+                except TypeError:
+                    output = None
+        except BaseException as e:
+            run_manager.on_chain_error(e)
+            raise e
+        run_manager.on_chain_end(output)
 
     async def astream(
         self,
@@ -502,9 +515,21 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 raise e
             else:
                 first_error = None
-                yield chunk
-                async for chunk in stream:
-                    yield chunk
+                break
         if first_error:
             await run_manager.on_chain_error(first_error)
             raise first_error
+
+        yield chunk
+        output: Optional[Output] = chunk
+        try:
+            async for chunk in stream:
+                yield chunk
+                try:
+                    output = output + chunk  # type: ignore
+                except TypeError:
+                    output = None
+        except BaseException as e:
+            await run_manager.on_chain_error(e)
+            raise e
+        await run_manager.on_chain_end(output)

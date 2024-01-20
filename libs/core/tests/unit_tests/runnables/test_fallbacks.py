@@ -4,7 +4,6 @@ from typing import Any, AsyncIterator, Iterator
 import pytest
 from syrupy import SnapshotAssertion
 
-from langchain_core.callbacks import AsyncCallbackManagerForChainRun
 from langchain_core.load import dumps
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import (
@@ -260,40 +259,32 @@ def test_fallbacks_stream() -> None:
         list(runnable.stream({}))
 
 
-async def _agenerate(input: dict) -> AsyncIterator[str]:
+async def _agenerate(input: AsyncIterator) -> AsyncIterator[str]:
     for c in "foo bar":
         yield c
 
 
-async def _agenerate_immediate_error(
-    input: dict, run_manager: AsyncCallbackManagerForChainRun
-) -> AsyncIterator[str]:
-    e = ValueError()
-    await run_manager.on_chain_error(e)
-    raise e
+async def _agenerate_immediate_error(input: AsyncIterator) -> AsyncIterator[str]:
+    raise ValueError()
     yield ""
 
 
-async def _agenerate_delayed_error(
-    input: dict, run_manager: AsyncCallbackManagerForChainRun
-) -> AsyncIterator[str]:
+async def _agenerate_delayed_error(input: AsyncIterator) -> AsyncIterator[str]:
     yield ""
-    e = ValueError()
-    await run_manager.on_chain_error(e)
-    raise e
+    raise ValueError()
 
 
 async def test_fallbacks_astream() -> None:
-    runnable = RunnableLambda(_agenerate_immediate_error).with_fallbacks(
-        [RunnableLambda(_agenerate)]
+    runnable = RunnableGenerator(_agenerate_immediate_error).with_fallbacks(
+        [RunnableGenerator(_agenerate)]
     )
     expected = (c for c in "foo bar")
     async for c in runnable.astream({}):
         assert c == next(expected)
 
     with pytest.raises(ValueError):
-        runnable = RunnableLambda(_agenerate_delayed_error).with_fallbacks(
-            [RunnableLambda(_agenerate)]
+        runnable = RunnableGenerator(_agenerate_delayed_error).with_fallbacks(
+            [RunnableGenerator(_agenerate)]
         )
         async for c in runnable.astream({}):
             pass
