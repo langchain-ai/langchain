@@ -450,6 +450,13 @@ class Runnable(Generic[Input, Output], ABC):
 
         return self | RunnablePick(keys)
 
+    def drop(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
+        """Drop keys from the dict output of this runnable.
+        Returns a new runnable."""
+        from langchain_core.runnables.passthrough import RunnableDrop
+
+        return self | RunnableDrop(keys)
+
     def assign(
         self,
         **kwargs: Union[
@@ -1667,7 +1674,11 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 def _seq_input_schema(
     steps: List[Runnable[Any, Any]], config: Optional[RunnableConfig]
 ) -> Type[BaseModel]:
-    from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+    from langchain_core.runnables.passthrough import (
+        RunnableAssign,
+        RunnableDrop,
+        RunnablePick,
+    )
 
     first = steps[0]
     if len(steps) == 1:
@@ -1685,7 +1696,7 @@ def _seq_input_schema(
                 },
                 __config__=_SchemaConfig,
             )
-    elif isinstance(first, RunnablePick):
+    elif isinstance(first, (RunnablePick, RunnableDrop)):
         return _seq_input_schema(steps[1:], config)
 
     return first.get_input_schema(config)
@@ -1694,7 +1705,11 @@ def _seq_input_schema(
 def _seq_output_schema(
     steps: List[Runnable[Any, Any]], config: Optional[RunnableConfig]
 ) -> Type[BaseModel]:
-    from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+    from langchain_core.runnables.passthrough import (
+        RunnableAssign,
+        RunnableDrop,
+        RunnablePick,
+    )
 
     last = steps[-1]
     if len(steps) == 1:
@@ -1739,6 +1754,19 @@ def _seq_output_schema(
                     __root__=(field.annotation, field.default),
                     __config__=_SchemaConfig,
                 )
+    elif isinstance(last, RunnableDrop):
+        prev_output_schema = _seq_output_schema(steps[:-1], config)
+        if not prev_output_schema.__custom_root_type__:
+            # it's a dict as expected
+            return create_model(  # type: ignore[call-overload]
+                "RunnableSequenceOutput",
+                **{
+                    k: (v.annotation, v.default)
+                    for k, v in prev_output_schema.__fields__.items()
+                    if k not in last.keys
+                },
+                __config__=_SchemaConfig,
+            )
 
     return last.get_output_schema(config)
 
