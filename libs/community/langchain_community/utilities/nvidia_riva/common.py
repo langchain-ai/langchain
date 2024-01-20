@@ -1,30 +1,14 @@
-"""A collection of common code used by the NVIDIA Riva Runnables."""
-import asyncio
-import queue
+"""An NVIDIA Riva TTS module that converts text into audio bytes."""
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    AsyncIterator,
-    Dict,
-    Generic,
-    Iterator,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from langchain_core.pydantic_v1 import (
     AnyHttpUrl,
     BaseModel,
     Field,
     parse_obj_as,
-    root_validator,
     validator,
 )
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 if TYPE_CHECKING:
     import riva.client
@@ -43,76 +27,8 @@ def _import_riva_client() -> "riva.client":
     return riva.client
 
 
-# Create a generic Sentinel type
 class SentinelT:  # pylint: disable=too-few-public-methods
     """An empty Sentinel type."""
-
-
-_TRANSFORM_END = SentinelT()
-
-
-# Define base Riva data types
-_InputT = TypeVar("_InputT")
-_OutputT = TypeVar("_OutputT")
-
-
-# pylint: disable-next=too-few-public-methods
-class RivaBase(Generic[_InputT, _OutputT], RunnableSerializable[_InputT, _OutputT]):
-    """A common set of methods for all Riva Runnables."""
-
-    @root_validator(pre=True)
-    @classmethod
-    def _validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate the Python environment and input arguments."""
-        _ = _import_riva_client()
-        return values
-
-    async def atransform(
-        self,
-        input: AsyncIterator[_InputT],
-        _: Optional[RunnableConfig] = None,
-    ) -> AsyncGenerator[_OutputT, None]:
-        """Intercept async transforms and route them to the synchronous transform in a thread."""
-        loop = asyncio.get_running_loop()
-        input_queue: queue.Queue[Union[_InputT, SentinelT]] = queue.Queue()
-        out_queue: asyncio.Queue[Union[_OutputT, SentinelT]] = asyncio.Queue()
-
-        async def _producer() -> None:
-            """Produce input into the input queue."""
-            async for val in input:
-                input_queue.put(val)
-            input_queue.put(_TRANSFORM_END)
-
-        def _consumer() -> None:
-            """Consume the input with transform."""
-            input_iterator = cast(
-                Iterator[_InputT], iter(input_queue.get, _TRANSFORM_END)
-            )
-            for val in self.transform(input_iterator):
-                out_queue.put_nowait(val)
-            out_queue.put_nowait(_TRANSFORM_END)
-
-        async def _consumer_coro() -> None:
-            """Coroutine that wraps the consumer."""
-            await loop.run_in_executor(None, _consumer)
-
-        producer_task = loop.create_task(_producer())
-        consumer_task = loop.create_task(_consumer_coro())
-
-        while True:
-            try:
-                val = await asyncio.wait_for(out_queue.get(), 0.5)
-            except asyncio.exceptions.TimeoutError:
-                continue
-            out_queue.task_done()
-
-            if val is _TRANSFORM_END:
-                break
-
-            yield val
-
-        await producer_task
-        await consumer_task
 
 
 class RivaAudioEncoding(str, Enum):
@@ -135,6 +51,7 @@ class RivaAudioEncoding(str, Enum):
     @classmethod
     def from_wave_format_code(cls, format_code: int) -> "RivaAudioEncoding":
         """Return the audio encoding specified by the format code in the wave file.
+
         ref: https://mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
         """
         try:
@@ -196,5 +113,5 @@ class RivaCommonConfigMixin(BaseModel):
     )
     language_code: str = Field(
         default="en-US",
-        description="The [BCP-47 language code](https://www.rfc-editor.org/rfc/bcp/bcp47.txt) for the target langauge.",
+        description="The [BCP-47 language code](https://www.rfc-editor.org/rfc/bcp/bcp47.txt) for the target lanauge.",
     )

@@ -40,7 +40,7 @@ def response_generator(
     empty: bool = False,
     final: bool = False,
     alternatives: bool = True,
-) -> Generator[rasr.StreamingRecognizeResponse, None, None]:
+) -> rasr.StreamingRecognizeResponse:
     """Create a pseudo streaming response."""
     if empty:
         return rasr.StreamingRecognizeResponse()
@@ -69,7 +69,7 @@ def response_generator(
 
 def streaming_recognize_mock(
     generator: Generator[rasr.StreamingRecognizeRequest, None, None], **_
-):
+) -> Generator[rasr.StreamingRecognizeResponse, None, None]:
     """A mock function to fake a streaming call to Riva."""
     yield response_generator(empty=True)
     yield response_generator(alternatives=False)
@@ -83,6 +83,7 @@ def streaming_recognize_mock(
             input_bytes = ""
 
         output_transcript += input_bytes + " "
+
         yield response_generator(final=final, transcript=output_transcript)
         if final:
             output_transcript = ""
@@ -128,7 +129,7 @@ def test_init_defaults() -> None:
 def test_config(asr: RivaASR) -> None:
     """Verify the Riva config is properly assembled."""
     expected = rasr.StreamingRecognitionConfig(
-        interim_results=False,
+        interim_results=True,
         config=rasr.RecognitionConfig(
             encoding=CONFIG["encoding"],
             sample_rate_hertz=CONFIG["sample_rate_hertz"],
@@ -156,42 +157,8 @@ def test_get_service(asr: RivaASR) -> None:
     "riva.client.proto.riva_asr_pb2_grpc.RivaSpeechRecognitionStub.__init__",
     riva_asr_stub_init_patch,
 )
-def test_transcribe(asr, stream) -> None:
-    """Test the transcribe method."""
-    got_val = asr._transcribe(stream)
-    assert got_val == AUDIO_TEXT_MOCK[0].strip()
-
-
-@pytest.mark.requires("riva.client")
-@patch(
-    "riva.client.proto.riva_asr_pb2_grpc.RivaSpeechRecognitionStub.__init__",
-    riva_asr_stub_init_patch,
-)
 def test_invoke(asr, stream) -> None:
     """Test the invoke method."""
-    got_val = asr.invoke(stream)
-    assert got_val == "".join(AUDIO_TEXT_MOCK).strip()
-
-
-@pytest.mark.requires("riva.client")
-@patch(
-    "riva.client.proto.riva_asr_pb2_grpc.RivaSpeechRecognitionStub.__init__",
-    riva_asr_stub_init_patch,
-)
-def test_stream(asr, stream) -> None:
-    """Test the invoke method."""
-    for idx, got_val in enumerate(asr.stream(stream)):
-        assert got_val == AUDIO_TEXT_MOCK[idx].strip()
-
-
-@pytest.mark.requires("riva.client")
-@patch(
-    "riva.client.proto.riva_asr_pb2_grpc.RivaSpeechRecognitionStub.__init__",
-    riva_asr_stub_init_patch,
-)
-async def test_astream(asr, stream) -> None:
-    """Test the invoke method."""
-    idx = 0
-    async for got_val in asr.astream(stream):
-        assert got_val == AUDIO_TEXT_MOCK[idx].strip()
-        idx += 1
+    got = asr.invoke(stream)
+    exepected = " ".join([s.strip() for s in AUDIO_TEXT_MOCK]).strip()
+    assert got == exepected

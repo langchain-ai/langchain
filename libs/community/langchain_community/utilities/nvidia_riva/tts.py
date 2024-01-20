@@ -1,16 +1,30 @@
 """An NVIDIA Riva TTS module that converts text into audio bytes."""
+import asyncio
 import logging
 import pathlib
+import queue
 import tempfile
 import wave
-from typing import TYPE_CHECKING, Any, Generator, Iterator, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    AsyncIterator,
+    Dict,
+    Generator,
+    Iterator,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import Field, validator
-from langchain_core.runnables import RunnableConfig
+from langchain_core.pydantic_v1 import Field, root_validator, validator
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
-from .common import RivaAuthMixin, RivaBase, RivaCommonConfigMixin, _import_riva_client
+from .common import RivaAuthMixin, RivaCommonConfigMixin, SentinelT, _import_riva_client
 
 if TYPE_CHECKING:
     import riva.client
@@ -18,6 +32,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 _MAX_TEXT_LENGTH = 400
 _SENTENCE_TERMINATORS = ("\n", ".", "!", "?", "¡", "¿")
+_TRANSFORM_END = SentinelT()
 
 # pylint: disable-next=invalid-name
 TTSInputType = Union[str, AnyMessage, PromptValue]
@@ -74,13 +89,15 @@ def _process_chunks(inputs: Iterator[TTSInputType]) -> Generator[str, None, None
                 yield buffer[idx : idx + 5]
             buffer = ""
 
-    # return any remaining buffer
+    # return remaining buffer
     if buffer:
         yield buffer
 
 
 class RivaTTS(
-    RivaAuthMixin, RivaCommonConfigMixin, RivaBase[TTSInputType, TTSOutputType]
+    RivaAuthMixin,
+    RivaCommonConfigMixin,
+    RunnableSerializable[TTSInputType, TTSOutputType],
 ):
     """A runnable that performs Text-to-Speech (TTS) with NVIDIA Riva."""
 
@@ -108,6 +125,13 @@ class RivaTTS(
         ),
     )
 
+    @root_validator(pre=True)
+    @classmethod
+    def _validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate the Python environment and input arguments."""
+        _ = _import_riva_client()
+        return values
+
     @validator("output_directory")
     @classmethod
     def _output_directory_validator(cls, v: str) -> str:
@@ -128,7 +152,7 @@ class RivaTTS(
             ) from err
 
     def invoke(
-        self, input: TTSInputType, _: Union[RunnableConfig, None] = None
+        self, input: TTSInputType, _: RunnableConfig | None = None
     ) -> TTSOutputType:
         """Perform TTS by taking a string and outputting the entire audio file."""
         return b"".join(self.transform(iter([input])))
@@ -171,3 +195,57 @@ class RivaTTS(
         if wav_file:
             wav_file.close()
             _LOGGER.debug("Riva TTS wrote file: %s", wav_file_name)
+
+    async def atransform(
+        self,
+        input: AsyncIterator[TTSInputType],
+        _: Optional[RunnableConfig] = None,
+    ) -> AsyncGenerator[TTSOutputType, None]:
+        """Intercept async transforms and route them to the synchronous transform in a thread."""
+        loop = asyncio.get_running_loop()
+        input_queue: queue.Queue[Union[TTSInputType, SentinelT]] = queue.Queue()
+        out_queue: asyncio.Queue[Union[TTSOutputType, SentinelT]] = asyncio.Queue()
+
+        async def _producer() -> None:
+            """Produce input into the input queue."""
+            async for val in input:
+                input_queue.put_nowait(val)
+            input_queue.put_nowait(_TRANSFORM_END)
+
+        def _input_iterator() -> Iterator[TTSInputType]:
+            """Iterate over the input_queue."""
+            while True:
+                try:
+                    val = input_queue.get(timeout=0.5)
+                except queue.Empty:
+                    continue
+                if val == _TRANSFORM_END:
+                    break
+                yield val
+
+        def _consumer() -> None:
+            """Consume the input with transform."""
+            for val in self.transform(_input_iterator()):
+                out_queue.put_nowait(val)
+            out_queue.put_nowait(_TRANSFORM_END)
+
+        async def _consumer_coro() -> None:
+            """Coroutine that wraps the consumer."""
+            await loop.run_in_executor(None, _consumer)
+
+        producer = loop.create_task(_producer())
+        consumer = loop.create_task(_consumer_coro())
+
+        while True:
+            try:
+                val = await asyncio.wait_for(out_queue.get(), 0.5)
+            except asyncio.exceptions.TimeoutError:
+                continue
+            out_queue.task_done()
+
+            if val is _TRANSFORM_END:
+                break
+            yield val
+
+        await producer
+        await consumer
