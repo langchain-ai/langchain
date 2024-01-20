@@ -1,4 +1,4 @@
-"""An NVIDIA Riva TTS module that converts text into audio bytes."""
+"""A common module for NVIDIA Riva that contains utilities used by any Riva Runnable."""
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
