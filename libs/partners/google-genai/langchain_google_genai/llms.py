@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum, auto
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import google.api_core
@@ -14,12 +15,18 @@ from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-"""Constant to define family of models"""
-MODEL_FAMILY_MAPPING = {
-    "gemini-pro": "gemini",
-    "gemini-pro-vision": "gemini",
-    "models/text-bison-001": "google_palm",
-}
+
+class GoogleModelFamily(str, Enum):
+    GEMINI = auto()
+    PALM = auto()
+
+    @classmethod
+    def _missing_(cls, value: Any) -> Optional["GoogleModelFamily"]:
+        if "gemini" in value.lower():
+            return GoogleModelFamily.GEMINI
+        elif "text-bison" in value.lower():
+            return GoogleModelFamily.PALM
+        return None
 
 
 def _create_retry_decorator(
@@ -72,10 +79,6 @@ def _completion_with_retry(
     return _completion_with_retry(
         prompt=prompt, is_gemini=is_gemini, stream=stream, **kwargs
     )
-
-
-def _is_gemini_model(model_name: str) -> bool:
-    return "gemini" in model_name
 
 
 def _strip_erroneous_leading_spaces(text: str) -> str:
@@ -133,16 +136,12 @@ Supported examples:
     )
 
     @property
-    def is_gemini(self) -> bool:
-        """Returns whether a model is belongs to a Gemini family or not."""
-        return _is_gemini_model(self.model)
-
-    @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
 
-    def _get_model_family(self) -> str:
-        return MODEL_FAMILY_MAPPING.get(self.model, "Unsupported Model Name")
+    @property
+    def _model_family(self) -> str:
+        return GoogleModelFamily(self.model)
 
 
 class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
@@ -174,7 +173,7 @@ class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
             client_options=values.get("client_options"),
         )
 
-        if _is_gemini_model(model_name):
+        if GoogleModelFamily(model_name) == GoogleModelFamily.GEMINI:
             values["client"] = genai.GenerativeModel(model_name=model_name)
         else:
             values["client"] = genai
@@ -210,7 +209,7 @@ class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
             "candidate_count": self.n,
         }
         for prompt in prompts:
-            if self.is_gemini:
+            if self._model_family == GoogleModelFamily.GEMINI:
                 res = _completion_with_retry(
                     self,
                     prompt=prompt,
@@ -286,7 +285,7 @@ class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
         Returns:
             The integer number of tokens in the text.
         """
-        if self._get_model_family() == "gemini":
+        if self._model_family == GoogleModelFamily.GEMINI:
             result = self.client.count_tokens(text)
             token_count = result.total_tokens
         else:

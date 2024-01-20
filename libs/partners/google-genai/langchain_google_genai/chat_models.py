@@ -51,7 +51,7 @@ from tenacity import (
 )
 
 from langchain_google_genai._common import GoogleGenerativeAIError
-from langchain_google_genai.llms import _BaseGoogleGenerativeAI
+from langchain_google_genai.llms import GoogleModelFamily, _BaseGoogleGenerativeAI
 
 IMAGE_TYPES: Tuple = ()
 try:
@@ -74,10 +74,6 @@ class ChatGoogleGenerativeAIError(GoogleGenerativeAIError):
     Google genai API usage in the ChatGoogleGenerativeAI class, such as unsupported
     message types or roles.
     """
-
-
-def _is_gemini_model(model_name: str) -> bool:
-    return "gemini" in model_name
 
 
 def _create_retry_decorator() -> Callable[[Any], Any]:
@@ -451,10 +447,6 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
     def _llm_type(self) -> str:
         return "chat-google-generative-ai"
 
-    @property
-    def _is_geminiai(self) -> bool:
-        return self.model is not None and "gemini" in self.model
-
     @classmethod
     def is_lc_serializable(self) -> bool:
         return True
@@ -616,11 +608,6 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         chat = self.client.start_chat(history=history)
         return params, chat, message
 
-    @property
-    def is_gemini(self) -> bool:
-        """Returns whether a model is belongs to a Gemini family or not."""
-        return _is_gemini_model(self.model)
-
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.
 
@@ -632,7 +619,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         Returns:
             The integer number of tokens in the text.
         """
-        if self._get_model_family() == "gemini":
+        if self._model_family == GoogleModelFamily.GEMINI:
             result = self.client.count_tokens(text)
             token_count = result.total_tokens
         else:
