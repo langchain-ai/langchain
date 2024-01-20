@@ -53,7 +53,7 @@ optional = true
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1"
 langchain-core = {path = "../../core", develop = true}
 types-google-cloud-ndb = "^2.2.0.20240106"
 
