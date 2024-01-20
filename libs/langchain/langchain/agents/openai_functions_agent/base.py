@@ -239,8 +239,7 @@ def create_openai_functions_agent(
             so either be an OpenAI model that supports that or a wrapper of
             a different model that adds in equivalent support.
         tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input key `agent_scratchpad`, which will
-            contain agent action and tool output messages.
+        prompt: The prompt to use. See Prompt section below for more.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -278,7 +277,13 @@ def create_openai_functions_agent(
                 }
             )
 
-    Creating prompt example:
+    Prompt:
+
+        The agent prompt must have an `agent_scratchpad` key that is a
+            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            messages will be passed in here.
+
+        Here's an example:
 
         .. code-block:: python
 
