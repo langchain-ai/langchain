@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from langchain_core.embeddings import Embeddings
 
-from langchain_astradb.vectorstores import AstraDB
+from langchain_astradb.vectorstores import AstraDB, AstraDBVectorStore
 
 
 class SomeEmbeddings(Embeddings):
@@ -38,8 +38,19 @@ def test_initialization() -> None:
     """Test integration vectorstore initialization."""
     mock_astra_db = Mock()
     embedding = SomeEmbeddings(dimension=2)
-    AstraDB(
+    AstraDBVectorStore(
         embedding=embedding,
         collection_name="mock_coll_name",
         astra_db_client=mock_astra_db,
     )
+
+def test_vectorstore_aliasing() -> None:
+    """Checking aliasing of names"""
+    mock_astra_db = Mock()
+    embedding = SomeEmbeddings(dimension=2)
+    legacy_vs = AstraDB(
+        embedding=embedding,
+        collection_name="mock_coll_name",
+        astra_db_client=mock_astra_db,
+    )
+    assert isinstance(legacy_vs, AstraDBVectorStore)

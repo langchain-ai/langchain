@@ -17,7 +17,7 @@ from typing import (
 )
 
 import numpy as np
-
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
@@ -25,7 +25,7 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
-ADBVST = TypeVar("ADBVST", bound="AstraDB")
+ADBVST = TypeVar("ADBVST", bound="AstraDBVectorStore")
 T = TypeVar("T")
 U = TypeVar("U")
 DocDict = Dict[str, Any]  # dicts expressing entries to insert
@@ -53,7 +53,7 @@ def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
     return new_lst
 
 
-class AstraDB(VectorStore):
+class AstraDBVectorStore(VectorStore):
     """Wrapper around DataStax Astra DB for vector-store workloads.
 
     To use it, you need a recent installation of the `astrapy` library
@@ -65,11 +65,11 @@ class AstraDB(VectorStore):
     Example:
         .. code-block:: python
 
-                from langchain_community.vectorstores import AstraDB
+                from langchain_community.vectorstores import AstraDBVectorStore
                 from langchain_community.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vectorstore = AstraDB(
+                vectorstore = AstraDBVectorStore(
                   embedding=embeddings,
                   collection_name="my_store",
                   token="AstraCS:...",
@@ -130,10 +130,12 @@ class AstraDB(VectorStore):
             for k, v in filter_dict.items():
                 if k and k[0] == "$":
                     if isinstance(v, list):
-                        metadata_filter[k] = [AstraDB._filter_to_metadata(f) for f in v]
+                        metadata_filter[k] = [
+                            AstraDBVectorStore._filter_to_metadata(f) for f in v
+                        ]
                     else:
                         # assume each list item can be fed back to this function
-                        metadata_filter[k] = AstraDB._filter_to_metadata(v)  # type: ignore
+                        metadata_filter[k] = AstraDBVectorStore._filter_to_metadata(v)  # type: ignore
                 else:
                     metadata_filter[f"metadata.{k}"] = v
 
@@ -156,7 +158,7 @@ class AstraDB(VectorStore):
         pre_delete_collection: bool = False,
     ) -> None:
         """
-        Create an AstraDB vector store object. See class docstring for help.
+        Create an AstraDBVectorStore vector store object. See class docstring for help.
         """
         try:
             from astrapy.db import (
@@ -175,8 +177,8 @@ class AstraDB(VectorStore):
         if astra_db_client is not None:
             if token is not None or api_endpoint is not None:
                 raise ValueError(
-                    "You cannot pass 'astra_db_client' to AstraDB if passing "
-                    "'token' and 'api_endpoint'."
+                    "You cannot pass 'astra_db_client' to AstraDBVectorStore "
+                    "if passing 'token' and 'api_endpoint'."
                 )
 
         self.embedding = embedding
@@ -304,7 +306,7 @@ class AstraDB(VectorStore):
 
         if kwargs:
             warnings.warn(
-                "Method 'delete' of AstraDB vector store invoked with "
+                "Method 'delete' of AstraDBVectorStore vector store invoked with "
                 f"unsupported arguments ({', '.join(sorted(kwargs.keys()))}), "
                 "which will be ignored."
             )
@@ -375,7 +377,7 @@ class AstraDB(VectorStore):
 
         if kwargs:
             warnings.warn(
-                "Method 'add_texts' of AstraDB vector store invoked with "
+                "Method 'add_texts' of AstraDBVectorStore vector store invoked with "
                 f"unsupported arguments ({', '.join(sorted(kwargs.keys()))}), "
                 "which will be ignored."
             )
@@ -705,7 +707,7 @@ class AstraDB(VectorStore):
             metadatas (Optional[List[dict]]): metadata dicts for the texts.
             ids (Optional[List[str]]): ids to associate to the texts.
             *Additional arguments*: you can pass any argument that you would
-                to 'add_texts' and/or to the 'AstraDB' class constructor
+                to 'add_texts' and/or to the 'AstraDBVectorStore' class constructor
                 (see these methods for details). These arguments will be
                 routed to the respective methods as they are.
 
@@ -731,8 +733,9 @@ class AstraDB(VectorStore):
             unknown_kwargs = set(kwargs.keys()) - known_kwargs
             if unknown_kwargs:
                 warnings.warn(
-                    "Method 'from_texts' of AstraDB vector store invoked with "
-                    f"unsupported arguments ({', '.join(sorted(unknown_kwargs))}), "
+                    "Method 'from_texts' of AstraDBVectorStore vector store "
+                    "invoked with unsupported arguments "
+                    f"({', '.join(sorted(unknown_kwargs))}), "
                     "which will be ignored."
                 )
 
@@ -783,6 +786,15 @@ class AstraDB(VectorStore):
             in place of 'texts' and 'metadatas'.
 
         Returns:
-            an `AstraDB` vectorstore.
+            an `AstraDBVectorStore` vectorstore.
         """
         return super().from_documents(documents, embedding, **kwargs)
+
+
+@deprecated(
+    since="0.0.13",
+    removal="0.2.0",
+    alternative_import="langchain_community.vectorstores.AstraDBVectorStore"
+)
+class AstraDB(AstraDBVectorStore):
+    pass
