@@ -121,7 +121,12 @@ def create_self_ask_with_search_agent(
 
             agent_executor.invoke({"input": "hi"})
 
-    Create prompt example:
+    Prompt:
+
+        The prompt must have input key `agent_scratchpad` which will
+            contain agent actions and tool outputs as a string.
+
+        Here's an example:
 
         .. code-block:: python
 
