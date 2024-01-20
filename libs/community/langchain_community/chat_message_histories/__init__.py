@@ -63,5 +63,5 @@ __all__ = [
     "ZepChatMessageHistory",
     "UpstashRedisChatMessageHistory",
     "Neo4jChatMessageHistory",
-    "TiDBChatMessageHistory"
+    "TiDBChatMessageHistory",
 ]
