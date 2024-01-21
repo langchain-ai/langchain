@@ -7,7 +7,6 @@ import warnings
 from importlib.metadata import version
 from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
 
-from packaging.version import parse
 from requests import HTTPError, Response
 
 from langchain_core.pydantic_v1 import SecretStr
@@ -103,24 +102,26 @@ def check_package_version(
     gt_version: Optional[str] = None,
     gte_version: Optional[str] = None,
 ) -> None:
-    """Check the version of a package."""
-    imported_version = parse(version(package))
-    if lt_version is not None and imported_version >= parse(lt_version):
-        raise ValueError(
-            f"Expected {package} version to be < {lt_version}. Received "
-            f"{imported_version}."
-        )
-    if lte_version is not None and imported_version > parse(lte_version):
+    """Check the version of a package is in a specified range."""
+    imported_version = version(package)
+    if lt_version is not None:
+        if imported_version >= lt_version:
+            raise ValueError(
+                f"Expected {package} version to be < {lt_version}. Received "
+                f"{imported_version}."
+            )
+    elif lte_version is not None and imported_version > lte_version:
         raise ValueError(
             f"Expected {package} version to be <= {lte_version}. Received "
             f"{imported_version}."
         )
-    if gt_version is not None and imported_version <= parse(gt_version):
-        raise ValueError(
-            f"Expected {package} version to be > {gt_version}. Received "
-            f"{imported_version}."
-        )
-    if gte_version is not None and imported_version < parse(gte_version):
+    if gt_version is not None:
+        if imported_version <= gt_version:
+            raise ValueError(
+                f"Expected {package} version to be > {gt_version}. Received "
+                f"{imported_version}."
+            )
+    elif gte_version is not None and imported_version < gte_version:
         raise ValueError(
             f"Expected {package} version to be >= {gte_version}. Received "
             f"{imported_version}."
