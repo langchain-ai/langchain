@@ -76,6 +76,7 @@ class AI21LLM(BaseLLM, AI21Base):
         **kwargs: Any,
     ) -> LLMResult:
         generations: List[List[Generation]] = []
+        token_count = 0
 
         for prompt in prompts:
             response = self._invoke_completion(
@@ -83,8 +84,10 @@ class AI21LLM(BaseLLM, AI21Base):
             )
             generation = self._response_to_generation(response)
             generations.append(generation)
+            token_count += self.client.count_tokens(prompt)
 
-        return LLMResult(generations=generations)
+        llm_output = {"token_count": token_count, "model_name": self.model}
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(
         self,
