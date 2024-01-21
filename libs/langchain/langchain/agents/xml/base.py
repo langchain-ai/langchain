@@ -152,7 +152,13 @@ def create_xml_agent(
                 }
             )
 
-    Creating prompt example:
+    Prompt:
+
+        The prompt must have input keys:
+            * `tools`: contains descriptions for each tool.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as an XML string.
+
+        Here's an example:
 
         .. code-block:: python
 
