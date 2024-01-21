@@ -1,5 +1,5 @@
 """Tool for the SceneXplain API."""
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -24,6 +24,7 @@ class SceneXplainTool(BaseTool):
         "the output will be a text description that covers every detail of the image."
     )
     api_wrapper: SceneXplainAPIWrapper = Field(default_factory=SceneXplainAPIWrapper)
+    args_schema: Type[SceneXplainInput]
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None

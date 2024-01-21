@@ -1,13 +1,13 @@
 """Tools for interacting with a Power BI dataset."""
 import logging
 from time import perf_counter
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field, validator
+from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain_core.tools import BaseTool
 
 from langchain_community.chat_models.openai import _import_tiktoken
@@ -19,6 +19,18 @@ from langchain_community.tools.powerbi.prompt import (
 from langchain_community.utilities.powerbi import PowerBIDataset, json_to_md
 
 logger = logging.getLogger(__name__)
+
+
+class QueryPowerBIToolInput(BaseModel):
+    tool_input: str = Field(description="Detailed question about the dataset")
+
+
+class InfoPowerBIToolInput(BaseModel):
+    tool_input: str = Field(description="Tool is a comma-separated list of tables")
+
+
+class ListPowerBIToolInput(BaseModel):
+    tool_input: Optional[str] = Field(description="Empty String")
 
 
 class QueryPowerBITool(BaseTool):
@@ -37,6 +49,7 @@ class QueryPowerBITool(BaseTool):
     max_iterations: int = 5
     output_token_limit: int = 4000
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
+    args_schema: Type[QueryPowerBIToolInput]
 
     class Config:
         """Configuration for this pydantic object."""
@@ -225,6 +238,7 @@ class InfoPowerBITool(BaseTool):
     Example Input: "table1, table2, table3"
     """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
+    args_schema: Type[InfoPowerBIToolInput]
 
     class Config:
         """Configuration for this pydantic object."""
@@ -253,6 +267,7 @@ class ListPowerBITool(BaseTool):
     name: str = "list_tables_powerbi"
     description: str = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
+    args_schema: Type[ListPowerBIToolInput]
 
     class Config:
         """Configuration for this pydantic object."""

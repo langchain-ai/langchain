@@ -1,7 +1,7 @@
 """Tools for interacting with vectorstores."""
 
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.language_models import BaseLanguageModel
@@ -12,11 +12,18 @@ from langchain_core.vectorstores import VectorStore
 from langchain_community.llms.openai import OpenAI
 
 
+class BaseVectorStoreTooInput(BaseModel):
+    """Input for the Tavily tool."""
+
+    query: str = Field(description="Fully formed question.")
+
+
 class BaseVectorStoreTool(BaseModel):
     """Base class for tools that use a VectorStore."""
 
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
+    args_schema: Type[BaseModel] = BaseVectorStoreTooInput
 
     class Config(BaseTool.Config):
         pass

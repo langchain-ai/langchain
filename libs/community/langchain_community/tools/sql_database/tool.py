@@ -1,8 +1,8 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import (
@@ -13,6 +13,32 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.tools import BaseTool
 from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
+
+
+class QuerySQLDataBaseToolInput(BaseModel):
+    """Input for the SemanticScholar tool."""
+
+    query: str = Field(description="Detailed and correct SQL query")
+
+
+class InfoSQLDatabaseToolInput(BaseModel):
+    """Input for the SemanticScholar tool."""
+
+    table_names: str = Field(
+        description='Comma-separated list of tables. Example Input: "table1, table2, table3"'
+    )
+
+
+class ListSQLDatabaseToolInput(BaseModel):
+    """Input for the SemanticScholar tool."""
+
+    tool_input: str = Field(description="Empty String")
+
+
+class QuerySQLCheckerToolInput(BaseModel):
+    """Input for the SemanticScholar tool."""
+
+    query: str = Field(description="SQL query that needs to checked and corrected")
 
 
 class BaseSQLDatabaseTool(BaseModel):
@@ -33,6 +59,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
+    args_schema: Type[BaseModel] = QuerySQLDataBaseToolInput
 
     def _run(
         self,
@@ -52,6 +79,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     Example Input: "table1, table2, table3"
     """
+    args_schema: Type[BaseModel] = InfoSQLDatabaseToolInput
 
     def _run(
         self,
@@ -69,6 +97,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     name: str = "sql_db_list_tables"
     description: str = "Input is an empty string, output is a comma separated list of tables in the database."
+    args_schema: Type[BaseModel] = ListSQLDatabaseToolInput
 
     def _run(
         self,
@@ -91,6 +120,7 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with sql_db_query!
     """
+    args_schema: Type[BaseModel] = QuerySQLCheckerToolInput
 
     @root_validator(pre=True)
     def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:

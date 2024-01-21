@@ -1,14 +1,29 @@
 """Tool for the Metaphor search API."""
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
+
+
+class MetaphorSearchResultsToolInput(BaseModel):
+    query: str = Field(description="Metaphor-optimized query")
+    num_results: int = Field(
+        description="Number of results that needs to be returned from the query"
+    )
+    include_domains: Optional[List[str]] = Field(description="Domains Included")
+    exclude_domains: Optional[List[str]] = Field(description="Domains Excluded")
+    start_crawl_date: Optional[str] = Field(description="Crawling Start Date")
+    end_crawl_date: Optional[str] = Field(description="Crawling End Date")
+    start_published_date: Optional[str] = Field(description="Pubish Start Date")
+    end_published_date: Optional[str] = Field(description="Publish End Date")
+    use_autoprompt: Optional[bool] = Field(description="Whether to use autoprompt")
 
 
 class MetaphorSearchResults(BaseTool):
@@ -21,6 +36,7 @@ class MetaphorSearchResults(BaseTool):
         "Output is a JSON array of the query results"
     )
     api_wrapper: MetaphorSearchAPIWrapper
+    args_schema: Type[MetaphorSearchResultsToolInput]
 
     def _run(
         self,

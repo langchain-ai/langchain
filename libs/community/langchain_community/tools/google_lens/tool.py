@@ -1,11 +1,16 @@
 """Tool for the Google Lens"""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
+
+
+class GoogleLensQueryRunToolInput(BaseModel):
+    query: str = Field(description="Google lens query to search with google lens")
 
 
 class GoogleLensQueryRun(BaseTool):
@@ -19,6 +24,7 @@ class GoogleLensQueryRun(BaseTool):
         "Input should be a url to an image."
     )
     api_wrapper: GoogleLensAPIWrapper
+    args_schema: Type[BaseModel] = GoogleLensQueryRunToolInput
 
     def _run(
         self,

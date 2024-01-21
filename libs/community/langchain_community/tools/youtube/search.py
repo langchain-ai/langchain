@@ -9,11 +9,22 @@ Input to this tool should be a comma separated list,
     maximum number of video results to return
  """
 import json
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_community.tools import BaseTool
+
+
+class YouTubeSearchToolInput(BaseModel):
+    query: str = Field(
+        description="""Should be a comma separated list
+                       the first part contains a person name and the second a 
+                       number that is the maximum number of video results 
+                       to return aka num_results. the second part is optional
+                       """
+    )
 
 
 class YouTubeSearchTool(BaseTool):
@@ -27,6 +38,7 @@ class YouTubeSearchTool(BaseTool):
         "number that is the maximum number of video results "
         "to return aka num_results. the second part is optional"
     )
+    args_schema: Type[BaseModel] = YouTubeSearchToolInput
 
     def _search(self, person: str, num_results: int) -> str:
         from youtube_search import YoutubeSearch

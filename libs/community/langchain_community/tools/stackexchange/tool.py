@@ -1,11 +1,18 @@
-"""Tool for the Wikipedia API."""
+"""Tool for the Stack Exhange API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.stackexchange import StackExchangeAPIWrapper
+
+
+class StackExchangeToolInput(BaseModel):
+    """Input for the SemanticScholar tool."""
+
+    query: str = Field(description="Stack Question to look up")
 
 
 class StackExchangeTool(BaseTool):
@@ -19,6 +26,7 @@ class StackExchangeTool(BaseTool):
         "Input should be a fully formed question."
     )
     api_wrapper: StackExchangeAPIWrapper
+    args_schema: Type[BaseModel] = StackExchangeToolInput
 
     def _run(
         self,

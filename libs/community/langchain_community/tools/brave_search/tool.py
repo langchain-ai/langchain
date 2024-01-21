@@ -3,16 +3,14 @@ from __future__ import annotations
 from typing import Any, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.brave_search import BraveSearchWrapper
 
 
-from langchain.pydantic_v1 import BaseModel, Field
-
 class BraveSearchInput(BaseModel):
     query: str = Field(description="should be a search query")
-
 
 
 class BraveSearch(BaseTool):

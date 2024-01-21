@@ -1,11 +1,16 @@
 """Tool for the Google Scholar"""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
+
+
+class GoogleScholarQueryRunToolInput(BaseModel):
+    query: str = Field(description="Google Scholar query to search with google scholar")
 
 
 class GoogleScholarQueryRun(BaseTool):
@@ -19,6 +24,7 @@ class GoogleScholarQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleScholarAPIWrapper
+    args_schema: Type[GoogleScholarQueryRunToolInput]
 
     def _run(
         self,

@@ -1,11 +1,16 @@
 """Tool for the Google Trends"""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
+
+
+class GoogleTrendsQueryRunToolInput(BaseModel):
+    query: str = Field(description="Google Trends query to search with google trends")
 
 
 class GoogleTrendsQueryRun(BaseTool):
@@ -19,6 +24,7 @@ class GoogleTrendsQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleTrendsAPIWrapper
+    args_schema: Type[GoogleTrendsQueryRunToolInput]
 
     def _run(
         self,

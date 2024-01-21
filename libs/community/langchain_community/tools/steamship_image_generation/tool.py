@@ -14,10 +14,10 @@ To use this tool, you must first set as environment variables:
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.tools import BaseTool
@@ -25,6 +25,10 @@ from langchain_community.tools.steamship_image_generation.utils import make_imag
 
 if TYPE_CHECKING:
     from steamship import Steamship
+
+
+class SteamWebAPIQueryRunToolInput(BaseModel):
+    query: str = Field(description="A detailed text-2-image prompt describing an image")
 
 
 class ModelName(str, Enum):
@@ -55,6 +59,7 @@ class SteamshipImageGenerationTool(BaseTool):
         "Input: A detailed text-2-image prompt describing an image"
         "Output: the UUID of a generated image"
     )
+    args_schema: Type[BaseModel] = SteamWebAPIQueryRunToolInput
 
     @root_validator(pre=True)
     def validate_size(cls, values: Dict) -> Dict:

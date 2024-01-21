@@ -1,12 +1,11 @@
 import tempfile
 from enum import Enum
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
-from langchain.pydantic_v1 import BaseModel, Field
 
 
 def _import_elevenlabs() -> Any:
@@ -21,8 +20,6 @@ def _import_elevenlabs() -> Any:
 
 class ElevenLabsText2SpeechToolInput(BaseModel):
     query: str = Field(description="Text that needs to be converted to speech")
-
-
 
 
 class ElevenLabsModel(str, Enum):

@@ -1,11 +1,11 @@
 from abc import abstractmethod
-from typing import Any, Optional, Protocol, Sequence, runtime_checkable
+from typing import Any, Optional, Protocol, Sequence, Type, runtime_checkable
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.llms.gradient_ai import TrainResult
@@ -32,6 +32,12 @@ class TrainableLLM(Protocol):
         ...
 
 
+class MemorizeToolInput(BaseModel):
+    information_to_learn: str = Field(
+        description="The information that needs to be learned by the llm"
+    )
+
+
 class Memorize(BaseTool):
     """Tool that trains a language model."""
 
@@ -44,6 +50,7 @@ class Memorize(BaseTool):
         "then the tool will fine-tune yourself to remember it."
     )
     llm: TrainableLLM = Field()
+    args_schema: Type[MemorizeToolInput]
 
     def _run(
         self,

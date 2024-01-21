@@ -1,14 +1,20 @@
 """Tool for the SearxNG search API."""
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.searx_search import SearxSearchWrapper
+
+
+class SearxSearchRunToolInput(BaseModel):
+    """Input for the SemanticScholar tool."""
+
+    query: str = Field(description="search query to look up")
 
 
 class SearxSearchRun(BaseTool):
@@ -22,6 +28,7 @@ class SearxSearchRun(BaseTool):
     )
     wrapper: SearxSearchWrapper
     kwargs: dict = Field(default_factory=dict)
+    args_schema: Type[BaseModel] = SearxSearchRunToolInput
 
     def _run(
         self,
@@ -52,6 +59,7 @@ class SearxSearchResults(BaseTool):
     wrapper: SearxSearchWrapper
     num_results: int = 4
     kwargs: dict = Field(default_factory=dict)
+    args_schema: Type[BaseModel] = SearxSearchRunToolInput
 
     class Config:
         """Pydantic config."""

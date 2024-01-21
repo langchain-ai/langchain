@@ -1,15 +1,19 @@
 """Tool for the Serper.dev Google Search API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
+
+
+class GoogleSerperRunToolInput(BaseModel):
+    query: str = Field(description="Google Serper query to search with google serper")
 
 
 class GoogleSerperRun(BaseTool):
@@ -22,6 +26,7 @@ class GoogleSerperRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleSerperAPIWrapper
+    args_schema: Type[GoogleSerperRunToolInput]
 
     def _run(
         self,
@@ -51,6 +56,7 @@ class GoogleSerperResults(BaseTool):
         "Input should be a search query. Output is a JSON object of the query results"
     )
     api_wrapper: GoogleSerperAPIWrapper = Field(default_factory=GoogleSerperAPIWrapper)
+    args_schema: Type[GoogleSerperRunToolInput]
 
     def _run(
         self,

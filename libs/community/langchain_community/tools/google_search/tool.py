@@ -1,11 +1,16 @@
 """Tool for the Google search API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
+
+
+class GoogleSearchRunToolInput(BaseModel):
+    query: str = Field(description="Google Search query to search with google search")
 
 
 class GoogleSearchRun(BaseTool):
@@ -18,6 +23,7 @@ class GoogleSearchRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleSearchAPIWrapper
+    args_schema: Type[GoogleSearchRunToolInput]
 
     def _run(
         self,
@@ -39,6 +45,7 @@ class GoogleSearchResults(BaseTool):
     )
     num_results: int = 4
     api_wrapper: GoogleSearchAPIWrapper
+    args_schema: Type[GoogleSearchRunToolInput]
 
     def _run(
         self,

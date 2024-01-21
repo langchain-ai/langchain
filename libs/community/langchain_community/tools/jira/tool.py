@@ -18,13 +18,17 @@ jira = JiraAPIWrapper()
 toolkit = JiraToolkit.from_jira_api_wrapper(jira)
 ```
 """
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.jira import JiraAPIWrapper
+
+
+class JiraActionToolInput(BaseModel):
+    instructions: str = Field(description="Instructions for Jira Action")
 
 
 class JiraAction(BaseTool):
@@ -32,8 +36,9 @@ class JiraAction(BaseTool):
 
     api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)
     mode: str
-    name: str = ""
+    name: str = "jira_action"
     description: str = ""
+    args_schema: Type[JiraActionToolInput]
 
     def _run(
         self,

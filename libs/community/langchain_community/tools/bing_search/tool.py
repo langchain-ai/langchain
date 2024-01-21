@@ -1,17 +1,16 @@
 """Tool for the Bing search API."""
 
-from typing import Optional,Type
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.bing_search import BingSearchAPIWrapper
-from langchain.pydantic_v1 import BaseModel, Field
+
 
 class BingSearchInput(BaseModel):
     query: str = Field(description="should be a search query")
-
-
 
 
 class BingSearchRun(BaseTool):
