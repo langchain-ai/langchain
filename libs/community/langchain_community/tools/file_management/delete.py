@@ -22,7 +22,7 @@ class DeleteFileTool(BaseFileToolMixin, BaseTool):
     """Tool that deletes a file."""
 
     name: str = "file_delete"
-    args_schema: Type[BaseModel] = FileDeleteInput
+    args_schema: Type[FileDeleteInput] = FileDeleteInput
     description: str = "Delete a file"
 
     def _run(

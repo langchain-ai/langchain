@@ -62,7 +62,7 @@ class NucliaUnderstandingAPI(BaseTool):
         "A wrapper around Nuclia Understanding API endpoints. "
         "Useful for when you need to extract text from any kind of files. "
     )
-    args_schema: Type[BaseModel] = NUASchema
+    args_schema: Type[NUASchema] = NUASchema
     _results: Dict[str, Any] = {}
     _config: Dict[str, Any] = {}
 

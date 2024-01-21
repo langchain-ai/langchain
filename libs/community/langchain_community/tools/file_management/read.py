@@ -21,7 +21,7 @@ class ReadFileTool(BaseFileToolMixin, BaseTool):
     """Tool that reads a file."""
 
     name: str = "read_file"
-    args_schema: Type[BaseModel] = ReadFileInput
+    args_schema: Type[ReadFileInput] = ReadFileInput
     description: str = "Read file from disk"
 
     def _run(

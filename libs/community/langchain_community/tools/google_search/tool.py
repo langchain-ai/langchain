@@ -23,7 +23,7 @@ class GoogleSearchRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleSearchAPIWrapper
-    args_schema: Type[GoogleSearchRunToolInput]
+    args_schema: Type[GoogleSearchRunToolInput] = GoogleSearchRunToolInput
 
     def _run(
         self,

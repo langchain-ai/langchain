@@ -29,7 +29,7 @@ class GitLabAction(BaseTool):
     mode: str
     name: str = ""
     description: str = ""
-    args_schema: Type[BaseModel] = GitLabActionToolInput
+    args_schema: Type[GitLabActionToolInput] = GitLabActionToolInput
 
     def _run(
         self,

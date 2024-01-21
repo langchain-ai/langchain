@@ -23,7 +23,7 @@ class MoveFileTool(BaseFileToolMixin, BaseTool):
     """Tool that moves a file."""
 
     name: str = "move_file"
-    args_schema: Type[BaseModel] = FileMoveInput
+    args_schema: Type[FileMoveInput] = FileMoveInput
     description: str = "Move or rename a file from one location to another"
 
     def _run(

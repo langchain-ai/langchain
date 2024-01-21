@@ -59,7 +59,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
-    args_schema: Type[BaseModel] = QuerySQLDataBaseToolInput
+    args_schema: Type[QuerySQLDataBaseToolInput] = QuerySQLDataBaseToolInput
 
     def _run(
         self,
@@ -79,7 +79,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     Example Input: "table1, table2, table3"
     """
-    args_schema: Type[BaseModel] = InfoSQLDatabaseToolInput
+    args_schema: Type[InfoSQLDatabaseToolInput] = InfoSQLDatabaseToolInput
 
     def _run(
         self,
@@ -97,7 +97,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     name: str = "sql_db_list_tables"
     description: str = "Input is an empty string, output is a comma separated list of tables in the database."
-    args_schema: Type[BaseModel] = ListSQLDatabaseToolInput
+    args_schema: Type[ListSQLDatabaseToolInput] = ListSQLDatabaseToolInput
 
     def _run(
         self,
@@ -120,7 +120,7 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with sql_db_query!
     """
-    args_schema: Type[BaseModel] = QuerySQLCheckerToolInput
+    args_schema: Type[QuerySQLCheckerToolInput] = QuerySQLCheckerToolInput
 
     @root_validator(pre=True)
     def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:

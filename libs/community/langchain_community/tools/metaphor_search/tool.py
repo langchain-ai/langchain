@@ -36,7 +36,7 @@ class MetaphorSearchResults(BaseTool):
         "Output is a JSON array of the query results"
     )
     api_wrapper: MetaphorSearchAPIWrapper
-    args_schema: Type[MetaphorSearchResultsToolInput]
+    args_schema: Type[MetaphorSearchResultsToolInput] = MetaphorSearchResultsToolInput
 
     def _run(
         self,

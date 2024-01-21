@@ -43,7 +43,7 @@ class RedditSearchRun(BaseTool):
         "Useful when you need to know post information on a subreddit."
     )
     api_wrapper: RedditSearchAPIWrapper = Field(default_factory=RedditSearchAPIWrapper)
-    args_schema: Type[BaseModel] = RedditSearchSchema
+    args_schema: Type[RedditSearchSchema] = RedditSearchSchema
 
     def _run(
         self,

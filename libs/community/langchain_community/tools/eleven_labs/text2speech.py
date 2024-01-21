@@ -45,7 +45,7 @@ class ElevenLabsText2SpeechTool(BaseTool):
         "It supports multiple languages, including English, German, Polish, "
         "Spanish, Italian, French, Portuguese, and Hindi. "
     )
-    args_schema: Type[BaseModel] = ElevenLabsText2SpeechToolInput
+    args_schema: Type[ElevenLabsText2SpeechToolInput] = ElevenLabsText2SpeechToolInput
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

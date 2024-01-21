@@ -49,7 +49,7 @@ class QueryPowerBITool(BaseTool):
     max_iterations: int = 5
     output_token_limit: int = 4000
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
-    args_schema: Type[QueryPowerBIToolInput]
+    args_schema: Type[QueryPowerBIToolInput] = QueryPowerBIToolInput
 
     class Config:
         """Configuration for this pydantic object."""
@@ -238,7 +238,7 @@ class InfoPowerBITool(BaseTool):
     Example Input: "table1, table2, table3"
     """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
-    args_schema: Type[InfoPowerBIToolInput]
+    args_schema: Type[InfoPowerBIToolInput] = InfoPowerBIToolInput
 
     class Config:
         """Configuration for this pydantic object."""
@@ -267,7 +267,7 @@ class ListPowerBITool(BaseTool):
     name: str = "list_tables_powerbi"
     description: str = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
-    args_schema: Type[ListPowerBIToolInput]
+    args_schema: Type[ListPowerBIToolInput] = ListPowerBIToolInput
 
     class Config:
         """Configuration for this pydantic object."""

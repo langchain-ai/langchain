@@ -25,7 +25,7 @@ class SteamWebAPIQueryRun(BaseTool):
     )
 
     api_wrapper: SteamWebAPIWrapper
-    args_schema: Type[BaseModel] = SteamWebAPIQueryRunToolInput
+    args_schema: Type[SteamWebAPIQueryRunToolInput] = SteamWebAPIQueryRunToolInput
 
     def _run(
         self,

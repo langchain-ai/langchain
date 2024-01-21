@@ -97,7 +97,7 @@ class JsonListKeysTool(BaseTool):
     The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
     """
     spec: JsonSpec
-    args_schema: Type[JsonListToolInput]
+    args_schema: Type[JsonListToolInput] = JsonListToolInput
 
     def _run(
         self,
@@ -124,7 +124,7 @@ class JsonGetValueTool(BaseTool):
     The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
     """
     spec: JsonSpec
-    args_schema: Type[JsonListToolInput]
+    args_schema: Type[JsonListToolInput] = JsonListToolInput
 
     def _run(
         self,

@@ -34,7 +34,7 @@ class EdenaiTool(BaseTool):
 
     providers: List[str]
     """provider to use for the API call."""
-    args_schema: Type[BaseModel] = EdenAiInput
+    args_schema: Type[EdenAiInput] = EdenAiInput
 
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:

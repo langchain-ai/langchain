@@ -26,7 +26,7 @@ class StackExchangeTool(BaseTool):
         "Input should be a fully formed question."
     )
     api_wrapper: StackExchangeAPIWrapper
-    args_schema: Type[BaseModel] = StackExchangeToolInput
+    args_schema: Type[StackExchangeToolInput] = StackExchangeToolInput
 
     def _run(
         self,

@@ -60,7 +60,7 @@ class O365SearchEvents(O365BaseTool):
     """
 
     name: str = "events_search"
-    args_schema: Type[BaseModel] = SearchEventsInput
+    args_schema: Type[SearchEventsInput] = SearchEventsInput
     description: str = (
         " Use this tool to search for the user's calendar events."
         " The input must be the start and end datetimes for the search query."

@@ -28,7 +28,7 @@ class SearxSearchRun(BaseTool):
     )
     wrapper: SearxSearchWrapper
     kwargs: dict = Field(default_factory=dict)
-    args_schema: Type[BaseModel] = SearxSearchRunToolInput
+    args_schema: Type[SearxSearchRunToolInput] = SearxSearchRunToolInput
 
     def _run(
         self,

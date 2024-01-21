@@ -50,7 +50,7 @@ class Memorize(BaseTool):
         "then the tool will fine-tune yourself to remember it."
     )
     llm: TrainableLLM = Field()
-    args_schema: Type[MemorizeToolInput]
+    args_schema: Type[MemorizeToolInput] = MemorizeToolInput
 
     def _run(
         self,

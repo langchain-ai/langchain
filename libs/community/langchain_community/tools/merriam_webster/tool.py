@@ -23,7 +23,7 @@ class MerriamWebsterQueryRun(BaseTool):
         "Input should be the word you want the definition of."
     )
     api_wrapper: MerriamWebsterAPIWrapper
-    args_schema: Type[MerriamWebsteToolInput]
+    args_schema: Type[MerriamWebsteToolInput] = MerriamWebsteToolInput
 
     def _run(
         self,

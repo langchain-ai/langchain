@@ -59,7 +59,7 @@ class O365SearchEmails(O365BaseTool):
     """
 
     name: str = "messages_search"
-    args_schema: Type[BaseModel] = SearchEmailsInput
+    args_schema: Type[SearchEmailsInput] = SearchEmailsInput
     description: str = (
         "Use this tool to search for email messages."
         " The input must be a valid Microsoft Graph v1.0 $search query."

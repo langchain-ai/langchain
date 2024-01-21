@@ -28,7 +28,7 @@ class SemanticScholarQueryRun(BaseTool):
     api_wrapper: SemanticScholarAPIWrapper = Field(
         default_factory=SemanticScholarAPIWrapper
     )
-    args_schema: Type[BaseModel] = SemantscholarInput
+    args_schema: Type[SemantscholarInput] = SemantscholarInput
 
     def _run(
         self,

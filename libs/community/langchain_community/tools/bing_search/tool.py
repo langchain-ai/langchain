@@ -23,7 +23,7 @@ class BingSearchRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: BingSearchAPIWrapper
-    args_schema: Type[BaseModel] = BingSearchInput
+    args_schema: Type[BingSearchInput] = BingSearchInput
 
     def _run(
         self,

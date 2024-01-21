@@ -25,7 +25,7 @@ class WriteFileTool(BaseFileToolMixin, BaseTool):
     """Tool that writes a file to disk."""
 
     name: str = "write_file"
-    args_schema: Type[BaseModel] = WriteFileInput
+    args_schema: Type[WriteFileInput] = WriteFileInput
     description: str = "Write file to disk"
 
     def _run(

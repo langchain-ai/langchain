@@ -26,7 +26,7 @@ class BaseGraphQLTool(BaseTool):
 
     Example Input: query {{ allUsers {{ id, name, email }} }}\
     """  # noqa: E501
-    args_schema: Type[BaseGraphQLToolInput]
+    args_schema: Type[BaseGraphQLToolInput] = BaseGraphQLToolInput
 
     class Config:
         """Configuration for this pydantic object."""

@@ -36,7 +36,7 @@ class ClickupAction(BaseTool):
     mode: str
     name: str = "clickup_action"
     description: str = "Tool to execute action on ClickUp"
-    args_schema: Type[BaseModel] = ClickupActionInput
+    args_schema: Type[ClickupActionInput] = ClickupActionInput
 
     def _run(
         self,

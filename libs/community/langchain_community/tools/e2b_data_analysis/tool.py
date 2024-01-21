@@ -97,7 +97,7 @@ class E2BDataAnalysisTool(BaseTool):
     """Tool for running python code in a sandboxed environment for data analysis."""
 
     name = "e2b_data_analysis"
-    args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
+    args_schema: Type[E2BDataAnalysisToolArguments] = E2BDataAnalysisToolArguments
     session: Any
     description: str
     _uploaded_files: List[UploadedFile] = PrivateAttr(default_factory=list)

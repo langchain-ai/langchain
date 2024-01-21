@@ -23,7 +23,7 @@ class NasaAction(BaseTool):
     mode: str
     name: str = ""
     description: str = ""
-    args_schema: Type[NasaActionToolInput]
+    args_schema: Type[NasaActionToolInput] = NasaActionToolInput
 
     def _run(
         self,

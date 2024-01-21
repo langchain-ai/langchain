@@ -59,7 +59,7 @@ class SteamshipImageGenerationTool(BaseTool):
         "Input: A detailed text-2-image prompt describing an image"
         "Output: the UUID of a generated image"
     )
-    args_schema: Type[BaseModel] = SteamWebAPIQueryRunToolInput
+    args_schema: Type[SteamWebAPIQueryRunToolInput] = SteamWebAPIQueryRunToolInput
 
     @root_validator(pre=True)
     def validate_size(cls, values: Dict) -> Dict:

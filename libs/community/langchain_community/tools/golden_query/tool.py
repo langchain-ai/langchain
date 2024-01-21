@@ -29,7 +29,7 @@ class GoldenQueryRun(BaseTool):
         " in JSON format."
     )
     api_wrapper: GoldenQueryAPIWrapper
-    args_schema: Type[BaseModel] = GoldenQueryRunToolInput
+    args_schema: Type[GoldenQueryRunToolInput] = GoldenQueryRunToolInput
 
     def _run(
         self,

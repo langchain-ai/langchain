@@ -26,7 +26,7 @@ class SearchAPIRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: SearchApiAPIWrapper
-    args_schema: Type[SearchAPIRunToolInput]
+    args_schema: Type[SearchAPIRunToolInput] = SearchAPIRunToolInput
 
     def _run(
         self,

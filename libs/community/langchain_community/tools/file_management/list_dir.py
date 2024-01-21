@@ -22,7 +22,7 @@ class ListDirectoryTool(BaseFileToolMixin, BaseTool):
     """Tool that lists files and directories in a specified folder."""
 
     name: str = "list_directory"
-    args_schema: Type[BaseModel] = DirectoryListingInput
+    args_schema: Type[DirectoryListingInput] = DirectoryListingInput
     description: str = "List files and directories in a specified folder"
 
     def _run(

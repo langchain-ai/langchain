@@ -24,7 +24,7 @@ class WikipediaQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: WikipediaAPIWrapper
-    args_schema: Type[BaseModel] = WikipediaQueryInput
+    args_schema: Type[WikipediaQueryInput] = WikipediaQueryInput
 
     def _run(
         self,

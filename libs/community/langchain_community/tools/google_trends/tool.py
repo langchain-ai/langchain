@@ -24,7 +24,7 @@ class GoogleTrendsQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleTrendsAPIWrapper
-    args_schema: Type[GoogleTrendsQueryRunToolInput]
+    args_schema: Type[GoogleTrendsQueryRunToolInput] = GoogleTrendsQueryRunToolInput
 
     def _run(
         self,

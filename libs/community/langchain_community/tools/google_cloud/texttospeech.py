@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import tempfile
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional,Type
 
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-
+from langchain.pydantic_v1 import Field
 from langchain_community.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
@@ -35,6 +36,12 @@ def _encoding_file_extension_map(encoding: texttospeech.AudioEncoding) -> Option
     }
     return ENCODING_FILE_EXTENSION_MAP.get(encoding)
 
+class GoogleCloudTextToSpeechToolInput(BaseModel):
+    input_text: str = Field(description="Input Text that needs to be converted to audio")
+    language_code: str = Field(description="Input Text that needs to be converted to audio",
+                               default = 'en-US')
+    ssml_gender: Optional[texttospeech.SsmlVoiceGender] = Field(description="SSML Gender")
+    audio_encoding: Optional[texttospeech.AudioEncoding] = Field(description="AudioEncoding")
 
 class GoogleCloudTextToSpeechTool(BaseTool):
     """Tool that queries the Google Cloud Text to Speech API.
@@ -52,7 +59,7 @@ class GoogleCloudTextToSpeechTool(BaseTool):
     )
 
     _client: Any
-
+    arg_schema: Type[GoogleCloudTextToSpeechToolInput] = GoogleCloudTextToSpeechToolInput
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
         texttospeech = _import_google_cloud_texttospeech()

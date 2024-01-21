@@ -24,7 +24,7 @@ class GoogleFinanceQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleFinanceAPIWrapper
-    args_schema: Type[BaseModel] = GoogleFinanceQueryRunToolInput
+    args_schema: Type[GoogleFinanceQueryRunToolInput] = GoogleFinanceQueryRunToolInput
 
     def _run(
         self,

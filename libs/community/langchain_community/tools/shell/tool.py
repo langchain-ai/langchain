@@ -68,7 +68,7 @@ class ShellTool(BaseTool):
     description: str = f"Run shell commands on this {_get_platform()} machine."
     """Description of tool."""
 
-    args_schema: Type[BaseModel] = ShellInput
+    args_schema: Type[ShellInput] = ShellInput
     """Schema for input arguments."""
 
     ask_human_input: bool = False

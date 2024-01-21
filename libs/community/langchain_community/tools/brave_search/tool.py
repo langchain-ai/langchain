@@ -23,7 +23,7 @@ class BraveSearch(BaseTool):
         "input should be a search query."
     )
     search_wrapper: BraveSearchWrapper
-    args_schema: Type[BaseModel] = BraveSearchInput
+    args_schema: Type[BraveSearchInput] = BraveSearchInput
 
     @classmethod
     def from_api_key(

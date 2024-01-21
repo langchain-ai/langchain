@@ -26,7 +26,7 @@ class OpenWeatherMapQueryRun(BaseTool):
         "Useful for fetching current weather information for a specified location. "
         "Input should be a location string (e.g. London,GB)."
     )
-    args_schema: Type[OpenWeatherMapQueryRunToolInput]
+    args_schema: Type[OpenWeatherMapQueryRunToolInput] = OpenWeatherMapQueryRunToolInput
 
     def _run(
         self, location: str, run_manager: Optional[CallbackManagerForToolRun] = None

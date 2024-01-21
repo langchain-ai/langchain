@@ -24,7 +24,7 @@ class GoogleScholarQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleScholarAPIWrapper
-    args_schema: Type[GoogleScholarQueryRunToolInput]
+    args_schema: Type[GoogleScholarQueryRunToolInput] = GoogleScholarQueryRunToolInput
 
     def _run(
         self,

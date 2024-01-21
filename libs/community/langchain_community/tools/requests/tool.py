@@ -79,7 +79,7 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
 
     name: str = "requests_get"
     description: str = "A portal to the internet. Use this when you need to get specific content from a website. Input should be a  url (i.e. https://www.google.com). The output will be the text response of the GET request."
-    args_schema: Type[RequestsGetToolInput]
+    args_schema: Type[RequestsGetToolInput] = RequestsGetToolInput
 
     def _run(
         self, url: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -107,7 +107,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
     Be careful to always use double quotes for strings in the json string
     The output will be the text response of the POST request.
     """
-    args_schema: Type[RequestsPostToolInput]
+    args_schema: Type[RequestsPostToolInput] = RequestsPostToolInput
 
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -145,7 +145,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
     Be careful to always use double quotes for strings in the json string
     The output will be the text response of the PATCH request.
     """
-    args_schema: Type[RequestsPatchToolInput]
+    args_schema: Type[RequestsPatchToolInput] = RequestsPatchToolInput
 
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -183,7 +183,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
     Be careful to always use double quotes for strings in the json string.
     The output will be the text response of the PUT request.
     """
-    args_schema: Type[RequestsPutToolInput]
+    args_schema: Type[RequestsPutToolInput] = RequestsPutToolInput
 
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -215,7 +215,7 @@ class RequestsDeleteTool(BaseRequestsTool, BaseTool):
 
     name: str = "requests_delete"
     description: str = "A portal to the internet. Use this when you need to make a DELETE request to a URL. Input should be a specific url, and the output will be the text response of the DELETE request."
-    args_schema: Type[RequestsDeleteToolInput]
+    args_schema: Type[RequestsDeleteToolInput] = RequestsDeleteToolInput
 
     def _run(
         self,

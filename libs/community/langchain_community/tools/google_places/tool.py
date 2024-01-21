@@ -26,7 +26,7 @@ class GooglePlacesTool(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)
-    args_schema: Type[BaseModel] = GooglePlacesSchema
+    args_schema: Type[GooglePlacesSchema] = GooglePlacesSchema
 
     def _run(
         self,

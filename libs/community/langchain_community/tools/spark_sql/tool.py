@@ -61,7 +61,7 @@ class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
-    args_schema: Type[BaseModel] = QuerySparkSQLToolInput
+    args_schema: Type[QuerySparkSQLToolInput] = QuerySparkSQLToolInput
 
     def _run(
         self,
@@ -83,7 +83,7 @@ class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
     Example Input: "table1, table2, table3"
     """
 
-    args_schema: Type[BaseModel] = InfoSparkSQLToolInput
+    args_schema: Type[InfoSparkSQLToolInput] = InfoSparkSQLToolInput
 
     def _run(
         self,
@@ -99,7 +99,7 @@ class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
 
     name: str = "list_tables_sql_db"
     description: str = "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
-    args_schema: Type[BaseModel] = ListSparkSQLToolInput
+    args_schema: Type[ListSparkSQLToolInput] = ListSparkSQLToolInput
 
     def _run(
         self,
@@ -122,7 +122,7 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with query_sql_db!
     """
-    args_schema: Type[BaseModel] = QueryCheckerToolInput
+    args_schema: Type[QueryCheckerToolInput] = QueryCheckerToolInput
 
     @root_validator(pre=True)
     def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:

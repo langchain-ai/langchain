@@ -28,7 +28,7 @@ class DuckDuckGoSearchRun(BaseTool):
     api_wrapper: DuckDuckGoSearchAPIWrapper = Field(
         default_factory=DuckDuckGoSearchAPIWrapper
     )
-    args_schema: Type[BaseModel] = DDGInput
+    args_schema: Type[DDGInput] = DDGInput
 
     def _run(
         self,

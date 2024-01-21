@@ -23,7 +23,7 @@ class BaseVectorStoreTool(BaseModel):
 
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
-    args_schema: Type[BaseModel] = BaseVectorStoreTooInput
+    args_schema: Type[BaseVectorStoreTooInput] = BaseVectorStoreTooInput
 
     class Config(BaseTool.Config):
         pass

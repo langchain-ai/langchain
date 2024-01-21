@@ -27,7 +27,7 @@ class HumanInputRun(BaseTool):
     )
     prompt_func: Callable[[str], None] = Field(default_factory=lambda: _print_func)
     input_func: Callable = Field(default_factory=lambda: input)
-    args_schema: Type[HumanInputRunToolInput]
+    args_schema: Type[HumanInputRunToolInput] = HumanInputRunToolInput
 
     def _run(
         self,

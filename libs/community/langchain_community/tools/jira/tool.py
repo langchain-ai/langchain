@@ -38,7 +38,7 @@ class JiraAction(BaseTool):
     mode: str
     name: str = "jira_action"
     description: str = ""
-    args_schema: Type[JiraActionToolInput]
+    args_schema: Type[JiraActionToolInput] = JiraActionToolInput
 
     def _run(
         self,

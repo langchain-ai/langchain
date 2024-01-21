@@ -11,7 +11,7 @@ from langchain_community.utilities.scenexplain import SceneXplainAPIWrapper
 class SceneXplainInput(BaseModel):
     """Input for SceneXplain."""
 
-    query: str = Field(..., description="The link to the image to explain")
+    query: str = Field(description="The link to the image to explain")
 
 
 class SceneXplainTool(BaseTool):
@@ -24,7 +24,7 @@ class SceneXplainTool(BaseTool):
         "the output will be a text description that covers every detail of the image."
     )
     api_wrapper: SceneXplainAPIWrapper = Field(default_factory=SceneXplainAPIWrapper)
-    args_schema: Type[SceneXplainInput]
+    args_schema: Type[SceneXplainInput] = SceneXplainInput
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None

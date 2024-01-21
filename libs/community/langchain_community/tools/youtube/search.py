@@ -38,7 +38,7 @@ class YouTubeSearchTool(BaseTool):
         "number that is the maximum number of video results "
         "to return aka num_results. the second part is optional"
     )
-    args_schema: Type[BaseModel] = YouTubeSearchToolInput
+    args_schema: Type[YouTubeSearchToolInput] = YouTubeSearchToolInput
 
     def _search(self, person: str, num_results: int) -> str:
         from youtube_search import YoutubeSearch

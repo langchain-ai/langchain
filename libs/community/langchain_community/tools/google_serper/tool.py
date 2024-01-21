@@ -26,7 +26,7 @@ class GoogleSerperRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleSerperAPIWrapper
-    args_schema: Type[GoogleSerperRunToolInput]
+    args_schema: Type[GoogleSerperRunToolInput] = GoogleSerperRunToolInput
 
     def _run(
         self,

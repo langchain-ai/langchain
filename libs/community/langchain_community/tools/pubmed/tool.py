@@ -23,7 +23,7 @@ class PubmedQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)
-    args_schema: Type[PubmedQueryRunToolInput]
+    args_schema: Type[PubmedQueryRunToolInput] = PubmedQueryRunToolInput
 
     def _run(
         self,

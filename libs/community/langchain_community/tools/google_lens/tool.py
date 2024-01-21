@@ -24,7 +24,7 @@ class GoogleLensQueryRun(BaseTool):
         "Input should be a url to an image."
     )
     api_wrapper: GoogleLensAPIWrapper
-    args_schema: Type[BaseModel] = GoogleLensQueryRunToolInput
+    args_schema: Type[GoogleLensQueryRunToolInput] = GoogleLensQueryRunToolInput
 
     def _run(
         self,

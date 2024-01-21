@@ -24,7 +24,7 @@ class GoogleJobsQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleJobsAPIWrapper
-    args_schema: Type[BaseModel] = GoogleJobsQueryRunToolInput
+    args_schema: Type[GoogleJobsQueryRunToolInput] = GoogleJobsQueryRunToolInput
 
     def _run(
         self,

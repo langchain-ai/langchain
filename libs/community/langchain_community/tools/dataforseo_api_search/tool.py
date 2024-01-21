@@ -26,7 +26,7 @@ class DataForSeoAPISearchRun(BaseTool):
         "or current events."
     )
     api_wrapper: DataForSeoAPIWrapper
-    args_schema: Type[BaseModel] = DataForSeoAPISearchInput
+    args_schema: Type[DataForSeoAPISearchInput] = DataForSeoAPISearchInput
 
     def _run(
         self,

@@ -29,7 +29,7 @@ class TavilySearchResults(BaseTool):
     )
     api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)
     max_results: int = 5
-    args_schema: Type[BaseModel] = TavilyInput
+    args_schema: Type[TavilyInput] = TavilyInput
 
     def _run(
         self,
