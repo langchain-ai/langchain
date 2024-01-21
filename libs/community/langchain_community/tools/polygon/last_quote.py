@@ -1,14 +1,15 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.tools import BaseTool
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.polygon import PolygonAPIWrapper
 
 
 class Inputs(BaseModel):
     query: str
+
 
 class PolygonLastQuote(BaseTool):
     """Tool that gets the last quote of a ticker from Polygon"""
