@@ -21,7 +21,7 @@ class MetaphorSearchResultsToolInput(BaseModel):
     exclude_domains: Optional[List[str]] = Field(description="Domains Excluded")
     start_crawl_date: Optional[str] = Field(description="Crawling Start Date")
     end_crawl_date: Optional[str] = Field(description="Crawling End Date")
-    start_published_date: Optional[str] = Field(description="Pubish Start Date")
+    start_published_date: Optional[str] = Field(description="Publish Start Date")
     end_published_date: Optional[str] = Field(description="Publish End Date")
     use_autoprompt: Optional[bool] = Field(description="Whether to use autoprompt")
 

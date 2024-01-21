@@ -1,4 +1,4 @@
-"""Tool for the Stack Exhange API."""
+"""Tool for the Stack Exchange API."""
 
 from typing import Optional, Type
 
