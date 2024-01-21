@@ -1,10 +1,14 @@
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_community.utilities.polygon import PolygonAPIWrapper
 
+
+class Inputs(BaseModel):
+    query: str
 
 class PolygonLastQuote(BaseTool):
     """Tool that gets the last quote of a ticker from Polygon"""
@@ -12,10 +16,11 @@ class PolygonLastQuote(BaseTool):
     mode: str = "get_last_quote"
     name: str = "polygon_last_quote"
     description: str = (
-        "A wrapper around Polygon's Last Quote API."
-        "This tool is useful for fetching the latest price of a stock."
+        "A wrapper around Polygon's Last Quote API. "
+        "This tool is useful for fetching the latest price of a stock. "
         "Input should be the ticker that you want to query the last price quote for."
     )
+    args_schema: Type[BaseModel] = Inputs
 
     api_wrapper: PolygonAPIWrapper
 
