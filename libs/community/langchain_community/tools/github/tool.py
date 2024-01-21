@@ -14,11 +14,12 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.github import GitHubAPIWrapper
+
+
 class GitHubActionToolInput(BaseModel):
     instructions: str = Field(
         description="Instruction associated with a action on GitHub"
     )
-
 
 
 class GitHubAction(BaseTool):
