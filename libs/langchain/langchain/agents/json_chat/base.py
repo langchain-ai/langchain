@@ -148,7 +148,6 @@ def create_json_chat_agent(
         tools=render_text_description(list(tools)),
         tool_names=", ".join([t.name for t in tools]),
     )
-    llm_with_stop = llm.bind(stop=["\nObservation"])
 
     agent = (
         RunnablePassthrough.assign(
