@@ -19,7 +19,7 @@ from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult, Generation, RunInfo
 
 
-class AI21LLM(BaseLLM, AI21Base):
+class AI21(BaseLLM, AI21Base):
     """AI21LLM large language models.
 
     Example:
