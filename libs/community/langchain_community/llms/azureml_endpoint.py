@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Mapping, Optional
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator, validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class AzureMLEndpointClient(object):
@@ -326,7 +326,7 @@ class AzureMLBaseEndpoint(BaseModel):
     """Type of the endpoint being consumed. Possible values are `serverless` for 
         pay-as-you-go and `realtime` for real-time endpoints. """
 
-    endpoint_api_key: str = ""
+    endpoint_api_key: SecretStr = convert_to_secret_str("")
     """Authentication Key for Endpoint. Should be passed to constructor or specified as
         env var `AZUREML_ENDPOINT_API_KEY`."""
 
@@ -346,8 +346,8 @@ class AzureMLBaseEndpoint(BaseModel):
 
     @root_validator(pre=True)
     def validate_environ(cls, values: Dict) -> Dict:
-        values["endpoint_api_key"] = get_from_dict_or_env(
-            values, "endpoint_api_key", "AZUREML_ENDPOINT_API_KEY"
+        values["endpoint_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "endpoint_api_key", "AZUREML_ENDPOINT_API_KEY")
         )
         values["endpoint_url"] = get_from_dict_or_env(
             values, "endpoint_url", "AZUREML_ENDPOINT_URL"
@@ -425,7 +425,9 @@ class AzureMLBaseEndpoint(BaseModel):
         endpoint_key = values.get("endpoint_api_key")
         deployment_name = values.get("deployment_name")
 
-        http_client = AzureMLEndpointClient(endpoint_url, endpoint_key, deployment_name)
+        http_client = AzureMLEndpointClient(
+            endpoint_url, endpoint_key.get_secret_value(), deployment_name
+        )
         return http_client
 
 
