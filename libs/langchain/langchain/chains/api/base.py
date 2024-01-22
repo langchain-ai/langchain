@@ -163,7 +163,7 @@ class APIChain(Chain):
             )
         api_response = self.requests_wrapper.get(api_url)
         _run_manager.on_text(
-            api_response, color="yellow", end="\n", verbose=self.verbose
+            str(api_response), color="yellow", end="\n", verbose=self.verbose
         )
         answer = self.api_answer_chain.predict(
             question=question,
@@ -198,7 +198,7 @@ class APIChain(Chain):
             )
         api_response = await self.requests_wrapper.aget(api_url)
         await _run_manager.on_text(
-            api_response, color="yellow", end="\n", verbose=self.verbose
+            str(api_response), color="yellow", end="\n", verbose=self.verbose
         )
         answer = await self.api_answer_chain.apredict(
             question=question,

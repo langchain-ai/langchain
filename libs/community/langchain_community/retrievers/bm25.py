@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
 
 
@@ -16,7 +17,7 @@ class BM25Retriever(BaseRetriever):
 
     vectorizer: Any
     """ BM25 vectorizer."""
-    docs: List[Document]
+    docs: List[Document] = Field(repr=False)
     """ List of documents."""
     k: int = 4
     """ Number of documents to return."""
