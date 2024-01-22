@@ -69,3 +69,22 @@ def test_cypher_return_correct_schema() -> None:
         sorted(relationships, key=lambda x: x["output"]["end"])
         == expected_relationships
     )
+
+
+def test_neo4j_timeout() -> None:
+    """Test that neo4j uses the timeout correctly."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(url=url, username=username, password=password, timeout=0.1)
+    try:
+        graph.query("UNWIND range(0,100000,1) AS i MERGE (:Foo {id:i})")
+    except Exception as e:
+        assert (
+            e.code
+            == "Neo.ClientError.Transaction.TransactionTimedOutClientConfiguration"
+        )

@@ -2,6 +2,7 @@ from typing import Any, List, Sequence, Tuple, Union
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
@@ -12,7 +13,6 @@ from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.format_scratchpad import format_xml
 from langchain.agents.output_parsers import XMLAgentOutputParser
 from langchain.agents.xml.prompt import agent_instructions
-from langchain.callbacks.base import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.tools.render import render_text_description
 
@@ -112,8 +112,19 @@ def create_xml_agent(
 ) -> Runnable:
     """Create an agent that uses XML to format its logic.
 
-    Examples:
+    Args:
+        llm: LLM to use as the agent.
+        tools: Tools this agent has access to.
+        prompt: The prompt to use, must have input keys
+            `tools`: contains descriptions for each tool.
+            `agent_scratchpad`: contains previous agent actions and tool outputs.
 
+    Returns:
+        A Runnable sequence representing an agent. It takes as input all the same input
+        variables as the prompt passed in does. It returns as output either an
+        AgentAction or AgentFinish.
+
+    Example:
 
         .. code-block:: python
 
@@ -137,22 +148,47 @@ def create_xml_agent(
                     "input": "what's my name?",
                     # Notice that chat_history is a string
                     # since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
+                    "chat_history": "Human: My name is Bob\\nAI: Hello Bob!",
                 }
             )
 
-    Args:
-        llm: LLM to use as the agent.
-        tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input keys of
-            `tools` and `agent_scratchpad`.
+    Prompt:
 
-    Returns:
-        A runnable sequence representing an agent. It takes as input all the same input
-        variables as the prompt passed in does. It returns as output either an
-        AgentAction or AgentFinish.
+        The prompt must have input keys:
+            * `tools`: contains descriptions for each tool.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as an XML string.
 
-    """
+        Here's an example:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import PromptTemplate
+
+            template = '''You are a helpful assistant. Help the user answer any questions.
+
+            You have access to the following tools:
+
+            {tools}
+
+            In order to use a tool, you can use <tool></tool> and <tool_input></tool_input> tags. You will then get back a response in the form <observation></observation>
+            For example, if you have a tool called 'search' that could run a google search, in order to search for the weather in SF you would respond:
+
+            <tool>search</tool><tool_input>weather in SF</tool_input>
+            <observation>64 degrees</observation>
+
+            When you are done, respond with a final answer between <final_answer></final_answer>. For example:
+
+            <final_answer>The weather in SF is 64 degrees</final_answer>
+
+            Begin!
+
+            Previous Conversation:
+            {chat_history}
+
+            Question: {input}
+            {agent_scratchpad}'''
+            prompt = PromptTemplate.from_template(template)
+    """  # noqa: E501
     missing_vars = {"tools", "agent_scratchpad"}.difference(prompt.input_variables)
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
