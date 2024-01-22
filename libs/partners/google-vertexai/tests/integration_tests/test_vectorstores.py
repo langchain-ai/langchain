@@ -3,7 +3,8 @@
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
 
-Additionaly in order to run the test you must have set the following environment variables:
+Additionaly in order to run the test you must have set the following environment 
+variables:
 
 - PROJECT_ID: Id of the Google Cloud Project
 - REGION: Region of the Bucket, Index and Endpoint
@@ -14,7 +15,7 @@ Additionaly in order to run the test you must have set the following environment
 """
 
 import os
-from typing import List, Dict
+from typing import Dict
 
 import pytest
 
@@ -63,7 +64,6 @@ def test_add_texts(vector_store: VertexAIVectorSearch):
 
 def test_similarity_search(vector_store: VertexAIVectorSearch):
 
-    docs = vector_store.similarity_search_with_score("What are your favourite animals?", k=1)
+    query = "What are your favourite animals?"
+    docs = vector_store.similarity_search_with_score(query, k=1)
     assert len(docs) == 1
-    print(docs)
-
