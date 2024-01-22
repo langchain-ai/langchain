@@ -42,27 +42,25 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-
-# TODO: Remove 'type: ignore' once mistralai has stubs or py.typed marker.
-from mistralai.async_client import MistralAsyncClient  # type: ignore[import]
-from mistralai.client import MistralClient  # type: ignore[import]
-from mistralai.constants import (  # type: ignore[import]
+from mistralai.async_client import MistralAsyncClient
+from mistralai.client import MistralClient
+from mistralai.constants import (
     ENDPOINT as DEFAULT_MISTRAL_ENDPOINT,
 )
-from mistralai.exceptions import (  # type: ignore[import]
+from mistralai.exceptions import (
     MistralAPIException,
     MistralConnectionException,
     MistralException,
 )
-from mistralai.models.chat_completion import (  # type: ignore[import]
+from mistralai.models.chat_completion import (
     ChatCompletionResponse as MistralChatCompletionResponse,
 )
-from mistralai.models.chat_completion import (  # type: ignore[import]
+from mistralai.models.chat_completion import (
     ChatMessage as MistralChatMessage,
 )
-from mistralai.models.chat_completion import (  # type: ignore[import]
+from mistralai.models.chat_completion import (
     DeltaMessage as MistralDeltaMessage,
 )
 
@@ -156,8 +154,8 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: MistralClient = None  #: :meta private:
-    async_client: MistralAsyncClient = None  #: :meta private:
+    client: MistralClient = Field(default=None)  #: :meta private:
+    async_client: MistralAsyncClient = Field(default=None)  #: :meta private:
     mistral_api_key: Optional[SecretStr] = None
     endpoint: str = DEFAULT_MISTRAL_ENDPOINT
     max_retries: int = 5

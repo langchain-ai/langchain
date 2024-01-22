@@ -9,11 +9,11 @@ Taking [Chat Langchain](https://chat.langchain.com/) as a case study, only about
 
 This template helps solve this "feedback scarcity" problem. Below is an example invocation of this chat bot:
 
-[![Chat Interaction](./static/chat_interaction.png)](https://smith.langchain.com/public/3378daea-133c-4fe8-b4da-0a3044c5dbe8/r?runtab=1)
+[![Screenshot of a chat bot interaction where the AI responds in a pirate accent to a user asking where their keys are.](./static/chat_interaction.png "Chat Bot Interaction Example")](https://smith.langchain.com/public/3378daea-133c-4fe8-b4da-0a3044c5dbe8/r?runtab=1)
 
 When the user responds to this ([link](https://smith.langchain.com/public/a7e2df54-4194-455d-9978-cecd8be0df1e/r)), the response evaluator is invoked, resulting in the following evaluationrun:
 
-[![Evaluator Run](./static/evaluator.png)](https://smith.langchain.com/public/534184ee-db8f-4831-a386-3f578145114c/r)
+[![Screenshot of an evaluator run showing the AI's response effectiveness score based on the user's follow-up message expressing frustration.](./static/evaluator.png "Chat Bot Evaluator Run")](https://smith.langchain.com/public/534184ee-db8f-4831-a386-3f578145114c/r)
 
 As shown, the evaluator sees that the user is increasingly frustrated, indicating that the prior response was not effective
 
