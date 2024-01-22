@@ -41,6 +41,9 @@ def _is_pinecone_v3() -> bool:
     return version.parse(pinecone_client_version) >= version.parse("3.0.0.dev")
 
 
+@deprecated(
+    since="0.0.15", removal="0.2.0", alternative_import="langchain_pinecone.Pinecone"
+)
 class Pinecone(VectorStore):
     """`Pinecone` vector store.
 
