@@ -400,7 +400,7 @@ class TestElasticsearch:
                         "script": {
                             "source": """
             double value = dotProduct(params.query_vector, 'vector');
-            return sigmoid(1, Math.E, -value); 
+            return sigmoid(1, Math.E, -value);
             """,
                             "params": {
                                 "query_vector": [
