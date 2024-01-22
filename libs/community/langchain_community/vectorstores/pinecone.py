@@ -7,6 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
@@ -49,19 +50,8 @@ class Pinecone(VectorStore):
 
     To use, you should have the ``pinecone-client`` python package installed.
 
-    Example:
-        .. code-block:: python
-
-            from langchain_community.vectorstores import Pinecone
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
-            import pinecone
-
-            # The environment should be the one specified next to the API key
-            # in your Pinecone console
-            pinecone.init(api_key="***", environment="...")
-            index = pinecone.Index("langchain-demo")
-            embeddings = OpenAIEmbeddings()
-            vectorstore = Pinecone(index, embeddings, "text")
+    This version of Pinecone is deprecated. Please use `langchain_pinecone.Pinecone`
+    instead.
     """
 
     def __init__(

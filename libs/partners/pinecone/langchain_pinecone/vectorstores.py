@@ -12,6 +12,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
 )
 
 from langchain_core.embeddings import Embeddings
@@ -23,16 +24,28 @@ if TYPE_CHECKING:
 VST = TypeVar("VST", bound=VectorStore)
 
 
-class PineconeVectorStore(VectorStore):
-    """Interface for vector store.
+class Pinecone(VectorStore):
+    """`Pinecone` vector store.
 
     Example:
         .. code-block:: python
 
-            from langchain_pinecone.vectorstores import PineconeVectorStore
+            from langchain_pinecone import Pinecone
+            from langchain_openai import OpenAIEmbeddings
 
-            vectorstore = PineconeVectorStore()
+            # The environment should be the one specified next to the API key
+            # in your Pinecone console
+            pinecone.init(api_key="***", environment="...")
+            index = pinecone.Index("langchain-demo")
+            embeddings = OpenAIEmbeddings()
+            vectorstore = Pinecone(index, embeddings, "text")
     """
+
+    def __init__(
+            self,
+            index: Optional[Any] = None,
+            embedding: Optional[Union[Embeddings, Callable]] = None,
+    )
 
     def add_texts(
         self,
