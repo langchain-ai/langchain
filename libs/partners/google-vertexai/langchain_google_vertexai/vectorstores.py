@@ -12,7 +12,6 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain_google_vertexai._utils import get_client_info
 
-
 if TYPE_CHECKING:
     from google.cloud import storage
     from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
@@ -20,10 +19,10 @@ if TYPE_CHECKING:
         Namespace,
     )
     from google.oauth2.service_account import Credentials
-
     from langchain_community.embeddings import TensorflowHubEmbeddings
 
 logger = logging.getLogger(__name__)
+
 
 class VertexAIVectorSearch(VectorStore):
     """`Google Vertex AI Vector Search` (previously Matching Engine) vector store.
@@ -413,7 +412,8 @@ class VertexAIVectorSearch(VectorStore):
             the local file system.
             embedding: The :class:`Embeddings` that will be used for
             embedding the texts.
-            kwargs: Additional keyword arguments to pass to VertexAIVectorSearch.__init__().
+            kwargs: Additional keyword arguments to pass to
+                VertexAIVectorSearch.__init__().
 
         Returns:
             A configured VertexAIVectorSearch with the texts added to the index.
@@ -595,7 +595,7 @@ class VertexAIVectorSearch(VectorStore):
         from langchain_community.embeddings import TensorflowHubEmbeddings
 
         return TensorflowHubEmbeddings()
-    
+
 
 class MatchingEngine(VertexAIVectorSearch):
     """`VertexAIVectorSearch` vector store alias for backwards compatibility.
@@ -611,5 +611,3 @@ class MatchingEngine(VertexAIVectorSearch):
         )
 
         super().__init__(*args, **kwargs)
-
-
