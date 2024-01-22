@@ -32,11 +32,25 @@ def test_cypher_return_correct_schema() -> None:
     # Refresh schema information
     graph.refresh_schema()
     relationships = graph.query(
-        "CALL llm_util.schema('raw') YIELD schema WITH schema.relationships AS relationships UNWIND relationships AS relationship RETURN relationship['start'] AS start, relationship['type'] AS type, relationship['end'] AS end ORDER BY start, type, end;"
+        "CALL llm_util.schema('raw') YIELD schema "
+        "WITH schema.relationships AS relationships "
+        "UNWIND relationships AS relationship "
+        "RETURN relationship['start'] AS start, "
+        "relationship['type'] AS type, "
+        "relationship['end'] AS end "
+        "ORDER BY start, type, end;"
     )
+
     node_props = graph.query(
-        "CALL llm_util.schema('raw') YIELD schema WITH schema.node_props AS nodes WITH nodes['LabelA'] AS properties UNWIND properties AS property RETURN property['property'] AS prop, property['type'] AS type ORDER BY prop ASC;"
+        "CALL llm_util.schema('raw') YIELD schema "
+        "WITH schema.node_props AS nodes "
+        "WITH nodes['LabelA'] AS properties "
+        "UNWIND properties AS property "
+        "RETURN property['property'] AS prop, "
+        "property['type'] AS type "
+        "ORDER BY prop ASC;"
     )
+
     expected_relationships = [
         {"start": "LabelA", "type": "REL_TYPE", "end": "LabelB"},
         {"start": "LabelA", "type": "REL_TYPE", "end": "LabelC"},
