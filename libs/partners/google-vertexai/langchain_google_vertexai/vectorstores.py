@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-
 class VertexAIVectorSearch(VectorStore):
     """`Google Vertex AI Vector Search` (previously Matching Engine) vector store.
 
@@ -72,9 +71,9 @@ class VertexAIVectorSearch(VectorStore):
         Attributes:
             project_id: The GCS project id.
             index: The created index class. See
-                ~:func:`MatchingEngine.from_components`.
+                ~:func:`VertexAIVectorSearch.from_components`.
             endpoint: The created endpoint class. See
-                ~:func:`MatchingEngine.from_components`.
+                ~:func:`VertexAIVectorSearch.from_components`.
             embedding: A :class:`Embeddings` that will be used for
                 embedding the text sent. If none is sent, then the
                 multilingual Tensorflow Universal Sentence Encoder will be used.
@@ -110,7 +109,7 @@ class VertexAIVectorSearch(VectorStore):
             raise ImportError(
                 "You must run `pip install --upgrade "
                 "google-cloud-aiplatform google-cloud-storage`"
-                "to use the MatchingEngine Vectorstore."
+                "to use the VertexAIVectorSearch Vectorstore."
             )
 
     def add_texts(
@@ -375,22 +374,22 @@ class VertexAIVectorSearch(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type["MatchingEngine"],
+        cls: Type["VertexAIVectorSearch"],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "MatchingEngine":
+    ) -> "VertexAIVectorSearch":
         """Use from components instead."""
         raise NotImplementedError(
             "This method is not implemented. Instead, you should initialize the class"
-            " with `MatchingEngine.from_components(...)` and then call "
+            " with `VertexAIVectorSearch.from_components(...)` and then call "
             "`add_texts`"
         )
 
     @classmethod
     def from_components(
-        cls: Type["MatchingEngine"],
+        cls: Type["VertexAIVectorSearch"],
         project_id: str,
         region: str,
         gcs_bucket_name: str,
@@ -399,7 +398,7 @@ class VertexAIVectorSearch(VectorStore):
         credentials_path: Optional[str] = None,
         embedding: Optional[Embeddings] = None,
         **kwargs: Any,
-    ) -> "MatchingEngine":
+    ) -> "VertexAIVectorSearch":
         """Takes the object creation out of the constructor.
 
         Args:
@@ -414,10 +413,10 @@ class VertexAIVectorSearch(VectorStore):
             the local file system.
             embedding: The :class:`Embeddings` that will be used for
             embedding the texts.
-            kwargs: Additional keyword arguments to pass to MatchingEngine.__init__().
+            kwargs: Additional keyword arguments to pass to VertexAIVectorSearch.__init__().
 
         Returns:
-            A configured MatchingEngine with the texts added to the index.
+            A configured VertexAIVectorSearch with the texts added to the index.
         """
         gcs_bucket_name = cls._validate_gcs_bucket(gcs_bucket_name)
         credentials = cls._create_credentials_from_file(credentials_path)
@@ -612,3 +611,5 @@ class MatchingEngine(VertexAIVectorSearch):
         )
 
         super().__init__(*args, **kwargs)
+
+
