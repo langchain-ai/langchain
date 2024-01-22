@@ -1,5 +1,6 @@
 """Test chat model integration."""
 import os
+from unittest.mock import call
 
 import pytest
 from ai21.models import Penalty, ChatMessage, RoleType
@@ -12,6 +13,7 @@ from langchain_core.messages import (
     AIMessage,
     ChatMessage as LangChainChatMessage,
 )
+from tests.unit_tests.conftest import BASIC_DUMMY_LLM_PARAMETERS
 
 os.environ["AI21_API_KEY"] = "test_key"
 
@@ -52,7 +54,7 @@ def test_initialization__when_custom_parameters_in_init():
     assert llm.min_tokens == min_tokens
     assert llm.temperature == temperature
     assert llm.top_p == top_p
-    assert llm.top_k_returns == top_k_returns
+    assert llm.top_k_return == top_k_returns
     assert llm.frequency_penalty == frequency_penalty
     assert llm.presence_penalty == presence_penalty
     assert count_penalty == count_penalty
@@ -96,5 +98,69 @@ def test_convert_message_to_ai21_message(
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
     message,
 ):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as e:
         _convert_message_to_ai21_message(message)
+    assert e.value.args[0] == (
+        f"Could not resolve role type from message {message}. "
+        f"Only support {HumanMessage.__name__} and {AIMessage.__name__}."
+    )
+
+
+def test_invoke(mock_client_with_chat):
+    chat_input = "I'm Pickle Rick"
+
+    llm = ChatAI21(
+        client=mock_client_with_chat,
+        **BASIC_DUMMY_LLM_PARAMETERS,
+    )
+    llm.invoke(input=chat_input, config=dict(tags=["foo"]))
+
+    mock_client_with_chat.chat.create.assert_called_once_with(
+        model="j2-ultra",
+        messages=[ChatMessage(role=RoleType.USER, text=chat_input)],
+        system="",
+        stop_sequences=None,
+        **BASIC_DUMMY_LLM_PARAMETERS,
+    )
+
+
+def test_generate(mock_client_with_chat):
+    messages0 = [
+        HumanMessage(content="I'm Pickle Rick"),
+        AIMessage(content="Hello Pickle Rick! I am your AI Assistant"),
+        HumanMessage(content="Nice to meet you."),
+    ]
+    messages1 = [
+        HumanMessage(content="What is 1 + 1"),
+        SystemMessage(content="system message"),
+    ]
+    llm = ChatAI21(
+        client=mock_client_with_chat,
+        **BASIC_DUMMY_LLM_PARAMETERS,
+    )
+
+    llm.generate(messages=[messages0, messages1])
+    mock_client_with_chat.chat.create.assert_has_calls(
+        [
+            call(
+                model="j2-ultra",
+                messages=[
+                    ChatMessage(role=RoleType.USER, text=messages0[0].content),
+                    ChatMessage(role=RoleType.ASSISTANT, text=messages0[1].content),
+                    ChatMessage(role=RoleType.USER, text=messages0[2].content),
+                ],
+                system="",
+                stop_sequences=None,
+                **BASIC_DUMMY_LLM_PARAMETERS,
+            ),
+            call(
+                model="j2-ultra",
+                messages=[
+                    ChatMessage(role=RoleType.USER, text=messages1[0].content),
+                ],
+                system="system message",
+                stop_sequences=None,
+                **BASIC_DUMMY_LLM_PARAMETERS,
+            ),
+        ]
+    )
