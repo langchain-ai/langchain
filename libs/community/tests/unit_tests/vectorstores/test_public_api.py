@@ -30,6 +30,7 @@ _EXPECTED = [
     "HanaDB",
     "Hologres",
     "LanceDB",
+    "Lantern",
     "LLMRails",
     "Marqo",
     "MatchingEngine",

@@ -381,10 +381,6 @@
       "destination": "/docs/modules/agents/"
     },
     {
-      "source": "/docs/use_cases(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
       "source": "/docs/integrations(/?)",
       "destination": "/docs/integrations/providers/"
     },
@@ -1422,7 +1418,7 @@
     },
     {
       "source": "/docs/integrations/tools/sqlite",
-      "destination": "/docs/use_cases/qa_structured/sqlite"
+      "destination": "/docs/use_cases/qa_structured/sql"
     },
     {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",

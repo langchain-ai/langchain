@@ -5,14 +5,19 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core._api import beta
 from langchain_core.load.mapping import (
-    OLD_PROMPT_TEMPLATE_FORMATS,
+    _OG_SERIALIZABLE_MAPPING,
+    OLD_CORE_NAMESPACES_MAPPING,
     SERIALIZABLE_MAPPING,
 )
 from langchain_core.load.serializable import Serializable
 
 DEFAULT_NAMESPACES = ["langchain", "langchain_core", "langchain_community"]
 
-ALL_SERIALIZABLE_MAPPINGS = {**SERIALIZABLE_MAPPING, **OLD_PROMPT_TEMPLATE_FORMATS}
+ALL_SERIALIZABLE_MAPPINGS = {
+    **SERIALIZABLE_MAPPING,
+    **OLD_CORE_NAMESPACES_MAPPING,
+    **_OG_SERIALIZABLE_MAPPING,
+}
 
 
 class Reviver:
