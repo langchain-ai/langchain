@@ -415,7 +415,7 @@ class ElasticsearchStore(VectorStore):
         distance_strategy: Optional. Distance strategy to use when
                             searching the index.
                             Defaults to COSINE. Can be one of COSINE,
-                            EUCLIDEAN_DISTANCE, MAX_INNTER_PRODUCT or DOT_PRODUCT.
+                            EUCLIDEAN_DISTANCE, MAX_INNER_PRODUCT or DOT_PRODUCT.
 
     If you want to use a cloud hosted Elasticsearch instance, you can pass in the
     cloud_id argument instead of the es_url argument.
