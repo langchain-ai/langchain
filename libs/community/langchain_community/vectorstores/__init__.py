@@ -463,12 +463,11 @@ def _import_neuraldb() -> Any:
 
     return NeuralDBVectorStore
 
-  
+
 def _import_lantern() -> Any:
     from langchain_community.vectorstores.lantern import Lantern
 
     return Lantern
-
 
 
 def __getattr__(name: str) -> Any:
