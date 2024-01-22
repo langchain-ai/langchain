@@ -724,6 +724,9 @@ class ElasticsearchStore(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        if isinstance(self.strategy, ApproxRetrievalStrategy) and self.strategy.hybrid:
+            raise ValueError("scores are currently not supported in hybrid mode")
+
         return self._search(query=query, k=k, filter=filter, **kwargs)
 
     def similarity_search_by_vector_with_relevance_scores(
@@ -743,6 +746,9 @@ class ElasticsearchStore(VectorStore):
         Returns:
             List of Documents most similar to the embedding and score for each
         """
+        if isinstance(self.strategy, ApproxRetrievalStrategy) and self.strategy.hybrid:
+            raise ValueError("scores are currently not supported in hybrid mode")
+
         return self._search(query_vector=embedding, k=k, filter=filter, **kwargs)
 
     def _search(
