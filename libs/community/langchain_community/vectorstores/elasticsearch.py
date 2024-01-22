@@ -388,7 +388,6 @@ class ElasticsearchStore(VectorStore):
             from langchain_community.vectorstores import ElasticsearchStore
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
-            embeddings = OpenAIEmbeddings()
             vectorstore = ElasticsearchStore(
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
@@ -693,6 +692,25 @@ class ElasticsearchStore(VectorStore):
 
         return selected_docs
 
+    @staticmethod
+    def _identity_fn(score: float) -> float:
+        return score
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+
+        Vectorstores should define their own selection based method of relevance.
+        """
+        # All scores from Elasticsearch are already normalized similarities:
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/dense-vector.html#dense-vector-params
+        return self._identity_fn
+
     def similarity_search_with_score(
         self, query: str, k: int = 4, filter: Optional[List[dict]] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
@@ -706,6 +724,9 @@ class ElasticsearchStore(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        if isinstance(self.strategy, ApproxRetrievalStrategy) and self.strategy.hybrid:
+            raise ValueError("scores are currently not supported in hybrid mode")
+
         return self._search(query=query, k=k, filter=filter, **kwargs)
 
     def similarity_search_by_vector_with_relevance_scores(
@@ -725,6 +746,9 @@ class ElasticsearchStore(VectorStore):
         Returns:
             List of Documents most similar to the embedding and score for each
         """
+        if isinstance(self.strategy, ApproxRetrievalStrategy) and self.strategy.hybrid:
+            raise ValueError("scores are currently not supported in hybrid mode")
+
         return self._search(query_vector=embedding, k=k, filter=filter, **kwargs)
 
     def _search(

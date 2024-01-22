@@ -1503,8 +1503,10 @@ class Runnable(Generic[Input, Output], ABC):
                             try:
                                 final_output = final_output + chunk  # type: ignore
                             except TypeError:
-                                final_output = None
+                                final_output = chunk
                                 final_output_supported = False
+                    else:
+                        final_output = chunk
             except StopIteration:
                 pass
             for ichunk in input_for_tracing:
@@ -1515,8 +1517,10 @@ class Runnable(Generic[Input, Output], ABC):
                         try:
                             final_input = final_input + ichunk  # type: ignore
                         except TypeError:
-                            final_input = None
+                            final_input = ichunk
                             final_input_supported = False
+                else:
+                    final_input = ichunk
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -1602,8 +1606,10 @@ class Runnable(Generic[Input, Output], ABC):
                             try:
                                 final_output = final_output + chunk  # type: ignore
                             except TypeError:
-                                final_output = None
+                                final_output = chunk
                                 final_output_supported = False
+                    else:
+                        final_output = chunk
             except StopAsyncIteration:
                 pass
             async for ichunk in input_for_tracing:
@@ -1614,8 +1620,10 @@ class Runnable(Generic[Input, Output], ABC):
                         try:
                             final_input = final_input + ichunk  # type: ignore[operator]
                         except TypeError:
-                            final_input = None
+                            final_input = ichunk
                             final_input_supported = False
+                else:
+                    final_input = ichunk
         except BaseException as e:
             await run_manager.on_chain_error(e, inputs=final_input)
             raise
