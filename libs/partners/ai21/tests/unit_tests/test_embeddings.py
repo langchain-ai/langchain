@@ -15,15 +15,17 @@ _DUMMY_EMBEDDING_0 = [1.0, 2.0, 3.0]
 _DUMMY_EMBEDDING_1 = [4.0, 5.0, 6.0]
 _DUMMY_EMBEDDING_2 = [7.0, 8.0, 9.0]
 
-_DUMMY_EMBEDDING_RESPONSE = EmbedResponse(results=[
-    EmbedResult(_DUMMY_EMBEDDING_0),
-    EmbedResult(_DUMMY_EMBEDDING_1),
-    EmbedResult(_DUMMY_EMBEDDING_2),
-],
-    id="test_id"
+_DUMMY_EMBEDDING_RESPONSE = EmbedResponse(
+    results=[
+        EmbedResult(_DUMMY_EMBEDDING_0),
+        EmbedResult(_DUMMY_EMBEDDING_1),
+        EmbedResult(_DUMMY_EMBEDDING_2),
+    ],
+    id="test_id",
 )
 
 
+@pytest.mark.requires("ai21")
 @pytest.fixture
 def mock_client_with_embeddings(mocker: MockerFixture) -> Mock:
     mock_client = mocker.MagicMock(spec=AI21Client)
@@ -33,6 +35,7 @@ def mock_client_with_embeddings(mocker: MockerFixture) -> Mock:
     return mock_client
 
 
+@pytest.mark.requires("ai21")
 def test_embed_query(mock_client_with_embeddings: Mock) -> None:
     llm = AI21Embeddings(client=mock_client_with_embeddings)
 
@@ -45,6 +48,7 @@ def test_embed_query(mock_client_with_embeddings: Mock) -> None:
     )
 
 
+@pytest.mark.requires("ai21")
 def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
     llm = AI21Embeddings(client=mock_client_with_embeddings)
 
