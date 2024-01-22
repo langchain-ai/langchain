@@ -24,6 +24,7 @@ def test_initialization__when_default_parameters_in_init() -> None:
     ChatAI21()
 
 
+@pytest.mark.requires("ai21")
 def test_initialization__when_custom_parameters_in_init():
     model = "j2-mid"
     num_results = 1
@@ -60,6 +61,7 @@ def test_initialization__when_custom_parameters_in_init():
     assert count_penalty == count_penalty
 
 
+@pytest.mark.requires("ai21")
 @pytest.mark.parametrize(
     ids=[
         "when_human_message",
@@ -84,6 +86,7 @@ def test_convert_message_to_ai21_message(
     assert ai21_message == expected_ai21_message
 
 
+@pytest.mark.requires("ai21")
 @pytest.mark.parametrize(
     ids=[
         "when_system_message",
@@ -106,6 +109,7 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
     )
 
 
+@pytest.mark.requires("ai21")
 def test_invoke(mock_client_with_chat):
     chat_input = "I'm Pickle Rick"
 
@@ -124,6 +128,7 @@ def test_invoke(mock_client_with_chat):
     )
 
 
+@pytest.mark.requires("ai21")
 def test_generate(mock_client_with_chat):
     messages0 = [
         HumanMessage(content="I'm Pickle Rick"),
