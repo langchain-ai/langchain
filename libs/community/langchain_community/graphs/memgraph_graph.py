@@ -38,19 +38,19 @@ class MemgraphGraph(Neo4jGraph):
         self.structured_schema = db_structured_schema
 
         # Format node properties
-        formatted_node_props = ""
+        formatted_node_props = []
 
         for node_name, properties in db_structured_schema["node_props"].items():
-            formatted_node_props += (
-                f"Node name: '{node_name}', Node properties: {properties}\n"
+            formatted_node_props.append(
+                f"Node name: '{node_name}', Node properties: {properties}"
             )
 
         # Format relationship properties
-        formatted_rel_props = ""
+        formatted_rel_props = []
         for rel_name, properties in db_structured_schema["rel_props"].items():
-            formatted_rel_props += (
+            formatted_rel_props.append(
                 f"Relationship name: '{rel_name}', "
-                f"Relationship properties: {properties}\n"
+                f"Relationship properties: {properties}"
             )
 
         # Format relationships
@@ -62,10 +62,10 @@ class MemgraphGraph(Neo4jGraph):
         self.schema = "\n".join(
             [
                 "Node properties are the following:",
-                formatted_node_props,
+                *formatted_node_props,
                 "Relationship properties are the following:",
-                formatted_rel_props,
+                *formatted_rel_props,
                 "The relationships are the following:",
-                "\n".join(formatted_rels),
+                *formatted_rels,
             ]
         )
