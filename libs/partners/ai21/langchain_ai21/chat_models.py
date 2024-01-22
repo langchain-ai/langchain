@@ -75,7 +75,7 @@ class ChatAI21(BaseChatModel, AI21Base):
     top_p: float = 1
     """A value controlling the diversity of the model's responses."""
 
-    top_k_returns: int = 0
+    top_k_return: int = 0
     """The number of top-scoring tokens to consider for each generation step."""
 
     frequency_penalty: Optional[Penalty] = None
@@ -125,7 +125,9 @@ class ChatAI21(BaseChatModel, AI21Base):
         messages = messages.copy()
         system_messages = _pop_system_messages(messages)
         last_system_message_str = system_messages[-1].content if system_messages else ""
-        ai21_messages = [_convert_message_to_ai21_message(message) for message in messages]
+        ai21_messages = [
+            _convert_message_to_ai21_message(message) for message in messages
+        ]
 
         response = self.client.chat.create(
             model=self.model,
@@ -136,7 +138,7 @@ class ChatAI21(BaseChatModel, AI21Base):
             max_tokens=self.max_tokens,
             min_tokens=self.min_tokens,
             top_p=self.top_p,
-            top_k_returns=self.top_k_returns,
+            top_k_return=self.top_k_return,
             stop_sequences=stop,
             frequency_penalty=self.frequency_penalty,
             presence_penalty=self.presence_penalty,
