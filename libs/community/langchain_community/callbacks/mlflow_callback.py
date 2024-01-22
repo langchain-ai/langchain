@@ -520,7 +520,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """
-        Run when agent is ending.
+        Run when text is received.
         """
         self.metrics["step"] += 1
         self.metrics["text_ctr"] += 1
