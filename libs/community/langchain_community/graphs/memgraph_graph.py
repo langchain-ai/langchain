@@ -1,6 +1,5 @@
 from langchain_community.graphs.neo4j_graph import Neo4jGraph
 
-
 SCHEMA_QUERY = """
 CALL llm_util.schema("raw")
 YIELD *
@@ -49,7 +48,10 @@ class MemgraphGraph(Neo4jGraph):
         # Format relationship properties
         formatted_rel_props = ""
         for rel_name, properties in db_structured_schema["rel_props"].items():
-            formatted_rel_props += f"Relationship name: '{rel_name}', Relationship properties: {properties}\n"
+            formatted_rel_props += (
+                f"Relationship name: '{rel_name}', "
+                f"Relationship properties: {properties}\n"
+            )
 
         # Format relationships
         formatted_rels = [
