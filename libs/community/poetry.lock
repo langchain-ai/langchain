@@ -3927,7 +3927,7 @@ develop = true
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
-langsmith = "^0.0.83"
+langsmith = ">=0.0.83,<0.1"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -9180,4 +9180,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e512944a95e344bcf8b15066e289798c53fb39299f6e0190bf69371f43e6f63a"
+content-hash = "73184aec5978e0de5b99029724164fa76394beb6359b59763ca488a258b0df4d"
