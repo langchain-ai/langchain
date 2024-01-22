@@ -31,7 +31,10 @@ def _convert_message_to_ai21_message(
         role = RoleType.ASSISTANT
 
     if not role:
-        raise ValueError(f"Could not resolve role type from message {message}")
+        raise ValueError(
+            f"Could not resolve role type from message {message}. "
+            f"Only support {HumanMessage.__name__} and {AIMessage.__name__}."
+        )
 
     return ChatMessage(role=role, text=content)
 
