@@ -1,6 +1,8 @@
 from typing import List
 from unittest.mock import Mock
 
+import pytest
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.embeddings import Embeddings
 
 from langchain_astradb.vectorstores import AstraDB, AstraDBVectorStore
@@ -44,13 +46,15 @@ def test_initialization() -> None:
         astra_db_client=mock_astra_db,
     )
 
+
 def test_vectorstore_aliasing() -> None:
-    """Checking aliasing of names"""
+    """Checking aliasing of names and deprecation warning"""
     mock_astra_db = Mock()
     embedding = SomeEmbeddings(dimension=2)
-    legacy_vs = AstraDB(
-        embedding=embedding,
-        collection_name="mock_coll_name",
-        astra_db_client=mock_astra_db,
-    )
+    with pytest.warns(LangChainDeprecationWarning):
+        legacy_vs = AstraDB(
+            embedding=embedding,
+            collection_name="mock_coll_name",
+            astra_db_client=mock_astra_db,
+        )
     assert isinstance(legacy_vs, AstraDBVectorStore)

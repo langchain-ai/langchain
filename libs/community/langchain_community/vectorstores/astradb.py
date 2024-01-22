@@ -794,7 +794,7 @@ class AstraDBVectorStore(VectorStore):
 @deprecated(
     since="0.0.13",
     removal="0.2.0",
-    alternative_import="langchain_community.vectorstores.AstraDBVectorStore"
+    alternative_import="langchain_community.vectorstores.AstraDBVectorStore",
 )
 class AstraDB(AstraDBVectorStore):
     pass

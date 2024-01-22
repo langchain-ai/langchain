@@ -123,10 +123,12 @@ def _import_astradb() -> Any:
 
     return AstraDB
 
+
 def _import_astradb_vectorstore() -> Any:
     from langchain_community.vectorstores.astradb import AstraDBVectorStore
 
     return AstraDBVectorStore
+
 
 def _import_chroma() -> Any:
     from langchain_community.vectorstores.chroma import Chroma
