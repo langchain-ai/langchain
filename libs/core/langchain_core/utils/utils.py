@@ -105,22 +105,24 @@ def check_package_version(
 ) -> None:
     """Check the version of a package."""
     imported_version = parse(version(package))
-    if lt_version is not None and imported_version >= parse(lt_version):
-        raise ValueError(
-            f"Expected {package} version to be < {lt_version}. Received "
-            f"{imported_version}."
-        )
-    if lte_version is not None and imported_version > parse(lte_version):
+    if lt_version is not None:
+        if imported_version >= parse(lt_version):
+            raise ValueError(
+                f"Expected {package} version to be < {lt_version}. Received "
+                f"{imported_version}."
+            )
+    elif lte_version is not None and imported_version > parse(lte_version):
         raise ValueError(
             f"Expected {package} version to be <= {lte_version}. Received "
             f"{imported_version}."
         )
-    if gt_version is not None and imported_version <= parse(gt_version):
-        raise ValueError(
-            f"Expected {package} version to be > {gt_version}. Received "
-            f"{imported_version}."
-        )
-    if gte_version is not None and imported_version < parse(gte_version):
+    if gt_version is not None:
+        if imported_version <= parse(gt_version):
+            raise ValueError(
+                f"Expected {package} version to be > {gt_version}. Received "
+                f"{imported_version}."
+            )
+    elif gte_version is not None and imported_version < parse(gte_version):
         raise ValueError(
             f"Expected {package} version to be >= {gte_version}. Received "
             f"{imported_version}."
