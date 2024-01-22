@@ -46,11 +46,13 @@ def mock_client_with_completion(
     return mock_client
 
 
+@pytest.mark.requires("ai21")
 def test_initialization__when_default_parameters() -> None:
     """Test integration initialization."""
     AI21()
 
 
+@pytest.mark.requires("ai21")
 def test_initialization__when_custom_parameters_to_init() -> None:
     """Test integration initialization."""
     AI21(
@@ -72,6 +74,7 @@ def test_initialization__when_custom_parameters_to_init() -> None:
     )
 
 
+@pytest.mark.requires("ai21")
 def test_generate(mock_client_with_completion):
     # Setup test
     prompt0 = "Hi, my name is what?"
