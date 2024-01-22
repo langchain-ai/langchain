@@ -272,10 +272,12 @@ class BedrockBase(BaseModel, ABC):
 
         try:
             response = self.client.invoke_model(
-                body=body, modelId=self.model_id, accept=accept, contentType=contentType
+                body=body,
+                modelId=self.model_id,
+                accept=accept,
+                contentType=contentType,
             )
             text = LLMInputOutputAdapter.prepare_output(provider, response)
-
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}").with_traceback(
                 e.__traceback__
