@@ -1,7 +1,7 @@
 from langchain_ai21 import __all__
 
 EXPECTED_ALL = [
-    "AI21LLM",
+    "AI21",
     "ChatAI21",
     "AI21VectorStore",
     "AI21Embeddings",
