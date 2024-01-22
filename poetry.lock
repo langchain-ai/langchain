@@ -2,13 +2,13 @@
 
 [[package]]
 name = "ai21"
-version = "2.0.0rc10"
+version = "2.0.0rc11"
 description = ""
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "ai21-2.0.0rc10-py3-none-any.whl", hash = "sha256:41539d753beae574a3c9c6e79df6ff07462a656799870813ad732624afd14971"},
-    {file = "ai21-2.0.0rc10.tar.gz", hash = "sha256:6eaf2284f4d9d6f21b6e5ef69f5bd945a7765321f406ab2102b64c55018288a5"},
+    {file = "ai21-2.0.0rc11-py3-none-any.whl", hash = "sha256:81b15af1f1f5f76605d379c7b20cda47ac10f04bdb8aa55acd1e20676d2c787f"},
+    {file = "ai21-2.0.0rc11.tar.gz", hash = "sha256:eda27dacfedd37bd0cffcd4cd1a7ab063452611ee80c6637a61afbfe95c54675"},
 ]
 
 [package.dependencies]
@@ -4085,4 +4085,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "37a34e5f4a9f1fb691b0f1a43feee1a51aeb848f4236e9a49d093ad4f2dbf04e"
+content-hash = "55ea95f07d7a196fb8b80ceaab340cadc6316826aa82f1c82ab98100b3e51452"
