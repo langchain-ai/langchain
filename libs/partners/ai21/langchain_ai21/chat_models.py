@@ -18,7 +18,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
-def _convert_to_ai21_message(
+def _convert_message_to_ai21_message(
     message: BaseMessage,
 ) -> ChatMessage:
     content = cast(str, message.content)
@@ -122,7 +122,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         messages = messages.copy()
         system_messages = _pop_system_messages(messages)
         last_system_message_str = system_messages[-1].content if system_messages else ""
-        ai21_messages = [_convert_to_ai21_message(message) for message in messages]
+        ai21_messages = [_convert_message_to_ai21_message(message) for message in messages]
 
         response = self.client.chat.create(
             model=self.model,
