@@ -3,7 +3,7 @@
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
 
-Additionaly in order to run the test you must have set the following environment 
+Additionally in order to run the test you must have set the following environment 
 variables:
 
 - PROJECT_ID: Id of the Google Cloud Project
