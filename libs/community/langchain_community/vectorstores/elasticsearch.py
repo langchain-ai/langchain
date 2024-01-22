@@ -214,6 +214,8 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
             similarityAlgo = "l2_norm"
         elif similarity is DistanceStrategy.DOT_PRODUCT:
             similarityAlgo = "dot_product"
+        elif similarity is DistanceStrategy.MAX_INNER_PRODUCT:
+            similarityAlgo = "max_inner_product"
         else:
             raise ValueError(f"Similarity {similarity} not supported.")
 
@@ -412,7 +414,7 @@ class ElasticsearchStore(VectorStore):
         distance_strategy: Optional. Distance strategy to use when
                             searching the index.
                             Defaults to COSINE. Can be one of COSINE,
-                            EUCLIDEAN_DISTANCE, or DOT_PRODUCT.
+                            EUCLIDEAN_DISTANCE, MAX_INNER_PRODUCT or DOT_PRODUCT.
 
     If you want to use a cloud hosted Elasticsearch instance, you can pass in the
     cloud_id argument instead of the es_url argument.
@@ -508,6 +510,7 @@ class ElasticsearchStore(VectorStore):
                 DistanceStrategy.COSINE,
                 DistanceStrategy.DOT_PRODUCT,
                 DistanceStrategy.EUCLIDEAN_DISTANCE,
+                DistanceStrategy.MAX_INNER_PRODUCT,
             ]
         ] = None,
         strategy: BaseRetrievalStrategy = ApproxRetrievalStrategy(),
@@ -1128,7 +1131,8 @@ class ElasticsearchStore(VectorStore):
             distance_strategy: Optional. Name of the distance
                                 strategy to use. Defaults to "COSINE".
                                 can be one of "COSINE",
-                                "EUCLIDEAN_DISTANCE", "DOT_PRODUCT".
+                                "EUCLIDEAN_DISTANCE", "DOT_PRODUCT",
+                                "MAX_INNER_PRODUCT".
             bulk_kwargs: Optional. Additional arguments to pass to
                         Elasticsearch bulk.
         """
