@@ -306,7 +306,8 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
                 raise ValueError(
-                    f"Exceed {self.collapse_max_retries} tries to collapse document to {_token_max} tokens."
+                    f"Exceed {self.collapse_max_retries} tries to \
+                        collapse document to {_token_max} tokens."
                 )
         return result_docs, {}
 
@@ -340,7 +341,8 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
                 raise ValueError(
-                    f"Exceed {self.collapse_max_retries} tries to collapse document to {_token_max} tokens."
+                    f"Exceed {self.collapse_max_retries} tries to \
+                        collapse document to {_token_max} tokens."
                 )
         return result_docs, {}
 
