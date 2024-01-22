@@ -66,10 +66,10 @@ from langchain_core.runnables import (
     RunnablePassthrough,
     RunnablePick,
     RunnableSequence,
-    RunnableWithFallbacks,
     add,
     chain,
 )
+from langchain_core.runnables.base import RunnableSerializable
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -134,6 +134,17 @@ class FakeTracer(BaseTracer):
 
 
 class FakeRunnable(Runnable[str, int]):
+    def invoke(
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+    ) -> int:
+        return len(input)
+
+
+class FakeRunnableSerializable(RunnableSerializable[str, int]):
+    hello: str = ""
+
     def invoke(
         self,
         input: str,
@@ -1302,6 +1313,30 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     mock.reset_mock()
 
 
+async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
+    fake = FakeRunnableSerializable()
+    spy = mocker.spy(fake.__class__, "invoke")
+    fakew = fake.configurable_fields(hello=ConfigurableField(id="hello", name="Hello"))
+
+    assert (
+        fakew.with_config(tags=["a-tag"]).invoke(
+            "hello", {"configurable": {"hello": "there"}, "metadata": {"bye": "now"}}
+        )
+        == 5
+    )
+    assert spy.call_args_list[0].args[1:] == (
+        "hello",
+        dict(
+            tags=["a-tag"],
+            callbacks=None,
+            recursion_limit=25,
+            configurable={"hello": "there"},
+            metadata={"hello": "there", "bye": "now"},
+        ),
+    )
+    spy.reset_mock()
+
+
 async def test_with_config(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
@@ -1612,6 +1647,8 @@ async def test_prompt() -> None:
                     ]
                 )
             ],
+            "type": "prompt",
+            "name": "ChatPromptTemplate",
         },
     )
 
@@ -2060,6 +2097,8 @@ async def test_prompt_with_llm(
                     "logs": {},
                     "final_output": None,
                     "streamed_output": [],
+                    "name": "RunnableSequence",
+                    "type": "chain",
                 },
             }
         ),
@@ -2262,6 +2301,8 @@ async def test_prompt_with_llm_parser(
                     "logs": {},
                     "final_output": None,
                     "streamed_output": [],
+                    "name": "RunnableSequence",
+                    "type": "chain",
                 },
             }
         ),
@@ -2473,7 +2514,13 @@ async def test_stream_log_lists() -> None:
             {
                 "op": "replace",
                 "path": "",
-                "value": {"final_output": None, "logs": {}, "streamed_output": []},
+                "value": {
+                    "final_output": None,
+                    "logs": {},
+                    "streamed_output": [],
+                    "name": "list_producer",
+                    "type": "chain",
+                },
             }
         ),
         RunLogPatch(
@@ -2501,12 +2548,14 @@ async def test_stream_log_lists() -> None:
     assert state.state == {
         "final_output": {"alist": ["0", "1", "2", "3"]},
         "logs": {},
+        "name": "list_producer",
         "streamed_output": [
             {"alist": ["0"]},
             {"alist": ["1"]},
             {"alist": ["2"]},
             {"alist": ["3"]},
         ],
+        "type": "chain",
     }
 
 
@@ -3645,52 +3694,6 @@ async def test_runnable_sequence_atransform() -> None:
 
     assert len(chunks) == len("foo-lish")
     assert "".join(chunks) == "foo-lish"
-
-
-@pytest.fixture()
-def llm_with_fallbacks() -> RunnableWithFallbacks:
-    error_llm = FakeListLLM(responses=["foo"], i=1)
-    pass_llm = FakeListLLM(responses=["bar"])
-
-    return error_llm.with_fallbacks([pass_llm])
-
-
-@pytest.fixture()
-def llm_with_multi_fallbacks() -> RunnableWithFallbacks:
-    error_llm = FakeListLLM(responses=["foo"], i=1)
-    error_llm_2 = FakeListLLM(responses=["baz"], i=1)
-    pass_llm = FakeListLLM(responses=["bar"])
-
-    return error_llm.with_fallbacks([error_llm_2, pass_llm])
-
-
-@pytest.fixture()
-def llm_chain_with_fallbacks() -> Runnable:
-    error_llm = FakeListLLM(responses=["foo"], i=1)
-    pass_llm = FakeListLLM(responses=["bar"])
-
-    prompt = PromptTemplate.from_template("what did baz say to {buz}")
-    return RunnableParallel({"buz": lambda x: x}) | (prompt | error_llm).with_fallbacks(
-        [prompt | pass_llm]
-    )
-
-
-@pytest.mark.parametrize(
-    "runnable",
-    ["llm_with_fallbacks", "llm_with_multi_fallbacks", "llm_chain_with_fallbacks"],
-)
-async def test_llm_with_fallbacks(
-    runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
-) -> None:
-    runnable = request.getfixturevalue(runnable)
-    assert runnable.invoke("hello") == "bar"
-    assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
-    assert list(runnable.stream("hello")) == ["bar"]
-    assert await runnable.ainvoke("hello") == "bar"
-    assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
-    assert list(await runnable.ainvoke("hello")) == list("bar")
-    if sys.version_info >= (3, 9):
-        assert dumps(runnable, pretty=True) == snapshot
 
 
 class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
@@ -5150,4 +5153,6 @@ async def test_astream_log_deep_copies() -> None:
         "final_output": 2,
         "logs": {},
         "streamed_output": [2],
+        "name": "add_one",
+        "type": "chain",
     }

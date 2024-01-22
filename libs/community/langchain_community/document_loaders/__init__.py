@@ -180,6 +180,7 @@ from langchain_community.document_loaders.snowflake_loader import SnowflakeLoade
 from langchain_community.document_loaders.spreedly import SpreedlyLoader
 from langchain_community.document_loaders.srt import SRTLoader
 from langchain_community.document_loaders.stripe import StripeLoader
+from langchain_community.document_loaders.surrealdb import SurrealDBLoader
 from langchain_community.document_loaders.telegram import (
     TelegramChatApiLoader,
     TelegramChatFileLoader,
@@ -360,6 +361,7 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "SurrealDBLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",

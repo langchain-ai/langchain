@@ -112,7 +112,7 @@ class LangChainTracer(BaseTracer):
         metadata: Optional[Dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
@@ -135,6 +135,7 @@ class LangChainTracer(BaseTracer):
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
+        return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
         run_ = run.copy()

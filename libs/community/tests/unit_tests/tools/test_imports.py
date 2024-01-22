@@ -80,6 +80,7 @@ EXPECTED_ALL = [
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
     "PackageInstallTool",
+    "PolygonLastQuote",
     "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",

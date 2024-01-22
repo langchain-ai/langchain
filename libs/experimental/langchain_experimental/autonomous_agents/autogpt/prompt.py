@@ -101,3 +101,6 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
         messages += historical_messages
         messages.append(input_message)
         return messages
+
+    def pretty_repr(self, html: bool = False) -> str:
+        raise NotImplementedError

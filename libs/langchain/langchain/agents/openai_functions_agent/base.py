@@ -1,9 +1,10 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
-from typing import Any, List, Optional, Sequence, Tuple, Union
+from typing import Any, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
     BaseMessage,
@@ -27,8 +28,6 @@ from langchain.agents.format_scratchpad.openai_functions import (
 from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
 )
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
 
 
 @deprecated("0.1.0", alternative="create_openai_functions_agent", removal="0.2.0")
@@ -47,6 +46,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
     prompt: BasePromptTemplate
+    output_parser: Type[
+        OpenAIFunctionsAgentOutputParser
+    ] = OpenAIFunctionsAgentOutputParser
 
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
@@ -105,9 +107,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 messages,
                 callbacks=callbacks,
             )
-        agent_decision = OpenAIFunctionsAgentOutputParser._parse_ai_message(
-            predicted_message
-        )
+        agent_decision = self.output_parser._parse_ai_message(predicted_message)
         return agent_decision
 
     async def aplan(
@@ -136,9 +136,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         predicted_message = await self.llm.apredict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
-        agent_decision = OpenAIFunctionsAgentOutputParser._parse_ai_message(
-            predicted_message
-        )
+        agent_decision = self.output_parser._parse_ai_message(predicted_message)
         return agent_decision
 
     def return_stopped_response(
@@ -236,7 +234,19 @@ def create_openai_functions_agent(
 ) -> Runnable:
     """Create an agent that uses OpenAI function calling.
 
-    Examples:
+    Args:
+        llm: LLM to use as the agent. Should work with OpenAI function calling,
+            so either be an OpenAI model that supports that or a wrapper of
+            a different model that adds in equivalent support.
+        tools: Tools this agent has access to.
+        prompt: The prompt to use. See Prompt section below for more.
+
+    Returns:
+        A Runnable sequence representing an agent. It takes as input all the same input
+        variables as the prompt passed in does. It returns as output either an
+        AgentAction or AgentFinish.
+
+    Example:
 
         Creating an agent with no memory
 
@@ -267,18 +277,26 @@ def create_openai_functions_agent(
                 }
             )
 
-    Args:
-        llm: LLM to use as the agent. Should work with OpenAI function calling,
-            so either be an OpenAI model that supports that or a wrapper of
-            a different model that adds in equivalent support.
-        tools: Tools this agent has access to.
-        prompt: The prompt to use, must have an input key of `agent_scratchpad`.
+    Prompt:
 
-    Returns:
-        A runnable sequence representing an agent. It takes as input all the same input
-        variables as the prompt passed in does. It returns as output either an
-        AgentAction or AgentFinish.
+        The agent prompt must have an `agent_scratchpad` key that is a
+            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            messages will be passed in here.
 
+        Here's an example:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are a helpful assistant"),
+                    MessagesPlaceholder("chat_history", optional=True),
+                    ("human", "{input}"),
+                    MessagesPlaceholder("agent_scratchpad"),
+                ]
+            )
     """
     if "agent_scratchpad" not in prompt.input_variables:
         raise ValueError(

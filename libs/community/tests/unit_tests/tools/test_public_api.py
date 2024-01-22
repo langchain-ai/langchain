@@ -82,6 +82,7 @@ _EXPECTED = [
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
     "PackageInstallTool",
+    "PolygonLastQuote",
     "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
