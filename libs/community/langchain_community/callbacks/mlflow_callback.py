@@ -666,28 +666,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             .dropna(axis=1)
             .rename({"step": "prompt_step"}, axis=1)
         )
-        complexity_metrics_columns = []
-        visualizations_columns = []
-
-        complexity_metrics_columns = [
-            "flesch_reading_ease",
-            "flesch_kincaid_grade",
-            "smog_index",
-            "coleman_liau_index",
-            "automated_readability_index",
-            "dale_chall_readability_score",
-            "difficult_words",
-            "linsear_write_formula",
-            "gunning_fog",
-            # "text_standard",
-            "fernandez_huerta",
-            "szigriszt_pazos",
-            "gutierrez_polini",
-            "crawford",
-            "gulpease_index",
-            "osman",
-        ]
-
+        complexity_metrics_columns = get_text_complexity_metrics()
         visualizations_columns = ["dependency_tree", "entities"]
 
         token_usage_columns = [
