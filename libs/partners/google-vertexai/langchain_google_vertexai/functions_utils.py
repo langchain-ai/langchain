@@ -5,7 +5,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.tools import Tool
+from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import FunctionDescription
 from langchain_core.utils.json_schema import dereference_refs
 from vertexai.preview.generative_models import (  # type: ignore
@@ -39,7 +39,7 @@ def _format_pydantic_to_vertex_function(
     }
 
 
-def _format_tool_to_vertex_function(tool: Tool) -> FunctionDescription:
+def _format_tool_to_vertex_function(tool: BaseTool) -> FunctionDescription:
     "Format tool into the Vertex function API."
     if tool.args_schema:
         schema = dereference_refs(tool.args_schema.schema())
@@ -75,12 +75,12 @@ def _format_tool_to_vertex_function(tool: Tool) -> FunctionDescription:
 
 
 def _format_tools_to_vertex_tool(
-    tools: List[Union[Tool, Type[BaseModel]]],
+    tools: List[Union[BaseTool, Type[BaseModel]]],
 ) -> List[VertexTool]:
     "Format tool into the Vertex Tool instance."
     function_declarations = []
     for tool in tools:
-        if isinstance(tool, Tool):
+        if isinstance(tool, BaseTool):
             func = _format_tool_to_vertex_function(tool)
         else:
             func = _format_pydantic_to_vertex_function(tool)

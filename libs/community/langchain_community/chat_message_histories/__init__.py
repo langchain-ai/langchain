@@ -35,6 +35,7 @@ from langchain_community.chat_message_histories.sql import SQLChatMessageHistory
 from langchain_community.chat_message_histories.streamlit import (
     StreamlitChatMessageHistory,
 )
+from langchain_community.chat_message_histories.tidb import TiDBChatMessageHistory
 from langchain_community.chat_message_histories.upstash_redis import (
     UpstashRedisChatMessageHistory,
 )
@@ -62,4 +63,5 @@ __all__ = [
     "ZepChatMessageHistory",
     "UpstashRedisChatMessageHistory",
     "Neo4jChatMessageHistory",
+    "TiDBChatMessageHistory",
 ]
