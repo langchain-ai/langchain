@@ -110,7 +110,8 @@ class PyPDFParser(BaseBlobParser):
         images = []
         for obj in xObject:
             if xObject[obj]["/Subtype"] == "/Image":
-                if xObject[obj]["/Filter"][1:] in _PDF_FILTER_WITHOUT_LOSS:
+                filter = xObject[obj]["/Filter"][1:][0][1:]
+                if filter in _PDF_FILTER_WITHOUT_LOSS:
                     height, width = xObject[obj]["/Height"], xObject[obj]["/Width"]
 
                     images.append(
@@ -118,7 +119,7 @@ class PyPDFParser(BaseBlobParser):
                             height, width, -1
                         )
                     )
-                elif xObject[obj]["/Filter"][1:] in _PDF_FILTER_WITH_LOSS:
+                elif filter in _PDF_FILTER_WITH_LOSS:
                     images.append(xObject[obj].get_data())
                 else:
                     warnings.warn("Unknown PDF Filter!")
