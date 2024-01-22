@@ -11,7 +11,7 @@ def test_chat_deepinfra() -> None:
     chat = ChatDeepInfra(
         max_tokens=10,
     )
-    response = chat([HumanMessage(content="Hello")])
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -23,7 +23,7 @@ def test_chat_deepinfra_streaming() -> None:
         streaming=True,
         max_tokens=10,
     )
-    response = chat([HumanMessage(content="Hello")])
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 
