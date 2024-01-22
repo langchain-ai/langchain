@@ -388,7 +388,6 @@ class ElasticsearchStore(VectorStore):
             from langchain_community.vectorstores import ElasticsearchStore
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
-            embeddings = OpenAIEmbeddings()
             vectorstore = ElasticsearchStore(
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
@@ -692,6 +691,25 @@ class ElasticsearchStore(VectorStore):
                 del doc.metadata[self.vector_query_field]
 
         return selected_docs
+
+    @staticmethod
+    def _identity_fn(score: float) -> float:
+        return score
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+
+        Vectorstores should define their own selection based method of relevance.
+        """
+        # All scores from Elasticsearch are already normalized similarities:
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/dense-vector.html#dense-vector-params
+        return self._identity_fn
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, filter: Optional[List[dict]] = None, **kwargs: Any
