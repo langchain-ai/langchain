@@ -46,12 +46,12 @@ def mock_client_with_completion(
     return mock_client
 
 
-def test_initialization__when_default() -> None:
+def test_initialization__when_default_parameters() -> None:
     """Test integration initialization."""
     AI21()
 
 
-def test_initialization__when_passing_parameter_to_init() -> None:
+def test_initialization__when_custom_parameters_to_init() -> None:
     """Test integration initialization."""
     AI21(
         model="j2-mid",
@@ -73,6 +73,7 @@ def test_initialization__when_passing_parameter_to_init() -> None:
 
 
 def test_generate(mock_client_with_completion):
+    # Setup test
     prompt0 = "Hi, my name is what?"
     prompt1 = "My name is who?"
     stop = ["\n"]
@@ -87,6 +88,7 @@ def test_generate(mock_client_with_completion):
     count_penalty = Penalty(scale=0.2, apply_to_punctuation=True, apply_to_emojis=True)
     custom_model = "test_model"
     epoch = 1
+
     ai21 = AI21(
         client=mock_client_with_completion,
         num_results=num_results,
@@ -101,11 +103,14 @@ def test_generate(mock_client_with_completion):
         custom_model=custom_model,
         epoch=epoch,
     )
+
+    # Make call to testing function
     ai21.generate(
         [prompt0, prompt1],
         stop=stop,
     )
 
+    # Assertions
     mock_client_with_completion.count_tokens.assert_has_calls(
         [
             call(prompt0),
