@@ -119,7 +119,7 @@ class HanaDB(VectorStore):
 
     def _table_exists(self, table_name) -> bool:
         sql_str = (
-            "SELECT COUNT(*) FROM TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA"
+            "SELECT COUNT(*) FROM SYS.TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA"
             " AND TABLE_NAME = ?"
         )
         try:
@@ -135,7 +135,7 @@ class HanaDB(VectorStore):
 
     def _check_column(self, table_name, column_name, column_type, column_length=None):
         sql_str = (
-            "SELECT DATA_TYPE_NAME, LENGTH FROM TABLE_COLUMNS WHERE "
+            "SELECT DATA_TYPE_NAME, LENGTH FROM SYS.TABLE_COLUMNS WHERE "
             "SCHEMA_NAME = CURRENT_SCHEMA "
             "AND TABLE_NAME = ? AND COLUMN_NAME = ?"
         )
