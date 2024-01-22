@@ -21,7 +21,7 @@ from typing import (
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.retrievers import BaseRetriever
+from langchain_core.retrievers import BaseRetriever, DocumentResult, RetrievalResult
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
@@ -650,22 +650,52 @@ class VectorStoreRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
+        result = self._get_relevant_results(query, run_manager=run_manager)
+        return [doc_result.document for doc_result in result.documents]
+
+    def _get_relevant_results(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> RetrievalResult:
+        result_metadata = {
+            "query": query,
+            "search_type": self.search_type,
+            "search_kwargs": self.search_kwargs,
+        }
         if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+            docs_and_scores = self.vectorstore.similarity_search_with_score(
+                query, **self.search_kwargs
+            )
+            result = RetrievalResult(
+                documents=[
+                    DocumentResult(document=doc, metadata={"score": score})
+                    for doc, score in docs_and_scores
+                ],
+                metadata=result_metadata,
+            )
         elif self.search_type == "similarity_score_threshold":
             docs_and_similarities = (
                 self.vectorstore.similarity_search_with_relevance_scores(
                     query, **self.search_kwargs
                 )
             )
-            docs = [doc for doc, _ in docs_and_similarities]
+            result = RetrievalResult(
+                documents=[
+                    DocumentResult(document=doc, metadata={"relevance_score": score})
+                    for doc, score in docs_and_similarities
+                ],
+                metadata=result_metadata,
+            )
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
             )
+            result = RetrievalResult(
+                documents=[DocumentResult(document=doc) for doc in docs],
+                metadata=result_metadata,
+            )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
-        return docs
+        return result
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
