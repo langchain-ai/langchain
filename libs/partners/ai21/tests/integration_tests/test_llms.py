@@ -4,10 +4,6 @@ from ai21.models import Penalty
 
 from langchain_ai21.llms import AI21
 
-import os
-
-os.environ["AI21_API_KEY"] = "FwlPukdfYB6f3cIjkxLyEgJGUhiQSiA6"
-
 
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
