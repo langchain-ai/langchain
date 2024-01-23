@@ -7,6 +7,12 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
+from google.cloud import aiplatform, storage
+from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
+from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint import (
+    Namespace,
+)
+from google.oauth2.service_account import Credentials
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -14,12 +20,6 @@ from langchain_core.vectorstores import VectorStore
 from langchain_google_vertexai._utils import get_client_info
 
 if TYPE_CHECKING:
-    from google.cloud import storage
-    from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
-    from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint import (
-        Namespace,
-    )
-    from google.oauth2.service_account import Credentials
     from langchain_community.embeddings import TensorflowHubEmbeddings
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,6 @@ class VertexAIVectorSearch(VectorStore):
                 metadata.
         """
         super().__init__()
-        self._validate_google_libraries_installation()
 
         self.project_id = project_id
         self.index = index
@@ -108,18 +107,6 @@ class VertexAIVectorSearch(VectorStore):
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding
-
-    def _validate_google_libraries_installation(self) -> None:
-        """Validates that Google libraries that are needed are installed."""
-        try:
-            from google.cloud import aiplatform, storage  # noqa: F401
-            from google.oauth2 import service_account  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "You must run `pip install --upgrade "
-                "google-cloud-aiplatform google-cloud-storage`"
-                "to use the VertexAIVectorSearch Vectorstore."
-            )
 
     def add_texts(
         self,
@@ -483,11 +470,9 @@ class VertexAIVectorSearch(VectorStore):
              will be used.
         """
 
-        from google.oauth2 import service_account
-
         credentials = None
         if json_credentials_path is not None:
-            credentials = service_account.Credentials.from_service_account_file(
+            credentials = Credentials.from_service_account_file(
                 json_credentials_path
             )
 
@@ -509,10 +494,8 @@ class VertexAIVectorSearch(VectorStore):
             A configured MatchingEngineIndex.
         """
 
-        from google.cloud import aiplatform
-
         logger.debug(f"Creating matching engine index with id {index_id}.")
-        return aiplatform.MatchingEngineIndex(
+        return MatchingEngineIndex(
             index_name=index_id,
             project=project_id,
             location=region,
@@ -535,10 +518,8 @@ class VertexAIVectorSearch(VectorStore):
             A configured MatchingEngineIndexEndpoint.
         """
 
-        from google.cloud import aiplatform
-
         logger.debug(f"Creating endpoint with id {endpoint_id}.")
-        return aiplatform.MatchingEngineIndexEndpoint(
+        return MatchingEngineIndexEndpoint(
             index_endpoint_name=endpoint_id,
             project=project_id,
             location=region,
@@ -554,8 +535,6 @@ class VertexAIVectorSearch(VectorStore):
         Returns:
             A configured GCS client.
         """
-
-        from google.cloud import storage
 
         return storage.Client(
             credentials=credentials,
@@ -580,8 +559,6 @@ class VertexAIVectorSearch(VectorStore):
             gcs_bucket_name: GCS staging location.
             credentials: The GCS Credentials object.
         """
-
-        from google.cloud import aiplatform
 
         logger.debug(
             f"Initializing AI Platform for project {project_id} on "
