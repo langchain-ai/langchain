@@ -35,6 +35,8 @@ You can use LangChain Core objects in two ways:
 
 2. **declarative**, with LangChain Expression Language (LCEL)
 
+3. or a mix of both! eg. one of the steps in your LCEL sequence can be a custom function
+
 | Feature   | Imperative                      | Declarative    |
 | --------- | ------------------------------- | -------------- |
 | Syntax    | All of Python                   | LCEL           |
