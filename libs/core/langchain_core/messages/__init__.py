@@ -1,4 +1,4 @@
-from typing import List, Sequence, Union
+from typing import List, Sequence, Tuple, Type, Union
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import (
@@ -115,6 +115,81 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
     return chunk.__class__.__mro__[1](
         **{k: v for k, v in chunk.__dict__.items() if k != "type"}
     )
+
+
+MessageLikeRepresentation = Union[BaseMessage, Tuple[str, str], str]
+
+
+def _create_template_from_message_type(message_type: str, template: str) -> BaseMessage:
+    """Create a message prompt template from a message type and template string.
+
+    Args:
+        message_type: str the type of the message template (e.g., "human", "ai", etc.)
+        template: str the template string.
+
+    Returns:
+        a message prompt template of the appropriate type.
+    """
+    if message_type in ("human", "user"):
+        message: BaseMessage = HumanMessage(content=template)
+    elif message_type in ("ai", "assistant"):
+        message = AIMessage(content=template)
+    elif message_type == "system":
+        message = SystemMessage(content=template)
+    else:
+        raise ValueError(
+            f"Unexpected message type: {message_type}. Use one of 'human',"
+            f" 'user', 'ai', 'assistant', or 'system'."
+        )
+    return message
+
+
+def _convert_to_message(
+    message: MessageLikeRepresentation,
+) -> BaseMessage:
+    """Instantiate a message from a variety of message formats.
+
+    The message format can be one of the following:
+
+    - BaseMessagePromptTemplate
+    - BaseMessage
+    - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
+    - 2-tuple of (message class, template)
+    - string: shorthand for ("human", template); e.g., "{user_input}"
+
+    Args:
+        message: a representation of a message in one of the supported formats
+
+    Returns:
+        an instance of a message or a message template
+    """
+    if isinstance(message, BaseMessage):
+        _message = message
+    elif isinstance(message, str):
+        _message = _create_template_from_message_type("human", message)
+    elif isinstance(message, tuple):
+        if len(message) != 2:
+            raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
+        message_type_str, template = message
+        _message = _create_template_from_message_type(message_type_str, template)
+    else:
+        raise NotImplementedError(f"Unsupported message type: {type(message)}")
+
+    return _message
+
+
+def convert_to_messages(
+    messages: Sequence[MessageLikeRepresentation],
+) -> List[BaseMessage]:
+    """Convert a sequence of messages to a list of messages.
+
+    Args:
+        messages: Sequence of messages to convert.
+
+    Returns:
+        List of messages (BaseMessages).
+    """
+    return [_convert_to_message(m) for m in messages]
 
 
 __all__ = [

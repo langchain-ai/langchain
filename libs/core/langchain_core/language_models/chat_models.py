@@ -34,6 +34,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    convert_to_messages,
     message_chunk_to_message,
 )
 from langchain_core.outputs import (
@@ -144,7 +145,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         elif isinstance(input, str):
             return StringPromptValue(text=input)
         elif isinstance(input, Sequence):
-            return ChatPromptValue(messages=input)
+            return ChatPromptValue(messages=convert_to_messages(input))
         else:
             raise ValueError(
                 f"Invalid input type {type(input)}. "

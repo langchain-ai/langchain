@@ -27,6 +27,7 @@ from langchain_core.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
+    convert_to_messages,
 )
 from langchain_core.messages.base import get_msg_title_repr
 from langchain_core.prompt_values import ChatPromptValue, PromptValue
@@ -126,7 +127,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value}"
             )
-        for v in value:
+        for v in convert_to_messages(value):
             if not isinstance(v, BaseMessage):
                 raise ValueError(
                     f"variable {self.variable_name} should be a list of base messages,"
