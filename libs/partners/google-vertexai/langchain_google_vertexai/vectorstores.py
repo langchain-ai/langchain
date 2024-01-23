@@ -4,6 +4,7 @@ import json
 import logging
 import time
 import uuid
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
@@ -49,6 +50,7 @@ class VertexAIVectorSearch(VectorStore):
         gcs_bucket_name: str,
         credentials: Optional[Credentials] = None,
         *,
+        document_storage: Optional["VertexAIVectorSearchDocumentStorage"] = None,
         document_id_key: Optional[str] = None,
     ):
         """Google Vertex AI Vector Search (previously Matching Engine)
@@ -94,6 +96,14 @@ class VertexAIVectorSearch(VectorStore):
         self.credentials = credentials
         self.gcs_bucket_name = gcs_bucket_name
         self.document_id_key = document_id_key
+
+        self.document_storage = document_storage
+
+        if self.document_storage is None:
+            self.document_storage = GCSVertexAIVectorSearchDocumentStorage(
+                bucket=self.gcs_client.get_bucket(self.gcs_bucket_name),
+                prefix="documents"
+            )
 
     @property
     def embeddings(self) -> Embeddings:
@@ -145,7 +155,7 @@ class VertexAIVectorSearch(VectorStore):
             if metadatas is not None:
                 json_["metadata"] = metadatas[idx]
             jsons.append(json_)
-            self._upload_to_gcs(text, f"documents/{id}")
+            self.document_storage.store_by_id(document_id=id, text=text)
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
 
@@ -268,7 +278,7 @@ class VertexAIVectorSearch(VectorStore):
         # means that the match method will always return an array with only
         # one element.
         for result in response[0]:
-            page_content = self._download_from_gcs(f"documents/{result.id}")
+            page_content = self.document_storage.get_by_id(document_id=result.id)
             # TODO: return all metadata.
             metadata = {}
             if self.document_id_key is not None:
@@ -611,3 +621,93 @@ class MatchingEngine(VertexAIVectorSearch):
         )
 
         super().__init__(*args, **kwargs)
+
+
+class VertexAIVectorSearchDocumentStorage(ABC):
+    """ Provides an abstract interface for the storage
+    """
+
+    @abstractmethod
+    def get_by_id(self, document_id: str) -> str | None:
+        """ Gets the text of a document by its id. If not found, returns None.
+
+        Args:
+            document_id: Id of the document to get from the storage.
+
+        Returns:
+            Text of the document if found, otherwise None.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def store_by_id(self, document_id: str, text: str):
+        """ Stores a document text associated to a document_id.
+
+        Args:
+            document_id: Id of the document to be stored.
+            text: Text of the document to be stored.
+        """
+        raise NotImplementedError()
+    
+
+class GCSVertexAIVectorSearchDocumentStorage(VertexAIVectorSearchDocumentStorage):
+    """ Stores documents in Google Cloud Storage.
+
+    For each pair id, document_text the name of the blob will be {prefix}/{id} stored
+    in plain text format.
+    """
+
+    def __init__(
+        self, 
+        bucket: "storage.Bucket",
+        prefix: Optional[str] = "documents"
+    ) -> None:
+        """ Constructor.
+
+        Args:
+            bucket: Bucket where the documents will be stored.
+            prefix: Prefix that is prepended to all document names.
+        """
+        super().__init__()
+        self._bucket = bucket
+        self._prefix = prefix
+
+    def get_by_id(self, document_id: str) -> str | None:
+        """ Gets the text of a document by its id. If not found, returns None.
+
+        Args:
+            document_id: Id of the document to get from the storage.
+
+        Returns:
+            Text of the document if found, otherwise None.
+        """
+
+        blob_name = self._get_blob_name(document_id)
+        existing_blob = self._bucket.get_blob(blob_name)
+        
+        if existing_blob is None: 
+            return None
+        
+        return existing_blob.download_as_text()
+    
+    def store_by_id(self, document_id: str, text: str) -> None:
+        """ Stores a document text associated to a document_id.
+
+        Args:
+            document_id: Id of the document to be stored.
+            text: Text of the document to be stored.
+        """
+        blob_name = self._get_blob_name(document_id)
+        new_blow = self._bucket.blob(blob_name)
+        new_blow.upload_from_string(text)
+
+    def _get_blob_name(self, document_id: str) -> str:
+        """ Builds a blob name using the prefix and the document_id.
+
+        Args:
+            document_id: Id of the document.
+
+        Returns:
+            Name of the blob that the document will be/is stored in
+        """
+        return f"{self._prefix}/{document_id}"

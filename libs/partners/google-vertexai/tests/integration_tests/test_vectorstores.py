@@ -20,7 +20,10 @@ from typing import Dict
 import pytest
 
 from langchain_google_vertexai.embeddings import VertexAIEmbeddings
-from langchain_google_vertexai.vectorstores import VertexAIVectorSearch
+from langchain_google_vertexai.vectorstores import (
+    GCSVertexAIVectorSearchDocumentStorage,
+    VertexAIVectorSearch,
+)
 
 
 @pytest.fixture
@@ -48,7 +51,17 @@ def test_constructor(vector_store_kwargs):
     assert isinstance(vector_store, VertexAIVectorSearch)
 
 
+def test_similarity_search(vector_store: VertexAIVectorSearch):
+    query = "What are your favourite animals?"
+    docs = vector_store.similarity_search_with_score(query, k=1)
+    assert len(docs) == 1
+
+
 def test_add_texts(vector_store: VertexAIVectorSearch):
+
+    if os.environ.get("RUN_SLOW_TESTS") is None:
+        return 
+    
     vector_store.add_texts(
         texts=[
             "Lions are my favourite animals",
@@ -58,7 +71,21 @@ def test_add_texts(vector_store: VertexAIVectorSearch):
     )
 
 
-def test_similarity_search(vector_store: VertexAIVectorSearch):
-    query = "What are your favourite animals?"
-    docs = vector_store.similarity_search_with_score(query, k=1)
-    assert len(docs) == 1
+def test_gcs_document_storage():
+
+    from google.cloud import storage
+
+    client = storage.Client(project=os.environ["PROJECT_ID"])
+    bucket = client.bucket(bucket_name=os.environ["GCS_BUCKET_NAME"])
+
+    prefix = "test-document-storage"
+
+    storage = GCSVertexAIVectorSearchDocumentStorage(bucket=bucket, prefix=prefix)
+    
+    id_ = "my-id"
+    text = "My text"
+    storage.store_by_id(id_, text)
+
+    assert storage.get_by_id(id_) == text
+
+    assert storage.get_by_id("non-existant") is None
