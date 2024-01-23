@@ -9,7 +9,6 @@ def test_all() -> None:
         "GraphIndexCreator",
         "index",
         "IndexingResult",
-        "MemoryRecordManager",
         "SQLRecordManager",
         "VectorstoreIndexCreator",
     ]
