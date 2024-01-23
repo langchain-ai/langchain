@@ -67,23 +67,22 @@ class KDBAI(VectorStore):
         self,
         texts: List[str],
         ids: Optional[List[str]],
-        metadata: Optional[pd.DataFrame] = None,
+        metadata: Optional[Any] = None,
     ) -> None:
-
         try:
             import numpy as np
         except ImportError:
             raise ImportError(
                 "Could not import numpy python package. "
-                "Please install it with `pip install numpy`."                
+                "Please install it with `pip install numpy`."
             )
-        
+
         try:
             import pandas as pd
         except ImportError:
             raise ImportError(
                 "Could not import pandas python package. "
-                "Please install it with `pip install pandas`."                
+                "Please install it with `pip install pandas`."
             )
 
         embeds = self._embedding.embed_documents(texts)
@@ -122,7 +121,7 @@ class KDBAI(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import pandas python package. "
-                "Please install it with `pip install pandas`."                
+                "Please install it with `pip install pandas`."
             )
 
         texts = list(texts)
@@ -168,7 +167,7 @@ class KDBAI(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import pandas python package. "
-                "Please install it with `pip install pandas`."                
+                "Please install it with `pip install pandas`."
             )
 
         texts = [x.page_content for x in documents]
@@ -214,12 +213,11 @@ class KDBAI(VectorStore):
         Returns:
             List[Document]: List of similar documents.
         """
-        if 'n' in kwargs:
-            k = kwargs.pop('n')
-        matches = self._table.search(vectors=[embedding], 
-                                     n=k, 
-                                     filter=filter, 
-                                     **kwargs)[0]
+        if "n" in kwargs:
+            k = kwargs.pop("n")
+        matches = self._table.search(vectors=[embedding], n=k, filter=filter, **kwargs)[
+            0
+        ]
         docs = []
         for row in matches.to_dict(orient="records"):
             text = row.pop("text")
