@@ -1,9 +1,6 @@
 import pytest
 
 from langchain_core.documents.document_transformers import _LEGACY
-import pytest
-
-from langchain_core.documents.document_transformers import _LEGACY
 
 # %% -------------------------------------------------------------------------------
 # Normally, this class is intended to replace the current implementation of
