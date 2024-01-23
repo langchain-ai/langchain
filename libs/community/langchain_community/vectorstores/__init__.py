@@ -464,6 +464,12 @@ def _import_lantern() -> Any:
     return Lantern
 
 
+def _import_wrapper() -> Any:
+    from langchain_community.vectorstores.wrapper_vectorstore import WrapperVectorStore
+
+    return WrapperVectorStore
+
+
 def __getattr__(name: str) -> Any:
     if name == "AnalyticDB":
         return _import_analyticdb()
@@ -607,6 +613,8 @@ def __getattr__(name: str) -> Any:
         return _import_vespa()
     elif name == "Lantern":
         return _import_lantern()
+    elif name == "WrapperVectorStore":
+        return _import_wrapper()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -681,5 +689,6 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "WrapperVectorStore",
     "Lantern",
 ]

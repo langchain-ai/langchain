@@ -19,6 +19,7 @@ from langchain_community.vectorstores import (
     TimescaleVector,
     Vectara,
     Weaviate,
+    WrapperVectorStore,
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
@@ -73,6 +74,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         OpenSearchVectorSearch: OpenSearchTranslator,
         MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
+    if isinstance(vectorstore, WrapperVectorStore):
+        return _get_builtin_translator(vectorstore.vectorstore)
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):

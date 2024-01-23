@@ -112,5 +112,6 @@ __all__ = [
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
+    "WrapperVectorStore",
     "VectorStore",
 ]
