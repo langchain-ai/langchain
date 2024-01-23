@@ -58,8 +58,11 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
 class ChatEdenAI(BaseChatModel):
     """`EdenAI` chat large language models.
 
-    To use, you should have the environment variable ``EDENAI_API_KEY`` set
-    with your API key, or pass it as a named parameter to the constructor.
+    `EdenAI` is a versatile platform that allows you to access various language models from different providers, such as Google, OpenAI, Cohere, Mistral and more.
+
+    To get started, make sure you have the environment variable ``EDENAI_API_KEY`` set with your API key, or pass it as a named parameter to the constructor.
+
+    Additionally, `EdenAI` provides the flexibility to choose from a variety of models, including the ones like "gpt-4".
 
     Example:
         .. code-block:: python
@@ -67,14 +70,42 @@ class ChatEdenAI(BaseChatModel):
             from langchain_community.chat_models import ChatEdenAI
             from langchain_core.messages import HumanMessage
 
+            # Initialize `ChatEdenAI` with the desired configuration
             chat = ChatEdenAI(
-                model="openai",
+                provider="openai",
                 model="gpt-4",
                 max_tokens=256,
                 temperature=0.75)
 
+            # Create a list of messages to interact with the model
             messages = [HumanMessage(content="hello")]
+
+            # Invoke the model with the provided messages
             chat.invoke(messages)
+
+    `EdenAI` goes beyond mere model invocation. It empowers you with advanced features, including:
+
+    - **Multiple Providers**: Gain access to a diverse range of language models offered by various providers, giving you the freedom to choose the best-suited model for your use case.
+
+    - **Fallback Mechanism**: Set a fallback mechanism to ensure seamless operations even if the primary provider is unavailable, you can easily switches to an alternative provider.
+
+    - **Usage Statistics**: Track usage statistics on a per-project and per-API key basis. This feature allows you to monitor and manage resource consumption effectively.
+
+    - **Monitoring and Observability**: `EdenAI` provides comprehensive monitoring and observability tools on the platform. Monitor the performance of your language models, analyze usage patterns, and gain valuable insights to optimize your applications.
+
+
+    Example of setting up a fallback mechanism:
+        .. code-block:: python
+
+            # Initialize `ChatEdenAI` with a fallback provider
+            chat_with_fallback = ChatEdenAI(
+                provider="openai",
+                model="gpt-4",
+                max_tokens=256,
+                temperature=0.75,
+                fallback_provider="google")
+
+    you can find more details here : https://docs.edenai.co/reference/text_chat_create
     """
 
     provider: str = "openai"
@@ -94,6 +125,9 @@ class ChatEdenAI(BaseChatModel):
 
     streaming: bool = False
     """Whether to stream the results."""
+
+    fallback_providers: Optional[str] = None
+    """Providers in this will be used as fallback if the call to provider fails."""
 
     edenai_api_url: str = "https://api.edenai.run/v2"
 
@@ -141,6 +175,7 @@ class ChatEdenAI(BaseChatModel):
             "providers": self.provider,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
+            "fallback_providers": self.fallback_providers,
             **formatted_data,
             **kwargs,
         }
@@ -152,20 +187,13 @@ class ChatEdenAI(BaseChatModel):
 
         request = Requests(headers=headers)
         response = request.post(url=url, data=payload, stream=True)
-
-        if response.status_code >= 500:
-            raise Exception(f"EdenAI Server: Error {response.status_code}")
-        elif response.status_code >= 400:
-            raise ValueError(f"EdenAI received an invalid payload: {response.text}")
-        elif response.status_code != 200:
-            raise Exception(
-                f"EdenAI returned an unexpected response with status "
-                f"{response.status_code}: {response.text}"
-            )
+        response.raise_for_status()
 
         for chunk_response in response.iter_lines():
             chunk = json.loads(chunk_response.decode())
             yield ChatGenerationChunk(message=AIMessageChunk(content=chunk["text"]))
+            if run_manager:
+                run_manager.on_llm_new_token(chunk["text"], chunk=chunk)
 
     async def _astream(
         self,
@@ -184,6 +212,7 @@ class ChatEdenAI(BaseChatModel):
             "providers": self.provider,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
+            "fallback_providers": self.fallback_providers,
             **formatted_data,
             **kwargs,
         }
@@ -195,23 +224,16 @@ class ChatEdenAI(BaseChatModel):
 
         async with ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
-                if response.status >= 500:
-                    raise Exception(f"EdenAI Server: Error {response.status}")
-                elif response.status >= 400:
-                    raise ValueError(
-                        f"EdenAI received an invalid payload: {response.text}"
-                    )
-                elif response.status != 200:
-                    raise Exception(
-                        f"EdenAI returned an unexpected response with status "
-                        f"{response.status}: {response.text}"
-                    )
-
+                response.raise_for_status()
                 async for chunk_response in response.content:
                     chunk = json.loads(chunk_response.decode())
                     yield ChatGenerationChunk(
                         message=AIMessageChunk(content=chunk["text"])
                     )
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            token=chunk["text"], chunk=chunk
+                        )
 
     def _generate(
         self,
@@ -237,6 +259,7 @@ class ChatEdenAI(BaseChatModel):
             "providers": self.provider,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
+            "fallback_providers": self.fallback_providers,
             **formatted_data,
             **kwargs,
         }
@@ -249,18 +272,15 @@ class ChatEdenAI(BaseChatModel):
         request = Requests(headers=headers)
         response = request.post(url=url, data=payload)
 
-        if response.status_code >= 500:
-            raise Exception(f"EdenAI Server: Error {response.status_code}")
-        elif response.status_code >= 400:
-            raise ValueError(f"EdenAI received an invalid payload: {response.text}")
-        elif response.status_code != 200:
-            raise Exception(
-                f"EdenAI returned an unexpected response with status "
-                f"{response.status_code}: {response.text}"
-            )
-
+        response.raise_for_status()
         data = response.json()
         provider_response = data[self.provider]
+
+        if self.fallback_providers:
+            fallback_response = data.get(self.fallback_providers)
+            if fallback_response:
+                provider_response = fallback_response
+
         if provider_response.get("status") == "fail":
             err_msg = provider_response.get("error", {}).get("message")
             raise Exception(err_msg)
@@ -268,7 +288,7 @@ class ChatEdenAI(BaseChatModel):
         return ChatResult(
             generations=[
                 ChatGeneration(
-                    message=AIMessage(content=data[self.provider]["generated_text"])
+                    message=AIMessage(content=provider_response["generated_text"])
                 )
             ],
             llm_output=data,
@@ -297,6 +317,7 @@ class ChatEdenAI(BaseChatModel):
             "providers": self.provider,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
+            "fallback_providers": self.fallback_providers,
             **formatted_data,
             **kwargs,
         }
@@ -308,19 +329,15 @@ class ChatEdenAI(BaseChatModel):
 
         async with ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
-                if response.status >= 500:
-                    raise Exception(f"EdenAI Server: Error {response.status}")
-                elif response.status >= 400:
-                    raise ValueError(
-                        f"EdenAI received an invalid payload: {response.text}"
-                    )
-                elif response.status != 200:
-                    raise Exception(
-                        f"EdenAI returned an unexpected response with status "
-                        f"{response.status}: {response.text}"
-                    )
+                response.raise_for_status()
                 data = await response.json()
                 provider_response = data[self.provider]
+
+                if self.fallback_providers:
+                    fallback_response = data.get(self.fallback_providers)
+                    if fallback_response:
+                        provider_response = fallback_response
+
                 if provider_response.get("status") == "fail":
                     err_msg = provider_response.get("error", {}).get("message")
                     raise Exception(err_msg)
@@ -329,7 +346,7 @@ class ChatEdenAI(BaseChatModel):
                     generations=[
                         ChatGeneration(
                             message=AIMessage(
-                                content=data[self.provider]["generated_text"]
+                                content=provider_response["generated_text"]
                             )
                         )
                     ],
