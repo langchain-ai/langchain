@@ -1,8 +1,10 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
+import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
+from tqdm.autonotebook import trange
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -299,7 +301,6 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     def _headers(self) -> dict:
         return {"Authorization": f"Bearer {self.api_key.get_secret_value()}"}
 
-    @property
     def _text_length(self, text: Union[List[int], List[List[int]]]):
         """
         Help function to get the length for the input text. Text can be either
@@ -341,10 +342,11 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         """  # noqa: E501
         all_embeddings = []
         length_sorted_idx = np.argsort([-self._text_length(sen) for sen in texts])
-        sentences_sorted = [sentences[idx] for idx in length_sorted_idx]
+        sentences_sorted = [texts[idx] for idx in length_sorted_idx]
 
-        for start_index in trange(0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar):
-            sentences_batch = sentences_sorted[start_index:start_index + batch_size]
+        for start_index in trange(0, len(texts), batch_size, desc="Batches", disable=not show_progress_bar):
+            sentences_batch = texts[start_index:start_index + batch_size]
+
             response = requests.post(
                 self._api_url,
                 headers=self._headers,
@@ -353,6 +355,9 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
                     "options": {"wait_for_model": True, "use_cache": True},
                 },
             )
+            if response.status_code != 200:
+                raise ValueError(
+                    f"Error in embed_document with:{sentences_batch} {response.status_code} {response.text}")
             embeddings = response.json()
             all_embeddings.extend(embeddings)
 
