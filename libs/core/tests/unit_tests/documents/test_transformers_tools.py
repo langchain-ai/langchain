@@ -1,3 +1,4 @@
+import typing
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import pytest
@@ -23,7 +24,7 @@ class FakeLLM(LLM):
 
     @validator("queries", always=True)
     def check_queries_required(
-        cls, queries: Optional[Mapping], values: Mapping[str, Any]
+            cls, queries: Optional[Mapping], values: Mapping[str, Any]
     ) -> Optional[Mapping]:
         if values.get("sequential_response") and not queries:
             raise ValueError(
@@ -41,11 +42,11 @@ class FakeLLM(LLM):
         return "fake"
 
     def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> str:
         if self.sequential_responses:
             return self._get_next_response_in_sequence
@@ -68,9 +69,10 @@ class FakeLLM(LLM):
         return response
 
 
+@typing.no_type_check
 def init_llm(
-    queries: Dict[int, str],
-    max_token: int = MAX_TOKENS,
+        queries: Dict[int, str],
+        max_token: int = MAX_TOKENS,
 ) -> BaseLLM:
     if FAKE_LLM:
         return FakeLLM(
@@ -78,22 +80,23 @@ def init_llm(
             sequential_responses=True,
         )
     else:
-        import langchain
-        from dotenv import load_dotenv
-        from langchain_community.cache import SQLiteCache
-
-        load_dotenv()
-
-        if USE_CACHE:
-            langchain.llm_cache = SQLiteCache(
-                database_path="/tmp/cache_qa_with_reference.db"
-            )
-        llm = langchain.OpenAI(
-            temperature=TEMPERATURE,
-            max_tokens=max_token,
-            # cache=False,
-        )
-        return llm
+        # Tools for debug
+        # from dotenv import load_dotenv
+        # from langchain_community.cache import SQLiteCache
+        #
+        # load_dotenv()
+        #
+        # if USE_CACHE:
+        #     langchain_core.globals.set_llm_cache(SQLiteCache(
+        #         database_path="/tmp/cache_qa_with_reference.db"
+        #     ))
+        # llm = langchain.OpenAI(
+        #     temperature=TEMPERATURE,
+        #     max_tokens=max_token,
+        #     # cache=False,
+        # )
+        # return llm
+        assert (False, "set FAKE_LLM=True")
 
 
 # %% copy_transformer
