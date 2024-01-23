@@ -4,13 +4,6 @@ import logging
 import uuid
 from typing import Any, Iterable, List, Optional, Tuple
 
-import numpy as np
-
-try:
-    import pandas as pd
-except ImportError:
-    pass
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -76,6 +69,23 @@ class KDBAI(VectorStore):
         ids: Optional[List[str]],
         metadata: Optional[pd.DataFrame] = None,
     ) -> None:
+
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError(
+                "Could not import numpy python package. "
+                "Please install it with `pip install numpy`."                
+            )
+        
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "Could not import pandas python package. "
+                "Please install it with `pip install pandas`."                
+            )
+
         embeds = self._embedding.embed_documents(texts)
         df = pd.DataFrame()
         df["id"] = ids
@@ -106,6 +116,15 @@ class KDBAI(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
+
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "Could not import pandas python package. "
+                "Please install it with `pip install pandas`."                
+            )
+
         texts = list(texts)
         metadf: pd.DataFrame = None
         if metadatas is not None:
@@ -143,6 +162,15 @@ class KDBAI(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
+
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "Could not import pandas python package. "
+                "Please install it with `pip install pandas`."                
+            )
+
         texts = [x.page_content for x in documents]
         metadata = pd.DataFrame([x.metadata for x in documents])
         return self.add_texts(texts, metadata=metadata, batch_size=batch_size)
@@ -186,9 +214,12 @@ class KDBAI(VectorStore):
         Returns:
             List[Document]: List of similar documents.
         """
-        matches = self._table.search(vectors=[embedding], n=k, filter=filter, **kwargs)[
-            0
-        ]
+        if 'n' in kwargs:
+            k = kwargs.pop('n')
+        matches = self._table.search(vectors=[embedding], 
+                                     n=k, 
+                                     filter=filter, 
+                                     **kwargs)[0]
         docs = []
         for row in matches.to_dict(orient="records"):
             text = row.pop("text")
