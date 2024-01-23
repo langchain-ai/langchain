@@ -188,7 +188,7 @@ class MlflowLogger:
         self.start_run(
             kwargs["run_name"], kwargs["run_tags"], kwargs.get("run_id", None)
         )
-        self.dir = f'{kwargs["artifacts_dir"]}/' if "artifacts_dir" in kwargs else ""
+        self.dir = kwargs.get("artifacts_dir", "")
 
     def start_run(
         self, name: str, tags: Dict[str, str], run_id: Optional[str] = None
@@ -225,7 +225,9 @@ class MlflowLogger:
 
     def jsonf(self, data: Dict[str, Any], filename: str) -> None:
         """To log the input data as json file artifact."""
-        self.mlflow.log_dict(data, f"{self.dir}{filename}.json", run_id=self.run_id)
+        self.mlflow.log_dict(
+            data, os.path.join(self.dir, f"{filename}.json"), run_id=self.run_id
+        )
 
     def table(self, name: str, dataframe) -> None:  # type: ignore
         """To log the input pandas dataframe as a html table"""
@@ -233,11 +235,15 @@ class MlflowLogger:
 
     def html(self, html: str, filename: str) -> None:
         """To log the input html string as html file artifact."""
-        self.mlflow.log_text(html, f"{self.dir}{filename}.html", run_id=self.run_id)
+        self.mlflow.log_text(
+            html, os.path.join(self.dir, f"{filename}.html"), run_id=self.run_id
+        )
 
     def text(self, text: str, filename: str) -> None:
         """To log the input text as text file artifact."""
-        self.mlflow.log_text(text, f"{self.dir}{filename}.txt", run_id=self.run_id)
+        self.mlflow.log_text(
+            text, os.path.join(self.dir, f"{filename}.txt"), run_id=self.run_id
+        )
 
     def artifact(self, path: str) -> None:
         """To upload the file from given path as artifact."""
@@ -302,9 +308,9 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         except OSError:
             logger.warning(
                 "Run `python -m spacy download en_core_web_sm` "
-                "to download en_core_web_sm"
+                "to download en_core_web_sm model for text visualization."
             )
-            raise
+            self.nlp = None
 
         self.metrics = {key: 0 for key in mlflow_callback_metrics()}
 
@@ -459,7 +465,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if isinstance(outputs, dict):
             chain_output = ",".join([f"{k}={v}" for k, v in outputs.items()])
         elif isinstance(outputs, list):
-            chain_output = ",".join([str(output) for output in outputs])
+            chain_output = ",".join(map(str, outputs))
         else:
             chain_output = str(outputs)
         resp.update({"action": "on_chain_end", "outputs": chain_output})
@@ -705,7 +711,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         return session_analysis_df
 
     def _contain_llm_records(self):
-        return len(self.records["on_llm_start_records"]) >= 1
+        return bool(self.records["on_llm_start_records"])
 
     def flush_tracker(self, langchain_asset: Any = None, finish: bool = False) -> None:
         pd = import_pandas()
