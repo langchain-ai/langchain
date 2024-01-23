@@ -343,8 +343,8 @@ class RunnableAgent(BaseSingleActionAgent):
 
     runnable: Runnable[dict, Union[AgentAction, AgentFinish]]
     """Runnable to call to get agent action."""
-    _input_keys: List[str] = []
-    """Input keys."""
+    input_keys_arg: List[str] = []
+    return_keys_arg: List[str] = []
 
     class Config:
         """Configuration for this pydantic object."""
@@ -354,16 +354,11 @@ class RunnableAgent(BaseSingleActionAgent):
     @property
     def return_values(self) -> List[str]:
         """Return values of the agent."""
-        return []
+        return self.return_keys_arg
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
-
-        Returns:
-            List of input keys.
-        """
-        return self._input_keys
+        return self.input_keys_arg
 
     def plan(
         self,
@@ -439,8 +434,8 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 
     runnable: Runnable[dict, Union[List[AgentAction], AgentFinish]]
     """Runnable to call to get agent actions."""
-    _input_keys: List[str] = []
-    """Input keys."""
+    input_keys_arg: List[str] = []
+    return_keys_arg: List[str] = []
 
     class Config:
         """Configuration for this pydantic object."""
@@ -450,7 +445,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     @property
     def return_values(self) -> List[str]:
         """Return values of the agent."""
-        return []
+        return self.return_keys_arg
 
     @property
     def input_keys(self) -> List[str]:
@@ -459,7 +454,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         Returns:
             List of input keys.
         """
-        return self._input_keys
+        return self.input_keys_arg
 
     def plan(
         self,
