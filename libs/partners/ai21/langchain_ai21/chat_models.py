@@ -1,4 +1,4 @@
-from typing import Any, AsyncIterator, Iterator, List, Optional, cast
+from typing import Any, AsyncIterator, Iterator, List, Optional, cast, Tuple
 
 from ai21.models import ChatMessage, RoleType, Penalty
 
@@ -16,6 +16,25 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
+
+def _convert_messages_to_ai21_messages(
+    messages: List[BaseMessage],
+) -> Tuple[Optional[str], List[ChatMessage]]:
+    system_message = None
+    converted_messages: List[ChatMessage] = []
+
+    for i, message in enumerate(messages):
+        if message.type == "system":
+            if i != 0:
+                raise ValueError("System message must be at beginning of message list.")
+            else:
+                system_message = message.content
+        else:
+            converted_message = _convert_message_to_ai21_message(message)
+            converted_messages.append(converted_message)
+
+    return system_message, converted_messages
 
 
 def _convert_message_to_ai21_message(
@@ -122,17 +141,12 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        messages = messages.copy()
-        system_messages = _pop_system_messages(messages)
-        last_system_message_str = system_messages[-1].content if system_messages else ""
-        ai21_messages = [
-            _convert_message_to_ai21_message(message) for message in messages
-        ]
+        system, ai21_messages = _convert_messages_to_ai21_messages(messages)
 
         response = self.client.chat.create(
             model=self.model,
             messages=ai21_messages,
-            system=last_system_message_str,
+            system=system or '',
             num_results=self.num_results,
             temperature=self.temperature,
             max_tokens=self.max_tokens,
