@@ -24,6 +24,7 @@ from sqlalchemy import (
     Engine,
     Float,
     Index,
+    Integer,
     String,
     UniqueConstraint,
     and_,
@@ -67,7 +68,7 @@ class UpsertionRecord(Base):  # type: ignore[valid-type,misc]
     # If the need arises, this attribute can be pulled into a separate Collection
     # table at some time later.
     namespace = Column(String, index=True, nullable=False)
-    group_id = Column(String, index=True, nullable=True)
+    group_id = Column(Integer, index=True, nullable=True)
 
     # The timestamp associated with the last record upsertion.
     updated_at = Column(Float, index=True)
@@ -302,13 +303,13 @@ class SQLRecordManager(RecordManager):
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
-                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
-                stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
+                pg_insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
+                stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
                         # attr-defined type ignore
-                        updated_at=insert_stmt.excluded.updated_at,  # type: ignore
-                        group_id=insert_stmt.excluded.group_id,  # type: ignore
+                        updated_at=pg_insert_stmt.excluded.updated_at,  # type: ignore
+                        group_id=pg_insert_stmt.excluded.group_id,  # type: ignore
                     ),
                 )
             else:
@@ -377,13 +378,13 @@ class SQLRecordManager(RecordManager):
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
-                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
-                stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
+                pg_insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
+                stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
                         # attr-defined type ignore
-                        updated_at=insert_stmt.excluded.updated_at,  # type: ignore
-                        group_id=insert_stmt.excluded.group_id,  # type: ignore
+                        updated_at=pg_insert_stmt.excluded.updated_at,  # type: ignore
+                        group_id=pg_insert_stmt.excluded.group_id,  # type: ignore
                     ),
                 )
             else:
@@ -460,7 +461,7 @@ class SQLRecordManager(RecordManager):
             if limit:
                 query = query.limit(limit)  # type: ignore[attr-defined]
             records = query.all()  # type: ignore[attr-defined]
-        return [r.key for r in records]
+        return [str(r.key) for r in records]
 
     async def alist_keys(
         self,
