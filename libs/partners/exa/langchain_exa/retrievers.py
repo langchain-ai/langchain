@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore
 from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore
@@ -50,9 +50,10 @@ class ExaSearchRetriever(BaseRetriever):
     """The type of search, 'keyword' or 'neural'. Default: neural"""
     highlights: Optional[Union[HighlightsContentsOptions, bool]] = None
     """Whether to set the page content to the highlights of the results."""
-    text_contents_options: Optional[Union[TextContentsOptions, bool]] = None
+    text_contents_options: Union[TextContentsOptions, Literal[True]] = True
+    """How to set the page content of the results"""
 
-    _client: Exa
+    client: Exa
     exa_api_key: SecretStr
     exa_base_url: Optional[str] = None
 
@@ -65,7 +66,7 @@ class ExaSearchRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        response = self._client.search_and_contents(
+        response = self.client.search_and_contents(
             query,
             num_results=self.k,
             text=self.text_contents_options,
@@ -80,6 +81,8 @@ class ExaSearchRetriever(BaseRetriever):
         )
 
         results = response.results
+
+        print(results)
 
         return [
             Document(

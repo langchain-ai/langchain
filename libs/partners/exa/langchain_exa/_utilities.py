@@ -14,5 +14,5 @@ def initialize_client(values: Dict) -> Dict:
     }
     if values.get("exa_base_url"):
         args["base_url"] = values["exa_base_url"]
-    values["_client"] = Exa(**args)
+    values["client"] = Exa(**args)
     return values

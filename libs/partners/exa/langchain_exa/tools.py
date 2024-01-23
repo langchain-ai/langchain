@@ -22,7 +22,7 @@ class ExaSearchResults(BaseTool):
         "Input should be an Exa-optimized query. "
         "Output is a JSON array of the query results"
     )
-    _client: Exa
+    client: Exa
     exa_api_key: SecretStr
 
     @root_validator(pre=True)
@@ -48,7 +48,7 @@ class ExaSearchResults(BaseTool):
     ) -> Union[List[Dict], str]:
         """Use the tool."""
         try:
-            return self._client.search_and_contents(
+            return self.client.search_and_contents(
                 query,
                 num_results=num_results,
                 text=text_contents_options,
@@ -74,7 +74,7 @@ class ExaFindSimilarResults(BaseTool):
         "Input should be an Exa-optimized query. "
         "Output is a JSON array of the query results"
     )
-    _client: Exa
+    client: Exa
     exa_api_key: SecretStr
     exa_base_url: Optional[str] = None
 
@@ -102,7 +102,7 @@ class ExaFindSimilarResults(BaseTool):
     ) -> Union[List[Dict], str]:
         """Use the tool."""
         try:
-            return self._client.find_similar_and_contents(
+            return self.client.find_similar_and_contents(
                 url,
                 num_results=num_results,
                 text=text_contents_options,
