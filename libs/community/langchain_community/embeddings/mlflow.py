@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Iterator, List
+from typing import Any, Dict, Iterator, List
 from urllib.parse import urlparse
 
 from langchain_core.embeddings import Embeddings
@@ -34,6 +34,10 @@ class MlflowEmbeddings(Embeddings, BaseModel):
     target_uri: str
     """The target URI to use."""
     _client: Any = PrivateAttr()
+    """The parameters to use for queries."""
+    query_params: Dict[str, str] = {}
+    """The parameters to use for documents."""
+    documents_params: Dict[str, str] = {}
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
@@ -63,12 +67,22 @@ class MlflowEmbeddings(Embeddings, BaseModel):
                 f"The scheme must be one of {allowed}."
             )
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed(self, texts: List[str], params: Dict[str, str]) -> List[List[float]]:
         embeddings: List[List[float]] = []
         for txt in _chunk(texts, 20):
-            resp = self._client.predict(endpoint=self.endpoint, inputs={"input": txt})
+            resp = self._client.predict(
+                endpoint=self.endpoint, inputs={"input": txt, **params}
+            )
             embeddings.extend(r["embedding"] for r in resp["data"])
         return embeddings
 
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return self.embed(texts, params=self.documents_params)
+
     def embed_query(self, text: str) -> List[float]:
-        return self.embed_documents([text])[0]
+        return self.embed([text], params=self.query_params)[0]
+
+
+class MlflowCohereEmbeddings(MlflowEmbeddings):
+    query_params: Dict[str, str] = {"input_type": "search_query"}
+    documents_params: Dict[str, str] = {"input_type": "search_document"}
