@@ -50,7 +50,6 @@ from typing import (
 )
 
 import requests
-from bs4 import BeautifulSoup
 from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
@@ -1558,6 +1557,13 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
         return documents
 
     def split_html_by_headers(self, html_doc):
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import BeautifulSoup, please install with `pip install BeautifulSoup`."
+            ) from e
+
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
         sections = {}

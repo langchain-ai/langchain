@@ -1276,6 +1276,7 @@ def test_split_text_on_tokens() -> None:
     assert output == expected_output
 
 @pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
 def test_section_aware_happy_path_splitting_based_on_header_1_2():
     # arrange
     html_string = """<!DOCTYPE html>
@@ -1328,6 +1329,7 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2():
     assert docs[2].metadata["Header 2"] == "Baz"
 
 @pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
 def test_happy_path_splitting_based_on_header_with_font_size():
     # arrange
     html_string = """<!DOCTYPE html>
@@ -1381,6 +1383,7 @@ def test_happy_path_splitting_based_on_header_with_font_size():
     assert docs[2].metadata["Header 2"] == "Baz"
 
 @pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
 def test_happy_path_splitting_based_on_header_with_whitespace_chars():
     # arrange
     html_string = """<!DOCTYPE html>
