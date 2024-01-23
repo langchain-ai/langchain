@@ -12,6 +12,8 @@ variables:
 - INDEX_ID: Id of the Vector Search index.
 - ENDPOINT_ID: Id of the Vector Search endpoint.
 
+If required to run slow tests, enviroment variable 'RUN_SLOW_TESTS' must be set
+
 """
 
 import os
