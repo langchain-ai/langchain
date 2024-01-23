@@ -82,8 +82,6 @@ class ExaSearchRetriever(BaseRetriever):
 
         results = response.results
 
-        print(results)
-
         return [
             Document(
                 page_content=(result.text),
