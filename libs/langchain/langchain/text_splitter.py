@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import os
 import pathlib
 import re
 from abc import ABC, abstractmethod
@@ -47,7 +48,7 @@ from typing import (
     Union,
     cast,
 )
-import os
+
 import requests
 from bs4 import BeautifulSoup
 from langchain_core.documents import BaseDocumentTransformer, Document
