@@ -53,6 +53,7 @@ class ExaSearchRetriever(BaseRetriever):
 
     _client: Exa
     exa_api_key: SecretStr
+    exa_base_url: Optional[str] = None
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
