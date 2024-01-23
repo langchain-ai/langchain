@@ -1,6 +1,9 @@
 """Test ChatAI21 chat model."""
+import os
+
 from langchain_ai21.chat_models import ChatAI21
 
+os.environ["AI21_API_KEY"] = "FwlPukdfYB6f3cIjkxLyEgJGUhiQSiA6"
 # def test_stream() -> None:
 #     """Test streaming tokens from AI21."""
 #     llm = ChatAI21()
