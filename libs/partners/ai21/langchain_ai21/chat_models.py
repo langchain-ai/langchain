@@ -11,7 +11,6 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
-    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
 )
@@ -118,7 +117,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     async def _astream(
         self,
@@ -127,12 +126,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        yield ChatGenerationChunk(
-            message=BaseMessageChunk(content="Yield chunks", type="ai"),
-        )
-        yield ChatGenerationChunk(
-            message=BaseMessageChunk(content=" like this!", type="ai"),
-        )
+        raise NotImplementedError()
 
     def _generate(
         self,
@@ -146,7 +140,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         response = self.client.chat.create(
             model=self.model,
             messages=ai21_messages,
-            system=system or '',
+            system=system or "",
             num_results=self.num_results,
             temperature=self.temperature,
             max_tokens=self.max_tokens,
@@ -171,4 +165,4 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        raise NotImplementedError
+        raise NotImplementedError()
