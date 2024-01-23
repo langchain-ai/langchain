@@ -14,6 +14,8 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
 pinecone-client = {version = "^3", python = ">=3.8,<3.13"}
+simsimd = "^3.6.3"
+numpy = "^1"
 
 [tool.poetry.group.test]
 optional = true
