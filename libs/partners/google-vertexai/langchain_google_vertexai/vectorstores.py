@@ -588,7 +588,7 @@ class MatchingEngine(VertexAIVectorSearch):
     DEPRECATED: Use `VertexAIVectorSearch` instead.
     """
 
-    def __init__(self, *args: Any, **kwargs:Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         import warnings
 
         warnings.warn(
