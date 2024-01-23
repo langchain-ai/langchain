@@ -170,10 +170,8 @@ class MlflowLogger:
             )
             self.mlflow.set_tracking_uri(tracking_uri)
 
-            if kwargs.get("run_id", None) is not None:
-                self.mlf_expid = self.mlflow.get_run(
-                    kwargs["run_id"]
-                ).info.experiment_id
+            if run_id := kwargs.get("run_id"):
+                self.mlf_expid = self.mlflow.get_run(run_id).info.experiment_id
             else:
                 # User can set other env variables described here
                 # > https://www.mlflow.org/docs/latest/tracking.html#logging-to-a-tracking-server
@@ -204,7 +202,7 @@ class MlflowLogger:
                 rname = "".join(
                     random.choices(string.ascii_uppercase + string.digits, k=7)
                 )
-                name = name.replace("%", rname)
+                name = name[:-1] + rname
             run = self.mlflow.MlflowClient().create_run(
                 self.mlf_expid, run_name=name, tags=tags
             )
@@ -271,7 +269,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         tags: Optional[Dict] = None,
         tracking_uri: Optional[str] = None,
         run_id: Optional[str] = None,
-        artifact_dir: Optional[str] = None,
+        artifacts_dir: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
         import_pandas()
@@ -285,7 +283,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.tags = tags or {}
         self.tracking_uri = tracking_uri
         self.run_id = run_id
-        self.artifact_dir = artifact_dir
+        self.artifacts_dir = artifacts_dir
 
         self.temp_dir = tempfile.TemporaryDirectory()
 
@@ -295,7 +293,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             run_name=self.name,
             run_tags=self.tags,
             run_id=self.run_id,
-            artifact_dir=self.artifact_dir,
+            artifacts_dir=self.artifacts_dir,
         )
 
         self.action_records: list = []
