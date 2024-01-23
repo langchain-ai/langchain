@@ -1527,7 +1527,6 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
 
         return text_splitter.split_documents(results)
 
-
     def split_text(self, text: str) -> List[Document]:
         """Split HTML text string
 
@@ -1535,7 +1534,7 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
             text: HTML text
         """
         return self.split_text_from_file(StringIO(text))
-    
+
     def create_documents(
         self, texts: List[str], metadatas: Optional[List[dict]] = None
     ) -> List[Document]:
@@ -1557,18 +1556,18 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
                 new_doc = Document(page_content=chunk.page_content, metadata=metadata)
                 documents.append(new_doc)
         return documents
-    
+
     def split_html_by_headers(self, html_doc):
-        soup = BeautifulSoup(html_doc, 'html.parser')
+        soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
         sections = {}
         section_content = []
         current_header = None
         current_header_tag = None
- 
-        headers = soup.find_all( ["body"] + headers)
+
+        headers = soup.find_all(["body"] + headers)
         current_header = headers[0]
- 
+
         for i, header in enumerate(headers):
             if i == 0:
                 current_header = "#TITLE#"
@@ -1579,20 +1578,19 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
                 current_header_tag = header.name
                 section_content = []
             for element in header.next_elements:
-                if i + 1 < len(headers) and element == headers[i+1]:
+                if i + 1 < len(headers) and element == headers[i + 1]:
                     break
                 if isinstance(element, str):
                     section_content.append(element)
 
-            sections[current_header] = { 
+            sections[current_header] = {
                 "content": " ".join(section_content),
-                "tag_name": current_header_tag
-                }
+                "tag_name": current_header_tag,
+            }
 
         return sections
-    
-    def convert_possible_tags_to_header(self, html_content: str)->str:
 
+    def convert_possible_tags_to_header(self, html_content: str) -> str:
         if self.xslt_path is None:
             return html_content
 
@@ -1610,11 +1608,8 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
         # this is needed for htmls files that using different font sizes and layouts
         # check to see if self.xslt_path is a relative path or absolute path
         if not os.path.isabs(self.xslt_path):
-            xslt_path = (
-                pathlib.Path(__file__).parent
-                / self.xslt_path
-            )
-        
+            xslt_path = pathlib.Path(__file__).parent / self.xslt_path
+
         xslt_tree = etree.parse(xslt_path)
         transform = etree.XSLT(xslt_tree)
         result = transform(tree)
@@ -1629,13 +1624,15 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
         file_content = file.getvalue()
         file_content = self.convert_possible_tags_to_header(file_content)
         sections = self.split_html_by_headers(file_content)
-       
+
         return [
             Document(
                 page_content=sections[section_key]["content"],
                 metadata={
-                    self.headers_to_split_on[sections[section_key]["tag_name"]]:
-                        section_key
-                    }
-            ) for section_key in sections.keys()
+                    self.headers_to_split_on[
+                        sections[section_key]["tag_name"]
+                    ]: section_key
+                },
+            )
+            for section_key in sections.keys()
         ]
