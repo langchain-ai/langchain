@@ -15,12 +15,11 @@ from typing import (
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
-from langchain_core.runnables.base import RunnableParallel, coerce_to_runnable
-
 from langchain_core.documents.runnable_document_transformer import (
     _LEGACY,
     RunnableGeneratorDocumentTransformer,
 )
+from langchain_core.runnables.base import RunnableParallel, coerce_to_runnable
 
 if sys.version_info.major > 3 or sys.version_info.minor >= 12:
     from itertools import batched  # type: ignore[attr-defined]
