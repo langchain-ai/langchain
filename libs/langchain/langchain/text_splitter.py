@@ -177,6 +177,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         current_doc: List[str] = []
         total = 0
         for d in splits:
+            current_text = self._join_docs(current_doc, separator)
+            total = self._length_function(current_text)
             _len = self._length_function(d)
             if (
                 total + _len + (separator_len if len(current_doc) > 0 else 0)
