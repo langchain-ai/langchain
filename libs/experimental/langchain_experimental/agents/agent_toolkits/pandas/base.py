@@ -1,18 +1,21 @@
 """Agent for working with pandas objects."""
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Literal, Union
+import warnings
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
 
 from langchain.agents import create_openai_tools_agent, create_react_agent
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent, \
-    create_openai_functions_agent
+from langchain.agents.openai_functions_agent.base import (
+    OpenAIFunctionsAgent,
+    create_openai_functions_agent,
+)
 from langchain.agents.types import AgentType
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
 from langchain.tools import BaseTool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import SystemMessage
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 
 from langchain_experimental.agents.agent_toolkits.pandas.prompt import (
@@ -120,168 +123,65 @@ def _get_single_prompt(
 
 
 def _get_prompt_and_tools(
-    df: Any,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
-    input_variables: Optional[List[str]] = None,
-    include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: int = 5,
-    extra_tools: Sequence[BaseTool] = (),
+    df: Any, **kwargs: Any
 ) -> Tuple[BasePromptTemplate, List[BaseTool]]:
-    try:
-        import pandas as pd
-
-        pd.set_option("display.max_columns", None)
-    except ImportError:
-        raise ImportError(
-            "pandas package not found, please install with `pip install pandas`"
-        )
-
-    if include_df_in_prompt is not None and suffix is not None:
-        raise ValueError("If suffix is specified, include_df_in_prompt should not be.")
-
-    if isinstance(df, list):
-        for item in df:
-            if not isinstance(item, pd.DataFrame):
-                raise ValueError(f"Expected pandas object, got {type(df)}")
-        return _get_multi_prompt(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            input_variables=input_variables,
-            include_df_in_prompt=include_df_in_prompt,
-            number_of_head_rows=number_of_head_rows,
-            extra_tools=extra_tools,
-        )
-    else:
-        if not isinstance(df, pd.DataFrame):
-            raise ValueError(f"Expected pandas object, got {type(df)}")
-        return _get_single_prompt(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            input_variables=input_variables,
-            include_df_in_prompt=include_df_in_prompt,
-            number_of_head_rows=number_of_head_rows,
-            extra_tools=extra_tools,
-        )
+    return (
+        _get_multi_prompt(df, **kwargs)
+        if isinstance(df, list)
+        else _get_single_prompt(df, **kwargs)
+    )
 
 
 def _get_functions_single_prompt(
     df: Any,
     prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
+    suffix: str = "",
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    if suffix is not None:
-        suffix_to_use = suffix
-        if include_df_in_prompt:
-            suffix_to_use = suffix_to_use.format(
-                df_head=str(df.head(number_of_head_rows).to_markdown())
-            )
-    elif include_df_in_prompt:
-        suffix_to_use = FUNCTIONS_WITH_DF.format(
-            df_head=str(df.head(number_of_head_rows).to_markdown())
-        )
-    else:
-        suffix_to_use = ""
-
-    if prefix is None:
-        prefix = PREFIX_FUNCTIONS
-
-    tools = [PythonAstREPLTool(locals={"df": df})]
-    system_message = SystemMessage(content=prefix + suffix_to_use)
+) -> Tuple[ChatPromptTemplate, List[PythonAstREPLTool]]:
+    if include_df_in_prompt:
+        df_head = str(df.head(number_of_head_rows).to_markdown())
+        suffix = (suffix or FUNCTIONS_WITH_DF).format(df_head=df_head)
+    prefix = prefix if prefix is not None else PREFIX_FUNCTIONS
+    system_message = SystemMessage(content=prefix + suffix)
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
-    return prompt, tools
+    return prompt, [PythonAstREPLTool(locals={"df": df})]
 
 
 def _get_functions_multi_prompt(
     dfs: Any,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
+    prefix: str = "",
+    suffix: str = "",
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    if suffix is not None:
-        suffix_to_use = suffix
-        if include_df_in_prompt:
-            dfs_head = "\n\n".join(
-                [d.head(number_of_head_rows).to_markdown() for d in dfs]
-            )
-            suffix_to_use = suffix_to_use.format(
-                dfs_head=dfs_head,
-            )
-    elif include_df_in_prompt:
+) -> Tuple[ChatPromptTemplate, List[PythonAstREPLTool]]:
+    if include_df_in_prompt:
         dfs_head = "\n\n".join([d.head(number_of_head_rows).to_markdown() for d in dfs])
-        suffix_to_use = FUNCTIONS_WITH_MULTI_DF.format(
-            dfs_head=dfs_head,
-        )
-    else:
-        suffix_to_use = ""
-
-    if prefix is None:
-        prefix = MULTI_DF_PREFIX_FUNCTIONS
-    prefix = prefix.format(num_dfs=str(len(dfs)))
-
-    df_locals = {}
-    for i, dataframe in enumerate(dfs):
-        df_locals[f"df{i + 1}"] = dataframe
-    tools = [PythonAstREPLTool(locals=df_locals)]
-    system_message = SystemMessage(content=prefix + suffix_to_use)
+        suffix = (suffix or FUNCTIONS_WITH_MULTI_DF).format(dfs_head=dfs_head)
+    prefix = (prefix or MULTI_DF_PREFIX_FUNCTIONS).format(num_dfs=str(len(dfs)))
+    system_message = SystemMessage(content=prefix + suffix)
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
-    return prompt, tools
+
+    locals = {f"df{i + 1}": df for i, df in enumerate(dfs)}
+    return prompt, [PythonAstREPLTool(locals=locals)]
 
 
 def _get_functions_prompt_and_tools(
-    df: Any,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
-    input_variables: Optional[List[str]] = None,
-    include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: int = 5,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    try:
-        import pandas as pd
-
-        pd.set_option("display.max_columns", None)
-    except ImportError:
-        raise ImportError(
-            "pandas package not found, please install with `pip install pandas`"
-        )
-    if input_variables is not None:
-        raise ValueError("`input_variables` is not supported at the moment.")
-
-    if include_df_in_prompt is not None and suffix is not None:
-        raise ValueError("If suffix is specified, include_df_in_prompt should not be.")
-
-    if isinstance(df, list):
-        for item in df:
-            if not isinstance(item, pd.DataFrame):
-                raise ValueError(f"Expected pandas object, got {type(df)}")
-        return _get_functions_multi_prompt(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            include_df_in_prompt=include_df_in_prompt,
-            number_of_head_rows=number_of_head_rows,
-        )
-    else:
-        if not isinstance(df, pd.DataFrame):
-            raise ValueError(f"Expected pandas object, got {type(df)}")
-        return _get_functions_single_prompt(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            include_df_in_prompt=include_df_in_prompt,
-            number_of_head_rows=number_of_head_rows,
-        )
+    df: Any, **kwargs: Any
+) -> Tuple[ChatPromptTemplate, List[PythonAstREPLTool]]:
+    return (
+        _get_functions_multi_prompt(df, **kwargs)
+        if isinstance(df, list)
+        else _get_functions_single_prompt(df, **kwargs)
+    )
 
 
 def create_pandas_dataframe_agent(
     llm: BaseLanguageModel,
     df: Any,
-    agent_type: Union[AgentType, Literal["openai-tools"]] = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    agent_type: Union[
+        AgentType, Literal["openai-tools"]
+    ] = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
@@ -298,7 +198,7 @@ def create_pandas_dataframe_agent(
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe(s).
-    
+
     Args:
         llm: Language model to use for the agent.
         df: Pandas dataframe or list of Pandas dataframes.
@@ -318,12 +218,12 @@ def create_pandas_dataframe_agent(
         agent_executor_kwargs: Arbitrary additional AgentExecutor args.
         include_df_in_prompt:
         number_of_head_rows:
-        extra_tools: Additional tools to give to agent on top of the ones that come with
-            SQLDatabaseToolkit.
-        **kwargs: 
+        extra_tools: Additional tools to give to agent on top of a PythonAstREPLTool.
+        **kwargs: DEPRECATED. Not used, kept for backwards compatibility.
 
     Returns:
-        An AgentExecutor with the specified agent_type agent.
+        An AgentExecutor with the specified agent_type agent and access to
+        a PythonAstREPLTool with the DataFrame(s) + any user-provided extra_tools.
 
     Example:
 
@@ -338,7 +238,28 @@ def create_pandas_dataframe_agent(
         agent_executor = create_sql_agent(llm, db, agent_type="openai-tools", verbose=True)
 
     """  # noqa: E501
+    try:
+        import pandas as pd
+    except ImportError as e:
+        raise ImportError(
+            "pandas package not found, please install with `pip install pandas`"
+        ) from e
+    else:
+        pd.set_option("display.max_columns", None)
+
+    for _df in df if isinstance(df, list) else [df]:
+        if not isinstance(_df, pd.DataFrame):
+            raise ValueError(f"Expected pandas DataFrame, got {type(_df)}")
+
+    if kwargs:
+        warnings.warn(
+            f"Received additional kwargs {kwargs} which are no longer supported."
+        )
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
+        if include_df_in_prompt is not None and suffix is not None:
+            raise ValueError(
+                "If suffix is specified, include_df_in_prompt should not be."
+            )
         prompt, tools = _get_prompt_and_tools(
             df,
             prefix=prefix,
@@ -348,31 +269,32 @@ def create_pandas_dataframe_agent(
             number_of_head_rows=number_of_head_rows,
             extra_tools=extra_tools,
         )
-        agent: Union[BaseSingleActionAgent, Runnable] = create_react_agent(llm, tools, prompt)
-    elif agent_type == AgentType.OPENAI_FUNCTIONS:
+        agent: Union[BaseSingleActionAgent, Runnable] = create_react_agent(
+            llm, tools, prompt
+        )
+    elif agent_type in (AgentType.OPENAI_FUNCTIONS, "openai-tools"):
+        if input_variables is not None:
+            raise ValueError(
+                f"input_variables not supported for agent_type: {agent_type}. Only "
+                f"supported for agent_type 'zero-shot-react-description'."
+            )
         prompt, base_tools = _get_functions_prompt_and_tools(
             df,
             prefix=prefix,
             suffix=suffix,
-            input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
         )
         tools = list(base_tools) + list(extra_tools)
-        agent = create_openai_functions_agent(llm, tools, prompt)
-    elif agent_type == "openai-tools":
-        prompt, base_tools = _get_functions_prompt_and_tools(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            input_variables=input_variables,
-            include_df_in_prompt=include_df_in_prompt,
-            number_of_head_rows=number_of_head_rows,
-        )
-        tools = list(base_tools) + list(extra_tools)
-        agent = create_openai_tools_agent(llm, tools, prompt)
+        if agent_type == AgentType.OPENAI_FUNCTIONS:
+            agent = create_openai_functions_agent(llm, tools, prompt)
+        else:
+            agent = create_openai_tools_agent(llm, tools, prompt)
     else:
-        raise ValueError(f"Agent type {agent_type} not supported at the moment.")
+        raise ValueError(
+            f"Agent type {agent_type} not supported at the moment. Must be one of "
+            "'openai-tools', 'openai-functions', or 'zero-shot-react-description'."
+        )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,

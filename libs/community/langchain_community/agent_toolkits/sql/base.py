@@ -199,7 +199,10 @@ def create_sql_agent(
         )
 
     else:
-        raise ValueError(f"Agent type {agent_type} not supported at the moment.")
+        raise ValueError(
+            f"Agent type {agent_type} not supported at the moment. Must be one of "
+            "'openai-tools', 'openai-functions', or 'zero-shot-react-description'."
+        )
 
     return AgentExecutor(
         name="SQL Agent Executor",
