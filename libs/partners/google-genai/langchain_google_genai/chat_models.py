@@ -443,7 +443,7 @@ Supported examples:
     top_k: Optional[int] = None
     """Decode using top-k sampling: consider the set of top_k most probable tokens.
        Must be positive."""
-    top_p: Optional[int] = None
+    top_p: Optional[float] = None
     """The maximum cumulative probability of tokens to consider when sampling.
 
         The model uses combined Top-k and nucleus sampling.
@@ -466,6 +466,14 @@ Supported examples:
     
     Gemini does not support system messages; any unsupported messages will 
     raise an error."""
+    client_options: Optional[Dict] = Field(
+        None,
+        description="Client options to pass to the Google API client.",
+    )
+    transport: Optional[str] = Field(
+        None,
+        description="A string, one of: [`rest`, `grpc`, `grpc_asyncio`].",
+    )
 
     class Config:
         allow_population_by_field_name = True
@@ -488,12 +496,18 @@ Supported examples:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
+        """Validates params and passes them to google-generativeai package."""
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
         if isinstance(google_api_key, SecretStr):
             google_api_key = google_api_key.get_secret_value()
-        genai.configure(api_key=google_api_key)
+
+        genai.configure(
+            api_key=google_api_key,
+            transport=values.get("transport"),
+            client_options=values.get("client_options"),
+        )
         if (
             values.get("temperature") is not None
             and not 0 <= values["temperature"] <= 1

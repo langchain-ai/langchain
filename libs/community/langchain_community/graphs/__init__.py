@@ -11,6 +11,7 @@ from langchain_community.graphs.neo4j_graph import Neo4jGraph
 from langchain_community.graphs.neptune_graph import NeptuneGraph
 from langchain_community.graphs.networkx_graph import NetworkxEntityGraph
 from langchain_community.graphs.rdf_graph import RdfGraph
+from langchain_community.graphs.tigergraph_graph import TigerGraph
 
 __all__ = [
     "MemgraphGraph",
@@ -23,5 +24,6 @@ __all__ = [
     "RdfGraph",
     "ArangoGraph",
     "FalkorDBGraph",
+    "TigerGraph",
     "GraphDBGraph",
 ]
