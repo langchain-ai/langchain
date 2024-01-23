@@ -40,6 +40,7 @@ optional = true
 
 [tool.poetry.group.test_integration.dependencies]
 langchain-openai = ">=0.0.3,<0.1"
+pytest-vcr = "^1.0.2"
 
 [tool.poetry.group.lint]
 optional = true
