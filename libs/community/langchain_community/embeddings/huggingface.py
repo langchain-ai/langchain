@@ -316,9 +316,8 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         else:
             return sum([len(t) for t in text])
 
-    def embed_documents(self, texts: List[str], batch_size: int = 32, show_progress_bar: bool = True,
-                        convert_to_tensor: bool = False, convert_to_numpy: bool = True,
-                        input_was_string: bool = False):
+    def embed_documents(self, texts: List[str], batch_size: int = 32, show_progress_bar: bool = True) -> List[
+        List[float]]:
         """Get the embeddings for a list of texts.
 
         Args:
@@ -358,14 +357,6 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
             all_embeddings.extend(embeddings)
 
         all_embeddings = [all_embeddings[idx] for idx in np.argsort(length_sorted_idx)]
-
-        if convert_to_tensor:
-            all_embeddings = torch.stack(all_embeddings)
-        elif convert_to_numpy:
-            all_embeddings = np.asarray([np.array(emb) for emb in all_embeddings])
-
-        if input_was_string:
-            all_embeddings = all_embeddings[0]
 
         return all_embeddings
 
