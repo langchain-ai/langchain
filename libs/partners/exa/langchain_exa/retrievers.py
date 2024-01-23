@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from exa_py import Exa  # type: ignore
 from exa_py.api import HighlightsContentsOptions  # type: ignore
@@ -8,6 +8,23 @@ from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.retrievers import BaseRetriever
 
 from langchain_exa._utilities import initialize_client
+
+
+def _get_metadata(result: Any) -> Dict[str, Any]:
+    """Get the metadata from a result object."""
+    metadata = {
+        "title": result.title,
+        "url": result.url,
+        "id": result.id,
+        "score": result.score,
+        "published_date": result.published_date,
+        "author": result.author,
+    }
+    if getattr(result, "highlights"):
+        metadata["highlights"] = result.highlights
+    if getattr(result, "highlight_scores"):
+        metadata["highlight_scores"] = result.highlight_scores
+    return metadata
 
 
 class ExaSearchRetriever(BaseRetriever):
@@ -64,12 +81,7 @@ class ExaSearchRetriever(BaseRetriever):
         return [
             Document(
                 page_content=(result.text),
-                metadata={
-                    "highlights": result.highlights,
-                    "highlight_scores": result.highlight_scores,
-                }
-                if self.highlights and getattr(result, "highlights")
-                else {},
+                metadata=_get_metadata(result),
             )
             for result in results
         ]
