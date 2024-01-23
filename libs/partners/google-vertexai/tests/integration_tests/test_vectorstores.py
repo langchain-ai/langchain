@@ -60,10 +60,9 @@ def test_similarity_search(vector_store: VertexAIVectorSearch):
 
 
 def test_add_texts(vector_store: VertexAIVectorSearch):
-
     if os.environ.get("RUN_SLOW_TESTS") is None:
-        return 
-    
+        return
+
     vector_store.add_texts(
         texts=[
             "Lions are my favourite animals",
@@ -74,7 +73,6 @@ def test_add_texts(vector_store: VertexAIVectorSearch):
 
 
 def test_gcs_document_storage():
-
     from google.cloud import storage
 
     client = storage.Client(project=os.environ["PROJECT_ID"])
@@ -83,7 +81,7 @@ def test_gcs_document_storage():
     prefix = "test-document-storage"
 
     storage = GCSVertexAIVectorSearchDocumentStorage(bucket=bucket, prefix=prefix)
-    
+
     id_ = "my-id"
     text = "My text"
     storage.store_by_id(id_, text)

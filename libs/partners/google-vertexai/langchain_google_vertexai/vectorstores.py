@@ -101,7 +101,7 @@ class VertexAIVectorSearch(VectorStore):
         if self.document_storage is None:
             self.document_storage = GCSVertexAIVectorSearchDocumentStorage(
                 bucket=self.gcs_client.get_bucket(self.gcs_bucket_name),
-                prefix="documents"
+                prefix="documents",
             )
 
     @property
@@ -472,9 +472,7 @@ class VertexAIVectorSearch(VectorStore):
 
         credentials = None
         if json_credentials_path is not None:
-            credentials = Credentials.from_service_account_file(
-                json_credentials_path
-            )
+            credentials = Credentials.from_service_account_file(json_credentials_path)
 
         return credentials
 
@@ -601,12 +599,11 @@ class MatchingEngine(VertexAIVectorSearch):
 
 
 class VertexAIVectorSearchDocumentStorage(ABC):
-    """ Provides an abstract interface for the storage
-    """
+    """Provides an abstract interface for the storage"""
 
     @abstractmethod
     def get_by_id(self, document_id: str) -> str | None:
-        """ Gets the text of a document by its id. If not found, returns None.
+        """Gets the text of a document by its id. If not found, returns None.
 
         Args:
             document_id: Id of the document to get from the storage.
@@ -618,28 +615,26 @@ class VertexAIVectorSearchDocumentStorage(ABC):
 
     @abstractmethod
     def store_by_id(self, document_id: str, text: str):
-        """ Stores a document text associated to a document_id.
+        """Stores a document text associated to a document_id.
 
         Args:
             document_id: Id of the document to be stored.
             text: Text of the document to be stored.
         """
         raise NotImplementedError()
-    
+
 
 class GCSVertexAIVectorSearchDocumentStorage(VertexAIVectorSearchDocumentStorage):
-    """ Stores documents in Google Cloud Storage.
+    """Stores documents in Google Cloud Storage.
 
     For each pair id, document_text the name of the blob will be {prefix}/{id} stored
     in plain text format.
     """
 
     def __init__(
-        self, 
-        bucket: "storage.Bucket",
-        prefix: Optional[str] = "documents"
+        self, bucket: "storage.Bucket", prefix: Optional[str] = "documents"
     ) -> None:
-        """ Constructor.
+        """Constructor.
 
         Args:
             bucket: Bucket where the documents will be stored.
@@ -650,7 +645,7 @@ class GCSVertexAIVectorSearchDocumentStorage(VertexAIVectorSearchDocumentStorage
         self._prefix = prefix
 
     def get_by_id(self, document_id: str) -> str | None:
-        """ Gets the text of a document by its id. If not found, returns None.
+        """Gets the text of a document by its id. If not found, returns None.
 
         Args:
             document_id: Id of the document to get from the storage.
@@ -661,14 +656,14 @@ class GCSVertexAIVectorSearchDocumentStorage(VertexAIVectorSearchDocumentStorage
 
         blob_name = self._get_blob_name(document_id)
         existing_blob = self._bucket.get_blob(blob_name)
-        
-        if existing_blob is None: 
+
+        if existing_blob is None:
             return None
-        
+
         return existing_blob.download_as_text()
-    
+
     def store_by_id(self, document_id: str, text: str) -> None:
-        """ Stores a document text associated to a document_id.
+        """Stores a document text associated to a document_id.
 
         Args:
             document_id: Id of the document to be stored.
@@ -679,7 +674,7 @@ class GCSVertexAIVectorSearchDocumentStorage(VertexAIVectorSearchDocumentStorage
         new_blow.upload_from_string(text)
 
     def _get_blob_name(self, document_id: str) -> str:
-        """ Builds a blob name using the prefix and the document_id.
+        """Builds a blob name using the prefix and the document_id.
 
         Args:
             document_id: Id of the document.
