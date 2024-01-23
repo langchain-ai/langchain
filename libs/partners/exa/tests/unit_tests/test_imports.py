@@ -4,6 +4,7 @@ EXPECTED_ALL = [
     "ExaSearchResults",
     "ExaSearchRetriever",
     "HighlightsContentsOptions",
+    "TextContentsOptions",
 ]
 
 

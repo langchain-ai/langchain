@@ -3,7 +3,7 @@
 from typing import Dict, List, Optional, Union
 
 from exa_py import Exa  # type: ignore
-from exa_py.api import HighlightsContentsOptions  # type: ignore
+from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
@@ -35,6 +35,7 @@ class ExaSearchResults(BaseTool):
         self,
         query: str,
         num_results: int,
+        text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
@@ -50,6 +51,7 @@ class ExaSearchResults(BaseTool):
             return self._client.search_and_contents(
                 query,
                 num_results=num_results,
+                text=text_contents_options,
                 highlights=highlights,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
@@ -86,6 +88,7 @@ class ExaFindSimilarResults(BaseTool):
         self,
         url: str,
         num_results: int,
+        text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
@@ -102,6 +105,7 @@ class ExaFindSimilarResults(BaseTool):
             return self._client.find_similar_and_contents(
                 url,
                 num_results=num_results,
+                text=text_contents_options,
                 highlights=highlights,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,

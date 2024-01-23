@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from exa_py import Exa  # type: ignore
-from exa_py.api import HighlightsContentsOptions  # type: ignore
+from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import SecretStr, root_validator
@@ -50,6 +50,7 @@ class ExaSearchRetriever(BaseRetriever):
     """The type of search, 'keyword' or 'neural'. Default: neural"""
     highlights: Optional[Union[HighlightsContentsOptions, bool]] = None
     """Whether to set the page content to the highlights of the results."""
+    text_contents_options: Optional[Union[TextContentsOptions, bool]] = None
 
     _client: Exa
     exa_api_key: SecretStr
@@ -67,6 +68,7 @@ class ExaSearchRetriever(BaseRetriever):
         response = self._client.search_and_contents(
             query,
             num_results=self.k,
+            text=self.text_contents_options,
             highlights=self.highlights,
             include_domains=self.include_domains,
             exclude_domains=self.exclude_domains,
