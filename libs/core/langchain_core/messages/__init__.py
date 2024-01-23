@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple, Type, Union
+from typing import List, Sequence, Tuple, Union
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import (
