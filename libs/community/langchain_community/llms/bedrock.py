@@ -461,11 +461,11 @@ class BedrockBase(BaseModel, ABC):
 
     def _get_bedrock_services_signal(self, body: dict) -> dict:
         """
-            This function checks the response body for an interrupt flag or message that indicates
-            whether any of the Bedrock services have intervened in the processing flow. It is
-            primarily used to identify modifications or interruptions imposed by these services
-            during the request-response cycle with a Large Language Model (LLM).
-            """
+        This function checks the response body for an interrupt flag or message that indicates
+        whether any of the Bedrock services have intervened in the processing flow. It is
+        primarily used to identify modifications or interruptions imposed by these services
+        during the request-response cycle with a Large Language Model (LLM).
+        """
 
         if self._guardrails_enabled and self.guardrails.get("trace") and self._is_guardrails_intervention(body):
                 return {
@@ -543,52 +543,6 @@ class BedrockBase(BaseModel, ABC):
 
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
-
-
-    async def _aprepare_input_and_invoke_stream(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
-        ) -> AsyncIterator[GenerationChunk]:
-            _model_kwargs = self.model_kwargs or {}
-            provider = self._get_provider()
-
-            if stop:
-                if provider not in self.provider_stop_sequence_key_name_map:
-                    raise ValueError(
-                        f"Stop sequence key name for {provider} is not supported."
-                    )
-                _model_kwargs[self.provider_stop_sequence_key_name_map.get(provider)] = stop
-
-            if provider == "cohere":
-                _model_kwargs["stream"] = True
-
-            params = {**_model_kwargs, **kwargs}
-            input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
-            body = json.dumps(input_body)
-
-            response = await asyncio.get_running_loop().run_in_executor(
-                None,
-                lambda: self.client.invoke_model_with_response_stream(
-                    body=body,
-                    modelId=self.model_id,
-                    accept="application/json",
-                    contentType="application/json",
-                ),
-            )
-
-            async for chunk in LLMInputOutputAdapter.aprepare_output_stream(
-                provider, response, stop
-            ):
-                yield chunk
-                if run_manager is not None and asyncio.iscoroutinefunction(
-                    run_manager.on_llm_new_token
-                ):
-                    await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
-                elif run_manager is not None:
-                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _aprepare_input_and_invoke_stream(
         self,
