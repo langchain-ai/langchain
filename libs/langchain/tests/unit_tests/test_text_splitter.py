@@ -9,11 +9,11 @@ from langchain_core.documents import Document
 from langchain.text_splitter import (
     CharacterTextSplitter,
     HTMLHeaderTextSplitter,
+    HTMLSectionSplitter,
     Language,
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
-    HTMLSectionSplitter,
     Tokenizer,
     split_text_on_tokens,
 )
@@ -1303,10 +1303,10 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2():
             </html>"""
 
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on = [
+        headers_to_split_on=[
             ["h1", "Header 1"],
             ["h2", "Header 2"]
-        ]    
+        ]
     )
 
     docs = sec_splitter.split_text(html_string)
@@ -1315,14 +1315,20 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2():
     assert docs[0].page_content == "Foo \n Some intro text about Foo."
     assert docs[0].metadata["Header 1"] == "Foo"
 
-    assert docs[1].page_content == "Bar main section \n Some intro text about Bar. \n Bar subsection 1 \n Some text about the first subtopic of Bar. \n Bar subsection 2 \n Some text about the second subtopic of Bar."
-    assert docs[1].metadata[ "Header 2"] == 'Bar main section'
+    assert docs[1].page_content == (
+        "Bar main section \n Some intro text about Bar. \n "
+        "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
+        "Bar subsection 2 \n Some text about the second subtopic of Bar."
+    )
+    assert docs[1].metadata["Header 2"] == 'Bar main section'
 
-    assert docs[2].page_content == "Baz \n Some text about Baz \n \n Some concluding text about Foo"
-    assert docs[2].metadata[ "Header 2"] == "Baz"
+    assert docs[2].page_content == (
+        "Baz \n Some text about Baz \n \n Some concluding text about Foo"
+    )
+    assert docs[2].metadata["Header 2"] == "Baz"
 
 
-def test_happy_path_splitting_based_on_header_with_font_size(self):
+def test_happy_path_splitting_based_on_header_with_font_size():
     # arrange
     html_string = """<!DOCTYPE html>
             <html>
@@ -1349,11 +1355,10 @@ def test_happy_path_splitting_based_on_header_with_font_size(self):
             </html>"""
     
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on = [
+        headers_to_split_on=[
             ["h1", "Header 1"],
             ["h2", "Header 2"]
         ]
-        
     )
 
     docs = sec_splitter.split_text(html_string)
@@ -1362,14 +1367,21 @@ def test_happy_path_splitting_based_on_header_with_font_size(self):
     assert docs[0].page_content == "Foo \n Some intro text about Foo."
     assert docs[0].metadata["Header 1"] == "Foo"
 
-    assert docs[1].page_content == "Bar main section \n Some intro text about Bar. \n Bar subsection 1 \n Some text about the first subtopic of Bar. \n Bar subsection 2 \n Some text about the second subtopic of Bar."
-    assert docs[1].metadata[ "Header 2"] == 'Bar main section'
+    assert docs[1].page_content == (
+        "Bar main section \n Some intro text about Bar. \n "
+        "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
+        "Bar subsection 2 \n Some text about the second subtopic of Bar."
+    )
+    assert docs[1].metadata["Header 2"] == 'Bar main section'
 
-    assert docs[2].page_content == "Baz \n Some text about Baz \n \n Some concluding text about Foo"
-    assert docs[2].metadata[ "Header 2"] == "Baz"
+    assert docs[2].page_content == (
+        "Baz \n Some text about Baz \n \n "
+        "Some concluding text about Foo"
+    )
+    assert docs[2].metadata["Header 2"] == "Baz"
 
 
-def test_happy_path_splitting_based_on_header_with_whitespace_chars(self):
+def test_happy_path_splitting_based_on_header_with_whitespace_chars():
     # arrange
     html_string = """<!DOCTYPE html>
             <html>
@@ -1396,11 +1408,10 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars(self):
             </html>"""
 
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on = [
+        headers_to_split_on=[
             ["h1", "Header 1"],
             ["h2", "Header 2"]
         ]
-        
     )
 
     docs = sec_splitter.split_text(html_string)
@@ -1409,8 +1420,15 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars(self):
     assert docs[0].page_content == "Foo  \n Some intro text about Foo."
     assert docs[0].metadata["Header 1"] == "Foo"
 
-    assert docs[1].page_content == "Bar main section \n Some intro text about Bar. \n Bar subsection 1 \n Some text about the first subtopic of Bar. \n Bar subsection 2 \n Some text about the second subtopic of Bar."
-    assert docs[1].metadata[ "Header 2"] == 'Bar main section'
+    assert docs[1].page_content == (
+        "Bar main section \n Some intro text about Bar. \n "
+        "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
+        "Bar subsection 2 \n Some text about the second subtopic of Bar."
+    )
+    assert docs[1].metadata["Header 2"] == 'Bar main section'
 
-    assert docs[2].page_content == "Baz \n Some text about Baz \n \n Some concluding text about Foo"
-    assert docs[2].metadata[ "Header 2"] == "Baz"
+    assert docs[2].page_content == (
+        "Baz \n Some text about Baz \n \n "
+        "Some concluding text about Foo"
+    )
+    assert docs[2].metadata["Header 2"] == "Baz"

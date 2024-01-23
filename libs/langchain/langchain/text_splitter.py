@@ -26,6 +26,7 @@ import logging
 import pathlib
 import re
 from abc import ABC, abstractmethod
+from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO, StringIO
@@ -48,9 +49,8 @@ from typing import (
     cast,
 )
 
-import requests
-from bs4 import BeautifulSoup
 import os
+import requests
 from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
@@ -1634,7 +1634,8 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
             Document(
                 page_content=sections[section_key]["content"],
                 metadata={
-                    self.headers_to_split_on[sections[section_key]["tag_name"]]: section_key
+                    self.headers_to_split_on[sections[section_key]["tag_name"]]:
+                        section_key
                     }
             ) for section_key in sections.keys()
         ]
