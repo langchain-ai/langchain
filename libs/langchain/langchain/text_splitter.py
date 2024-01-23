@@ -1561,7 +1561,8 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
             from bs4 import BeautifulSoup
         except ImportError as e:
             raise ImportError(
-                "Unable to import BeautifulSoup, please install with `pip install BeautifulSoup`."
+                "Unable to import BeautifulSoup, please install with `pip install \
+                    BeautifulSoup`."
             ) from e
 
         soup = BeautifulSoup(html_doc, "html.parser")
