@@ -468,7 +468,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        async for stream_resp in self._acreate_stream(prompt, stop, **kwargs):
+        async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
                 yield chunk

@@ -1,0 +1,25 @@
+name: 🔒 Privileged
+description: You are a LangChain maintainer, or was asked directly by a maintainer to create an issue here. If not, check the other options.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in LangChain! 🚀
+        
+        If you are not a LangChain maintainer or were not asked directly by a maintainer to create an issue, then please start the conversation in a [Question in GitHub Discussions](https://github.com/langchain-ai/langchain/discussions/categories/q-a) instead.
+        
+        You are a LangChain maintainer if you maintain any of the packages inside of the LangChain repository 
+        or are a regular contributor to LangChain with previous merged merged pull requests.
+  - type: checkboxes
+    id: privileged
+    attributes:
+      label: Privileged issue
+      description: Confirm that you are allowed to create an issue here.
+      options:
+        - label: I am a LangChain maintainer, or was asked directly by a LangChain maintainer to create an issue here.
+          required: true
+  - type: textarea
+    id: content
+    attributes:
+      label: Issue Content
+      description: Add the content of the issue here.

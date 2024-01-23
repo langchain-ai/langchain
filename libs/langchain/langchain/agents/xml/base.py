@@ -2,6 +2,7 @@ from typing import Any, List, Sequence, Tuple, Union
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
@@ -12,7 +13,6 @@ from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.format_scratchpad import format_xml
 from langchain.agents.output_parsers import XMLAgentOutputParser
 from langchain.agents.xml.prompt import agent_instructions
-from langchain.callbacks.base import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.tools.render import render_text_description
 
@@ -152,7 +152,13 @@ def create_xml_agent(
                 }
             )
 
-    Creating prompt example:
+    Prompt:
+
+        The prompt must have input keys:
+            * `tools`: contains descriptions for each tool.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as an XML string.
+
+        Here's an example:
 
         .. code-block:: python
 
