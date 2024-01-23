@@ -1646,7 +1646,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             if key not in self.__fields__:
                 raise ValueError(
                     f"Configuration key {key} not found in {self}: "
-                    "available keys are {self.__fields__.keys()}"
+                    f"available keys are {self.__fields__.keys()}"
                 )
 
         return RunnableConfigurableFields(default=self, fields=kwargs)
