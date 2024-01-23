@@ -213,8 +213,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         except JSONDecodeError as e:
                 raise OutputParserException("Invalid JSON output: {text}") from e
 
-    def parse(self, text: str) -> Any:
-        return self.parse_result([Generation(text=text)])
+    def parse(self, text: str,partial=False) -> Any:
+        return self.parse_result([Generation(text=text)],partial=partial)
 
     def get_format_instructions(self) -> str:
         if self.pydantic_object is None:
