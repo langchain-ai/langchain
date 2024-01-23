@@ -25,9 +25,7 @@ from typing import (
 )
 
 import pytest
-
-from langchain.text_splitter import TokenTextSplitter
-from langchain_core.documents import Document
+from langchain_core.documents.base import Document  # noqa
 from langchain_core.documents.document_transformers import _LEGACY
 from langchain_core.documents.runnable_document_transformer import (
     RunnableGeneratorDocumentTransformer,
@@ -220,6 +218,8 @@ class NewTextSplitter(RunnableGeneratorDocumentTransformer, ABC):
         **kwargs: Any,
     ) -> TS:
         """Text splitter that uses tiktoken encoder to count length."""
+        from langchain.text_splitter import TokenTextSplitter
+
         try:
             import tiktoken
         except ImportError:
