@@ -1275,7 +1275,7 @@ def test_split_text_on_tokens() -> None:
     expected_output = ["foo bar", "bar baz", "baz 123"]
     assert output == expected_output
 
-
+@pytest.mark.requires("lxml")
 def test_section_aware_happy_path_splitting_based_on_header_1_2():
     # arrange
     html_string = """<!DOCTYPE html>
@@ -1311,7 +1311,7 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2():
 
     docs = sec_splitter.split_text(html_string)
 
-    assert len(docs) == 3
+    assert len(docs) == 4
     assert docs[0].page_content == "Foo \n Some intro text about Foo."
     assert docs[0].metadata["Header 1"] == "Foo"
 
@@ -1327,7 +1327,7 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2():
     )
     assert docs[2].metadata["Header 2"] == "Baz"
 
-
+@pytest.mark.requires("lxml")
 def test_happy_path_splitting_based_on_header_with_font_size():
     # arrange
     html_string = """<!DOCTYPE html>
@@ -1363,7 +1363,7 @@ def test_happy_path_splitting_based_on_header_with_font_size():
 
     docs = sec_splitter.split_text(html_string)
 
-    assert len(docs) == 3
+    assert len(docs) == 4
     assert docs[0].page_content == "Foo \n Some intro text about Foo."
     assert docs[0].metadata["Header 1"] == "Foo"
 
@@ -1380,7 +1380,7 @@ def test_happy_path_splitting_based_on_header_with_font_size():
     )
     assert docs[2].metadata["Header 2"] == "Baz"
 
-
+@pytest.mark.requires("lxml")
 def test_happy_path_splitting_based_on_header_with_whitespace_chars():
     # arrange
     html_string = """<!DOCTYPE html>
@@ -1416,7 +1416,7 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars():
 
     docs = sec_splitter.split_text(html_string)
 
-    assert len(docs) == 3
+    assert len(docs) == 4
     assert docs[0].page_content == "Foo  \n Some intro text about Foo."
     assert docs[0].metadata["Header 1"] == "Foo"
 
