@@ -13,6 +13,7 @@ from langchain_community.document_loaders.parsers.pdf import (
     PyPDFium2Parser,
     PyPDFParser,
 )
+from langchain_community.document_loaders.parsers.vsdx import VsdxParser
 
 __all__ = [
     "AzureAIDocumentIntelligenceParser",
@@ -26,4 +27,5 @@ __all__ = [
     "PyMuPDFParser",
     "PyPDFium2Parser",
     "PyPDFParser",
+    "VsdxParser",
 ]
