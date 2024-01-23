@@ -1,4 +1,4 @@
-from typing import Sequence, Iterator, Any, AsyncIterator
+from typing import Any, AsyncIterator, Iterator, Sequence
 
 import pytest
 
@@ -7,8 +7,10 @@ from langchain_core.documents.document_transformers import (
     _LEGACY,
     DocumentTransformers,
 )
-from langchain_core.documents.runnable_document_transformer import \
-    RunnableGeneratorDocumentTransformer
+from langchain_core.documents.runnable_document_transformer import (
+    RunnableGeneratorDocumentTransformer,
+)
+
 from .sample_transformer import (
     LowerLazyTransformer,
     UpperLazyTransformer,
@@ -21,7 +23,7 @@ def by_pg(doc: Document) -> str:
 
 class _SplitWords(RunnableGeneratorDocumentTransformer):
     def lazy_transform_documents(
-            self, documents: Iterator[Document], **kwargs: Any
+        self, documents: Iterator[Document], **kwargs: Any
     ) -> Iterator[Document]:
         for doc in documents:
             for text in doc.page_content.split(" "):

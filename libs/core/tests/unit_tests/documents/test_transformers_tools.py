@@ -1,20 +1,17 @@
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import pytest
+
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.documents import Document
-from langchain_core.language_models import BaseLLM
-from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import validator
-
 from langchain_core.documents.copy_transformer import CopyDocumentTransformer
+from langchain_core.language_models import LLM, BaseLLM
+from langchain_core.pydantic_v1 import validator
 
 TEMPERATURE = 0.0
 MAX_TOKENS = 1000
 FAKE_LLM = True
 USE_CACHE = True
-
-
 
 
 class FakeLLM(LLM):
@@ -69,6 +66,7 @@ class FakeLLM(LLM):
         response = queries[list(queries.keys())[self.response_index]]
         self.response_index = self.response_index + 1
         return response
+
 
 def init_llm(
     queries: Dict[int, str],
@@ -150,5 +148,3 @@ async def test_copy_transformer_alazy_transform_documents() -> None:
     assert id(result[1]) != id(doc2)
     assert result[0] == doc1
     assert result[1] == doc2
-
-

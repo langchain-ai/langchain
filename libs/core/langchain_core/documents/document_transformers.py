@@ -83,9 +83,7 @@ class DocumentTransformers(RunnableGeneratorDocumentTransformer):
     if _LEGACY:
         transformers: Sequence[BaseDocumentTransformer]
     else:
-        transformers: Sequence[  # type: ignore[no-redef]
-            RunnableGeneratorDocumentTransformer
-        ]
+        transformers: Sequence[RunnableGeneratorDocumentTransformer]  # type: ignore[no-redef]
     """List of document transformer that are applied in parallel."""
 
     def __add__(

@@ -5,7 +5,6 @@ import copy
 from typing import Any, AsyncIterator, Callable, Iterator
 
 from langchain_core.documents import Document
-
 from langchain_core.documents.runnable_document_transformer import (
     RunnableGeneratorDocumentTransformer,
 )
