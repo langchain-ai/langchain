@@ -299,7 +299,26 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     def _headers(self) -> dict:
         return {"Authorization": f"Bearer {self.api_key.get_secret_value()}"}
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    @property
+    def _text_length(self, text: Union[List[int], List[List[int]]]):
+        """
+        Help function to get the length for the input text. Text can be either
+        a list of ints (which means a single text as input), or a tuple of list of ints
+        (representing several text inputs to the model).
+        """
+
+        if isinstance(text, dict):  # {key: value} case
+            return len(next(iter(text.values())))
+        elif not hasattr(text, '__len__'):  # Object has no len() method
+            return 1
+        elif len(text) == 0 or isinstance(text[0], int):  # Empty string or list of ints
+            return len(text)
+        else:
+            return sum([len(t) for t in text])
+
+    def embed_documents(self, texts: List[str], batch_size: int = 32, show_progress_bar: bool = True,
+                        convert_to_tensor: bool = False, convert_to_numpy: bool = True,
+                        input_was_string: bool = False):
         """Get the embeddings for a list of texts.
 
         Args:
@@ -321,15 +340,34 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
                 texts = ["Hello, world!", "How are you?"]
                 hf_embeddings.embed_documents(texts)
         """  # noqa: E501
-        response = requests.post(
-            self._api_url,
-            headers=self._headers,
-            json={
-                "inputs": texts,
-                "options": {"wait_for_model": True, "use_cache": True},
-            },
-        )
-        return response.json()
+        all_embeddings = []
+        length_sorted_idx = np.argsort([-self._text_length(sen) for sen in texts])
+        sentences_sorted = [sentences[idx] for idx in length_sorted_idx]
+
+        for start_index in trange(0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar):
+            sentences_batch = sentences_sorted[start_index:start_index + batch_size]
+            response = requests.post(
+                self._api_url,
+                headers=self._headers,
+                json={
+                    "inputs": sentences_batch,
+                    "options": {"wait_for_model": True, "use_cache": True},
+                },
+            )
+            embeddings = response.json()
+            all_embeddings.extend(embeddings)
+
+        all_embeddings = [all_embeddings[idx] for idx in np.argsort(length_sorted_idx)]
+
+        if convert_to_tensor:
+            all_embeddings = torch.stack(all_embeddings)
+        elif convert_to_numpy:
+            all_embeddings = np.asarray([np.array(emb) for emb in all_embeddings])
+
+        if input_was_string:
+            all_embeddings = all_embeddings[0]
+
+        return all_embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
