@@ -1,20 +1,3 @@
-import pytest
-
-from langchain_core.documents.document_transformers import _LEGACY
-
-# %% -------------------------------------------------------------------------------
-# Normally, this class is intended to replace the current implementation of
-# TextSplitter. Currently, text_splitter.py is present in langchain, not lanchain-core.
-# To demonstrate the use of LCEL for transformers, I therefore need to place this
-# example in langchain, not langchain-core.
-"""
-To demonstrate the possibility of adjusting the existing code to take account of the 
-integration of LCEL in the transformers, we propose a new implementation 
-of TextSplitter.
-
-It's a sample of refactoring the legacy TextSplitter, to be compatible with lazy, async
-and LCEL.
-"""
 import asyncio
 import copy
 import logging
@@ -41,15 +24,30 @@ from typing import (
     cast,
 )
 
+import pytest
+
 from langchain.text_splitter import TokenTextSplitter
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
-
+from langchain_core.documents.document_transformers import _LEGACY
 from langchain_core.documents.runnable_document_transformer import (
     RunnableGeneratorDocumentTransformer,
     to_sync_iterator,
 )
+from langchain_core.pydantic_v1 import root_validator
 
+# %% -------------------------------------------------------------------------------
+# Normally, this class is intended to replace the current implementation of
+# TextSplitter. Currently, text_splitter.py is present in langchain, not lanchain-core.
+# To demonstrate the use of LCEL for transformers, I therefore need to place this
+# example in langchain, not langchain-core.
+"""
+To demonstrate the possibility of adjusting the existing code to take account of the 
+integration of LCEL in the transformers, we propose a new implementation 
+of TextSplitter.
+
+It's a sample of refactoring the legacy TextSplitter, to be compatible with lazy, async
+and LCEL.
+"""
 logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="NewTextSplitter")
 

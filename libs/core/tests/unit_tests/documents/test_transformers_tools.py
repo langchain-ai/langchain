@@ -24,7 +24,7 @@ class FakeLLM(LLM):
 
     @validator("queries", always=True)
     def check_queries_required(
-            cls, queries: Optional[Mapping], values: Mapping[str, Any]
+        cls, queries: Optional[Mapping], values: Mapping[str, Any]
     ) -> Optional[Mapping]:
         if values.get("sequential_response") and not queries:
             raise ValueError(
@@ -42,11 +42,11 @@ class FakeLLM(LLM):
         return "fake"
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         if self.sequential_responses:
             return self._get_next_response_in_sequence
@@ -71,8 +71,8 @@ class FakeLLM(LLM):
 
 @typing.no_type_check
 def init_llm(
-        queries: Dict[int, str],
-        max_token: int = MAX_TOKENS,
+    queries: Dict[int, str],
+    max_token: int = MAX_TOKENS,
 ) -> BaseLLM:
     if FAKE_LLM:
         return FakeLLM(
