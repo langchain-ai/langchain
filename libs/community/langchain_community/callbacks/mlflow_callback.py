@@ -190,6 +190,7 @@ class MlflowLogger:
         self.start_run(
             kwargs["run_name"], kwargs["run_tags"], kwargs.get("run_id", None)
         )
+        self.dir = f'{kwargs["artifacts_dir"]}/' if "artifacts_dir" in kwargs else ""
 
     def start_run(
         self, name: str, tags: Dict[str, str], run_id: Optional[str] = None
@@ -226,7 +227,7 @@ class MlflowLogger:
 
     def jsonf(self, data: Dict[str, Any], filename: str) -> None:
         """To log the input data as json file artifact."""
-        self.mlflow.log_dict(data, f"{filename}.json", run_id=self.run_id)
+        self.mlflow.log_dict(data, f"{self.dir}{filename}.json", run_id=self.run_id)
 
     def table(self, name: str, dataframe) -> None:  # type: ignore
         """To log the input pandas dataframe as a html table"""
@@ -234,11 +235,11 @@ class MlflowLogger:
 
     def html(self, html: str, filename: str) -> None:
         """To log the input html string as html file artifact."""
-        self.mlflow.log_text(html, f"{filename}.html", run_id=self.run_id)
+        self.mlflow.log_text(html, f"{self.dir}{filename}.html", run_id=self.run_id)
 
     def text(self, text: str, filename: str) -> None:
         """To log the input text as text file artifact."""
-        self.mlflow.log_text(text, f"{filename}.txt", run_id=self.run_id)
+        self.mlflow.log_text(text, f"{self.dir}{filename}.txt", run_id=self.run_id)
 
     def artifact(self, path: str) -> None:
         """To upload the file from given path as artifact."""
@@ -270,6 +271,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         tags: Optional[Dict] = None,
         tracking_uri: Optional[str] = None,
         run_id: Optional[str] = None,
+        artifact_dir: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
         import_pandas()
@@ -292,6 +294,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             run_name=self.name,
             run_tags=self.tags,
             run_id=self.run_id,
+            artifact_dir=self.artifact_dir,
         )
 
         self.action_records: list = []
