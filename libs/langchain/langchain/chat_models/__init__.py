@@ -39,6 +39,7 @@ def __getattr__(name: str) -> None:
 
     return getattr(chat_models, name)
 
+
 __all__ = [
     "ChatOpenAI",
     "BedrockChat",
