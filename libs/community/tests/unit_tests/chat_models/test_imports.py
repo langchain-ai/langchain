@@ -10,6 +10,7 @@ EXPECTED_ALL = [
     "ChatAnthropic",
     "ChatCohere",
     "ChatDatabricks",
+    "ChatDeepInfra",
     "ChatGooglePalm",
     "ChatHuggingFace",
     "ChatMlflow",

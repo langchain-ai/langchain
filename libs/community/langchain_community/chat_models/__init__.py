@@ -25,6 +25,7 @@ from langchain_community.chat_models.baidu_qianfan_endpoint import QianfanChatEn
 from langchain_community.chat_models.bedrock import BedrockChat
 from langchain_community.chat_models.cohere import ChatCohere
 from langchain_community.chat_models.databricks import ChatDatabricks
+from langchain_community.chat_models.deepinfra import ChatDeepInfra
 from langchain_community.chat_models.ernie import ErnieBotChat
 from langchain_community.chat_models.everlyai import ChatEverlyAI
 from langchain_community.chat_models.fake import FakeListChatModel
@@ -62,6 +63,7 @@ __all__ = [
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
     "ChatDatabricks",
+    "ChatDeepInfra",
     "ChatEverlyAI",
     "ChatAnthropic",
     "ChatCohere",
