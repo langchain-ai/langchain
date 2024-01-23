@@ -221,3 +221,30 @@ def test_generate(mock_client_with_chat):
             ),
         ]
     )
+
+
+@pytest.mark.requires("ai21")
+async def test_agenerate_when_not_implemented__should_raise_error():
+    with pytest.raises(NotImplementedError):
+        await ChatAI21().agenerate("I'm Pickle Rick")
+
+
+@pytest.mark.requires("ai21")
+async def test_abatch_when_not_implemented__should_raise_error():
+    with pytest.raises(NotImplementedError):
+        await ChatAI21().abatch("I'm Pickle Rick")
+
+
+@pytest.mark.requires("ai21")
+def test_stream_when_not_implemented__should_raise_error():
+    llm = ChatAI21()
+    with pytest.raises(NotImplementedError):
+        for _ in llm.stream("I'm Pickle Rick"):
+            ...
+
+
+@pytest.mark.requires("ai21")
+async def test_ainvoke_when_not_implemented__should_raise_error():
+    llm = ChatAI21()
+    with pytest.raises(NotImplementedError):
+        await llm.ainvoke("I'm Pickle Rick")
