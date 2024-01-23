@@ -69,9 +69,12 @@ async def abatched(iterable: AsyncIterable[T], n: int) -> AsyncIterable[Tuple[T,
 
 
 class DocumentTransformers(RunnableGeneratorDocumentTransformer):
-    """Document transformer that uses a list of Transformers.
+    """
+    Document transformer that uses a list of Transformers.
     Take each input document, and apply all transformations present in the
     `transformers` attribute.
+
+    This is the basis for multiple transformations, using the plus operator.
     """
 
     class Config:

@@ -120,6 +120,8 @@ class RunnableGeneratorDocumentTransformer(
     BaseModel,  # Pydantic v2
     ABC,
 ):
+    # This class has a new LCEL-compatible BaseDocumentTransformer proposal.
+    # It is intended to replace it once all the impacts have been processed.
     """
     Runnable Document Transformer with lazy transformation.
 
@@ -158,8 +160,11 @@ class RunnableGeneratorDocumentTransformer(
         self,
         other: "RunnableGeneratorDocumentTransformer",
     ) -> "DocumentTransformers":
-        """Compose this runnable with another object to create a RunnableSequence."""
-        # return RunnableSequence(first=self, last=coerce_to_runnable(other))
+        """
+        Compose this runnable with another object to create a
+        RunnableTransformers, with several transformations applied to the
+        same documents .
+        """
         from .document_transformers import DocumentTransformers
 
         if isinstance(other, DocumentTransformers):
