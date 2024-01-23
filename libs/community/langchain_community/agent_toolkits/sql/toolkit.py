@@ -69,3 +69,7 @@ class SQLDatabaseToolkit(BaseToolkit):
             list_sql_database_tool,
             query_sql_checker_tool,
         ]
+
+    def get_context(self) -> dict:
+        """Return db context that you may want in agent prompt."""
+        return self.db.get_context()
