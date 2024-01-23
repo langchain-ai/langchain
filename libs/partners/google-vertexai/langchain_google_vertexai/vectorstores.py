@@ -95,7 +95,7 @@ class VertexAIVectorSearch(VectorStore):
         self.credentials = credentials
         self.gcs_bucket_name = gcs_bucket_name
         self.document_id_key = document_id_key
-        
+
         if document_storage is not None:
             self.document_storage = document_storage
 
