@@ -1,9 +1,11 @@
 """Agent for working with pandas objects."""
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Literal, Union
 
+from langchain.agents import create_openai_tools_agent, create_react_agent
 from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent, \
+    create_openai_functions_agent
 from langchain.agents.types import AgentType
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
@@ -11,6 +13,7 @@ from langchain.schema import BasePromptTemplate
 from langchain.tools import BaseTool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import SystemMessage
+from langchain_core.runnables import Runnable
 
 from langchain_experimental.agents.agent_toolkits.pandas.prompt import (
     FUNCTIONS_WITH_DF,
@@ -278,7 +281,7 @@ def _get_functions_prompt_and_tools(
 def create_pandas_dataframe_agent(
     llm: BaseLanguageModel,
     df: Any,
-    agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    agent_type: Union[AgentType, Literal["openai-tools"]] = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
@@ -294,11 +297,49 @@ def create_pandas_dataframe_agent(
     extra_tools: Sequence[BaseTool] = (),
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a pandas agent from an LLM and dataframe."""
-    agent: BaseSingleActionAgent
-    base_tools: Sequence[BaseTool]
+    """Construct a pandas agent from an LLM and dataframe(s).
+    
+    Args:
+        llm: Language model to use for the agent.
+        df: Pandas dataframe or list of Pandas dataframes.
+        agent_type: One of "openai-tools", "openai-functions", or
+            "zero-shot-react-description". Defaults to "zero-shot-react-description".
+            "openai-tools" is recommended over "openai-functions".
+        callback_manager: DEPRECATED. Pass "callbacks" key into 'agent_executor_kwargs'
+            instead to pass constructor callbacks to AgentExecutor.
+        prefix: Prompt prefix string.
+        suffix: Prompt suffix string.
+        input_variables:
+        verbose: AgentExecutor verbosity.
+        return_intermediate_steps:
+        max_iterations: Passed to AgentExecutor init.
+        max_execution_time: Passed to AgentExecutor init.
+        early_stopping_method: Passed to AgentExecutor init.
+        agent_executor_kwargs: Arbitrary additional AgentExecutor args.
+        include_df_in_prompt:
+        number_of_head_rows:
+        extra_tools: Additional tools to give to agent on top of the ones that come with
+            SQLDatabaseToolkit.
+        **kwargs: 
+
+    Returns:
+        An AgentExecutor with the specified agent_type agent.
+
+    Example:
+
+        .. code-block:: python
+
+        from langchain_openai import ChatOpenAI
+        from langchain_experimental.agents import create_pandas_dataframe_agent
+        import pandas as pd
+
+        df = pd.read_csv("titanic.csv")
+        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        agent_executor = create_sql_agent(llm, db, agent_type="openai-tools", verbose=True)
+
+    """  # noqa: E501
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
-        prompt, base_tools = _get_prompt_and_tools(
+        prompt, tools = _get_prompt_and_tools(
             df,
             prefix=prefix,
             suffix=suffix,
@@ -307,21 +348,9 @@ def create_pandas_dataframe_agent(
             number_of_head_rows=number_of_head_rows,
             extra_tools=extra_tools,
         )
-        tools = base_tools
-        llm_chain = LLMChain(
-            llm=llm,
-            prompt=prompt,
-            callback_manager=callback_manager,
-        )
-        tool_names = [tool.name for tool in tools]
-        agent = ZeroShotAgent(
-            llm_chain=llm_chain,
-            allowed_tools=tool_names,
-            callback_manager=callback_manager,
-            **kwargs,
-        )
+        agent: Union[BaseSingleActionAgent, Runnable] = create_react_agent(llm, tools, prompt)
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
-        _prompt, base_tools = _get_functions_prompt_and_tools(
+        prompt, base_tools = _get_functions_prompt_and_tools(
             df,
             prefix=prefix,
             suffix=suffix,
@@ -330,13 +359,18 @@ def create_pandas_dataframe_agent(
             number_of_head_rows=number_of_head_rows,
         )
         tools = list(base_tools) + list(extra_tools)
-        agent = OpenAIFunctionsAgent(
-            llm=llm,
-            prompt=_prompt,
-            tools=tools,
-            callback_manager=callback_manager,
-            **kwargs,
+        agent = create_openai_functions_agent(llm, tools, prompt)
+    elif agent_type == "openai-tools":
+        prompt, base_tools = _get_functions_prompt_and_tools(
+            df,
+            prefix=prefix,
+            suffix=suffix,
+            input_variables=input_variables,
+            include_df_in_prompt=include_df_in_prompt,
+            number_of_head_rows=number_of_head_rows,
         )
+        tools = list(base_tools) + list(extra_tools)
+        agent = create_openai_tools_agent(llm, tools, prompt)
     else:
         raise ValueError(f"Agent type {agent_type} not supported at the moment.")
     return AgentExecutor.from_agent_and_tools(
