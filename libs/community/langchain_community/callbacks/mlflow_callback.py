@@ -285,6 +285,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.tags = tags or {}
         self.tracking_uri = tracking_uri
         self.run_id = run_id
+        self.artifact_dir = artifact_dir
 
         self.temp_dir = tempfile.TemporaryDirectory()
 
