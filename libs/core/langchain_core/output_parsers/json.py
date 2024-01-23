@@ -202,16 +202,16 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         text = result[0].text
         text = text.strip()
-        if partial:
-            try:
-                return parse_json_markdown(text)
-            except JSONDecodeError:
-                return None
-        else:
-            try:
-                return parse_json_markdown(text)
-            except JSONDecodeError as e:
-                raise OutputParserException(f"Invalid json output: {text}") from e
+
+        try:
+            json_data = parse_json_markdown(text)
+            if partial:
+                return json_data
+            elif json_data=={}:
+                raise ValueError(f"Invalid JSON: {text}")
+            
+        except JSONDecodeError as e:
+                raise OutputParserException("Invalid JSON output: {text}") from e
 
     def parse(self, text: str) -> Any:
         return self.parse_result([Generation(text=text)])
