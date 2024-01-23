@@ -95,10 +95,11 @@ class VertexAIVectorSearch(VectorStore):
         self.credentials = credentials
         self.gcs_bucket_name = gcs_bucket_name
         self.document_id_key = document_id_key
+        
+        if document_storage is not None:
+            self.document_storage = document_storage
 
-        self.document_storage = document_storage
-
-        if self.document_storage is None:
+        else:
             self.document_storage = GCSVertexAIVectorSearchDocumentStorage(
                 bucket=self.gcs_client.get_bucket(self.gcs_bucket_name),
                 prefix="documents",
@@ -587,7 +588,7 @@ class MatchingEngine(VertexAIVectorSearch):
     DEPRECATED: Use `VertexAIVectorSearch` instead.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         import warnings
 
         warnings.warn(
@@ -614,7 +615,7 @@ class VertexAIVectorSearchDocumentStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def store_by_id(self, document_id: str, text: str):
+    def store_by_id(self, document_id: str, text: str) -> None:
         """Stores a document text associated to a document_id.
 
         Args:
