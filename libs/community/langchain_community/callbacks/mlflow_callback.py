@@ -412,10 +412,14 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 self.records["on_llm_end_records"].append(generation_resp)
                 self.records["action_records"].append(generation_resp)
                 self.mlflg.jsonf(resp, f"llm_end_{llm_ends}_generation_{idx}")
-                dependency_tree = generation_resp["dependency_tree"]
-                entities = generation_resp["entities"]
-                self.mlflg.html(dependency_tree, "dep-" + hash_string(generation.text))
-                self.mlflg.html(entities, "ent-" + hash_string(generation.text))
+                if "dependency_tree" in generation_resp:
+                    dependency_tree = generation_resp["dependency_tree"]
+                    self.mlflg.html(
+                        dependency_tree, "dep-" + hash_string(generation.text)
+                    )
+                if "entities" in generation_resp:
+                    entities = generation_resp["entities"]
+                    self.mlflg.html(entities, "ent-" + hash_string(generation.text))
 
     def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors."""
@@ -675,7 +679,9 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             .rename({"step": "prompt_step"}, axis=1)
         )
         complexity_metrics_columns = get_text_complexity_metrics()
-        visualizations_columns = ["dependency_tree", "entities"]
+        visualizations_columns = (
+            ["dependency_tree", "entities"] if self.nlp is not None else []
+        )
 
         token_usage_columns = [
             "token_usage_total_tokens",
