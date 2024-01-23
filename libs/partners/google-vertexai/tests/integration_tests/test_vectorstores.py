@@ -88,4 +88,4 @@ def test_gcs_document_storage():
 
     assert storage.get_by_id(id_) == text
 
-    assert storage.get_by_id("non-existant") is None
+    assert storage.get_by_id("non-existent") is None
