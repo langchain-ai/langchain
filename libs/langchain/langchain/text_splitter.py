@@ -26,7 +26,6 @@ import logging
 import pathlib
 import re
 from abc import ABC, abstractmethod
-from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO, StringIO
@@ -48,9 +47,9 @@ from typing import (
     Union,
     cast,
 )
-
 import os
 import requests
+from bs4 import BeautifulSoup
 from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
