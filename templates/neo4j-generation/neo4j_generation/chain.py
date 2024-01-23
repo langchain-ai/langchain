@@ -1,7 +1,6 @@
-from typing import List, Optional
-
+from typing import Dict
 from langchain.chains.openai_functions import (
-    create_structured_output_chain,
+    create_structured_output_runnable
 )
 from langchain.schema import Document
 from langchain_community.chat_models import ChatOpenAI
@@ -14,6 +13,7 @@ from neo4j_generation.utils import (
     map_to_base_node,
     map_to_base_relationship,
 )
+from langchain.schema.runnable import RunnableParallel, RunnableLambda, RunnablePassthrough
 
 graph = Neo4jGraph()
 
@@ -21,27 +21,37 @@ graph = Neo4jGraph()
 llm = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0)
 
 
-def get_extraction_chain(
-    allowed_nodes: Optional[List[str]] = None, allowed_rels: Optional[List[str]] = None
-):
+def add_graph_documents(
+    params: Dict
+) -> str:
     """
-    Constructs and returns an extraction chain for building a knowledge graph based on specified parameters.
-
-    The function generates a chat prompt template, outlining the instructions for an LLM to extract information
-    and construct a knowledge graph. It primarily focuses on consistency in labeling nodes, handling numerical data
-    and dates, coreference resolution, and strict compliance with the provided rules.
+    Process the given text to extract graph data and constructs a graph document from the extracted information.
+    The constructed graph document is then added to the graph.
 
     Parameters:
-    - allowed_nodes (Optional[List[str]]): A list of node labels that are allowed to be used in the knowledge graph.
-                                           If not provided, there won't be any specific restriction on node labels.
-    - allowed_rels (Optional[List[str]]): A list of relationship types that are allowed in the knowledge graph.
-                                         If not provided, there won't be any specific restriction on relationship types.
-    """  # noqa: E501
-    prompt = ChatPromptTemplate.from_messages(
+    - input (Dict): The input text from which the information will be extracted to construct the graph.
+
+    Returns:
+    str: A confirmation message indicating the completion of the graph construction.
+    """ 
+    
+    data  = params['data']
+    text = params['context']['input']
+    # Construct a graph document
+    graph_document = GraphDocument(
+        nodes=[map_to_base_node(node) for node in data.nodes],
+        relationships=[map_to_base_relationship(rel) for rel in data.rels],
+        source=Document(page_content=text),
+    )
+    # Store information into a graph
+    graph.add_graph_documents([graph_document])
+    return "Graph construction finished"
+
+prompt = ChatPromptTemplate.from_messages(
         [
             (
-                "system",
-                f"""# Knowledge Graph Instructions for GPT-4
+                "system", """
+# Knowledge Graph Instructions for GPT-4
 ## 1. Overview
 You are a top-tier algorithm designed for extracting information in structured formats to build a knowledge graph.
 - **Nodes** represent entities and concepts. They're akin to Wikipedia nodes.
@@ -50,8 +60,8 @@ You are a top-tier algorithm designed for extracting information in structured f
 - **Consistency**: Ensure you use basic or elementary types for node labels.
   - For example, when you identify an entity representing a person, always label it as **"person"**. Avoid using more specific terms like "mathematician" or "scientist".
 - **Node IDs**: Never utilize integers as node IDs. Node IDs should be names or human-readable identifiers found in the text.
-{'- **Allowed Node Labels:**' + ", ".join(allowed_nodes) if allowed_nodes else ""}
-{'- **Allowed Relationship Types**:' + ", ".join(allowed_rels) if allowed_rels else ""}
+- **Allowed Node Labels:** {allow_nodes}
+- **Allowed Relationship Types**: {allow_rels}
 ## 3. Handling Numerical Data and Dates
 - Numerical data, like age or other related information, should be incorporated as attributes or properties of the respective nodes.
 - **No Separate Nodes for Dates/Numbers**: Do not create separate nodes for dates or numerical values. Always attach them as attributes or properties of nodes.
@@ -75,37 +85,7 @@ Adhere to the rules strictly. Non-compliance will result in termination.
             ("human", "Tip: Make sure to answer in the correct format"),
         ]
     )
-    return create_structured_output_chain(KnowledgeGraph, llm, prompt, verbose=False)
 
+extract_chain =  create_structured_output_runnable(KnowledgeGraph, llm, prompt)
 
-def chain(
-    text: str,
-    allowed_nodes: Optional[List[str]] = None,
-    allowed_relationships: Optional[List[str]] = None,
-) -> str:
-    """
-    Process the given text to extract graph data and constructs a graph document from the extracted information.
-    The constructed graph document is then added to the graph.
-
-    Parameters:
-    - text (str): The input text from which the information will be extracted to construct the graph.
-    - allowed_nodes (Optional[List[str]]): A list of node labels to guide the extraction process.
-                                   If not provided, extraction won't have specific restriction on node labels.
-    - allowed_relationships (Optional[List[str]]): A list of relationship types to guide the extraction process.
-                                  If not provided, extraction won't have specific restriction on relationship types.
-
-    Returns:
-    str: A confirmation message indicating the completion of the graph construction.
-    """  # noqa: E501
-    # Extract graph data using OpenAI functions
-    extract_chain = get_extraction_chain(allowed_nodes, allowed_relationships)
-    data = extract_chain.run(text)
-    # Construct a graph document
-    graph_document = GraphDocument(
-        nodes=[map_to_base_node(node) for node in data.nodes],
-        relationships=[map_to_base_relationship(rel) for rel in data.rels],
-        source=Document(page_content=text),
-    )
-    # Store information into a graph
-    graph.add_graph_documents([graph_document])
-    return "Graph construction finished"
+chain = RunnableParallel({"data": extract_chain, "context": RunnablePassthrough()}) | RunnableLambda(add_graph_documents)
