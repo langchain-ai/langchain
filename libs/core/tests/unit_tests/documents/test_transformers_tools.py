@@ -96,7 +96,7 @@ def init_llm(
         #     # cache=False,
         # )
         # return llm
-        assert (False, "set FAKE_LLM=True")
+        assert (FAKE_LLM, "set FAKE_LLM=True")
 
 
 # %% copy_transformer
