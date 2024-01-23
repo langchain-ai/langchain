@@ -17,7 +17,7 @@ from typing import (
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.runnables.base import RunnableParallel, coerce_to_runnable
 
-from .runnable_document_transformer import (
+from langchain_core.documents.runnable_document_transformer import (
     _LEGACY,
     RunnableGeneratorDocumentTransformer,
 )
