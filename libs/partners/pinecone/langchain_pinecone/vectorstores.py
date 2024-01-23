@@ -17,6 +17,8 @@ from typing import (
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from langchain_pinecone._utilities import DistanceStrategy
+import pinecone
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -43,9 +45,17 @@ class Pinecone(VectorStore):
 
     def __init__(
             self,
+            # setting default params to bypass having to pass in
+            # the index and embedding objects - manually throw
+            # exceptions if they are not passed in or set in environment
+            # (keeping param for backwards compatibility)
             index: Optional[Any] = None,
-            embedding: Optional[Union[Embeddings, Callable]] = None,
-    )
+            embedding: Optional[Embeddings] = None,
+            text_key: Optional[str] = None,
+            namespace: Optional[str] = None,
+            distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
+    ):
+        
 
     def add_texts(
         self,
