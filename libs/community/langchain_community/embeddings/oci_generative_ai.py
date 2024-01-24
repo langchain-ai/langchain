@@ -147,9 +147,11 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             ) from ex
         except Exception as e:
             raise ValueError(
-                "Could not load config to authenticate with OCI client. "
-                "Please check ~/.oci/config exists. And the specified "
-                "profile name are valid."
+                "Could not authenticate with OCI client. "
+                "Please check if ~/.oci/config exists. "
+                "If INSTANCE_PRINCIPLE or RESOURCE_PRINCIPLE is used, "
+                "Please check the specified "
+                "auth_profile and auth_type are valid."
             ) from e
 
         return values

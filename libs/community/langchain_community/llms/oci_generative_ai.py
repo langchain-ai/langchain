@@ -132,9 +132,11 @@ class OCIGenAIBase(BaseModel, ABC):
             ) from ex
         except Exception as e:
             raise ValueError(
-                "Could not load config to authenticate with OCI client. "
-                "Please check ~/.oci/config exists. And the specified "
-                "profile name are valid."
+                "Could not authenticate with OCI client. "
+                "Please check if ~/.oci/config exists. "
+                "If INSTANCE_PRINCIPLE or RESOURCE_PRINCIPLE is used, "
+                "Please check the specified "
+                "auth_profile and auth_type are valid."
             ) from e
 
         return values
@@ -242,8 +244,6 @@ class OCIGenAI(LLM, OCIGenAIBase):
         else:
             raise ValueError(f"Invalid provider: {provider}")
 
-        # If stop tokens are provided, the service returns them.
-        # In order to make this consistent with LangChain, we strip them.
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
 
