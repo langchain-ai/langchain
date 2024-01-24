@@ -1589,11 +1589,13 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
                     break
                 if isinstance(element, str):
                     section_content.append(element)
+            content = " ".join(section_content).strip()
 
-            sections[current_header] = {
-                "content": " ".join(section_content),
-                "tag_name": current_header_tag,
-            }
+            if content != "":
+                sections[current_header] = {
+                    "content": content,
+                    "tag_name": current_header_tag,
+                }
 
         return sections
 
