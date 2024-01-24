@@ -28,6 +28,7 @@ _EXPECTED = [
     "Epsilla",
     "FAISS",
     "Hologres",
+    "KDBAI",
     "LanceDB",
     "Lantern",
     "LLMRails",
