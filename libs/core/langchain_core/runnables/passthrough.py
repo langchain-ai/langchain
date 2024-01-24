@@ -325,10 +325,12 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
     """
 
-    mapper: Runnable[Dict[str, Any], Dict[str, Any]]
+    mapper: RunnableSerializable[Dict[str, Any], Dict[str, Any]]
 
     def __init__(
-        self, mapper: Runnable[Dict[str, Any], Dict[str, Any]], **kwargs: Any
+        self,
+        mapper: RunnableSerializable[Dict[str, Any], Dict[str, Any]],
+        **kwargs: Any,
     ) -> None:
         super().__init__(mapper=mapper, **kwargs)
 
