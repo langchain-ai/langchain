@@ -45,6 +45,14 @@ class ConfigData:
 
 test_setup = ConfigData()
 
+def generateSchemaName(cursor):
+    cursor.execute("SELECT REPLACE(CURRENT_UTCDATE, '-', '') || '_' || BINTOHEX(SYSUUID) FROM DUMMY;")
+    if cursor.has_result_set():
+        rows = cursor.fetchall()
+        uid = rows[0][0]
+    else:
+        uid = random.randint(1, 100000000)
+    return f'VEC_{uid}'
 
 def setup_module(module):
     test_setup.conn = dbapi.connect(
@@ -56,8 +64,8 @@ def setup_module(module):
         sslValidateCertificate=False,
     )
     try:
-        test_setup.schema_name = random.randint(1, 100000000)
         cur = test_setup.conn.cursor()
+        test_setup.schema_name = generateSchemaName(cur)
         sql_str = f"CREATE SCHEMA {test_setup.schema_name}"
         cur.execute(sql_str)
         sql_str = f"SET SCHEMA {test_setup.schema_name}"
