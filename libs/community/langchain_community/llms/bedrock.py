@@ -136,10 +136,9 @@ class LLMInputOutputAdapter:
                 text = response_body.get("results")[0].get("outputText")
 
         return {
-            "text" : text,
-            "body" : response_body,
+            "text": text,
+            "body": response_body,
         }
-
 
     @classmethod
     def prepare_output_stream(
@@ -168,14 +167,15 @@ class LLMInputOutputAdapter:
                 chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
             ):
                 return
-                    # chunk obj format varies with provider
+                # chunk obj format varies with provider
             yield GenerationChunk(
                 text=chunk_obj[output_key],
                 generation_info={
-                    GUARDRAILS_BODY_KEY : chunk_obj.get(GUARDRAILS_BODY_KEY) if GUARDRAILS_BODY_KEY in chunk_obj else None,
-                }
+                    GUARDRAILS_BODY_KEY: chunk_obj.get(GUARDRAILS_BODY_KEY)
+                    if GUARDRAILS_BODY_KEY in chunk_obj
+                    else None,
+                },
             )
-
 
     @classmethod
     async def aprepare_output_stream(
@@ -250,9 +250,9 @@ class BedrockBase(BaseModel, ABC):
     }
 
     guardrails: Optional[Mapping[str, Any]] = {
-        "id" : None,
-        "version" : None,
-        "trace" : False
+        "id": None,
+        "version": None,
+        "trace": False,
     }
     """
     An optional dictionary to configure guardrails for Bedrock.
@@ -294,7 +294,7 @@ class BedrockBase(BaseModel, ABC):
             reason = kwargs.get("reason")
             if reason == "GUARDRAIL_INTERVENED":
                 ...Logic to handle guardrail intervention...
-    """
+    """  # noqa: E501
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -372,29 +372,33 @@ class BedrockBase(BaseModel, ABC):
             TypeError: If 'guardrails' lacks 'id' or 'version' keys.
         """
         try:
-
-            return isinstance(self.guardrails, dict) and bool(self.guardrails["id"]) and bool(self.guardrails["version"])
+            return (
+                isinstance(self.guardrails, dict)
+                and bool(self.guardrails["id"])
+                and bool(self.guardrails["version"])
+            )
 
         except KeyError as e:
-            raise TypeError("Guardrails must be a dictionary with 'id' and 'version' keys.") from e
-
+            raise TypeError(
+                "Guardrails must be a dictionary with 'id' and 'version' keys."
+            ) from e
 
     def _get_guardrails_canonical(self) -> Dict[str, Any]:
         """
-            The canonical way to pass in guardrails to the bedrock service
-            adheres to the following format:
+        The canonical way to pass in guardrails to the bedrock service
+        adheres to the following format:
 
-            "amazon-bedrock-guardrailDetails": {
-                "guardrailId": "string",
-                "guardrailVersion": "string"
-            }
+        "amazon-bedrock-guardrailDetails": {
+            "guardrailId": "string",
+            "guardrailVersion": "string"
+        }
         """
         return {
-            "amazon-bedrock-guardrailDetails" : {
+            "amazon-bedrock-guardrailDetails": {
                 "guardrailId": self.guardrails.get("id"),
                 "guardrailVersion": self.guardrails.get("version"),
-            }}
-
+            }
+        }
 
     def _prepare_input_and_invoke(
         self,
@@ -418,7 +422,7 @@ class BedrockBase(BaseModel, ABC):
             "body": body,
             "modelId": self.model_id,
             "accept": accept,
-            "contentType": contentType
+            "contentType": contentType,
         }
 
         if self._guardrails_enabled:
@@ -429,7 +433,9 @@ class BedrockBase(BaseModel, ABC):
         try:
             response = self.client.invoke_model(**request_options)
 
-            text, body = LLMInputOutputAdapter.prepare_output(provider, response).values()
+            text, body = LLMInputOutputAdapter.prepare_output(
+                provider, response
+            ).values()
 
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
@@ -437,17 +443,20 @@ class BedrockBase(BaseModel, ABC):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
 
-        #Verify and raise a callback error if any intervention occurs or a signal is sent from a Bedrock service,
-        #such as when guardrails are triggered.
+        # Verify and raise a callback error if any intervention occurs or a signal is
+        # sent from a Bedrock service,
+        # such as when guardrails are triggered.
         services_trace = self._get_bedrock_services_signal(body)
 
         if services_trace.get("signal") and run_manager is not None:
-            run_manager.on_llm_error(Exception(f"Error raised by bedrock service: {services_trace.get('reason')}"),
-                                     **services_trace)
+            run_manager.on_llm_error(
+                Exception(
+                    f"Error raised by bedrock service: {services_trace.get('reason')}"
+                ),
+                **services_trace,
+            )
 
         return text
-
-
 
     def _get_bedrock_services_signal(self, body: dict) -> dict:
         """
@@ -455,24 +464,27 @@ class BedrockBase(BaseModel, ABC):
         whether any of the Bedrock services have intervened in the processing flow. It is
         primarily used to identify modifications or interruptions imposed by these services
         during the request-response cycle with a Large Language Model (LLM).
-        """
+        """  # noqa: E501
 
-        if self._guardrails_enabled and self.guardrails.get("trace") and self._is_guardrails_intervention(body):
-                return {
-                    "signal" : True,
-                    "reason" : "GUARDRAIL_INTERVENED",
-                    "trace" : body.get(AMAZON_BEDROCK_TRACE_KEY)
-                }
+        if (
+            self._guardrails_enabled
+            and self.guardrails.get("trace")
+            and self._is_guardrails_intervention(body)
+        ):
+            return {
+                "signal": True,
+                "reason": "GUARDRAIL_INTERVENED",
+                "trace": body.get(AMAZON_BEDROCK_TRACE_KEY),
+            }
 
         return {
-            "signal" : False,
-            "reason" : None,
-            "trace" : None,
+            "signal": False,
+            "reason": None,
+            "trace": None,
         }
 
     def _is_guardrails_intervention(self, body: dict) -> bool:
         return body.get(GUARDRAILS_BODY_KEY) == "GUARDRAIL_INTERVENED"
-
 
     def _prepare_input_and_invoke_stream(
         self,
@@ -505,12 +517,11 @@ class BedrockBase(BaseModel, ABC):
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
 
-
         request_options = {
             "body": body,
             "modelId": self.model_id,
             "accept": "application/json",
-            "contentType": "application/json"
+            "contentType": "application/json",
         }
 
         if self._guardrails_enabled:
@@ -529,7 +540,7 @@ class BedrockBase(BaseModel, ABC):
         ):
             yield chunk
             # verify and raise callback error if any middleware intervened
-            services_trace = self._get_bedrock_services_signal(chunk.generation_info)
+            self._get_bedrock_services_signal(chunk.generation_info)
 
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
@@ -694,7 +705,9 @@ class Bedrock(LLM, BedrockBase):
                 completion += chunk.text
             return completion
 
-        return self._prepare_input_and_invoke(prompt=prompt, stop=stop,run_manager=run_manager, **kwargs)
+        return self._prepare_input_and_invoke(
+            prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+        )
 
     async def _astream(
         self,
