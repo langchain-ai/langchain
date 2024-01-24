@@ -133,7 +133,7 @@ class HuggingFaceTextGenInference(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
+            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", default=""
         )
         # When TGI make requests to Huggingface's Inference Endpoints,
         # a bearer token must be included into the request header for authorization
