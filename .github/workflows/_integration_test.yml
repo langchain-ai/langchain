@@ -55,6 +55,12 @@ jobs:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          WATSONX_URL: ${{ secrets.WATSONX_URL }}
+          WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
+          WATSONX_TOKEN: ${{ secrets.WATSONX_TOKEN }}
+          WATSONX_PASSWORD: ${{ secrets.WATSONX_PASSWORD }}
+          WATSONX_USERNAME: ${{ secrets.WATSONX_USERNAME }}
+          WATSONX_INSTANCE_ID: ${{ secrets.WATSONX_INSTANCE_ID }}
         run: |
           make integration_tests
 

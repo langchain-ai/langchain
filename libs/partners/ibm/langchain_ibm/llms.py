@@ -2,7 +2,6 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
@@ -12,9 +11,6 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-@deprecated(
-    since="0.0.351", removal="0.2", alternative_import="langchain_ibm.WatsonxLLM"
-)
 class WatsonxLLM(BaseLLM):
     """
     IBM watsonx.ai large language models.
@@ -37,7 +33,7 @@ class WatsonxLLM(BaseLLM):
                 GenTextParamsMetaNames.TOP_P: 1,
             }
 
-            from langchain_community.llms import WatsonxLLM
+            from langchain_ibm import WatsonxLLM
             watsonx_llm = WatsonxLLM(
                 model_id="google/flan-ul2",
                 url="https://us-south.ml.cloud.ibm.com",
@@ -166,7 +162,7 @@ class WatsonxLLM(BaseLLM):
                 )
 
         try:
-            from ibm_watsonx_ai.foundation_models import ModelInference
+            from ibm_watsonx_ai.foundation_models import ModelInference  # type: ignore
 
             credentials = {
                 "url": values["url"].get_secret_value() if values["url"] else None,
@@ -253,8 +249,10 @@ class WatsonxLLM(BaseLLM):
             "input_token_count": input_token_count,
         }
 
-    def _get_chat_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
-        params: Dict[str, Any] = {**self.params} if self.params else None
+    def _get_chat_params(
+        self, stop: Optional[List[str]] = None
+    ) -> Optional[Dict[str, Any]]:
+        params: Optional[Dict[str, Any]] = {**self.params} if self.params else None
         if stop is not None:
             params = (params or {}) | {"stop_sequences": stop}
         return params
