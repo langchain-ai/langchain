@@ -9,7 +9,7 @@ from langchain_community.vectorstores.tidb_vector import TiDBVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 TiDB_CONNECT_URL = os.environ.get(
-    "TEST_TiDB_VECTOR_URL", "mysql+pymysql://root@127.0.0.1:4000/test"
+    "TEST_TiDB_CONNECTION_URL", "mysql+pymysql://root@127.0.0.1:4000/test"
 )
 
 ADA_TOKEN_COUNT = 1536
@@ -43,12 +43,12 @@ def test_search() -> None:
     ids = ["1", "2", "3"]
     docsearch = TiDBVector.from_texts(
         texts=texts,
-        collection_name="test_collection",
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
         metadatas=metadatas,
         ids=ids,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
         distance_strategy="cosine",
     )
 
@@ -58,7 +58,7 @@ def test_search() -> None:
         session.close()
 
     output = docsearch.similarity_search("foo", k=1)
-    docsearch.drop_collection()
+    docsearch.drop_vectorstore()
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
@@ -69,10 +69,10 @@ def test_search_with_filter() -> None:
     texts = ["foo", "bar", "baz"]
     docsearch = TiDBVector.from_texts(
         texts=texts,
-        collection_name="test_collection",
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
     )
 
     output = docsearch.similarity_search("foo", k=1)
@@ -86,11 +86,11 @@ def test_search_with_filter() -> None:
     metadatas = [{"page": i + 1, "page_str": str(i + 1)} for i in range(len(texts))]
     docsearch = TiDBVector.from_texts(
         texts=texts,
-        collection_name="test_collection",
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
         metadatas=metadatas,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
     )
 
     output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
@@ -187,7 +187,7 @@ def test_search_with_filter() -> None:
     )
     assert output == []
 
-    docsearch.drop_collection()
+    docsearch.drop_vectorstore()
 
 
 def test_search_with_score() -> None:
@@ -196,52 +196,52 @@ def test_search_with_score() -> None:
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = TiDBVector.from_texts(
         texts=texts,
-        collection_name="test_collection",
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
         metadatas=metadatas,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
         distance_strategy="cosine",
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
-    docsearch.drop_collection()
+    docsearch.drop_vectorstore()
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
-def test_load_from_existing_collection() -> None:
-    """Test loading existing collection."""
+def test_load_from_existing_vectorstore() -> None:
+    """Test loading existing TiDB Vector Store."""
 
-    # create collection and add documents
+    # create tidb vector store and add documents
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = TiDBVector.from_texts(
         texts=texts,
-        collection_name="test_collection",
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
         metadatas=metadatas,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
         distance_strategy="cosine",
     )
 
-    # load from existing collection
-    docsearch_copy = TiDBVector.from_existing_collection(
-        collection_name="test_collection",
+    # load from existing tidb vector store
+    docsearch_copy = TiDBVector.from_existing_vectorstore(
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
     )
     output = docsearch_copy.similarity_search_with_score("foo", k=1)
-    docsearch.drop_collection()
+    docsearch.drop_vectorstore()
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
-    # load from non-existing collection
+    # load from non-existing tidb vector store
     try:
-        _ = TiDBVector.from_existing_collection(
-            collection_name="test_collection_non_existing",
+        _ = TiDBVector.from_existing_vectorstore(
+            vectorstore_name="test_vectorstore_non_existing",
             embedding=FakeEmbeddingsWithAdaDimension(),
             connection_string=TiDB_CONNECT_URL,
         )
-        assert False, "non-existing collection testing raised an error"
+        assert False, "non-existing tidb vector store testing raised an error"
     except sqlalchemy.exc.NoSuchTableError:
         pass
 
@@ -253,18 +253,18 @@ def test_delete_doc() -> None:
     ids = ["1", "2", "3"]
     docsearch = TiDBVector.from_texts(
         texts=texts,
-        collection_name="test_collection",
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         ids=ids,
         connection_string=TiDB_CONNECT_URL,
         metadatas=metadatas,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
     )
 
     output = docsearch.similarity_search_with_score("foo", k=1)
     docsearch.delete(["1", "2"])
     output_after_deleted = docsearch.similarity_search_with_score("foo", k=1)
-    docsearch.drop_collection()
+    docsearch.drop_vectorstore()
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0)]
     assert output_after_deleted == [
         (Document(page_content="baz", metadata={"page": "2"}), 0.004691842206844599)
@@ -277,12 +277,12 @@ def test_relevance_score() -> None:
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch_consine = TiDBVector.from_texts(
         texts=texts,
-        collection_name="test_collection",
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
         metadatas=metadatas,
         distance_strategy="cosine",
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
     )
 
     output_consine = docsearch_consine.similarity_search_with_relevance_scores(
@@ -294,8 +294,8 @@ def test_relevance_score() -> None:
         (Document(page_content="baz", metadata={"page": "2"}), 0.9953081577931554),
     ]
 
-    docsearch_l2 = TiDBVector.from_existing_collection(
-        collection_name="test_collection",
+    docsearch_l2 = TiDBVector.from_existing_vectorstore(
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
         distance_strategy="l2",
@@ -310,18 +310,18 @@ def test_relevance_score() -> None:
     try:
         _ = TiDBVector.from_texts(
             texts=texts,
-            collection_name="test_collection",
+            vectorstore_name="test_tidb_vectorstore_langchain",
             embedding=FakeEmbeddingsWithAdaDimension(),
             connection_string=TiDB_CONNECT_URL,
             metadatas=metadatas,
             distance_strategy="inner",
-            pre_delete_collection=True,
+            drop_existing_vectorstore=True,
         )
         assert False, "inner product should raise error"
     except ValueError:
         pass
 
-    docsearch_l2.drop_collection()
+    docsearch_l2.drop_vectorstore()
 
 
 def test_retriever_search_threshold() -> None:
@@ -330,11 +330,11 @@ def test_retriever_search_threshold() -> None:
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = TiDBVector.from_texts(
         texts=texts,
-        collection_name="test_collection",
+        vectorstore_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=TiDB_CONNECT_URL,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
     )
 
     retriever = docsearch.as_retriever(
@@ -347,4 +347,4 @@ def test_retriever_search_threshold() -> None:
         Document(page_content="bar", metadata={"page": "1"}),
     ]
 
-    docsearch.drop_collection()
+    docsearch.drop_vectorstore()

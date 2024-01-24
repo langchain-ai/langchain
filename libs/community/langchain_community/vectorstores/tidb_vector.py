@@ -6,7 +6,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
-DEFAULT_COLLECTION_NAME = "langchain_tidb_vector"
+DEFAULT_TiDB_VECTOR_STORE_NAME = "langchain_tidb_vector"
 
 
 class TiDBVector(VectorStore):
@@ -14,30 +14,30 @@ class TiDBVector(VectorStore):
         self,
         connection_string: str,
         embedding_function: Embeddings,
-        collection: Optional[Any] = None,
-        collection_name: str = DEFAULT_COLLECTION_NAME,
+        tidb_vectorstore: Optional[Any] = None,
+        vectorstore_name: str = DEFAULT_TiDB_VECTOR_STORE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
-        pre_delete_collection: bool = False,
+        drop_existing_vectorstore: bool = False,
         **kwargs: Any,
     ) -> None:
         """
-        Initialize a TiDBVector.
+        Initialize a TiDB Vector Store.
 
         Args:
             connection_string (str): The connection string for the TiDB database,
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
             embedding_function: The embedding function used to generate embeddings.
-            collection (Optional[TiDBVectorStore]): The existing collection to use.
-            collection_name (str): The name of the collection,
+            tidb_vectorstore (Optional): The existing TiDB Vector Store to use.
+            vectorstore_name (str, optional): The name of the TiDB Vector Store,
                 defaults to "langchain_tidb_vector".
             distance_strategy: The strategy used for similarity search,
                 defaults to "cosine", valid values: "l2", "cosine".
             engine_args (Optional[Dict]): Additional arguments for the database engine,
                 defaults to None.
-            pre_delete_collection: Delete the collection before creating a new one,
-                defaults to False.
+            drop_existing_vectorstore: Drop the existing TiDB Vector Store
+                before initializing, defaults to False.
             **kwargs (Any): Additional keyword arguments.
 
         Examples:
@@ -54,7 +54,7 @@ class TiDBVector(VectorStore):
                 texts = [..., ...],
                 connection_string=CONNECTION_STRING,
                 distance_strategy="l2",
-                collection_name="tidb_vector_langchain",
+                vectorstore_name="tidb_vector_langchain",
             )
 
             query = "What did the president say about Ketanji Brown Jackson"
@@ -68,19 +68,19 @@ class TiDBVector(VectorStore):
         self._distance_strategy = distance_strategy
 
         try:
-            from tidb_vector.integrations.vectorstore import TiDBCollection
+            from tidb_vector.integrations import VectorStore as TiDBVectorStore
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
                 "Please install it with `pip install tidbvec`."
             )
 
-        self._tidb = collection or TiDBCollection(
+        self._tidb = tidb_vectorstore or TiDBVectorStore(
             connection_string=connection_string,
-            collection_name=collection_name,
+            table_name=vectorstore_name,
             distance_strategy=distance_strategy,
             engine_args=engine_args,
-            pre_delete_collection=pre_delete_collection,
+            drop_existing_table=drop_existing_vectorstore,
             **kwargs,
         )
 
@@ -103,12 +103,12 @@ class TiDBVector(VectorStore):
         embedding: Embeddings,
         connection_string: str,
         metadatas: Optional[List[dict]] = None,
-        collection_name: str = DEFAULT_COLLECTION_NAME,
+        vectorstore_name: str = DEFAULT_TiDB_VECTOR_STORE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
-        pre_delete_collection: bool = False,
+        drop_existing_vectorstore: bool = False,
         **kwargs: Any,
     ) -> VectorStore:
         """
@@ -121,7 +121,7 @@ class TiDBVector(VectorStore):
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
             metadatas: The list of metadata dictionaries corresponding to each text,
                 defaults to None.
-            collection_name (str, optional): The name of the collection,
+            vectorstore_name (str, optional): The name of the TiDB Vector Store,
                 defaults to "langchain_tidb_vector".
             distance_strategy: The distance strategy used for similarity search,
                 defaults to "cosine", allowed strategies: "l2", "cosine".
@@ -129,23 +129,23 @@ class TiDBVector(VectorStore):
                 defaults to None.
             engine_args: Additional arguments for the underlying database engine,
                 defaults to None.
-            pre_delete_collection: Delete existing collection before adding the texts,
-                defaults to False.
+            drop_existing_vectorstore: Drop the existing TiDB Vector Store
+                before creating a new one, defaults to False.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
-            VectorStore: The created VectorStore.
+            VectorStore: The created TiDB Vector Store.
 
         """
         embeddings = embedding.embed_documents(list(texts))
 
         vs = cls(
             connection_string=connection_string,
-            collection_name=collection_name,
+            vectorstore_name=vectorstore_name,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
             engine_args=engine_args,
-            pre_delete_collection=pre_delete_collection,
+            drop_existing_vectorstore=drop_existing_vectorstore,
             **kwargs,
         )
 
@@ -156,24 +156,24 @@ class TiDBVector(VectorStore):
         return vs
 
     @classmethod
-    def from_existing_collection(
+    def from_existing_vectorstore(
         cls,
         embedding: Embeddings,
         connection_string: str,
-        collection_name: str = DEFAULT_COLLECTION_NAME,
+        vectorstore_name: str,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> VectorStore:
         """
-        Create a VectorStore instance from an existing collection in the TiDB database.
+        Create a VectorStore instance from an existing TiDB Vector Store in TiDB.
 
         Args:
             embedding (Embeddings): The function to use for generating embeddings.
             connection_string (str): The connection string for the TiDB database,
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
-            collection_name (str, optional): The name of the collection,
+            vectorstore_name (str): The name of the TiDB Vector Store,
                 defaults to "langchain_tidb_vector".
             distance_strategy: The distance strategy used for similarity search,
                 defaults to "cosine", allowed strategies: "l2", "cosine".
@@ -188,16 +188,16 @@ class TiDBVector(VectorStore):
         """
 
         try:
-            from tidb_vector.integrations.vectorstore import TiDBCollection
+            from tidb_vector.integrations import VectorStore as TiDBVectorStore
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
                 "Please install it with `pip install tidbvec`."
             )
 
-        tidb_collection = TiDBCollection.get_collection(
+        tidb_vectorstore = TiDBVectorStore.get_vectorstore(
             connection_string=connection_string,
-            collection_name=collection_name,
+            table_name=vectorstore_name,
             distance_strategy=distance_strategy,
             engine_args=engine_args,
             **kwargs,
@@ -205,16 +205,16 @@ class TiDBVector(VectorStore):
 
         return cls(
             connection_string=connection_string,
-            collection=tidb_collection,
+            tidb_vectorstore=tidb_vectorstore,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
         )
 
-    def drop_collection(self) -> None:
+    def drop_vectorstore(self) -> None:
         """
-        Drop the collection from the TiDB database.
+        Drop the Vector Store from the TiDB database.
         """
-        self._tidb.drop_collection()
+        self._tidb.drop_table()
 
     def add_texts(
         self,
@@ -224,7 +224,7 @@ class TiDBVector(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """
-        Add texts to TiDB Vector.
+        Add texts to TiDB Vector Store.
 
         Args:
             texts (Iterable[str]): The texts to be added.
@@ -253,7 +253,7 @@ class TiDBVector(VectorStore):
         **kwargs: Any,
     ) -> None:
         """
-        Delete vectors from the TiDB vector.
+        Delete vector data from the TiDB Vector Store.
 
         Args:
             ids (Optional[List[str]]): A list of vector IDs to delete.
