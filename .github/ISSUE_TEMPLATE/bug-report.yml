@@ -91,7 +91,16 @@ body:
     id: system-info
     attributes:
       label: System Info
-      description: Please share your system info with us.
+      description: |
+        Please share your system info with us. 
+        
+        "pip freeze | grep langchain" 
+        platform (windows / linux / mac)
+        python version
+        
+        OR if you're on a recent version of langchain-core you can paste the output of:
+        
+        python -m langchain_core.sys_info
       placeholder: |
         "pip freeze | grep langchain"
         platform
