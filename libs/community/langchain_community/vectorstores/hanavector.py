@@ -439,7 +439,7 @@ class HanaDB(VectorStore):
 
         Returns:
             Optional[bool]: True, if deletion is technically successful.
-            Deletion of zero entries, due to non-matching filters is a successs.
+            Deletion of zero entries, due to non-matching filters is a success.
         """
 
         if ids is not None:

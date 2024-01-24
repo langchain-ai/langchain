@@ -268,7 +268,7 @@ def test_hanavector_add_texts(texts: List[str]) -> None:
 
     vectordb.add_texts(texts=texts)
 
-    # chech that embeddings have been created in the table
+    # check that embeddings have been created in the table
     number_of_texts = len(texts)
     number_of_rows = -1
     sql_str = f"SELECT COUNT(*) FROM {table_name}"
@@ -296,7 +296,7 @@ def test_hanavector_from_texts(texts: List[str]) -> None:
     # test if vectorDB is instance of HanaDB
     assert isinstance(vectorDB, HanaDB)
 
-    # chech that embeddings have been created in the table
+    # check that embeddings have been created in the table
     number_of_texts = len(texts)
     number_of_rows = -1
     sql_str = f"SELECT COUNT(*) FROM {table_name}"

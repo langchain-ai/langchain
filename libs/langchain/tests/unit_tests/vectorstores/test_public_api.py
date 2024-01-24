@@ -27,7 +27,6 @@ _EXPECTED = [
     "ElasticsearchStore",
     "Epsilla",
     "FAISS",
-    "HanaDB",
     "Hologres",
     "LanceDB",
     "LLMRails",

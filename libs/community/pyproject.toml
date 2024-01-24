@@ -88,6 +88,7 @@ azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 oracle-ads = {version = "^2.9.1", optional = true}
 zhipuai = {version = "^1.0.7", optional = true}
 elasticsearch = {version = "^8.12.0", optional = true}
+hdbcli = {version = "^2.19.21", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -148,7 +149,6 @@ langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
 boto3 = ">=1.28.57,<2"
 google-cloud-aiplatform = ">=1.37.0,<2"
-hdbcli = "^2.19.21"
 
 [tool.poetry.group.lint]
 optional = true
@@ -252,6 +252,7 @@ extended_testing = [
  "oracle-ads",
  "zhipuai",
  "elasticsearch",
+ "hdbcli",
 ]
 
 [tool.ruff]
