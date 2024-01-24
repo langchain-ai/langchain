@@ -15,7 +15,7 @@ python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
 requests = "^2.31.0"
 types-requests = "^2.31.0.20231231"
-langsmith = "^0.0.77"
+langsmith = ">=0.0.83,<0.1"
 
 [tool.poetry.group.test]
 optional = true

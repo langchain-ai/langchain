@@ -1,3 +1,7 @@
+from functools import partial
+from typing import Optional
+
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
 
@@ -10,8 +14,37 @@ class RetrieverInput(BaseModel):
     query: str = Field(description="query to look up in retriever")
 
 
+def _get_relevant_documents(
+    query: str,
+    retriever: BaseRetriever,
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+) -> str:
+    docs = retriever.get_relevant_documents(query)
+    return document_separator.join(
+        format_document(doc, document_prompt) for doc in docs
+    )
+
+
+async def _aget_relevant_documents(
+    query: str,
+    retriever: BaseRetriever,
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+) -> str:
+    docs = await retriever.aget_relevant_documents(query)
+    return document_separator.join(
+        format_document(doc, document_prompt) for doc in docs
+    )
+
+
 def create_retriever_tool(
-    retriever: BaseRetriever, name: str, description: str
+    retriever: BaseRetriever,
+    name: str,
+    description: str,
+    *,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    document_separator: str = "\n\n",
 ) -> Tool:
     """Create a tool to do retrieval of documents.
 
@@ -25,10 +58,23 @@ def create_retriever_tool(
     Returns:
         Tool class to pass to an agent
     """
+    document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    func = partial(
+        _get_relevant_documents,
+        retriever=retriever,
+        document_prompt=document_prompt,
+        document_separator=document_separator,
+    )
+    afunc = partial(
+        _aget_relevant_documents,
+        retriever=retriever,
+        document_prompt=document_prompt,
+        document_separator=document_separator,
+    )
     return Tool(
         name=name,
         description=description,
-        func=retriever.get_relevant_documents,
-        coroutine=retriever.aget_relevant_documents,
+        func=func,
+        coroutine=afunc,
         args_schema=RetrieverInput,
     )
