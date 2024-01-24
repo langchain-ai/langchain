@@ -120,22 +120,22 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 MessageLikeRepresentation = Union[BaseMessage, Tuple[str, str], str]
 
 
-def _create_template_from_message_type(message_type: str, template: str) -> BaseMessage:
-    """Create a message prompt template from a message type and template string.
+def _create_message_from_message_type(message_type: str, content: str) -> BaseMessage:
+    """Create a message from a message type and content string.
 
     Args:
-        message_type: str the type of the message template (e.g., "human", "ai", etc.)
-        template: str the template string.
+        message_type: str the type of the message (e.g., "human", "ai", etc.)
+        content: str the content string.
 
     Returns:
-        a message prompt template of the appropriate type.
+        a message of the appropriate type.
     """
     if message_type in ("human", "user"):
-        message: BaseMessage = HumanMessage(content=template)
+        message: BaseMessage = HumanMessage(content=content)
     elif message_type in ("ai", "assistant"):
-        message = AIMessage(content=template)
+        message = AIMessage(content=content)
     elif message_type == "system":
-        message = SystemMessage(content=template)
+        message = SystemMessage(content=content)
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"
@@ -166,12 +166,12 @@ def _convert_to_message(
     if isinstance(message, BaseMessage):
         _message = message
     elif isinstance(message, str):
-        _message = _create_template_from_message_type("human", message)
+        _message = _create_message_from_message_type("human", message)
     elif isinstance(message, tuple):
         if len(message) != 2:
             raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
         message_type_str, template = message
-        _message = _create_template_from_message_type(message_type_str, template)
+        _message = _create_message_from_message_type(message_type_str, template)
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 

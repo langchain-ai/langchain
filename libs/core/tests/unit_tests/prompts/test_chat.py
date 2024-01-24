@@ -369,3 +369,9 @@ def test_messages_placeholder() -> None:
         prompt.format_messages()
     prompt = MessagesPlaceholder("history", optional=True)
     assert prompt.format_messages() == []
+    prompt.format_messages(
+        history=[("system", "You are an AI assistant."), "Hello!"]
+    ) == [
+        SystemMessage(content="You are an AI assistant."),
+        HumanMessage(content="Hello!"),
+    ]

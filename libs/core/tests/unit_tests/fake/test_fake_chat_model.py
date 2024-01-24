@@ -5,8 +5,9 @@ from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages.human import HumanMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
-from tests.unit_tests.fake.chat_model import GenericFakeChatModel
+from tests.unit_tests.fake.chat_model import GenericFakeChatModel, ParrotFakeChatModel
 
 
 def test_generic_fake_chat_model_invoke() -> None:
@@ -182,3 +183,11 @@ async def test_callback_handlers() -> None:
         AIMessageChunk(content="goodbye"),
     ]
     assert tokens == ["hello", " ", "goodbye"]
+
+
+def test_chat_model_inputs() -> None:
+    fake = ParrotFakeChatModel()
+
+    assert fake.invoke("hello") == HumanMessage(content="hello")
+    assert fake.invoke([("ai", "blah")]) == AIMessage(content="blah")
+    assert fake.invoke([AIMessage(content="blah")]) == AIMessage(content="blah")
