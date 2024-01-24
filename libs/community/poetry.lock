@@ -1770,6 +1770,42 @@ duckdb = ">=0.4.0"
 sqlalchemy = ">=1.3.22"
 
 [[package]]
+name = "elastic-transport"
+version = "8.12.0"
+description = "Transport classes and utilities shared among Python Elastic client libraries"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "elastic-transport-8.12.0.tar.gz", hash = "sha256:48839b942fcce199eece1558ecea6272e116c58da87ca8d495ef12eb61effaf7"},
+    {file = "elastic_transport-8.12.0-py3-none-any.whl", hash = "sha256:87d9dc9dee64a05235e7624ed7e6ab6e5ca16619aa7a6d22e853273b9f1cfbee"},
+]
+
+[package.dependencies]
+certifi = "*"
+urllib3 = ">=1.26.2,<3"
+
+[package.extras]
+develop = ["aiohttp", "furo", "mock", "pytest", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "pytest-mock", "requests", "sphinx (>2)", "sphinx-autodoc-typehints", "trustme"]
+
+[[package]]
+name = "elasticsearch"
+version = "8.12.0"
+description = "Python client for Elasticsearch"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "elasticsearch-8.12.0-py3-none-any.whl", hash = "sha256:d394c5ce746bb8cb97827feae57759dae462bce34df221a6fdb6875c56476389"},
+    {file = "elasticsearch-8.12.0.tar.gz", hash = "sha256:58fd3876682f7529c33b9eeee701e71cfcc334bb45d725e315e22a0a5e2611fb"},
+]
+
+[package.dependencies]
+elastic-transport = ">=8,<9"
+
+[package.extras]
+async = ["aiohttp (>=3,<4)"]
+requests = ["requests (>=2.4.0,<3.0.0)"]
+
+[[package]]
 name = "entrypoints"
 version = "0.4"
 description = "Discover and load entry points from installed packages."
@@ -3884,7 +3920,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.10"
+version = "0.1.14"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3894,7 +3930,7 @@ develop = true
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
-langsmith = "~0.0.63"
+langsmith = ">=0.0.83,<0.1"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -3910,13 +3946,13 @@ url = "../core"
 
 [[package]]
 name = "langsmith"
-version = "0.0.69"
+version = "0.0.83"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.69-py3-none-any.whl", hash = "sha256:49a2546bb83eedb0552673cf81a068bb08078d6d48471f4f1018e1d5c6aa46b1"},
-    {file = "langsmith-0.0.69.tar.gz", hash = "sha256:8fb5297f274db0576ec650d9bab0319acfbb6622d62bc5bb9fe31c6235dc0358"},
+    {file = "langsmith-0.0.83-py3-none-any.whl", hash = "sha256:a5bb7ac58c19a415a9d5f51db56dd32ee2cd7343a00825bbc2018312eb3d122a"},
+    {file = "langsmith-0.0.83.tar.gz", hash = "sha256:94427846b334ad9bdbec3266fee12903fe9f5448f628667689d0412012aaf392"},
 ]
 
 [package.dependencies]
@@ -9162,9 +9198,9 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 cli = ["typer"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "dashvector", "databricks-vectorsearch", "datasets", "dgml-utils", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hologres-vector", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "tidbvec", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict", "zhipuai"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "dashvector", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hologres-vector", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict", "zhipuai"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6568aa847dfd14d4d2e3347204c8745b1184449ec7ee6588433134d8f843875c"
+content-hash = "73184aec5978e0de5b99029724164fa76394beb6359b59763ca488a258b0df4d"
