@@ -3,7 +3,7 @@ name = "rag-lantern"
 version = "0.1.0"
 description = "RAG using Lantern retriver"
 authors = [
-    "Gustavo Reyes <gustavo@lantern.io>",
+    "Gustavo Reyes <gustavo@lantern.dev>",
 ]
 readme = "README.md"
 

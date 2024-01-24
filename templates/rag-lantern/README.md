@@ -3,14 +3,14 @@
 
 This template performs RAG with Lantern.
 
-[Lantern](https://lantern.io/docs) is an open-source Firebase alternative. It is built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL), a free and open-source relational database management system (RDBMS) and uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
+[Lantern](https://lantern.dev/docs) is an open-source Firebase alternative. It is built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL), a free and open-source relational database management system (RDBMS) and uses [lantern](https://github.com/lanterndata/lantern) to store embeddings within your tables.
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 To get your `OPENAI_API_KEY`, navigate to [API keys](https://platform.openai.com/account/api-keys) on your OpenAI account and create a new secret key.
 
-To find your `LANTERN_URL` and `LANTERN_SERVICE_KEY`, head to your Lantern project's [API settings](https://lantern.io/dashboard/project/_/settings/api). 
+To find your `LANTERN_URL` and `LANTERN_SERVICE_KEY`, head to your Lantern project's [API settings](https://lantern.dev/dashboard/project/_/settings/api). 
 
 - `LANTERN_URL` corresponds to the Project URL
 - `LANTERN_SERVICE_KEY` corresponds to the `service_role` API key
@@ -26,13 +26,10 @@ export OPENAI_API_KEY=
 
 Use these steps to setup your Lantern database if you haven't already.
 
-1. Head over to https://database.new to provision your Lantern database.
-2. In the studio, jump to the [SQL editor](https://lantern.io/dashboard/project/_/sql/new) and run the following script to enable `pgvector` and setup your database as a vector store:
+1. Head over to https://lantern.dev to provision your Lantern database.
+2. In the your favorite sql client, jump to the SQL editor and run the following script to setup your database as a vector store:
 
    ```sql
-   -- Enable the pgvector extension to work with embedding vectors
-   create extension if not exists vector;
-
    -- Create a table to store your documents
    create table
      documents (

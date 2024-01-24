@@ -7,7 +7,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 CONNECTION_STRING = "postgresql://postgres:postgres@localhost:5432"
-COLLECTION_NAME = "langchain"
+COLLECTION_NAME = "documents"
 DB_NAME = "postgres"
 
 embeddings = OpenAIEmbeddings()
