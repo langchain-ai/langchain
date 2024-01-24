@@ -16,7 +16,7 @@ Required to run this test:
 import json
 import math
 import os
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, TypedDict
 
 import pytest
 from astrapy.db import AstraDB as LibAstraDB
@@ -32,6 +32,11 @@ COLLECTION_NAME_DIM2 = "lc_test_d2"
 COLLECTION_NAME_DIM2_EUCLIDEAN = "lc_test_d2_eucl"
 
 # Ad-hoc embedding classes:
+
+class AstraDBCredentials(TypedDict, total=False):
+    token: str
+    api_endpoint: str
+    namespace: Optional[str]
 
 
 class SomeEmbeddings(Embeddings):
@@ -100,7 +105,7 @@ def _has_env_vars() -> bool:
 
 
 @pytest.fixture(scope="session")
-def astradb_credentials() -> Iterable[Dict[str, Optional[str]]]:
+def astradb_credentials() -> AstraDBCredentials:
     yield {
         "token": os.environ["ASTRA_DB_APPLICATION_TOKEN"],
         "api_endpoint": os.environ["ASTRA_DB_API_ENDPOINT"],
@@ -110,7 +115,7 @@ def astradb_credentials() -> Iterable[Dict[str, Optional[str]]]:
 
 @pytest.fixture(scope="function")
 def store_someemb(
-    astradb_credentials: Dict[str, Optional[str]],
+    astradb_credentials: AstraDBCredentials,
 ) -> Iterable[AstraDBVectorStore]:
     emb = SomeEmbeddings(dimension=2)
     v_store = AstraDBVectorStore(
@@ -130,7 +135,7 @@ def store_someemb(
 
 @pytest.fixture(scope="function")
 def store_parseremb(
-    astradb_credentials: Dict[str, Optional[str]],
+    astradb_credentials: AstraDBCredentials,
 ) -> Iterable[AstraDBVectorStore]:
     emb = ParserEmbeddings(dimension=2)
     v_store = AstraDBVectorStore(
@@ -152,7 +157,7 @@ def store_parseremb(
 @pytest.mark.skipif(not _has_env_vars(), reason="Missing Astra DB env. vars")
 class TestAstraDBVectorStore:
     def test_astradb_vectorstore_create_delete(
-        self, astradb_credentials: Dict[str, Optional[str]]
+        self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """Create and delete."""
         emb = SomeEmbeddings(dimension=2)
@@ -188,7 +193,7 @@ class TestAstraDBVectorStore:
         reason="Collection-deletion tests are suppressed",
     )
     def test_astradb_vectorstore_pre_delete_collection(
-        self, astradb_credentials: Dict[str, Optional[str]]
+        self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """Use of the pre_delete_collection flag."""
         emb = SomeEmbeddings(dimension=2)
@@ -220,7 +225,7 @@ class TestAstraDBVectorStore:
             v_store.delete_collection()
 
     def test_astradb_vectorstore_from_x(
-        self, astradb_credentials: Dict[str, Optional[str]]
+        self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """from_texts and from_documents methods."""
         emb = SomeEmbeddings(dimension=2)
@@ -453,7 +458,7 @@ class TestAstraDBVectorStore:
         reason="Collection-deletion tests are suppressed",
     )
     def test_astradb_vectorstore_drop(
-        self, astradb_credentials: Dict[str, Optional[str]]
+        self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """behaviour of 'delete_collection'."""
         collection_name = COLLECTION_NAME_DIM2
@@ -477,7 +482,7 @@ class TestAstraDBVectorStore:
             _ = v_store.similarity_search("hah", k=10)
 
     def test_astradb_vectorstore_custom_params(
-        self, astradb_credentials: Dict[str, Optional[str]]
+        self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """Custom batch size and concurrency params."""
         emb = SomeEmbeddings(dimension=2)
@@ -520,7 +525,7 @@ class TestAstraDBVectorStore:
                 v_store.clear()
 
     def test_astradb_vectorstore_metrics(
-        self, astradb_credentials: Dict[str, Optional[str]]
+        self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """
         Different choices of similarity metric.
