@@ -173,7 +173,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             instructions: Assistant instructions.
             tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
             model: Assistant model to use.
-            client: OpenAI or AzureOpenAI client. Will create default OpenAI client if not specified.
+            client: OpenAI or AzureOpenAI client.
+                Will create default OpenAI client if not specified.
 
         Returns:
             OpenAIAssistantRunnable configured to run using the created assistant.
