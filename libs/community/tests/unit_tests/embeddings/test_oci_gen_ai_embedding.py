@@ -1,4 +1,4 @@
-"""Test OCI Generative AI service embedding endpoint."""
+"""Test OCI Generative AI embedding service."""
 from unittest.mock import MagicMock
 
 import pytest
@@ -17,7 +17,7 @@ class MockResponseDict(dict):
     "test_model_id", ["cohere.embed-english-light-v3.0", "cohere.embed-english-v3.0"]
 )
 def test_embedding_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
-    """Test valid call to OCI Generative AI embedding endpoint."""
+    """Test valid call to OCI Generative AI embedding service."""
     oci_gen_ai_client = MagicMock()
     embeddings = OCIGenAIEmbeddings(
         model_id=test_model_id,
