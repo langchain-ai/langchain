@@ -142,13 +142,8 @@ const config = {
       },
       image: "img/parrot-chainlink-icon.png",
       navbar: {
-        title: "🦜️🔗 LangChain",
+        title: "🦜️🔗 LangChain Docs",
         items: [
-          {
-            to: "/docs/get_started/introduction",
-            label: "Docs",
-            position: "left",
-          },
           {
             type: "docSidebar",
             position: "left",
