@@ -1233,6 +1233,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ElasticVectorSearch",
         "ElasticsearchStore",
         "FAISS",
+        "HanaDB",
         "MomentoVectorIndex",
         "MyScale",
         "PGVector",
