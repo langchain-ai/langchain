@@ -7,7 +7,7 @@ from langchain_community.indexes.base import RecordManager
 class MemoryRecordManager(RecordManager):
     data: List[Dict[str, Any]] = []
 
-    def __init__(self, namespace: str = ""):
+    def __init__(self, namespace: str):
         super().__init__(namespace=namespace)
 
     def create_schema(self) -> None:
