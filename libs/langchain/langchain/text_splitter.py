@@ -1539,7 +1539,6 @@ class HTMLSectionSplitter:
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            index = -1
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
 
