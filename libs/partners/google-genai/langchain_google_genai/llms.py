@@ -56,11 +56,19 @@ def _completion_with_retry(
         prompt: LanguageModelInput, is_gemini: bool, stream: bool, **kwargs: Any
     ) -> Any:
         generation_config = kwargs.get("generation_config", {})
-        if is_gemini:
-            return llm.client.generate_content(
-                contents=prompt, stream=stream, generation_config=generation_config
-            )
-        return llm.client.generate_text(prompt=prompt, **kwargs)
+        error_msg = (
+            "Your location is not supported by google-generativeai at the moment. "
+            "Try to use VertexAI LLM from langchain_google_vertexai"
+        )
+        try:
+            if is_gemini:
+                return llm.client.generate_content(
+                    contents=prompt, stream=stream, generation_config=generation_config
+                )
+            return llm.client.generate_text(prompt=prompt, **kwargs)
+        except google.api_core.exceptions.FailedPrecondition as exc:
+            if "location is not supported" in exc.message:
+                raise ValueError(error_msg)
 
     return _completion_with_retry(
         prompt=prompt, is_gemini=is_gemini, stream=stream, **kwargs
