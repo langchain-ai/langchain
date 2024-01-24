@@ -49,20 +49,34 @@ class AthenaLoader(BaseLoader):
         self.query = query
         self.database = database
         self.s3_output_uri = s3_output_uri
-        self.profile_name = profile_name
         self.metadata_columns = metadata_columns if metadata_columns is not None else []
 
+        try:
+            import boto3
+        except ImportError:
+            raise ModuleNotFoundError(
+                "Could not import boto3 python package. "
+                "Please install it with `pip install boto3`."
+            )
+
+        try:
+            session = (
+                boto3.Session(profile_name=profile_name)
+                if profile_name is not None
+                else boto3.Session()
+            )
+        except Exception as e:
+            raise ValueError(
+                "Could not load credentials to authenticate with AWS client. "
+                "Please check that credentials in the specified "
+                "profile name are valid."
+            ) from e
+
+        self.athena_client = session.client("athena")
+        self.s3_client = session.client("s3")
+
     def _execute_query(self) -> List[Dict[str, Any]]:
-        import boto3
-
-        session = (
-            boto3.Session(profile_name=self.profile_name)
-            if self.profile_name is not None
-            else boto3.Session()
-        )
-        client = session.client("athena")
-
-        response = client.start_query_execution(
+        response = self.athena_client.start_query_execution(
             QueryString=self.query,
             QueryExecutionContext={"Database": self.database},
             ResultConfiguration={"OutputLocation": self.s3_output_uri},
@@ -70,7 +84,7 @@ class AthenaLoader(BaseLoader):
         query_execution_id = response["QueryExecutionId"]
         print(f"Query : {self.query}")
         while True:
-            response = client.get_query_execution(QueryExecutionId=query_execution_id)
+            response = self.athena_client.get_query_execution(QueryExecutionId=query_execution_id)
             state = response["QueryExecution"]["Status"]["State"]
             if state == "SUCCEEDED":
                 print(f"State : {state}")
@@ -86,19 +100,23 @@ class AthenaLoader(BaseLoader):
                 print(f"State : {state}")
             time.sleep(1)
 
-        result_set = self.get_result_set(session, query_execution_id)
+        result_set = self._get_result_set(query_execution_id)
         return json.loads(result_set.to_json(orient="records"))
 
-    def get_result_set(self, session, query_execution_id):
-        import pandas as pd
-
-        s3c = session.client("s3")
+    def _get_result_set(self, query_execution_id: str):
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ModuleNotFoundError(
+                "Could not import pandas python package. "
+                "Please install it with `pip install pandas`."
+            )
 
         tokens = self.s3_output_uri.removeprefix("s3://").removesuffix("/").split("/")
         bucket = tokens[0]
         key = "/".join(tokens[1:]) + "/" + query_execution_id + ".csv"
 
-        obj = s3c.get_object(Bucket=bucket, Key=key)
+        obj = self.s3_client.get_object(Bucket=bucket, Key=key)
         df = pd.read_csv(io.BytesIO(obj["Body"].read()), encoding="utf8")
         return df
 
