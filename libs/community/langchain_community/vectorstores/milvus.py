@@ -506,7 +506,7 @@ class Milvus(VectorStore):
             batch_size (int, optional): Batch size to use for insertion.
                 Defaults to 1000.
             ids (Optional[List[str]]): List of text ids. The length of each item
-            
+
         Raises:
             MilvusException: Failure to add texts
 
