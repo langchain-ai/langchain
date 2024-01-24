@@ -126,8 +126,8 @@ async def test_beta_async_function() -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
-            "The function `beta_async_function` is in beta. It is actively being worked on, "
-            "so the API may change."
+            "The function `beta_async_function` is in beta. "
+            "It is actively being worked on, so the API may change."
         )
 
         doc = beta_function.__doc__
@@ -168,8 +168,8 @@ async def test_beta_async_method() -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
-            "The function `beta_async_method` is in beta. It is actively being worked on, so "
-            "the API may change."
+            "The function `beta_async_method` is in beta. "
+            "It is actively being worked on, so the API may change."
         )
 
         doc = obj.beta_method.__doc__
