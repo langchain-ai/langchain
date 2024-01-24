@@ -1,7 +1,16 @@
-name: "\U0001F680 Feature request"
-description: Submit a proposal/request for a new LangChain feature
-labels: ["02 Feature Request"]
+labels: ["Idea"]
+description: Suggest ideas for LangChain features and improvements.
 body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checked
+      description: Please confirm and check all the following options.
+      options:
+        - label: I searched existing ideas and did not find a similar one.
+          required: true
+        - label: I added a very descriptive title to this idea.
+          required: true
   - type: textarea
     id: feature-request
     validations:
@@ -19,12 +28,3 @@ body:
       label: Motivation
       description: |
         Please outline the motivation for the proposal. Is your feature request related to a problem? e.g., I'm always frustrated when [...]. If this is related to another GitHub issue, please link here too.
-
-  - type: textarea
-    id: contribution
-    validations:
-      required: true
-    attributes:
-      label: Your contribution
-      description: |
-        Is there any way that you could help, e.g. by submitting a PR? Make sure to read the [Contributing Guide](https://python.langchain.com/docs/contributing/)

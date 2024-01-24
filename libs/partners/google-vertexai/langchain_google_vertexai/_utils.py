@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Optional, Union
 
 import google.api_core
 from google.api_core.gapic_v1.client_info import ClientInfo
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
