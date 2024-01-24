@@ -8,7 +8,9 @@ from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization", "conversational")
+VALID_TASKS = (
+    "text2text-generation", "text-generation", "summarization", "conversational"
+)
 
 
 class HuggingFaceEndpoint(LLM):
