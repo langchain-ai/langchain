@@ -1282,15 +1282,22 @@ class CallbackManager(BaseCallbackManager):
         input_str: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
+        inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> CallbackManagerForToolRun:
         """Run when tool starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized tool.
-            input_str (str): The input to the tool.
-            run_id (UUID, optional): The ID of the run. Defaults to None.
-            parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
+            serialized: Serialized representation of the tool.
+            input_str: The  input to the tool as a string.
+                Non-string inputs are cast to strings.
+            run_id: ID for the run. Defaults to None.
+            parent_run_id: The ID of the parent run. Defaults to None.
+            inputs: The original input to the tool if provided.
+                Recommended for usage instead of input_str when the original
+                input is needed.
+                If provided, the inputs are expected to be formatted as a dict.
+                The keys will correspond to the named-arguments in the tool.
 
         Returns:
             CallbackManagerForToolRun: The callback manager for the tool run.
@@ -1308,6 +1315,7 @@ class CallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
+            inputs=inputs,
             **kwargs,
         )
 

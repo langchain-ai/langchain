@@ -25,6 +25,7 @@ from langchain_community.chat_models.baidu_qianfan_endpoint import QianfanChatEn
 from langchain_community.chat_models.bedrock import BedrockChat
 from langchain_community.chat_models.cohere import ChatCohere
 from langchain_community.chat_models.databricks import ChatDatabricks
+from langchain_community.chat_models.deepinfra import ChatDeepInfra
 from langchain_community.chat_models.ernie import ErnieBotChat
 from langchain_community.chat_models.everlyai import ChatEverlyAI
 from langchain_community.chat_models.fake import FakeListChatModel
@@ -47,6 +48,7 @@ from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
 from langchain_community.chat_models.promptlayer_openai import PromptLayerChatOpenAI
+from langchain_community.chat_models.sparkllm import ChatSparkLLM
 from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_community.chat_models.vertexai import ChatVertexAI
 from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
@@ -61,6 +63,7 @@ __all__ = [
     "FakeListChatModel",
     "PromptLayerChatOpenAI",
     "ChatDatabricks",
+    "ChatDeepInfra",
     "ChatEverlyAI",
     "ChatAnthropic",
     "ChatCohere",
@@ -86,6 +89,7 @@ __all__ = [
     "ChatBaichuan",
     "ChatHunyuan",
     "GigaChat",
+    "ChatSparkLLM",
     "VolcEngineMaasChat",
     "GPTRouter",
     "ChatZhipuAI",

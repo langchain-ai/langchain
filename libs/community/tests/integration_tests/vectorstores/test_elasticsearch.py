@@ -157,7 +157,7 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
-    async def test_similarity_search_without_metadat_async(
+    async def test_similarity_search_without_metadata_async(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
         """Test end to end construction and search without metadata."""
@@ -400,7 +400,7 @@ class TestElasticsearch:
                         "script": {
                             "source": """
             double value = dotProduct(params.query_vector, 'vector');
-            return sigmoid(1, Math.E, -value); 
+            return sigmoid(1, Math.E, -value);
             """,
                             "params": {
                                 "query_vector": [
@@ -776,6 +776,44 @@ class TestElasticsearch:
             embedding=embedded_query, k=1
         )
         assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
+
+    def test_elasticsearch_with_relevance_threshold(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test to make sure the relevance threshold is respected."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": str(i)} for i in range(len(texts))]
+        embeddings = FakeEmbeddings()
+
+        docsearch = ElasticsearchStore.from_texts(
+            index_name=index_name,
+            texts=texts,
+            embedding=embeddings,
+            metadatas=metadatas,
+            **elasticsearch_connection,
+        )
+
+        # Find a good threshold for testing
+        query_string = "foo"
+        embedded_query = embeddings.embed_query(query_string)
+        top3 = docsearch.similarity_search_by_vector_with_relevance_scores(
+            embedding=embedded_query, k=3
+        )
+        similarity_of_second_ranked = top3[1][1]
+        assert len(top3) == 3
+
+        # Test threshold
+        retriever = docsearch.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={"score_threshold": similarity_of_second_ranked},
+        )
+        output = retriever.get_relevant_documents(query=query_string)
+
+        assert output == [
+            top3[0][0],
+            top3[1][0],
+            # third ranked is out
+        ]
 
     def test_elasticsearch_delete_ids(
         self, elasticsearch_connection: dict, index_name: str
