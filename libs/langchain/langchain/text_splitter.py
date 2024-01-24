@@ -598,7 +598,9 @@ class HTMLHeaderTextSplitter:
                 "Unable to import lxml, please install with `pip install lxml`."
             ) from e
         # use lxml library to parse html document and return xml ElementTree
-        parser = etree.HTMLParser()
+        # Explicitly encoding in utf-8 allows non-English
+        # html files to be processed without garbled characters
+        parser = etree.HTMLParser(encoding="utf-8")
         tree = etree.parse(file, parser)
 
         # document transformation for "structure-aware" chunking is handled with xsl.
@@ -1424,6 +1426,37 @@ class SpacyTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         splits = (s.text for s in self._tokenizer(text).sents)
+        return self._merge_splits(splits, self._separator)
+
+
+class KonlpyTextSplitter(TextSplitter):
+    """Splitting text using Konlpy package.
+
+    It is good for splitting Korean text.
+    """
+
+    def __init__(
+        self,
+        separator: str = "\n\n",
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the Konlpy text splitter."""
+        super().__init__(**kwargs)
+        self._separator = separator
+        try:
+            from konlpy.tag import Kkma
+        except ImportError:
+            raise ImportError(
+                """
+                Konlpy is not installed, please install it with 
+                `pip install konlpy`
+                """
+            )
+        self.kkma = Kkma()
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        splits = self.kkma.sentences(text)
         return self._merge_splits(splits, self._separator)
 
 

@@ -300,7 +300,7 @@ class ChildTool(BaseTool):
 
     def run(
         self,
-        tool_input: Union[str, Dict],
+        tool_input: Union[str, Dict[str, Any]],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -312,7 +312,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
-        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -333,9 +332,15 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            # Inputs by definition should always be dicts.
+            # For now, it's unclear whether this assumption is ever violated,
+            # but if it is we will send a `None` value to the callback instead
+            # And will need to address issue via a patch.
+            inputs=None if isinstance(tool_input, str) else tool_input,
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
@@ -387,7 +392,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
-        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -407,9 +411,11 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            inputs=tool_input,
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (

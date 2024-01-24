@@ -216,6 +216,12 @@ def _import_hologres() -> Any:
     return Hologres
 
 
+def _import_kdbai() -> Any:
+    from langchain_community.vectorstores.kdbai import KDBAI
+
+    return KDBAI
+
+
 def _import_lancedb() -> Any:
     from langchain_community.vectorstores.lancedb import LanceDB
 
@@ -531,6 +537,8 @@ def __getattr__(name: str) -> Any:
         return _import_faiss()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "KDBAI":
+        return _import_kdbai()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -647,6 +655,7 @@ __all__ = [
     "Epsilla",
     "FAISS",
     "Hologres",
+    "KDBAI",
     "LanceDB",
     "LLMRails",
     "Marqo",

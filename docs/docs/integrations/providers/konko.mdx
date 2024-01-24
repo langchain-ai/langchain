@@ -60,21 +60,27 @@ konko.Model.list()
 
 ## Calling a model
 
-Find a model on the [Konko Introduction page](https://docs.konko.ai/docs#available-models)
-
-For example, for this [LLama 2 model](https://docs.konko.ai/docs/meta-llama-2-13b-chat). The model id would be: `"meta-llama/Llama-2-13b-chat-hf"`
+Find a model on the [Konko Introduction page](https://docs.konko.ai/docs/list-of-models)
 
 Another way to find the list of models running on the Konko instance is through this [endpoint](https://docs.konko.ai/reference/listmodels).
 
-From here, we can initialize our model:
+## Examples of Endpoint Usage
 
-```python
-chat_instance = ChatKonko(max_tokens=10, model = 'meta-llama/Llama-2-13b-chat-hf')
-```
 
-And run it:
+- **ChatCompletion with Mistral-7B:**
+  ```python
+  chat_instance = ChatKonko(max_tokens=10, model = 'mistralai/mistral-7b-instruct-v0.1')
+  msg = HumanMessage(content="Hi")
+  chat_response = chat_instance([msg])
+  
+  ```
 
-```python
-msg = HumanMessage(content="Hi")
-chat_response = chat_instance([msg])
-```
+- **Completion with mistralai/Mistral-7B-v0.1:**
+  ```python
+  from langchain.llms import Konko
+  llm = Konko(max_tokens=800, model='mistralai/Mistral-7B-v0.1')
+  prompt = "Generate a Product Description for Apple Iphone 15"
+  response = llm(prompt)
+  ```
+
+For further assistance, contact [support@konko.ai](mailto:support@konko.ai) or join our [Discord](https://discord.gg/TXV2s3z7RZ).

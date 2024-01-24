@@ -270,6 +270,12 @@ def _import_koboldai() -> Any:
     return KoboldApiLLM
 
 
+def _import_konko() -> Any:
+    from langchain_community.llms.konko import Konko
+
+    return Konko
+
+
 def _import_llamacpp() -> Any:
     from langchain_community.llms.llamacpp import LlamaCpp
 
@@ -639,6 +645,8 @@ def __getattr__(name: str) -> Any:
         return _import_javelin_ai_gateway()
     elif name == "KoboldApiLLM":
         return _import_koboldai()
+    elif name == "Konko":
+        return _import_konko()
     elif name == "LlamaCpp":
         return _import_llamacpp()
     elif name == "ManifestWrapper":
@@ -780,6 +788,7 @@ __all__ = [
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
     "KoboldApiLLM",
+    "Konko",
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
@@ -868,6 +877,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "huggingface_textgen_inference": _import_huggingface_text_gen_inference,
         "human-input": _import_human,
         "koboldai": _import_koboldai,
+        "konko": _import_konko,
         "llamacpp": _import_llamacpp,
         "textgen": _import_textgen,
         "minimax": _import_minimax,
