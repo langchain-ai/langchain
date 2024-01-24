@@ -33,7 +33,7 @@ class BaseLoader(ABC):
     def load_and_transform(
         self, transformer: Optional[BaseDocumentTransformer] = None
     ) -> Sequence[Document]:
-        """Load Documents and transforme into chunks. Chunks are returned as Documents.
+        """Load Documents and transform into chunks. Chunks are returned as Documents.
 
         Args:
             transformer: Transformer like TextSplitter instance to use
