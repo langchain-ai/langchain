@@ -116,7 +116,7 @@ class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
             # TODO: Use get_args / get_origin and fully
             # specify valid annotations.
             typehint_mandate = """
-    class ChildTool(BaseTool):
+class ChildTool(BaseTool):
     ...
     args_schema: Type[BaseModel] = SchemaClass
     ..."""
