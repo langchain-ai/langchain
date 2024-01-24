@@ -8,7 +8,7 @@ import pytest
 from typing import Any
 import os
 from langchain_community.llms.bedrock import Bedrock
-from langchain.callbacks.base import AsyncCallbackHandler
+from langchain_core.callbacks import AsyncCallbackHandler
 from pathlib import Path
 from typing import Generator
 
