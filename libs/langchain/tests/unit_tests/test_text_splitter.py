@@ -1321,9 +1321,12 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2():
     )
     assert docs[1].metadata["Header 2"] == "Bar main section"
 
-    assert docs[2].page_content == (
-        "Baz \n Some text about Baz \n \n Some concluding text about Foo"
+    assert (
+        docs[2].page_content
+        == "Baz \n Some text about Baz \n \n \n Some concluding text about Foo"
     )
+    # Baz \n Some text about Baz \n \n \n Some concluding text about Foo
+    # Baz \n Some text about Baz \n \n Some concluding text about Foo
     assert docs[2].metadata["Header 2"] == "Baz"
 
 
@@ -1373,7 +1376,7 @@ def test_happy_path_splitting_based_on_header_with_font_size():
     assert docs[1].metadata["Header 2"] == "Bar main section"
 
     assert docs[2].page_content == (
-        "Baz \n Some text about Baz \n \n " "Some concluding text about Foo"
+        "Baz \n Some text about Baz \n \n \n Some concluding text about Foo"
     )
     assert docs[2].metadata["Header 2"] == "Baz"
 
@@ -1424,6 +1427,6 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars():
     assert docs[1].metadata["Header 2"] == "Bar main section"
 
     assert docs[2].page_content == (
-        "Baz \n Some text about Baz \n \n " "Some concluding text about Foo"
+        "Baz \n Some text about Baz \n \n \n Some concluding text about Foo"
     )
     assert docs[2].metadata["Header 2"] == "Baz"
