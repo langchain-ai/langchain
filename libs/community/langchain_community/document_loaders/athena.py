@@ -141,7 +141,7 @@ class AthenaLoader(BaseLoader):
             page_content = "\n".join(
                 f"{k}: {v}" for k, v in row.items() if k in content_columns
             )
-            metadata = {k: v for k, v in row.items() if k in metadata_columns}
+            metadata = {k: v for k, v in row.items() if k in metadata_columns and v is not None}
             doc = Document(page_content=page_content, metadata=metadata)
             yield doc
 
