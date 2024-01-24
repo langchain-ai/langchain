@@ -119,7 +119,7 @@ class LanguageParser(BaseBlobParser):
                 },
             )
             return
-    
+
         if self.parser_threshold >= len(code.splitlines()):
             yield Document(
                 page_content=code,
