@@ -4,16 +4,32 @@ from typing import Sequence
 
 def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     """Print information about the environment for debugging purposes."""
+    import pkgutil
     import platform
     import sys
     from importlib import metadata, util
 
-    packages = [
-        "langchain_core",
-        "langchain",
-        "langchain_community",
+    # Packages that do not start with "langchain" prefix.
+    other_langchain_packages = [
         "langserve",
-    ] + list(additional_pkgs)
+        "langgraph",
+    ]
+
+    langchain_pkgs = [
+        name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")
+    ]
+
+    all_packages = sorted(
+        set(langchain_pkgs + other_langchain_packages + list(additional_pkgs))
+    )
+
+    # Always surface these packages to the top
+    order_by = ["langchain_core", "langchain", "langchain_community"]
+
+    for pkg in reversed(order_by):
+        if pkg in all_packages:
+            all_packages.remove(pkg)
+            all_packages = [pkg] + list(all_packages)
 
     system_info = {
         "OS": platform.system(),
@@ -32,13 +48,15 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     print("Package Information")
     print("-------------------")
 
-    for pkg in packages:
+    not_installed = []
+
+    for pkg in all_packages:
         try:
             found_package = util.find_spec(pkg)
         except Exception:
             found_package = None
         if found_package is None:
-            print(f"> {pkg}: Not Found")
+            not_installed.append(pkg)
             continue
 
         # Package version
@@ -51,7 +69,16 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         if package_version is not None:
             print(f"> {pkg}: {package_version}")
         else:
-            print(f"> {pkg}: Found")
+            print(f"> {pkg}: Installed. No version info available.")
+
+    if not_installed:
+        print()
+        print("Packages not installed (Not Necessarily a Problem)")
+        print("--------------------------------------------------")
+        print("The following packages were not found:")
+        print()
+        for pkg in not_installed:
+            print(f"> {pkg}")
 
 
 if __name__ == "__main__":

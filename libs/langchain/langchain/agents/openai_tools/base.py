@@ -20,8 +20,8 @@ def create_openai_tools_agent(
     Args:
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input key `agent_scratchpad`, which will
-            contain agent action and tool output messages.
+        prompt: The prompt to use. See Prompt section below for more on the expected
+            input variables.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -57,7 +57,13 @@ def create_openai_tools_agent(
                 }
             )
 
-    Creating prompt example:
+    Prompt:
+
+        The agent prompt must have an `agent_scratchpad` key that is a
+            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            messages will be passed in here.
+
+        Here's an example:
 
         .. code-block:: python
 
