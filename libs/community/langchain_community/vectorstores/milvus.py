@@ -480,9 +480,10 @@ class Milvus(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
         timeout: Optional[int] = None,
         batch_size: int = 1000,
+        *,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Insert text data into Milvus.
@@ -499,13 +500,13 @@ class Milvus(VectorStore):
                 that they all fit in memory.
             metadatas (Optional[List[dict]]): Metadata dicts attached to each of
                 the texts. Defaults to None.
-            ids (Optional[List[str]]): List of text ids. The length of each item
             should be less than 65535 bytes. Required and work when auto_id is False.
             timeout (Optional[int]): Timeout for each batch insert. Defaults
                 to None.
             batch_size (int, optional): Batch size to use for insertion.
                 Defaults to 1000.
-
+            ids (Optional[List[str]]): List of text ids. The length of each item
+            
         Raises:
             MilvusException: Failure to add texts
 
@@ -930,13 +931,14 @@ class Milvus(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
         collection_name: str = "LangChainCollection",
         connection_args: dict[str, Any] = DEFAULT_MILVUS_CONNECTION,
         consistency_level: str = "Session",
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: bool = False,
+        *,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Milvus:
         """Create a Milvus collection, indexes it with HNSW, and insert data.
@@ -946,7 +948,6 @@ class Milvus(VectorStore):
             embedding (Embeddings): Embedding function.
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
-            ids (Optional[List[str]]): List of text ids. Defaults to None.
             collection_name (str, optional): Collection name to use. Defaults to
                 "LangChainCollection".
             connection_args (dict[str, Any], optional): Connection args to use. Defaults
@@ -959,6 +960,7 @@ class Milvus(VectorStore):
                 Defaults to None.
             drop_old (Optional[bool], optional): Whether to drop the collection with
                 that name if it exists. Defaults to False.
+            ids (Optional[List[str]]): List of text ids. Defaults to None.
 
         Returns:
             Milvus: Milvus Vector Store
