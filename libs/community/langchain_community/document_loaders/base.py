@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator, List, Optional
+from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 
-from langchain_core.documents import Document
+from langchain_core._api import deprecated
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 from langchain_community.document_loaders.blob_loaders import Blob
 
@@ -29,6 +30,21 @@ class BaseLoader(ABC):
     def load(self) -> List[Document]:
         """Load data into Document objects."""
 
+    def load_and_transform(
+        self, transformer: Optional[BaseDocumentTransformer] = None
+    ) -> Sequence[Document]:
+        """Load Documents and transforme into chunks. Chunks are returned as Documents.
+
+        Args:
+            transformer: Transformer like TextSplitter instance to use
+            for transform documents.
+
+        Returns:
+            Sequence of Documents.
+        """
+        return transformer.transform_documents(self.load())
+
+    @deprecated("0.0.15", alternative="load_and_transforme", removal="0.2.0")
     def load_and_split(
         self, text_splitter: Optional[TextSplitter] = None
     ) -> List[Document]:
