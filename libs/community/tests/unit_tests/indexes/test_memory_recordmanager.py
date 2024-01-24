@@ -4,7 +4,7 @@ from typing import List
 import pytest
 from langchain_core.embeddings import Embeddings
 
-from langchain_rag.indexes import MemoryRecordManager
+from langchain_community.indexes import MemoryRecordManager
 
 
 class _FakeEmbeddings(Embeddings):
