@@ -12,6 +12,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -632,7 +633,9 @@ class ChatOpenAI(BaseChatModel):
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
-        function_call: Optional[Union[_FunctionCall, str]] = None,
+        function_call: Optional[
+            Union[_FunctionCall, str, Literal["auto", "none"]]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind functions (and other objects) to this chat model.
@@ -652,22 +655,26 @@ class ChatOpenAI(BaseChatModel):
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
         if function_call is not None:
-            function_call_ = (
+            function_call = (
                 {"name": function_call}
                 if isinstance(function_call, str)
+                and function_call not in ("auto", "none")
                 else function_call
             )
-            if len(formatted_functions) != 1:
+            if isinstance(function_call, dict) and len(formatted_functions) != 1:
                 raise ValueError(
                     "When specifying `function_call`, you must provide exactly one "
                     "function."
                 )
-            if formatted_functions[0]["name"] != function_call_["name"]:
+            if (
+                isinstance(function_call, dict)
+                and formatted_functions[0]["name"] != function_call["name"]
+            ):
                 raise ValueError(
                     f"Function call {function_call} was specified, but the only "
                     f"provided function was {formatted_functions[0]['name']}."
                 )
-            kwargs = {**kwargs, "function_call": function_call_}
+            kwargs = {**kwargs, "function_call": function_call}
         return super().bind(
             functions=formatted_functions,
             **kwargs,
