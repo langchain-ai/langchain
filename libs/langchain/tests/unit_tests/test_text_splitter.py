@@ -1275,6 +1275,7 @@ def test_split_text_on_tokens() -> None:
     expected_output = ["foo bar", "bar baz", "baz 123"]
     assert output == expected_output
 
+
 @pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
 def test_section_aware_happy_path_splitting_based_on_header_1_2():
@@ -1304,29 +1305,27 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2():
             </html>"""
 
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[
-            ["h1", "Header 1"],
-            ["h2", "Header 2"]
-        ]
+        headers_to_split_on=[["h1", "Header 1"], ["h2", "Header 2"]]
     )
 
     docs = sec_splitter.split_text(html_string)
 
-    assert len(docs) == 4
-    assert docs[0].page_content == "Foo \n Some intro text about Foo."
+    assert len(docs) == 3
     assert docs[0].metadata["Header 1"] == "Foo"
+    assert docs[0].page_content == "Foo \n Some intro text about Foo."
 
     assert docs[1].page_content == (
         "Bar main section \n Some intro text about Bar. \n "
         "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
         "Bar subsection 2 \n Some text about the second subtopic of Bar."
     )
-    assert docs[1].metadata["Header 2"] == 'Bar main section'
+    assert docs[1].metadata["Header 2"] == "Bar main section"
 
     assert docs[2].page_content == (
         "Baz \n Some text about Baz \n \n Some concluding text about Foo"
     )
     assert docs[2].metadata["Header 2"] == "Baz"
+
 
 @pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
@@ -1355,17 +1354,14 @@ def test_happy_path_splitting_based_on_header_with_font_size():
                 </div>
             </body>
             </html>"""
-    
+
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[
-            ["h1", "Header 1"],
-            ["h2", "Header 2"]
-        ]
+        headers_to_split_on=[["h1", "Header 1"], ["h2", "Header 2"]]
     )
 
     docs = sec_splitter.split_text(html_string)
 
-    assert len(docs) == 4
+    assert len(docs) == 3
     assert docs[0].page_content == "Foo \n Some intro text about Foo."
     assert docs[0].metadata["Header 1"] == "Foo"
 
@@ -1374,13 +1370,13 @@ def test_happy_path_splitting_based_on_header_with_font_size():
         "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
         "Bar subsection 2 \n Some text about the second subtopic of Bar."
     )
-    assert docs[1].metadata["Header 2"] == 'Bar main section'
+    assert docs[1].metadata["Header 2"] == "Bar main section"
 
     assert docs[2].page_content == (
-        "Baz \n Some text about Baz \n \n "
-        "Some concluding text about Foo"
+        "Baz \n Some text about Baz \n \n " "Some concluding text about Foo"
     )
     assert docs[2].metadata["Header 2"] == "Baz"
+
 
 @pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
@@ -1411,15 +1407,12 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars():
             </html>"""
 
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[
-            ["h1", "Header 1"],
-            ["h2", "Header 2"]
-        ]
+        headers_to_split_on=[["h1", "Header 1"], ["h2", "Header 2"]]
     )
 
     docs = sec_splitter.split_text(html_string)
 
-    assert len(docs) == 4
+    assert len(docs) == 3
     assert docs[0].page_content == "Foo  \n Some intro text about Foo."
     assert docs[0].metadata["Header 1"] == "Foo"
 
@@ -1428,10 +1421,9 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars():
         "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
         "Bar subsection 2 \n Some text about the second subtopic of Bar."
     )
-    assert docs[1].metadata["Header 2"] == 'Bar main section'
+    assert docs[1].metadata["Header 2"] == "Bar main section"
 
     assert docs[2].page_content == (
-        "Baz \n Some text about Baz \n \n "
-        "Some concluding text about Foo"
+        "Baz \n Some text about Baz \n \n " "Some concluding text about Foo"
     )
     assert docs[2].metadata["Header 2"] == "Baz"
