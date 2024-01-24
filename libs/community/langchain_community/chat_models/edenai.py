@@ -58,11 +58,14 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
 class ChatEdenAI(BaseChatModel):
     """`EdenAI` chat large language models.
 
-    `EdenAI` is a versatile platform that allows you to access various language models from different providers, such as Google, OpenAI, Cohere, Mistral and more.
+    `EdenAI` is a versatile platform that allows you to access various language models
+    from different providers such as Google, OpenAI, Cohere, Mistral and more.
 
-    To get started, make sure you have the environment variable ``EDENAI_API_KEY`` set with your API key, or pass it as a named parameter to the constructor.
+    To get started, make sure you have the environment variable ``EDENAI_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
 
-    Additionally, `EdenAI` provides the flexibility to choose from a variety of models, including the ones like "gpt-4".
+    Additionally, `EdenAI` provides the flexibility to choose from a variety of models,
+    including the ones like "gpt-4".
 
     Example:
         .. code-block:: python
@@ -83,16 +86,21 @@ class ChatEdenAI(BaseChatModel):
             # Invoke the model with the provided messages
             chat.invoke(messages)
 
-    `EdenAI` goes beyond mere model invocation. It empowers you with advanced features, including:
+    `EdenAI` goes beyond mere model invocation. It empowers you with advanced features :
 
-    - **Multiple Providers**: Gain access to a diverse range of language models offered by various providers, giving you the freedom to choose the best-suited model for your use case.
+    - **Multiple Providers**: access to a diverse range of llms offered by various
+     providers giving you the freedom to choose the best-suited model for your use case.
 
-    - **Fallback Mechanism**: Set a fallback mechanism to ensure seamless operations even if the primary provider is unavailable, you can easily switches to an alternative provider.
+    - **Fallback Mechanism**: Set a fallback mechanism to ensure seamless operations
+        even if the primary provider is unavailable, you can easily switches to an
+        alternative provider.
 
-    - **Usage Statistics**: Track usage statistics on a per-project and per-API key basis. This feature allows you to monitor and manage resource consumption effectively.
+    - **Usage Statistics**: Track usage statistics on a per-project
+    and per-API key basis.
+    This feature allows you to monitor and manage resource consumption effectively.
 
-    - **Monitoring and Observability**: `EdenAI` provides comprehensive monitoring and observability tools on the platform. Monitor the performance of your language models, analyze usage patterns, and gain valuable insights to optimize your applications.
-
+    - **Monitoring and Observability**: `EdenAI` provides comprehensive monitoring
+    and observability tools on the platform.
 
     Example of setting up a fallback mechanism:
         .. code-block:: python
