@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List
 
-from boto3 import Session
 from langchain_core.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
@@ -15,7 +14,7 @@ class StreamingAmazonAPIGatewayWebSocketCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
-        boto3_session: Session,
+        boto3_session,
         endpoint_url: str,
         connection_id: str,
         *,
