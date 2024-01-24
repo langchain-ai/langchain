@@ -1,5 +1,4 @@
-labels: ["Idea"]
-description: Suggest ideas for LangChain features and improvements.
+labels: [idea]
 body:
   - type: checkboxes
     id: checks
@@ -19,7 +18,6 @@ body:
       label: Feature request
       description: |
         A clear and concise description of the feature proposal. Please provide links to any relevant GitHub repos, papers, or other resources if relevant.
-
   - type: textarea
     id: motivation
     validations:
