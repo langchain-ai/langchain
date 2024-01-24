@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     import rdflib
 
 
-class GraphDBGraph:
-    """GraphDB wrapper for graph operations.
+class OntotextGraphDBGraph:
+    """Ontotext GraphDB https://graphdb.ontotext.com/ wrapper for graph operations.
 
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
@@ -55,7 +55,7 @@ class GraphDBGraph:
         i.e. also the incoming class links.
         In case of large graphs with a million of instances, this is not efficient.
         Check https://github.com/eclipse-rdf4j/rdf4j/issues/4857
-        :param local_file: a local RDF ontology file. Supported file formats:
+        :param local_file: a local RDF ontology file. Supported file formats: TODO
         Turtle, RDF/XML, JSON-LD, N-Triples, Notation-3, Trig, Trix, N-Quads
 
         Either query_ontology or local_file should be passed.
@@ -137,7 +137,7 @@ class GraphDBGraph:
             raise FileNotFoundError(f"File {local_file} does not exist.")
         if not os.access(local_file, os.R_OK):
             raise PermissionError(f"Read permission for {local_file} is restricted")
-        graph = rdflib.Graph()
+        graph = rdflib.ConjunctiveGraph()
         try:
             graph.parse(local_file)
         except Exception as e:

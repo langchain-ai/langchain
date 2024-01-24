@@ -1,13 +1,11 @@
-"""
-Question answering over a GraphDB graph using SPARQL.
-"""
+"""Question answering over a graph."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     import rdflib
-from langchain_community.graphs import GraphDBGraph
+from langchain_community.graphs import OntotextGraphDBGraph
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
@@ -16,15 +14,16 @@ from langchain_core.pydantic_v1 import Field
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
-    GRAPHDB_FIX_SELECT_PROMPT,
-    GRAPHDB_GENERATION_SELECT_PROMPT,
     GRAPHDB_QA_PROMPT,
+    GRAPHDB_SPARQL_FIX_PROMPT,
+    GRAPHDB_SPARQL_GENERATION_PROMPT,
 )
 from langchain.chains.llm import LLMChain
 
 
-class GraphDBQAChain(Chain):
-    """Question-answering against a GraphDB graph by generating SPARQL statements.
+class OntotextGraphDBQAChain(Chain):
+    """Question-answering against Ontotext GraphDB
+       https://graphdb.ontotext.com/ by generating SPARQL queries.
 
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
@@ -38,11 +37,11 @@ class GraphDBQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: GraphDBGraph = Field(exclude=True)
-    sparql_generation_select_chain: LLMChain
-    sparql_fix_select_chain: LLMChain
+    graph: OntotextGraphDBGraph = Field(exclude=True)
+    sparql_generation_chain: LLMChain
+    sparql_fix_chain: LLMChain
+    max_fix_retries: int
     qa_chain: LLMChain
-    max_regeneration_attempts: int
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
@@ -60,22 +59,22 @@ class GraphDBQAChain(Chain):
         cls,
         llm: BaseLanguageModel,
         *,
-        sparql_select_prompt: BasePromptTemplate = GRAPHDB_GENERATION_SELECT_PROMPT,
-        sparql_fix_select_prompt: BasePromptTemplate = GRAPHDB_FIX_SELECT_PROMPT,
+        sparql_generation_prompt: BasePromptTemplate = GRAPHDB_SPARQL_GENERATION_PROMPT,
+        sparql_fix_prompt: BasePromptTemplate = GRAPHDB_SPARQL_FIX_PROMPT,
+        max_fix_retries: int = 5,
         qa_prompt: BasePromptTemplate = GRAPHDB_QA_PROMPT,
-        max_regeneration_attempts: int = 5,
         **kwargs: Any,
-    ) -> GraphDBQAChain:
+    ) -> OntotextGraphDBQAChain:
         """Initialize from LLM."""
+        sparql_generation_chain = LLMChain(llm=llm, prompt=sparql_generation_prompt)
+        sparql_fix_chain = LLMChain(llm=llm, prompt=sparql_fix_prompt)
+        max_fix_retries = max_fix_retries
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
-        sparql_generation_select_chain = LLMChain(llm=llm, prompt=sparql_select_prompt)
-        sparql_fix_select_chain = LLMChain(llm=llm, prompt=sparql_fix_select_prompt)
-        max_regeneration_attempts = max_regeneration_attempts
         return cls(
             qa_chain=qa_chain,
-            sparql_generation_select_chain=sparql_generation_select_chain,
-            sparql_fix_select_chain=sparql_fix_select_chain,
-            max_regeneration_attempts=max_regeneration_attempts,
+            sparql_generation_chain=sparql_generation_chain,
+            sparql_fix_chain=sparql_fix_chain,
+            max_fix_retries=max_fix_retries,
             **kwargs,
         )
 
@@ -92,20 +91,23 @@ class GraphDBQAChain(Chain):
         callbacks = _run_manager.get_child()
         prompt = inputs[self.input_key]
 
-        generated_sparql = self.sparql_generation_select_chain.run(
+        sparql_generation_chain_result = self.sparql_generation_chain.invoke(
             {"prompt": prompt, "schema": self.graph.get_schema}, callbacks=callbacks
         )
+        generated_sparql = sparql_generation_chain_result[
+            self.sparql_generation_chain.output_key
+        ]
 
         generated_sparql = self._get_valid_sparql_query(
             _run_manager, callbacks, generated_sparql
         )
         query_results = self._execute_sparql_query(_run_manager, generated_sparql)
 
-        result = self.qa_chain(
+        qa_chain_result = self.qa_chain.invoke(
             {"prompt": prompt, "context": query_results}, callbacks=callbacks
         )
-        res = result[self.qa_chain.output_key]
-        return {self.output_key: res}
+        result = qa_chain_result[self.qa_chain.output_key]
+        return {self.output_key: result}
 
     def _get_valid_sparql_query(
         self,
@@ -124,15 +126,18 @@ class GraphDBQAChain(Chain):
                 _run_manager, generated_sparql, parse_exception
             )
 
-            while retries < self.max_regeneration_attempts:
+            while retries < self.max_fix_retries:
                 try:
-                    generated_sparql = self.sparql_fix_select_chain.run(
+                    sparql_fix_chain_result = self.sparql_fix_chain.invoke(
                         {
                             "parse_exception": parse_exception,
                             "generated_sparql": generated_sparql,
                         },
                         callbacks=callbacks,
                     )
+                    generated_sparql = sparql_fix_chain_result[
+                        self.sparql_fix_chain.output_key
+                    ]
                     return self._parse_sparql_query(_run_manager, generated_sparql)
                 except ParseException as e:
                     retries += 1

@@ -35,5 +35,5 @@ __all__ = [
     "RdfGraph",
     "ArangoGraph",
     "FalkorDBGraph",
-    "GraphDBGraph",
+    "OntotextGraphDBGraph",
 ]

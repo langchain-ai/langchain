@@ -5,16 +5,16 @@ import unittest
 import pytest
 
 
-class TestGraphDBGraph(unittest.TestCase):
+class TestOntotextGraphDBGraph(unittest.TestCase):
     def test_import(self) -> None:
-        from langchain_community.graphs import GraphDBGraph  # noqa: F401
+        from langchain_community.graphs import OntotextGraphDBGraph  # noqa: F401
 
     @pytest.mark.requires("rdflib")
     def test_validate_user_query_wrong_type(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(TypeError) as e:
-            GraphDBGraph._validate_user_query(
+            OntotextGraphDBGraph._validate_user_query(
                 [
                     "PREFIX starwars: <https://swapi.co/ontology/> "
                     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
@@ -26,10 +26,10 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_validate_user_query_invalid_sparql_syntax(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
-            GraphDBGraph._validate_user_query(
+            OntotextGraphDBGraph._validate_user_query(
                 "CONSTRUCT {?s ?p ?o} FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o"
             )
         self.assertEqual(
@@ -41,10 +41,10 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_validate_user_query_invalid_query_type_select(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
-            GraphDBGraph._validate_user_query("SELECT * { ?s ?p ?o }")
+            OntotextGraphDBGraph._validate_user_query("SELECT * { ?s ?p ?o }")
         self.assertEqual(
             "Invalid query type. Only CONSTRUCT queries are supported.",
             str(e.exception),
@@ -52,10 +52,10 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_validate_user_query_invalid_query_type_ask(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
-            GraphDBGraph._validate_user_query("ASK { ?s ?p ?o }")
+            OntotextGraphDBGraph._validate_user_query("ASK { ?s ?p ?o }")
         self.assertEqual(
             "Invalid query type. Only CONSTRUCT queries are supported.",
             str(e.exception),
@@ -63,10 +63,10 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_validate_user_query_invalid_query_type_describe(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
-            GraphDBGraph._validate_user_query(
+            OntotextGraphDBGraph._validate_user_query(
                 "PREFIX swapi: <https://swapi.co/ontology/> "
                 "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
                 "DESCRIBE ?term WHERE { ?term rdfs:isDefinedBy swapi: }"
@@ -78,18 +78,18 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_validate_user_query_construct(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
-        GraphDBGraph._validate_user_query(
+        OntotextGraphDBGraph._validate_user_query(
             "CONSTRUCT {?s ?p ?o} FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}"
         )
 
     @pytest.mark.requires("rdflib")
     def test_check_connectivity(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
-            GraphDBGraph(
+            OntotextGraphDBGraph(
                 query_endpoint="http://localhost:7200/repositories/non-existing-repository",
                 query_ontology="PREFIX swapi: <https://swapi.co/ontology/> "
                 "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
@@ -106,16 +106,16 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_local_file_does_not_exist(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         non_existing_file = os.path.join("non", "existing", "path", "to", "file.ttl")
         with self.assertRaises(FileNotFoundError) as e:
-            GraphDBGraph._load_ontology_schema_from_file(non_existing_file)
+            OntotextGraphDBGraph._load_ontology_schema_from_file(non_existing_file)
         self.assertEqual(f"File {non_existing_file} does not exist.", str(e.exception))
 
     @pytest.mark.requires("rdflib")
     def test_local_file_no_access(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with tempfile.NamedTemporaryFile() as tmp_file:
             tmp_file_name = tmp_file.name
@@ -124,7 +124,7 @@ class TestGraphDBGraph(unittest.TestCase):
             os.chmod(tmp_file_name, 0o300)
 
             with self.assertRaises(PermissionError) as e:
-                GraphDBGraph._load_ontology_schema_from_file(tmp_file_name)
+                OntotextGraphDBGraph._load_ontology_schema_from_file(tmp_file_name)
 
             self.assertEqual(
                 f"Read permission for {tmp_file_name} is restricted", str(e.exception)
@@ -132,7 +132,7 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_local_file_bad_syntax(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with tempfile.TemporaryDirectory() as tempdir:
             tmp_file_path = os.path.join(tempdir, "starwars-ontology.trig")
@@ -140,7 +140,7 @@ class TestGraphDBGraph(unittest.TestCase):
                 tmp_file.write("invalid trig")
 
             with self.assertRaises(ValueError) as e:
-                GraphDBGraph._load_ontology_schema_from_file(tmp_file_path)
+                OntotextGraphDBGraph._load_ontology_schema_from_file(tmp_file_path)
             self.assertEqual(
                 f"('Invalid file format for {tmp_file_path} : '"
                 ", BadSyntax('', 0, 'invalid trig', 0, "
@@ -150,10 +150,10 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_both_query_and_local_file_provided(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
-            GraphDBGraph(
+            OntotextGraphDBGraph(
                 query_endpoint="http://localhost:7200/repositories/non-existing-repository",
                 query_ontology="CONSTRUCT {?s ?p ?o}"
                 "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
@@ -165,10 +165,10 @@ class TestGraphDBGraph(unittest.TestCase):
 
     @pytest.mark.requires("rdflib")
     def test_nor_query_nor_local_file_provided(self) -> None:
-        from langchain_community.graphs import GraphDBGraph
+        from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
-            GraphDBGraph(
+            OntotextGraphDBGraph(
                 query_endpoint="http://localhost:7200/repositories/non-existing-repository",
             )
         self.assertEqual(

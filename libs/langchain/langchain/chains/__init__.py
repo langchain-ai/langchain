@@ -37,11 +37,11 @@ from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.graph_qa.falkordb import FalkorDBQAChain
-from langchain.chains.graph_qa.graphdb import GraphDBQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
+from langchain.chains.graph_qa.ontotext_graphdb import OntotextGraphDBQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
@@ -97,7 +97,7 @@ __all__ = [
     "GraphCypherQAChain",
     "GraphQAChain",
     "GraphSparqlQAChain",
-    "GraphDBQAChain",
+    "OntotextGraphDBQAChain",
     "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",

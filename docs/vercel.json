@@ -1445,8 +1445,8 @@
       "destination": "/docs/use_cases/graph/graph_cypher_qa"
     },
     {
-      "source": "/en/latest/modules/chains/examples/graph_graphdb_qa.html",
-      "destination": "/docs/use_cases/graph/graph_graphdb_qa"
+      "source": "/en/latest/modules/chains/examples/graph_ontotext_graphdb_qa.html",
+      "destination": "/docs/use_cases/graph/graph_ontotext_graphdb_qa"
     },
     {
       "source": "/en/latest/modules/chains/examples/graph_nebula_qa.html",
