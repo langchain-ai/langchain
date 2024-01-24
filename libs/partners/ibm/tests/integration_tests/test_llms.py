@@ -1,4 +1,7 @@
-"""Test WatsonxLLM API wrapper."""
+"""Test WatsonxLLM API wrapper.
+
+You'll need to set WATSONX_APIKEY and WATSONX_PROJECT_ID environment variables.
+"""
 
 import os
 
