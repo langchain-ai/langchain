@@ -598,7 +598,9 @@ class HTMLHeaderTextSplitter:
                 "Unable to import lxml, please install with `pip install lxml`."
             ) from e
         # use lxml library to parse html document and return xml ElementTree
-        parser = etree.HTMLParser()
+        # Explicitly encoding in utf-8 allows non-English
+        # html files to be processed without garbled characters
+        parser = etree.HTMLParser(encoding="utf-8")
         tree = etree.parse(file, parser)
 
         # document transformation for "structure-aware" chunking is handled with xsl.
