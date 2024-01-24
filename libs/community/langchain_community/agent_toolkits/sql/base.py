@@ -160,10 +160,10 @@ def create_sql_agent(
             )
             template = "\n\n".join(
                 [
-                    react_prompt.PREFIX,
+                    prefix or react_prompt.PREFIX,
                     "{tools}",
                     format_instructions,
-                    react_prompt.SUFFIX,
+                    suffix or react_prompt.SUFFIX,
                 ]
             )
             prompt = PromptTemplate.from_template(template)
