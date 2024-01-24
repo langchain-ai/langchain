@@ -248,8 +248,12 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
                 if "." in kk and kk.startswith(k):
                     vv = v
                     for part in kk.split(".")[1:]:
-                        vv = getattr(vv, part)
-                    values.append(vv)
+                        if vv is None:
+                            break
+                        else:
+                            vv = getattr(vv, part)
+                    else:
+                        values.append(vv)
         return values
     except (SyntaxError, TypeError, OSError):
         return []
