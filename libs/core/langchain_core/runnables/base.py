@@ -1479,7 +1479,7 @@ class Runnable(Generic[Input, Output], ABC):
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
-            {"input": ""},
+            {"input": final_input},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
         )
