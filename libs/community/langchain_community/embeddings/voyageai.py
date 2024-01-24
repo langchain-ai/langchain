@@ -33,9 +33,9 @@ class VoyageEmbeddings(BaseModel, Embeddings):
 
     client: Any
 
-    model: str = "voyage-01"
+    model: str = "voyage-02"
     voyage_api_key: Optional[str] = None
-    batch_size: int = 64
+    batch_size: int = 72
     """Maximum number of texts to embed in each request."""
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding. Must have tqdm installed if set 
