@@ -1,18 +1,24 @@
-name: "\U0001F41B Bug Report"
-description: Report a bug in LangChain. To report a security issue, please instead use the security option below. For questions, please use the GitHub Discussions.
-labels: ["02 Bug Report"]
+labels: [Question]
 body:
   - type: markdown
     attributes:
-      value: >
-        Thank you for taking the time to file a bug report. 
+      value: |
+        Thanks for your interest in 🦜️🔗 LangChain!
+
+        Please follow these instructions, fill every question, and do every step. 🙏
         
-        Use this to report bugs in LangChain. 
+        We're asking for this because answering questions and solving problems in GitHub takes a lot of time --
+        this is time that we cannot spend on adding new features, fixing bugs, write documentation or reviewing pull requests.
+
+        By asking questions in a structured way (following this) it will be much easier to help you.
+
+        And there's a high chance that you will find the solution along the way and you won't even have to submit it and wait for an answer. 😎
+
+        As there are too many questions, we will **DISCARD** and close the incomplete ones. 
         
-        If you're not certain that your issue is due to a bug in LangChain, please use [GitHub Discussions](https://github.com/langchain-ai/langchain/discussions)
-        to ask for help with your issue.
+        That will allow us (and others) to focus on helping people like you that follow the whole process. 🤓
         
-        Relevant links to check before filing a bug report to see if your issue has already been reported, fixed or
+        Relevant links to check before opening a question to see if your question has already been answered, fixed or
         if there's another way to solve your problem:
         
         [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction),
@@ -27,18 +33,27 @@ body:
       label: Checked other resources
       description: Please confirm and check all the following options.
       options:
-        - label: I added a very descriptive title to this issue.
+        - label: I added a very descriptive title to this question.
           required: true
         - label: I searched the LangChain documentation with the integrated search.
           required: true
         - label: I used the GitHub search to find a similar question and didn't find it.
           required: true
-        - label: I am sure that this is a bug in LangChain rather than my code.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Commit to Help
+      description: |
+        After submitting this, I commit to one of:
+
+          * Read open questions until I find 2 where I can help someone and add a comment to help there.
+          * I already hit the "watch" button in this repository to receive notifications and I commit to help at least 2 people that ask questions in the future.
+          * Once my question is answered, I will mark the answer as "accepted".
+      options:
+        - label: I commit to help with one of those options 👆
           required: true
   - type: textarea
-    id: reproduction
-    validations:
-      required: true
+    id: example
     attributes:
       label: Example Code
       description: |
@@ -54,27 +69,16 @@ body:
         * Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
 
       placeholder: |
-        The following code: 
-        
-        ```python
         from langchain_core.runnables import RunnableLambda
 
         def bad_code(inputs) -> int:
           raise NotImplementedError('For demo purpose')
-          
+        
           chain = RunnableLambda(bad_code)
           chain.invoke('Hello!')
-        ```
-  - type: textarea
-    id: error
+      render: python
     validations:
-      required: false
-    attributes:
-      label: Error Message and Stack Trace (if applicable)
-      description: |
-        If you are reporting an error, please include the full error message and stack trace.
-      placeholder: |
-        Exception + full stack trace
+      required: true
   - type: textarea
     id: description
     attributes:
@@ -82,7 +86,7 @@ body:
       description: |
         What is the problem, question, or error?
 
-        Write a short description telling what you are doing, what you expect to happen, and what is currently happening.
+        Write a short description explaining what you are doing, what you expect to happen, and what is currently happening.
       placeholder: |
         * I'm trying to use the `langchain` library to do X.
         * I expect to see Y.
