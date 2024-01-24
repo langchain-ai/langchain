@@ -1542,9 +1542,6 @@ class HTMLSectionSplitter:
             index = -1
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
-                if self._add_start_index:
-                    index = text.find(chunk, index + 1)
-                    metadata["start_index"] = index
 
                 for key in chunk.metadata.keys():
                     if chunk.metadata[key] == "#TITLE#":
