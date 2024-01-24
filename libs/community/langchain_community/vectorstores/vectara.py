@@ -22,11 +22,14 @@ class SummaryConfig:
     is_enabled: True if summary is enabled, False otherwise
     max_results: maximum number of results to summarize
     response_lang: requested language for the summary
+    prompt_name: name of the prompt to use for summarization
+      (see https://docs.vectara.com/docs/learn/grounded-generation/select-a-summarizer)
     """
 
     is_enabled: bool = False
     max_results: int = 7
     response_lang: str = "eng"
+    prompt_name: str = "vectara-summary-ext-v1.2.0"
 
 
 @dataclass
@@ -83,7 +86,7 @@ class Vectara(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain.vectorstores import Vectara
+            from langchain_community.vectorstores import Vectara
 
             vectorstore = Vectara(
                 vectara_customer_id=vectara_customer_id,
@@ -364,6 +367,7 @@ class Vectara(VectorStore):
                 {
                     "maxSummarizedResults": config.summary_config.max_results,
                     "responseLang": config.summary_config.response_lang,
+                    "summarizerPromptName": config.summary_config.prompt_name,
                 }
             ]
 
@@ -512,7 +516,7 @@ class Vectara(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain.vectorstores import Vectara
+                from langchain_community.vectorstores import Vectara
                 vectara = Vectara.from_texts(
                     texts,
                     vectara_customer_id=customer_id,
@@ -544,7 +548,7 @@ class Vectara(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain.vectorstores import Vectara
+                from langchain_community.vectorstores import Vectara
                 vectara = Vectara.from_files(
                     files_list,
                     vectara_customer_id=customer_id,
@@ -570,6 +574,7 @@ class VectaraRetriever(VectorStoreRetriever):
             "k": 5,
             "filter": "",
             "n_sentence_context": "2",
+            "summary_config": SummaryConfig(),
         }
     )
 

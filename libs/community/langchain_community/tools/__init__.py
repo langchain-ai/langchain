@@ -472,6 +472,12 @@ def _import_plugin() -> Any:
     return AIPluginTool
 
 
+def _import_polygon_tool_PolygonLastQuote() -> Any:
+    from langchain_community.tools.polygon.last_quote import PolygonLastQuote
+
+    return PolygonLastQuote
+
+
 def _import_powerbi_tool_InfoPowerBITool() -> Any:
     from langchain_community.tools.powerbi.tool import InfoPowerBITool
 
@@ -525,7 +531,9 @@ def _import_reddit_search_RedditSearchRun() -> Any:
 
 
 def _import_render() -> Any:
-    from langchain_community.tools.render import format_tool_to_openai_function
+    from langchain_community.tools.convert_to_openai import (
+        format_tool_to_openai_function,
+    )
 
     return format_tool_to_openai_function
 
@@ -905,6 +913,8 @@ def __getattr__(name: str) -> Any:
         return _import_playwright_NavigateTool()
     elif name == "AIPluginTool":
         return _import_plugin()
+    elif name == "PolygonLastQuote":
+        return _import_polygon_tool_PolygonLastQuote()
     elif name == "InfoPowerBITool":
         return _import_powerbi_tool_InfoPowerBITool()
     elif name == "ListPowerBITool":
@@ -1083,6 +1093,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonLastQuote",
     "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",

@@ -90,7 +90,7 @@ class _OllamaCommon(BaseLanguageModel):
     will give more diverse answers, while a lower value (e.g. 10)
     will be more conservative. (Default: 40)"""
 
-    top_p: Optional[int] = None
+    top_p: Optional[float] = None
     """Works together with top-k. A higher value (e.g., 0.95) will lead
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
@@ -106,6 +106,12 @@ class _OllamaCommon(BaseLanguageModel):
 
     timeout: Optional[int] = None
     """Timeout for the request stream"""
+
+    headers: Optional[dict] = None
+    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
+    This is useful when Ollama is hosted on cloud services that require
+    tokens for authentication.
+    """
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -184,8 +190,9 @@ class _OllamaCommon(BaseLanguageModel):
 
         params = self._default_params
 
-        if "model" in kwargs:
-            params["model"] = kwargs["model"]
+        for key in self._default_params:
+            if key in kwargs:
+                params[key] = kwargs[key]
 
         if "options" in kwargs:
             params["options"] = kwargs["options"]
@@ -193,7 +200,7 @@ class _OllamaCommon(BaseLanguageModel):
             params["options"] = {
                 **params["options"],
                 "stop": stop,
-                **kwargs,
+                **{k: v for k, v in kwargs.items() if k not in self._default_params},
             }
 
         if payload.get("messages"):
@@ -207,7 +214,10 @@ class _OllamaCommon(BaseLanguageModel):
 
         response = requests.post(
             url=api_url,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                **(self.headers if isinstance(self.headers, dict) else {}),
+            },
             json=request_payload,
             stream=True,
             timeout=self.timeout,
@@ -244,8 +254,9 @@ class _OllamaCommon(BaseLanguageModel):
 
         params = self._default_params
 
-        if "model" in kwargs:
-            params["model"] = kwargs["model"]
+        for key in self._default_params:
+            if key in kwargs:
+                params[key] = kwargs[key]
 
         if "options" in kwargs:
             params["options"] = kwargs["options"]
@@ -253,7 +264,7 @@ class _OllamaCommon(BaseLanguageModel):
             params["options"] = {
                 **params["options"],
                 "stop": stop,
-                **kwargs,
+                **{k: v for k, v in kwargs.items() if k not in self._default_params},
             }
 
         if payload.get("messages"):
@@ -440,7 +451,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        for stream_resp in self._create_stream(prompt, stop, **kwargs):
+        for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
                 yield chunk
@@ -457,7 +468,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        async for stream_resp in self._acreate_stream(prompt, stop, **kwargs):
+        async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
                 yield chunk

@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import enum
 import logging
 import uuid
-from functools import partial
 from typing import (
     Any,
     Callable,
@@ -31,6 +29,7 @@ except ImportError:
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
@@ -63,7 +62,7 @@ class BaseModel(Base):
 _classes: Any = None
 
 
-def _get_embedding_collection_store() -> Any:
+def _get_embedding_collection_store(vector_dimension: Optional[int] = None) -> Any:
     global _classes
     if _classes is not None:
         return _classes
@@ -126,7 +125,7 @@ def _get_embedding_collection_store() -> Any:
         )
         collection = relationship(CollectionStore, back_populates="embeddings")
 
-        embedding: Vector = sqlalchemy.Column(Vector(None))
+        embedding: Vector = sqlalchemy.Column(Vector(vector_dimension))
         document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
         cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
@@ -152,6 +151,10 @@ class PGVector(VectorStore):
         connection_string: Postgres connection string.
         embedding_function: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
+        embedding_length: The length of the embedding vector. (default: None)
+            NOTE: This is not mandatory. Defining it will prevent vectors of
+            any other size to be added to the embeddings table but, without it,
+            the embeddings can't be indexed.
         collection_name: The name of the collection to use. (default: langchain)
             NOTE: This is not the name of the table, but the name of the collection.
             The tables will be created when initializing the store (if not exists)
@@ -184,6 +187,7 @@ class PGVector(VectorStore):
         self,
         connection_string: str,
         embedding_function: Embeddings,
+        embedding_length: Optional[int] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -196,6 +200,7 @@ class PGVector(VectorStore):
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
+        self._embedding_length = embedding_length
         self.collection_name = collection_name
         self.collection_metadata = collection_metadata
         self._distance_strategy = distance_strategy
@@ -212,7 +217,9 @@ class PGVector(VectorStore):
         """Initialize the store."""
         self.create_vector_extension()
 
-        EmbeddingStore, CollectionStore = _get_embedding_collection_store()
+        EmbeddingStore, CollectionStore = _get_embedding_collection_store(
+            self._embedding_length
+        )
         self.CollectionStore = CollectionStore
         self.EmbeddingStore = EmbeddingStore
         self.create_tables_if_not_exists()
@@ -282,12 +289,14 @@ class PGVector(VectorStore):
     def delete(
         self,
         ids: Optional[List[str]] = None,
+        collection_only: bool = False,
         **kwargs: Any,
     ) -> None:
         """Delete vectors by ids or uuids.
 
         Args:
             ids: List of ids to delete.
+            collection_only: Only delete ids in the collection.
         """
         with Session(self._bind) as session:
             if ids is not None:
@@ -295,9 +304,20 @@ class PGVector(VectorStore):
                     "Trying to delete vectors by ids (represented by the model "
                     "using the custom ids field)"
                 )
-                stmt = delete(self.EmbeddingStore).where(
-                    self.EmbeddingStore.custom_id.in_(ids)
-                )
+
+                stmt = delete(self.EmbeddingStore)
+
+                if collection_only:
+                    collection = self.get_collection(session)
+                    if not collection:
+                        self.logger.warning("Collection not found")
+                        return
+
+                    stmt = stmt.where(
+                        self.EmbeddingStore.collection_id == collection.uuid
+                    )
+
+                stmt = stmt.where(self.EmbeddingStore.custom_id.in_(ids))
                 session.execute(stmt)
             session.commit()
 
@@ -367,6 +387,7 @@ class PGVector(VectorStore):
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
+            documents = []
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 embedding_store = self.EmbeddingStore(
                     embedding=embedding,
@@ -375,7 +396,8 @@ class PGVector(VectorStore):
                     custom_id=id,
                     collection_id=collection.uuid,
                 )
-                session.add(embedding_store)
+                documents.append(embedding_store)
+            session.bulk_save_objects(documents)
             session.commit()
 
         return ids
@@ -486,6 +508,66 @@ class PGVector(VectorStore):
         ]
         return docs
 
+    def _create_filter_clause(self, key, value):
+        IN, NIN, BETWEEN, GT, LT, NE = "in", "nin", "between", "gt", "lt", "ne"
+        EQ, LIKE, CONTAINS, OR, AND = "eq", "like", "contains", "or", "and"
+
+        value_case_insensitive = {k.lower(): v for k, v in value.items()}
+        if IN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.in_(
+                value_case_insensitive[IN]
+            )
+        elif NIN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.not_in(
+                value_case_insensitive[NIN]
+            )
+        elif BETWEEN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.between(
+                str(value_case_insensitive[BETWEEN][0]),
+                str(value_case_insensitive[BETWEEN][1]),
+            )
+        elif GT in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext > str(
+                value_case_insensitive[GT]
+            )
+        elif LT in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext < str(
+                value_case_insensitive[LT]
+            )
+        elif NE in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext != str(
+                value_case_insensitive[NE]
+            )
+        elif EQ in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext == str(
+                value_case_insensitive[EQ]
+            )
+        elif LIKE in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.like(
+                value_case_insensitive[LIKE]
+            )
+        elif CONTAINS in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.contains(
+                value_case_insensitive[CONTAINS]
+            )
+        elif OR in map(str.lower, value):
+            or_clauses = [
+                self._create_filter_clause(key, sub_value)
+                for sub_value in value_case_insensitive[OR]
+            ]
+            filter_by_metadata = sqlalchemy.or_(*or_clauses)
+        elif AND in map(str.lower, value):
+            and_clauses = [
+                self._create_filter_clause(key, sub_value)
+                for sub_value in value_case_insensitive[AND]
+            ]
+            filter_by_metadata = sqlalchemy.and_(*and_clauses)
+
+        else:
+            filter_by_metadata = None
+
+        return filter_by_metadata
+
     def __query_collection(
         self,
         embedding: List[float],
@@ -502,22 +584,11 @@ class PGVector(VectorStore):
 
             if filter is not None:
                 filter_clauses = []
-                IN, NIN = "in", "nin"
+
                 for key, value in filter.items():
                     if isinstance(value, dict):
-                        value_case_insensitive = {
-                            k.lower(): v for k, v in value.items()
-                        }
-                        if IN in map(str.lower, value):
-                            filter_by_metadata = self.EmbeddingStore.cmetadata[
-                                key
-                            ].astext.in_(value_case_insensitive[IN])
-                        elif NIN in map(str.lower, value):
-                            filter_by_metadata = self.EmbeddingStore.cmetadata[
-                                key
-                            ].astext.not_in(value_case_insensitive[NIN])
-                        else:
-                            filter_by_metadata = None
+                        filter_by_metadata = self._create_filter_clause(key, value)
+
                         if filter_by_metadata is not None:
                             filter_clauses.append(filter_by_metadata)
                     else:
@@ -941,7 +1012,8 @@ class PGVector(VectorStore):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(
+        return await run_in_executor(
+            None,
             self.max_marginal_relevance_search_by_vector,
             embedding,
             k=k,
@@ -950,4 +1022,3 @@ class PGVector(VectorStore):
             filter=filter,
             **kwargs,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)

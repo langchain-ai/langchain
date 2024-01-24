@@ -1,9 +1,13 @@
 from langchain_community.storage import __all__
 
 EXPECTED_ALL = [
+    "AstraDBStore",
+    "AstraDBByteStore",
     "RedisStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
+    "SQLDocStore",
+    "SQLStrStore",
 ]
 
 
