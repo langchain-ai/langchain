@@ -1,5 +1,5 @@
 """Test chat model integration."""
-from typing import Optional
+from typing import Any, Dict, Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -49,7 +49,7 @@ def test_parse_examples_failes_wrong_sequence() -> None:
 def test_vertexai_args_passed(stop: Optional[str]) -> None:
     response_text = "Goodbye"
     user_prompt = "Hello"
-    prompt_params = {
+    prompt_params: Dict[str, Any] = {
         "max_output_tokens": 1,
         "temperature": 10000.0,
         "top_k": 10,
@@ -69,7 +69,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         mock_model.start_chat = mock_start_chat
         mg.return_value = mock_model
 
-        model = ChatVertexAI(**prompt_params)  # type: ignore
+        model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
         if stop:
             response = model([message], stop=[stop])
