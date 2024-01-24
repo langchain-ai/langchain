@@ -1,7 +1,9 @@
 """Methods for creating function specs in the style of OpenAI Functions"""
+from __future__ import annotations
 
 import inspect
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -16,8 +18,12 @@ from typing import (
 
 from typing_extensions import TypedDict
 
+from langchain_core._api import deprecated
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.json_schema import dereference_refs
+
+if TYPE_CHECKING:
+    from langchain_core.tools import BaseTool
 
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
@@ -45,6 +51,11 @@ class ToolDescription(TypedDict):
     function: FunctionDescription
 
 
+@deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="0.2.0",
+)
 def convert_pydantic_to_openai_function(
     model: Type[BaseModel],
     *,
@@ -61,6 +72,11 @@ def convert_pydantic_to_openai_function(
     }
 
 
+@deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="0.2.0",
+)
 def convert_pydantic_to_openai_tool(
     model: Type[BaseModel],
     *,
@@ -153,6 +169,11 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     return required
 
 
+@deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="0.2.0",
+)
 def convert_python_function_to_openai_function(
     function: Callable,
 ) -> Dict[str, Any]:
@@ -174,8 +195,49 @@ def convert_python_function_to_openai_function(
     }
 
 
+@deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="0.2.0",
+)
+def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
+    """Format tool into the OpenAI function API."""
+    if tool.args_schema:
+        return convert_pydantic_to_openai_function(
+            tool.args_schema, name=tool.name, description=tool.description
+        )
+    else:
+        return {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": {
+                # This is a hack to get around the fact that some tools
+                # do not expose an args_schema, and expect an argument
+                # which is a string.
+                # And Open AI does not support an array type for the
+                # parameters.
+                "properties": {
+                    "__arg1": {"title": "__arg1", "type": "string"},
+                },
+                "required": ["__arg1"],
+                "type": "object",
+            },
+        }
+
+
+@deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="0.2.0",
+)
+def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
+    """Format tool into the OpenAI function API."""
+    function = format_tool_to_openai_function(tool)
+    return {"type": "function", "function": function}
+
+
 def convert_to_openai_function(
-    function: Union[Dict[str, Any], Type[BaseModel], Callable],
+    function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
@@ -188,15 +250,38 @@ def convert_to_openai_function(
         A dict version of the passed in function which is compatible with the
             OpenAI function-calling API.
     """
+    from langchain_core.tools import BaseTool
+
     if isinstance(function, dict):
         return function
     elif isinstance(function, type) and issubclass(function, BaseModel):
         return cast(Dict, convert_pydantic_to_openai_function(function))
+    elif isinstance(function, BaseTool):
+        return format_tool_to_openai_function(function)
     elif callable(function):
         return convert_python_function_to_openai_function(function)
-
     else:
         raise ValueError(
             f"Unsupported function type {type(function)}. Functions must be passed in"
             f" as Dict, pydantic.BaseModel, or Callable."
         )
+
+
+def convert_to_openai_tool(
+    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+) -> Dict[str, Any]:
+    """Convert a raw function/class to an OpenAI tool.
+
+    Args:
+        tool: Either a dictionary, a pydantic.BaseModel class, Python function, or
+            BaseTool. If a dictionary is passed in, it is assumed to already be a valid
+            OpenAI tool or OpenAI function.
+
+    Returns:
+        A dict version of the passed in tool which is compatible with the
+            OpenAI tool-calling API.
+    """
+    if isinstance(tool, dict) and "type" in tool:
+        return tool
+    function = convert_to_openai_function(tool)
+    return {"type": "function", "function": function}
