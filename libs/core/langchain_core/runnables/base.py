@@ -452,6 +452,10 @@ class Runnable(Generic[Input, Output], ABC):
 
     def assign(
         self,
+        *args: Union[
+            Runnable[Dict[str, Any], Dict[str, Any]],
+            Callable[[Dict[str, Any]], Dict[str, Any]],
+        ],
         **kwargs: Union[
             Runnable[Dict[str, Any], Any],
             Callable[[Dict[str, Any]], Any],
@@ -465,7 +469,14 @@ class Runnable(Generic[Input, Output], ABC):
         Returns a new runnable."""
         from langchain_core.runnables.passthrough import RunnableAssign
 
-        return self | RunnableAssign(RunnableParallel(kwargs))
+        if args and kwargs:
+            raise ValueError
+        elif args and len(args) > 1:
+            raise ValueError
+        elif args:
+            return self | RunnableAssign(coerce_to_runnable(args[0]))
+        else:
+            return self | RunnableAssign(RunnableParallel(kwargs))
 
     """ --- Public API --- """
 
@@ -1689,7 +1700,12 @@ def _seq_input_schema(
                 **{
                     k: (v.annotation, v.default)
                     for k, v in next_input_schema.__fields__.items()
-                    if k not in first.mapper.steps
+                    if k
+                    not in (
+                        first.mapper.steps
+                        if isinstance(first.mapper, RunnableParallel)
+                        else {}
+                    )
                 },
                 __config__=_SchemaConfig,
             )
