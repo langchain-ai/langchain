@@ -210,6 +210,12 @@ def _import_hologres() -> Any:
     return Hologres
 
 
+def _import_kdbai() -> Any:
+    from langchain_community.vectorstores.kdbai import KDBAI
+
+    return KDBAI
+
+
 def _import_lancedb() -> Any:
     from langchain_community.vectorstores.lancedb import LanceDB
 
@@ -458,6 +464,12 @@ def _import_zilliz() -> Any:
     return Zilliz
 
 
+def _import_lantern() -> Any:
+    from langchain_community.vectorstores.lantern import Lantern
+
+    return Lantern
+
+
 def __getattr__(name: str) -> Any:
     if name == "AnalyticDB":
         return _import_analyticdb()
@@ -517,6 +529,8 @@ def __getattr__(name: str) -> Any:
         return _import_faiss()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "KDBAI":
+        return _import_kdbai()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -599,6 +613,8 @@ def __getattr__(name: str) -> Any:
         return _import_zilliz()
     elif name == "VespaStore":
         return _import_vespa()
+    elif name == "Lantern":
+        return _import_lantern()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -630,6 +646,7 @@ __all__ = [
     "Epsilla",
     "FAISS",
     "Hologres",
+    "KDBAI",
     "LanceDB",
     "LLMRails",
     "Marqo",
@@ -673,4 +690,5 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "Lantern",
 ]

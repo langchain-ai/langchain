@@ -1,7 +1,7 @@
 
 # hyde
 
-This template HyDE with RAG. 
+This template uses HyDE with RAG. 
 
 Hyde is a retrieval method that stands for Hypothetical Document Embeddings (HyDE). It is a method used to enhance retrieval by generating a hypothetical document for an incoming query. 
 
