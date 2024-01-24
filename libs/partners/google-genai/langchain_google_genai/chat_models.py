@@ -21,6 +21,8 @@ from typing import (
 )
 from urllib.parse import urlparse
 
+import google.api_core
+
 # TODO: remove ignore once the google package is published with types
 import google.generativeai as genai  # type: ignore[import]
 import requests
@@ -87,8 +89,6 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
         Callable[[Any], Any]: A retry decorator configured for handling specific
         Google API exceptions.
     """
-    import google.api_core.exceptions
-
     multiplier = 2
     min_seconds = 1
     max_seconds = 60
@@ -123,14 +123,22 @@ def _chat_with_retry(generation_method: Callable, **kwargs: Any) -> Any:
         Any: The result from the chat generation method.
     """
     retry_decorator = _create_retry_decorator()
-    from google.api_core.exceptions import InvalidArgument  # type: ignore
 
     @retry_decorator
     def _chat_with_retry(**kwargs: Any) -> Any:
         try:
             return generation_method(**kwargs)
-        except InvalidArgument as e:
-            # Do not retry for these errors.
+        # Do not retry for these errors.
+        except google.api_core.exceptions.FailedPrecondition as exc:
+            if "location is not supported" in exc.message:
+                error_msg = (
+                    "Your location is not supported by google-generativeai "
+                    "at the moment. Try to use ChatVertexAI LLM from "
+                    "langchain_google_vertexai."
+                )
+                raise ValueError(error_msg)
+
+        except google.api_core.exceptions.InvalidArgument as e:
             raise ChatGoogleGenerativeAIError(
                 f"Invalid argument provided to Gemini: {e}"
             ) from e
