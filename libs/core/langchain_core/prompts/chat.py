@@ -28,11 +28,14 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.messages.base import get_msg_title_repr
 from langchain_core.prompt_values import ChatPromptValue, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate
 from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import get_colored_text
+from langchain_core.utils.interactive_env import is_interactive_env
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
@@ -42,6 +45,11 @@ class BaseMessagePromptTemplate(Serializable, ABC):
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
@@ -63,6 +71,13 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of input variables.
         """
 
+    def pretty_repr(self, html: bool = False) -> str:
+        """Human-readable representation."""
+        raise NotImplementedError
+
+    def pretty_print(self) -> None:
+        print(self.pretty_repr(html=is_interactive_env()))
+
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
 
@@ -82,8 +97,15 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     variable_name: str
     """Name of variable to use as messages."""
 
-    def __init__(self, variable_name: str, **kwargs: Any):
-        return super().__init__(variable_name=variable_name, **kwargs)
+    optional: bool = False
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
+    def __init__(self, variable_name: str, *, optional: bool = False, **kwargs: Any):
+        super().__init__(variable_name=variable_name, optional=optional, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
@@ -94,7 +116,11 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         Returns:
             List of BaseMessage.
         """
-        value = kwargs[self.variable_name]
+        value = (
+            kwargs.get(self.variable_name, [])
+            if self.optional
+            else kwargs[self.variable_name]
+        )
         if not isinstance(value, list):
             raise ValueError(
                 f"variable {self.variable_name} should be a list of base messages, "
@@ -115,7 +141,16 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         Returns:
             List of input variable names.
         """
-        return [self.variable_name]
+        return [self.variable_name] if not self.optional else []
+
+    def pretty_repr(self, html: bool = False) -> str:
+        var = "{" + self.variable_name + "}"
+        if html:
+            title = get_msg_title_repr("Messages Placeholder", bold=True)
+            var = get_colored_text(var, "yellow")
+        else:
+            title = get_msg_title_repr("Messages Placeholder")
+        return f"{title}\n\n{var}"
 
 
 MessagePromptTemplateT = TypeVar(
@@ -131,6 +166,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     """String prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     @classmethod
     def from_template(
@@ -214,12 +254,23 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         """
         return self.prompt.input_variables
 
+    def pretty_repr(self, html: bool = False) -> str:
+        # TODO: Handle partials
+        title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
+        title = get_msg_title_repr(title, bold=html)
+        return f"{title}\n\n{self.prompt.pretty_repr(html=html)}"
+
 
 class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """Chat message prompt template."""
 
     role: str
     """Role of the message."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -239,6 +290,11 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
 
@@ -254,6 +310,11 @@ class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """AI message prompt template. This is a message sent from the AI."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -272,6 +333,11 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
     """System message prompt template.
     This is a message that is not sent to the user.
     """
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -326,6 +392,13 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages."""
 
+    def pretty_repr(self, html: bool = False) -> str:
+        """Human-readable representation."""
+        raise NotImplementedError
+
+    def pretty_print(self) -> None:
+        print(self.pretty_repr(html=is_interactive_env()))
+
 
 MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate]
 
@@ -367,6 +440,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
@@ -563,12 +641,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             elif isinstance(
                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
             ):
-                rel_params = {
-                    k: v
-                    for k, v in kwargs.items()
-                    if k in message_template.input_variables
-                }
-                message = message_template.format_messages(**rel_params)
+                message = message_template.format_messages(**kwargs)
                 result.extend(message)
             else:
                 raise ValueError(f"Unexpected input: {message_template}")
@@ -657,6 +730,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             file_path: path to file.
         """
         raise NotImplementedError()
+
+    def pretty_repr(self, html: bool = False) -> str:
+        # TODO: handle partials
+        return "\n\n".join(msg.pretty_repr(html=html) for msg in self.messages)
 
 
 def _create_template_from_message_type(

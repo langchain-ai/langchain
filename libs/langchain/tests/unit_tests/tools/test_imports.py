@@ -1,4 +1,5 @@
-from langchain.tools import __all__
+from langchain import tools
+from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "AINAppOps",
@@ -68,6 +69,7 @@ EXPECTED_ALL = [
     "ListSparkSQLTool",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
     "O365CreateDraftMessage",
@@ -91,12 +93,19 @@ EXPECTED_ALL = [
     "RequestsPostTool",
     "RequestsPutTool",
     "SceneXplainTool",
+    "SearchAPIRun",
+    "SearchAPIResults",
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
+    "SlackGetChannel",
+    "SlackGetMessage",
+    "SlackScheduleMessage",
+    "SlackSendMessage",
     "SleepTool",
     "StackExchangeTool",
     "StdInInquireTool",
+    "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
@@ -109,7 +118,6 @@ EXPECTED_ALL = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "authenticate",
     "format_tool_to_openai_function",
     "tool",
     "MerriamWebsterQueryRun",
@@ -117,4 +125,5 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(tools.__all__) == set(EXPECTED_ALL)
+    assert_all_importable(tools)

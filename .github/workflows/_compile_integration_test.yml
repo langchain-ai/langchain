@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.7.1"
 
 jobs:
   build:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Install integration dependencies
         shell: bash
-        run: poetry install --with=test_integration
+        run: poetry install --with=test_integration,test
 
       - name: Check integration tests compile
         shell: bash

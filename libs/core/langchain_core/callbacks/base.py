@@ -75,7 +75,13 @@ class LLMManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when LLM errors."""
+        """Run when LLM errors.
+        Args:
+            error (BaseException): The error that occurred.
+            kwargs (Any): Additional keyword arguments.
+                - response (LLMResult): The response which was generated before
+                    the error occurred.
+        """
 
 
 class ChainManagerMixin:
@@ -213,6 +219,7 @@ class CallbackManagerMixin:
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool starts running."""
@@ -351,7 +358,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM errors."""
+        """Run when LLM errors.
+        Args:
+            error (BaseException): The error that occurred.
+            kwargs (Any): Additional keyword arguments.
+                - response (LLMResult): The response which was generated before
+                    the error occurred.
+        """
 
     async def on_chain_start(
         self,
@@ -397,6 +410,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool starts running."""

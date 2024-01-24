@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.7.1"
   WORKDIR: "templates"
 
 jobs:
@@ -33,5 +33,4 @@ jobs:
       ./.github/workflows/_lint.yml
     with:
       working-directory: templates
-      langchain-location: ../libs/langchain
     secrets: inherit

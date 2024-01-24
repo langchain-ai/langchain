@@ -26,8 +26,9 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       name: Setup python ${{ inputs.python-version }}
+      id: setup-python
       with:
         python-version: ${{ inputs.python-version }}
 
@@ -74,7 +75,8 @@ runs:
       env:
         POETRY_VERSION: ${{ inputs.poetry-version }}
         PYTHON_VERSION: ${{ inputs.python-version }}
-      run: pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
+      # Install poetry using the python version installed by setup-python step.
+      run: pipx install "poetry==$POETRY_VERSION" --python '${{ steps.setup-python.outputs.python-path }}' --verbose
 
     - name: Restore pip and poetry cached dependencies
       uses: actions/cache@v3
