@@ -1,4 +1,5 @@
 labels: ["Idea"]
+description: Suggest ideas for LangChain features and improvements.
 body:
   - type: checkboxes
     id: checks
