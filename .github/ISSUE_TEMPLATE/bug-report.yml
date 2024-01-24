@@ -46,10 +46,12 @@ body:
         
         If a maintainer can copy it, run it, and see it right away, there's a much higher chance that you'll be able to get help.
         
-        If you're including an error message, please include the full stack trace not just the last error.
+        **Important!** 
         
-        **Important!** Use code tags to correctly format your code. See https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting
-        Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
+        * Use code tags (e.g., ```python ... ```) to correctly [format your code](https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting).
+        * INCLUDE the language label (e.g. `python`) after the first three backticks to enable syntax highlighting. (e.g., ```python rather than ```).
+        * Reduce your code to the minimum required to reproduce the issue if possible. This makes it much easier for others to help you.
+        * Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
 
       placeholder: |
         The following code: 
