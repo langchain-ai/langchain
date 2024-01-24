@@ -14,9 +14,11 @@ EXPECTED_ALL = [
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
+    "LLMRailsEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowAIGatewayEmbeddings",
     "MlflowEmbeddings",
+    "MlflowCohereEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
@@ -53,6 +55,7 @@ EXPECTED_ALL = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
+    "VolcanoEmbeddings",
 ]
 
 

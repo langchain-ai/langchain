@@ -15,7 +15,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must
             exist in advance. If you need help on how to create a `FeedbackDataset` in
             Argilla, please visit
-            https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html.
+            https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html.
         workspace_name: name of the workspace in Argilla where the specified
             `FeedbackDataset` lives in. Defaults to `None`, which means that the
             default workspace will be used.
@@ -54,7 +54,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
     REPO_URL: str = "https://github.com/argilla-io/argilla"
     ISSUES_URL: str = f"{REPO_URL}/issues"
-    BLOG_URL: str = "https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html"  # noqa: E501
+    BLOG_URL: str = "https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html"  # noqa: E501
 
     DEFAULT_API_URL: str = "http://localhost:6900"
 
@@ -71,7 +71,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must
                 exist in advance. If you need help on how to create a `FeedbackDataset`
                 in Argilla, please visit
-                https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html.
+                https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html.
             workspace_name: name of the workspace in Argilla where the specified
                 `FeedbackDataset` lives in. Defaults to `None`, which means that the
                 default workspace will be used.
@@ -134,7 +134,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                     " default API key in Argilla Quickstart."
                 ),
             )
-            api_url = self.DEFAULT_API_URL
+            api_key = self.DEFAULT_API_KEY
 
         # Connect to Argilla with the provided credentials, if applicable
         try:

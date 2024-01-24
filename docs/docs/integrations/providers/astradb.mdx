@@ -18,12 +18,12 @@ pip install "astrapy>=0.5.3"
 ### Vector Store
 
 ```python
-from langchain.vectorstores import AstraDB
+from langchain_community.vectorstores import AstraDB
 vector_store = AstraDB(
-  embedding=my_embedding,
-  collection_name="my_store",
-  api_endpoint="...",
-  token="...",
+    embedding=my_embedding,
+    collection_name="my_store",
+    api_endpoint="...",
+    token="...",
 )
 ```
 
@@ -40,7 +40,7 @@ set_llm_cache(AstraDBCache(
 ))
 ```
 
-Learn more in the [example notebook](/docs/integrations/llms/llm_caching) (scroll to the Astra DB section).
+Learn more in the [example notebook](/docs/integrations/llms/llm_caching#astra-db-caches) (scroll to the Astra DB section).
 
 
 ### Semantic LLM Cache
@@ -55,14 +55,14 @@ set_llm_cache(AstraDBSemanticCache(
 ))
 ```
 
-Learn more in the [example notebook](/docs/integrations/llms/llm_caching) (scroll to the appropriate section).
+Learn more in the [example notebook](/docs/integrations/llms/llm_caching#astra-db-caches) (scroll to the appropriate section).
 
 ### Chat message history
 
 ```python
 from langchain.memory import AstraDBChatMessageHistory
 message_history = AstraDBChatMessageHistory(
-    session_id="test-session"
+    session_id="test-session",
     api_endpoint="...",
     token="...",
 )
@@ -70,6 +70,67 @@ message_history = AstraDBChatMessageHistory(
 
 Learn more in the [example notebook](/docs/integrations/memory/astradb_chat_message_history).
 
+### Document loader
+
+```python
+from langchain_community.document_loaders import AstraDBLoader
+loader = AstraDBLoader(
+    collection_name="my_collection",
+    api_endpoint="...",
+    token="..."
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/document_loaders/astradb).
+
+### Self-querying retriever
+
+```python
+from langchain_community.vectorstores import AstraDB
+from langchain.retrievers.self_query.base import SelfQueryRetriever
+
+vector_store = AstraDB(
+    embedding=my_embedding,
+    collection_name="my_store",
+    api_endpoint="...",
+    token="...",
+)
+
+retriever = SelfQueryRetriever.from_llm(
+    my_llm,
+    vector_store,
+    document_content_description,
+    metadata_field_info
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/retrievers/self_query/astradb).
+
+### Store
+
+```python
+from langchain_community.storage import AstraDBStore
+store = AstraDBStore(
+    collection_name="my_kv_store",
+    api_endpoint="...",
+    token="..."
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/stores/astradb#astradbstore).
+
+### Byte Store
+
+```python
+from langchain_community.storage import AstraDBByteStore
+store = AstraDBByteStore(
+    collection_name="my_kv_store",
+    api_endpoint="...",
+    token="..."
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/stores/astradb#astradbbytestore).
 
 ## Apache Cassandra and Astra DB through CQL
 
@@ -83,14 +144,14 @@ Hence, a different set of connectors, outlined below, shall be used.
 ### Vector Store
 
 ```python
-from langchain.vectorstores import Cassandra
+from langchain_community.vectorstores import Cassandra
 vector_store = Cassandra(
-  embedding=my_embedding,
-  table_name="my_store",
+    embedding=my_embedding,
+    table_name="my_store",
 )
 ```
 
-Learn more in the [example notebook](/docs/integrations/vectorstores/astradb) (scroll down to the CQL-specific section).
+Learn more in the [example notebook](/docs/integrations/vectorstores/astradb#apache-cassandra-and-astra-db-through-cql) (scroll down to the CQL-specific section).
 
 
 ### Memory
@@ -110,7 +171,7 @@ from langchain.cache import CassandraCache
 langchain.llm_cache = CassandraCache()
 ```
 
-Learn more in the [example notebook](/docs/integrations/llms/llm_caching) (scroll to the Cassandra section).
+Learn more in the [example notebook](/docs/integrations/llms/llm_caching#cassandra-caches) (scroll to the Cassandra section).
 
 
 ### Semantic LLM Cache
@@ -118,9 +179,9 @@ Learn more in the [example notebook](/docs/integrations/llms/llm_caching) (scrol
 ```python
 from langchain.cache import CassandraSemanticCache
 cassSemanticCache = CassandraSemanticCache(
-  embedding=my_embedding,
-  table_name="my_store",
+    embedding=my_embedding,
+    table_name="my_store",
 )
 ```
 
-Learn more in the [example notebook](/docs/integrations/llms/llm_caching) (scroll to the appropriate section).
+Learn more in the [example notebook](/docs/integrations/llms/llm_caching#cassandra-caches) (scroll to the appropriate section).

@@ -1035,6 +1035,87 @@ def test_md_header_text_splitter_3() -> None:
     assert output == expected_output
 
 
+def test_md_header_text_splitter_preserve_headers_1() -> None:
+    """Test markdown splitter by header: Preserve Headers."""
+
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bat\n\n"
+        "Hi this is Jim\n\n"
+        "Hi Joe\n\n"
+        "## Baz\n\n"
+        "# Bar\n\n"
+        "This is Alice\n\n"
+        "This is Bob"
+    )
+    headers_to_split_on = [
+        ("#", "Header 1"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        Document(
+            page_content="# Foo  \n## Bat  \nHi this is Jim  \nHi Joe  \n## Baz",
+            metadata={"Header 1": "Foo"},
+        ),
+        Document(
+            page_content="# Bar  \nThis is Alice  \nThis is Bob",
+            metadata={"Header 1": "Bar"},
+        ),
+    ]
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_preserve_headers_2() -> None:
+    """Test markdown splitter by header: Preserve Headers."""
+
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        "### Boo \n\n"
+        "Hi this is Lance\n\n"
+        "## Baz\n\n"
+        "Hi this is Molly\n"
+        "    ## Buz\n"
+        "# Bop"
+    )
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        Document(
+            page_content="# Foo  \n## Bar  \nHi this is Jim  \nHi this is Joe",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+        Document(
+            page_content="### Boo  \nHi this is Lance",
+            metadata={"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
+        ),
+        Document(
+            page_content="## Baz  \nHi this is Molly",
+            metadata={"Header 1": "Foo", "Header 2": "Baz"},
+        ),
+        Document(
+            page_content="## Buz",
+            metadata={"Header 1": "Foo", "Header 2": "Buz"},
+        ),
+        Document(page_content="# Bop", metadata={"Header 1": "Bop"}),
+    ]
+    assert output == expected_output
+
+
 @pytest.mark.parametrize("fence", [("```"), ("~~~")])
 def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
     """Test markdown splitter by header: Fenced code block."""

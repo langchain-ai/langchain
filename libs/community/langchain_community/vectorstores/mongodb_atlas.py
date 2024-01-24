@@ -209,6 +209,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
+            del res["embedding"]
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
@@ -221,12 +222,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return MongoDB documents most similar to the given query and their scores.
 
-        Uses the knnBeta Operator available in MongoDB Atlas Search.
-        This feature is in early access and available only for evaluation purposes, to
-        validate functionality, and to gather feedback from a small closed group of
-        early access users. It is not recommended for production deployments as we
-        may introduce breaking changes.
-        For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
+        Uses the vectorSearch operator available in MongoDB Atlas Search.
+        For more: https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
 
         Args:
             query: Text to look up documents similar to.
@@ -234,7 +231,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             pre_filter: (Optional) dictionary of argument(s) to prefilter document
                 fields on.
             post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
-                following the knnBeta vector search.
+                following the vectorSearch stage.
 
         Returns:
             List of documents most similar to the query and their scores.
@@ -258,12 +255,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[Document]:
         """Return MongoDB documents most similar to the given query.
 
-        Uses the knnBeta Operator available in MongoDB Atlas Search.
-        This feature is in early access and available only for evaluation purposes, to
-        validate functionality, and to gather feedback from a small closed group of
-        early access users. It is not recommended for production deployments as we
-        may introduce breaking changes.
-        For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
+        Uses the vectorSearch operator available in MongoDB Atlas Search.
+        For more: https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
 
         Args:
             query: Text to look up documents similar to.
@@ -271,17 +264,22 @@ class MongoDBAtlasVectorSearch(VectorStore):
             pre_filter: (Optional) dictionary of argument(s) to prefilter document
                 fields on.
             post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
-                following the knnBeta vector search.
+                following the vectorSearch stage.
 
         Returns:
             List of documents most similar to the query and their scores.
         """
+        additional = kwargs.get("additional")
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
         )
+
+        if additional and "similarity_score" in additional:
+            for doc, score in docs_and_scores:
+                doc.metadata["score"] = score
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search(
@@ -311,7 +309,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             pre_filter: (Optional) dictionary of argument(s) to prefilter on document
                 fields.
             post_filter_pipeline: (Optional) pipeline of MongoDB aggregation stages
-                following the knnBeta vector search.
+                following the vectorSearch stage.
         Returns:
             List of documents selected by maximal marginal relevance.
         """

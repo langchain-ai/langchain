@@ -1,8 +1,8 @@
 import os
 
-from langchain.chat_models import ChatOpenAI
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain.vectorstores import Vectara
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.vectorstores import Vectara
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
@@ -41,7 +41,6 @@ retriever = MultiQueryRetriever.from_llm(retriever=vectara_retriever, llm=llm)
 # We extract the summary from the RAG output, which is the last document
 # (if summary is enabled)
 # Note that if you want to extract the citation information, you can use res[:-1]]
-model = ChatOpenAI()
 chain = (
     RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
     | (lambda res: res[-1])

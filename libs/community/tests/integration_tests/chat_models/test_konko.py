@@ -1,13 +1,55 @@
 """Evaluate ChatKonko Interface."""
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
+from langchain_core.pydantic_v1 import SecretStr
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.chat_models.konko import ChatKonko
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+
+
+def test_konko_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test initialization with an API key provided via an env variable"""
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv("KONKO_API_KEY", "test-konko-key")
+
+    chat = ChatKonko()
+
+    print(chat.openai_api_key, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+    print(chat.konko_api_key, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+
+def test_konko_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test initialization with an API key provided via the initializer"""
+    chat = ChatKonko(openai_api_key="test-openai-key", konko_api_key="test-konko-key")
+
+    print(chat.konko_api_key, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+    print(chat.konko_secret_key, end="")
+    captured = capsys.readouterr()
+    assert captured.out == "**********"
+
+
+def test_uses_actual_secret_value_from_secret_str() -> None:
+    """Test that actual secret is retrieved using `.get_secret_value()`."""
+    chat = ChatKonko(openai_api_key="test-openai-key", konko_api_key="test-konko-key")
+    assert cast(SecretStr, chat.konko_api_key).get_secret_value() == "test-openai-key"
+    assert cast(SecretStr, chat.konko_secret_key).get_secret_value() == "test-konko-key"
 
 
 def test_konko_chat_test() -> None:
@@ -21,7 +63,7 @@ def test_konko_chat_test() -> None:
 
 def test_konko_chat_test_openai() -> None:
     """Evaluate basic ChatKonko functionality."""
-    chat_instance = ChatKonko(max_tokens=10, model="gpt-3.5-turbo")
+    chat_instance = ChatKonko(max_tokens=10, model="meta-llama/llama-2-70b-chat")
     msg = HumanMessage(content="Hi")
     chat_response = chat_instance([msg])
     assert isinstance(chat_response, BaseMessage)

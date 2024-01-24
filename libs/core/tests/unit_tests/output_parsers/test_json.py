@@ -147,6 +147,7 @@ TEST_CASES = [
     NO_TICKS_WHITE_SPACE,
     TEXT_BEFORE,
     TEXT_AFTER,
+    TEXT_BEFORE_AND_AFTER,
 ]
 
 
@@ -198,6 +199,9 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar": "foo}', '{"foo": "bar", "bar": "foo}"}'),
     ('{"foo": "bar", "bar": "foo[', '{"foo": "bar", "bar": "foo["}'),
     ('{"foo": "bar", "bar": "foo\\"', '{"foo": "bar", "bar": "foo\\""}'),
+    ('{"foo": "bar", "bar":', '{"foo": "bar"}'),
+    ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
+    ('{"foo": "bar", ', '{"foo": "bar"}'),
 ]
 
 
@@ -486,3 +490,9 @@ async def test_partial_text_json_output_parser_diff_async() -> None:
     chain = input_iter | SimpleJsonOutputParser(diff=True)
 
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF
+
+
+def test_raises_error() -> None:
+    parser = SimpleJsonOutputParser()
+    with pytest.raises(Exception):
+        parser.invoke("hi")

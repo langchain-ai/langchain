@@ -1,0 +1,2 @@
+langchain-core==0.1.8
+langchain==0.1.0
