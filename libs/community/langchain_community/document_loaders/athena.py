@@ -84,7 +84,9 @@ class AthenaLoader(BaseLoader):
         query_execution_id = response["QueryExecutionId"]
         print(f"Query : {self.query}")
         while True:
-            response = self.athena_client.get_query_execution(QueryExecutionId=query_execution_id)
+            response = self.athena_client.get_query_execution(
+                QueryExecutionId=query_execution_id
+            )
             state = response["QueryExecution"]["Status"]["State"]
             if state == "SUCCEEDED":
                 print(f"State : {state}")
@@ -141,7 +143,9 @@ class AthenaLoader(BaseLoader):
             page_content = "\n".join(
                 f"{k}: {v}" for k, v in row.items() if k in content_columns
             )
-            metadata = {k: v for k, v in row.items() if k in metadata_columns and v is not None}
+            metadata = {
+                k: v for k, v in row.items() if k in metadata_columns and v is not None
+            }
             doc = Document(page_content=page_content, metadata=metadata)
             yield doc
 
