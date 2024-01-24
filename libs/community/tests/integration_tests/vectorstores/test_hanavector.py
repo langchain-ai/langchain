@@ -48,7 +48,8 @@ test_setup = ConfigData()
 
 def generateSchemaName(cursor):
     cursor.execute(
-        "SELECT REPLACE(CURRENT_UTCDATE, '-', '') || '_' || BINTOHEX(SYSUUID) FROM DUMMY;"
+        "SELECT REPLACE(CURRENT_UTCDATE, '-', '') || '_' || BINTOHEX(SYSUUID) FROM "
+        "DUMMY;"
     )
     if cursor.has_result_set():
         rows = cursor.fetchall()
