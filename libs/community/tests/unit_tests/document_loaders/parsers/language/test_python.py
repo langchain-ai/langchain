@@ -7,12 +7,33 @@ class TestPythonSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """import os
 
+@first_decorator
+@second_decorator
 def hello(text):
     print(text)
 
-class Simple:
+def multiple_hello(
+    text: str,
+    count: int = 1,
+):
+    for _ in range(count):
+        print(text)
+
+class Alpha:
     def __init__(self):
         self.a = 1
+
+@cls_decorator
+class Beta:
+    def __init__(self):
+        self.b = 1
+
+class AlphaBeta(
+    Alpha,
+    Beta,
+):
+    def __init__(self):
+        super().__init__()
 
 hello("Hello!")"""
 
@@ -20,13 +41,22 @@ hello("Hello!")"""
 
 # Code for: def hello(text):
 
-# Code for: class Simple:
+# Code for: def multiple_hello(text: str, count: int=1):
+
+# Code for: class Alpha:
+
+# Code for: class Beta:
+
+# Code for: class AlphaBeta(Alpha, Beta):
 
 hello("Hello!")"""
 
         self.expected_extracted_code = [
-            "def hello(text):\n" "    print(text)",
-            "class Simple:\n" "    def __init__(self):\n" "        self.a = 1",
+            "@first_decorator\n" "@second_decorator\n" "def hello(text):\n" "    print(text)",
+            "def multiple_hello(\n" "    text: str,\n" "    count: int = 1,\n" "):\n" "    for _ in range(count):\n" "        print(text)",
+            "class Alpha:\n" "    def __init__(self):\n" "        self.a = 1",
+            "@cls_decorator\n" "class Beta:\n" "    def __init__(self):\n" "        self.b = 1",
+            "class AlphaBeta(\n" "    Alpha,\n" "    Beta,\n" "):\n" "    def __init__(self):\n" "        super().__init__()",
         ]
 
     def test_extract_functions_classes(self) -> None:

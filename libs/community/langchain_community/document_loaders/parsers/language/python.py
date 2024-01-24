@@ -23,6 +23,10 @@ class PythonSegmenter(CodeSegmenter):
     def _extract_code(self, node: Any) -> str:
         start = node.lineno - 1
         end = node.end_lineno
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            # if the node has decorators, we want to include them in the code
+            decorator_lines = [decorator.lineno for decorator in getattr(node, 'decorator_list', [])]
+            start = min(decorator_lines + [node.lineno]) - 1 if decorator_lines else node.lineno - 1
         return "\n".join(self.source_lines[start:end])
 
     def _extract_function_classes_signature(self, node: Union[ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef]) -> str:
@@ -49,7 +53,8 @@ class PythonSegmenter(CodeSegmenter):
 
         for node in ast.iter_child_nodes(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                start = node.lineno - 1
+                decorator_lines = [decorator.lineno for decorator in getattr(node, 'decorator_list', [])]
+                start = min(decorator_lines + [node.lineno]) - 1 if decorator_lines else node.lineno - 1
                 signature = self._extract_function_classes_signature(node)
                 simplified_lines[start] = f"# Code for: {signature}"
 
