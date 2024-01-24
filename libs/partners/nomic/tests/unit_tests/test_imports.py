@@ -1,9 +1,6 @@
 from langchain_nomic import __all__
 
 EXPECTED_ALL = [
-    "NomicLLM",
-    "ChatNomic",
-    "NomicVectorStore",
     "NomicEmbeddings",
 ]
 

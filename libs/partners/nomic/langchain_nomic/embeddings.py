@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
 
-import nomic
+import nomic  # type: ignore
 from langchain_core.embeddings import Embeddings
 
 
@@ -23,7 +23,7 @@ class NomicEmbeddings(Embeddings):
             model: model name
         """
         _api_key = nomic_api_key or os.environ.get("NOMIC_API_KEY")
-        nomic.login(api_key=_api_key)
+        nomic.login(_api_key)
         self.model = model
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
