@@ -44,11 +44,11 @@ class _TestOutputParser(BaseOutputParser):
 
 
 def test_tools() -> None:
-    from langchain.agents import AgentExecutor  # type: ignore
-    from langchain.agents.format_scratchpad import (  # type: ignore
+    from langchain.agents import AgentExecutor  # type: ignore[import-not-found]
+    from langchain.agents.format_scratchpad import (  # type: ignore[import-not-found]
         format_to_openai_function_messages,
     )
-    from langchain.chains import LLMMathChain  # type: ignore
+    from langchain.chains import LLMMathChain  # type: ignore[import-not-found]
 
     llm = ChatVertexAI(model_name="gemini-pro")
     math_chain = LLMMathChain.from_llm(llm=llm)
@@ -68,7 +68,7 @@ def test_tools() -> None:
     llm_with_tools = llm.bind(functions=tools)
 
     agent = (
-        {  # type: ignore
+        {  # type: ignore[var-annotated]
             "input": lambda x: x["input"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]
@@ -112,12 +112,12 @@ def test_stream() -> None:
 
 
 def test_multiple_tools() -> None:
-    from langchain.agents import AgentExecutor  # type: ignore
-    from langchain.agents.format_scratchpad import (
-        format_to_openai_function_messages,  # type: ignore
+    from langchain.agents import AgentExecutor
+    from langchain.agents.format_scratchpad import format_to_openai_function_messages
+    from langchain.chains import LLMMathChain
+    from langchain.utilities import (  # type: ignore[import-not-found]
+        GoogleSearchAPIWrapper,
     )
-    from langchain.chains import LLMMathChain  # type: ignore
-    from langchain.utilities import GoogleSearchAPIWrapper  # type: ignore
 
     llm = ChatVertexAI(model_name="gemini-pro", max_output_tokens=1024)
     math_chain = LLMMathChain.from_llm(llm=llm)
@@ -150,7 +150,7 @@ def test_multiple_tools() -> None:
     llm_with_tools = llm.bind(functions=tools)
 
     agent = (
-        {  # type: ignore
+        {  # type: ignore[var-annotated]
             "input": lambda x: x["input"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]
