@@ -1487,7 +1487,7 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(separators=separators, **kwargs)
 
 
-class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
+class HTMLSectionSplitter:
     """
     Splitting HTML files based on specified tag and font sizes.
     Requires lxml package.
@@ -1508,8 +1508,6 @@ class HTMLSectionSplitter(RecursiveCharacterTextSplitter):
             xslt_path: path to xslt file for document transformation.
             Needed for html contents that using different format and layouts.
         """
-        super().__init__(**kwargs)
-
         self.headers_to_split_on = dict(headers_to_split_on)
         self.xslt_path = xslt_path
         self.kwargs = kwargs
