@@ -57,7 +57,10 @@ from langchain_community.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain_community.embeddings.llm_rails import LLMRailsEmbeddings
 from langchain_community.embeddings.localai import LocalAIEmbeddings
 from langchain_community.embeddings.minimax import MiniMaxEmbeddings
-from langchain_community.embeddings.mlflow import MlflowEmbeddings
+from langchain_community.embeddings.mlflow import (
+    MlflowCohereEmbeddings,
+    MlflowEmbeddings,
+)
 from langchain_community.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
 from langchain_community.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain_community.embeddings.mosaicml import MosaicMLInstructorEmbeddings
@@ -102,6 +105,7 @@ __all__ = [
     "LLMRailsEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowEmbeddings",
+    "MlflowCohereEmbeddings",
     "MlflowAIGatewayEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",

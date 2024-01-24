@@ -29,6 +29,7 @@ _EXPECTED = [
     "FAISS",
     "HanaDB",
     "Hologres",
+    "KDBAI",
     "LanceDB",
     "Lantern",
     "LLMRails",
