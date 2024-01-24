@@ -275,7 +275,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         tags: Optional[Dict] = None,
         tracking_uri: Optional[str] = None,
         run_id: Optional[str] = None,
-        artifacts_dir: Optional[str] = None,
+        artifacts_dir: str = "",
     ) -> None:
         """Initialize callback handler."""
         import_pandas()
