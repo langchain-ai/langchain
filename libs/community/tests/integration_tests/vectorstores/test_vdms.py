@@ -5,8 +5,7 @@ import os
 import pytest
 from langchain_core.documents import Document
 
-from langchain_community.vectorstores import VDMS
-from langchain_community.vectorstores.vdms import embedding2bytes
+from langchain_community.vectorstores.vdms import VDMS, embedding2bytes
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -16,11 +15,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 """
 cd tests/integration_tests/vectorstores/docker-compose
-docker-compose -f vdms.yml up
+docker-compose -f vdms.yml up -d
 
 By default runs against local docker instance of VDMS using port (VDMS_DBPORT) 55555.
 Use the following to specify different port:
-VDMS_DBPORT=<port> docker-compose -f vdms.yml up
+VDMS_DBPORT=<port> docker-compose -f vdms.yml up -d
 """
 
 
@@ -40,10 +39,8 @@ class TestVDMS:
 
     def test_init_from_client(self) -> None:
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         _ = VDMS(
             embedding_function=embedding_function,
-            embedding_dimension=embedding_dimension,
             connection_args=self.connection_args,
         )
 
@@ -51,92 +48,104 @@ class TestVDMS:
         """Test end to end construction and search."""
         collection_name = "test_from_texts_with_metadatas"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
+        ids = [f"test_from_texts_with_metadatas_{i}" for i in range(len(texts))]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
         docsearch = VDMS.from_texts(
             texts=texts,
+            ids=ids,
             embedding_function=embedding_function,
             metadatas=metadatas,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
         output = docsearch.similarity_search("foo", k=1)
-        assert output == [Document(page_content="foo", metadata={"page": "0"})]
+        assert output == [
+            Document(page_content="foo", metadata={"page": "0", "id": ids[0]})
+        ]
 
     def test_from_texts_with_metadatas_with_scores(self) -> None:
         """Test end to end construction and scored search."""
         collection_name = "test_from_texts_with_metadatas_with_scores"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
+        ids = [
+            f"test_from_texts_with_metadatas_with_scores_{i}" for i in range(len(texts))
+        ]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
         docsearch = VDMS.from_texts(
             texts=texts,
+            ids=ids,
             embedding_function=embedding_function,
             metadatas=metadatas,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
         output = docsearch.similarity_search_with_score("foo", k=1)
-        assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+        assert output == [
+            (Document(page_content="foo", metadata={"page": "0", "id": ids[0]}), 0.0)
+        ]
 
     def test_from_texts_with_metadatas_with_scores_using_vector(self) -> None:
         """Test end to end construction and scored search, using embedding vector."""
         collection_name = "test_from_texts_with_metadatas_with_scores_using_vector"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
+        ids = [f"test_from_texts_with_metadatas_{i}" for i in range(len(texts))]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
         docsearch = VDMS.from_texts(
             texts=texts,
+            ids=ids,
             embedding_function=embedding_function,
             metadatas=metadatas,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
         output = docsearch._similarity_search_with_relevance_scores("foo", k=1)
-        assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+        assert output == [
+            (Document(page_content="foo", metadata={"page": "0", "id": ids[0]}), 0.0)
+        ]
 
     def test_search_filter(self) -> None:
         """Test end to end construction and search with metadata filtering."""
         collection_name = "test_search_filter"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["far", "bar", "baz"]
+        ids = [f"test_search_filter_{i}" for i in range(len(texts))]
         metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
         docsearch = VDMS.from_texts(
             texts=texts,
+            ids=ids,
             embedding_function=embedding_function,
             metadatas=metadatas,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
         output = docsearch.similarity_search(
             "far", k=1, filter={"first_letter": ["==", "f"]}
         )
-        assert output == [Document(page_content="far", metadata={"first_letter": "f"})]
+        assert output == [
+            Document(page_content="far", metadata={"first_letter": "f", "id": ids[0]})
+        ]
         output = docsearch.similarity_search(
             "far", k=2, filter={"first_letter": ["==", "b"]}
         )
-        assert output == [Document(page_content="bar", metadata={"first_letter": "b"})]
+        assert output == [
+            Document(page_content="bar", metadata={"first_letter": "b", "id": ids[1]})
+        ]
 
     def test_search_filter_with_scores(self) -> None:
         """Test end to end construction and scored search with metadata filtering."""
         collection_name = "test_search_filter_with_scores"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["far", "bar", "baz"]
+        ids = [f"test_search_filter_with_scores_{i}" for i in range(len(texts))]
         metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
         docsearch = VDMS.from_texts(
             texts=texts,
+            ids=ids,
             embedding_function=embedding_function,
             metadatas=metadatas,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
@@ -144,59 +153,67 @@ class TestVDMS:
             "far", k=1, filter={"first_letter": ["==", "f"]}
         )
         assert output == [
-            (Document(page_content="far", metadata={"first_letter": "f"}), 0.0)
+            (
+                Document(
+                    page_content="far", metadata={"first_letter": "f", "id": ids[0]}
+                ),
+                0.0,
+            )
         ]
 
         output = docsearch.similarity_search_with_score(
             "far", k=2, filter={"first_letter": ["==", "b"]}
         )
         assert output == [
-            (Document(page_content="bar", metadata={"first_letter": "b"}), 1.0)
+            (
+                Document(
+                    page_content="bar", metadata={"first_letter": "b", "id": ids[1]}
+                ),
+                1.0,
+            )
         ]
 
     def test_mmr(self) -> None:
         """Test end to end construction and search."""
         collection_name = "test_mmr"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
+        ids = [f"test_mmr_{i}" for i in range(len(texts))]
         docsearch = VDMS.from_texts(
             texts=texts,
+            ids=ids,
             embedding_function=embedding_function,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
         output = docsearch.max_marginal_relevance_search("foo", k=1)
-        assert output == [Document(page_content="foo")]
+        assert output == [Document(page_content="foo", metadata={"id": ids[0]})]
 
     def test_mmr_by_vector(self) -> None:
         """Test end to end construction and search."""
         collection_name = "test_mmr_by_vector"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
+        ids = [f"test_mmr_by_vector_{i}" for i in range(len(texts))]
         docsearch = VDMS.from_texts(
             texts=texts,
+            ids=ids,
             embedding_function=embedding_function,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
         embedded_query = embedding_function.embed_query("foo")
         output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
-        assert output == [Document(page_content="foo")]
+        assert output == [Document(page_content="foo", metadata={"id": ids[0]})]
 
     def test_with_include_parameter(self) -> None:
         """Test end to end construction and include parameter."""
         collection_name = "test_with_include_parameter"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
         docsearch = VDMS.from_texts(
             texts=texts,
             embedding_function=embedding_function,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
@@ -213,7 +230,6 @@ class TestVDMS:
 
         # Make a consistent embedding
         embedding_function = ConsistentFakeEmbeddings()
-        embedding_dimension = 10
 
         # Initial document content and id
         initial_content = "foo"
@@ -228,7 +244,6 @@ class TestVDMS:
             collection_name=collection_name,
             documents=[original_doc],
             embedding_function=embedding_function,
-            embedding_dimension=embedding_dimension,
             ids=[document_id],
         )
         response, old_embedding = docsearch.get(
@@ -254,7 +269,9 @@ class TestVDMS:
 
         # Assert that the updated document is returned by the search
         assert output == [
-            Document(page_content=updated_content, metadata={"page": "0"})
+            Document(
+                page_content=updated_content, metadata={"page": "0", "id": document_id}
+            )
         ]
 
         # Assert that the new embedding is correct
@@ -274,32 +291,30 @@ class TestVDMS:
         """Test to make sure the relevance score is scaled to 0-1."""
         collection_name = "test_with_relevance_score"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         texts = ["foo", "bar", "baz"]
+        ids = [f"test_mmr_by_vector_{i}" for i in range(len(texts))]
         metadatas = [{"page": str(i)} for i in range(len(texts))]
         docsearch = VDMS.from_texts(
             texts=texts,
+            ids=ids,
             embedding_function=embedding_function,
             metadatas=metadatas,
-            embedding_dimension=embedding_dimension,
             collection_name=collection_name,
             connection_args=self.connection_args,
         )
         output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
         assert output == [
-            (Document(page_content="foo", metadata={"page": "0"}), 0.0),
-            (Document(page_content="bar", metadata={"page": "1"}), 0.25),
-            (Document(page_content="baz", metadata={"page": "2"}), 1.0),
+            (Document(page_content="foo", metadata={"page": "0", "id": ids[0]}), 0.0),
+            (Document(page_content="bar", metadata={"page": "1", "id": ids[1]}), 0.25),
+            (Document(page_content="baz", metadata={"page": "2", "id": ids[2]}), 1.0),
         ]
 
     def test_add_documents_no_metadata(self) -> None:
         collection_name = "test_add_documents_no_metadata"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         db = VDMS(
             collection_name=collection_name,
             embedding_function=embedding_function,
-            embedding_dimension=embedding_dimension,
             connection_args=self.connection_args,
         )
         db.add_documents([Document(page_content="foo")])
@@ -307,11 +322,9 @@ class TestVDMS:
     def test_add_documents_mixed_metadata(self) -> None:
         collection_name = "test_add_documents_mixed_metadata"
         embedding_function = FakeEmbeddings()
-        embedding_dimension = 10
         db = VDMS(
             collection_name=collection_name,
             embedding_function=embedding_function,
-            embedding_dimension=embedding_dimension,
             connection_args=self.connection_args,
         )
 
@@ -324,6 +337,8 @@ class TestVDMS:
         assert actual_ids == ids
 
         search = db.similarity_search("foo bar", k=2)
+        docs[0].metadata = {"id": ids[0]}
+        docs[1].metadata["id"] = ids[1]
         assert sorted(search, key=lambda d: d.page_content) == sorted(
             docs, key=lambda d: d.page_content
         )
