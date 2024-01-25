@@ -28,37 +28,45 @@ class OntotextGraphDBGraph:
     """
 
     def __init__(
-        self,
-        query_endpoint: str,
-        query_ontology: Optional[str] = None,
-        local_file: Optional[str] = None,
+            self,
+            query_endpoint: str,
+            query_ontology: Optional[str] = None,
+            local_file: Optional[str] = None,
+            local_file_format: Optional[str] = None,
     ) -> None:
         """
         Set up the GraphDB wrapper
 
+        :param query_endpoint: SPARQL endpoint for queries, read access
+
         If GraphDB is secured,
         set the environment variables 'GRAPHDB_USERNAME' and 'GRAPHDB_PASSWORD'.
 
-        :param query_endpoint: SPARQL endpoint for queries, read access
         :param query_ontology: a `CONSTRUCT` query that is executed
         on the SPARQL endpoint and returns the KG schema statements
         Example:
         'CONSTRUCT {?s ?p ?o} FROM <https://example.com/ontology/> WHERE {?s ?p ?o}'
         Currently, DESCRIBE queries like
-        'PREFIX swapi: <https://swapi.co/ontology/>
+        'PREFIX onto: <https://example.com/ontology/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         DESCRIBE ?term WHERE {
-            ?term rdfs:isDefinedBy swapi:
+            ?term rdfs:isDefinedBy onto:
         }'
         are not supported, because DESCRIBE returns
         the Symmetric Concise Bounded Description (SCBD),
         i.e. also the incoming class links.
         In case of large graphs with a million of instances, this is not efficient.
         Check https://github.com/eclipse-rdf4j/rdf4j/issues/4857
-        :param local_file: a local RDF ontology file. Supported file formats: TODO
-        Turtle, RDF/XML, JSON-LD, N-Triples, Notation-3, Trig, Trix, N-Quads
 
-        Either query_ontology or local_file should be passed.
+        :param local_file: a local RDF ontology file.
+        Supported file formats: Turtle, RDF/XML, JSON-LD, N-Triples, Notation-3, Trig, Trix, N-Quads.
+        If the rdf format can't be determined from the file extension,
+        pass explicitly the rdf format in `local_file_format` param.
+
+        :param local_file_format: Used if the rdf format can't be determined from the local file extension.
+        One of "json-ld", "xml", "n3", "turtle", "nt", "trig", "nquads", "trix"
+
+        Either `query_ontology` or `local_file` should be passed.
         """
 
         if query_ontology and local_file:
@@ -84,7 +92,7 @@ class OntotextGraphDBGraph:
         self._check_connectivity()
 
         if local_file:
-            ontology_schema_graph = self._load_ontology_schema_from_file(local_file)
+            ontology_schema_graph = self._load_ontology_schema_from_file(local_file, local_file_format)
         else:
             self._validate_user_query(query_ontology)
             ontology_schema_graph = self._load_ontology_schema_with_query(
@@ -127,7 +135,7 @@ class OntotextGraphDBGraph:
             )
 
     @staticmethod
-    def _load_ontology_schema_from_file(local_file: str):
+    def _load_ontology_schema_from_file(local_file: str, local_file_format: str):
         """
         Parse the ontology schema statements from the provided file
         """
@@ -139,7 +147,7 @@ class OntotextGraphDBGraph:
             raise PermissionError(f"Read permission for {local_file} is restricted")
         graph = rdflib.ConjunctiveGraph()
         try:
-            graph.parse(local_file)
+            graph.parse(local_file, format=local_file_format)
         except Exception as e:
             raise ValueError(f"Invalid file format for {local_file} : ", e)
         return graph
@@ -185,8 +193,8 @@ class OntotextGraphDBGraph:
         return self.schema
 
     def query(
-        self,
-        query: str,
+            self,
+            query: str,
     ) -> List[rdflib.query.ResultRow]:
         """
         Query the graph.
