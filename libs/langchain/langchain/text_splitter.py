@@ -1566,7 +1566,7 @@ class HTMLSectionSplitter:
         headers = list(self.headers_to_split_on.keys())
         sections: Dict[str, Dict[str, Optional[str]]] = {}
         section_content: List[str] = []
-        current_header = None
+        current_header: str = ""
         current_header_tag = None
 
         headers = soup.find_all(["body"] + headers)
