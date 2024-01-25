@@ -2962,6 +2962,29 @@ files = [
 ]
 
 [[package]]
+name = "hdbcli"
+version = "2.19.21"
+description = "SAP HANA Python Client"
+optional = true
+python-versions = "*"
+files = [
+    {file = "hdbcli-2.19.21-cp27-cp27m-macosx_10_7_x86_64.whl", hash = "sha256:3028f04b86de2d9834a69f3fec2abb58201be3f1cbc357a63af18d4becaab1d3"},
+    {file = "hdbcli-2.19.21-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:f5e5ad76e77eff67ffad4f7db4a9cbe3e6b9c0399e39bd31ffeb4136d2192bc0"},
+    {file = "hdbcli-2.19.21-cp27-cp27m-manylinux2014_ppc64le.whl", hash = "sha256:a8ceca28c6b80c5e6f8fc80a3517d7e843b9c3288f8b03c49316be68468d3848"},
+    {file = "hdbcli-2.19.21-cp27-cp27m-win_amd64.whl", hash = "sha256:c963a8fa2f3405024051812048479bdd527d730351473f354d85e7fd933bf7ce"},
+    {file = "hdbcli-2.19.21-cp27-cp27mu-macosx_10_7_x86_64.whl", hash = "sha256:98e72291fd5c226b22636274c3ccadb93ff2e3b54b98bff3f37e402ecfd73151"},
+    {file = "hdbcli-2.19.21-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:9773cc00cfd72ac7c2ad102560ca747bd5077437bed8bbb812071fa0ceb195a2"},
+    {file = "hdbcli-2.19.21-cp27-cp27mu-manylinux2014_ppc64le.whl", hash = "sha256:ba5cf42ea026a1b1677c2c8bdbf2e6b77fbbabb7506671485740e675a6a5345a"},
+    {file = "hdbcli-2.19.21-cp34-abi3-macosx_10_11_x86_64.whl", hash = "sha256:fac185d39a7a143a3c505c3e4260d0fc1b244589d4bea126e248e70e9e994e2b"},
+    {file = "hdbcli-2.19.21-cp34-abi3-manylinux1_x86_64.whl", hash = "sha256:3c20763ba687acab151680c296c9daddbbbb7107a9790cf953da9bc527e373b9"},
+    {file = "hdbcli-2.19.21-cp34-abi3-manylinux2014_ppc64le.whl", hash = "sha256:e20a3f60039875d03165c5790993952f5e2ec8efe141e051f7e154d96afc79a4"},
+    {file = "hdbcli-2.19.21-cp36-abi3-manylinux2014_aarch64.whl", hash = "sha256:7c7c50e89fe03be434460d407f2b74196eadde21db4046d52175a22b879ffa28"},
+    {file = "hdbcli-2.19.21-cp36-abi3-win32.whl", hash = "sha256:d8529099b535b2c02ddb923ef8006132cf548e358f0bb0afdef3d4d81adc74d0"},
+    {file = "hdbcli-2.19.21-cp36-abi3-win_amd64.whl", hash = "sha256:7c631a467f15cbb0d91655c2059b3c421e2fa0451ffeb500a3461aa4456e3fa2"},
+    {file = "hdbcli-2.19.21-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:f8607479efef3dea5fc4181806a20ffe6552ef0212efc371c93a15bf2d50c3b4"},
+]
+
+[[package]]
 name = "hologres-vector"
 version = "0.0.6"
 description = ""
@@ -3920,7 +3943,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.14"
+version = "0.1.15"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -4975,13 +4998,13 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "oci"
-version = "2.118.0"
+version = "2.119.1"
 description = "Oracle Cloud Infrastructure Python SDK"
 optional = true
 python-versions = "*"
 files = [
-    {file = "oci-2.118.0-py3-none-any.whl", hash = "sha256:766170a9b4c93053ba3fe5ae63c0ab48fdd71b4d17709742a2b45249f0829872"},
-    {file = "oci-2.118.0.tar.gz", hash = "sha256:1004726c4dad6c02f967b7bc4e733ff552451a2914cb542c380756c7d46bb938"},
+    {file = "oci-2.119.1-py3-none-any.whl", hash = "sha256:64b6012f3c2b70cf7fb5f58a1a4b4458d8f4d41ea1b79a5d9f8ca4beb2dfa225"},
+    {file = "oci-2.119.1.tar.gz", hash = "sha256:992df963382f378b93634826956677f3c13407ca1b828c4eaf1cfd18f19fae33"},
 ]
 
 [package.dependencies]
@@ -7072,13 +7095,13 @@ six = ">=1.15.0"
 
 [[package]]
 name = "rdflib"
-version = "6.3.2"
+version = "7.0.0"
 description = "RDFLib is a Python library for working with RDF, a simple yet powerful language for representing information."
 optional = true
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.8.1,<4.0.0"
 files = [
-    {file = "rdflib-6.3.2-py3-none-any.whl", hash = "sha256:36b4e74a32aa1e4fa7b8719876fb192f19ecd45ff932ea5ebbd2e417a0247e63"},
-    {file = "rdflib-6.3.2.tar.gz", hash = "sha256:72af591ff704f4caacea7ecc0c5a9056b8553e0489dd4f35a9bc52dbd41522e0"},
+    {file = "rdflib-7.0.0-py3-none-any.whl", hash = "sha256:0438920912a642c866a513de6fe8a0001bd86ef975057d6962c79ce4771687cd"},
+    {file = "rdflib-7.0.0.tar.gz", hash = "sha256:9995eb8569428059b8c1affd26b25eac510d64f5043d9ce8c84e0d0036e995ae"},
 ]
 
 [package.dependencies]
@@ -9224,9 +9247,9 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 cli = ["typer"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "dashvector", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hologres-vector", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict", "zhipuai"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "dashvector", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "oci", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "upstash-redis", "xata", "xmltodict", "zhipuai"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8a4d46d5e9473844658a9af84589691d95789e1fa340007643b42680e97778aa"
+content-hash = "cbd9f671ce676cedc85107134aab91f9720a7c8472535b23cc5b4691fa3ddf16"

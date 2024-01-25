@@ -1,11 +1,16 @@
 name: "\U0001F41B Bug Report"
-description: Submit a bug report to help us improve LangChain. To report a security issue, please instead use the security option below.
+description: Report a bug in LangChain. To report a security issue, please instead use the security option below. For questions, please use the GitHub Discussions.
 labels: ["02 Bug Report"]
 body:
   - type: markdown
     attributes:
       value: >
         Thank you for taking the time to file a bug report. 
+        
+        Use this to report bugs in LangChain. 
+        
+        If you're not certain that your issue is due to a bug in LangChain, please use [GitHub Discussions](https://github.com/langchain-ai/langchain/discussions)
+        to ask for help with your issue.
         
         Relevant links to check before filing a bug report to see if your issue has already been reported, fixed or
         if there's another way to solve your problem:
@@ -14,7 +19,8 @@ body:
         [API Reference](https://api.python.langchain.com/en/stable/),
         [GitHub search](https://github.com/langchain-ai/langchain),
         [LangChain Github Discussions](https://github.com/langchain-ai/langchain/discussions),
-        [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue)
+        [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue),
+        [LangChain ChatBot](https://chat.langchain.com/)
   - type: checkboxes
     id: checks
     attributes:
@@ -27,6 +33,8 @@ body:
           required: true
         - label: I used the GitHub search to find a similar question and didn't find it.
           required: true
+        - label: I am sure that this is a bug in LangChain rather than my code.
+          required: true
   - type: textarea
     id: reproduction
     validations:
@@ -38,10 +46,12 @@ body:
         
         If a maintainer can copy it, run it, and see it right away, there's a much higher chance that you'll be able to get help.
         
-        If you're including an error message, please include the full stack trace not just the last error.
+        **Important!** 
         
-        **Important!** Use code tags to correctly format your code. See https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting
-        Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
+        * Use code tags (e.g., ```python ... ```) to correctly [format your code](https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting).
+        * INCLUDE the language label (e.g. `python`) after the first three backticks to enable syntax highlighting. (e.g., ```python rather than ```).
+        * Reduce your code to the minimum required to reproduce the issue if possible. This makes it much easier for others to help you.
+        * Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
 
       placeholder: |
         The following code: 
@@ -55,9 +65,16 @@ body:
           chain = RunnableLambda(bad_code)
           chain.invoke('Hello!')
         ```
-        
-        Include both the error and the full stack trace if reporting an exception!
-
+  - type: textarea
+    id: error
+    validations:
+      required: false
+    attributes:
+      label: Error Message and Stack Trace (if applicable)
+      description: |
+        If you are reporting an error, please include the full error message and stack trace.
+      placeholder: |
+        Exception + full stack trace
   - type: textarea
     id: description
     attributes:
@@ -76,28 +93,26 @@ body:
     id: system-info
     attributes:
       label: System Info
-      description: Please share your system info with us.
+      description: |
+        Please share your system info with us. 
+        
+        "pip freeze | grep langchain" 
+        platform (windows / linux / mac)
+        python version
+        
+        OR if you're on a recent version of langchain-core you can paste the output of:
+        
+        python -m langchain_core.sys_info
       placeholder: |
         "pip freeze | grep langchain"
         platform
         python version
+        
+        Alternatively, if you're on a recent version of langchain-core you can paste the output of:
+        
+        python -m langchain_core.sys_info
+        
+        These will only surface LangChain packages, don't forget to include any other relevant
+        packages you're using (if you're not sure what's relevant, you can paste the entire output of `pip freeze`).
     validations:
       required: true
-  - type: checkboxes
-    id: related-components
-    attributes:
-      label: Related Components
-      description: "Select the components related to the issue (if applicable):"
-      options:
-        - label: "LLMs/Chat Models"
-        - label: "Embedding Models"
-        - label: "Prompts / Prompt Templates / Prompt Selectors"
-        - label: "Output Parsers"
-        - label: "Document Loaders"
-        - label: "Vector Stores / Retrievers"
-        - label: "Memory"
-        - label: "Agents / Agent Executors"
-        - label: "Tools / Toolkits"
-        - label: "Chains"
-        - label: "Callbacks/Tracing"
-        - label: "Async"
