@@ -3715,6 +3715,10 @@
     {
       "source": "/docs/integrations/providers/google_document_ai",
       "destination": "/docs/integrations/platforms/google#google-document-ai"
+    },
+    {
+      "source": "/docs/integrations/tools/metaphor_search",
+      "destination": "/docs/integrations/tools/exa_search"
     }
   ]
 }
