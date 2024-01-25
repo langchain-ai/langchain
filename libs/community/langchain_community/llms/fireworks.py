@@ -106,7 +106,6 @@ class Fireworks(BaseLLM):
                 **params,
             )
             choices.extend(response)
-
         return self.create_llm_result(choices, prompts)
 
     async def _agenerate(
@@ -150,6 +149,7 @@ class Fireworks(BaseLLM):
     def create_llm_result(self, choices: Any, prompts: List[str]) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
+        token_usage = []
         for i, _ in enumerate(prompts):
             sub_choices = choices[i : (i + 1)]
             generations.append(
@@ -160,7 +160,8 @@ class Fireworks(BaseLLM):
                     for choice in sub_choices
                 ]
             )
-        llm_output = {"model": self.model}
+            token_usage.extend([choice.usage for choice in sub_choices])
+        llm_output = {"model": self.model, "token_usage": token_usage}
         return LLMResult(generations=generations, llm_output=llm_output)
 
     def _stream(

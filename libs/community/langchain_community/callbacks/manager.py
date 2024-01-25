@@ -10,6 +10,7 @@ from typing import (
 
 from langchain_core.tracers.context import register_configure_hook
 
+from langchain_community.callbacks.fireworks_callback import FireworksCallbackHandler
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_community.callbacks.tracers.comet import CometTracer
 from langchain_community.callbacks.tracers.wandb import WandbTracer
@@ -19,6 +20,9 @@ logger = logging.getLogger(__name__)
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
+fireworks_callback_var: ContextVar[Optional[FireworksCallbackHandler]] = ContextVar(
+    "fireworks_callback", default=None
+)
 wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # noqa: E501
     "tracing_wandb_callback", default=None
 )
@@ -27,6 +31,7 @@ comet_tracing_callback_var: ContextVar[Optional[CometTracer]] = ContextVar(  # n
 )
 
 register_configure_hook(openai_callback_var, True)
+register_configure_hook(fireworks_callback_var, True)
 register_configure_hook(
     wandb_tracing_callback_var, True, WandbTracer, "LANGCHAIN_WANDB_TRACING"
 )
@@ -74,3 +79,21 @@ def wandb_tracing_enabled(
     wandb_tracing_callback_var.set(cb)
     yield None
     wandb_tracing_callback_var.set(None)
+
+
+@contextmanager
+def get_fireworks_callback() -> Generator[FireworksCallbackHandler, None, None]:
+    """
+    Get the Fireworks callback handler in a context manager to inspect token usage info.
+
+    Returns:
+        FireworksCallbackHandler: The Fireworks.ai callback handler.
+
+    Example:
+        >>> with get_fireworks_callback_handler() as cb:
+        ...     # Use the Fireworks callback handler
+    """
+    cb = FireworksCallbackHandler()
+    fireworks_callback_var.set(cb)
+    yield cb
+    fireworks_callback_var.set(None)

@@ -14,6 +14,7 @@ from langchain_community.callbacks.arthur_callback import ArthurCallbackHandler
 from langchain_community.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain_community.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain_community.callbacks.context_callback import ContextCallbackHandler
+from langchain_community.callbacks.fireworks_callback import FireworksCallbackHandler
 from langchain_community.callbacks.flyte_callback import FlyteCallbackHandler
 from langchain_community.callbacks.human import HumanApprovalCallbackHandler
 from langchain_community.callbacks.infino_callback import InfinoCallbackHandler
@@ -22,6 +23,7 @@ from langchain_community.callbacks.labelstudio_callback import (
 )
 from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
 from langchain_community.callbacks.manager import (
+    get_fireworks_callback,
     get_openai_callback,
     wandb_tracing_enabled,
 )
