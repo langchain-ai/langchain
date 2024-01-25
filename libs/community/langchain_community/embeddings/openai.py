@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 import warnings
-from importlib.metadata import version
 from typing import (
     Any,
     Callable,
@@ -20,10 +19,10 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
-from packaging.version import Version, parse
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -32,6 +31,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+from langchain_community.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,7 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
 
 def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
-    if _is_openai_v1():
+    if is_openai_v1():
         return embeddings.client.create(**kwargs)
     retry_decorator = _create_retry_decorator(embeddings)
 
@@ -126,7 +127,7 @@ def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
 async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
 
-    if _is_openai_v1():
+    if is_openai_v1():
         return await embeddings.async_client.create(**kwargs)
 
     @_async_retry_decorator(embeddings)
@@ -137,11 +138,11 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
     return await _async_embed_with_retry(**kwargs)
 
 
-def _is_openai_v1() -> bool:
-    _version = parse(version("openai"))
-    return _version >= Version("1.0.0")
-
-
+@deprecated(
+    since="0.1.0",
+    removal="0.2.0",
+    alternative_import="langchain_openai.OpenAIEmbeddings",
+)
 class OpenAIEmbeddings(BaseModel, Embeddings):
     """OpenAI embedding models.
 
@@ -330,7 +331,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install openai`."
             )
         else:
-            if _is_openai_v1():
+            if is_openai_v1():
                 if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
                     warnings.warn(
                         "If you have openai>=1.0.0 installed and are using Azure, "
@@ -360,7 +361,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
-        if _is_openai_v1():
+        if is_openai_v1():
             openai_args: Dict = {"model": self.model, **self.model_kwargs}
         else:
             openai_args = {

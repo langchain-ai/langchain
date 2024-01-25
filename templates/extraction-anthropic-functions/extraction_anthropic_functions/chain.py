@@ -1,8 +1,8 @@
 from typing import List, Optional
 
 from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
-from langchain.prompts import ChatPromptTemplate
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_experimental.llms.anthropic_functions import AnthropicFunctions
 

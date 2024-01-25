@@ -1,8 +1,8 @@
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_xml
-from langchain.llms import OpenAI
 from langchain.tools import DuckDuckGoSearchRun
 from langchain.tools.render import render_text_description
+from langchain_community.llms import OpenAI
 from langchain_core.pydantic_v1 import BaseModel
 
 from solo_performance_prompting_agent.parser import parse_output

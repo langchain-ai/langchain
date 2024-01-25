@@ -1,15 +1,23 @@
 [tool.poetry]
 name = "langchain-google-genai"
-version = "0.0.3"
+version = "0.0.6.post1"
 description = "An integration package connecting Google's genai package and LangChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain/blob/master/libs/partners/google-genai"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/google-genai"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 langchain-core = "^0.1"
 google-generativeai = "^0.3.1"
+pillow = { version = "^10.1.0", optional = true }
+
+[tool.poetry.extras]
+images = ["pillow"]
 
 [tool.poetry.group.test]
 optional = true
@@ -34,6 +42,8 @@ codespell = "^2.2.0"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
+pillow = "^10.1.0"
+
 
 [tool.poetry.group.lint]
 optional = true

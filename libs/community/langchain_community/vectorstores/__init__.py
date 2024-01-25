@@ -104,6 +104,14 @@ def _import_baiducloud_vector_search() -> Any:
     return BESVectorStore
 
 
+def _import_bigquery() -> Any:
+    from langchain_community.vectorstores.bigquery_vector_search import (
+        BigQueryVectorSearch,
+    )
+
+    return BigQueryVectorSearch
+
+
 def _import_cassandra() -> Any:
     from langchain_community.vectorstores.cassandra import Cassandra
 
@@ -196,10 +204,22 @@ def _import_faiss() -> Any:
     return FAISS
 
 
+def _import_hanavector() -> Any:
+    from langchain_community.vectorstores.hanavector import HanaDB
+
+    return HanaDB
+
+
 def _import_hologres() -> Any:
     from langchain_community.vectorstores.hologres import Hologres
 
     return Hologres
+
+
+def _import_kdbai() -> Any:
+    from langchain_community.vectorstores.kdbai import KDBAI
+
+    return KDBAI
 
 
 def _import_lancedb() -> Any:
@@ -360,6 +380,12 @@ def _import_supabase() -> Any:
     return SupabaseVectorStore
 
 
+def _import_surrealdb() -> Any:
+    from langchain_community.vectorstores.surrealdb import SurrealDBStore
+
+    return SurrealDBStore
+
+
 def _import_tair() -> Any:
     from langchain_community.vectorstores.tair import Tair
 
@@ -444,6 +470,12 @@ def _import_zilliz() -> Any:
     return Zilliz
 
 
+def _import_lantern() -> Any:
+    from langchain_community.vectorstores.lantern import Lantern
+
+    return Lantern
+
+
 def __getattr__(name: str) -> Any:
     if name == "AnalyticDB":
         return _import_analyticdb()
@@ -467,6 +499,8 @@ def __getattr__(name: str) -> Any:
         return _import_azuresearch()
     elif name == "Bagel":
         return _import_bageldb()
+    elif name == "BigQueryVectorSearch":
+        return _import_bigquery()
     elif name == "BESVectorStore":
         return _import_baiducloud_vector_search()
     elif name == "Cassandra":
@@ -499,8 +533,12 @@ def __getattr__(name: str) -> Any:
         return _import_epsilla()
     elif name == "FAISS":
         return _import_faiss()
+    elif name == "HanaDB":
+        return _import_hanavector()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "KDBAI":
+        return _import_kdbai()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -551,6 +589,8 @@ def __getattr__(name: str) -> Any:
         return _import_starrocks()
     elif name == "SupabaseVectorStore":
         return _import_supabase()
+    elif name == "SurrealDBStore":
+        return _import_surrealdb()
     elif name == "Tair":
         return _import_tair()
     elif name == "TencentVectorDB":
@@ -581,6 +621,8 @@ def __getattr__(name: str) -> Any:
         return _import_zilliz()
     elif name == "VespaStore":
         return _import_vespa()
+    elif name == "Lantern":
+        return _import_lantern()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -611,7 +653,9 @@ __all__ = [
     "ElasticsearchStore",
     "Epsilla",
     "FAISS",
+    "HanaDB",
     "Hologres",
+    "KDBAI",
     "LanceDB",
     "LLMRails",
     "Marqo",
@@ -637,6 +681,7 @@ __all__ = [
     "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
+    "SurrealDBStore",
     "Tair",
     "TileDB",
     "Tigris",
@@ -654,4 +699,5 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "Lantern",
 ]

@@ -1,11 +1,9 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
-import asyncio
 import inspect
 import warnings
 from abc import abstractmethod
-from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -26,7 +24,13 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validate_arguments,
 )
-from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+)
+from langchain_core.runnables.config import run_in_executor
 
 
 class SchemaAnnotationError(TypeError):
@@ -107,25 +111,24 @@ class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
 
         args_schema_type = cls.__annotations__.get("args_schema", None)
 
-        if args_schema_type is not None:
-            if args_schema_type is None or args_schema_type == BaseModel:
-                # Throw errors for common mis-annotations.
-                # TODO: Use get_args / get_origin and fully
-                # specify valid annotations.
-                typehint_mandate = """
+        if args_schema_type is not None and args_schema_type == BaseModel:
+            # Throw errors for common mis-annotations.
+            # TODO: Use get_args / get_origin and fully
+            # specify valid annotations.
+            typehint_mandate = """
 class ChildTool(BaseTool):
     ...
     args_schema: Type[BaseModel] = SchemaClass
     ..."""
-                name = cls.__name__
-                raise SchemaAnnotationError(
-                    f"Tool definition for {name} must include valid type annotations"
-                    f" for argument 'args_schema' to behave as expected.\n"
-                    f"Expected annotation of 'Type[BaseModel]'"
-                    f" but got '{args_schema_type}'.\n"
-                    f"Expected class looks like:\n"
-                    f"{typehint_mandate}"
-                )
+            name = cls.__name__
+            raise SchemaAnnotationError(
+                f"Tool definition for {name} must include valid type annotations"
+                f" for argument 'args_schema' to behave as expected.\n"
+                f"Expected annotation of 'Type[BaseModel]'"
+                f" but got '{args_schema_type}'.\n"
+                f"Expected class looks like:\n"
+                f"{typehint_mandate}"
+            )
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
@@ -202,7 +205,7 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         return self.run(
             input,
             callbacks=config.get("callbacks"),
@@ -218,7 +221,7 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         return await self.arun(
             input,
             callbacks=config.get("callbacks"),
@@ -244,7 +247,11 @@ class ChildTool(BaseTool):
         else:
             if input_args is not None:
                 result = input_args.parse_obj(tool_input)
-                return {k: v for k, v in result.dict().items() if k in tool_input}
+                return {
+                    k: getattr(result, k)
+                    for k, v in result.dict().items()
+                    if k in tool_input
+                }
         return tool_input
 
     @root_validator()
@@ -280,11 +287,7 @@ class ChildTool(BaseTool):
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None,
-            partial(self._run, **kwargs),
-            *args,
-        )
+        return await run_in_executor(None, self._run, *args, **kwargs)
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
@@ -296,7 +299,7 @@ class ChildTool(BaseTool):
 
     def run(
         self,
-        tool_input: Union[str, Dict],
+        tool_input: Union[str, Dict[str, Any]],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -308,7 +311,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
-        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -329,9 +331,15 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            # Inputs by definition should always be dicts.
+            # For now, it's unclear whether this assumption is ever violated,
+            # but if it is we will send a `None` value to the callback instead
+            # And will need to address issue via a patch.
+            inputs=None if isinstance(tool_input, str) else tool_input,
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
@@ -383,7 +391,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
-        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -403,9 +410,11 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            inputs=tool_input,
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
@@ -468,9 +477,7 @@ class Tool(BaseTool):
     ) -> Any:
         if not self.coroutine:
             # If the tool does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
+            return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
         return await super().ainvoke(input, config, **kwargs)
 
@@ -538,8 +545,12 @@ class Tool(BaseTool):
                 else await self.coroutine(*args, **kwargs)
             )
         else:
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self._run, run_manager=run_manager, **kwargs), *args
+            return await run_in_executor(
+                None,
+                self._run,
+                run_manager=run_manager.get_sync() if run_manager else None,
+                *args,
+                **kwargs,
             )
 
     # TODO: this is for backwards compatibility, remove in future
@@ -599,9 +610,7 @@ class StructuredTool(BaseTool):
     ) -> Any:
         if not self.coroutine:
             # If the tool does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
+            return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
         return await super().ainvoke(input, config, **kwargs)
 
@@ -652,10 +661,12 @@ class StructuredTool(BaseTool):
                 if new_argument_supported
                 else await self.coroutine(*args, **kwargs)
             )
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(self._run, run_manager=run_manager, **kwargs),
+            self._run,
+            run_manager=run_manager.get_sync() if run_manager else None,
             *args,
+            **kwargs,
         )
 
     @classmethod

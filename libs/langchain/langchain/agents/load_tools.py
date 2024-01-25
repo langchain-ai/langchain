@@ -18,91 +18,91 @@ import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
-from langchain.agents.tools import Tool
+from langchain_core.tools import Tool
 from langchain_core.language_models import BaseLanguageModel
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
+from langchain_core.callbacks import BaseCallbackManager
+from langchain_core.callbacks import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
-from langchain.utilities.dalle_image_generator import DallEAPIWrapper
-from langchain.utilities.requests import TextRequestsWrapper
-from langchain.tools.arxiv.tool import ArxivQueryRun
-from langchain.tools.golden_query.tool import GoldenQueryRun
-from langchain.tools.pubmed.tool import PubmedQueryRun
+from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
+from langchain_community.utilities.requests import TextRequestsWrapper
+from langchain_community.tools.arxiv.tool import ArxivQueryRun
+from langchain_community.tools.golden_query.tool import GoldenQueryRun
+from langchain_community.tools.pubmed.tool import PubmedQueryRun
 from langchain_core.tools import BaseTool
-from langchain.tools.bing_search.tool import BingSearchRun
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
-from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
-from langchain.tools.google_lens.tool import GoogleLensQueryRun
-from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
-from langchain.tools.google_scholar.tool import GoogleScholarQueryRun
-from langchain.tools.google_finance.tool import GoogleFinanceQueryRun
-from langchain.tools.google_trends.tool import GoogleTrendsQueryRun
-from langchain.tools.metaphor_search.tool import MetaphorSearchResults
-from langchain.tools.google_jobs.tool import GoogleJobsQueryRun
-from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
-from langchain.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
-from langchain.tools.graphql.tool import BaseGraphQLTool
-from langchain.tools.human.tool import HumanInputRun
-from langchain.tools.requests.tool import (
+from langchain_community.tools.bing_search.tool import BingSearchRun
+from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchRun
+from langchain_community.tools.google_cloud.texttospeech import (
+    GoogleCloudTextToSpeechTool,
+)
+from langchain_community.tools.google_lens.tool import GoogleLensQueryRun
+from langchain_community.tools.google_search.tool import (
+    GoogleSearchResults,
+    GoogleSearchRun,
+)
+from langchain_community.tools.google_scholar.tool import GoogleScholarQueryRun
+from langchain_community.tools.google_finance.tool import GoogleFinanceQueryRun
+from langchain_community.tools.google_trends.tool import GoogleTrendsQueryRun
+from langchain_community.tools.metaphor_search.tool import MetaphorSearchResults
+from langchain_community.tools.google_jobs.tool import GoogleJobsQueryRun
+from langchain_community.tools.google_serper.tool import (
+    GoogleSerperResults,
+    GoogleSerperRun,
+)
+from langchain_community.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
+from langchain_community.tools.graphql.tool import BaseGraphQLTool
+from langchain_community.tools.human.tool import HumanInputRun
+from langchain_community.tools.requests.tool import (
     RequestsDeleteTool,
     RequestsGetTool,
     RequestsPatchTool,
     RequestsPostTool,
     RequestsPutTool,
 )
-from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
-from langchain.tools.scenexplain.tool import SceneXplainTool
-from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
-from langchain.tools.shell.tool import ShellTool
-from langchain.tools.sleep.tool import SleepTool
-from langchain.tools.stackexchange.tool import StackExchangeTool
-from langchain.tools.merriam_webster.tool import MerriamWebsterQueryRun
-from langchain.tools.wikipedia.tool import WikipediaQueryRun
-from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
-from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
-from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
-from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
-from langchain.tools.memorize.tool import Memorize
-from langchain.tools.reddit_search.tool import RedditSearchRun
-from langchain.utilities.arxiv import ArxivAPIWrapper
-from langchain.utilities.golden_query import GoldenQueryAPIWrapper
-from langchain.utilities.pubmed import PubMedAPIWrapper
-from langchain.utilities.bing_search import BingSearchAPIWrapper
-from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
-from langchain.utilities.google_lens import GoogleLensAPIWrapper
-from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
-from langchain.utilities.google_search import GoogleSearchAPIWrapper
-from langchain.utilities.google_serper import GoogleSerperAPIWrapper
-from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
-from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
-from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
-from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
-from langchain.utilities.awslambda import LambdaWrapper
-from langchain.utilities.graphql import GraphQLAPIWrapper
-from langchain.utilities.searchapi import SearchApiAPIWrapper
-from langchain.utilities.searx_search import SearxSearchWrapper
-from langchain.utilities.serpapi import SerpAPIWrapper
-from langchain.utilities.stackexchange import StackExchangeAPIWrapper
-from langchain.utilities.twilio import TwilioAPIWrapper
-from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
-from langchain.utilities.wikipedia import WikipediaAPIWrapper
-from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
-from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
-from langchain.utilities.reddit_search import RedditSearchAPIWrapper
-
-
-def _get_python_repl() -> BaseTool:
-    raise ImportError(
-        "This tool has been moved to langchain experiment. "
-        "This tool has access to a python REPL. "
-        "For best practices make sure to sandbox this tool. "
-        "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
-        "To keep using this code as is, install langchain experimental and "
-        "update relevant imports replacing 'langchain' with 'langchain_experimental'"
-    )
+from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
+from langchain_community.tools.scenexplain.tool import SceneXplainTool
+from langchain_community.tools.searx_search.tool import (
+    SearxSearchResults,
+    SearxSearchRun,
+)
+from langchain_community.tools.shell.tool import ShellTool
+from langchain_community.tools.sleep.tool import SleepTool
+from langchain_community.tools.stackexchange.tool import StackExchangeTool
+from langchain_community.tools.merriam_webster.tool import MerriamWebsterQueryRun
+from langchain_community.tools.wikipedia.tool import WikipediaQueryRun
+from langchain_community.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain_community.tools.openweathermap.tool import OpenWeatherMapQueryRun
+from langchain_community.tools.dataforseo_api_search import DataForSeoAPISearchRun
+from langchain_community.tools.dataforseo_api_search import DataForSeoAPISearchResults
+from langchain_community.tools.memorize.tool import Memorize
+from langchain_community.tools.reddit_search.tool import RedditSearchRun
+from langchain_community.utilities.arxiv import ArxivAPIWrapper
+from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
+from langchain_community.utilities.pubmed import PubMedAPIWrapper
+from langchain_community.utilities.bing_search import BingSearchAPIWrapper
+from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
+from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
+from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
+from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
+from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
+from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
+from langchain_community.utilities.awslambda import LambdaWrapper
+from langchain_community.utilities.graphql import GraphQLAPIWrapper
+from langchain_community.utilities.searchapi import SearchApiAPIWrapper
+from langchain_community.utilities.searx_search import SearxSearchWrapper
+from langchain_community.utilities.serpapi import SerpAPIWrapper
+from langchain_community.utilities.stackexchange import StackExchangeAPIWrapper
+from langchain_community.utilities.twilio import TwilioAPIWrapper
+from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapper
+from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
+from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
+from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
+from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
 
 
 def _get_tools_requests_get() -> BaseTool:
@@ -353,9 +353,7 @@ def _get_scenexplain(**kwargs: Any) -> BaseTool:
 
 
 def _get_graphql_tool(**kwargs: Any) -> BaseTool:
-    graphql_endpoint = kwargs["graphql_endpoint"]
-    wrapper = GraphQLAPIWrapper(graphql_endpoint=graphql_endpoint)
-    return BaseGraphQLTool(graphql_wrapper=wrapper)
+    return BaseGraphQLTool(graphql_wrapper=GraphQLAPIWrapper(**kwargs))
 
 
 def _get_openweathermap(**kwargs: Any) -> BaseTool:
@@ -455,7 +453,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "stackexchange": (_get_stackexchange, []),
     "sceneXplain": (_get_scenexplain, []),
-    "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
+    "graphql": (_get_graphql_tool, ["graphql_endpoint", "custom_headers"]),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),
     "dataforseo-api-search": (
         _get_dataforseo_api_search,
