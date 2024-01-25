@@ -48,7 +48,6 @@ from typing import (
     Union,
     cast,
 )
-from bs4 import PageElement
 
 import requests
 from langchain_core.documents import BaseDocumentTransformer, Document
@@ -1554,9 +1553,10 @@ class HTMLSectionSplitter:
     def split_html_by_headers(self, html_doc: str) -> Dict[Optional[str], Dict[str, Optional[str]]]:
         try:
             from bs4 import BeautifulSoup
+            from bs4 import PageElement
         except ImportError as e:
             raise ImportError(
-                "Unable to import BeautifulSoup, please install with `pip install \
+                "Unable to import BeautifulSoup/PageElement, please install with `pip install \
                     BeautifulSoup`."
             ) from e
 
