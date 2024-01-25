@@ -210,7 +210,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             dumpd(self),
             query,
             name=run_name,
-            **kwargs,
         )
         try:
             _kwargs = kwargs if self._expects_other_args else {}
@@ -226,7 +225,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         else:
             run_manager.on_retriever_end(
                 result,
-                **kwargs,
             )
             return result
 
@@ -268,7 +266,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             dumpd(self),
             query,
             name=run_name,
-            **kwargs,
         )
         try:
             _kwargs = kwargs if self._expects_other_args else {}
@@ -284,6 +281,5 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         else:
             await run_manager.on_retriever_end(
                 result,
-                **kwargs,
             )
             return result
