@@ -160,7 +160,11 @@ class Fireworks(BaseLLM):
                     for choice in sub_choices
                 ]
             )
-            token_usage.extend([choice.usage for choice in sub_choices])
+            token_usage.extend(
+                [
+                    choice.usage.__dict__ for choice in sub_choices
+                ]
+            )
         llm_output = {"model": self.model, "token_usage": token_usage}
         return LLMResult(generations=generations, llm_output=llm_output)
 

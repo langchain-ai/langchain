@@ -68,7 +68,7 @@ def get_fireworks_token_cost_for_model(
     Args:
         model_name: Name of the model
         num_tokens: Number of tokens
-        is_completion: Whether or not the tokens are completion tokens, defaults to False
+        is_completion: Whether tokens are completion or prompt, default to False
 
     Returns:
         Cost in USD
@@ -138,8 +138,8 @@ class FireworksCallbackHandler(BaseCallbackHandler):
         total_prompt_tokens = 0
         for usage in token_usages:
             # Calculate token cost
-            completion_tokens = usage.completion_tokens
-            prompt_tokens = usage.prompt_tokens
+            completion_tokens = usage["completion_tokens"]
+            prompt_tokens = usage["prompt_tokens"]
             model_name = get_model_name(response.llm_output["model"])
             if model_name in MODEL_COST_PER_1M_TOKENS:
                 completion_cost = get_fireworks_token_cost_for_model(
