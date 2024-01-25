@@ -2511,9 +2511,13 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             from langchain_openai import ChatOpenAI
 
             model = ChatOpenAI()
-            joke_chain = ChatPromptTemplate.from_template("tell me a joke about {topic}") | model
+            joke_chain = (
+                ChatPromptTemplate.from_template("tell me a joke about {topic}")
+                | model
+            )
             poem_chain = (
-                ChatPromptTemplate.from_template("write a 2-line poem about {topic}") | model
+                ChatPromptTemplate.from_template("write a 2-line poem about {topic}")
+                | model
             )
 
             runnable = RunnableParallel(joke=joke_chain, poem=poem_chain)
