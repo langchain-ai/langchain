@@ -1,11 +1,7 @@
 """ChatYuan2 wrapper."""
 from __future__ import annotations
 
-import asyncio
 import logging
-import os
-
-os.environ["no_proxy"] = "localhost,127.0.0.1,::1"
 from typing import (
     Any,
     AsyncIterator,
@@ -60,7 +56,6 @@ from openai.types.chat import (
     ChatCompletion,
     ChatCompletionMessage,
 )
-
 
 logger = logging.getLogger(__name__)
 
