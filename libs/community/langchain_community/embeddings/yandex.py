@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Callable, Dict, List
 
 from langchain_core.embeddings import Embeddings
@@ -51,8 +52,6 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     """Model uri to use."""
     folder_id: str = ""
     """Yandex Cloud folder ID"""
-    model_uri: str = ""
-    """Model uri to use."""
     model_name: str = "text-search-query"
     """Model name to use."""
     model_version: str = "latest"
@@ -61,6 +60,8 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     """The url of the API."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
+    sleep_interval: int = 1
+    """Delay between API requests"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -162,6 +163,7 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str]):
         request = TextEmbeddingRequest(model_uri=self.model_uri, text=text)
         stub = EmbeddingsServiceStub(channel)
         res = stub.TextEmbedding(request, metadata=self._grpc_metadata)
-        result.append(res.embedding)
+        result.append(list(res.embedding))
+        time.sleep(self.sleep_interval)
 
     return result
