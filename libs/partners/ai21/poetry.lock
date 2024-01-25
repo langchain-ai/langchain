@@ -2,13 +2,13 @@
 
 [[package]]
 name = "ai21"
-version = "2.0.0rc9"
+version = "2.0.0rc11"
 description = ""
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "ai21-2.0.0rc9-py3-none-any.whl", hash = "sha256:fd88915ff6dfaf9fbdc44f7283f0483dd98e2013a6faaf561c45e6220db6db00"},
-    {file = "ai21-2.0.0rc9.tar.gz", hash = "sha256:b36e5e4e1073db876ed97d8c6a39e66d5ea80ddf8f3817a5df32fc444c696ac3"},
+    {file = "ai21-2.0.0rc11-py3-none-any.whl", hash = "sha256:81b15af1f1f5f76605d379c7b20cda47ac10f04bdb8aa55acd1e20676d2c787f"},
+    {file = "ai21-2.0.0rc11.tar.gz", hash = "sha256:eda27dacfedd37bd0cffcd4cd1a7ab063452611ee80c6637a61afbfe95c54675"},
 ]
 
 [package.dependencies]
@@ -972,4 +972,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f3bb100509bbb1e2eb8a4cfb955f40b37950b45d0f38d3b4b11368810944d91c"
+content-hash = "b239078ccc4e1f7f82eaa24e1571d2e7f2a444f904fb1e9faf8a90bcda470f12"
