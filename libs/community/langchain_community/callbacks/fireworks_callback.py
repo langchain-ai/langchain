@@ -152,7 +152,7 @@ class FireworksCallbackHandler(BaseCallbackHandler):
                 completion_cost = 0
                 prompt_cost = 0
             total_completion_cost += completion_cost
-            total_prompt_cost + prompt_cost
+            total_prompt_cost += prompt_cost
             total_completion_tokens += completion_tokens
             total_prompt_tokens += prompt_tokens
 
