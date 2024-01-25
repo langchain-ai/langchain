@@ -115,7 +115,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         )
 
     def invoke(
-        self, input: str, config: Optional[RunnableConfig] = None
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Document]:
         config = ensure_config(config)
         return self.get_relevant_documents(
@@ -124,13 +124,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            **kwargs,
         )
 
     async def ainvoke(
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> List[Document]:
         config = ensure_config(config)
         return await self.aget_relevant_documents(
@@ -139,6 +140,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            **kwargs,
         )
 
     @abstractmethod
