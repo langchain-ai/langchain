@@ -17,16 +17,11 @@ def test_on_llm_end_single_choice(handler: FireworksCallbackHandler()) -> None:
     response = LLMResult(
         generations=[],
         llm_output={
-            "token_usage":
-            [
-                {
-                    "prompt_tokens": 2,
-                    "completion_tokens": 1,
-                    "total_tokens": 3
-                }
+            "token_usage": [
+                {"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3}
             ],
-            "model": Fireworks.__fields__["model"].default
-        }
+            "model": Fireworks.__fields__["model"].default,
+        },
     )
     handler.on_llm_end(response)
     assert handler.successful_requests == 1
@@ -40,21 +35,12 @@ def test_on_llm_end_multiple_choices(handler: FireworksCallbackHandler) -> None:
     response = LLMResult(
         generations=[],
         llm_output={
-            "token_usage":
-            [
-                {
-                    "prompt_tokens": 2,
-                    "completion_tokens": 1,
-                    "total_tokens": 3
-                },
-                {
-                    "prompt_tokens": 2,
-                    "completion_tokens": 4,
-                    "total_tokens": 6
-                }
+            "token_usage": [
+                {"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3},
+                {"prompt_tokens": 2, "completion_tokens": 4, "total_tokens": 6},
             ],
-            "model": Fireworks.__fields__["model"].default
-        }
+            "model": Fireworks.__fields__["model"].default,
+        },
     )
     handler.on_llm_end(response)
     assert handler.successful_requests == 1
@@ -69,26 +55,20 @@ def test_on_llm_end_multiple_choices(handler: FireworksCallbackHandler) -> None:
     [
         ("accounts/fireworks/models/mistral-7b-instruct-4k", 0.001),
         ("accounts/fireworks/models/llama-v2-34b-code-instruct", 0.0035),
-        ("accounts/fireworks/models/mixtral-8x7b", 0.002)
-    ]
+        ("accounts/fireworks/models/mixtral-8x7b", 0.002),
+    ],
 )
 def test_on_llm_end_single_choice_cost(
-    handler: FireworksCallbackHandler,
-    model: str,
-    expected_cost: float
+    handler: FireworksCallbackHandler, model: str, expected_cost: float
 ) -> None:
     response = LLMResult(
         generations=[],
         llm_output={
             "token_usage": [
-                {
-                    "prompt_tokens": 1000,
-                    "completion_tokens": 1000,
-                    "total_tokens": 2000
-                }
+                {"prompt_tokens": 1000, "completion_tokens": 1000, "total_tokens": 2000}
             ],
-            "model": model
-        }
+            "model": model,
+        },
     )
     handler.on_llm_end(response)
     assert handler.total_cost == expected_cost
@@ -99,31 +79,21 @@ def test_on_llm_end_single_choice_cost(
     [
         ("accounts/fireworks/models/mistral-7b-instruct-4k", 0.001),
         ("accounts/fireworks/models/llama-v2-34b-code-instruct", 0.0035),
-        ("accounts/fireworks/models/mixtral-8x7b", 0.002)
-    ]
+        ("accounts/fireworks/models/mixtral-8x7b", 0.002),
+    ],
 )
 def test_on_llm_end_multiple_choice_cost(
-    handler: FireworksCallbackHandler,
-    model: str,
-    expected_cost: float
+    handler: FireworksCallbackHandler, model: str, expected_cost: float
 ) -> None:
     response = LLMResult(
         generations=[],
         llm_output={
             "token_usage": [
-                {
-                    "prompt_tokens": 500,
-                    "completion_tokens": 500,
-                    "total_tokens": 1000
-                },
-                {
-                    "prompt_tokens": 500,
-                    "completion_tokens": 500,
-                    "total_tokens": 1000
-                }
+                {"prompt_tokens": 500, "completion_tokens": 500, "total_tokens": 1000},
+                {"prompt_tokens": 500, "completion_tokens": 500, "total_tokens": 1000},
             ],
-            "model": model
-        }
+            "model": model,
+        },
     )
     handler.on_llm_end(response)
     assert handler.total_cost == expected_cost
