@@ -2,7 +2,7 @@
 name = "self-query-lantern"
 version = "0.1.0"
 description = "Self-querying retriever using Lantern"
-authors = ["Kacper Łukawski <gustavo@lantern.dev>"]
+authors = ["Gustavo Reyes <gustavo@lantern.dev>"]
 license = "Apache 2.0"
 readme = "README.md"
 packages = [{include = "self_query_lantern"}]
