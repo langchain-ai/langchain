@@ -103,6 +103,20 @@
 pip install gigachain
 ```
 
+### Миграция с LangChain
+
+Для миграции с LangChain и начала использования GigaChain нужно удалить все компоненты библиотеки `langchain`:
+
+```sh
+pip uninstall langchain langchain_experimental langchain_core langchain_community
+```
+
+После чего [установить библиотеку `gigachain`]({#ustanovka-giga-chain):
+
+```sh
+pip install gigachain
+```
+
 ## Работа с GigaChain
 
 Основной особенностью библиотеки является наличие модуля [`gigachat`](#описание-объекта-gigachain), который позволяет отправлять запросы к нейросетевой модели GigaChat.
