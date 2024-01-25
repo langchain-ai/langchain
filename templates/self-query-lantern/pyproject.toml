@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "self-query-lantern"
+version = "0.1.0"
+description = "Self-querying retriever using Lantern"
+authors = ["Kacper Łukawski <gustavo@lantern.dev>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [{include = "self_query_lantern"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+langchain = "^0.1"
+openai = "<2"
+lark = "^1.1.8"
+tiktoken = "^0.5.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+[tool.poetry.group.dev.dependencies.python-dotenv]
+extras = [
+    "cli",
+]
+version = "^1.0.0"
+
+[tool.langserve]
+export_module = "self_query_lantern"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Lantern"
+integrations = ["Lantern", "OpenAI"]
+tags = ["research", "agents"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
