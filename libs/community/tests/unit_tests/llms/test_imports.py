@@ -52,6 +52,7 @@ EXPECT_ALL = [
     "Nebula",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
+    "OCIGenAI",
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
