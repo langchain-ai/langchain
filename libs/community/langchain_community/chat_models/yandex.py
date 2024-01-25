@@ -139,7 +139,8 @@ def _make_request(
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK  with `pip install yandexcloud` or upgrade it to recent version."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     if not messages:
         raise ValueError("You should provide at least one message to start the chat!")
@@ -182,7 +183,8 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK  with `pip install yandexcloud` or upgrade it to recent version."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     if not messages:
         raise ValueError("You should provide at least one message to start the chat!")

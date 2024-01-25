@@ -191,7 +191,8 @@ def _make_request(
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK  with `pip install yandexcloud` or upgrade it to recent version."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     channel_credentials = grpc.ssl_channel_credentials()
     channel = grpc.secure_channel(self.url, channel_credentials)
@@ -231,7 +232,8 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK  with `pip install yandexcloud` or upgrade it to recent version."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     operation_api_url = "operation.api.cloud.yandex.net:443"
     channel_credentials = grpc.ssl_channel_credentials()
