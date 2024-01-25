@@ -693,7 +693,8 @@ class ChatOpenAI(BaseChatModel):
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call
-                (if any).
+                (if any), or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
@@ -702,18 +703,18 @@ class ChatOpenAI(BaseChatModel):
         if tool_choice is not None:
             if isinstance(tool_choice, str) and tool_choice not in ("auto", "none"):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            if isinstance(tool_choice, dict) and len(tool_choice) != 1:
+            if isinstance(tool_choice, dict) and len(formatted_tools) != 1:
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
-                    "tools."
+                    f"tool. Received {len(formatted_tools)} tools."
                 )
             if (
                 isinstance(tool_choice, dict)
-                and formatted_tools[0]["name"] != tool_choice["function"]["name"]
+                and formatted_tools[0]["function"]["name"] != tool_choice["function"]["name"]
             ):
                 raise ValueError(
                     f"Tool choice {tool_choice} was specified, but the only "
-                    f"provided tool was {formatted_tools[0]['name']}."
+                    f"provided tool was {formatted_tools[0]['function']['name']}."
                 )
             kwargs["tool_choice"] = tool_choice
         return super().bind(
