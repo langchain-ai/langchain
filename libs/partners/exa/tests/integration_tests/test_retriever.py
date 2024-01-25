@@ -24,4 +24,3 @@ def test_exa_retriever_highlights() -> None:
     assert isinstance(highlight_scores, list)
     assert isinstance(highlights[0], str)
     assert isinstance(highlight_scores[0], float)
-    assert False
