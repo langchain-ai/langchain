@@ -270,6 +270,12 @@ def _import_koboldai() -> Any:
     return KoboldApiLLM
 
 
+def _import_konko() -> Any:
+    from langchain_community.llms.konko import Konko
+
+    return Konko
+
+
 def _import_llamacpp() -> Any:
     from langchain_community.llms.llamacpp import LlamaCpp
 
@@ -338,6 +344,12 @@ def _import_oci_md_vllm() -> Any:
     )
 
     return OCIModelDeploymentVLLM
+
+
+def _import_oci_gen_ai() -> Any:
+    from langchain_community.llms.oci_generative_ai import OCIGenAI
+
+    return OCIGenAI
 
 
 def _import_octoai_endpoint() -> Any:
@@ -639,6 +651,8 @@ def __getattr__(name: str) -> Any:
         return _import_javelin_ai_gateway()
     elif name == "KoboldApiLLM":
         return _import_koboldai()
+    elif name == "Konko":
+        return _import_konko()
     elif name == "LlamaCpp":
         return _import_llamacpp()
     elif name == "ManifestWrapper":
@@ -659,6 +673,8 @@ def __getattr__(name: str) -> Any:
         return _import_oci_md_tgi()
     elif name == "OCIModelDeploymentVLLM":
         return _import_oci_md_vllm()
+    elif name == "OCIGenAI":
+        return _import_oci_gen_ai()
     elif name == "OctoAIEndpoint":
         return _import_octoai_endpoint()
     elif name == "Ollama":
@@ -780,6 +796,7 @@ __all__ = [
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
     "KoboldApiLLM",
+    "Konko",
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
@@ -792,6 +809,7 @@ __all__ = [
     "NLPCloud",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
+    "OCIGenAI",
     "Ollama",
     "OpenAI",
     "OpenAIChat",
@@ -868,6 +886,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "huggingface_textgen_inference": _import_huggingface_text_gen_inference,
         "human-input": _import_human,
         "koboldai": _import_koboldai,
+        "konko": _import_konko,
         "llamacpp": _import_llamacpp,
         "textgen": _import_textgen,
         "minimax": _import_minimax,
@@ -881,6 +900,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nlpcloud": _import_nlpcloud,
         "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
         "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
+        "oci_generative_ai": _import_oci_gen_ai,
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,

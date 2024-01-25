@@ -56,6 +56,7 @@ EXPECTED_ALL = [
     "VoyageEmbeddings",
     "BookendEmbeddings",
     "VolcanoEmbeddings",
+    "OCIGenAIEmbeddings",
 ]
 
 
