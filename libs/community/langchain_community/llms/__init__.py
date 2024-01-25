@@ -346,6 +346,12 @@ def _import_oci_md_vllm() -> Any:
     return OCIModelDeploymentVLLM
 
 
+def _import_oci_gen_ai() -> Any:
+    from langchain_community.llms.oci_generative_ai import OCIGenAI
+
+    return OCIGenAI
+
+
 def _import_octoai_endpoint() -> Any:
     from langchain_community.llms.octoai_endpoint import OctoAIEndpoint
 
@@ -667,6 +673,8 @@ def __getattr__(name: str) -> Any:
         return _import_oci_md_tgi()
     elif name == "OCIModelDeploymentVLLM":
         return _import_oci_md_vllm()
+    elif name == "OCIGenAI":
+        return _import_oci_gen_ai()
     elif name == "OctoAIEndpoint":
         return _import_octoai_endpoint()
     elif name == "Ollama":
@@ -801,6 +809,7 @@ __all__ = [
     "NLPCloud",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
+    "OCIGenAI",
     "Ollama",
     "OpenAI",
     "OpenAIChat",
@@ -891,6 +900,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nlpcloud": _import_nlpcloud,
         "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
         "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
+        "oci_generative_ai": _import_oci_gen_ai,
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,

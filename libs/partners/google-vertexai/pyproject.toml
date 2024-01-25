@@ -53,7 +53,7 @@ optional = true
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1"
 langchain-core = {path = "../../core", develop = true}
 types-google-cloud-ndb = "^2.2.0.20240106"
 
@@ -71,7 +71,16 @@ select = [
 ]
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+check_untyped_defs = true
+error_summary = false
+pretty = true
+show_column_numbers = true
+show_error_codes = true
+show_error_context = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
 
 [tool.coverage.run]
 omit = [

@@ -204,6 +204,12 @@ def _import_faiss() -> Any:
     return FAISS
 
 
+def _import_hanavector() -> Any:
+    from langchain_community.vectorstores.hanavector import HanaDB
+
+    return HanaDB
+
+
 def _import_hologres() -> Any:
     from langchain_community.vectorstores.hologres import Hologres
 
@@ -527,6 +533,8 @@ def __getattr__(name: str) -> Any:
         return _import_epsilla()
     elif name == "FAISS":
         return _import_faiss()
+    elif name == "HanaDB":
+        return _import_hanavector()
     elif name == "Hologres":
         return _import_hologres()
     elif name == "KDBAI":
@@ -645,6 +653,7 @@ __all__ = [
     "ElasticsearchStore",
     "Epsilla",
     "FAISS",
+    "HanaDB",
     "Hologres",
     "KDBAI",
     "LanceDB",
