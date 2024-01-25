@@ -3,7 +3,8 @@
 
 This template performs RAG with Lantern.
 
-[Lantern](https://lantern.dev/docs) is an open-source Firebase alternative. It is built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL), a free and open-source relational database management system (RDBMS) and uses [lantern](https://github.com/lanterndata/lantern) to store embeddings within your tables.
+[Lantern](https://lantern.dev) is an open-source vector database built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL). It enables vector search and embedding generation inside your database.
+
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
@@ -26,8 +27,8 @@ export OPENAI_API_KEY=
 
 Use these steps to setup your Lantern database if you haven't already.
 
-1. Head over to https://lantern.dev to provision your Lantern database.
-2. In the your favorite sql client, jump to the SQL editor and run the following script to setup your database as a vector store:
+1. Head to [https://lantern.dev](https://lantern.dev) to create your Lantern database.
+2. In your favorite SQL client, jump to the SQL editor and run the following script to setup your database as a vector store:
 
    ```sql
    -- Create a table to store your documents
@@ -36,12 +37,12 @@ Use these steps to setup your Lantern database if you haven't already.
        id uuid primary key,
        content text, -- corresponds to Document.pageContent
        metadata jsonb, -- corresponds to Document.metadata
-       embedding vector (1536) -- 1536 works for OpenAI embeddings, change as needed
+       embedding REAL[1536] -- 1536 works for OpenAI embeddings, change as needed
      );
 
    -- Create a function to search for documents
    create function match_documents (
-     query_embedding vector (1536),
+     query_embedding REAL[1536],
      filter jsonb default '{}'
    ) returns table (
      id uuid,
@@ -126,5 +127,3 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/rag-lantern")
 ```
-
-TODO: Add details about setting up the Lantern database
