@@ -2,6 +2,7 @@ import json
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 from aiohttp import ClientSession
+from langchain_community.utilities.requests import Requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -19,8 +20,6 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-
-from langchain_community.utilities.requests import Requests
 
 
 def _message_role(type: str) -> str:
@@ -199,9 +198,13 @@ class ChatEdenAI(BaseChatModel):
 
         for chunk_response in response.iter_lines():
             chunk = json.loads(chunk_response.decode())
-            yield ChatGenerationChunk(message=AIMessageChunk(content=chunk["text"]))
+            token = chunk["text"]
+            chat_generatio_chunk = ChatGenerationChunk(
+                message=AIMessageChunk(content=token)
+            )
+            yield chat_generatio_chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk["text"], chunk=chunk)
+                run_manager.on_llm_new_token(token, chunk=chat_generatio_chunk)
 
     async def _astream(
         self,
@@ -235,12 +238,14 @@ class ChatEdenAI(BaseChatModel):
                 response.raise_for_status()
                 async for chunk_response in response.content:
                     chunk = json.loads(chunk_response.decode())
-                    yield ChatGenerationChunk(
-                        message=AIMessageChunk(content=chunk["text"])
+                    token = chunk["text"]
+                    chat_generation_chunk = ChatGenerationChunk(
+                        message=AIMessageChunk(content=token)
                     )
+                    yield chat_generation_chunk
                     if run_manager:
                         await run_manager.on_llm_new_token(
-                            token=chunk["text"], chunk=chunk
+                            token=chunk["text"], chunk=chat_generation_chunk
                         )
 
     def _generate(
