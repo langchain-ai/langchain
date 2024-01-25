@@ -2,6 +2,7 @@ import os
 from typing import List, Optional
 
 import nomic  # type: ignore
+from nomic import embed
 from langchain_core.embeddings import Embeddings
 
 
@@ -28,7 +29,7 @@ class NomicEmbeddings(Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        output = nomic.embed.text(
+        output = embed.text(
             texts=texts,
             model=self.model,
         )
