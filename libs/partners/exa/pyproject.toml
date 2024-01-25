@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
-exa-py = "^1.0.2"
+exa-py = "^1.0.5"
 
 [tool.poetry.group.test]
 optional = true
@@ -48,11 +48,6 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = {path = "../../core", develop = true}
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
 
 [tool.ruff]
 select = [
