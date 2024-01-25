@@ -8,7 +8,7 @@ TEST_FILE ?= tests/unit_tests/
 
 integration_tests: TEST_FILE=tests/integration_tests/
 
-test, integration_tests:
+test integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 tests:

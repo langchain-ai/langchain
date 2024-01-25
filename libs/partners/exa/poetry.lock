@@ -175,18 +175,20 @@ files = [
 ]
 
 [[package]]
-name = "exa-py"
+name = "exa_py"
 version = "1.0.5"
 description = "Python SDK for Exa API."
 optional = false
 python-versions = "*"
-files = [
-    {file = "exa_py-1.0.5-py3-none-any.whl", hash = "sha256:89ef6060c9590c4606a7a6c828da6956720d55c80405601e1627606dc84010e8"},
-    {file = "exa_py-1.0.5.tar.gz", hash = "sha256:af1355272f6d641c55b440c74a2bb78c581050c6b13dc5ea1277850c91136648"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 requests = "*"
+
+[package.source]
+type = "directory"
+url = "../../../../exapysdk"
 
 [[package]]
 name = "exceptiongroup"
@@ -839,4 +841,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "0799476857a293a9a94b26a3912e11cb2893b55da1be8886a2af5780ecf847f3"
+content-hash = "a067e47db917110e87ae8694d01093817e94d11dc87fc089415c45fdf3da9357"
