@@ -31,7 +31,7 @@ class BaseLoader(ABC):
         """Load data into Document objects."""
 
     def load_and_transform(
-        self, transformer: Optional[BaseDocumentTransformer] = None
+        self, transformer: BaseDocumentTransformer
     ) -> Sequence[Document]:
         """Load Documents and transform into chunks. Chunks are returned as Documents.
 
