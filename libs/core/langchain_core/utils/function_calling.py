@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
-    "int": "number",
+    "int": "integer",
     "float": "number",
     "bool": "boolean",
 }
@@ -51,6 +51,18 @@ class ToolDescription(TypedDict):
     function: FunctionDescription
 
 
+def _rm_titles(kv: dict) -> dict:
+    new_kv = {}
+    for k, v in kv.items():
+        if k == "title":
+            continue
+        elif isinstance(v, dict):
+            new_kv[k] = _rm_titles(v)
+        else:
+            new_kv[k] = v
+    return new_kv
+
+
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
@@ -61,14 +73,17 @@ def convert_pydantic_to_openai_function(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    rm_titles: bool = True,
 ) -> FunctionDescription:
     """Converts a Pydantic model to a function description for the OpenAI API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
+    title = schema.pop("title", "")
+    default_description = schema.pop("description", "")
     return {
-        "name": name or schema["title"],
-        "description": description or schema["description"],
-        "parameters": schema,
+        "name": name or title,
+        "description": description or default_description,
+        "parameters": _rm_titles(schema) if rm_titles else schema,
     }
 
 
@@ -148,8 +163,19 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
             # Mypy error:
             # "type" has no attribute "schema"
             properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
-        elif arg_type.__name__ in PYTHON_TO_JSON_TYPES:
+        elif (
+            hasattr(arg_type, "__name__")
+            and getattr(arg_type, "__name__") in PYTHON_TO_JSON_TYPES
+        ):
             properties[arg] = {"type": PYTHON_TO_JSON_TYPES[arg_type.__name__]}
+        elif (
+            hasattr(arg_type, "__dict__")
+            and getattr(arg_type, "__dict__").get("__origin__", None) == Literal
+        ):
+            properties[arg] = {
+                "enum": list(arg_type.__args__),  # type: ignore
+                "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],  # type: ignore
+            }
         if arg in arg_descriptions:
             if arg not in properties:
                 properties[arg] = {}
