@@ -134,7 +134,7 @@ async def test_beta_async_function() -> None:
         assert isinstance(doc, str)
         assert doc.startswith("[*Beta*]  original doc")
     
-    assert not inspect.iscoroutinefunction(beta_async_function)
+    assert inspect.iscoroutinefunction(beta_async_function)
 
 
 def test_beta_method() -> None:
@@ -176,7 +176,7 @@ async def test_beta_async_method() -> None:
         assert isinstance(doc, str)
         assert doc.startswith("[*Beta*]  original doc")
 
-    assert not inspect.iscoroutinefunction(obj.beta_async_method)
+    assert inspect.iscoroutinefunction(obj.beta_async_method)
 
 
 def test_beta_classmethod() -> None:
