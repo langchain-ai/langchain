@@ -176,13 +176,13 @@ files = [
 
 [[package]]
 name = "exa-py"
-version = "1.0.1"
+version = "1.0.2"
 description = "Python SDK for Exa API."
 optional = false
 python-versions = "*"
 files = [
-    {file = "exa_py-1.0.1-py3-none-any.whl", hash = "sha256:a247a44e4e9d0f5b528ccddb9d3a757475e727463a9af2f2ea7fdb451fab92ee"},
-    {file = "exa_py-1.0.1.tar.gz", hash = "sha256:b9c934195ace1d2474449aa020f9f41cc4c2f904d3f4b5325cd747e8462e2130"},
+    {file = "exa_py-1.0.2-py3-none-any.whl", hash = "sha256:9cf24f346ec040c40c846992086498163a41bf0f6fdd671f9246ceb6b4c78d12"},
+    {file = "exa_py-1.0.2.tar.gz", hash = "sha256:95ec39c92e9d8b4f520cfc7bb012b6273935c227b5afa95d06bde99c49e4cebb"},
 ]
 
 [package.dependencies]
@@ -839,4 +839,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "3de0cfa74970232e3916c990336aa90d626ca2677819374a415433c994d34132"
+content-hash = "a9e70131ef471b8c1a6ce4de177f5977765bc5a18cb7e31a0eaa96e59bd8c81f"
