@@ -1804,7 +1804,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             # Or equivalently:
             # sequence = RunnableSequence(first=runnable_1, last=runnable_2)
             sequence.invoke(1)
-            await runnable.ainvoke(1)
+            await sequence.ainvoke(1)
 
             sequence.batch([1, 2, 3])
             await sequence.abatch([1, 2, 3])
