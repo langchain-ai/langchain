@@ -48,6 +48,7 @@ from typing import (
     Union,
     cast,
 )
+from bs4 import PageElement
 
 import requests
 from langchain_core.documents import BaseDocumentTransformer, Document
@@ -1550,7 +1551,7 @@ class HTMLSectionSplitter:
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(self, html_doc: str) -> Dict[str, Dict[str, str]]:
+    def split_html_by_headers(self, html_doc: str) -> Dict[Optional[str], Dict[str, Optional[str]]]:
         try:
             from bs4 import BeautifulSoup
         except ImportError as e:
@@ -1562,7 +1563,7 @@ class HTMLSectionSplitter:
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
         sections = {}
-        section_content = []
+        section_content: List[str] = []
         current_header = None
         current_header_tag = None
 
@@ -1570,15 +1571,16 @@ class HTMLSectionSplitter:
         current_header = headers[0]
 
         for i, header in enumerate(headers):
+            header_element: PageElement = header
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
                 section_content = []
             else:
-                current_header = header.text.strip()
-                current_header_tag = header.name
+                current_header = header_element.text.strip()
+                current_header_tag = header_element.name
                 section_content = []
-            for element in header.next_elements:
+            for element in header_element.next_elements:
                 if i + 1 < len(headers) and element == headers[i + 1]:
                     break
                 if isinstance(element, str):
