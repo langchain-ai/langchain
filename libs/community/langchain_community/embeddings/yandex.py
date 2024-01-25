@@ -153,7 +153,7 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str]):
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` or upgrade it to recent version."
         ) from e
     result = []
     channel_credentials = grpc.ssl_channel_credentials()
