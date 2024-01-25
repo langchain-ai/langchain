@@ -36,43 +36,43 @@ GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 class RunnableWithMessageHistory(RunnableBindingBase):
     """A runnable that manages chat message history for another runnable.
-    
+
     A chat message history is a sequence of messages that represent a conversation.
-    
+
     RunnableWithMessageHistory wraps another runnable and manages the chat message
     history for it; it is responsible for reading and updating the chat message
     history.
-    
+
     The formats supports for the inputs and outputs of the wrapped runnable
     are described below.
-    
-    RunnableWithMessageHistory must always be called with a config that contains 
-    the appropriate parameters for the chat message history factory. 
-    
+
+    RunnableWithMessageHistory must always be called with a config that contains
+    the appropriate parameters for the chat message history factory.
+
     By default the runnable is expected to take a single configuration parameter
     called `session_id` which is a string. This parameter is used to create a new
     or look up an existing chat message history that matches the given session_id.
-    
+
     In this case, the invocation would look like this:
-    
+
     `with_history.invoke(..., config={"configurable": {"session_id": "bar"}})`
     ; e.g., ``{"configurable": {"session_id": "<SESSION_ID>"}}``.
-    
+
     The configuration can be customized by passing in a list of
     ``ConfigurableFieldSpec`` objects to the ``history_factory_config`` parameter (see
     example below).
-    
+
     In the examples, we will use a chat message history with an in-memory
     implementation to make it easy to experiment and see the results.
-    
+
     For production use cases, you will want to use a persistent implementation
     of chat message history, such as ``RedisChatMessageHistory``.
-    
-    
+
+
     Example: Chat message history with an in-memory implementation for testing.
-    
+
     .. code-block:: python
-    
+
         from operator import itemgetter
         from typing import List
 
@@ -116,10 +116,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         history = get_by_session_id("1")
         history.add_message(AIMessage(content="hello"))
         print(store)
-                    
-    
+
+
     Example where the wrapped Runnable takes a dictionary input:
-        
+
         .. code-block:: python
 
             from typing import Optional
@@ -141,7 +141,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 chain,
                 # Uses the get_by_session_id function defined in the example
                 # above.
-                get_by_session_id, 
+                get_by_session_id,
                 input_messages_key="question",
                 history_messages_key="history",
             )
@@ -150,9 +150,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 {"ability": "math", "question": "What does cosine mean?"},
                 config={"configurable": {"session_id": "foo"}}
             ))
-            
+
             # Uses the store defined in the example above.
-            print(store) 
+            print(store)
 
             print(chain_with_history.invoke(
                 {"ability": "math", "question": "What's its inverse"},
@@ -160,10 +160,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             ))
 
             print(store)
-        
+
 
     Example where the session factory takes two keys, user_id and conversation id):
-    
+
         .. code-block:: python
 
             store = {}
