@@ -3,7 +3,7 @@ from langchain.schema import Document
 
 DEFAULT_CONNECTION_STRING = "postgresql://postgres:postgres@localhost:5432"
 
-# Qdrant collection name
+# Lantern collection name
 DEFAULT_COLLECTION_NAME = "restaurants"
 
 # Here is a description of the dataset and metadata attributes. Metadata attributes will
