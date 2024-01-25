@@ -114,6 +114,7 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
     )
 
 
+@pytest.mark.requires("ai21")
 @pytest.mark.parametrize(
     ids=[
         "when_all_messages_are_human_messages__should_return_system_none",
@@ -152,6 +153,7 @@ def test_convert_messages_to_ai21_messages(
     assert system == expected_system
 
 
+@pytest.mark.requires("ai21")
 def test_convert_messages_to_ai21_messages_when_system_is_not_first__should_raise_value_error():
     messages = [
         HumanMessage(content="Human Message Content 1"),
