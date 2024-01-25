@@ -693,6 +693,7 @@ class ChatOpenAI(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
         tool_choice: Optional[Union[dict, str, Literal["auto", "none"]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
