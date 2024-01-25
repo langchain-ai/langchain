@@ -105,7 +105,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "tags": [],
         },
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "1",
@@ -121,7 +121,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "tags": ["seq:step:1"],
         },
         {
-            "data": {},
+            "data": {"input": "olleh"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "2",
@@ -145,7 +145,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "tags": ["seq:step:2"],
         },
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "3",
@@ -214,7 +214,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     )
     assert events == [
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "1",
@@ -246,7 +246,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     )
     assert events == [
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "3",
@@ -744,7 +744,12 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "tags": ["seq:step:1"],
         },
         {
-            "data": {},
+            "data": {
+                "input": [
+                    Document(page_content="hello world!", metadata={"foo": "bar"}),
+                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
+                ]
+            },
             "event": "on_chain_start",
             "metadata": {},
             "name": "format_docs",
@@ -837,7 +842,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "tags": ["seq:step:1"],
         },
         {
-            "data": {},
+            "data": {"input": "helloworld"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "reverse",
@@ -917,7 +922,7 @@ async def test_event_stream_with_retry() -> None:
             "tags": [],
         },
         {
-            "data": {},
+            "data": {"input": "q"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "success",
@@ -933,7 +938,7 @@ async def test_event_stream_with_retry() -> None:
             "tags": ["seq:step:1"],
         },
         {
-            "data": {},
+            "data": {"input": "success"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "fail",
