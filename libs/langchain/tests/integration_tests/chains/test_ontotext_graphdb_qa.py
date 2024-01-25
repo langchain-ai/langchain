@@ -4,8 +4,7 @@ import pytest
 from langchain_community.graphs import OntotextGraphDBGraph
 from langchain_openai import ChatOpenAI
 
-from langchain.chains import LLMChain
-from langchain.chains import OntotextGraphDBQAChain
+from langchain.chains import LLMChain, OntotextGraphDBQAChain
 
 """
 cd libs/langchain/tests/integration_tests/chains/docker-compose-ontotext-graphdb

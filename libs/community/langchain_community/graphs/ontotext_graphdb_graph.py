@@ -28,11 +28,11 @@ class OntotextGraphDBGraph:
     """
 
     def __init__(
-            self,
-            query_endpoint: str,
-            query_ontology: Optional[str] = None,
-            local_file: Optional[str] = None,
-            local_file_format: Optional[str] = None,
+        self,
+        query_endpoint: str,
+        query_ontology: Optional[str] = None,
+        local_file: Optional[str] = None,
+        local_file_format: Optional[str] = None,
     ) -> None:
         """
         Set up the GraphDB wrapper
@@ -59,11 +59,13 @@ class OntotextGraphDBGraph:
         Check https://github.com/eclipse-rdf4j/rdf4j/issues/4857
 
         :param local_file: a local RDF ontology file.
-        Supported file formats: Turtle, RDF/XML, JSON-LD, N-Triples, Notation-3, Trig, Trix, N-Quads.
+        Supported RDF formats:
+        Turtle, RDF/XML, JSON-LD, N-Triples, Notation-3, Trig, Trix, N-Quads.
         If the rdf format can't be determined from the file extension,
         pass explicitly the rdf format in `local_file_format` param.
 
-        :param local_file_format: Used if the rdf format can't be determined from the local file extension.
+        :param local_file_format: Used if the rdf format can't be determined
+        from the local file extension.
         One of "json-ld", "xml", "n3", "turtle", "nt", "trig", "nquads", "trix"
 
         Either `query_ontology` or `local_file` should be passed.
@@ -92,7 +94,9 @@ class OntotextGraphDBGraph:
         self._check_connectivity()
 
         if local_file:
-            ontology_schema_graph = self._load_ontology_schema_from_file(local_file, local_file_format)
+            ontology_schema_graph = self._load_ontology_schema_from_file(
+                local_file, local_file_format
+            )
         else:
             self._validate_user_query(query_ontology)
             ontology_schema_graph = self._load_ontology_schema_with_query(
@@ -135,7 +139,7 @@ class OntotextGraphDBGraph:
             )
 
     @staticmethod
-    def _load_ontology_schema_from_file(local_file: str, local_file_format: str):
+    def _load_ontology_schema_from_file(local_file: str, local_file_format: str = None):
         """
         Parse the ontology schema statements from the provided file
         """
@@ -193,8 +197,8 @@ class OntotextGraphDBGraph:
         return self.schema
 
     def query(
-            self,
-            query: str,
+        self,
+        query: str,
     ) -> List[rdflib.query.ResultRow]:
         """
         Query the graph.

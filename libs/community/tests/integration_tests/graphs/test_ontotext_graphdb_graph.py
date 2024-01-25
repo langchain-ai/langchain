@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+
 from langchain_community.graphs import OntotextGraphDBGraph
 
 """
@@ -13,7 +14,7 @@ def test_query() -> None:
     graph = OntotextGraphDBGraph(
         query_endpoint="http://localhost:7200/repositories/langchain",
         query_ontology="CONSTRUCT {?s ?p ?o}"
-                       "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
     query_results = graph.query(
@@ -34,7 +35,7 @@ def test_get_schema_with_query() -> None:
     graph = OntotextGraphDBGraph(
         query_endpoint="http://localhost:7200/repositories/langchain",
         query_ontology="CONSTRUCT {?s ?p ?o}"
-                       "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
     from rdflib import Graph
@@ -62,21 +63,21 @@ def test_get_schema_with_query() -> None:
     ],
 )
 def test_get_schema_from_file(
-        tmp_path: Path, rdf_format: str, file_extension: str
+    tmp_path: Path, rdf_format: str, file_extension: str
 ) -> None:
     expected_number_of_ontology_statements = 19
 
     graph = OntotextGraphDBGraph(
         query_endpoint="http://localhost:7200/repositories/langchain",
         query_ontology="CONSTRUCT {?s ?p ?o}"
-                       "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
     from rdflib import ConjunctiveGraph, Graph
 
     assert (
-            len(Graph().parse(data=graph.get_schema, format="turtle"))
-            == expected_number_of_ontology_statements
+        len(Graph().parse(data=graph.get_schema, format="turtle"))
+        == expected_number_of_ontology_statements
     )
 
     # serialize the ontology schema loaded with the query in a local file
@@ -97,31 +98,30 @@ def test_get_schema_from_file(
         local_file=str(local_file),
     )
     assert (
-            len(Graph().parse(data=graph.get_schema, format="turtle"))
-            == expected_number_of_ontology_statements
+        len(Graph().parse(data=graph.get_schema, format="turtle"))
+        == expected_number_of_ontology_statements
     )
 
 
 @pytest.mark.parametrize(
-    "rdf_format",
-    ["json-ld", "xml", "n3", "turtle", "nt", "trig", "nquads", "trix"]
+    "rdf_format", ["json-ld", "xml", "n3", "turtle", "nt", "trig", "nquads", "trix"]
 )
 def test_get_schema_from_file_with_explicit_rdf_format(
-        tmp_path: Path, rdf_format: str
+    tmp_path: Path, rdf_format: str
 ) -> None:
     expected_number_of_ontology_statements = 19
 
     graph = OntotextGraphDBGraph(
         query_endpoint="http://localhost:7200/repositories/langchain",
         query_ontology="CONSTRUCT {?s ?p ?o}"
-                       "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
     from rdflib import ConjunctiveGraph, Graph
 
     assert (
-            len(Graph().parse(data=graph.get_schema, format="turtle"))
-            == expected_number_of_ontology_statements
+        len(Graph().parse(data=graph.get_schema, format="turtle"))
+        == expected_number_of_ontology_statements
     )
 
     # serialize the ontology schema loaded with the query in a local file
@@ -143,32 +143,27 @@ def test_get_schema_from_file_with_explicit_rdf_format(
         local_file_format=rdf_format,
     )
     assert (
-            len(Graph().parse(data=graph.get_schema, format="turtle"))
-            == expected_number_of_ontology_statements
+        len(Graph().parse(data=graph.get_schema, format="turtle"))
+        == expected_number_of_ontology_statements
     )
 
 
-def test_get_schema_from_file_with_wrong_extension(
-        tmp_path: Path
-) -> None:
+def test_get_schema_from_file_with_wrong_extension(tmp_path: Path) -> None:
     expected_number_of_ontology_statements = 19
 
     graph = OntotextGraphDBGraph(
         query_endpoint="http://localhost:7200/repositories/langchain",
         query_ontology="CONSTRUCT {?s ?p ?o}"
-                       "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
     from rdflib import ConjunctiveGraph, Graph
 
     assert (
-            len(Graph().parse(data=graph.get_schema, format="turtle"))
-            == expected_number_of_ontology_statements
+        len(Graph().parse(data=graph.get_schema, format="turtle"))
+        == expected_number_of_ontology_statements
     )
 
-    # serialize the ontology schema loaded with the query in a local file
-    # in various rdf formats and check that this results
-    # in the same number of statements
     conjunctive_graph = ConjunctiveGraph()
     ontology_context = conjunctive_graph.get_context("https://swapi.co/ontology/")
     ontology_context.parse(data=graph.get_schema, format="turtle")
@@ -182,5 +177,5 @@ def test_get_schema_from_file_with_wrong_extension(
     with pytest.raises(ValueError):
         OntotextGraphDBGraph(
             query_endpoint="http://localhost:7200/repositories/langchain",
-            local_file=str(local_file)
+            local_file=str(local_file),
         )
