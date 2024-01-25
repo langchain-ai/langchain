@@ -1637,9 +1637,7 @@ class HTMLSectionSplitter:
                 page_content=sections[section_key]["content"],
                 metadata={
                     self.headers_to_split_on[
-                        sections[section_key]["tag_name"]
-                        if sections[section_key]["tag_name"] is not None
-                        else ""
+                        str(sections[section_key]["tag_name"])
                     ]: section_key
                 },
             )
