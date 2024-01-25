@@ -170,7 +170,13 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
-        return partition(filename=self.file_path, **self.unstructured_kwargs)
+        if isinstance(self.file_path, list):
+            elements = []
+            for file in self.file_path:
+                elements.extend(partition(filename=file, **self.unstructured_kwargs))
+            return elements
+        else:
+            return partition(filename=self.file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}

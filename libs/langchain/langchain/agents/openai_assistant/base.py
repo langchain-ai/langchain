@@ -7,12 +7,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Un
 
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
 from langchain_core.tools import BaseTool
-
-from langchain.callbacks.manager import CallbackManager
 
 if TYPE_CHECKING:
     import openai
@@ -147,8 +146,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
 
     """  # noqa: E501
 
-    client: openai.OpenAI = Field(default_factory=_get_openai_client)
-    """OpenAI client."""
+    client: Any = Field(default_factory=_get_openai_client)
+    """OpenAI or AzureOpenAI client."""
     assistant_id: str
     """OpenAI assistant id."""
     check_every_ms: float = 1_000.0
@@ -164,7 +163,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         tools: Sequence[Union[BaseTool, dict]],
         model: str,
         *,
-        client: Optional[openai.OpenAI] = None,
+        client: Optional[Union[openai.OpenAI, openai.AzureOpenAI]] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Create an OpenAI Assistant and instantiate the Runnable.
@@ -174,7 +173,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             instructions: Assistant instructions.
             tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
             model: Assistant model to use.
-            client: OpenAI client. Will create default client if not specified.
+            client: OpenAI or AzureOpenAI client.
+                Will create default OpenAI client if not specified.
 
         Returns:
             OpenAIAssistantRunnable configured to run using the created assistant.
@@ -192,7 +192,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             tools=openai_tools,
             model=model,
         )
-        return cls(assistant_id=assistant.id, **kwargs)
+        return cls(assistant_id=assistant.id, client=client, **kwargs)
 
     def invoke(
         self, input: dict, config: Optional[RunnableConfig] = None

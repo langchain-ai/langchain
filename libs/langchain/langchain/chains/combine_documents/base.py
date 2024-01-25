@@ -3,15 +3,15 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Type
 
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.runnables.config import RunnableConfig
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
 from langchain.chains.base import Chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
@@ -37,7 +37,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     to use (default `input_documents`), and then also expose a method to calculate
     the length of a prompt from documents (useful for outside callers to use to
     determine whether it's safe to pass a list of documents into this chain or whether
-    that will longer than the context length).
+    that will be longer than the context length).
     """
 
     input_key: str = "input_documents"  #: :meta private:

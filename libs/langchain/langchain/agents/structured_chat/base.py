@@ -3,6 +3,7 @@ from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
@@ -12,6 +13,7 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.tools import BaseTool
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
@@ -20,9 +22,7 @@ from langchain.agents.structured_chat.output_parser import (
     StructuredChatOutputParserWithRetries,
 )
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.tools import BaseTool
 from langchain.tools.render import render_text_description_and_args
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
@@ -158,10 +158,7 @@ def create_structured_chat_agent(
     Args:
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input keys
-            `tools`: contains descriptions and arguments for each tool.
-            `tool_names`: contains all tool names.
-            `agent_scratchpad`: contains previous agent actions and tool outputs.
+        prompt: The prompt to use. See Prompt section below for more.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -197,7 +194,14 @@ def create_structured_chat_agent(
                 }
             )
 
-    Creating prompt example:
+    Prompt:
+
+        The prompt must have input keys:
+            * `tools`: contains descriptions and arguments for each tool.
+            * `tool_names`: contains all tool names.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as a string.
+
+        Here's an example:
 
         .. code-block:: python
 
