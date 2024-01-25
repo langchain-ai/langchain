@@ -2454,11 +2454,11 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     """A runnable that runs a mapping of runnables in parallel, and returns a mapping
     of their outputs.
 
-    RunableParallel is one of the two main composition primitives for the LCEL,
+    RunnableParallel is one of the two main composition primitives for the LCEL,
     alongside RunnableSequence. It invokes runnables concurrently, providing the same
     input to each.
 
-    A RunableParallel can be instantiated directly or by using a dict literal within a
+    A RunnableParallel can be instantiated directly or by using a dict literal within a
     sequence.
 
     Here is a simple example that uses functions to illustrate the use of
