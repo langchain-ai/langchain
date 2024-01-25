@@ -1550,7 +1550,7 @@ class HTMLSectionSplitter:
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(self, html_doc):
+    def split_html_by_headers(self, html_doc: str) -> Dict[str, Dict[str, str]]:
         try:
             from bs4 import BeautifulSoup
         except ImportError as e:
