@@ -2458,7 +2458,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     alongside RunnableSequence. It invokes runnables concurrently, providing the same
     input to each.
 
-    A RunnableSequence can be instantiated directly or by using a dict literal within a
+    A RunableParallel can be instantiated directly or by using a dict literal within a
     sequence.
 
     Here is a simple example that uses functions to illustrate the use of
