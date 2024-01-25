@@ -11,9 +11,7 @@ from langchain_core.utils.json_schema import dereference_refs
 from vertexai.preview.generative_models import (  # type: ignore
     FunctionDeclaration,
 )
-from vertexai.preview.generative_models import (
-    Tool as VertexTool,  # type: ignore
-)
+from vertexai.preview.generative_models import Tool as VertexTool
 
 
 def _format_pydantic_to_vertex_function(

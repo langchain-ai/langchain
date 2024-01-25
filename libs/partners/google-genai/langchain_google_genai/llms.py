@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum, auto
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import google.api_core
@@ -13,6 +14,19 @@ from langchain_core.language_models.llms import BaseLLM, create_base_retry_decor
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
+
+
+class GoogleModelFamily(str, Enum):
+    GEMINI = auto()
+    PALM = auto()
+
+    @classmethod
+    def _missing_(cls, value: Any) -> Optional["GoogleModelFamily"]:
+        if "gemini" in value.lower():
+            return GoogleModelFamily.GEMINI
+        elif "text-bison" in value.lower():
+            return GoogleModelFamily.PALM
+        return None
 
 
 def _create_retry_decorator(
@@ -56,19 +70,23 @@ def _completion_with_retry(
         prompt: LanguageModelInput, is_gemini: bool, stream: bool, **kwargs: Any
     ) -> Any:
         generation_config = kwargs.get("generation_config", {})
-        if is_gemini:
-            return llm.client.generate_content(
-                contents=prompt, stream=stream, generation_config=generation_config
-            )
-        return llm.client.generate_text(prompt=prompt, **kwargs)
+        error_msg = (
+            "Your location is not supported by google-generativeai at the moment. "
+            "Try to use VertexAI LLM from langchain_google_vertexai"
+        )
+        try:
+            if is_gemini:
+                return llm.client.generate_content(
+                    contents=prompt, stream=stream, generation_config=generation_config
+                )
+            return llm.client.generate_text(prompt=prompt, **kwargs)
+        except google.api_core.exceptions.FailedPrecondition as exc:
+            if "location is not supported" in exc.message:
+                raise ValueError(error_msg)
 
     return _completion_with_retry(
         prompt=prompt, is_gemini=is_gemini, stream=stream, **kwargs
     )
-
-
-def _is_gemini_model(model_name: str) -> bool:
-    return "gemini" in model_name
 
 
 def _strip_erroneous_leading_spaces(text: str) -> str:
@@ -84,17 +102,9 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
         return text
 
 
-class GoogleGenerativeAI(BaseLLM, BaseModel):
-    """Google GenerativeAI models.
+class _BaseGoogleGenerativeAI(BaseModel):
+    """Base class for Google Generative AI LLMs"""
 
-    Example:
-        .. code-block:: python
-
-            from langchain_google_genai import GoogleGenerativeAI
-            llm = GoogleGenerativeAI(model="gemini-pro")
-    """
-
-    client: Any  #: :meta private:
     model: str = Field(
         ...,
         description="""The name of the model to use.
@@ -134,13 +144,25 @@ Supported examples:
     )
 
     @property
-    def is_gemini(self) -> bool:
-        """Returns whether a model is belongs to a Gemini family or not."""
-        return _is_gemini_model(self.model)
-
-    @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
+
+    @property
+    def _model_family(self) -> str:
+        return GoogleModelFamily(self.model)
+
+
+class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
+    """Google GenerativeAI models.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_google_genai import GoogleGenerativeAI
+            llm = GoogleGenerativeAI(model="gemini-pro")
+    """
+
+    client: Any  #: :meta private:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -159,7 +181,7 @@ Supported examples:
             client_options=values.get("client_options"),
         )
 
-        if _is_gemini_model(model_name):
+        if GoogleModelFamily(model_name) == GoogleModelFamily.GEMINI:
             values["client"] = genai.GenerativeModel(model_name=model_name)
         else:
             values["client"] = genai
@@ -195,7 +217,7 @@ Supported examples:
             "candidate_count": self.n,
         }
         for prompt in prompts:
-            if self.is_gemini:
+            if self._model_family == GoogleModelFamily.GEMINI:
                 res = _completion_with_retry(
                     self,
                     prompt=prompt,
@@ -271,7 +293,11 @@ Supported examples:
         Returns:
             The integer number of tokens in the text.
         """
-        if self.is_gemini:
-            raise ValueError("Counting tokens is not yet supported!")
-        result = self.client.count_text_tokens(model=self.model, prompt=text)
-        return result["token_count"]
+        if self._model_family == GoogleModelFamily.GEMINI:
+            result = self.client.count_tokens(text)
+            token_count = result.total_tokens
+        else:
+            result = self.client.count_text_tokens(model=self.model, prompt=text)
+            token_count = result["token_count"]
+
+        return token_count
