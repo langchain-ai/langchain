@@ -1,7 +1,7 @@
 """Test LiteLLM Router API wrapper."""
 import asyncio
 from copy import deepcopy
-from typing import Any, AsyncGenerator, Coroutine, List, Tuple, Union, cast
+from typing import Any, AsyncGenerator, Coroutine, Dict, List, Tuple, Union, cast
 
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -48,22 +48,22 @@ class FakeCompletion:
 
     @staticmethod
     def _get_new_result_and_choices(
-        base_result: dict[str, Any],
-    ) -> Tuple[dict[str, Any], List[dict[str, Any]]]:
+        base_result: Dict[str, Any],
+    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         result = deepcopy(base_result)
-        choices = cast(List[dict[str, Any]], result["choices"])
+        choices = cast(List[Dict[str, Any]], result["choices"])
         return result, choices
 
     @staticmethod
     def _get_next_result(
-        agen: AsyncGenerator[dict[str, Any], None],
-    ) -> dict[str, Any]:
+        agen: AsyncGenerator[Dict[str, Any], None],
+    ) -> Dict[str, Any]:
         coroutine = cast(Coroutine, agen.__anext__())
         return asyncio.run(coroutine)
 
     async def _get_fake_results_agenerator(
         self, **kwargs: Any
-    ) -> AsyncGenerator[dict[str, Any], None]:
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         from litellm import Usage
 
         self.seen_inputs.append(kwargs)
@@ -112,10 +112,10 @@ class FakeCompletion:
             )
             yield result
 
-    def completion(self, **kwargs: Any) -> Union[List, dict[str, Any]]:
+    def completion(self, **kwargs: Any) -> Union[List, Dict[str, Any]]:
         agen = self._get_fake_results_agenerator(**kwargs)
         if kwargs["stream"]:
-            results: List[dict[str, Any]] = []
+            results: List[Dict[str, Any]] = []
             while True:
                 try:
                     results.append(self._get_next_result(agen))
@@ -128,7 +128,7 @@ class FakeCompletion:
 
     async def acompletion(
         self, **kwargs: Any
-    ) -> Union[AsyncGenerator[dict[str, Any], None], dict[str, Any]]:
+    ) -> Union[AsyncGenerator[Dict[str, Any], None], Dict[str, Any]]:
         agen = self._get_fake_results_agenerator(**kwargs)
         if kwargs["stream"]:
             return agen
