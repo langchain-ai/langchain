@@ -117,8 +117,7 @@ class AI21(BaseLLM, AI21Base):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        yield GenerationChunk(text="Yield chunks")
-        yield GenerationChunk(text=" like this!")
+        raise NotImplementedError
 
     def _invoke_completion(
         self,
