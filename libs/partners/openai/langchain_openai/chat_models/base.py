@@ -710,7 +710,8 @@ class ChatOpenAI(BaseChatModel):
                 )
             if (
                 isinstance(tool_choice, dict)
-                and formatted_tools[0]["function"]["name"] != tool_choice["function"]["name"]
+                and formatted_tools[0]["function"]["name"]
+                != tool_choice["function"]["name"]
             ):
                 raise ValueError(
                     f"Tool choice {tool_choice} was specified, but the only "
