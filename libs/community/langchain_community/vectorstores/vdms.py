@@ -132,31 +132,6 @@ class VDMS(VectorStore):
             metric=self.distance_strategy,
         )
 
-    def __query_collection(
-        self,
-        query_embeddings: Optional[List[float]] = None,
-        n_results: int = 4,
-        filter: Optional[Dict[str, str]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
-        **kwargs: Any,
-    ) -> List[Dict[str, Any]]:
-        """Query the vdms collection."""
-        # try:
-        #     import vdms  # noqa: F401
-        # except ImportError:
-        #     raise ValueError(
-        #         "Could not import vdms python package. "
-        #         "Please install it with `pip install vdms`."
-        #     )
-        return self.query_collection_embeddings(
-            self._collection_name,
-            query_embeddings=query_embeddings,
-            n_results=n_results,
-            filter=filter,
-            # where_document=where_document,
-            **kwargs,
-        )
-
     def _create_connection_alias(self, connection_args: dict) -> Any:
         if connection_args is None:
             connection_args = DEFAULT_VDMS_CONNECTION
@@ -220,9 +195,7 @@ class VDMS(VectorStore):
             # where_document,
             **kwargs,
         )
-        # docs_and_rel_scores = [
-        #     (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
-        # ]
+
         docs_and_rel_scores = []
         for doc, score in docs_and_scores:
             if self.override_relevance_score_fn is None:
@@ -315,17 +288,20 @@ class VDMS(VectorStore):
         Returns:
             List[str]: List of IDs of the added images.
         """
-        # Map from uris to b64 encoded strings
-        b64_texts = [self.encode_image(uri=uri) for uri in uris]
+        # Map from uris to blobs
+        blobs = [self.encode_image(uri=uri) for uri in uris]
+
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in uris]
-        embeddings = None
+
         # Set embeddings
+        embeddings = None
         if self._embedding_function is not None and hasattr(
             self._embedding_function, "embed_image"
         ):
             embeddings = self._embedding_function.embed_image(uris=uris)
+
         if metadatas:
             # fill metadatas with empty dicts if somebody
             # did not specify metadata for all images
@@ -568,6 +544,10 @@ class VDMS(VectorStore):
     @property
     def embeddings(self) -> Optional[Embeddings]:
         return self._embedding_function
+
+    def encode_image(self, image_path: str) -> str:
+        with open(image_path, "rb") as f:
+            return f.read()
 
     @classmethod
     def from_documents(
