@@ -23,7 +23,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
             from langchain_openai import AzureOpenAIEmbeddings
 
-            openai = OpenAIEmbeddings(model=""text-embedding-3-large", azure_endpoint="...", azure_deployment="...")
+            openai = AzureOpenAIEmbeddings(model=""text-embedding-3-large")
     """
 
     azure_endpoint: Union[str, None] = None

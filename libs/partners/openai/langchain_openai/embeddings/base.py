@@ -213,7 +213,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
-        params = {"model": self.model, **self.model_kwargs}
+        params: Dict = {"model": self.model, **self.model_kwargs}
         if self.dimensions is not None:
             params["dimensions"] = self.dimensions
         return params
