@@ -18,7 +18,7 @@ QA_PROMPT = ChatPromptTemplate.from_messages(
         ("user", "{question}"),
     ]
 )
-_inputs =  QA_PROMPT | ChatOpenAI() | StrOutputParser()
+_inputs = QA_PROMPT | ChatOpenAI() | StrOutputParser()
 
 
 chain = RunnableWithMessageHistory(
