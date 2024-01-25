@@ -42,7 +42,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
@@ -53,6 +53,7 @@ from tenacity import (
 )
 
 from langchain_google_genai._common import GoogleGenerativeAIError
+from langchain_google_genai.llms import GoogleModelFamily, _BaseGoogleGenerativeAI
 
 IMAGE_TYPES: Tuple = ()
 try:
@@ -417,7 +418,7 @@ def _response_to_result(
     return ChatResult(generations=generations, llm_output=llm_output)
 
 
-class ChatGoogleGenerativeAI(BaseChatModel):
+class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
     """`Google Generative AI` Chat models API.
 
     To use, you must have either:
@@ -435,53 +436,13 @@ class ChatGoogleGenerativeAI(BaseChatModel):
 
     """
 
-    model: str = Field(
-        ...,
-        description="""The name of the model to use.
-Supported examples:
-    - gemini-pro""",
-    )
-    max_output_tokens: int = Field(default=None, description="Max output tokens")
-
     client: Any  #: :meta private:
-    google_api_key: Optional[SecretStr] = None
-    temperature: Optional[float] = None
-    """Run inference with this temperature. Must by in the closed
-       interval [0.0, 1.0]."""
-    top_k: Optional[int] = None
-    """Decode using top-k sampling: consider the set of top_k most probable tokens.
-       Must be positive."""
-    top_p: Optional[float] = None
-    """The maximum cumulative probability of tokens to consider when sampling.
 
-        The model uses combined Top-k and nucleus sampling.
-
-        Tokens are sorted based on their assigned probabilities so
-        that only the most likely tokens are considered. Top-k
-        sampling directly limits the maximum number of tokens to
-        consider, while Nucleus sampling limits number of tokens
-        based on the cumulative probability.
-
-        Note: The default value varies by model, see the
-        `Model.top_p` attribute of the `Model` returned the
-        `genai.get_model` function.
-    """
-    n: int = Field(default=1, alias="candidate_count")
-    """Number of chat completions to generate for each prompt. Note that the API may
-       not return the full n completions if duplicates are generated."""
     convert_system_message_to_human: bool = False
     """Whether to merge any leading SystemMessage into the following HumanMessage.
     
     Gemini does not support system messages; any unsupported messages will 
     raise an error."""
-    client_options: Optional[Dict] = Field(
-        None,
-        description="Client options to pass to the Google API client.",
-    )
-    transport: Optional[str] = Field(
-        None,
-        description="A string, one of: [`rest`, `grpc`, `grpc_asyncio`].",
-    )
 
     class Config:
         allow_population_by_field_name = True
@@ -493,10 +454,6 @@ Supported examples:
     @property
     def _llm_type(self) -> str:
         return "chat-google-generative-ai"
-
-    @property
-    def _is_geminiai(self) -> bool:
-        return self.model is not None and "gemini" in self.model
 
     @classmethod
     def is_lc_serializable(self) -> bool:
@@ -658,3 +615,23 @@ Supported examples:
         message = history.pop()
         chat = self.client.start_chat(history=history)
         return params, chat, message
+
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        if self._model_family == GoogleModelFamily.GEMINI:
+            result = self.client.count_tokens(text)
+            token_count = result.total_tokens
+        else:
+            result = self.client.count_text_tokens(model=self.model, prompt=text)
+            token_count = result["token_count"]
+
+        return token_count
