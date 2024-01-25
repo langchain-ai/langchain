@@ -1550,14 +1550,16 @@ class HTMLSectionSplitter:
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(self, html_doc: str) -> Dict[Optional[str], Dict[str, Optional[str]]]:
+    def split_html_by_headers(
+        self, html_doc: str
+    ) -> Dict[Optional[str], Dict[str, Optional[str]]]:
         try:
-            from bs4 import BeautifulSoup
-            from bs4 import PageElement
+            from bs4 import BeautifulSoup, PageElement
         except ImportError as e:
             raise ImportError(
-                "Unable to import BeautifulSoup/PageElement, please install with `pip install \
-                    BeautifulSoup`."
+                "Unable to import BeautifulSoup/PageElement, \
+                    please install with `pip install \
+                    bs4`."
             ) from e
 
         soup = BeautifulSoup(html_doc, "html.parser")
