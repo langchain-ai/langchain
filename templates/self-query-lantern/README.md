@@ -8,14 +8,11 @@ using Lantern and OpenAI. By default, it uses an artificial dataset of 10 docume
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
-Set the `LANTERN_URL` to the URL of your Lantern instance. If you use [Lantern](https://lantern.dev)
-you have to set the `LANTERN_API_KEY` environment variable as well. If you do not set any of them,
-the template will try to connect a local Lantern instance at `http://localhost:6333`.
+Set the `LANTERN_CONNECTION_STRING` to the URL of your Lantern instance. If you do not set any of them,
+the template will try to connect a local Lantern instance at `http://localhost:5432`.
 
 ```shell
-export LANTERN_URL=
-export LANTERN_API_KEY=
-
+export LANTERN_CONNECTION_STRING=
 export OPENAI_API_KEY=
 ```
 
