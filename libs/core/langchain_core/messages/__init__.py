@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import (
@@ -117,10 +117,16 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
     )
 
 
-MessageLikeRepresentation = Union[BaseMessage, Tuple[str, str], str]
+MessageLikeRepresentation = Union[BaseMessage, Tuple[str, str], str, Dict[str, Any]]
 
 
-def _create_message_from_message_type(message_type: str, content: str) -> BaseMessage:
+def _create_message_from_message_type(
+    message_type: str,
+    content: str,
+    name: Optional[str] = None,
+    tool_call_id: Optional[str] = None,
+    **additional_kwargs: Any,
+) -> BaseMessage:
     """Create a message from a message type and content string.
 
     Args:
@@ -130,12 +136,23 @@ def _create_message_from_message_type(message_type: str, content: str) -> BaseMe
     Returns:
         a message of the appropriate type.
     """
+    kwargs = {}
+    if name is not None:
+        kwargs["name"] = name
+    if tool_call_id is not None:
+        kwargs["tool_call_id"] = tool_call_id
+    if additional_kwargs:
+        kwargs["additional_kwargs"] = additional_kwargs
     if message_type in ("human", "user"):
-        message: BaseMessage = HumanMessage(content=content)
+        message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
-        message = AIMessage(content=content)
+        message = AIMessage(content=content, **kwargs)
     elif message_type == "system":
-        message = SystemMessage(content=content)
+        message = SystemMessage(content=content, **kwargs)
+    elif message_type == "function":
+        message = FunctionMessage(content=content, **kwargs)
+    elif message_type == "tool":
+        message = ToolMessage(content=content, **kwargs)
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"
@@ -154,7 +171,7 @@ def _convert_to_message(
     - BaseMessagePromptTemplate
     - BaseMessage
     - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
-    - 2-tuple of (message class, template)
+    - dict: a message dict with role and content keys
     - string: shorthand for ("human", template); e.g., "{user_input}"
 
     Args:
@@ -172,6 +189,18 @@ def _convert_to_message(
             raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
         message_type_str, template = message
         _message = _create_message_from_message_type(message_type_str, template)
+    elif isinstance(message, dict):
+        msg_kwargs = message.copy()
+        try:
+            msg_type = msg_kwargs.pop("role")
+            msg_content = msg_kwargs.pop("content")
+        except KeyError:
+            raise ValueError(
+                f"Message dict must contain 'role' and 'content' keys, got {message}"
+            )
+        _message = _create_message_from_message_type(
+            msg_type, msg_content, **msg_kwargs
+        )
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 
@@ -208,6 +237,7 @@ __all__ = [
     "SystemMessageChunk",
     "ToolMessage",
     "ToolMessageChunk",
+    "convert_to_messages",
     "get_buffer_string",
     "message_chunk_to_message",
     "messages_from_dict",
