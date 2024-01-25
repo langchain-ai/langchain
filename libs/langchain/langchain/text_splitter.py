@@ -1552,7 +1552,7 @@ class HTMLSectionSplitter:
 
     def split_html_by_headers(
         self, html_doc: str
-    ) -> Dict[Optional[str], Dict[str, Optional[str]]]:
+    ) -> Dict[str, Dict[str, Optional[str]]]:
         try:
             from bs4 import BeautifulSoup, PageElement
         except ImportError as e:
@@ -1564,7 +1564,7 @@ class HTMLSectionSplitter:
 
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
-        sections = {}
+        sections: Dict[str, Dict[str, Optional[str]]] = {}
         section_content: List[str] = []
         current_header = None
         current_header_tag = None
