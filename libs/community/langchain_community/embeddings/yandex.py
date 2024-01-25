@@ -60,7 +60,7 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     """The url of the API."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
-    sleep_interval: int = 0
+    sleep_interval: float = 0.0
     """Delay between API requests"""
 
     @root_validator()
