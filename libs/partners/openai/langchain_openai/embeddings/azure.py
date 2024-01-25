@@ -12,7 +12,19 @@ from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):
-    """`Azure OpenAI` Embeddings API."""
+    """`Azure OpenAI` Embeddings API.
+
+    To use, you should have the
+    environment variable ``AZURE_OPENAI_API_KEY`` set with your API key or pass it
+    as a named parameter to the constructor.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_openai import AzureOpenAIEmbeddings
+
+            openai = AzureOpenAIEmbeddings(model=""text-embedding-3-large")
+    """
 
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.
