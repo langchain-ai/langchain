@@ -136,13 +136,13 @@ def _create_message_from_message_type(
     Returns:
         a message of the appropriate type.
     """
-    kwargs = {}
+    kwargs: Dict[str, Any] = {}
     if name is not None:
         kwargs["name"] = name
     if tool_call_id is not None:
         kwargs["tool_call_id"] = tool_call_id
     if additional_kwargs:
-        kwargs["additional_kwargs"] = additional_kwargs
+        kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
     if message_type in ("human", "user"):
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
