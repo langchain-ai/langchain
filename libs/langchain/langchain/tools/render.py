@@ -7,11 +7,11 @@ This module contains various ways to render tools.
 from typing import List
 
 # For backwards compatibility
-from langchain_community.tools.convert_to_openai import (
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import (
     format_tool_to_openai_function,
     format_tool_to_openai_tool,
 )
-from langchain_core.tools import BaseTool
 
 __all__ = [
     "render_text_description",
