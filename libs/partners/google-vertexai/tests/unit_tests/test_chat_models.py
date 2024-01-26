@@ -278,6 +278,24 @@ def test_default_params_gemini() -> None:
                 },
             },
         ),
+        (
+            Content(
+                role="model",
+                parts=[
+                    Part(
+                        text="",
+                        function_call=FunctionCall(
+                            name="Information",
+                            args={"info": [[1, 2, 3], [4, 5, 6]]},
+                        ),
+                    )
+                ],
+            ),
+            {
+                "name": "Information",
+                "arguments": {"info": [[1, 2, 3], [4, 5, 6]]},
+            },
+        ),
     ],
 )
 def test_parse_response_candidate(content, expected) -> None:

@@ -307,7 +307,10 @@ def _convert_mapcomposite(mapcomposite: MapComposite):
 def _convert_repeatedcomposite(repeated_composite: RepeatedComposite):
     _ = []
     for composite in repeated_composite:
-        if isinstance(composite, MapComposite):
+        if isinstance(composite, RepeatedComposite):
+            obj_list = _convert_repeatedcomposite(composite)
+            _.append(obj_list)
+        elif isinstance(composite, MapComposite):
             map = _convert_mapcomposite(composite)
             _.append(map)
         else:
