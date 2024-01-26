@@ -135,7 +135,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         include_run_info = kwargs.get("include_run_info", False)
         return_only_outputs = kwargs.get("return_only_outputs", False)
 
-        inputs = self.prep_inputs(input)
         callback_manager = CallbackManager.configure(
             callbacks,
             self.callbacks,
@@ -148,22 +147,25 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
-            inputs,
+            input,
             name=run_name,
         )
         try:
+            inputs = self.prep_inputs(input)
             outputs = (
                 self._call(inputs, run_manager=run_manager)
                 if new_arg_supported
                 else self._call(inputs)
             )
+
+            final_outputs: Dict[str, Any] = self.prep_outputs(
+                inputs, outputs, return_only_outputs
+            )
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise e
         run_manager.on_chain_end(outputs)
-        final_outputs: Dict[str, Any] = self.prep_outputs(
-            inputs, outputs, return_only_outputs
-        )
+
         if include_run_info:
             final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
         return final_outputs
@@ -182,7 +184,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         include_run_info = kwargs.get("include_run_info", False)
         return_only_outputs = kwargs.get("return_only_outputs", False)
 
-        inputs = self.prep_inputs(input)
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
             self.callbacks,
@@ -195,22 +196,24 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
-            inputs,
+            input,
             name=run_name,
         )
         try:
+            inputs = self.prep_inputs(input)
             outputs = (
                 await self._acall(inputs, run_manager=run_manager)
                 if new_arg_supported
                 else await self._acall(inputs)
             )
+            final_outputs: Dict[str, Any] = self.prep_outputs(
+                inputs, outputs, return_only_outputs
+            )
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise e
         await run_manager.on_chain_end(outputs)
-        final_outputs: Dict[str, Any] = self.prep_outputs(
-            inputs, outputs, return_only_outputs
-        )
+
         if include_run_info:
             final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
         return final_outputs
