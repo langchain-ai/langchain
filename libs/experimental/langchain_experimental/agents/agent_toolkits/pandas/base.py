@@ -17,6 +17,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
+from langchain_core.utils.interactive_env import is_interactive_env
 
 from langchain_experimental.agents.agent_toolkits.pandas.prompt import (
     FUNCTIONS_WITH_DF,
@@ -235,7 +236,12 @@ def create_pandas_dataframe_agent(
 
         df = pd.read_csv("titanic.csv")
         llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        agent_executor = create_sql_agent(llm, db, agent_type="openai-tools", verbose=True)
+        agent_executor = create_pandas_dataframe_agent(
+            llm,
+            db,
+            agent_type="openai-tools",
+            verbose=True
+        )
 
     """  # noqa: E501
     try:
@@ -244,7 +250,7 @@ def create_pandas_dataframe_agent(
         raise ImportError(
             "pandas package not found, please install with `pip install pandas`"
         ) from e
-    else:
+    if is_interactive_env():
         pd.set_option("display.max_columns", None)
 
     for _df in df if isinstance(df, list) else [df]:
