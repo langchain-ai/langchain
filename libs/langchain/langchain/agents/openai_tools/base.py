@@ -1,10 +1,10 @@
 from typing import Sequence
 
-from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
@@ -82,9 +82,7 @@ def create_openai_tools_agent(
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
-    llm_with_tools = llm.bind(
-        tools=[format_tool_to_openai_tool(tool) for tool in tools]
-    )
+    llm_with_tools = llm.bind(tools=[convert_to_openai_tool(tool) for tool in tools])
 
     agent = (
         RunnablePassthrough.assign(
