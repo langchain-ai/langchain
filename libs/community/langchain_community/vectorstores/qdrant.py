@@ -1941,9 +1941,11 @@ class Qdrant(VectorStore):
         content_payload_key: str,
         metadata_payload_key: str,
     ) -> Document:
+        metadata = scored_point.payload.get(metadata_payload_key) or {}
+        metadata["_id"] = scored_point.id
         return Document(
             page_content=scored_point.payload.get(content_payload_key),
-            metadata=scored_point.payload.get(metadata_payload_key) or {},
+            metadata=metadata,
         )
 
     def _build_condition(self, key: str, value: Any) -> List[rest.FieldCondition]:
