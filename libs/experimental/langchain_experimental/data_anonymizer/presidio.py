@@ -80,6 +80,17 @@ def _import_operator_config() -> "OperatorConfig":
     return OperatorConfig
 
 
+def _import_conflict_resolution_strategy() -> "ConflictResolutionStrategy":
+    try:
+        from presidio_anonymizer.entities import ConflictResolutionStrategy
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_anonymizer, please install with "
+            "`pip install presidio-anonymizer`."
+        ) from e
+    return ConflictResolutionStrategy
+
+
 # Configuring Anonymizer for multiple languages
 # Detailed description and examples can be found here:
 # langchain/docs/extras/guides/privacy/multi_language_anonymization.ipynb
@@ -102,7 +113,7 @@ class PresidioAnonymizerBase(AnonymizerBase):
         self,
         analyzed_fields: Optional[List[str]] = None,
         operators: Optional[Dict[str, OperatorConfig]] = None,
-        languages_config: Dict = DEFAULT_LANGUAGES_CONFIG,
+        languages_config=None,
         add_default_faker_operators: bool = True,
         faker_seed: Optional[int] = None,
     ):
@@ -123,6 +134,8 @@ class PresidioAnonymizerBase(AnonymizerBase):
                 Defaults to None, in which case faker will be seeded randomly
                 and provide random values.
         """
+        if languages_config is None:
+            languages_config = DEFAULT_LANGUAGES_CONFIG
         OperatorConfig = _import_operator_config()
         AnalyzerEngine = _import_analyzer_engine()
         NlpEngineProvider = _import_nlp_engine_provider()
@@ -177,12 +190,16 @@ class PresidioAnonymizerBase(AnonymizerBase):
         self.operators.update(operators)
 
 
+ConflictResolutionStrategy = _import_conflict_resolution_strategy()
+
+
 class PresidioAnonymizer(PresidioAnonymizerBase):
     def _anonymize(
         self,
         text: str,
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
+        conflict_resolution: ConflictResolutionStrategy = ConflictResolutionStrategy.MERGE_SIMILAR_OR_CONTAINED,
     ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
@@ -204,8 +221,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         """
         if language is None:
             language = self.supported_languages[0]
-
-        if language not in self.supported_languages:
+        elif language not in self.supported_languages:
             raise ValueError(
                 f"Language '{language}' is not supported. "
                 f"Supported languages are: {self.supported_languages}. "
@@ -237,7 +253,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
 
         filtered_analyzer_results = (
             self._anonymizer._remove_conflicts_and_get_text_manipulation_data(
-                analyzer_results
+                analyzer_results, conflict_resolution
             )
         )
 
@@ -260,10 +276,12 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         self,
         analyzed_fields: Optional[List[str]] = None,
         operators: Optional[Dict[str, OperatorConfig]] = None,
-        languages_config: Dict = DEFAULT_LANGUAGES_CONFIG,
+        languages_config=None,
         add_default_faker_operators: bool = True,
         faker_seed: Optional[int] = None,
     ):
+        if languages_config is None:
+            languages_config = DEFAULT_LANGUAGES_CONFIG
         super().__init__(
             analyzed_fields,
             operators,
@@ -292,6 +310,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         text: str,
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
+        conflict_resolution: ConflictResolutionStrategy = ConflictResolutionStrategy.MERGE_SIMILAR_OR_CONTAINED,
     ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
@@ -348,7 +367,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
 
         filtered_analyzer_results = (
             self._anonymizer._remove_conflicts_and_get_text_manipulation_data(
-                analyzer_results
+                analyzer_results, conflict_resolution
             )
         )
 
