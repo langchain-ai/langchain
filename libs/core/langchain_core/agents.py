@@ -17,7 +17,7 @@ class AgentAction(Serializable):
 
     tool: str
     """The name of the Tool to execute."""
-    tool_input: Union[str, dict]
+    tool_input: Union[str, list, dict]
     """The input to pass in to the Tool."""
     log: str
     """Additional information to log about the action.
