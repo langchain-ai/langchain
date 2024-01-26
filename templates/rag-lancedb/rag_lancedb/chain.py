@@ -1,5 +1,5 @@
-from langchain_core.prompts import ChatPromptTemplate
 import lancedb
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.vectorstores import LanceDB
 from langchain_community.embeddings import OpenAIEmbeddings
@@ -7,11 +7,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
-
-
-
 # Example for document loading (from url), splitting, and creating vectostore
-
 """ 
 # Load
 from langchain_community.document_loaders import WebBaseLoader
@@ -63,7 +59,6 @@ table = db.create_table(
 )
 
 # Embed a single document as a test
-
 vectorstore = LanceDB.from_texts(["akash desai worked at kensho"], embedding, connection=table)
 
 retriever = vectorstore.as_retriever()
