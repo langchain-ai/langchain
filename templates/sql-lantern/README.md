@@ -1,8 +1,6 @@
 # sql-lantern
 
-This template enables user to use `lantern` for combining PostgreSQL with semantic search / RAG. 
-
-It uses the [Lantern](https://github.com/lanterndata/lantern) extension as shown in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb)
+This template enables user to use [`lantern`](https://github.com/lanterndata/lantern) for combining PostgreSQL with semantic search / RAG. 
 
 ## Environment Setup
 
