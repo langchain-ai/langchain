@@ -198,31 +198,22 @@ SPARQL_QA_PROMPT = PromptTemplate(
 )
 
 GRAPHDB_SPARQL_GENERATION_TEMPLATE = """
-Task: Generate a SPARQL SELECT statement for querying a graph database.
-For instance, to find all email addresses of John Doe, the following query would be suitable:
-
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT ?email
-WHERE {{
-    ?person foaf:name "John Doe" .
-    ?person foaf:mbox ?email .
-}}
-
-Instructions:
-Use only the node types and properties provided in the schema.
-Do not use any node types and properties that are not explicitly provided.
-Include all necessary prefixes.
-Schema in turtle format:
+Write a SPARQL SELECT query for querying a graph database.
+The ontology schema delimited by triple backticks in Turtle format is:
+```
 {schema}
-Note: Be as concise as possible.
+```
+Use only the classes and properties provided in the schema to construct the SPARQL query.
+Do not use any classes or properties that are not explicitly provided in the SPARQL query.
+Include all necessary prefixes.
 Do not include any explanations or apologies in your responses.
-Do not include '```sparql'.
-Do not respond to any questions that ask for anything else than for you to construct a SPARQL query.
+Do not wrap the query in backticks.
 Do not include any text except the SPARQL query generated.
-
-The question is:
-{prompt}"""
-
+The question delimited by triple backticks is:
+```
+{prompt}
+```
+"""
 GRAPHDB_SPARQL_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "prompt"],
     template=GRAPHDB_SPARQL_GENERATION_TEMPLATE,

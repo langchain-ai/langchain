@@ -1,10 +1,8 @@
 """Question answering over a graph."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-if TYPE_CHECKING:
-    import rdflib
 from langchain_community.graphs import OntotextGraphDBGraph
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models import BaseLanguageModel
@@ -101,7 +99,7 @@ class OntotextGraphDBQAChain(Chain):
         generated_sparql = self._get_valid_sparql_query(
             _run_manager, callbacks, generated_sparql
         )
-        query_results = self._execute_sparql_query(_run_manager, generated_sparql)
+        query_results = self.graph.query(generated_sparql)
 
         qa_chain_result = self.qa_chain.invoke(
             {"prompt": prompt, "context": query_results}, callbacks=callbacks
@@ -181,13 +179,3 @@ class OntotextGraphDBQAChain(Chain):
         _run_manager.on_text(
             error_message, color="red", end="\n\n", verbose=self.verbose
         )
-
-    def _execute_sparql_query(
-        self, _run_manager: CallbackManagerForChainRun, generated_query: str
-    ) -> List[rdflib.query.ResultRow]:
-        query_results = self.graph.query(generated_query)
-        _run_manager.on_text("Query results:", end="\n", verbose=self.verbose)
-        _run_manager.on_text(
-            str(query_results), color="green", end="\n", verbose=self.verbose
-        )
-        return query_results
