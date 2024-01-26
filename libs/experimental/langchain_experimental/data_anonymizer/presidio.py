@@ -80,17 +80,6 @@ def _import_operator_config() -> "OperatorConfig":
     return OperatorConfig
 
 
-def _import_conflict_resolution_strategy() -> "ConflictResolutionStrategy":
-    try:
-        from presidio_anonymizer.entities import ConflictResolutionStrategy
-    except ImportError as e:
-        raise ImportError(
-            "Could not import presidio_anonymizer, please install with "
-            "`pip install presidio-anonymizer`."
-        ) from e
-    return ConflictResolutionStrategy
-
-
 # Configuring Anonymizer for multiple languages
 # Detailed description and examples can be found here:
 # langchain/docs/extras/guides/privacy/multi_language_anonymization.ipynb
@@ -191,15 +180,12 @@ class PresidioAnonymizerBase(AnonymizerBase):
 
 
 class PresidioAnonymizer(PresidioAnonymizerBase):
-    ConflictResolutionStrategy = _import_conflict_resolution_strategy()
-    DEFAULT_RESOLUTION_STRATEGY = ConflictResolutionStrategy.MERGE_SIMILAR_OR_CONTAINED
-
     def _anonymize(
         self,
         text: str,
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
-        conflict_resolution: ConflictResolutionStrategy = DEFAULT_RESOLUTION_STRATEGY,
+        conflict_resolution: Optional[ConflictResolutionStrategy] = None,
     ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
@@ -272,9 +258,6 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
 
 
 class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerBase):
-    ConflictResolutionStrategy = _import_conflict_resolution_strategy()
-    DEFAULT_RESOLUTION_STRATEGY = ConflictResolutionStrategy.MERGE_SIMILAR_OR_CONTAINED
-
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,
@@ -313,7 +296,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         text: str,
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
-        conflict_resolution: ConflictResolutionStrategy = DEFAULT_RESOLUTION_STRATEGY,
+        conflict_resolution: Optional[ConflictResolutionStrategy] = None,
     ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
