@@ -18,6 +18,7 @@ EXPECTED_ALL = [
     "HuggingFaceHubEmbeddings",
     "MlflowAIGatewayEmbeddings",
     "MlflowEmbeddings",
+    "MlflowCohereEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
@@ -55,6 +56,7 @@ EXPECTED_ALL = [
     "VoyageEmbeddings",
     "BookendEmbeddings",
     "VolcanoEmbeddings",
+    "OCIGenAIEmbeddings",
 ]
 
 

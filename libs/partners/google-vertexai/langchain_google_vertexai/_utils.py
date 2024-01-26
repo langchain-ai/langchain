@@ -1,16 +1,24 @@
 """Utilities to init Vertex AI."""
+
+import dataclasses
 from importlib import metadata
 from typing import Any, Callable, Dict, Optional, Union
 
 import google.api_core
 from google.api_core.gapic_v1.client_info import ClientInfo
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import create_base_retry_decorator
-from vertexai.preview.generative_models import Image  # type: ignore
+from vertexai.generative_models._generative_models import (  # type: ignore[import-untyped]
+    Candidate,
+)
+from vertexai.language_models import (  # type: ignore[import-untyped]
+    TextGenerationResponse,
+)
+from vertexai.preview.generative_models import Image  # type: ignore[import-untyped]
 
 
 def create_retry_decorator(
@@ -88,27 +96,23 @@ def is_gemini_model(model_name: str) -> bool:
     return model_name is not None and "gemini" in model_name
 
 
-def get_generation_info(candidate: Any, is_gemini: bool) -> Optional[Dict[str, Any]]:
-    try:
-        if is_gemini:
-            # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini#response_body
-            return {
-                "is_blocked": any(
-                    [rating.blocked for rating in candidate.safety_ratings]
-                ),
-                "safety_ratings": [
-                    {
-                        "category": rating.category.name,
-                        "probability_label": rating.probability.name,
-                    }
-                    for rating in candidate.safety_ratings
-                ],
-            }
-        else:
-            # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/text-chat#response_body
-            return {
-                "is_blocked": candidate.is_blocked,
-                "safety_attributes": candidate.safety_attributes,
-            }
-    except Exception:
-        return None
+def get_generation_info(
+    candidate: Union[TextGenerationResponse, Candidate], is_gemini: bool
+) -> Dict[str, Any]:
+    if is_gemini:
+        # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini#response_body
+        return {
+            "is_blocked": any([rating.blocked for rating in candidate.safety_ratings]),
+            "safety_ratings": [
+                {
+                    "category": rating.category.name,
+                    "probability_label": rating.probability.name,
+                }
+                for rating in candidate.safety_ratings
+            ],
+            "citation_metadata": candidate.citation_metadata,
+        }
+    # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/text-chat#response_body
+    candidate_dc = dataclasses.asdict(candidate)
+    candidate_dc.pop("text")
+    return {k: v for k, v in candidate_dc.items() if not k.startswith("_")}
