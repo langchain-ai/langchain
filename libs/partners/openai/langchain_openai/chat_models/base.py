@@ -407,7 +407,7 @@ class ChatOpenAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
