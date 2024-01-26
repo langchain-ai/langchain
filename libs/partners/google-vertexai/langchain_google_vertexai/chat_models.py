@@ -30,6 +30,8 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
+from proto.marshal.collections.maps import MapComposite
+from proto.marshal.collections.repeated import RepeatedComposite
 from vertexai.language_models import (  # type: ignore
     ChatMessage,
     ChatModel,
@@ -274,11 +276,43 @@ def _parse_response_candidate(response_candidate: "Candidate") -> AIMessage:
         function_call = {"name": first_part.function_call.name}
 
         # dump to match other function calling llm for now
-        function_call["arguments"] = json.dumps(
-            {k: first_part.function_call.args[k] for k in first_part.function_call.args}
-        )
+        arguments = {}
+        for arg in first_part.function_call.args:
+            arg_value = first_part.function_call.args[arg]
+            if isinstance(arg_value, RepeatedComposite):
+                result = _convert_repeatedcomposite(arg_value)
+                arguments[arg] = result
+            elif isinstance(arg_value, MapComposite):
+                arguments[arg] = _convert_mapcomposite(arg_value)
+            else:
+                arguments[arg] = arg_value
+        function_call["arguments"] = json.dumps(arguments)
+
         additional_kwargs["function_call"] = function_call
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
+
+
+def _convert_mapcomposite(mapcomposite: MapComposite):
+    map = {}
+    for k, v in mapcomposite.items():
+        if isinstance(v, RepeatedComposite):
+            map[k] = _convert_repeatedcomposite(v)
+        elif isinstance(v, MapComposite):
+            map[k] = _convert_mapcomposite(v)
+        else:
+            map[k] = v
+    return map
+
+
+def _convert_repeatedcomposite(repeated_composite: RepeatedComposite):
+    _ = []
+    for composite in repeated_composite:
+        if isinstance(composite, MapComposite):
+            map = _convert_mapcomposite(composite)
+            _.append(map)
+        else:
+            _.append(composite)
+    return _
 
 
 class ChatVertexAI(_VertexAICommon, BaseChatModel):

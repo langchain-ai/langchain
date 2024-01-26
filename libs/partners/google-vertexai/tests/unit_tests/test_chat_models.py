@@ -1,10 +1,16 @@
 """Test chat model integration."""
 
+import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from google.cloud.aiplatform_v1beta1.types import (
+    Content,
+    FunctionCall,
+    Part,
+)
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -17,6 +23,7 @@ from langchain_google_vertexai.chat_models import (
     _parse_chat_history,
     _parse_chat_history_gemini,
     _parse_examples,
+    _parse_response_candidate,
 )
 
 
@@ -202,3 +209,85 @@ def test_default_params_gemini() -> None:
         message = HumanMessage(content=user_prompt)
         _ = model([message])
         mock_start_chat.assert_called_once_with(history=[])
+
+
+@pytest.mark.parametrize(
+    "content, expected",
+    [
+        (
+            Content(
+                role="model",
+                parts=[
+                    Part(
+                        text="",
+                        function_call=FunctionCall(
+                            name="Information",
+                            args={"name": "Ben"},
+                        ),
+                    )
+                ],
+            ),
+            {
+                "name": "Information",
+                "arguments": {"name": "Ben"},
+            },
+        ),
+        (
+            Content(
+                role="model",
+                parts=[
+                    Part(
+                        text="",
+                        function_call=FunctionCall(
+                            name="Information",
+                            args={"info": ["A", "B", "C"]},
+                        ),
+                    )
+                ],
+            ),
+            {
+                "name": "Information",
+                "arguments": {"info": ["A", "B", "C"]},
+            },
+        ),
+        (
+            Content(
+                role="model",
+                parts=[
+                    Part(
+                        text="",
+                        function_call=FunctionCall(
+                            name="Information",
+                            args={
+                                "people": [
+                                    {"name": "Joe", "age": 30},
+                                    {"name": "Martha"},
+                                ]
+                            },
+                        ),
+                    )
+                ],
+            ),
+            {
+                "name": "Information",
+                "arguments": {
+                    "people": [
+                        {"name": "Joe", "age": 30},
+                        {"name": "Martha"},
+                    ]
+                },
+            },
+        ),
+    ],
+)
+def test_parse_response_candidate(content, expected) -> None:
+    response_candidate = StubGeminiResponse(
+        text="", content=content, citation_metadata=Mock()
+    )
+
+    result = _parse_response_candidate(response_candidate)
+    result_arguments = json.loads(
+        result.additional_kwargs["function_call"]["arguments"]
+    )
+
+    assert result_arguments == expected["arguments"]
