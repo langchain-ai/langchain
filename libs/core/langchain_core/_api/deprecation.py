@@ -144,6 +144,15 @@ def deprecated(
                 emit_warning()
             return wrapped(*args, **kwargs)
 
+        async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Same as warning_emitting_wrapper, but for async functions."""
+
+            nonlocal warned
+            if not warned and not is_caller_internal():
+                warned = True
+                emit_warning()
+            return await wrapped(*args, **kwargs)
+
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
@@ -256,7 +265,10 @@ def deprecated(
             f"   {details}"
         )
 
-        return finalize(warning_emitting_wrapper, new_doc)
+        if inspect.iscoroutinefunction(obj):
+            return finalize(awarning_emitting_wrapper, new_doc)
+        else:
+            return finalize(warning_emitting_wrapper, new_doc)
 
     return deprecate
 

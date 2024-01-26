@@ -3,7 +3,7 @@ from __future__ import annotations
 from concurrent.futures import Executor
 from typing import Any, ClassVar, Dict, Iterator, List, Optional, Union
 
-import vertexai  # type: ignore
+import vertexai  # type: ignore[import-untyped]
 from google.api_core.client_options import ClientOptions
 from google.cloud.aiplatform.gapic import (
     PredictionServiceAsyncClient,
@@ -19,18 +19,18 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from vertexai.language_models import (  # type: ignore
+from vertexai.language_models import (  # type: ignore[import-untyped]
     CodeGenerationModel,
     TextGenerationModel,
 )
-from vertexai.language_models._language_models import (  # type: ignore
+from vertexai.language_models._language_models import (  # type: ignore[import-untyped]
     TextGenerationResponse,
 )
-from vertexai.preview.generative_models import (  # type: ignore
+from vertexai.preview.generative_models import (  # type: ignore[import-untyped]
     GenerativeModel,
     Image,
 )
-from vertexai.preview.language_models import (  # type: ignore
+from vertexai.preview.language_models import (  # type: ignore[import-untyped]
     CodeGenerationModel as PreviewCodeGenerationModel,
 )
 from vertexai.preview.language_models import (
@@ -449,9 +449,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     @property
     def endpoint_path(self) -> str:
         return self.client.endpoint_path(
-            project=self.project,  # type: ignore
-            location=self.location,
-            endpoint=self.endpoint_id,
+            project=self.project, location=self.location, endpoint=self.endpoint_id
         )
 
     @property
