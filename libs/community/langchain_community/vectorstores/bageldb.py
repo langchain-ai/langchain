@@ -110,8 +110,8 @@ class Bagel(VectorStore):
         except ImportError:
             raise ImportError("Please install bagel `pip install betabageldb`.")
 
-        texts = list(query_texts)
-        if self._embedding_function and query_embeddings is None and texts:
+        if self._embedding_function and query_embeddings is None and query_texts:
+            texts = list(query_texts)
             query_embeddings = self._embedding_function.embed_documents(texts)
             query_texts = None
 
