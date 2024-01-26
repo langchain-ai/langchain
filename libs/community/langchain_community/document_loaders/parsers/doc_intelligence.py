@@ -38,8 +38,8 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             analysis_features = [DocumentAnalysisFeature(feature) for feature in analysis_features]
             if any([feature not in _SUPPORTED_FEATURES for feature in analysis_features]):
                 logger.warning(
-                    f"The current supported features are: {[f.value for f in _SUPPORTED_FEATURES]}.\n"
-                    "Using unsupported features may result in unexpected behavior."
+                    f"The current supported features are: {[f.value for f in _SUPPORTED_FEATURES]}. "
+                    "Using other features may result in unexpected behavior."
                 )
 
         self.client = DocumentIntelligenceClient(
