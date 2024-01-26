@@ -1305,7 +1305,7 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2() -> None:
             </html>"""
 
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[["h1", "Header 1"], ["h2", "Header 2"]]
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
     )
 
     docs = sec_splitter.split_text(html_string)
@@ -1359,7 +1359,7 @@ def test_happy_path_splitting_based_on_header_with_font_size() -> None:
             </html>"""
 
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[["h1", "Header 1"], ["h2", "Header 2"]]
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
     )
 
     docs = sec_splitter.split_text(html_string)
@@ -1410,7 +1410,7 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
             </html>"""
 
     sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[["h1", "Header 1"], ["h2", "Header 2"]]
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
     )
 
     docs = sec_splitter.split_text(html_string)
