@@ -21,6 +21,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         api_version: Optional[str] = None,
         api_model: str = "prebuilt-layout",
         mode: str = "markdown",
+        analysis_features: Optional[List[str]] = None,
     ) -> None:
         """
         Initialize the object for file processing with Azure Document Intelligence
@@ -45,11 +46,18 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             Either file_path or url_path must be specified.
         api_version: Optional[str]
             The API version for DocumentIntelligenceClient. Setting None to use
-            the default value from SDK.
+            the default value from `azure-ai-documentintelligence` package.
         api_model: str
-            The model name or ID to be used for form recognition in Azure.
+            Unique document model name. Default value is "prebuilt-layout".
+            Note that overriding this default value may result in unsupported
+            behavior.
         mode: Optional[str]
             The type of content representation of the generated Documents.
+            Use either "single", "page", or "markdown". Default value is "markdown".
+        analysis_features: Optional[List[str]]
+            List of optional analysis features, each feature should be passed
+            as a str that conforms to the enum `DocumentAnalysisFeature` in
+            `azure-ai-documentintelligence` package. Default value is None.
 
         Examples:
         ---------
@@ -58,7 +66,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         ...     api_endpoint="https://endpoint.azure.com",
         ...     api_key="APIKEY",
         ...     api_version="2023-10-31-preview",
-        ...     model="prebuilt-document",
+        ...     api_model="prebuilt-document",
         ...     mode="markdown"
         ... )
         """
@@ -75,6 +83,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             api_version=api_version,
             api_model=api_model,
             mode=mode,
+            analysis_features=analysis_features,
         )
 
     def lazy_load(
