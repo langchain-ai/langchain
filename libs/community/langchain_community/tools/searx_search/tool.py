@@ -43,7 +43,7 @@ class SearxSearchRun(BaseTool):
 class SearxSearchResults(BaseTool):
     """Tool that queries a Searx instance and gets back json."""
 
-    name: str = "Searx-Search-Results"
+    name: str = "searx_search_results"
     description: str = (
         "A meta search engine."
         "Useful for when you need to answer questions about current events."
