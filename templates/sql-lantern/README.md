@@ -14,7 +14,7 @@ And you can configure configure the following environment variables for use by t
 - `POSTGRES_HOST` (localhost)
 - `POSTGRES_PORT` (5432)
 
-If you don't have a postgres instance, you can run one locally in docker:
+If you don't have a Postgres instance with Lantern installed, you can run one locally in docker:
 
 ```bash
 docker run \
@@ -37,10 +37,10 @@ Apart from having `lantern` extension enabled, you will need to do some setup be
 
 In order to run RAG over your postgreSQL database you will need to generate the embeddings for the specific columns you want. 
 
-This process is covered in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb), but the overall approach consist of:
+This process is covered in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb), but the overall approach consists of:
 1. Querying for unique values in the column
 2. Generating embeddings for those values
-3. Store the embeddings in a separate column or in an auxiliary table.
+3. Storing the embeddings in a separate column or in an auxiliary table.
 
 ## Usage
 
