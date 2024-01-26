@@ -1,15 +1,14 @@
 # sql-lantern
 
-This template enables user to use `lantern` for combining postgreSQL with semantic search / RAG. 
+This template enables user to use `lantern` for combining PostgreSQL with semantic search / RAG. 
 
-It uses [Lantern](https://github.com/lanterndata/lantern) extension as shown in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb)
+It uses the [Lantern](https://github.com/lanterndata/lantern) extension as shown in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb)
 
 ## Environment Setup
 
 If you are using `ChatOpenAI` as your LLM, make sure the `OPENAI_API_KEY` is set in your environment. You can change both the LLM and embeddings model inside `chain.py`
 
-And you can configure configure the following environment variables
-for use by the template (defaults are in parentheses)
+And you can configure configure the following environment variables for use by the template (defaults are in parentheses)
 
 - `POSTGRES_USER` (postgres)
 - `POSTGRES_PASSWORD` (test)
@@ -21,17 +20,17 @@ If you don't have a postgres instance, you can run one locally in docker:
 
 ```bash
 docker run \
-  --name some-postgres \
+  --name lantern-instance \
   -e POSTGRES_PASSWORD=test \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_DB=vectordb \
   -p 5432:5432 \
-  postgres:16
+  lanterndata/lantern:latest-pg16
 ```
 
 And to start again later, use the `--name` defined above:
 ```bash
-docker start some-postgres
+docker start lantern-instance
 ```
 
 ### PostgreSQL Database setup
