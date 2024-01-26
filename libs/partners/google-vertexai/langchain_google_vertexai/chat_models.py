@@ -30,8 +30,8 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
-from proto.marshal.collections.maps import MapComposite
-from proto.marshal.collections.repeated import RepeatedComposite
+from proto.marshal.collections.maps import MapComposite  # type: ignore
+from proto.marshal.collections.repeated import RepeatedComposite  # type: ignore
 from vertexai.language_models import (  # type: ignore
     ChatMessage,
     ChatModel,
