@@ -170,11 +170,12 @@ class NeptuneRdfGraph:
         json_resp = json.loads(queryres.text)
         return json_resp
 
-    '''
-    This is a public method that allows the user to create schema from their own
-    schema_elements. The anticipated use is that the user prunes the introspected schema.
-    '''
+    
     def load_from_schema_elements(self, schema_elements):
+        """
+        Create schema from schema_elements. Helpful in cases where
+        introspected schema needs pruning.
+        """
 
         elemstr={}
         for elem in ELEM_TYPES:
