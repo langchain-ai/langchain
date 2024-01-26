@@ -66,7 +66,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         ...     api_endpoint="https://endpoint.azure.com",
         ...     api_key="APIKEY",
         ...     api_version="2023-10-31-preview",
-        ...     api_model="prebuilt-document",
+        ...     api_model="prebuilt-layout",
         ...     mode="markdown"
         ... )
         """
