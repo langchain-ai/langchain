@@ -6,15 +6,15 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from langchain_community.llms.openai import OpenAI
+from langchain_core.callbacks import (
+    CallbackManagerForChainRun,
+)
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.outputs import Generation
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
 
-from langchain.callbacks.manager import (
-    CallbackManagerForChainRun,
-)
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
     PROMPT,

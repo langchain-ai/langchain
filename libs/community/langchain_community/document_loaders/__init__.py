@@ -180,6 +180,7 @@ from langchain_community.document_loaders.snowflake_loader import SnowflakeLoade
 from langchain_community.document_loaders.spreedly import SpreedlyLoader
 from langchain_community.document_loaders.srt import SRTLoader
 from langchain_community.document_loaders.stripe import StripeLoader
+from langchain_community.document_loaders.surrealdb import SurrealDBLoader
 from langchain_community.document_loaders.telegram import (
     TelegramChatApiLoader,
     TelegramChatFileLoader,
@@ -206,6 +207,7 @@ from langchain_community.document_loaders.unstructured import (
 from langchain_community.document_loaders.url import UnstructuredURLLoader
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain_community.document_loaders.url_selenium import SeleniumURLLoader
+from langchain_community.document_loaders.vsdx import VsdxLoader
 from langchain_community.document_loaders.weather import WeatherDataLoader
 from langchain_community.document_loaders.web_base import WebBaseLoader
 from langchain_community.document_loaders.whatsapp_chat import WhatsAppChatLoader
@@ -360,6 +362,7 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "SurrealDBLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
@@ -392,6 +395,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",

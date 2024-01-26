@@ -141,12 +141,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            index = -1
+            index = 0
+            previous_chunk_len = 0
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    index = text.find(chunk, index + 1)
+                    offset = index + previous_chunk_len - self._chunk_overlap
+                    index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
+                    previous_chunk_len = len(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
@@ -598,7 +601,9 @@ class HTMLHeaderTextSplitter:
                 "Unable to import lxml, please install with `pip install lxml`."
             ) from e
         # use lxml library to parse html document and return xml ElementTree
-        parser = etree.HTMLParser()
+        # Explicitly encoding in utf-8 allows non-English
+        # html files to be processed without garbled characters
+        parser = etree.HTMLParser(encoding="utf-8")
         tree = etree.parse(file, parser)
 
         # document transformation for "structure-aware" chunking is handled with xsl.
@@ -1424,6 +1429,37 @@ class SpacyTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         splits = (s.text for s in self._tokenizer(text).sents)
+        return self._merge_splits(splits, self._separator)
+
+
+class KonlpyTextSplitter(TextSplitter):
+    """Splitting text using Konlpy package.
+
+    It is good for splitting Korean text.
+    """
+
+    def __init__(
+        self,
+        separator: str = "\n\n",
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the Konlpy text splitter."""
+        super().__init__(**kwargs)
+        self._separator = separator
+        try:
+            from konlpy.tag import Kkma
+        except ImportError:
+            raise ImportError(
+                """
+                Konlpy is not installed, please install it with 
+                `pip install konlpy`
+                """
+            )
+        self.kkma = Kkma()
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        splits = self.kkma.sentences(text)
         return self._merge_splits(splits, self._separator)
 
 
