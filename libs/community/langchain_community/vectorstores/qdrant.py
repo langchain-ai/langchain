@@ -1943,6 +1943,7 @@ class Qdrant(VectorStore):
     ) -> Document:
         metadata = scored_point.payload.get(metadata_payload_key) or {}
         metadata["_id"] = scored_point.id
+        metadata["_collection_name"] = scored_point.collection_name
         return Document(
             page_content=scored_point.payload.get(content_payload_key),
             metadata=metadata,
