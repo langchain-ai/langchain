@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "sql-lantern"
 version = "0.0.1"
-description = "Use lantern for combining postgreSQL with semantic search / RAG"
+description = "Use Lantern for combining PostgreSQL with semantic search / RAG"
 authors = []
 readme = "README.md"
 
