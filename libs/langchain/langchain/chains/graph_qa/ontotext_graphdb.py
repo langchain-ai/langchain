@@ -113,11 +113,9 @@ class OntotextGraphDBQAChain(Chain):
         callbacks: CallbackManager,
         generated_sparql: str,
     ) -> str:
-        from pyparsing import ParseException
-
         try:
-            return self._parse_sparql_query(_run_manager, generated_sparql)
-        except ParseException as e:
+            return self._prepare_sparql_query(_run_manager, generated_sparql)
+        except Exception as e:
             retries = 0
             parse_exception = str(e)
             self._log_invalid_sparql_query(
@@ -136,8 +134,8 @@ class OntotextGraphDBQAChain(Chain):
                     generated_sparql = sparql_fix_chain_result[
                         self.sparql_fix_chain.output_key
                     ]
-                    return self._parse_sparql_query(_run_manager, generated_sparql)
-                except ParseException as e:
+                    return self._prepare_sparql_query(_run_manager, generated_sparql)
+                except Exception as e:
                     retries += 1
                     parse_exception = str(e)
                     self._log_invalid_sparql_query(
@@ -146,7 +144,7 @@ class OntotextGraphDBQAChain(Chain):
 
         raise ValueError("The generated SPARQL query is invalid.")
 
-    def _parse_sparql_query(
+    def _prepare_sparql_query(
         self, _run_manager: CallbackManagerForChainRun, generated_sparql: str
     ) -> str:
         from rdflib.plugins.sparql import prepareQuery
