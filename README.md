@@ -49,7 +49,7 @@ The LangChain libraries themselves are made up of several different packages.
 - **[`langchain-community`](libs/community)**: Third party integrations.
 - **[`langchain`](libs/langchain)**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
-![LangChain Stack](docs/static/img/langchain_stack.png)
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/img/langchain_stack.png "LangChain Architecture Overview")
 
 ## 🧱 What can you build with LangChain?
 **❓ Retrieval augmented generation**
@@ -95,7 +95,7 @@ Agents involve an LLM making decisions about which Actions to take, taking that 
 Please see [here](https://python.langchain.com) for full documentation, which includes:
 
 - [Getting started](https://python.langchain.com/docs/get_started/introduction): installation, setting up the environment, simple examples
-- Overview of the [interfaces](https://python.langchain.com/docs/expression_language/), [modules](https://python.langchain.com/docs/modules/) and [integrations](https://python.langchain.com/docs/integrations/providers)
+- Overview of the [interfaces](https://python.langchain.com/docs/expression_language/), [modules](https://python.langchain.com/docs/modules/), and [integrations](https://python.langchain.com/docs/integrations/providers)
 - [Use case](https://python.langchain.com/docs/use_cases/qa_structured/sql) walkthroughs and best practice [guides](https://python.langchain.com/docs/guides/adapters/openai)
 - [LangSmith](https://python.langchain.com/docs/langsmith/), [LangServe](https://python.langchain.com/docs/langserve), and [LangChain Template](https://python.langchain.com/docs/templates/) overviews
 - [Reference](https://api.python.langchain.com): full API docs

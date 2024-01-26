@@ -24,7 +24,7 @@ class UnstructuredMarkdownLoader(UnstructuredFileLoader):
 
     References
     ----------
-    https://unstructured-io.github.io/unstructured/bricks.html#partition-md
+    https://unstructured-io.github.io/unstructured/core/partition.html#partition-md
     """
 
     def _get_elements(self) -> List:

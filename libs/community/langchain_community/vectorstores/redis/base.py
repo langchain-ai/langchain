@@ -196,7 +196,7 @@ class Redis(VectorStore):
         - All strings are indexed as text fields
         - All numbers are indexed as numeric fields
         - All lists of strings are indexed as tag fields (joined by
-            langchain.vectorstores.redis.constants.REDIS_TAG_SEPARATOR)
+            langchain_community.vectorstores.redis.constants.REDIS_TAG_SEPARATOR)
         - All None values are not indexed but still stored in Redis these are
             not retrievable through the interface here, but the raw Redis client
             can be used to retrieve them.

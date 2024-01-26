@@ -1,7 +1,9 @@
 import re
 from typing import Any, List, Optional, Sequence, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
@@ -10,19 +12,23 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.tools import BaseTool
 
 from langchain.agents.agent import Agent, AgentOutputParser
+from langchain.agents.format_scratchpad import format_log_to_str
+from langchain.agents.output_parsers import JSONAgentOutputParser
 from langchain.agents.structured_chat.output_parser import (
     StructuredChatOutputParserWithRetries,
 )
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.tools import BaseTool
+from langchain.tools.render import render_text_description_and_args
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
 
+@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="0.2.0")
 class StructuredChatAgent(Agent):
     """Structured Chat Agent."""
 
@@ -142,3 +148,134 @@ class StructuredChatAgent(Agent):
     @property
     def _agent_type(self) -> str:
         raise ValueError
+
+
+def create_structured_chat_agent(
+    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+) -> Runnable:
+    """Create an agent aimed at supporting tools with multiple inputs.
+
+    Args:
+        llm: LLM to use as the agent.
+        tools: Tools this agent has access to.
+        prompt: The prompt to use. See Prompt section below for more.
+
+    Returns:
+        A Runnable sequence representing an agent. It takes as input all the same input
+        variables as the prompt passed in does. It returns as output either an
+        AgentAction or AgentFinish.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain import hub
+            from langchain_community.chat_models import ChatOpenAI
+            from langchain.agents import AgentExecutor, create_structured_chat_agent
+
+            prompt = hub.pull("hwchase17/structured-chat-agent")
+            model = ChatOpenAI()
+            tools = ...
+
+            agent = create_structured_chat_agent(model, tools, prompt)
+            agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+            agent_executor.invoke({"input": "hi"})
+
+            # Using with chat history
+            from langchain_core.messages import AIMessage, HumanMessage
+            agent_executor.invoke(
+                {
+                    "input": "what's my name?",
+                    "chat_history": [
+                        HumanMessage(content="hi! my name is bob"),
+                        AIMessage(content="Hello Bob! How can I assist you today?"),
+                    ],
+                }
+            )
+
+    Prompt:
+
+        The prompt must have input keys:
+            * `tools`: contains descriptions and arguments for each tool.
+            * `tool_names`: contains all tool names.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as a string.
+
+        Here's an example:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+            system = '''Respond to the human as helpfully and accurately as possible. You have access to the following tools:
+
+            {tools}
+
+            Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
+
+            Valid "action" values: "Final Answer" or {tool_names}
+
+            Provide only ONE action per $JSON_BLOB, as shown:
+
+            ```
+            {{
+              "action": $TOOL_NAME,
+              "action_input": $INPUT
+            }}
+            ```
+
+            Follow this format:
+
+            Question: input question to answer
+            Thought: consider previous and subsequent steps
+            Action:
+            ```
+            $JSON_BLOB
+            ```
+            Observation: action result
+            ... (repeat Thought/Action/Observation N times)
+            Thought: I know what to respond
+            Action:
+            ```
+            {{
+              "action": "Final Answer",
+              "action_input": "Final response to human"
+            }}
+
+            Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation'''
+
+            human = '''{input}
+
+            {agent_scratchpad}
+
+            (reminder to respond in a JSON blob no matter what)'''
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", system),
+                    MessagesPlaceholder("chat_history", optional=True),
+                    ("human", human),
+                ]
+            )
+    """  # noqa: E501
+    missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
+        prompt.input_variables
+    )
+    if missing_vars:
+        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+
+    prompt = prompt.partial(
+        tools=render_text_description_and_args(list(tools)),
+        tool_names=", ".join([t.name for t in tools]),
+    )
+    llm_with_stop = llm.bind(stop=["Observation"])
+
+    agent = (
+        RunnablePassthrough.assign(
+            agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
+        )
+        | prompt
+        | llm_with_stop
+        | JSONAgentOutputParser()
+    )
+    return agent

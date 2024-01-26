@@ -306,8 +306,13 @@ class MomentoVectorIndex(VectorStore):
 
         if "top_k" in kwargs:
             k = kwargs["k"]
+        filter_expression = kwargs.get("filter_expression", None)
         response = self._client.search(
-            self.index_name, embedding, top_k=k, metadata_fields=ALL_METADATA
+            self.index_name,
+            embedding,
+            top_k=k,
+            metadata_fields=ALL_METADATA,
+            filter_expression=filter_expression,
         )
 
         if not isinstance(response, Search.Success):
@@ -366,8 +371,13 @@ class MomentoVectorIndex(VectorStore):
         from momento.requests.vector_index import ALL_METADATA
         from momento.responses.vector_index import SearchAndFetchVectors
 
+        filter_expression = kwargs.get("filter_expression", None)
         response = self._client.search_and_fetch_vectors(
-            self.index_name, embedding, top_k=fetch_k, metadata_fields=ALL_METADATA
+            self.index_name,
+            embedding,
+            top_k=fetch_k,
+            metadata_fields=ALL_METADATA,
+            filter_expression=filter_expression,
         )
 
         if isinstance(response, SearchAndFetchVectors.Success):

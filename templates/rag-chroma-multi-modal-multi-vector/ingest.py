@@ -6,13 +6,13 @@ from io import BytesIO
 from pathlib import Path
 
 import pypdfium2 as pdfium
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.schema.document import Document
-from langchain.schema.messages import HumanMessage
-from langchain.storage import UpstashRedisByteStore
-from langchain.vectorstores import Chroma
+from langchain.storage import LocalFileStore, UpstashRedisByteStore
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_core.documents import Document
+from langchain_core.messages import HumanMessage
 from PIL import Image
 
 
@@ -126,20 +126,31 @@ def convert_to_base64(pil_image):
     return img_str
 
 
-def create_multi_vector_retriever(vectorstore, image_summaries, images):
+def create_multi_vector_retriever(
+    vectorstore, image_summaries, images, local_file_store
+):
     """
     Create retriever that indexes summaries, but returns raw images or texts
 
     :param vectorstore: Vectorstore to store embedded image sumamries
     :param image_summaries: Image summaries
     :param images: Base64 encoded images
+    :param local_file_store: Use local file storage
     :return: Retriever
     """
 
-    # Initialize the storage layer for images
-    UPSTASH_URL = os.getenv("UPSTASH_URL")
-    UPSTASH_TOKEN = os.getenv("UPSTASH_TOKEN")
-    store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
+    # File storage option
+    if local_file_store:
+        store = LocalFileStore(
+            str(Path(__file__).parent / "multi_vector_retriever_metadata")
+        )
+    else:
+        # Initialize the storage layer for images using Redis
+        UPSTASH_URL = os.getenv("UPSTASH_URL")
+        UPSTASH_TOKEN = os.getenv("UPSTASH_TOKEN")
+        store = UpstashRedisByteStore(url=UPSTASH_URL, token=UPSTASH_TOKEN)
+
+    # Doc ID
     id_key = "doc_id"
 
     # Create the multi-vector retriever
@@ -194,4 +205,5 @@ retriever_multi_vector_img = create_multi_vector_retriever(
     vectorstore_mvr,
     image_summaries,
     images_base_64_processed_documents,
+    local_file_store=True,
 )

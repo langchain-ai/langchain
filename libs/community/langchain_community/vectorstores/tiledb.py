@@ -37,23 +37,34 @@ def dependable_tiledb_import() -> Any:
 
 
 def get_vector_index_uri_from_group(group: Any) -> str:
+    """Get the URI of the vector index."""
     return group[VECTOR_INDEX_NAME].uri
 
 
 def get_documents_array_uri_from_group(group: Any) -> str:
+    """Get the URI of the documents array from group.
+
+    Args:
+        group: TileDB group object.
+
+    Returns:
+        URI of the documents array.
+    """
     return group[DOCUMENTS_ARRAY_NAME].uri
 
 
 def get_vector_index_uri(uri: str) -> str:
+    """Get the URI of the vector index."""
     return f"{uri}/{VECTOR_INDEX_NAME}"
 
 
 def get_documents_array_uri(uri: str) -> str:
+    """Get the URI of the documents array."""
     return f"{uri}/{DOCUMENTS_ARRAY_NAME}"
 
 
 class TileDB(VectorStore):
-    """Wrapper around TileDB vector database.
+    """TileDB vector store.
 
     To use, you should have the ``tiledb-vector-search`` python package installed.
 

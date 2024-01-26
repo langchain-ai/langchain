@@ -10,7 +10,7 @@ from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.prompt import PromptTemplate
 
-EXAMPLE_DIR = Path("tests/unit_tests/examples").absolute()
+EXAMPLE_DIR = (Path(__file__).parent.parent / "examples").absolute()
 
 
 @contextmanager
@@ -28,7 +28,8 @@ def test_loading_from_YAML() -> None:
     """Test loading from yaml file."""
     prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.yaml")
     expected_prompt = PromptTemplate(
-        input_variables=["adjective", "content"],
+        input_variables=["adjective"],
+        partial_variables={"content": "dogs"},
         template="Tell me a {adjective} joke about {content}.",
     )
     assert prompt == expected_prompt

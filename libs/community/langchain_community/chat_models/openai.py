@@ -20,6 +20,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -143,6 +144,9 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
+@deprecated(
+    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.ChatOpenAI"
+)
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
@@ -454,9 +458,12 @@ class ChatOpenAI(BaseChatModel):
             response = response.dict()
         for res in response["choices"]:
             message = convert_dict_to_message(res["message"])
+            generation_info = dict(finish_reason=res.get("finish_reason"))
+            if "logprobs" in res:
+                generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(
                 message=message,
-                generation_info=dict(finish_reason=res.get("finish_reason")),
+                generation_info=generation_info,
             )
             generations.append(gen)
         token_usage = response.get("usage", {})

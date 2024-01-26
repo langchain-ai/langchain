@@ -36,7 +36,7 @@ Fireworks integrates with Langchain through the LLM module. In this example, we
 will work the llama-v2-13b-chat model. 
 
 ```python
-from langchain.llms.fireworks import Fireworks 
+from langchain_community.llms.fireworks import Fireworks 
 
 llm = Fireworks(
     fireworks_api_key="<KEY>",

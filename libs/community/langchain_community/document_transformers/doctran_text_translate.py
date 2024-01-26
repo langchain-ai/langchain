@@ -36,12 +36,12 @@ class DoctranTextTranslator(BaseDocumentTransformer):
         )
         self.language = language
 
-    def transform_documents(
+    async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         raise NotImplementedError
 
-    async def atransform_documents(
+    def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         """Translates text documents using doctran."""
@@ -60,7 +60,7 @@ class DoctranTextTranslator(BaseDocumentTransformer):
             for doc in documents
         ]
         for i, doc in enumerate(doctran_docs):
-            doctran_docs[i] = await doc.translate(language=self.language).execute()
+            doctran_docs[i] = doc.translate(language=self.language).execute()
         return [
             Document(page_content=doc.transformed_content, metadata=doc.metadata)
             for doc in doctran_docs

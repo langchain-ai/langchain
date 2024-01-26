@@ -354,6 +354,13 @@ class TestAstraDB:
             filter={"group": "consonant", "ord": ord("q"), "case": "upper"},
         )
         assert res3 == []
+        # filter with logical operator
+        res4 = store_someemb.similarity_search(
+            "x",
+            k=10,
+            filter={"$or": [{"ord": ord("q")}, {"ord": ord("r")}]},
+        )
+        assert {doc.page_content for doc in res4} == {"q", "r"}
 
     def test_astradb_vectorstore_similarity_scale(
         self, store_parseremb: AstraDB

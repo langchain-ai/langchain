@@ -73,20 +73,19 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
         )
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
-        try:
-            input_dict = {key: inner_input[key] for key in self.input_variables}
-        except TypeError as e:
+        if not isinstance(inner_input, dict):
             raise TypeError(
                 f"Expected mapping type as input to {self.__class__.__name__}. "
                 f"Received {type(inner_input)}."
-            ) from e
-        except KeyError as e:
+            )
+        missing = set(self.input_variables).difference(inner_input)
+        if missing:
             raise KeyError(
-                f"Input to {self.__class__.__name__} is missing variable {e}. "
+                f"Input to {self.__class__.__name__} is missing variables {missing}. "
                 f" Expected: {self.input_variables}"
                 f" Received: {list(inner_input.keys())}"
-            ) from e
-        return self.format_prompt(**input_dict)
+            )
+        return self.format_prompt(**inner_input)
 
     def invoke(
         self, input: Dict, config: Optional[RunnableConfig] = None
@@ -100,7 +99,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
     @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
+        """Create Prompt Value."""
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:

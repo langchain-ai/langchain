@@ -62,8 +62,8 @@ class DirectoryLoader(BaseLoader):
             max_concurrency: The maximum number of threads to use. Defaults to 4.
             sample_size: The maximum number of files you would like to load from the
                 directory.
-            randomize_sample: Suffle the files to get a random sample.
-            sample_seed: set the seed of the random shuffle for reporoducibility.
+            randomize_sample: Shuffle the files to get a random sample.
+            sample_seed: set the seed of the random shuffle for reproducibility.
         """
         if loader_kwargs is None:
             loader_kwargs = {}

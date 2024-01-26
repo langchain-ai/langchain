@@ -4,12 +4,15 @@ import asyncio
 import functools
 import logging
 import uuid
+from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
+from contextvars import copy_context
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
+    Callable,
     Coroutine,
     Dict,
     Generator,
@@ -272,7 +275,9 @@ def handle_event(
                 # running coroutine, which we cannot interrupt to run this one.
                 # The solution is to create a new loop in a new thread.
                 with ThreadPoolExecutor(1) as executor:
-                    executor.submit(_run_coros, coros).result()
+                    executor.submit(
+                        cast(Callable, copy_context().run), _run_coros, coros
+                    ).result()
             else:
                 _run_coros(coros)
 
@@ -317,7 +322,13 @@ async def _ahandle_event_for_handler(
                     event(*args, **kwargs)
                 else:
                     await asyncio.get_event_loop().run_in_executor(
-                        None, functools.partial(event, *args, **kwargs)
+                        None,
+                        cast(
+                            Callable,
+                            functools.partial(
+                                copy_context().run, event, *args, **kwargs
+                            ),
+                        ),
                     )
     except NotImplementedError as e:
         if event_name == "on_chat_model_start":
@@ -371,7 +382,11 @@ async def ahandle_event(
     await asyncio.gather(
         *(
             _ahandle_event_for_handler(
-                handler, event_name, ignore_condition_name, *args, **kwargs
+                handler,
+                event_name,
+                ignore_condition_name,
+                *args,
+                **kwargs,
             )
             for handler in handlers
             if not handler.run_inline
@@ -504,8 +519,16 @@ class ParentRunManager(RunManager):
         return manager
 
 
-class AsyncRunManager(BaseRunManager):
+class AsyncRunManager(BaseRunManager, ABC):
     """Async Run Manager."""
+
+    @abstractmethod
+    def get_sync(self) -> RunManager:
+        """Get the equivalent sync RunManager.
+
+        Returns:
+            RunManager: The sync RunManager.
+        """
 
     async def on_text(
         self,
@@ -641,6 +664,23 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
 class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
+
+    def get_sync(self) -> CallbackManagerForLLMRun:
+        """Get the equivalent sync RunManager.
+
+        Returns:
+            CallbackManagerForLLMRun: The sync RunManager.
+        """
+        return CallbackManagerForLLMRun(
+            run_id=self.run_id,
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+        )
 
     async def on_llm_new_token(
         self,
@@ -796,6 +836,23 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
+    def get_sync(self) -> CallbackManagerForChainRun:
+        """Get the equivalent sync RunManager.
+
+        Returns:
+            CallbackManagerForChainRun: The sync RunManager.
+        """
+        return CallbackManagerForChainRun(
+            run_id=self.run_id,
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+        )
+
     async def on_chain_end(
         self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
     ) -> None:
@@ -926,6 +983,23 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
 class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
     """Async callback manager for tool run."""
 
+    def get_sync(self) -> CallbackManagerForToolRun:
+        """Get the equivalent sync RunManager.
+
+        Returns:
+            CallbackManagerForToolRun: The sync RunManager.
+        """
+        return CallbackManagerForToolRun(
+            run_id=self.run_id,
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+        )
+
     async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running.
 
@@ -1008,6 +1082,23 @@ class AsyncCallbackManagerForRetrieverRun(
     RetrieverManagerMixin,
 ):
     """Async callback manager for retriever run."""
+
+    def get_sync(self) -> CallbackManagerForRetrieverRun:
+        """Get the equivalent sync RunManager.
+
+        Returns:
+            CallbackManagerForRetrieverRun: The sync RunManager.
+        """
+        return CallbackManagerForRetrieverRun(
+            run_id=self.run_id,
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
+        )
 
     async def on_retriever_end(
         self, documents: Sequence[Document], **kwargs: Any
@@ -1191,15 +1282,22 @@ class CallbackManager(BaseCallbackManager):
         input_str: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
+        inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> CallbackManagerForToolRun:
         """Run when tool starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized tool.
-            input_str (str): The input to the tool.
-            run_id (UUID, optional): The ID of the run. Defaults to None.
-            parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
+            serialized: Serialized representation of the tool.
+            input_str: The  input to the tool as a string.
+                Non-string inputs are cast to strings.
+            run_id: ID for the run. Defaults to None.
+            parent_run_id: The ID of the parent run. Defaults to None.
+            inputs: The original input to the tool if provided.
+                Recommended for usage instead of input_str when the original
+                input is needed.
+                If provided, the inputs are expected to be formatted as a dict.
+                The keys will correspond to the named-arguments in the tool.
 
         Returns:
             CallbackManagerForToolRun: The callback manager for the tool run.
@@ -1217,6 +1315,7 @@ class CallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
+            inputs=inputs,
             **kwargs,
         )
 

@@ -9,7 +9,8 @@ if TYPE_CHECKING:
 
 
 class Xinference(LLM):
-    """Wrapper for accessing Xinference's large-scale model inference service.
+    """`Xinference` large-scale model inference service.
+
     To use, you should have the xinference library installed:
 
     .. code-block:: bash

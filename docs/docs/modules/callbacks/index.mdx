@@ -86,7 +86,7 @@ LangChain provides a few built-in handlers that you can use to get started. Thes
 ```python
 from langchain.callbacks import StdOutCallbackHandler
 from langchain.chains import LLMChain
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.prompts import PromptTemplate
 
 handler = StdOutCallbackHandler()
@@ -95,42 +95,40 @@ prompt = PromptTemplate.from_template("1 + {number} = ")
 
 # Constructor callback: First, let's explicitly set the StdOutCallbackHandler when initializing our chain
 chain = LLMChain(llm=llm, prompt=prompt, callbacks=[handler])
-chain.run(number=2)
+chain.invoke({"number":2})
 
 # Use verbose flag: Then, let's use the `verbose` flag to achieve the same result
 chain = LLMChain(llm=llm, prompt=prompt, verbose=True)
-chain.run(number=2)
+chain.invoke({"number":2})
 
 # Request callbacks: Finally, let's use the request `callbacks` to achieve the same result
 chain = LLMChain(llm=llm, prompt=prompt)
-chain.run(number=2, callbacks=[handler])
+chain.invoke({"number":2}, {"callbacks":[handler]})
+
 ```
 
 <CodeOutputBlock lang="python">
 
 ```
-    > Entering new LLMChain chain...
-    Prompt after formatting:
-    1 + 2 =
+> Entering new LLMChain chain...
+Prompt after formatting:
+1 + 2 = 
 
-    > Finished chain.
-
-
-    > Entering new LLMChain chain...
-    Prompt after formatting:
-    1 + 2 =
-
-    > Finished chain.
+> Finished chain.
 
 
-    > Entering new LLMChain chain...
-    Prompt after formatting:
-    1 + 2 =
+> Entering new LLMChain chain...
+Prompt after formatting:
+1 + 2 = 
 
-    > Finished chain.
+> Finished chain.
 
 
-    '\n\n3'
+> Entering new LLMChain chain...
+Prompt after formatting:
+1 + 2 = 
+
+> Finished chain.
 ```
 
 </CodeOutputBlock>

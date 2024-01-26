@@ -259,6 +259,16 @@ class ChatFireworks(BaseChatModel):
 def conditional_decorator(
     condition: bool, decorator: Callable[[Any], Any]
 ) -> Callable[[Any], Any]:
+    """Define conditional decorator.
+
+    Args:
+        condition: The condition.
+        decorator: The decorator.
+
+    Returns:
+        The decorated function.
+    """
+
     def actual_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         if condition:
             return decorator(func)
@@ -281,6 +291,7 @@ def completion_with_retry(
 
     @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(**kwargs: Any) -> Any:
+        """Use tenacity to retry the completion call."""
         return fireworks.client.ChatCompletion.create(
             **kwargs,
         )
