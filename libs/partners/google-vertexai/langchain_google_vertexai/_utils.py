@@ -97,22 +97,31 @@ def is_gemini_model(model_name: str) -> bool:
 
 
 def get_generation_info(
-    candidate: Union[TextGenerationResponse, Candidate], is_gemini: bool
+    candidate: Union[TextGenerationResponse, Candidate],
+    is_gemini: bool,
+    *,
+    stream: bool = False,
 ) -> Dict[str, Any]:
     if is_gemini:
         # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini#response_body
-        return {
+        info = {
             "is_blocked": any([rating.blocked for rating in candidate.safety_ratings]),
             "safety_ratings": [
                 {
                     "category": rating.category.name,
                     "probability_label": rating.probability.name,
+                    "blocked": rating.blocked,
                 }
                 for rating in candidate.safety_ratings
             ],
             "citation_metadata": candidate.citation_metadata,
         }
     # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/text-chat#response_body
-    candidate_dc = dataclasses.asdict(candidate)
-    candidate_dc.pop("text")
-    return {k: v for k, v in candidate_dc.items() if not k.startswith("_")}
+    else:
+        info = dataclasses.asdict(candidate)
+        info.pop("text")
+        info = {k: v for k, v in info.items() if not k.startswith("_")}
+    if stream:
+        # Remove non-streamable types, like bools.
+        info.pop("is_blocked")
+    return info

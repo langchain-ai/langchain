@@ -315,10 +315,12 @@ class VertexAI(_VertexAICommon, BaseLLM):
         return result.total_tokens
 
     def _response_to_generation(
-        self, response: TextGenerationResponse
+        self, response: TextGenerationResponse, *, stream: bool = False
     ) -> GenerationChunk:
         """Converts a stream response to a generation chunk."""
-        generation_info = get_generation_info(response, self._is_gemini_model)
+        generation_info = get_generation_info(
+            response, self._is_gemini_model, stream=stream
+        )
         try:
             text = response.text
         except AttributeError:
@@ -401,7 +403,14 @@ class VertexAI(_VertexAICommon, BaseLLM):
             run_manager=run_manager,
             **params,
         ):
-            chunk = self._response_to_generation(stream_resp)
+            # Gemini models return GenerationResponse even when streaming, which has a
+            # candidates field.
+            stream_resp = (
+                stream_resp
+                if isinstance(stream_resp, TextGenerationResponse)
+                else stream_resp.candidates[0]
+            )
+            chunk = self._response_to_generation(stream_resp, stream=True)
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
