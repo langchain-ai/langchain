@@ -2,7 +2,6 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 from langchain_community.graphs import OntotextGraphDBGraph
-from langchain_openai import ChatOpenAI
 
 from langchain.chains import LLMChain, OntotextGraphDBQAChain
 
@@ -12,8 +11,11 @@ cd libs/langchain/tests/integration_tests/chains/docker-compose-ontotext-graphdb
 """
 
 
+@pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize("max_fix_retries", [-2, -1, 0, 1, 2])
 def test_valid_sparql(max_fix_retries: int) -> None:
+    from langchain_openai import ChatOpenAI
+
     question = "What is Luke Skywalker's home planet?"
     answer = "Tatooine"
 
@@ -58,10 +60,13 @@ def test_valid_sparql(max_fix_retries: int) -> None:
     assert result == {chain.output_key: answer, chain.input_key: question}
 
 
+@pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize("max_fix_retries", [-2, -1, 0])
 def test_invalid_sparql_non_positive_max_fix_retries(
     max_fix_retries: int,
 ) -> None:
+    from langchain_openai import ChatOpenAI
+
     question = "What is Luke Skywalker's home planet?"
 
     graph = OntotextGraphDBGraph(
@@ -101,8 +106,11 @@ def test_invalid_sparql_non_positive_max_fix_retries(
     assert chain.qa_chain.invoke.call_count == 0
 
 
+@pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize("max_fix_retries", [1, 2, 3])
 def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
+    from langchain_openai import ChatOpenAI
+
     question = "What is Luke Skywalker's home planet?"
     answer = "Tatooine"
     generated_invalid_sparql = "```sparql SELECT * {?s ?p ?o} LIMIT 1```"
@@ -156,8 +164,11 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
     assert result == {chain.output_key: answer, chain.input_key: question}
 
 
+@pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize("max_fix_retries", [1, 2, 3])
 def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
+    from langchain_openai import ChatOpenAI
+
     question = "What is Luke Skywalker's home planet?"
     generated_invalid_sparql = "```sparql SELECT * {?s ?p ?o} LIMIT 1```"
 
@@ -206,6 +217,7 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
     assert chain.qa_chain.invoke.call_count == 0
 
 
+@pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize(
     "max_fix_retries,number_of_invalid_responses",
     [(1, 0), (2, 0), (2, 1), (10, 6)],
@@ -213,6 +225,8 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
 def test_valid_sparql_after_some_retries(
     max_fix_retries: int, number_of_invalid_responses: int
 ) -> None:
+    from langchain_openai import ChatOpenAI
+
     question = "What is Luke Skywalker's home planet?"
     answer = "Tatooine"
     generated_invalid_sparql = "```sparql SELECT * {?s ?p ?o} LIMIT 1```"
@@ -276,6 +290,7 @@ def test_valid_sparql_after_some_retries(
     assert result == {chain.output_key: answer, chain.input_key: question}
 
 
+@pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize(
     "model_name,question",
     [
@@ -288,6 +303,8 @@ def test_valid_sparql_after_some_retries(
     ],
 )
 def test_chain(model_name: str, question: str) -> None:
+    from langchain_openai import ChatOpenAI
+
     graph = OntotextGraphDBGraph(
         query_endpoint="http://localhost:7200/repositories/starwars",
         query_ontology="CONSTRUCT {?s ?p ?o} "
