@@ -156,7 +156,7 @@ def create_json_chat_agent(
             )
         )
         | prompt
-        | llm_with_stop
+        | llm
         | JSONAgentOutputParser()
     )
     return agent
