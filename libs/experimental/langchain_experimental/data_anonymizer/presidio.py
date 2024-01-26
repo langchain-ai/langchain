@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from presidio_analyzer import AnalyzerEngine, EntityRecognizer
     from presidio_analyzer.nlp_engine import NlpEngineProvider
     from presidio_anonymizer import AnonymizerEngine
-    from presidio_anonymizer.entities import OperatorConfig
+    from presidio_anonymizer.entities import ConflictResolutionStrategy, OperatorConfig
 
 
 def _import_analyzer_engine() -> "AnalyzerEngine":
@@ -106,9 +106,6 @@ DEFAULT_LANGUAGES_CONFIG = {
         # List of available models: https://spacy.io/usage/models
     ],
 }
-
-ConflictResolutionStrategy = _import_conflict_resolution_strategy()
-DEFAULT_RESOLUTION_STRATEGY = ConflictResolutionStrategy.MERGE_SIMILAR_OR_CONTAINED
 
 
 class PresidioAnonymizerBase(AnonymizerBase):
@@ -194,6 +191,9 @@ class PresidioAnonymizerBase(AnonymizerBase):
 
 
 class PresidioAnonymizer(PresidioAnonymizerBase):
+    ConflictResolutionStrategy = _import_conflict_resolution_strategy()
+    DEFAULT_RESOLUTION_STRATEGY = ConflictResolutionStrategy.MERGE_SIMILAR_OR_CONTAINED
+
     def _anonymize(
         self,
         text: str,
@@ -272,6 +272,9 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
 
 
 class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerBase):
+    ConflictResolutionStrategy = _import_conflict_resolution_strategy()
+    DEFAULT_RESOLUTION_STRATEGY = ConflictResolutionStrategy.MERGE_SIMILAR_OR_CONTAINED
+
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,
