@@ -31,7 +31,7 @@ class GoogleSearchRun(BaseTool):
 class GoogleSearchResults(BaseTool):
     """Tool that queries the Google Search API and gets back json."""
 
-    name: str = "Google Search Results JSON"
+    name: str = "google_search_results_json"
     description: str = (
         "A wrapper around Google Search. "
         "Useful for when you need to answer questions about current events. "

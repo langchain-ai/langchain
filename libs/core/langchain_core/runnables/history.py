@@ -37,18 +37,94 @@ GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 class RunnableWithMessageHistory(RunnableBindingBase):
     """A runnable that manages chat message history for another runnable.
 
-    Base runnable must have inputs and outputs that can be converted to a list of BaseMessages.
+    A chat message history is a sequence of messages that represent a conversation.
 
-    RunnableWithMessageHistory must always be called with a config that contains session_id, e.g. ``{"configurable": {"session_id": "<SESSION_ID>"}}`.
+    RunnableWithMessageHistory wraps another runnable and manages the chat message
+    history for it; it is responsible for reading and updating the chat message
+    history.
 
-    Example (dict input):
+    The formats supports for the inputs and outputs of the wrapped runnable
+    are described below.
+
+    RunnableWithMessageHistory must always be called with a config that contains
+    the appropriate parameters for the chat message history factory.
+
+    By default the runnable is expected to take a single configuration parameter
+    called `session_id` which is a string. This parameter is used to create a new
+    or look up an existing chat message history that matches the given session_id.
+
+    In this case, the invocation would look like this:
+
+    `with_history.invoke(..., config={"configurable": {"session_id": "bar"}})`
+    ; e.g., ``{"configurable": {"session_id": "<SESSION_ID>"}}``.
+
+    The configuration can be customized by passing in a list of
+    ``ConfigurableFieldSpec`` objects to the ``history_factory_config`` parameter (see
+    example below).
+
+    In the examples, we will use a chat message history with an in-memory
+    implementation to make it easy to experiment and see the results.
+
+    For production use cases, you will want to use a persistent implementation
+    of chat message history, such as ``RedisChatMessageHistory``.
+
+
+    Example: Chat message history with an in-memory implementation for testing.
+
+    .. code-block:: python
+
+        from operator import itemgetter
+        from typing import List
+
+        from langchain_openai.chat_models import ChatOpenAI
+
+        from langchain_core.chat_history import BaseChatMessageHistory
+        from langchain_core.documents import Document
+        from langchain_core.messages import BaseMessage, AIMessage
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+        from langchain_core.pydantic_v1 import BaseModel, Field
+        from langchain_core.runnables import (
+            RunnableLambda,
+            ConfigurableFieldSpec,
+            RunnablePassthrough,
+        )
+        from langchain_core.runnables.history import RunnableWithMessageHistory
+
+
+        class InMemoryHistory(BaseChatMessageHistory, BaseModel):
+            \"\"\"In memory implementation of chat message history.\"\"\"
+
+            messages: List[BaseMessage] = Field(default_factory=list)
+
+            def add_message(self, message: BaseMessage) -> None:
+                \"\"\"Add a self-created message to the store\"\"\"
+                self.messages.append(message)
+
+            def clear(self) -> None:
+                self.messages = []
+
+        # Here we use a global variable to store the chat message history.
+        # This will make it easier to inspect it to see the underlying results.
+        store = {}
+
+        def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
+            if session_id not in store:
+                store[session_id] = InMemoryHistory()
+            return store[session_id]
+
+
+        history = get_by_session_id("1")
+        history.add_message(AIMessage(content="hello"))
+        print(store)
+
+
+    Example where the wrapped Runnable takes a dictionary input:
+
         .. code-block:: python
 
             from typing import Optional
 
             from langchain_community.chat_models import ChatAnthropic
-            from langchain_community.chat_message_histories import RedisChatMessageHistory
-
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
             from langchain_core.runnables.history import RunnableWithMessageHistory
 
@@ -63,33 +139,40 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             chain_with_history = RunnableWithMessageHistory(
                 chain,
-                RedisChatMessageHistory,
+                # Uses the get_by_session_id function defined in the example
+                # above.
+                get_by_session_id,
                 input_messages_key="question",
                 history_messages_key="history",
             )
 
-            chain_with_history.invoke(
+            print(chain_with_history.invoke(
                 {"ability": "math", "question": "What does cosine mean?"},
                 config={"configurable": {"session_id": "foo"}}
-            )
-            # -> "Cosine is ..."
-            chain_with_history.invoke(
+            ))
+
+            # Uses the store defined in the example above.
+            print(store)
+
+            print(chain_with_history.invoke(
                 {"ability": "math", "question": "What's its inverse"},
                 config={"configurable": {"session_id": "foo"}}
-            )
-            # -> "The inverse of cosine is called arccosine ..."
+            ))
+
+            print(store)
 
 
-    Example (get_session_history takes two keys, user_id and conversation id):
+    Example where the session factory takes two keys, user_id and conversation id):
+
         .. code-block:: python
 
             store = {}
 
             def get_session_history(
                 user_id: str, conversation_id: str
-            ) -> ChatMessageHistory:
+            ) -> BaseChatMessageHistory:
                 if (user_id, conversation_id) not in store:
-                    store[(user_id, conversation_id)] = ChatMessageHistory()
+                    store[(user_id, conversation_id)] = InMemoryHistory()
                 return store[(user_id, conversation_id)]
 
             prompt = ChatPromptTemplate.from_messages([
@@ -103,7 +186,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             with_message_history = RunnableWithMessageHistory(
                 chain,
                 get_session_history=get_session_history,
-                input_messages_key="messages",
+                input_messages_key="question",
                 history_messages_key="history",
                 history_factory_config=[
                     ConfigurableFieldSpec(
@@ -125,7 +208,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 ],
             )
 
-            chain_with_history.invoke(
+            with_message_history.invoke(
                 {"ability": "math", "question": "What does cosine mean?"},
                 config={"configurable": {"user_id": "123", "conversation_id": "1"}}
             )

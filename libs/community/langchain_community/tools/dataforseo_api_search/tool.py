@@ -44,7 +44,7 @@ class DataForSeoAPISearchResults(BaseTool):
     """Tool that queries the DataForSeo Google Search API
     and get back json."""
 
-    name: str = "DataForSeo-Results-JSON"
+    name: str = "dataforseo_results_json"
     description: str = (
         "A comprehensive Google Search API provided by DataForSeo."
         "This tool is useful for obtaining real-time data on current events "
