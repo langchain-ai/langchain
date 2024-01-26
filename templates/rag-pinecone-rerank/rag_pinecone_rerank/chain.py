@@ -2,8 +2,8 @@ import os
 
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import CohereRerank
-from langchain_community.chat_models import ChatOpenAI
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.chat_models import ChatCohere, ChatOpenAI
+from langchain_community.embeddings import CohereEmbeddings, OpenAIEmbeddings
 from langchain_community.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -18,6 +18,24 @@ if os.environ.get("PINECONE_ENVIRONMENT", None) is None:
 
 PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
+EMBEDDING_TYPE = os.environ.get("EMBEDDING_TYPE", "OpenAI")
+
+if EMBEDDING_TYPE == "OpenAI":
+    print("Using OpenAI embeddings")
+    if os.environ.get("OPENAI_API_KEY", None) is None:
+        raise Exception("Missing `OPENAI_API_KEY` environment variable.")
+    embeddings = OpenAIEmbeddings()
+    chat_model = ChatOpenAI
+elif EMBEDDING_TYPE == "Cohere":
+    print("Using Cohere embeddings")
+    if os.environ.get("COHERE_API_KEY", None) is None:
+        raise Exception("Missing `COHERE_API_KEY` environment variable.")
+    cohere_embed_model = "embed-english-v3.0"
+    embeddings = CohereEmbeddings(model=cohere_embed_model)
+    chat_model = ChatCohere
+else:
+    raise Exception("Invalid `EMBEDDING_TYPE` environment variable.")
+
 ### Ingest code - you may need to run this the first time
 # # Load
 # from langchain_community.document_loaders import WebBaseLoader
@@ -31,11 +49,11 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 # # Add to vectorDB
 # vectorstore = Pinecone.from_documents(
-#     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
+#     documents=all_splits, embedding=embeddings, index_name=PINECONE_INDEX_NAME
 # )
 # retriever = vectorstore.as_retriever()
 
-vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
+vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, embeddings)
 
 # Get k=10 docs
 retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
@@ -54,7 +72,7 @@ Question: {question}
 prompt = ChatPromptTemplate.from_template(template)
 
 # RAG
-model = ChatOpenAI()
+model = chat_model()
 chain = (
     RunnableParallel(
         {"context": compression_retriever, "question": RunnablePassthrough()}

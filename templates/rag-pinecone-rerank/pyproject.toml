@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-pinecone-rerank"
 version = "0.1.0"
-description = "Use Cohere's reranking endpoint to rerank documents from an initial retrieval step using OpenAI"
+description = "Use Cohere's reranking endpoint to rerank documents from an initial retrieval step using OpenAI or Cohere"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]

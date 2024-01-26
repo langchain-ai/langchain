@@ -17,9 +17,7 @@ These are some of the more popular templates to get started with.
 
 These templates cover advanced retrieval techniques, which can be used for chat and QA over databases or documents.
 
-- **Reranking**: This retrieval technique uses Cohere's reranking endpoint to rerank documents from an initial retrieval step.
-  - [Using OpenAI's embeddings and chat](../rag-pinecone-rerank)
-  - [Using Cohere's embeddings and chat](../rag-pinecone-cohere-embed-rerank)
+- [Reranking](../rag-pinecone-rerank): This retrieval technique uses Cohere's reranking endpoint to rerank documents from an initial retrieval step (using OpenAI by default with a toggle switch to Cohere).
 - [Anthropic Iterative Search](../anthropic-iterative-search): This retrieval technique uses iterative prompting to determine what to retrieve and whether the retriever documents are good enough.
 - **Parent Document Retrieval** using [Neo4j](../neo4j-parent) or [MongoDB](../mongo-parent-document-retrieval): This retrieval technique stores embeddings for smaller chunks, but then returns larger chunks to pass to the model for generation.
 - [Semi-Structured RAG](../rag-semi-structured): The template shows how to do retrieval over semi-structured data (e.g. data that involves both text and tables).
