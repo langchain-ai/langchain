@@ -58,10 +58,8 @@ print(rag.get_relevant_documents("What is cohere ai?"))
 ### Text Embedding
 
 ```python
-from langchain_community.chat_models import ChatCohere
-from langchain.retrievers import CohereRagRetriever
-from langchain_core.documents import Document
+from langchain_community.embeddings import CohereEmbeddings
 
-rag = CohereRagRetriever(llm=ChatCohere())
-print(rag.get_relevant_documents("What is cohere ai?"))
+embeddings = CohereEmbeddings(model="embed-english-light-v3.0")
+print(embeddings.embed_documents(["This is a test document."]))
 ```

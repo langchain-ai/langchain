@@ -1138,8 +1138,7 @@ class Qdrant(VectorStore):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
-            False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise.
         """
         from qdrant_client.http import models as rest
 
@@ -1147,6 +1146,37 @@ class Qdrant(VectorStore):
             collection_name=self.collection_name,
             points_selector=ids,
         )
+        return result.status == rest.UpdateStatus.COMPLETED
+
+    @sync_call_fallback
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            True if deletion is successful, False otherwise.
+        """
+        from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
+
+        if self.async_client is None or isinstance(
+            self.async_client._client, AsyncQdrantLocal
+        ):
+            raise NotImplementedError(
+                "QdrantLocal cannot interoperate with sync and async clients"
+            )
+
+        from qdrant_client.http import models as rest
+
+        result = await self.async_client.delete(
+            collection_name=self.collection_name,
+            points_selector=ids,
+        )
+
         return result.status == rest.UpdateStatus.COMPLETED
 
     @classmethod

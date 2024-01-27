@@ -38,41 +38,23 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings import OpenAIEmbeddings
-            openai = OpenAIEmbeddings(openai_api_key="my-api-key")
+            from langchain_openai import OpenAIEmbeddings
 
-    In order to use the library with Microsoft Azure endpoints, you need to set
-    the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and OPENAI_API_VERSION.
-    The OPENAI_API_TYPE must be set to 'azure' and the others correspond to
-    the properties of your endpoint.
-    In addition, the deployment name must be passed as the model parameter.
+            openai = OpenAIEmbeddings(model=""text-embedding-3-large")
 
-    Example:
-        .. code-block:: python
-
-            import os
-
-            os.environ["OPENAI_API_TYPE"] = "azure"
-            os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
-            os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
-            os.environ["OPENAI_API_VERSION"] = "2023-05-15"
-            os.environ["OPENAI_PROXY"] = "http://your-corporate-proxy:8080"
-
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
-            embeddings = OpenAIEmbeddings(
-                deployment="your-embeddings-deployment-name",
-                model="your-embeddings-model-name",
-                openai_api_base="https://your-endpoint.openai.azure.com/",
-                openai_api_type="azure",
-            )
-            text = "This is a test query."
-            query_result = embeddings.embed_query(text)
+    In order to use the library with Microsoft Azure endpoints, use
+        AzureOpenAIEmbeddings.
 
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "text-embedding-ada-002"
+    dimensions: Optional[int] = None
+    """The number of dimensions the resulting output embeddings should have. 
+
+    Only supported in `text-embedding-3` and later models.
+    """
     # to support Azure OpenAI Service custom deployment names
     deployment: Optional[str] = model
     # TODO: Move to AzureOpenAIEmbeddings.
@@ -231,7 +213,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
-        return {"model": self.model, **self.model_kwargs}
+        params: Dict = {"model": self.model, **self.model_kwargs}
+        if self.dimensions is not None:
+            params["dimensions"] = self.dimensions
+        return params
 
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb

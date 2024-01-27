@@ -48,6 +48,8 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             the default value from SDK.
         api_model: str
             The model name or ID to be used for form recognition in Azure.
+        mode: Optional[str]
+            The type of content representation of the generated Documents.
 
         Examples:
         ---------
@@ -56,7 +58,8 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         ...     api_endpoint="https://endpoint.azure.com",
         ...     api_key="APIKEY",
         ...     api_version="2023-10-31-preview",
-        ...     model="prebuilt-document"
+        ...     model="prebuilt-document",
+        ...     mode="markdown"
         ... )
         """
 

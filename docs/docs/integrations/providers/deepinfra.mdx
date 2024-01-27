@@ -17,6 +17,8 @@ google/flan\* models can be viewed [here](https://deepinfra.com/models?type=text
 
 You can view a [list of request and response parameters](https://deepinfra.com/meta-llama/Llama-2-70b-chat-hf/api).
 
+Chat models [follow openai api](https://deepinfra.com/meta-llama/Llama-2-70b-chat-hf/api?example=openai-http)
+
 ## Wrappers
 
 ### LLM
@@ -33,4 +35,12 @@ There is also an DeepInfra Embeddings wrapper, you can access with
 
 ```python
 from langchain_community.embeddings import DeepInfraEmbeddings
+```
+
+### Chat Models
+
+There is a chat-oriented wrapper as well, accessible with
+
+```python
+from langchain_community.chat_models import ChatDeepInfra
 ```
