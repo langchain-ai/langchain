@@ -137,7 +137,7 @@ TEXT_BEFORE_AND_AFTER = """Action: Testing
 ```
 This should do the trick"""
 
-ANTHROPIC_STREAMING_WITHOUT_END_BRACKET = """Here is a response formatted as schema:
+WITHOUT_END_BRACKET = """Here is a response formatted as schema:
 
 ```json
 {
