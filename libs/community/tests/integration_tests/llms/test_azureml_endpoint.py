@@ -7,6 +7,7 @@ from typing import Dict
 from urllib.request import HTTPError
 
 import pytest
+from langchain_core.pydantic_v1 import ValidationError
 
 from langchain_community.llms.azureml_endpoint import (
     AzureMLOnlineEndpoint,
@@ -26,7 +27,7 @@ def test_gpt2_call() -> None:
         deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
         content_formatter=OSSContentFormatter(),
     )
-    output = llm("Foo")
+    output = llm.invoke("Foo")
     assert isinstance(output, str)
 
 
@@ -38,7 +39,7 @@ def test_hf_call() -> None:
         deployment_name=os.getenv("HF_DEPLOYMENT_NAME"),
         content_formatter=HFContentFormatter(),
     )
-    output = llm("Foo")
+    output = llm.invoke("Foo")
     assert isinstance(output, str)
 
 
@@ -50,7 +51,7 @@ def test_dolly_call() -> None:
         deployment_name=os.getenv("DOLLY_DEPLOYMENT_NAME"),
         content_formatter=DollyContentFormatter(),
     )
-    output = llm("Foo")
+    output = llm.invoke("Foo")
     assert isinstance(output, str)
 
 
@@ -81,7 +82,7 @@ def test_custom_formatter() -> None:
         deployment_name=os.getenv("BART_DEPLOYMENT_NAME"),
         content_formatter=CustomFormatter(),
     )
-    output = llm("Foo")
+    output = llm.invoke("Foo")
     assert isinstance(output, str)
 
 
@@ -93,7 +94,7 @@ def test_missing_content_formatter() -> None:
             endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
             deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
         )
-        llm("Foo")
+        llm.invoke("Foo")
 
 
 def test_invalid_request_format() -> None:
@@ -123,7 +124,31 @@ def test_invalid_request_format() -> None:
             deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
             content_formatter=CustomContentFormatter(),
         )
-        llm("Foo")
+        llm.invoke("Foo")
+
+
+def test_incorrect_url() -> None:
+    """Testing AzureML Endpoint for an incorrect URL"""
+    with pytest.raises(ValidationError):
+        llm = AzureMLOnlineEndpoint(
+            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
+            endpoint_url="https://endpoint.inference.com",
+            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
+            content_formatter=OSSContentFormatter(),
+        )
+        llm.invoke("Foo")
+
+
+def test_incorrect_api_type() -> None:
+    with pytest.raises(ValidationError):
+        llm = AzureMLOnlineEndpoint(
+            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
+            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
+            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
+            endpoint_api_type="serverless",
+            content_formatter=OSSContentFormatter(),
+        )
+        llm.invoke("Foo")
 
 
 def test_incorrect_key() -> None:
@@ -135,7 +160,7 @@ def test_incorrect_key() -> None:
             deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
             content_formatter=OSSContentFormatter(),
         )
-        llm("Foo")
+        llm.invoke("Foo")
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:

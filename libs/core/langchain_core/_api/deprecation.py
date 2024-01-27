@@ -16,6 +16,8 @@ import inspect
 import warnings
 from typing import Any, Callable, Generator, Type, TypeVar
 
+from langchain_core._api.internal import is_caller_internal
+
 
 class LangChainDeprecationWarning(DeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
@@ -37,6 +39,7 @@ def deprecated(
     message: str = "",
     name: str = "",
     alternative: str = "",
+    alternative_import: str = "",
     pending: bool = False,
     obj_type: str = "",
     addendum: str = "",
@@ -103,25 +106,81 @@ def deprecated(
         _name: str = name,
         _message: str = message,
         _alternative: str = alternative,
+        _alternative_import: str = alternative_import,
         _pending: bool = pending,
         _addendum: str = addendum,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
+
+        def emit_warning() -> None:
+            """Emit the warning."""
+            warn_deprecated(
+                since,
+                message=_message,
+                name=_name,
+                alternative=_alternative,
+                alternative_import=_alternative_import,
+                pending=_pending,
+                obj_type=_obj_type,
+                addendum=_addendum,
+                removal=removal,
+            )
+
+        warned = False
+
+        def warning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Wrapper for the original wrapped callable that emits a warning.
+
+            Args:
+                *args: The positional arguments to the function.
+                **kwargs: The keyword arguments to the function.
+
+            Returns:
+                The return value of the function being wrapped.
+            """
+            nonlocal warned
+            if not warned and not is_caller_internal():
+                warned = True
+                emit_warning()
+            return wrapped(*args, **kwargs)
+
+        async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Same as warning_emitting_wrapper, but for async functions."""
+
+            nonlocal warned
+            if not warned and not is_caller_internal():
+                warned = True
+                emit_warning()
+            return await wrapped(*args, **kwargs)
+
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
             wrapped = obj.__init__  # type: ignore
-            _name = _name or obj.__name__
+            _name = _name or (
+                f"{obj.__module__}.{obj.__name__}" if obj.__module__ else obj.__name__
+            )
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(_: Any, new_doc: str) -> T:
                 """Finalize the deprecation of a class."""
                 try:
                     obj.__doc__ = new_doc
                 except AttributeError:  # Can't set on some extension objects.
                     pass
+
+                def warn_if_direct_instance(
+                    self: Any, *args: Any, **kwargs: Any
+                ) -> Any:
+                    """Warn that the class is in beta."""
+                    nonlocal warned
+                    if not warned and type(self) is obj and not is_caller_internal():
+                        warned = True
+                        emit_warning()
+                    return wrapped(self, *args, **kwargs)
+
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
-                    wrapper
+                    warn_if_direct_instance
                 )
                 return obj
 
@@ -184,32 +243,6 @@ def deprecated(
                 wrapper.__doc__ = new_doc
                 return wrapper
 
-        def emit_warning() -> None:
-            """Emit the warning."""
-            warn_deprecated(
-                since,
-                message=_message,
-                name=_name,
-                alternative=_alternative,
-                pending=_pending,
-                obj_type=_obj_type,
-                addendum=_addendum,
-                removal=removal,
-            )
-
-        def warning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
-            """Wrapper for the original wrapped callable that emits a warning.
-
-            Args:
-                *args: The positional arguments to the function.
-                **kwargs: The keyword arguments to the function.
-
-            Returns:
-                The return value of the function being wrapped.
-            """
-            emit_warning()
-            return wrapped(*args, **kwargs)
-
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
         if not old_doc:
@@ -232,7 +265,10 @@ def deprecated(
             f"   {details}"
         )
 
-        return finalize(warning_emitting_wrapper, new_doc)
+        if inspect.iscoroutinefunction(obj):
+            return finalize(awarning_emitting_wrapper, new_doc)
+        else:
+            return finalize(warning_emitting_wrapper, new_doc)
 
     return deprecate
 
@@ -252,6 +288,7 @@ def warn_deprecated(
     message: str = "",
     name: str = "",
     alternative: str = "",
+    alternative_import: str = "",
     pending: bool = False,
     obj_type: str = "",
     addendum: str = "",
@@ -288,6 +325,10 @@ def warn_deprecated(
     """
     if pending and removal:
         raise ValueError("A pending deprecation cannot have a scheduled removal")
+    if alternative and alternative_import:
+        raise ValueError("Cannot specify both alternative and alternative_import")
+    if alternative_import and "." not in alternative_import:
+        raise ValueError("alternative_import must be a fully qualified module path")
 
     if not pending:
         if not removal:
@@ -301,6 +342,7 @@ def warn_deprecated(
 
     if not message:
         message = ""
+        package = name.split(".")[0].replace("_", "-") if "." in name else "LangChain"
 
         if obj_type:
             message += f"The {obj_type} `{name}`"
@@ -310,12 +352,24 @@ def warn_deprecated(
         if pending:
             message += " will be deprecated in a future version"
         else:
-            message += f" was deprecated in LangChain {since}"
+            message += f" was deprecated in {package} {since}"
 
             if removal:
                 message += f" and will be removed {removal}"
 
-        if alternative:
+        if alternative_import:
+            alt_package = alternative_import.split(".")[0].replace("_", "-")
+            if alt_package == package:
+                message += f". Use {alternative_import} instead."
+            else:
+                alt_module, alt_name = alternative_import.rsplit(".", 1)
+                message += (
+                    f". An updated version of the {obj_type} exists in the "
+                    f"{alt_package} package and should be used instead. To use it run "
+                    f"`pip install -U {alt_package}` and import as "
+                    f"`from {alt_module} import {alt_name}`."
+                )
+        elif alternative:
             message += f". Use {alternative} instead."
 
         if addendum:

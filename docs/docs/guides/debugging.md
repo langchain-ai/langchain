@@ -12,7 +12,7 @@ Platforms with tracing capabilities like [LangSmith](/docs/langsmith/) and [Wand
 
 For anyone building production-grade LLM applications, we highly recommend using a platform like this.
 
-![LangSmith run](../../static/img/run_details.png)
+![Screenshot of the LangSmith debugging interface showing an AgentExecutor run with input and output details, and a run tree visualization.](../../static/img/run_details.png "LangSmith Debugging Interface")
 
 ## `set_debug` and `set_verbose`
 
@@ -25,7 +25,7 @@ Let's suppose we have a simple agent, and want to visualize the actions it takes
 
 ```python
 from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(model_name="gpt-4", temperature=0)
 tools = load_tools(["ddg-search", "llm-math"], llm=llm)

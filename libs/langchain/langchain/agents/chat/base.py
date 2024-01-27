@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
@@ -21,7 +22,6 @@ from langchain.agents.chat.prompt import (
     SYSTEM_MESSAGE_SUFFIX,
 )
 from langchain.agents.utils import validate_tools_single_input
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 
 
