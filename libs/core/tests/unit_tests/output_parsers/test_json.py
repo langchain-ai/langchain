@@ -146,7 +146,7 @@ WITHOUT_END_BRACKET = """Here is a response formatted as schema:
 
 """
 
-ANTHROPIC_STREAMING_WITH_END_BRACKET = """Here is a response formatted as schema:
+WITH_END_BRACKET = """Here is a response formatted as schema:
 
 ```json
 {
