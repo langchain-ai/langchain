@@ -2946,7 +2946,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
             runnable = chant_chain | character_generator
             assert type(runnable.last) is RunnableGenerator
-            "".join(runnable.stream({"topic": "waste"})) # "Reduce👏, Reuse👏, Recycle👏."
+            "".join(runnable.stream({"topic": "waste"})) # Reduce👏, Reuse👏, Recycle👏.
     """
 
     def __init__(
