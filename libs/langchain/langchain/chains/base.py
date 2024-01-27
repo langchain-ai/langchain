@@ -131,7 +131,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         callbacks = config.get("callbacks")
         tags = config.get("tags")
         metadata = config.get("metadata")
-        run_name = config.get("run_name")
+        run_name = config.get("run_name") or self.get_name()
         include_run_info = kwargs.get("include_run_info", False)
         return_only_outputs = kwargs.get("return_only_outputs", False)
 
@@ -178,7 +178,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         callbacks = config.get("callbacks")
         tags = config.get("tags")
         metadata = config.get("metadata")
-        run_name = config.get("run_name")
+        run_name = config.get("run_name") or self.get_name()
         include_run_info = kwargs.get("include_run_info", False)
         return_only_outputs = kwargs.get("return_only_outputs", False)
 
