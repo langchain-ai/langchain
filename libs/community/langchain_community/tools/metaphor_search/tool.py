@@ -12,7 +12,6 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
 
 
-
 @deprecated(
     since="0.0.15",
     removal="0.2.0",
@@ -28,7 +27,7 @@ class MetaphorSearchResults(BaseTool):
         "Output is a JSON array of the query results"
     )
     api_wrapper: MetaphorSearchAPIWrapper
-    
+
     def _run(
         self,
         query: str,
