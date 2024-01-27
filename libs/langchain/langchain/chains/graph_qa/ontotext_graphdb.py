@@ -88,16 +88,17 @@ class OntotextGraphDBQAChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         prompt = inputs[self.input_key]
+        ontology_schema = self.graph.get_schema
 
         sparql_generation_chain_result = self.sparql_generation_chain.invoke(
-            {"prompt": prompt, "schema": self.graph.get_schema}, callbacks=callbacks
+            {"prompt": prompt, "schema": ontology_schema}, callbacks=callbacks
         )
         generated_sparql = sparql_generation_chain_result[
             self.sparql_generation_chain.output_key
         ]
 
         generated_sparql = self._get_valid_sparql_query(
-            _run_manager, callbacks, generated_sparql
+            _run_manager, callbacks, generated_sparql, ontology_schema
         )
         query_results = self.graph.query(generated_sparql)
 
@@ -112,22 +113,24 @@ class OntotextGraphDBQAChain(Chain):
         _run_manager: CallbackManagerForChainRun,
         callbacks: CallbackManager,
         generated_sparql: str,
+        ontology_schema: str,
     ) -> str:
         try:
             return self._prepare_sparql_query(_run_manager, generated_sparql)
         except Exception as e:
             retries = 0
-            parse_exception = str(e)
+            error_message = str(e)
             self._log_invalid_sparql_query(
-                _run_manager, generated_sparql, parse_exception
+                _run_manager, generated_sparql, error_message
             )
 
             while retries < self.max_fix_retries:
                 try:
                     sparql_fix_chain_result = self.sparql_fix_chain.invoke(
                         {
-                            "parse_exception": parse_exception,
+                            "error_message": error_message,
                             "generated_sparql": generated_sparql,
+                            "schema": ontology_schema,
                         },
                         callbacks=callbacks,
                     )

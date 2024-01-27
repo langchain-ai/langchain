@@ -141,10 +141,11 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
     chain.sparql_fix_chain.invoke = MagicMock(
         return_value={
             "text": "SELECT * {?s ?p ?o} LIMIT 1",
-            "parse_exception": "pyparsing.exceptions.ParseException: "
+            "error_message": "pyparsing.exceptions.ParseException: "
             "Expected {SelectQuery | ConstructQuery | DescribeQuery | AskQuery}, "
             "found '`'  (at char 0), (line:1, col:1)",
             "generated_sparql": generated_invalid_sparql,
+            "schema": "",
         }
     )
     chain.qa_chain.output_key = "text"
@@ -198,10 +199,11 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
     chain.sparql_fix_chain.invoke = MagicMock(
         return_value={
             "text": generated_invalid_sparql,
-            "parse_exception": "pyparsing.exceptions.ParseException: "
+            "error_message": "pyparsing.exceptions.ParseException: "
             "Expected {SelectQuery | ConstructQuery | DescribeQuery | AskQuery}, "
             "found '`'  (at char 0), (line:1, col:1)",
             "generated_sparql": generated_invalid_sparql,
+            "schema": "",
         }
     )
     chain.qa_chain.output_key = "text"
@@ -259,18 +261,20 @@ def test_valid_sparql_after_some_retries(
     chain.sparql_fix_chain.invoke.side_effect = [
         {
             "text": generated_invalid_sparql,
-            "parse_exception": "pyparsing.exceptions.ParseException: "
+            "error_message": "pyparsing.exceptions.ParseException: "
             "Expected {SelectQuery | ConstructQuery | DescribeQuery | AskQuery}, "
             "found '`'  (at char 0), (line:1, col:1)",
             "generated_sparql": generated_invalid_sparql,
+            "schema": "",
         }
     ] * number_of_invalid_responses + [
         {
             "text": generated_valid_sparql_query,
-            "parse_exception": "pyparsing.exceptions.ParseException: "
+            "error_message": "pyparsing.exceptions.ParseException: "
             "Expected {SelectQuery | ConstructQuery | DescribeQuery | AskQuery}, "
             "found '`'  (at char 0), (line:1, col:1)",
             "generated_sparql": generated_invalid_sparql,
+            "schema": "",
         }
     ]
     chain.qa_chain.output_key = "text"

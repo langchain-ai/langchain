@@ -219,14 +219,29 @@ GRAPHDB_SPARQL_GENERATION_PROMPT = PromptTemplate(
     template=GRAPHDB_SPARQL_GENERATION_TEMPLATE,
 )
 
-GRAPHDB_SPARQL_FIX_TEMPLATE = """Task: This query returns a syntactic error: 
-{parse_exception}
-Give me an improved query that works without any explanations or apologies. Do not change the logic of the query.
-The query is: 
-{generated_sparql}"""
+GRAPHDB_SPARQL_FIX_TEMPLATE = """
+This following SPARQL query delimited by triple backticks
+```
+{generated_sparql}
+```
+is not valid.
+The error delimited by triple backticks is
+```
+{error_message}
+```
+Give me a correct version of the SPARQL query.
+Do not change the logic of the query.
+Do not include any explanations or apologies in your responses.
+Do not wrap the query in backticks.
+Do not include any text except the SPARQL query generated.
+The ontology schema delimited by triple backticks in Turtle format is:
+```
+{schema}
+```
+"""
 
 GRAPHDB_SPARQL_FIX_PROMPT = PromptTemplate(
-    input_variables=["parse_exception", "generated_sparql"],
+    input_variables=["error_message", "generated_sparql", "schema"],
     template=GRAPHDB_SPARQL_FIX_TEMPLATE,
 )
 
