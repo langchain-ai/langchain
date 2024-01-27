@@ -127,12 +127,25 @@ def _load_prompt(config: dict) -> PromptTemplate:
 
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs."""
+    if path.startswith("azureml://"):
+        return _load_prompt_from_azureai(path)
     if hub_result := try_load_from_hub(
         path, _load_prompt_from_file, "prompts", {"py", "json", "yaml"}
     ):
         return hub_result
     else:
         return _load_prompt_from_file(path)
+
+def _load_prompt_from_azureai(path: Union[str, Path]) -> BasePromptTemplate:
+    """Load prompt from Azure"""
+    from azureml.core import Workspace
+    from azureai.asset import prompt
+
+    workspace = Workspace.from_config()
+    prompt = prompt(workspace, name=path.split("azureml://")[1])
+    prompt.download(target_dir=".")
+    return _load_prompt_from_file(prompt.local_path)
+
 
 
 def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
