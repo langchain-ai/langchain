@@ -610,6 +610,24 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)
 
+    def get_document_by_id(self, document_id: str) -> Document:
+        """Get a document in the collection by its ID.
+
+        Args:
+            document_id (str): ID of the document to get.
+
+        Returns:
+            Document: The document with the given ID.
+        """
+
+        result = self.get(ids=[document_id])
+        if result and "documents" in result and result["documents"]:
+            return Document(
+                page_content=result["documents"][0], metadata=result["metadatas"][0]
+            )
+        else:
+            return None
+
     def persist(self) -> None:
         """Persist the collection.
 
