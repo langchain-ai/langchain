@@ -35,17 +35,19 @@ class ChatZhipuAI(BaseChatModel):
     """
     `ZHIPU AI` large language chat models API.
 
-    To use, you should have the ``zhipuai`` python package installed, and the
-    environment variable ``ZHIPUAI_API_KEY`` set with your API key.
-
-    Any parameters that are valid to be passed to the zhipuai.create call can be passed
-    in, even if not explicitly saved on this class.
+    To use, you should have the ``zhipuai`` python package installed.
 
     Example:
-        .. code-block:: python
+    .. code-block:: python
 
-            from langchain_community.chat_models import ChatZhipuAI
-            zhipuai = ChatZhipuAI()
+    from langchain_community.chat_models import ChatZhipuAI
+
+    zhipuai_chat = ChatZhipuAI(
+        temperature=0.5,
+        api_key="your-api-key",
+        model="chatglm_turbo",
+    )
+
     """
 
     zhipuai: Any

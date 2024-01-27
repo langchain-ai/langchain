@@ -44,9 +44,9 @@ agent in your Streamlit app and simply pass the `StreamlitCallbackHandler` to `a
 thoughts and actions live in your app.
 
 ```python
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.callbacks import StreamlitCallbackHandler
+from langchain_community.callbacks import StreamlitCallbackHandler
 import streamlit as st
 
 llm = OpenAI(temperature=0, streaming=True)
