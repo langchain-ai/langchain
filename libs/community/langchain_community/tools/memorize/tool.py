@@ -41,7 +41,7 @@ class MemorizeToolInput(BaseModel):
 class Memorize(BaseTool):
     """Tool that trains a language model."""
 
-    name: str = "Memorize"
+    name: str = "memorize"
     description: str = (
         "Useful whenever you observed novel information "
         "from previous conversation history, "

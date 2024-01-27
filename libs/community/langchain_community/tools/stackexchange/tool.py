@@ -18,7 +18,7 @@ class StackExchangeToolInput(BaseModel):
 class StackExchangeTool(BaseTool):
     """Tool that uses StackExchange"""
 
-    name: str = "StackExchange"
+    name: str = "stack_exchange"
     description: str = (
         "A wrapper around StackExchange. "
         "Useful for when you need to answer specific programming questions"

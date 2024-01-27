@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Optional, Type, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -12,20 +13,12 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
 
 
-class MetaphorSearchResultsToolInput(BaseModel):
-    query: str = Field(description="Metaphor-optimized query")
-    num_results: int = Field(
-        description="Number of results that needs to be returned from the query"
-    )
-    include_domains: Optional[List[str]] = Field(description="Domains Included")
-    exclude_domains: Optional[List[str]] = Field(description="Domains Excluded")
-    start_crawl_date: Optional[str] = Field(description="Crawling Start Date")
-    end_crawl_date: Optional[str] = Field(description="Crawling End Date")
-    start_published_date: Optional[str] = Field(description="Publish Start Date")
-    end_published_date: Optional[str] = Field(description="Publish End Date")
-    use_autoprompt: Optional[bool] = Field(description="Whether to use autoprompt")
 
-
+@deprecated(
+    since="0.0.15",
+    removal="0.2.0",
+    alternative="langchain_exa.ExaSearchResults",
+)
 class MetaphorSearchResults(BaseTool):
     """Tool that queries the Metaphor Search API and gets back json."""
 

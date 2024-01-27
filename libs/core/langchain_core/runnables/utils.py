@@ -254,7 +254,6 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
                             vv = getattr(vv, part)
                     else:
                         values.append(vv)
-                    values.append(vv)
         return values
     except (SyntaxError, TypeError, OSError):
         return []

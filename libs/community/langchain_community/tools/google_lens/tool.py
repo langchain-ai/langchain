@@ -16,7 +16,7 @@ class GoogleLensQueryRunToolInput(BaseModel):
 class GoogleLensQueryRun(BaseTool):
     """Tool that queries the Google Lens API."""
 
-    name: str = "google_Lens"
+    name: str = "google_lens"
     description: str = (
         "A wrapper around Google Lens Search. "
         "Useful for when you need to get information related"
