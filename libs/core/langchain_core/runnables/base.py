@@ -2888,7 +2888,14 @@ class RunnableGenerator(Runnable[Input, Output]):
     a sequence.
 
     RunnableGenerators can be used to implement custom behavior, such as custom output
-    parsers, while preserving streaming capabilities.
+    parsers, while preserving streaming capabilities. Given a generator function with
+    a signature Iterator[A] -> Iterator[B], wrapping it in a RunnableGenerator allows
+    it to emit output chunks as soon as they are streamed in from the previous step.
+
+    Note that if a generator function has a signature A -> Iterator[B], such that it
+    requires its input from the previous step to be completed before emitting chunks
+    (e.g., most LLMs need the entire prompt available to start generating), it can
+    instead be wrapped in a RunnableLambda.
 
     Here is an example to show the basic mechanics of a RunnableGenerator:
 
@@ -2924,7 +2931,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         .. code-block:: python
 
             from langchain_core.prompts import ChatPromptTemplate
-            from langchain_core.runnables import RunnableGenerator
+            from langchain_core.runnables import RunnableGenerator, RunnableLambda
             from langchain_openai import ChatOpenAI
             from langchain.schema import StrOutputParser
 
@@ -2947,6 +2954,16 @@ class RunnableGenerator(Runnable[Input, Output]):
             runnable = chant_chain | character_generator
             assert type(runnable.last) is RunnableGenerator
             "".join(runnable.stream({"topic": "waste"})) # Reduce👏, Reuse👏, Recycle👏.
+
+            # Note that RunnableLambda can be used to delay streaming of one step in a
+            # sequence until the previous step is finished:
+            def reverse_generator(input: str) -> Iterator[str]:
+                # Yield characters of input in reverse order.
+                for character in input[::-1]:
+                    yield character
+
+            runnable = chant_chain | RunnableLambda(reverse_generator)
+            "".join(runnable.stream({"topic": "waste"}))  # ".elcycer ,esuer ,ecudeR"
     """
 
     def __init__(
