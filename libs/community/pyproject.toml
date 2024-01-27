@@ -13,7 +13,7 @@ langchain-core = ">=0.1.16,<0.2"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
-numpy = "^1"
+numpy = [{version = "^1", python = "<=3.8"}, {version="^1", python=">=3.9" }]
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
 dataclasses-json = ">= 0.5.7, < 0.7"
