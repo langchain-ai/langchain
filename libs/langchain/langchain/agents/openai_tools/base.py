@@ -1,10 +1,10 @@
 from typing import Sequence
 
-from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
@@ -17,8 +17,18 @@ def create_openai_tools_agent(
 ) -> Runnable:
     """Create an agent that uses OpenAI tools.
 
-    Examples:
+    Args:
+        llm: LLM to use as the agent.
+        tools: Tools this agent has access to.
+        prompt: The prompt to use. See Prompt section below for more on the expected
+            input variables.
 
+    Returns:
+        A Runnable sequence representing an agent. It takes as input all the same input
+        variables as the prompt passed in does. It returns as output either an
+        AgentAction or AgentFinish.
+
+    Example:
 
         .. code-block:: python
 
@@ -47,24 +57,32 @@ def create_openai_tools_agent(
                 }
             )
 
-    Args:
-        llm: LLM to use as the agent.
-        tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input keys of `agent_scratchpad`.
+    Prompt:
 
-    Returns:
-        A runnable sequence representing an agent. It takes as input all the same input
-        variables as the prompt passed in does. It returns as output either an
-        AgentAction or AgentFinish.
+        The agent prompt must have an `agent_scratchpad` key that is a
+            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            messages will be passed in here.
 
+        Here's an example:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are a helpful assistant"),
+                    MessagesPlaceholder("chat_history", optional=True),
+                    ("human", "{input}"),
+                    MessagesPlaceholder("agent_scratchpad"),
+                ]
+            )
     """
     missing_vars = {"agent_scratchpad"}.difference(prompt.input_variables)
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
-    llm_with_tools = llm.bind(
-        tools=[format_tool_to_openai_tool(tool) for tool in tools]
-    )
+    llm_with_tools = llm.bind(tools=[convert_to_openai_tool(tool) for tool in tools])
 
     agent = (
         RunnablePassthrough.assign(

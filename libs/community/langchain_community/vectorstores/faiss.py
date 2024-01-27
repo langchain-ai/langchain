@@ -986,11 +986,10 @@ class FAISS(VectorStore):
                 text_embedding_pairs = zip(texts, text_embeddings)
                 faiss = FAISS.from_embeddings(text_embedding_pairs, embeddings)
         """
-        texts = [t[0] for t in text_embeddings]
-        embeddings = [t[1] for t in text_embeddings]
+        texts, embeddings = zip(*text_embeddings)
         return cls.__from(
-            texts,
-            embeddings,
+            list(texts),
+            list(embeddings),
             embedding,
             metadatas=metadatas,
             ids=ids,

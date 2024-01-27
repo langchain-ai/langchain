@@ -8,7 +8,12 @@ from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+VALID_TASKS = (
+    "text2text-generation",
+    "text-generation",
+    "summarization",
+    "conversational",
+)
 
 
 class HuggingFaceEndpoint(LLM):
@@ -144,6 +149,8 @@ class HuggingFaceEndpoint(LLM):
             text = generated_text[0]["generated_text"]
         elif self.task == "summarization":
             text = generated_text[0]["summary_text"]
+        elif self.task == "conversational":
+            text = generated_text["response"][1]
         else:
             raise ValueError(
                 f"Got invalid task {self.task}, "
