@@ -9129,4 +9129,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "de9d93742467fe1b844f1995fc392cef19506db4fbd8fae4585132eae3ea0bff"
+content-hash = "c93abf3e7d1b428870e1d03be3190cbca2fdfe0c68a8cc0b75780a2aff22f6b2"
