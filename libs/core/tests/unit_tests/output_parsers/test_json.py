@@ -137,7 +137,7 @@ TEXT_BEFORE_AND_AFTER = """Action: Testing
 ```
 This should do the trick"""
 
-ANTHROPIC_STREAMING_WITHOUT_END_BRACKET = """Here is a response formatted as a JSON instance of the provided schema:
+ANTHROPIC_STREAMING_WITHOUT_END_BRACKET = """Here is a response formatted as schema:
 
 ```json
 {
@@ -146,7 +146,7 @@ ANTHROPIC_STREAMING_WITHOUT_END_BRACKET = """Here is a response formatted as a J
 
 """
 
-ANTHROPIC_STREAMING_WITH_END_BRACKET = """Here is a response formatted as a JSON instance of the provided schema:
+ANTHROPIC_STREAMING_WITH_END_BRACKET = """Here is a response formatted as schema:
 
 ```json
 {
@@ -155,7 +155,7 @@ ANTHROPIC_STREAMING_WITH_END_BRACKET = """Here is a response formatted as a JSON
   
 """
 
-ANTHROPIC_STREAMING_WITH_END_TICK = """Here is a response formatted as a JSON instance of the provided schema:
+ANTHROPIC_STREAMING_WITH_END_TICK = """Here is a response formatted as schema:
 
 ```json
 {
@@ -164,7 +164,7 @@ ANTHROPIC_STREAMING_WITH_END_TICK = """Here is a response formatted as a JSON in
 ``` 
 """
 
-ANTHROPIC_STREAMING_WITH_END_TEXT = """Here is a response formatted as a JSON instance of the provided schema:
+ANTHROPIC_STREAMING_WITH_END_TEXT = """Here is a response formatted as schema:
 
 ```
 {
