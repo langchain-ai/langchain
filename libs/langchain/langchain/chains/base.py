@@ -9,6 +9,14 @@ from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import yaml
 from langchain_core._api import deprecated
+from langchain_core.callbacks import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    BaseCallbackManager,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain_core.load.dump import dumpd
 from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
@@ -26,14 +34,6 @@ from langchain_core.runnables import (
     run_in_executor,
 )
 
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
 from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)
@@ -131,7 +131,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         callbacks = config.get("callbacks")
         tags = config.get("tags")
         metadata = config.get("metadata")
-        run_name = config.get("run_name")
+        run_name = config.get("run_name") or self.get_name()
         include_run_info = kwargs.get("include_run_info", False)
         return_only_outputs = kwargs.get("return_only_outputs", False)
 
@@ -178,7 +178,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         callbacks = config.get("callbacks")
         tags = config.get("tags")
         metadata = config.get("metadata")
-        run_name = config.get("run_name")
+        run_name = config.get("run_name") or self.get_name()
         include_run_info = kwargs.get("include_run_info", False)
         return_only_outputs = kwargs.get("return_only_outputs", False)
 
