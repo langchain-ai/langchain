@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, ca
 from urllib.parse import urlparse
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -203,6 +204,11 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
     return question
 
 
+@deprecated(
+    since="0.0.12",
+    removal="0.2.0",
+    alternative_import="langchain_google_vertexai.ChatVertexAI",
+)
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """`Vertex AI` Chat large language models API."""
 
