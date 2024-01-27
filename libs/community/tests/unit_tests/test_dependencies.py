@@ -27,9 +27,12 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     dependencies = poetry_conf["dependencies"]
 
     is_required = {
-        package_name: isinstance(requirements, str)
-        or not requirements.get("optional", False)
+        package_name: isinstance(requirement, str)
+        or not requirement.get("optional", False)
         for package_name, requirements in dependencies.items()
+        for requirement in (
+            requirements if isinstance(requirements, list) else [requirements]
+        )
     }
     required_dependencies = [
         package_name for package_name, required in is_required.items() if required
