@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from typing import (
     Any,
     Dict,
     Iterator,
     List,
-    Mapping,
     Optional,
     Set,
     Tuple,
@@ -19,20 +19,20 @@ import requests
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    generate_from_stream,
-)
 from langchain_core.messages import AIMessageChunk, BaseMessage
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.adapters.openai import (
-    convert_dict_to_message,
     convert_message_to_dict,
 )
-from langchain_community.chat_models.openai import _convert_delta_to_message_chunk
+from langchain_community.chat_models.openai import (
+    ChatOpenAI,
+    _convert_delta_to_message_chunk,
+    generate_from_stream,
+)
+from langchain_community.utils.openai import is_openai_v1
 
 DEFAULT_API_BASE = "https://api.konko.ai/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-13b-chat-hf"
@@ -40,7 +40,7 @@ DEFAULT_MODEL = "meta-llama/Llama-2-13b-chat-hf"
 logger = logging.getLogger(__name__)
 
 
-class ChatKonko(BaseChatModel):
+class ChatKonko(ChatOpenAI):
     """`ChatKonko` Chat large language models API.
 
     To use, you should have the ``konko`` python package installed, and the
@@ -72,10 +72,8 @@ class ChatKonko(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = None
-    konko_api_key: Optional[SecretStr] = None
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    """Timeout for requests to Konko completion API."""
+    openai_api_key: Optional[str] = None
+    konko_api_key: Optional[str] = None
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -100,13 +98,23 @@ class ChatKonko(BaseChatModel):
                 "Please install it with `pip install konko`."
             )
         try:
-            values["client"] = konko.ChatCompletion
+            if is_openai_v1():
+                values["client"] = konko.chat.completions
+            else:
+                values["client"] = konko.ChatCompletion
         except AttributeError:
             raise ValueError(
                 "`konko` has no `ChatCompletion` attribute, this is likely "
                 "due to an old version of the konko package. Try upgrading it "
                 "with `pip install --upgrade konko`."
             )
+
+        if not hasattr(konko, "_is_legacy_openai"):
+            warnings.warn(
+                "You are using an older version of the 'konko' package. "
+                "Please consider upgrading to access new features."
+            )
+
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
@@ -118,7 +126,6 @@ class ChatKonko(BaseChatModel):
         """Get the default parameters for calling Konko API."""
         return {
             "model": self.model,
-            "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
@@ -182,20 +189,6 @@ class ChatKonko(BaseChatModel):
 
         return _completion_with_retry(**kwargs)
 
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
-        overall_token_usage: dict = {}
-        for output in llm_outputs:
-            if output is None:
-                # Happens in streaming
-                continue
-            token_usage = output["token_usage"]
-            for k, v in token_usage.items():
-                if k in overall_token_usage:
-                    overall_token_usage[k] += v
-                else:
-                    overall_token_usage[k] = v
-        return {"token_usage": overall_token_usage, "model_name": self.model}
-
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -258,19 +251,6 @@ class ChatKonko(BaseChatModel):
             params["stop"] = stop
         message_dicts = [convert_message_to_dict(m) for m in messages]
         return message_dicts, params
-
-    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
-        generations = []
-        for res in response["choices"]:
-            message = convert_dict_to_message(res["message"])
-            gen = ChatGeneration(
-                message=message,
-                generation_info=dict(finish_reason=res.get("finish_reason")),
-            )
-            generations.append(gen)
-        token_usage = response.get("usage", {})
-        llm_output = {"token_usage": token_usage, "model_name": self.model}
-        return ChatResult(generations=generations, llm_output=llm_output)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
