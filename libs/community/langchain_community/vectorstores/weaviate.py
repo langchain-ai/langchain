@@ -460,7 +460,7 @@ class Weaviate(VectorStore):
             client.batch.configure(batch_size=batch_size)
 
         index_name = index_name or f"LangChain_{uuid4().hex}"
-        schema = _default_schema(index_name,text_key)
+        schema = _default_schema(index_name, text_key)
         # check whether the index already exists
         if not client.schema.exists(index_name):
             client.schema.create_class(schema)
