@@ -357,6 +357,8 @@ class SQLDatabase:
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows_result)
                 )
 
+            connection.invalidate()
+
             # save the sample rows in string format
             sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows])
 
