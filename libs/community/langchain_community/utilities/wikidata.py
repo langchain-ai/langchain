@@ -9,7 +9,7 @@ from langchain_core.pydantic_v1 import BaseModel, root_validator
 logger = logging.getLogger(__name__)
 
 WIKIDATA_MAX_QUERY_LENGTH = 300
-# Common properties you probably want to see filtereted from https://www.wikidata.org/wiki/Wikidata:Database_reports/List_of_properties/all
+# Common properties you probably want to see filtered from https://www.wikidata.org/wiki/Wikidata:Database_reports/List_of_properties/all
 DEFAULT_PROPERTIES = [
     "P31",
     "P279",
