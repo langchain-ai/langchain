@@ -6,7 +6,7 @@ from langchain_core.retrievers import (
     BaseRetriever,
     RetrieverOutput,
 )
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnablePassthrough, RunnableBranch
 
 
 def create_retrieval_chain(
@@ -56,9 +56,12 @@ def create_retrieval_chain(
 
     """
     if not isinstance(retriever, BaseRetriever):
-        retrieval_docs: Runnable[dict, RetrieverOutput] = retriever
+        retrieval_docs: Runnable[dict, RetrieverOutput] = RunnableBranch(
+          (lambda x: x.get("input", None) is None and len(x.get("chat_history", [])) > 0, lambda x: { "chat_history": x["chat_history"][1:], "input": x["chat_history"][-1].content }),
+          lambda x: x
+        ) | retriever
     else:
-        retrieval_docs = (lambda x: x["input"]) | retriever
+        retrieval_docs = (lambda x: x["input"] if x.get("input", None) is not None or len(x.get("chat_history", [])) == 0 else x["chat_history"][-1].content) | retriever
 
     retrieval_chain = (
         RunnablePassthrough.assign(

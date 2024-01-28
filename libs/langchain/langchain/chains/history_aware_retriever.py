@@ -48,9 +48,9 @@ def create_history_aware_retriever(
             chain.invoke({"input": "...", "chat_history": })
 
     """
-    if "input" not in prompt.input_variables:
+    if "input" not in prompt.input_variables and "chat_history" not in prompt.input_variables:
         raise ValueError(
-            "Expected `input` to be a prompt variable, "
+            "Expected either `input` or `chat_history` to be a prompt variable, "
             f"but got {prompt.input_variables}"
         )
 
@@ -59,7 +59,7 @@ def create_history_aware_retriever(
             # Both empty string and empty list evaluate to False
             lambda x: not x.get("chat_history", False),
             # If no chat history, then we just pass input to retriever
-            (lambda x: x["input"]) | retriever,
+            (lambda x: x["input"] if x.get("input", None) is not None and len(x.get("chat_history", [])) == 0 else x["chat_history"][-1].content) | retriever,
         ),
         # If chat history, then we pass inputs to LLM chain, then to retriever
         prompt | llm | StrOutputParser() | retriever,
