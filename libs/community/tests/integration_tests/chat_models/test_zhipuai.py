@@ -18,7 +18,7 @@ def test_default_call() -> None:
 
 def test_model() -> None:
     """Test model kwarg works."""
-    chat = ChatZhipuAI(model="chatglm_turbo")
+    chat = ChatZhipuAI(model="glm-4")
     response = chat(messages=[HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
