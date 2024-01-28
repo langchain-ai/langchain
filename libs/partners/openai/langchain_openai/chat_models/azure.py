@@ -35,6 +35,8 @@ class AzureChatOpenAI(ChatOpenAI):
 
     .. code-block:: python
 
+        from langchain_openai import AzureChatOpenAI
+
         AzureChatOpenAI(
             azure_deployment="35-turbo-dev",
             openai_api_version="2023-05-15",
@@ -151,11 +153,16 @@ class AzureChatOpenAI(ChatOpenAI):
                 )
             if values["deployment_name"]:
                 raise ValueError(
-                    "As of openai>=1.0.0, if `deployment_name` (or alias "
-                    "`azure_deployment`) is specified then "
-                    "`openai_api_base` (or alias `base_url`) should not be. "
-                    "Instead use `deployment_name` (or alias `azure_deployment`) "
-                    "and `azure_endpoint`."
+                    "As of openai>=1.0.0, if `azure_deployment` (or alias "
+                    "`deployment_name`) is specified then "
+                    "`base_url` (or alias `openai_api_base`) should not be. "
+                    "If specifying `azure_deployment`/`deployment_name` then use "
+                    "`azure_endpoint` instead of `base_url`.\n\n"
+                    "For example, you could specify:\n\n"
+                    'azure_deployment="https://xxx.openai.azure.com/", '
+                    'deployment_name="my-deployment"\n\n'
+                    "Or you can equivalently specify:\n\n"
+                    'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'  # noqa: E501
                 )
         client_params = {
             "api_version": values["openai_api_version"],
