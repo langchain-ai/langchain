@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, Union
 
+from langchain_core.messages import BaseMessage
 from langchain_core.retrievers import (
     BaseRetriever,
     RetrieverOutput,
 )
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnableBranch, RunnablePassthrough
 
 
 def create_retrieval_chain(
@@ -55,10 +56,37 @@ def create_retrieval_chain(
             chain.invoke({"input": "..."})
 
     """
+
+    def extract_retriever_input_string(x: Dict):
+        if x.get("input", None) is None or len(x.get("chat_history", [])) > 0:
+            return x["input"]
+        else:
+            return x["chat_history"][-1].content
+
+    def input_chat_history_is_message_list(x: Dict):
+        return (
+            isinstance(x.get("chat_history", []), list)
+            and len(x.get("chat_history", [])) > 0
+            and all(isinstance(i, BaseMessage) for i in x.get("chat_history", []))
+        )
+
     if not isinstance(retriever, BaseRetriever):
-        retrieval_docs: Runnable[dict, RetrieverOutput] = retriever
+        retrieval_docs: Runnable[dict, RetrieverOutput] = (
+            RunnableBranch(
+                (
+                    lambda x: not x.get("input")
+                    and input_chat_history_is_message_list(x),
+                    lambda x: {
+                        "chat_history": x["chat_history"][1:],
+                        "input": x["chat_history"][-1].content,
+                    },
+                ),
+                lambda x: x,
+            )
+            | retriever
+        )
     else:
-        retrieval_docs = (lambda x: x["input"]) | retriever
+        retrieval_docs = extract_retriever_input_string | retriever
 
     retrieval_chain = (
         RunnablePassthrough.assign(

@@ -48,10 +48,11 @@ def create_history_aware_retriever(
             chain.invoke({"input": "...", "chat_history": })
 
     """
-    if "input" not in prompt.input_variables:
+    input_vars = prompt.input_variables
+    if "input" not in input_vars and "chat_history" not in input_vars:
         raise ValueError(
-            "Expected `input` to be a prompt variable, "
-            f"but got {prompt.input_variables}"
+            "Expected either `input` or `chat_history` to be prompt variables, "
+            f"but got {input_vars}"
         )
 
     retrieve_documents: RetrieverOutputLike = RunnableBranch(
