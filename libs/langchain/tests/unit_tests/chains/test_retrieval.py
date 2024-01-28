@@ -2,7 +2,7 @@
 from langchain_community.llms.fake import FakeListLLM
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
-from langchain_core.prompts.prompt import (
+from langchain_core.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
     PromptTemplate,
@@ -49,7 +49,6 @@ def test_create_with_chat_history_messages_only() -> None:
     }
     output = chain.invoke(
         {
-            "input": "What is the answer?",
             "chat_history": [
                 HumanMessage(content="What is the answer?"),
             ],

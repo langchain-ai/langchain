@@ -57,18 +57,18 @@ def create_retrieval_chain(
 
     """
 
-    def extract_retriever_input_string(x: Dict):
-        if x.get("input", None) is None or len(x.get("chat_history", [])) > 0:
-            return x["input"]
-        else:
-            return x["chat_history"][-1].content
-
     def input_chat_history_is_message_list(x: Dict):
         return (
             isinstance(x.get("chat_history", []), list)
             and len(x.get("chat_history", [])) > 0
             and all(isinstance(i, BaseMessage) for i in x.get("chat_history", []))
         )
+
+    def extract_retriever_input_string(x: Dict):
+        if x.get("input", None) is None and input_chat_history_is_message_list(x):
+            return x["chat_history"][-1].content
+        else:
+            return x["input"]
 
     if not isinstance(retriever, BaseRetriever):
         retrieval_docs: Runnable[dict, RetrieverOutput] = (
