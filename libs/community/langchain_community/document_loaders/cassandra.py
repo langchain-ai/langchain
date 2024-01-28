@@ -1,4 +1,3 @@
-import json
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,13 +12,6 @@ from typing import (
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
-
-
-def default_page_content_mapper(row: Any) -> str:
-    if hasattr(row, "_asdict"):
-        return json.dumps(row._asdict())
-    return json.dumps(row)
-
 
 _NOT_SET = object()
 
@@ -36,7 +28,7 @@ class CassandraLoader(BaseLoader):
         session: Optional["Session"] = None,
         keyspace: Optional[str] = None,
         query: Optional[Union[str, "Statement"]] = None,
-        page_content_mapper: Callable[[Any], str] = default_page_content_mapper,
+        page_content_mapper: Callable[[Any], str] = str,
         metadata_mapper: Callable[[Any], dict] = lambda _: {},
         *,
         query_parameters: Union[dict, Sequence] = None,
@@ -61,6 +53,7 @@ class CassandraLoader(BaseLoader):
             query: The query used to load the data.
                 (do not use together with the table parameter)
             page_content_mapper: a function to convert a row to string page content.
+                Defaults to the str representation of the row.
             query_parameters: The query parameters used when calling session.execute .
             query_timeout: The query timeout used when calling session.execute .
             query_custom_payload: The query custom_payload used when calling
