@@ -83,20 +83,21 @@ class ChatGLM(LLM):
         {"role": "user", "content": prompt}
         ]    
         payload = {
-        	"model": "chatglm3", 
-        	"messages": chat_messages, 
-        	"stream": False, 
-        	"max_tokens": 2000, 
-        	"temperature": self.temperature, 
-        	"top_p": self.top_p, 
-    }
+            "model": "chatglm3", 
+            "messages": chat_messages, 
+            "stream": False, 
+            "max_tokens": 2000, 
+            "temperature": self.temperature, 
+            "top_p": self.top_p, 
+        }
         payload.update(_model_kwargs)
         payload.update(kwargs)
 
         logger.debug(f"ChatGLM payload: {payload}")
         # call api
         try:
-            response = requests.post(f"{self.endpoint_url}v1/chat/completions", headers=headers, json=payload,stream=False)
+            response = requests.post(
+                f"{self.endpoint_url}v1/chat/completions", headers=headers, json=payload,stream=False)
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
         logger.debug(f"ChatGLM response: {response}")
@@ -106,7 +107,8 @@ class ChatGLM(LLM):
 
         try:
             parsed_response = response.json()
-            text = parsed_response.get("choices", [{}])[0].get("message", "").get("content", "")
+            text = parsed_response.get(
+                "choices", [{}])[0].get("message", "").get("content", "")
 
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
