@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import httpx
+import jwt
 from httpx_sse import EventSource
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -61,10 +63,6 @@ def _get_jwt_token(api_key: str) -> str:
     Returns:
         The JWT token.
     """
-    import time
-
-    import jwt
-
     try:
         id, secret = api_key.split(".")
     except ValueError as err:
@@ -255,12 +253,6 @@ class ChatZhipuAI(BaseChatModel):
             values, "zhipuai_api_base", "ZHIPU_API_BASE", default=ZHIPU_API_BASE
         )
 
-        try:
-            import jwt
-        except ImportError:
-            raise ImportError(
-                "Could not import PyJWT package. Please install it with `pip install PyJWT`."
-            )
         return values
 
     def _create_message_dicts(
