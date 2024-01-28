@@ -110,7 +110,6 @@ class WikidataAPIWrapper(BaseModel):
 
         try:
             from wikibase_rest_api_client import Client
-            from wikibase_rest_api_client.utilities.fluent import FluentWikibaseClient
 
             client = Client(
                 timeout=60,

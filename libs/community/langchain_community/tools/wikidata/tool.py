@@ -16,7 +16,8 @@ class WikidataQueryRun(BaseTool):
         "A wrapper around Wikidata. "
         "Useful for when you need to answer general questions about "
         "people, places, companies, facts, historical events, or other subjects. "
-        "Input should be the exact name of the item you want information about or a Wikidata QID."
+        "Input should be the exact name of the item you want information about "
+        "or a Wikidata QID."
     )
     api_wrapper: WikidataAPIWrapper
 
