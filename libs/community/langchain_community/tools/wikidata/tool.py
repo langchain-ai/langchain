@@ -1,4 +1,4 @@
-"""Tool for the Wikipedia API."""
+"""Tool for the Wikidata API."""
 
 from typing import Optional
 
@@ -9,7 +9,7 @@ from langchain_community.utilities.wikidata import WikidataAPIWrapper
 
 
 class WikidataQueryRun(BaseTool):
-    """Tool that searches the Wikipedia API."""
+    """Tool that searches the Wikidata API."""
 
     name: str = "Wikidata"
     description: str = (
@@ -26,5 +26,5 @@ class WikidataQueryRun(BaseTool):
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        """Use the Wikipedia tool."""
+        """Use the Wikidata tool."""
         return self.api_wrapper.run(query)
