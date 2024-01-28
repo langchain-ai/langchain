@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -25,9 +27,9 @@ class CassandraLoader(BaseLoader):
     def __init__(
         self,
         table: Optional[str] = None,
-        session: Optional["Session"] = None,
+        session: Optional[Session] = None,
         keyspace: Optional[str] = None,
-        query: Optional[Union[str, "Statement"]] = None,
+        query: Optional[Union[str, Statement]] = None,
         page_content_mapper: Callable[[Any], str] = str,
         metadata_mapper: Callable[[Any], dict] = lambda _: {},
         *,
@@ -37,7 +39,7 @@ class CassandraLoader(BaseLoader):
         query_custom_payload: dict = None,
         query_execution_profile: Any = _NOT_SET,
         query_paging_state: Any = None,
-        query_host: "Host" = None,
+        query_host: Host = None,
         query_execute_as: str = None,
     ) -> None:
         """

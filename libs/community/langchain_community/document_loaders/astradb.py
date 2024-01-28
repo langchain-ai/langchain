@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import threading
@@ -31,8 +33,8 @@ class AstraDBLoader(BaseLoader):
         collection_name: str,
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
-        astra_db_client: Optional["AstraDB"] = None,
-        async_astra_db_client: Optional["AsyncAstraDB"] = None,
+        astra_db_client: Optional[AstraDB] = None,
+        async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
         filter_criteria: Optional[Dict[str, Any]] = None,
         projection: Optional[Dict[str, Any]] = None,
