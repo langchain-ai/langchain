@@ -31,6 +31,7 @@ from langchain_core.messages import (
     SystemMessage,
     convert_to_messages,
 )
+from langchain_core.messages.base import get_msg_title_repr
 from langchain_core.prompt_values import ChatPromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
