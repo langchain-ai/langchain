@@ -284,7 +284,10 @@ class _OllamaCommon(BaseLanguageModel):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url=api_url,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    **(self.headers if isinstance(self.headers, dict) else {}),
+                },
                 json=request_payload,
                 timeout=self.timeout,
             ) as response:
