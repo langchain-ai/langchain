@@ -360,6 +360,8 @@ class SQLDatabase:
             # save the sample rows in string format
             sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows])
 
+            connection.invalidate()
+
         # in some dialects when there are no rows in the table a
         # 'ProgrammingError' is returned
         except ProgrammingError:
