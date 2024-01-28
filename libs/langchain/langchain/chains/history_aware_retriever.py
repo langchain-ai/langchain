@@ -59,7 +59,7 @@ def create_history_aware_retriever(
             # Both empty string and empty list evaluate to False
             lambda x: not x.get("chat_history", False),
             # If no chat history, then we just pass input to retriever
-            (lambda x: x["input"] if x.get("input", None) is not None and len(x.get("chat_history", [])) == 0 else x["chat_history"][-1].content) | retriever,
+            (lambda x: x["input"]) | retriever,
         ),
         # If chat history, then we pass inputs to LLM chain, then to retriever
         prompt | llm | StrOutputParser() | retriever,
