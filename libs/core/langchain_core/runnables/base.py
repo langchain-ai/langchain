@@ -699,6 +699,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
+        version: Literal["v1"],
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -793,7 +794,9 @@ class Runnable(Generic[Input, Output], ABC):
 
             chain = RunnableLambda(func=reverse)
 
-            events = [event async for event in chain.astream_events("hello")]
+            events = [
+                event async for event in chain.astream_events("hello", version="v1")
+            ]
 
             # will produce the following events (run_id has been omitted for brevity):
             [
@@ -823,6 +826,9 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the runnable.
             config: The config to use for the runnable.
+            version: The version of the schema to use.
+                     Currently only version 1 is available.
+                     No default will be assigned until the API is stabilized.
             include_names: Only include events from runnables with matching names.
             include_types: Only include events from runnables with matching types.
             include_tags: Only include events from runnables with matching tags.
@@ -836,6 +842,11 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             An async stream of StreamEvents.
         """  # noqa: E501
+        if version != "v1":
+            raise NotImplementedError(
+                'Only version "v1" of the schema is currently supported.'
+            )
+
         from langchain_core.runnables.utils import (
             _RootEventFilter,
         )
@@ -1492,8 +1503,10 @@ class Runnable(Generic[Input, Output], ABC):
                             try:
                                 final_output = final_output + chunk  # type: ignore
                             except TypeError:
-                                final_output = None
+                                final_output = chunk
                                 final_output_supported = False
+                    else:
+                        final_output = chunk
             except StopIteration:
                 pass
             for ichunk in input_for_tracing:
@@ -1504,8 +1517,10 @@ class Runnable(Generic[Input, Output], ABC):
                         try:
                             final_input = final_input + ichunk  # type: ignore
                         except TypeError:
-                            final_input = None
+                            final_input = ichunk
                             final_input_supported = False
+                else:
+                    final_input = ichunk
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -1591,8 +1606,10 @@ class Runnable(Generic[Input, Output], ABC):
                             try:
                                 final_output = final_output + chunk  # type: ignore
                             except TypeError:
-                                final_output = None
+                                final_output = chunk
                                 final_output_supported = False
+                    else:
+                        final_output = chunk
             except StopAsyncIteration:
                 pass
             async for ichunk in input_for_tracing:
@@ -1603,8 +1620,10 @@ class Runnable(Generic[Input, Output], ABC):
                         try:
                             final_input = final_input + ichunk  # type: ignore[operator]
                         except TypeError:
-                            final_input = None
+                            final_input = ichunk
                             final_input_supported = False
+                else:
+                    final_input = ichunk
         except BaseException as e:
             await run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -1627,7 +1646,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             if key not in self.__fields__:
                 raise ValueError(
                     f"Configuration key {key} not found in {self}: "
-                    "available keys are {self.__fields__.keys()}"
+                    f"available keys are {self.__fields__.keys()}"
                 )
 
         return RunnableConfigurableFields(default=self, fields=kwargs)
@@ -1785,7 +1804,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             # Or equivalently:
             # sequence = RunnableSequence(first=runnable_1, last=runnable_2)
             sequence.invoke(1)
-            await runnable.ainvoke(1)
+            await sequence.ainvoke(1)
 
             sequence.batch([1, 2, 3])
             await sequence.abatch([1, 2, 3])
@@ -2432,9 +2451,83 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
 
 class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
-    """
-    A runnable that runs a mapping of runnables in parallel,
-    and returns a mapping of their outputs.
+    """A runnable that runs a mapping of runnables in parallel, and returns a mapping
+    of their outputs.
+
+    RunnableParallel is one of the two main composition primitives for the LCEL,
+    alongside RunnableSequence. It invokes runnables concurrently, providing the same
+    input to each.
+
+    A RunnableParallel can be instantiated directly or by using a dict literal within a
+    sequence.
+
+    Here is a simple example that uses functions to illustrate the use of
+    RunnableParallel:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import RunnableLambda
+
+            def add_one(x: int) -> int:
+                return x + 1
+
+            def mul_two(x: int) -> int:
+                return x * 2
+
+            def mul_three(x: int) -> int:
+                return x * 3
+
+            runnable_1 = RunnableLambda(add_one)
+            runnable_2 = RunnableLambda(mul_two)
+            runnable_3 = RunnableLambda(mul_three)
+
+            sequence = runnable_1 | {  # this dict is coerced to a RunnableParallel
+                "mul_two": runnable_2,
+                "mul_three": runnable_3,
+            }
+            # Or equivalently:
+            # sequence = runnable_1 | RunnableParallel(
+            #     {"mul_two": runnable_2, "mul_three": runnable_3}
+            # )
+            # Also equivalently:
+            # sequence = runnable_1 | RunnableParallel(
+            #     mul_two=runnable_2,
+            #     mul_three=runnable_3,
+            # )
+
+            sequence.invoke(1)
+            await sequence.ainvoke(1)
+
+            sequence.batch([1, 2, 3])
+            await sequence.abatch([1, 2, 3])
+
+    RunnableParallel makes it easy to run Runnables in parallel. In the below example,
+    we simultaneously stream output from two different Runnables:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableParallel
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI()
+            joke_chain = (
+                ChatPromptTemplate.from_template("tell me a joke about {topic}")
+                | model
+            )
+            poem_chain = (
+                ChatPromptTemplate.from_template("write a 2-line poem about {topic}")
+                | model
+            )
+
+            runnable = RunnableParallel(joke=joke_chain, poem=poem_chain)
+
+            # Display stream
+            output = {key: "" for key, _ in runnable.output_schema()}
+            for chunk in runnable.stream({"topic": "bear"}):
+                for key in chunk:
+                    output[key] = output[key] + chunk[key].content
+                print(output)
     """
 
     steps: Mapping[str, Runnable[Input, Any]]
