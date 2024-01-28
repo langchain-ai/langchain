@@ -11,10 +11,62 @@ logger = logging.getLogger(__name__)
 WIKIDATA_MAX_QUERY_LENGTH = 300
 # Common properties you probably want to see filtereted from https://www.wikidata.org/wiki/Wikidata:Database_reports/List_of_properties/all
 DEFAULT_PROPERTIES = [
-    'P31', 'P279', 'P27', 'P361', 'P527', 'P495', 'P17', 'P585', 'P131', 'P106', 'P21', 'P569', 'P570', 'P577', 'P50',
-    'P571', 'P641', 'P625', 'P19', 'P69', 'P108', 'P136', 'P39', 'P161', 'P20', 'P101', 'P179', 'P175', 'P7937', 'P57',
-    'P607', 'P509', 'P800', 'P449', 'P580', 'P582', 'P276', 'P69', 'P112', 'P740', 'P159', 'P452', 'P102', 'P1142',
-    'P1387', 'P1576', 'P140', 'P178', 'P287', 'P25', 'P22', 'P40', 'P185', 'P802', 'P1416']
+    "P31",
+    "P279",
+    "P27",
+    "P361",
+    "P527",
+    "P495",
+    "P17",
+    "P585",
+    "P131",
+    "P106",
+    "P21",
+    "P569",
+    "P570",
+    "P577",
+    "P50",
+    "P571",
+    "P641",
+    "P625",
+    "P19",
+    "P69",
+    "P108",
+    "P136",
+    "P39",
+    "P161",
+    "P20",
+    "P101",
+    "P179",
+    "P175",
+    "P7937",
+    "P57",
+    "P607",
+    "P509",
+    "P800",
+    "P449",
+    "P580",
+    "P582",
+    "P276",
+    "P69",
+    "P112",
+    "P740",
+    "P159",
+    "P452",
+    "P102",
+    "P1142",
+    "P1387",
+    "P1576",
+    "P140",
+    "P178",
+    "P287",
+    "P25",
+    "P22",
+    "P40",
+    "P185",
+    "P802",
+    "P1416",
+]
 DEFAULT_LANG_CODE = "en"
 WIKIDATA_USER_AGENT = "langchain-wikidata"
 WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
@@ -24,7 +76,7 @@ WIKIDATA_REST_API_URL = "https://www.wikidata.org/w/rest.php/wikibase/v0/"
 class WikidataAPIWrapper(BaseModel):
     """Wrapper around the Wikidata API.
 
-    To use, you should have the ``wikibase-rest-api-client`` and 
+    To use, you should have the ``wikibase-rest-api-client`` and
     ``mediawikiapi `` python packages installed.
     This wrapper will use the Wikibase APIs to conduct searches and
     fetch item content. By default, it will return the item content
@@ -46,8 +98,10 @@ class WikidataAPIWrapper(BaseModel):
         try:
             from mediawikiapi import MediaWikiAPI
             from mediawikiapi.config import Config
+
             values["wikidata_mw"] = MediaWikiAPI(
-                Config(user_agent=WIKIDATA_USER_AGENT, mediawiki_url=WIKIDATA_API_URL))
+                Config(user_agent=WIKIDATA_USER_AGENT, mediawiki_url=WIKIDATA_API_URL)
+            )
         except ImportError:
             raise ImportError(
                 "Could not import mediawikiapi python package. "
@@ -58,9 +112,12 @@ class WikidataAPIWrapper(BaseModel):
             from wikibase_rest_api_client import Client
             from wikibase_rest_api_client.utilities.fluent import FluentWikibaseClient
 
-            client = Client(timeout=60,
-                            base_url=WIKIDATA_REST_API_URL, headers={"User-Agent": WIKIDATA_USER_AGENT},
-                            follow_redirects=True)
+            client = Client(
+                timeout=60,
+                base_url=WIKIDATA_REST_API_URL,
+                headers={"User-Agent": WIKIDATA_USER_AGENT},
+                follow_redirects=True,
+            )
             values["wikidata_rest"] = client
         except ImportError:
             raise ImportError(
@@ -73,7 +130,8 @@ class WikidataAPIWrapper(BaseModel):
         from wikibase_rest_api_client.utilities.fluent import FluentWikibaseClient
 
         fluent_client: FluentWikibaseClient = FluentWikibaseClient(
-            self.wikidata_rest, supported_props=self.wikidata_props, lang=self.lang)
+            self.wikidata_rest, supported_props=self.wikidata_props, lang=self.lang
+        )
         resp = fluent_client.get_item(qid)
 
         if not resp:
@@ -93,7 +151,8 @@ class WikidataAPIWrapper(BaseModel):
 
         return Document(
             page_content=("\n".join(doc_lines))[: self.doc_content_chars_max],
-            meta={"title": qid, "source": f"https://www.wikidata.org/wiki/{qid}"},)
+            meta={"title": qid, "source": f"https://www.wikidata.org/wiki/{qid}"},
+        )
 
     def load(self, query: str) -> List[Document]:
         """
