@@ -24,6 +24,7 @@ from typing import (
 )
 
 import openai
+import pydantic
 import tiktoken
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -407,7 +408,11 @@ class ChatOpenAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
+                chunk = (
+                    chunk.dict()
+                    if pydantic.__version__.startswith("1")
+                    else chunk.model_dump()
+                )
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -465,7 +470,11 @@ class ChatOpenAI(BaseChatModel):
     def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
-            response = response.model_dump()
+            response = (
+                response.dict()
+                if pydantic.__version__.startswith("1")
+                else response.model_dump()
+            )
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res.get("finish_reason"))
@@ -499,7 +508,11 @@ class ChatOpenAI(BaseChatModel):
             messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
+                chunk = (
+                    chunk.dict()
+                    if pydantic.__version__.startswith("1")
+                    else chunk.model_dump()
+                )
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
