@@ -7,7 +7,6 @@ import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from contextvars import copy_context
-from copy import deepcopy
 from functools import wraps
 from itertools import groupby, tee
 from operator import itemgetter
@@ -36,7 +35,8 @@ from typing import (
 
 from typing_extensions import Literal, get_args
 
-from langchain_core.load.dump import dumpd, dumps
+from langchain_core._api import beta_decorator
+from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import BaseConfig, BaseModel, Field, create_model
 from langchain_core.runnables.config import (
@@ -54,6 +54,7 @@ from langchain_core.runnables.config import (
     var_child_runnable_config,
 )
 from langchain_core.runnables.graph import Graph
+from langchain_core.runnables.schema import EventData, StreamEvent
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -83,7 +84,11 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
-    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
+    from langchain_core.tracers.log_stream import (
+        LogEntry,
+        RunLog,
+        RunLogPatch,
+    )
     from langchain_core.tracers.root_listeners import Listener
 
 
@@ -600,7 +605,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_names: Optional[Sequence[str]] = None,
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> AsyncIterator[RunLogPatch]:
         ...
 
@@ -618,7 +623,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_names: Optional[Sequence[str]] = None,
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> AsyncIterator[RunLog]:
         ...
 
@@ -635,7 +640,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_names: Optional[Sequence[str]] = None,
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
         """
         Stream all output from a runnable, as reported to the callback system.
@@ -659,16 +664,11 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_types: Exclude logs with these types.
             exclude_tags: Exclude logs with these tags.
         """
-        import jsonpatch  # type: ignore[import]
-
-        from langchain_core.callbacks.base import BaseCallbackManager
         from langchain_core.tracers.log_stream import (
             LogStreamCallbackHandler,
-            RunLog,
-            RunLogPatch,
+            _astream_log_implementation,
         )
 
-        # Create a stream handler that will emit Log objects
         stream = LogStreamCallbackHandler(
             auto_close=False,
             include_names=include_names,
@@ -677,81 +677,346 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_names=exclude_names,
             exclude_types=exclude_types,
             exclude_tags=exclude_tags,
+            _schema_format="original",
         )
 
-        # Assign the stream handler to the config
-        config = ensure_config(config)
-        callbacks = config.get("callbacks")
-        if callbacks is None:
-            config["callbacks"] = [stream]
-        elif isinstance(callbacks, list):
-            config["callbacks"] = callbacks + [stream]
-        elif isinstance(callbacks, BaseCallbackManager):
-            callbacks = callbacks.copy()
-            callbacks.add_handler(stream, inherit=True)
-            config["callbacks"] = callbacks
-        else:
-            raise ValueError(
-                f"Unexpected type for callbacks: {callbacks}."
-                "Expected None, list or AsyncCallbackManager."
+        # Mypy isn't resolving the overloads here
+        # Likely an issue b/c `self` is being passed through
+        # and it's can't map it to Runnable[Input,Output]?
+        async for item in _astream_log_implementation(  # type: ignore
+            self,
+            input,
+            config,
+            diff=diff,
+            stream=stream,
+            with_streamed_output_list=with_streamed_output_list,
+        ):
+            yield item
+
+    @beta_decorator.beta(message="This API is in beta and may change in the future.")
+    async def astream_events(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        version: Literal["v1"],
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[StreamEvent]:
+        """Generate a stream of events.
+
+        Use to create an iterator ove StreamEvents that provide real-time information
+        about the progress of the runnable, including StreamEvents from intermediate
+        results.
+
+        A StreamEvent is a dictionary with the following schema:
+
+        * ``event``: str - Event names are of the
+            format: on_[runnable_type]_(start|stream|end).
+        * ``name``: str - The name of the runnable that generated the event.
+        * ``run_id``: str - randomly generated ID associated with the given execution of
+            the runnable that emitted the event.
+            A child runnable that gets invoked as part of the execution of a
+            parent runnable is assigned its own unique ID.
+        * ``tags``: Optional[List[str]] - The tags of the runnable that generated
+            the event.
+        * ``metadata``: Optional[Dict[str, Any]] - The metadata of the runnable
+            that generated the event.
+        * ``data``: Dict[str, Any]
+
+
+        Below is a table that illustrates some evens that might be emitted by various
+        chains. Metadata fields have been omitted from the table for brevity.
+        Chain definitions have been included after the table.
+
+        | event                | name             | chunk                           | input                                         | output                                          |
+        |----------------------|------------------|---------------------------------|-----------------------------------------------|-------------------------------------------------|
+        | on_chat_model_start  | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} |                                                 |
+        | on_chat_model_stream | [model name]     | AIMessageChunk(content="hello") |                                               |                                                 |
+        | on_chat_model_end    | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} | {"generations": [...], "llm_output": None, ...} |
+        | on_llm_start         | [model name]     |                                 | {'input': 'hello'}                            |                                                 |
+        | on_llm_stream        | [model name]     | 'Hello'                         |                                               |                                                 |
+        | on_llm_end           | [model name]     |                                 | 'Hello human!'                                |
+        | on_chain_start       | format_docs      |                                 |                                               |                                                 |
+        | on_chain_stream      | format_docs      | "hello world!, goodbye world!"  |                                               |                                                 |
+        | on_chain_end         | format_docs      |                                 | [Document(...)]                               | "hello world!, goodbye world!"                  |
+        | on_tool_start        | some_tool        |                                 | {"x": 1, "y": "2"}                            |                                                 |
+        | on_tool_stream       | some_tool        | {"x": 1, "y": "2"}              |                                               |                                                 |
+        | on_tool_end          | some_tool        |                                 |                                               | {"x": 1, "y": "2"}                              |
+        | on_retriever_start   | [retriever name] |                                 | {"query": "hello"}                            |                                                 |
+        | on_retriever_chunk   | [retriever name] | {documents: [...]}              |                                               |                                                 |
+        | on_retriever_end     | [retriever name] |                                 | {"query": "hello"}                            | {documents: [...]}                              |
+        | on_prompt_start      | [template_name]  |                                 | {"question": "hello"}                         |                                                 |
+        | on_prompt_end        | [template_name]  |                                 | {"question": "hello"}                         | ChatPromptValue(messages: [SystemMessage, ...]) |
+
+        Here are declarations associated with the events shown above:
+
+        `format_docs`:
+
+        ```python
+        def format_docs(docs: List[Document]) -> str:
+            '''Format the docs.'''
+            return ", ".join([doc.page_content for doc in docs])
+
+        format_docs = RunnableLambda(format_docs)
+        ```
+
+        `some_tool`:
+
+        ```python
+        @tool
+        def some_tool(x: int, y: str) -> dict:
+            '''Some_tool.'''
+            return {"x": x, "y": y}
+        ```
+
+        `prompt`:
+
+        ```python
+        template = ChatPromptTemplate.from_messages(
+            [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        ).with_config({"run_name": "my_template", "tags": ["my_template"]})
+        ```
+
+        Example:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import RunnableLambda
+
+            async def reverse(s: str) -> str:
+                return s[::-1]
+
+            chain = RunnableLambda(func=reverse)
+
+            events = [
+                event async for event in chain.astream_events("hello", version="v1")
+            ]
+
+            # will produce the following events (run_id has been omitted for brevity):
+            [
+                {
+                    "data": {"input": "hello"},
+                    "event": "on_chain_start",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+                {
+                    "data": {"chunk": "olleh"},
+                    "event": "on_chain_stream",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+                {
+                    "data": {"output": "olleh"},
+                    "event": "on_chain_end",
+                    "metadata": {},
+                    "name": "reverse",
+                    "tags": [],
+                },
+            ]
+
+        Args:
+            input: The input to the runnable.
+            config: The config to use for the runnable.
+            version: The version of the schema to use.
+                     Currently only version 1 is available.
+                     No default will be assigned until the API is stabilized.
+            include_names: Only include events from runnables with matching names.
+            include_types: Only include events from runnables with matching types.
+            include_tags: Only include events from runnables with matching tags.
+            exclude_names: Exclude events from runnables with matching names.
+            exclude_types: Exclude events from runnables with matching types.
+            exclude_tags: Exclude events from runnables with matching tags.
+            kwargs: Additional keyword arguments to pass to the runnable.
+                These will be passed to astream_log as this implementation
+                of astream_events is built on top of astream_log.
+
+        Returns:
+            An async stream of StreamEvents.
+        """  # noqa: E501
+        if version != "v1":
+            raise NotImplementedError(
+                'Only version "v1" of the schema is currently supported.'
             )
 
-        # Call the runnable in streaming mode,
-        # add each chunk to the output stream
-        async def consume_astream() -> None:
-            try:
-                prev_final_output: Optional[Output] = None
-                final_output: Optional[Output] = None
+        from langchain_core.runnables.utils import (
+            _RootEventFilter,
+        )
+        from langchain_core.tracers.log_stream import (
+            LogStreamCallbackHandler,
+            RunLog,
+            _astream_log_implementation,
+        )
 
-                async for chunk in self.astream(input, config, **kwargs):
-                    prev_final_output = final_output
-                    if final_output is None:
-                        final_output = chunk
+        stream = LogStreamCallbackHandler(
+            auto_close=False,
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+            _schema_format="streaming_events",
+        )
+
+        run_log = RunLog(state=None)  # type: ignore[arg-type]
+        encountered_start_event = False
+
+        _root_event_filter = _RootEventFilter(
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+        )
+
+        config = ensure_config(config)
+        root_tags = config.get("tags", [])
+        root_metadata = config.get("metadata", {})
+        root_name = config.get("run_name", self.get_name())
+
+        # Ignoring mypy complaint about too many different union combinations
+        # This arises because many of the argument types are unions
+        async for log in _astream_log_implementation(  # type: ignore[misc]
+            self,
+            input,
+            config=config,
+            stream=stream,
+            diff=True,
+            with_streamed_output_list=True,
+            **kwargs,
+        ):
+            run_log = run_log + log
+
+            if not encountered_start_event:
+                # Yield the start event for the root runnable.
+                encountered_start_event = True
+                state = run_log.state.copy()
+
+                event = StreamEvent(
+                    event=f"on_{state['type']}_start",
+                    run_id=state["id"],
+                    name=root_name,
+                    tags=root_tags,
+                    metadata=root_metadata,
+                    data={
+                        "input": input,
+                    },
+                )
+
+                if _root_event_filter.include_event(event, state["type"]):
+                    yield event
+
+            paths = {
+                op["path"].split("/")[2]
+                for op in log.ops
+                if op["path"].startswith("/logs/")
+            }
+            # Elements in a set should be iterated in the same order
+            # as they were inserted in modern python versions.
+            for path in paths:
+                data: EventData = {}
+                log_entry: LogEntry = run_log.state["logs"][path]
+                if log_entry["end_time"] is None:
+                    if log_entry["streamed_output"]:
+                        event_type = "stream"
                     else:
-                        try:
-                            final_output = final_output + chunk  # type: ignore
-                        except TypeError:
-                            final_output = chunk
-                    patches: List[Dict[str, Any]] = []
-                    if with_streamed_output_list:
-                        patches.append(
-                            {
-                                "op": "add",
-                                "path": "/streamed_output/-",
-                                # chunk cannot be shared between
-                                # streamed_output and final_output
-                                # otherwise jsonpatch.apply will
-                                # modify both
-                                "value": deepcopy(chunk),
-                            }
+                        event_type = "start"
+                else:
+                    event_type = "end"
+
+                if event_type == "start":
+                    # Include the inputs with the start event if they are available.
+                    # Usually they will NOT be available for components that operate
+                    # on streams, since those components stream the input and
+                    # don't know its final value until the end of the stream.
+                    inputs = log_entry["inputs"]
+                    if inputs is not None:
+                        data["input"] = inputs
+                    pass
+
+                if event_type == "end":
+                    inputs = log_entry["inputs"]
+                    if inputs is not None:
+                        data["input"] = inputs
+
+                    # None is a VALID output for an end event
+                    data["output"] = log_entry["final_output"]
+
+                if event_type == "stream":
+                    num_chunks = len(log_entry["streamed_output"])
+                    if num_chunks != 1:
+                        raise AssertionError(
+                            f"Expected exactly one chunk of streamed output, "
+                            f"got {num_chunks} instead. This is impossible. "
+                            f"Encountered in: {log_entry['name']}"
                         )
-                    for op in jsonpatch.JsonPatch.from_diff(
-                        prev_final_output, final_output, dumps=dumps
-                    ):
-                        patches.append({**op, "path": f"/final_output{op['path']}"})
-                    await stream.send_stream.send(RunLogPatch(*patches))
-            finally:
-                await stream.send_stream.aclose()
 
-        # Start the runnable in a task, so we can start consuming output
-        task = asyncio.create_task(consume_astream())
+                    data = {"chunk": log_entry["streamed_output"][0]}
+                    # Clean up the stream, we don't need it anymore.
+                    # And this avoids duplicates as well!
+                    log_entry["streamed_output"] = []
 
-        try:
-            # Yield each chunk from the output stream
-            if diff:
-                async for log in stream:
-                    yield log
-            else:
-                state = RunLog(state=None)  # type: ignore[arg-type]
-                async for log in stream:
-                    state = state + log
-                    yield state
-        finally:
-            # Wait for the runnable to finish, if not cancelled (eg. by break)
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+                yield StreamEvent(
+                    event=f"on_{log_entry['type']}_{event_type}",
+                    name=log_entry["name"],
+                    run_id=log_entry["id"],
+                    tags=log_entry["tags"],
+                    metadata=log_entry["metadata"],
+                    data=data,
+                )
+
+            # Finally, we take care of the streaming output from the root chain
+            # if there is any.
+            state = run_log.state
+            if state["streamed_output"]:
+                num_chunks = len(state["streamed_output"])
+                if num_chunks != 1:
+                    raise AssertionError(
+                        f"Expected exactly one chunk of streamed output, "
+                        f"got {num_chunks} instead. This is impossible. "
+                        f"Encountered in: {state['name']}"
+                    )
+
+                data = {"chunk": state["streamed_output"][0]}
+                # Clean up the stream, we don't need it anymore.
+                state["streamed_output"] = []
+
+                event = StreamEvent(
+                    event=f"on_{state['type']}_stream",
+                    run_id=state["id"],
+                    tags=root_tags,
+                    metadata=root_metadata,
+                    name=root_name,
+                    data=data,
+                )
+                if _root_event_filter.include_event(event, state["type"]):
+                    yield event
+
+        state = run_log.state
+
+        # Finally yield the end event for the root runnable.
+        event = StreamEvent(
+            event=f"on_{state['type']}_end",
+            name=root_name,
+            run_id=state["id"],
+            tags=root_tags,
+            metadata=root_metadata,
+            data={
+                "output": state["final_output"],
+            },
+        )
+        if _root_event_filter.include_event(event, state["type"]):
+            yield event
 
     def transform(
         self,
@@ -923,12 +1188,17 @@ class Runnable(Generic[Input, Output], ABC):
         fallbacks: Sequence[Runnable[Input, Output]],
         *,
         exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,),
+        exception_key: Optional[str] = None,
     ) -> RunnableWithFallbacksT[Input, Output]:
         """Add fallbacks to a runnable, returning a new Runnable.
 
         Args:
             fallbacks: A sequence of runnables to try if the original runnable fails.
             exceptions_to_handle: A tuple of exception types to handle.
+            exception_key: If string is specified then handled exceptions will be passed
+                to fallbacks as part of the input under the specified key. If None,
+                exceptions will not be passed to fallbacks. If used, the base runnable
+                and its fallbacks must accept a dictionary as input.
 
         Returns:
             A new Runnable that will try the original runnable, and then each
@@ -940,6 +1210,7 @@ class Runnable(Generic[Input, Output], ABC):
             runnable=self,
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
+            exception_key=exception_key,
         )
 
     """ --- Helper methods for Subclasses --- """
@@ -1232,8 +1503,10 @@ class Runnable(Generic[Input, Output], ABC):
                             try:
                                 final_output = final_output + chunk  # type: ignore
                             except TypeError:
-                                final_output = None
+                                final_output = chunk
                                 final_output_supported = False
+                    else:
+                        final_output = chunk
             except StopIteration:
                 pass
             for ichunk in input_for_tracing:
@@ -1244,8 +1517,10 @@ class Runnable(Generic[Input, Output], ABC):
                         try:
                             final_input = final_input + ichunk  # type: ignore
                         except TypeError:
-                            final_input = None
+                            final_input = ichunk
                             final_input_supported = False
+                else:
+                    final_input = ichunk
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -1331,8 +1606,10 @@ class Runnable(Generic[Input, Output], ABC):
                             try:
                                 final_output = final_output + chunk  # type: ignore
                             except TypeError:
-                                final_output = None
+                                final_output = chunk
                                 final_output_supported = False
+                    else:
+                        final_output = chunk
             except StopAsyncIteration:
                 pass
             async for ichunk in input_for_tracing:
@@ -1343,8 +1620,10 @@ class Runnable(Generic[Input, Output], ABC):
                         try:
                             final_input = final_input + ichunk  # type: ignore[operator]
                         except TypeError:
-                            final_input = None
+                            final_input = ichunk
                             final_input_supported = False
+                else:
+                    final_input = ichunk
         except BaseException as e:
             await run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -1367,7 +1646,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             if key not in self.__fields__:
                 raise ValueError(
                     f"Configuration key {key} not found in {self}: "
-                    "available keys are {self.__fields__.keys()}"
+                    f"available keys are {self.__fields__.keys()}"
                 )
 
         return RunnableConfigurableFields(default=self, fields=kwargs)
@@ -1525,7 +1804,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             # Or equivalently:
             # sequence = RunnableSequence(first=runnable_1, last=runnable_2)
             sequence.invoke(1)
-            await runnable.ainvoke(1)
+            await sequence.ainvoke(1)
 
             sequence.batch([1, 2, 3])
             await sequence.abatch([1, 2, 3])
@@ -2172,9 +2451,83 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
 
 class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
-    """
-    A runnable that runs a mapping of runnables in parallel,
-    and returns a mapping of their outputs.
+    """A runnable that runs a mapping of runnables in parallel, and returns a mapping
+    of their outputs.
+
+    RunnableParallel is one of the two main composition primitives for the LCEL,
+    alongside RunnableSequence. It invokes runnables concurrently, providing the same
+    input to each.
+
+    A RunnableParallel can be instantiated directly or by using a dict literal within a
+    sequence.
+
+    Here is a simple example that uses functions to illustrate the use of
+    RunnableParallel:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import RunnableLambda
+
+            def add_one(x: int) -> int:
+                return x + 1
+
+            def mul_two(x: int) -> int:
+                return x * 2
+
+            def mul_three(x: int) -> int:
+                return x * 3
+
+            runnable_1 = RunnableLambda(add_one)
+            runnable_2 = RunnableLambda(mul_two)
+            runnable_3 = RunnableLambda(mul_three)
+
+            sequence = runnable_1 | {  # this dict is coerced to a RunnableParallel
+                "mul_two": runnable_2,
+                "mul_three": runnable_3,
+            }
+            # Or equivalently:
+            # sequence = runnable_1 | RunnableParallel(
+            #     {"mul_two": runnable_2, "mul_three": runnable_3}
+            # )
+            # Also equivalently:
+            # sequence = runnable_1 | RunnableParallel(
+            #     mul_two=runnable_2,
+            #     mul_three=runnable_3,
+            # )
+
+            sequence.invoke(1)
+            await sequence.ainvoke(1)
+
+            sequence.batch([1, 2, 3])
+            await sequence.abatch([1, 2, 3])
+
+    RunnableParallel makes it easy to run Runnables in parallel. In the below example,
+    we simultaneously stream output from two different Runnables:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableParallel
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI()
+            joke_chain = (
+                ChatPromptTemplate.from_template("tell me a joke about {topic}")
+                | model
+            )
+            poem_chain = (
+                ChatPromptTemplate.from_template("write a 2-line poem about {topic}")
+                | model
+            )
+
+            runnable = RunnableParallel(joke=joke_chain, poem=poem_chain)
+
+            # Display stream
+            output = {key: "" for key, _ in runnable.output_schema()}
+            for chunk in runnable.stream({"topic": "bear"}):
+                for key in chunk:
+                    output[key] = output[key] + chunk[key].content
+                print(output)
     """
 
     steps: Mapping[str, Runnable[Input, Any]]
@@ -2529,8 +2882,88 @@ RunnableMap = RunnableParallel
 
 
 class RunnableGenerator(Runnable[Input, Output]):
-    """
-    A runnable that runs a generator function.
+    """A runnable that runs a generator function.
+
+    RunnableGenerators can be instantiated directly or by using a generator within
+    a sequence.
+
+    RunnableGenerators can be used to implement custom behavior, such as custom output
+    parsers, while preserving streaming capabilities. Given a generator function with
+    a signature Iterator[A] -> Iterator[B], wrapping it in a RunnableGenerator allows
+    it to emit output chunks as soon as they are streamed in from the previous step.
+
+    Note that if a generator function has a signature A -> Iterator[B], such that it
+    requires its input from the previous step to be completed before emitting chunks
+    (e.g., most LLMs need the entire prompt available to start generating), it can
+    instead be wrapped in a RunnableLambda.
+
+    Here is an example to show the basic mechanics of a RunnableGenerator:
+
+        .. code-block:: python
+
+            from typing import Any, AsyncIterator, Iterator
+
+            from langchain_core.runnables import RunnableGenerator
+
+
+            def gen(input: Iterator[Any]) -> Iterator[str]:
+                for token in ["Have", " a", " nice", " day"]:
+                    yield token
+
+
+            runnable = RunnableGenerator(gen)
+            runnable.invoke(None)  # "Have a nice day"
+            list(runnable.stream(None))  # ["Have", " a", " nice", " day"]
+            runnable.batch([None, None])  # ["Have a nice day", "Have a nice day"]
+
+
+            # Async version:
+            async def agen(input: AsyncIterator[Any]) -> AsyncIterator[str]:
+                for token in ["Have", " a", " nice", " day"]:
+                    yield token
+
+            runnable = RunnableGenerator(agen)
+            await runnable.ainvoke(None)  # "Have a nice day"
+            [p async for p in runnable.astream(None)] # ["Have", " a", " nice", " day"]
+
+    RunnableGenerator makes it easy to implement custom behavior within a streaming
+    context. Below we show an example:
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableGenerator, RunnableLambda
+            from langchain_openai import ChatOpenAI
+            from langchain.schema import StrOutputParser
+
+
+            model = ChatOpenAI()
+            chant_chain = (
+                ChatPromptTemplate.from_template("Give me a 3 word chant about {topic}")
+                | model
+                | StrOutputParser()
+            )
+
+            def character_generator(input: Iterator[str]) -> Iterator[str]:
+                for token in input:
+                    if "," in token or "." in token:
+                        yield "👏" + token
+                    else:
+                        yield token
+
+
+            runnable = chant_chain | character_generator
+            assert type(runnable.last) is RunnableGenerator
+            "".join(runnable.stream({"topic": "waste"})) # Reduce👏, Reuse👏, Recycle👏.
+
+            # Note that RunnableLambda can be used to delay streaming of one step in a
+            # sequence until the previous step is finished:
+            def reverse_generator(input: str) -> Iterator[str]:
+                # Yield characters of input in reverse order.
+                for character in input[::-1]:
+                    yield character
+
+            runnable = chant_chain | RunnableLambda(reverse_generator)
+            "".join(runnable.stream({"topic": "waste"}))  # ".elcycer ,esuer ,ecudeR"
     """
 
     def __init__(
@@ -3390,6 +3823,18 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     ) -> List[Output]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
+    async def astream_events(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[StreamEvent]:
+        for _ in range(1):
+            raise NotImplementedError(
+                "RunnableEach does not support astream_events yet."
+            )
+            yield
+
 
 class RunnableEach(RunnableEachBase[Input, Output]):
     """
@@ -3677,6 +4122,17 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             input,
             self._merge_configs(config),
             **{**self.kwargs, **kwargs},
+        ):
+            yield item
+
+    async def astream_events(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[StreamEvent]:
+        async for item in self.bound.astream_events(
+            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         ):
             yield item
 
