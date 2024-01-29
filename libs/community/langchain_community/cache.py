@@ -350,7 +350,7 @@ class UpstashRedisCache(BaseCache):
         self.redis.flushdb(flush_type=asynchronous)
 
 
-class RedisCacheBase(BaseCache, ABC):
+class _RedisCacheBase(BaseCache, ABC):
     @staticmethod
     def _key(prompt: str, llm_string: str) -> str:
         """Compute key from prompt and llm_string"""
@@ -396,7 +396,7 @@ class RedisCacheBase(BaseCache, ABC):
             pipe.expire(key, ttl)
 
 
-class RedisCache(RedisCacheBase):
+class RedisCache(_RedisCacheBase):
     """
     Cache that uses Redis as a backend. Allows to use a sync `redis.Redis` client.
     """
@@ -453,7 +453,7 @@ class RedisCache(RedisCacheBase):
         self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
 
-class AsyncRedisCache(RedisCacheBase):
+class AsyncRedisCache(_RedisCacheBase):
     """
     Cache that uses Redis as a backend. Allows to use an
     async `redis.asyncio.Redis` client.
