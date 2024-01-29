@@ -1,0 +1,61 @@
+{
+    "bootstrap-sha": "TODO",
+    "release-type": "python",
+    "bump-minor-pre-major": true,
+    "bump-patch-for-minor-pre-major": true,
+    "prerelease-type": "rc",
+    "separate-pull-requests": true,
+    "packages": {
+        "libs/core": {
+            "package-name": "langchain-core"
+        },
+        "libs/community": {
+            "package-name": "langchain-community"
+        },
+        "libs/langchain": {
+            "package-name": "langchain"
+        },
+        "libs/experimental": {
+            "package-name": "langchain-experimental"
+        },
+        "libs/cli": {
+            "package-name": "langchain-cli"
+        },
+        "libs/partners/anthropic": {
+            "package-name": "langchain-anthropic"
+        },
+        "libs/partners/exa": {
+            "package-name": "langchain-exa"
+        },
+        "libs/partners/google-genai": {
+            "package-name": "langchain-google-genai"
+        },
+        "libs/partners/google-vertexai": {
+            "package-name": "langchain-google-vertexai"
+        },
+        "libs/partners/mistralai": {
+            "package-name": "langchain-mistralai"
+        },
+        "libs/partners/nomic": {
+            "package-name": "langchain-nomic"
+        },
+        "libs/partners/nvidia-ai-endpoints": {
+            "package-name": "langchain-nvidia-ai-endpoints"
+        },
+        "libs/partners/nvidia-trt": {
+            "package-name": "langchain-nvidia-trt"
+        },
+        "libs/partners/openai": {
+            "package-name": "langchain-openai"
+        },
+        "libs/partners/pinecone": {
+            "package-name": "langchain-pinecone"
+        },
+        "libs/partners/robocorp": {
+            "package-name": "langchain-robocorp"
+        },
+        "libs/partners/together": {
+            "package-name": "langchain-together"
+        }
+    }
+}

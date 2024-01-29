@@ -1,0 +1,19 @@
+{
+  "libs/core": "0.1.17",
+  "libs/community": "0.0.16",
+  "libs/langchain": "0.1.4",
+  "libs/experimental": "0.0.49",
+  "libs/cli": "0.0.21",
+  "libs/partners/anthropic": "0.0.1.post1",
+  "libs/partners/exa": "0.0.1",
+  "libs/partners/google-genai": "0.0.6",
+  "libs/partners/google-vertexai": "0.0.3",
+  "libs/partners/mistralai": "0.0.3",
+  "libs/partners/nomic": "0.0.1",
+  "libs/partners/nvidia-ai-endpoints": "0.0.1",
+  "libs/partners/nvidia-trt": "0.0.1rc0",
+  "libs/partners/openai": "0.0.5",
+  "libs/partners/pinecone": "0.0.1",
+  "libs/partners/robocorp": "0.0.2",
+  "libs/partners/together": "0.0.2.post1"
+}
