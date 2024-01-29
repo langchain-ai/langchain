@@ -27,7 +27,9 @@ _EXPECTED = [
     "ElasticsearchStore",
     "Epsilla",
     "FAISS",
+    "HanaDB",
     "Hologres",
+    "KDBAI",
     "LanceDB",
     "Lantern",
     "LLMRails",
@@ -73,6 +75,7 @@ _EXPECTED = [
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "Yellowbrick",
+    "NeuralDBVectorStore",
 ]
 
 

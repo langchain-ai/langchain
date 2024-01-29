@@ -37,7 +37,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     to use (default `input_documents`), and then also expose a method to calculate
     the length of a prompt from documents (useful for outside callers to use to
     determine whether it's safe to pass a list of documents into this chain or whether
-    that will longer than the context length).
+    that will be longer than the context length).
     """
 
     input_key: str = "input_documents"  #: :meta private:
