@@ -299,7 +299,9 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         tools: Sequence[Union[BaseTool, dict]],
         model: str,
         *,
-        async_client: Optional[openai.AsyncOpenAI, openai.AsyncAzureOpenAI] = None,
+        async_client: Optional[
+            Union[openai.AsyncOpenAI, openai.AsyncAzureOpenAI]
+        ] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Create an AsyncOpenAI Assistant and instantiate the Runnable.
@@ -316,12 +318,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             AsyncOpenAIAssistantRunnable configured to run using the created assistant.
         """
         async_client = async_client or _get_openai_async_client()
-        openai_tools: List = []
-        for tool in tools:
-            oai_tool = (
-                tool if isinstance(tool, dict) else format_tool_to_openai_tool(tool)
-            )
-            openai_tools.append(oai_tool)
+        openai_tools = [convert_to_openai_tool(tool) for tool in tools]
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
