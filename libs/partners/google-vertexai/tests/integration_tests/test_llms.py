@@ -32,17 +32,33 @@ def test_vertex_initialization(model_name: str) -> None:
     "model_name",
     model_names_to_test_with_default,
 )
-def test_vertex_call(model_name: str) -> None:
+def test_vertex_invoke(model_name: str) -> None:
     llm = (
         VertexAI(model_name=model_name, temperature=0)
         if model_name
         else VertexAI(temperature=0.0)
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
-def test_vertex_generate() -> None:
+@pytest.mark.parametrize(
+    "model_name",
+    model_names_to_test_with_default,
+)
+def test_vertex_generate(model_name: str) -> None:
+    llm = (
+        VertexAI(model_name=model_name, temperature=0)
+        if model_name
+        else VertexAI(temperature=0.0)
+    )
+    output = llm.generate(["Say foo:"])
+    assert isinstance(output, LLMResult)
+    assert len(output.generations) == 1
+
+
+@pytest.mark.xfail(reason="VertexAI doesn't always respect number of candidates")
+def test_vertex_generate_multiple_candidates() -> None:
     llm = VertexAI(temperature=0.3, n=2, model_name="text-bison@001")
     output = llm.generate(["Say foo:"])
     assert isinstance(output, LLMResult)
@@ -50,6 +66,7 @@ def test_vertex_generate() -> None:
     assert len(output.generations[0]) == 2
 
 
+@pytest.mark.xfail(reason="VertexAI doesn't always respect number of candidates")
 def test_vertex_generate_code() -> None:
     llm = VertexAI(temperature=0.3, n=2, model_name="code-bison@001")
     output = llm.generate(["generate a python method that says foo:"])
@@ -87,6 +104,7 @@ async def test_vertex_consistency() -> None:
     assert output.generations[0][0].text == async_output.generations[0][0].text
 
 
+@pytest.mark.skip("CI testing not set up")
 @pytest.mark.parametrize(
     "endpoint_os_variable_name,result_arg",
     [("FALCON_ENDPOINT_ID", "generated_text"), ("LLAMA_ENDPOINT_ID", None)],
@@ -115,6 +133,7 @@ def test_model_garden(
     assert llm._llm_type == "vertexai_model_garden"
 
 
+@pytest.mark.skip("CI testing not set up")
 @pytest.mark.parametrize(
     "endpoint_os_variable_name,result_arg",
     [("FALCON_ENDPOINT_ID", "generated_text"), ("LLAMA_ENDPOINT_ID", None)],
@@ -143,6 +162,7 @@ def test_model_garden_generate(
     assert len(output.generations) == 2
 
 
+@pytest.mark.skip("CI testing not set up")
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "endpoint_os_variable_name,result_arg",
