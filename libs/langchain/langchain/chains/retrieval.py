@@ -57,14 +57,14 @@ def create_retrieval_chain(
 
     """
 
-    def messages_param_is_message_list(x: Dict):
+    def messages_param_is_message_list(x: Dict) -> bool:
         return (
             isinstance(x.get("messages", []), list)
             and len(x.get("messages", [])) > 0
             and all(isinstance(i, BaseMessage) for i in x.get("messages", []))
         )
 
-    def extract_retriever_input_string(x: Dict):
+    def extract_retriever_input_string(x: Dict) -> str:
         if not x.get("input"):
             if messages_param_is_message_list(x):
                 return x["messages"][-1].content
