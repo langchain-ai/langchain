@@ -1,5 +1,6 @@
 import importlib.util
 from typing import Any, Dict, List, Optional
+import spacy
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
@@ -9,7 +10,8 @@ class SpacyEmbeddings(BaseModel, Embeddings):
     """Embeddings by spaCy models.
 
     Attributes:
-        nlp (Any): The spaCy model loaded into memory.
+        nlp (str): Name of a spaCy model.
+        nlp_model (Any): The spaCy model loaded into memory.
 
     Methods:
         embed_documents(texts: List[str]) -> List[List[float]]:
@@ -18,8 +20,9 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             Generates an embedding for a single piece of text.
     """
 
-    nlp: Optional[Any] = "en_core_web_sm"  # The spaCy model loaded into memory,
-    # defaulting to "en_core_web_sm"
+    nlp: str = "en_core_web_sm"
+    nlp_model: Optional[Any] = None
+    
 
     class Config:
         """Configuration for this pydantic object."""
@@ -41,7 +44,11 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             ValueError: If the spaCy package or the
             model are not installed.
         """
-        spacy_model = values.get("nlp")
+        if values.get("nlp") is None:
+            values["nlp"] = "en_core_web_sm"
+
+        nlp = values.get("nlp")
+
 
         # Check if the spaCy package is installed
         if importlib.util.find_spec("spacy") is None:
@@ -51,15 +58,15 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             )
         try:
             # Try to load the spaCy model
-            import spacy
 
-            values["nlp"] = spacy.load(spacy_model)
+
+            values["nlp_model"] = spacy.load(nlp)
         except OSError:
             # If the model is not found, raise a ValueError
             raise ValueError(
-                f"SpaCy model '{spacy_model}' not found. "
+                f"SpaCy model '{nlp}' not found. "
                 f"Please install it with"
-                f" `python -m spacy download {spacy_model}`"
+                f" `python -m spacy download {nlp}`"
                 "or provide a valid spaCy model name."
             )
         return values  # Return the validated values
@@ -74,7 +81,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             A list of embeddings, one for each document.
         """
-        return [self.nlp(text).vector.tolist() for text in texts]
+        return [self.nlp_model(text).vector.tolist() for text in texts]
 
     def embed_query(self, text: str) -> List[float]:
         """
@@ -86,7 +93,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             The embedding for the text.
         """
-        return self.nlp(text).vector.tolist()
+        return self.nlp_model(text).vector.tolist()
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """
