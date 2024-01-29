@@ -48,9 +48,9 @@ def create_history_aware_retriever(
             chain.invoke({"input": "...", "chat_history": })
 
     """
-    if "input" not in prompt.input_variables and "chat_history" not in prompt.input_variables:
+    if "input" not in prompt.input_variables:
         raise ValueError(
-            "Expected either `input` or `chat_history` to be a prompt variable, "
+            "Expected `input` to be a prompt variable, "
             f"but got {prompt.input_variables}"
         )
 
