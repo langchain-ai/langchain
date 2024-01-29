@@ -11,7 +11,8 @@ class BreebsRetriever(BaseRetriever):
 
     See https://www.breebs.com/ for more info.
     Args:
-        breeb_key: The key to trigger the breeb (specialized knowledge pill on a specific topic).
+        breeb_key: The key to trigger the breeb
+        (specialized knowledge pill on a specific topic).
 
     To retrieve the list of all available Breebs : you can call https://breebs.promptbreeders.com/web/listbreebs
     """
@@ -26,7 +27,8 @@ class BreebsRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        """Retrieve context for given query. Not that for time being there is no score."""
+        """Retrieve context for given query.
+        Note that for time being there is no score."""
         r = requests.post(
             self.url,
             json={
