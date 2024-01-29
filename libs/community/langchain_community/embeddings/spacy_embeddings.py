@@ -10,8 +10,8 @@ class SpacyEmbeddings(BaseModel, Embeddings):
     """Embeddings by spaCy models.
 
     Attributes:
-        nlp (str): Name of a spaCy model.
-        nlp_model (Any): The spaCy model loaded into memory.
+        model_name (str): Name of a spaCy model.
+        nlp (Any): The spaCy model loaded into memory.
 
     Methods:
         embed_documents(texts: List[str]) -> List[List[float]]:
@@ -20,8 +20,8 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             Generates an embedding for a single piece of text.
     """
 
-    nlp: str = "en_core_web_sm"
-    nlp_model: Optional[Any] = None
+    model_name: str = "en_core_web_sm"
+    nlp: Optional[Any] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -43,10 +43,10 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             ValueError: If the spaCy package or the
             model are not installed.
         """
-        if values.get("nlp") is None:
-            values["nlp"] = "en_core_web_sm"
+        if values.get("model_name") is None:
+            values["model_name"] = "en_core_web_sm"
 
-        nlp = values.get("nlp")
+        model_name = values.get("model_name")
 
         # Check if the spaCy package is installed
         if importlib.util.find_spec("spacy") is None:
@@ -57,13 +57,13 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         try:
             # Try to load the spaCy model
 
-            values["nlp_model"] = spacy.load(nlp)
+            values["nlp"] = spacy.load(model_name)
         except OSError:
             # If the model is not found, raise a ValueError
             raise ValueError(
-                f"SpaCy model '{nlp}' not found. "
+                f"SpaCy model '{model_name}' not found. "
                 f"Please install it with"
-                f" `python -m spacy download {nlp}`"
+                f" `python -m spacy download {model_name}`"
                 "or provide a valid spaCy model name."
             )
         return values  # Return the validated values
@@ -78,7 +78,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             A list of embeddings, one for each document.
         """
-        return [self.nlp_model(text).vector.tolist() for text in texts]
+        return [self.nlp(text).vector.tolist() for text in texts]
 
     def embed_query(self, text: str) -> List[float]:
         """
@@ -90,7 +90,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             The embedding for the text.
         """
-        return self.nlp_model(text).vector.tolist()
+        return self.nlp(text).vector.tolist()
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """
