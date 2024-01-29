@@ -35,21 +35,21 @@ def test_create_with_chat_history_messages_only() -> None:
     retriever = FakeParrotRetriever()
     question_gen_prompt = ChatPromptTemplate.from_messages(
         [
-            MessagesPlaceholder(variable_name="chat_history"),
+            MessagesPlaceholder(variable_name="messages"),
         ]
     )
     chain = create_retrieval_chain(retriever, question_gen_prompt | llm)
 
     expected_output = {
         "answer": "I know the answer!",
-        "chat_history": [
+        "messages": [
             HumanMessage(content="What is the answer?"),
         ],
         "context": [Document(page_content="What is the answer?")],
     }
     output = chain.invoke(
         {
-            "chat_history": [
+            "messages": [
                 HumanMessage(content="What is the answer?"),
             ],
         }

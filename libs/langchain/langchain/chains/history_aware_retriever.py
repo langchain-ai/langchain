@@ -49,13 +49,28 @@ def create_history_aware_retriever(
 
     """
     input_vars = prompt.input_variables
-    if "input" not in input_vars and "chat_history" not in input_vars:
+    if "input" not in input_vars and "messages" not in input_vars:
         raise ValueError(
-            "Expected either `input` or `chat_history` to be prompt variables, "
+            "Expected either `input` or `messages` to be prompt variables, "
             f"but got {input_vars}"
+        )
+        
+    def messages_param_is_message_list(x: Dict):
+        return (
+            isinstance(x.get("messages", []), list)
+            and len(x.get("messages", [])) > 0
+            and all(isinstance(i, BaseMessage) for i in x.get("messages", []))
         )
 
     retrieve_documents: RetrieverOutputLike = RunnableBranch(
+        (
+            lambda x: messages_param_is_message_list(x) and len(x.get("messages", [])) > 1,
+            prompt | llm | StrOutputParser() | retriever
+        ),
+        (
+            lambda x: messages_param_is_message_list(x) and len(x.get("messages", [])) == 1,
+            (lambda x: x["messages"][-1].content) | retriever,
+        ),
         (
             # Both empty string and empty list evaluate to False
             lambda x: not x.get("chat_history", False),

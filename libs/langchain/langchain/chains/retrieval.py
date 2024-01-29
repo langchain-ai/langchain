@@ -57,34 +57,26 @@ def create_retrieval_chain(
 
     """
 
-    def input_chat_history_is_message_list(x: Dict):
+    def messages_param_is_message_list(x: Dict):
         return (
-            isinstance(x.get("chat_history", []), list)
-            and len(x.get("chat_history", [])) > 0
-            and all(isinstance(i, BaseMessage) for i in x.get("chat_history", []))
+            isinstance(x.get("messages", []), list)
+            and len(x.get("messages", [])) > 0
+            and all(isinstance(i, BaseMessage) for i in x.get("messages", []))
         )
 
     def extract_retriever_input_string(x: Dict):
-        if not x.get("input") and input_chat_history_is_message_list(x):
-            return x["chat_history"][-1].content
+        if not x.get("input"):
+            if messages_param_is_message_list(x):
+                return x["messages"][-1].content
+            else:
+                raise ValueError(
+                    'If `input` not provided, `messages` parameter must be a list of messages.'
+                )
         else:
             return x["input"]
 
     if not isinstance(retriever, BaseRetriever):
-        retrieval_docs: Runnable[dict, RetrieverOutput] = (
-            RunnableBranch(
-                (
-                    lambda x: not x.get("input")
-                    and input_chat_history_is_message_list(x),
-                    lambda x: {
-                        "chat_history": x["chat_history"][1:],
-                        "input": x["chat_history"][-1].content,
-                    },
-                ),
-                lambda x: x,
-            )
-            | retriever
-        )
+        retrieval_docs: Runnable[dict, RetrieverOutput] = retriever
     else:
         retrieval_docs = extract_retriever_input_string | retriever
 
