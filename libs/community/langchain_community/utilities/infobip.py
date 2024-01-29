@@ -49,6 +49,11 @@ class InfobipAPIWrapper(BaseModel):
         )
         values["base_url"] = base_url
 
+        from_email = get_from_dict_or_env(
+            values, "from_email", "INFOBIP_FROM_EMAIL"
+        )
+        values["from_email"] = from_email
+
         auth_params: Dict = {
             "base_url": base_url,
             "api_key": api_key,
@@ -62,7 +67,6 @@ class InfobipAPIWrapper(BaseModel):
         return values
 
     def run(self, message: str, to: str, subject: Optional[str] = "") -> str:
-
         if "@" in to:
             payload: Dict = {
                 "from": self.from_email,

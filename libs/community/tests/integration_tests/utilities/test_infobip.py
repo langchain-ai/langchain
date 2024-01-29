@@ -10,6 +10,6 @@ def test_sms() -> None:
 
 def test_email() -> None:
     """Test that call runs."""
-    infobip = InfobipAPIWrapper(from_email="voviro5448@giratex.com")
+    infobip = InfobipAPIWrapper()
     output = infobip.run(message="Hello via Infobip", to="voviro5448@giratex.com", subject="Test")
     assert output
