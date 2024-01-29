@@ -12,6 +12,7 @@ from requests import HTTPError, Response
 
 from langchain_core.pydantic_v1 import SecretStr
 
+
 def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
     """Validate specified keyword args are mutually exclusive."""
 
@@ -36,6 +37,7 @@ def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
         return wrapper
 
     return decorator
+
 
 def raise_for_status_with_text(response: Response) -> None:
     """Raise an error with the response text."""
