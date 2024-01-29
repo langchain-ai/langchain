@@ -1,7 +1,7 @@
 import importlib.util
 from typing import Any, Dict, List, Optional
-import spacy
 
+import spacy
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -22,7 +22,6 @@ class SpacyEmbeddings(BaseModel, Embeddings):
 
     nlp: str = "en_core_web_sm"
     nlp_model: Optional[Any] = None
-    
 
     class Config:
         """Configuration for this pydantic object."""
@@ -49,7 +48,6 @@ class SpacyEmbeddings(BaseModel, Embeddings):
 
         nlp = values.get("nlp")
 
-
         # Check if the spaCy package is installed
         if importlib.util.find_spec("spacy") is None:
             raise ValueError(
@@ -58,7 +56,6 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             )
         try:
             # Try to load the spaCy model
-
 
             values["nlp_model"] = spacy.load(nlp)
         except OSError:
