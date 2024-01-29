@@ -1,5 +1,7 @@
 """Test chat model integration."""
-from typing import Optional
+
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -45,11 +47,18 @@ def test_parse_examples_failes_wrong_sequence() -> None:
     )
 
 
+@dataclass
+class StubTextChatResponse:
+    """Stub text-chat response from VertexAI for testing."""
+
+    text: str
+
+
 @pytest.mark.parametrize("stop", [None, "stop1"])
 def test_vertexai_args_passed(stop: Optional[str]) -> None:
     response_text = "Goodbye"
     user_prompt = "Hello"
-    prompt_params = {
+    prompt_params: Dict[str, Any] = {
         "max_output_tokens": 1,
         "temperature": 10000.0,
         "top_k": 10,
@@ -59,7 +68,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
     # Mock the library to ensure the args are passed correctly
     with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
         mock_response = MagicMock()
-        mock_response.candidates = [Mock(text=response_text)]
+        mock_response.candidates = [StubTextChatResponse(text=response_text)]
         mock_chat = MagicMock()
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
@@ -69,7 +78,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         mock_model.start_chat = mock_start_chat
         mg.return_value = mock_model
 
-        model = ChatVertexAI(**prompt_params)  # type: ignore
+        model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
         if stop:
             response = model([message], stop=[stop])
@@ -136,7 +145,7 @@ def test_default_params_palm() -> None:
 
     with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
         mock_response = MagicMock()
-        mock_response.candidates = [Mock(text="Goodbye")]
+        mock_response.candidates = [StubTextChatResponse(text="Goodbye")]
         mock_chat = MagicMock()
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
@@ -159,13 +168,28 @@ def test_default_params_palm() -> None:
         )
 
 
+@dataclass
+class StubGeminiResponse:
+    """Stub gemini response from VertexAI for testing."""
+
+    text: str
+    content: Any
+    citation_metadata: Any
+    safety_ratings: List[Any] = field(default_factory=list)
+
+
 def test_default_params_gemini() -> None:
     user_prompt = "Hello"
 
     with patch("langchain_google_vertexai.chat_models.GenerativeModel") as gm:
         mock_response = MagicMock()
-        content = Mock(parts=[Mock(function_call=None)])
-        mock_response.candidates = [Mock(text="Goodbye", content=content)]
+        mock_response.candidates = [
+            StubGeminiResponse(
+                text="Goodbye",
+                content=Mock(parts=[Mock(function_call=None)]),
+                citation_metadata=Mock(),
+            )
+        ]
         mock_chat = MagicMock()
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message

@@ -52,6 +52,8 @@ class _BaseYandexGPT(Serializable):
     """The url of the API."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
+    sleep_interval: float = 1.0
+    """Delay between API requests"""
 
     @property
     def _llm_type(self) -> str:
@@ -195,7 +197,8 @@ def _make_request(
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     channel_credentials = grpc.ssl_channel_credentials()
     channel = grpc.secure_channel(self.url, channel_credentials)
@@ -235,7 +238,8 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     operation_api_url = "operation.api.cloud.yandex.net:443"
     channel_credentials = grpc.ssl_channel_credentials()
@@ -269,7 +273,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
 def _create_retry_decorator(llm: YandexGPT) -> Callable[[Any], Any]:
     from grpc import RpcError
 
-    min_seconds = 1
+    min_seconds = llm.sleep_interval
     max_seconds = 60
     return retry(
         reraise=True,
