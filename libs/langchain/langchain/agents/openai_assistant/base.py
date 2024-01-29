@@ -60,6 +60,22 @@ def _get_openai_client() -> openai.OpenAI:
         ) from e
 
 
+def _get_openai_async_client() -> openai.AsyncOpenAI:
+    try:
+        import openai
+
+        return openai.AsyncOpenAI()
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import openai, please install with `pip install openai`."
+        ) from e
+    except AttributeError as e:
+        raise AttributeError(
+            "Please make sure you are using a v1.1-compatible version of openai. You "
+            'can install with `pip install "openai>=1.1"`.'
+        ) from e
+
+
 OutputType = Union[
     List[OpenAIAssistantAction],
     OpenAIAssistantFinish,
