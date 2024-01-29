@@ -57,6 +57,7 @@ def beta_function() -> str:
     """original doc"""
     return "This is a beta function."
 
+
 @beta()
 async def beta_async_function() -> str:
     """original doc"""
@@ -72,7 +73,7 @@ class ClassWithBetaMethods:
     def beta_method(self) -> str:
         """original doc"""
         return "This is a beta method."
-    
+
     @beta()
     async def beta_async_method(self) -> str:
         """original doc"""
@@ -112,17 +113,16 @@ def test_beta_function() -> None:
         doc = beta_function.__doc__
         assert isinstance(doc, str)
         assert doc.startswith("[*Beta*]  original doc")
-    
+
     assert not inspect.iscoroutinefunction(beta_function)
+
 
 @pytest.mark.asyncio
 async def test_beta_async_function() -> None:
     """Test beta async function."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
-        assert (
-            await beta_async_function() == "This is a beta async function."
-        )
+        assert await beta_async_function() == "This is a beta async function."
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
@@ -133,7 +133,7 @@ async def test_beta_async_function() -> None:
         doc = beta_function.__doc__
         assert isinstance(doc, str)
         assert doc.startswith("[*Beta*]  original doc")
-    
+
     assert inspect.iscoroutinefunction(beta_async_function)
 
 
@@ -156,15 +156,14 @@ def test_beta_method() -> None:
 
     assert not inspect.iscoroutinefunction(obj.beta_method)
 
+
 @pytest.mark.asyncio 
 async def test_beta_async_method() -> None:
     """Test beta method."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
         obj = ClassWithBetaMethods()
-        assert (
-            await obj.beta_async_method() == "This is a beta async method."
-        )
+        assert await obj.beta_async_method() == "This is a beta async method."
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
