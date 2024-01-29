@@ -217,9 +217,19 @@ class AzureChatOpenAI(ChatOpenAI):
             if self.model_version:
                 model = f"{model}-{self.model_version}"
 
-            if chat_result.llm_output is not None and isinstance(
-                chat_result.llm_output, dict
-            ):
-                chat_result.llm_output["model_name"] = model
+            chat_result.llm_output = chat_result.llm_output or {}
+            chat_result.llm_output["model_name"] = model
+        if "prompt_filter_results" in response:
+            chat_result.llm_output = chat_result.llm_output or {}
+            chat_result.llm_output["prompt_filter_results"] = response[
+                "prompt_filter_results"
+            ]
+        for chat_gen, response_choice in zip(
+            chat_result.generations, response["choices"]
+        ):
+            chat_gen.generation_info = chat_gen.generation_info or {}
+            chat_gen.generation_info["content_filter_results"] = response_choice.get(
+                "content_filter_results", {}
+            )
 
         return chat_result
