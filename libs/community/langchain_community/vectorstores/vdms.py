@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import logging
 import uuid
 from copy import deepcopy
@@ -276,20 +277,32 @@ class VDMS(VectorStore):
         uris: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        add_path: Optional[bool] = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more images through the embeddings and add to the vectorstore.
+
+        Images are added as embeddings (AddDescriptor) instead of separate
+        entity (AddImage) within VDMS to leverage similarity search capability
 
         Args:
             uris List[str]: File path to the image.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
+            add_path (Optional[bool]): Add image path as metadata
 
         Returns:
             List[str]: List of IDs of the added images.
         """
-        # Map from uris to blobs
-        blobs = [self.encode_image(uri=uri) for uri in uris]
+        # Map from uris to blobs to base64
+        b64_texts = [self.encode_image(image_path=uri) for uri in uris]
+        if add_path and metadatas:
+            for midx, uri in enumerate(uris):
+                metadatas[midx]["image_path"] = uri
+        elif add_path:
+            metadatas = []
+            for uri in uris:
+                metadatas.append({"image_path": uri})
 
         # Populate IDs
         if ids is None:
@@ -317,13 +330,14 @@ class VDMS(VectorStore):
                     empty_ids.append(idx)
             if non_empty_ids:
                 metadatas = [metadatas[idx] for idx in non_empty_ids]
-                images_with_metadatas = [uris[idx] for idx in non_empty_ids]
+                images_with_metadatas = [b64_texts[idx] for idx in non_empty_ids]
                 embeddings_with_metadatas = (
                     [embeddings[idx] for idx in non_empty_ids] if embeddings else None
                 )
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
-                    self._collection.upsert(
+                    self.add_collection(
+                        self._collection_name,
                         metadatas=metadatas,
                         embeddings=embeddings_with_metadatas,
                         documents=images_with_metadatas,
@@ -339,18 +353,20 @@ class VDMS(VectorStore):
                     else:
                         raise e
             if empty_ids:
-                images_without_metadatas = [uris[j] for j in empty_ids]
+                images_without_metadatas = [b64_texts[j] for j in empty_ids]
                 embeddings_without_metadatas = (
                     [embeddings[j] for j in empty_ids] if embeddings else None
                 )
                 ids_without_metadatas = [ids[j] for j in empty_ids]
-                self._collection.upsert(
+                self.add_collection(
+                    self._collection_name,
                     embeddings=embeddings_without_metadatas,
                     documents=images_without_metadatas,
                     ids=ids_without_metadatas,
                 )
         else:
-            self._collection.upsert(
+            self.add_collection(
+                self._collection_name,
                 embeddings=embeddings,
                 documents=b64_texts,
                 ids=ids,
@@ -485,6 +501,9 @@ class VDMS(VectorStore):
         # self.print_last_response()
         return response[0]["FindDescriptor"]["returned"]
 
+    def decode_image(self, base64_image):
+        return base64.b64decode(base64_image)
+
     def delete(
         self,
         ids: Optional[List[str]] = None,
@@ -547,7 +566,8 @@ class VDMS(VectorStore):
 
     def encode_image(self, image_path: str) -> str:
         with open(image_path, "rb") as f:
-            return f.read()
+            blob = f.read()
+            return base64.b64encode(blob).decode("utf-8")
 
     @classmethod
     def from_documents(
