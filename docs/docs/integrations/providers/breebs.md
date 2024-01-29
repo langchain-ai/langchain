@@ -1,7 +1,7 @@
 # BREEBS (Open Knowledge)
 
 [BREEBS](https://www.breebs.com/) is an open collaborative knowledge platform. 
-Anybody can create a Breeb, a knowledge capsule, based on PDFs stored on a Google Drive folder.
+Anybody can create a Breeb, a knowledge capsule based on PDFs stored on a Google Drive folder.
 A breeb can be used by any LLM/chatbot to improve its expertise, reduce hallucinations and give access to sources.
 Behind the scenes, Breebs implements several Retrieval Augmented Generation (RAG) models to seamlessly provide useful context at each iteration.  
 
