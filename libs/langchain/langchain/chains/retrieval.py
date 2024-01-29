@@ -7,7 +7,7 @@ from langchain_core.retrievers import (
     BaseRetriever,
     RetrieverOutput,
 )
-from langchain_core.runnables import Runnable, RunnableBranch, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnablePassthrough
 
 
 def create_retrieval_chain(
@@ -70,7 +70,8 @@ def create_retrieval_chain(
                 return x["messages"][-1].content
             else:
                 raise ValueError(
-                    'If `input` not provided, `messages` parameter must be a list of messages.'
+                    "If `input` not provided, ",
+                    "`messages` parameter must be a list of messages.",
                 )
         else:
             return x["input"]

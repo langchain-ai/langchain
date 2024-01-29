@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import Dict
+
 from langchain_core.language_models import LanguageModelLike
+from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.retrievers import RetrieverLike, RetrieverOutputLike
@@ -54,7 +57,7 @@ def create_history_aware_retriever(
             "Expected either `input` or `messages` to be prompt variables, "
             f"but got {input_vars}"
         )
-        
+
     def messages_param_is_message_list(x: Dict):
         return (
             isinstance(x.get("messages", []), list)
@@ -64,11 +67,13 @@ def create_history_aware_retriever(
 
     retrieve_documents: RetrieverOutputLike = RunnableBranch(
         (
-            lambda x: messages_param_is_message_list(x) and len(x.get("messages", [])) > 1,
-            prompt | llm | StrOutputParser() | retriever
+            lambda x: messages_param_is_message_list(x)
+            and len(x.get("messages", [])) > 1,
+            prompt | llm | StrOutputParser() | retriever,
         ),
         (
-            lambda x: messages_param_is_message_list(x) and len(x.get("messages", [])) == 1,
+            lambda x: messages_param_is_message_list(x)
+            and len(x.get("messages", [])) == 1,
             (lambda x: x["messages"][-1].content) | retriever,
         ),
         (
