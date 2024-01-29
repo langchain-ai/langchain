@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Type
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain_core.tools import BaseTool
 
-from .models import Action, Parameter
+from langchain_community.tools.connery.models import Action, Parameter
 
 
 class ConneryAction(BaseTool):

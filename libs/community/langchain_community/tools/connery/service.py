@@ -5,8 +5,8 @@ import requests
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils.env import get_from_dict_or_env
 
-from .models import Action
-from .tool import ConneryAction
+from langchain_community.tools.connery.models import Action
+from langchain_community.tools.connery.tool import ConneryAction
 
 
 class ConneryService(BaseModel):
