@@ -16,7 +16,7 @@ from langchain.agents.openai_functions_agent.base import (
     create_openai_functions_agent,
 )
 from langchain_core.callbacks import BaseCallbackManager
-from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.tools import BaseTool
@@ -40,7 +40,6 @@ def _get_multi_prompt(
     dfs: List[Any],
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
-    input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
@@ -61,7 +60,6 @@ def _get_multi_prompt(
         tools,
         prefix=prefix,
         suffix=suffix_to_use,
-        input_variables=input_variables,
     )
     partial_prompt = prompt.partial()
     if "dfs_head" in partial_prompt.input_variables:
@@ -76,7 +74,6 @@ def _get_single_prompt(
     df: Any,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
-    input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
@@ -94,7 +91,6 @@ def _get_single_prompt(
         tools,
         prefix=prefix,
         suffix=suffix_to_use,
-        input_variables=input_variables,
     )
 
     partial_prompt = prompt.partial()
@@ -159,7 +155,7 @@ def _get_functions_prompt_and_tools(
 
 
 def create_pandas_dataframe_agent(
-    llm: BaseLanguageModel,
+    llm: LanguageModelLike,
     df: Any,
     agent_type: Union[
         AgentType, Literal["openai-tools"]
@@ -179,7 +175,7 @@ def create_pandas_dataframe_agent(
     extra_tools: Sequence[BaseTool] = (),
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a pandas agent from an LLM and dataframe(s).
+    """Construct a Pandas agent from an LLM and dataframe(s).
 
     Args:
         llm: Language model to use for the agent.
@@ -191,9 +187,10 @@ def create_pandas_dataframe_agent(
             instead to pass constructor callbacks to AgentExecutor.
         prefix: Prompt prefix string.
         suffix: Prompt suffix string.
-        input_variables:
+        input_variables: DEPRECATED. Input variables automatically inferred from 
+            constructed prompt.
         verbose: AgentExecutor verbosity.
-        return_intermediate_steps:
+        return_intermediate_steps: Passed to AgentExecutor init.
         max_iterations: Passed to AgentExecutor init.
         max_execution_time: Passed to AgentExecutor init.
         early_stopping_method: Passed to AgentExecutor init.
@@ -207,7 +204,7 @@ def create_pandas_dataframe_agent(
 
     Returns:
         An AgentExecutor with the specified agent_type agent and access to
-        a PythonAstREPLTool with the DataFrame(s) + any user-provided extra_tools.
+        a PythonAstREPLTool with the DataFrame(s) and any user-provided extra_tools.
 
     Example:
 
@@ -221,7 +218,7 @@ def create_pandas_dataframe_agent(
         llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
         agent_executor = create_pandas_dataframe_agent(
             llm,
-            db,
+            df,
             agent_type="openai-tools",
             verbose=True
         )
@@ -241,6 +238,9 @@ def create_pandas_dataframe_agent(
         if not isinstance(_df, pd.DataFrame):
             raise ValueError(f"Expected pandas DataFrame, got {type(_df)}")
 
+    if input_variables:
+        kwargs = kwargs or {}
+        kwargs["input_variables"] = input_variables
     if kwargs:
         warnings.warn(
             f"Received additional kwargs {kwargs} which are no longer supported."
@@ -255,7 +255,6 @@ def create_pandas_dataframe_agent(
             df,
             prefix=prefix,
             suffix=suffix,
-            input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
             extra_tools=extra_tools,
@@ -266,11 +265,6 @@ def create_pandas_dataframe_agent(
             return_keys_arg=["output"],
         )
     elif agent_type in (AgentType.OPENAI_FUNCTIONS, "openai-tools"):
-        if input_variables is not None:
-            raise ValueError(
-                f"input_variables not supported for agent_type: {agent_type}. Only "
-                f"supported for agent_type 'zero-shot-react-description'."
-            )
         prompt, base_tools = _get_functions_prompt_and_tools(
             df,
             prefix=prefix,
@@ -296,7 +290,7 @@ def create_pandas_dataframe_agent(
             f"Agent type {agent_type} not supported at the moment. Must be one of "
             "'openai-tools', 'openai-functions', or 'zero-shot-react-description'."
         )
-    return AgentExecutor.from_agent_and_tools(
+    return AgentExecutor(
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,
