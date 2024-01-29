@@ -18,7 +18,7 @@ class InfobipAPIWrapper(BaseModel):
     email_channel: Any  #: :meta private
 
     api_key: Optional[str] = None
-    base_url: Optional[str] = None
+    base_url: Optional[str] = "https://api.infobip.com/"
     from_email: Optional[str] = None
 
     class Config:
@@ -61,29 +61,28 @@ class InfobipAPIWrapper(BaseModel):
         values["email_channel"] = email_channel
         return values
 
-    def run(self, body: str, to: str, channel: str = "sms", subject: Optional[str] = "") -> str:
-        if channel == "sms":
+    def run(self, message: str, to: str, subject: Optional[str] = "") -> str:
+
+        if "@" in to:
+            payload: Dict = {
+                "from": self.from_email,
+                "to": to,
+                "subject": subject,
+                "text": message
+            }
+            email_response = self.email_channel.send_email_message(payload)
+            return email_response.messages[0].message_id
+        else:
             if len(subject) > 0:
-                body = f"{subject} - {body}"
+                body = f"{subject} - {message}"
 
             payload: Dict = {
                 "messages": [
                     {
                         "destinations": [{"to": to}],
-                        "text": body,
+                        "text": message,
                     }
                 ]
             }
             sms_response = self.sms_channel.send_sms_message(payload)
             return sms_response.messages[0].message_id
-        elif channel == "email":
-            payload: Dict = {
-                "from": self.from_email,
-                "to": to,
-                "subject": subject,
-                "text": body
-            }
-            email_response = self.email_channel.send_email_message(payload)
-            return email_response.messages[0].message_id
-        
-        raise ValueError("Channel not supported, please use sms or email.")
