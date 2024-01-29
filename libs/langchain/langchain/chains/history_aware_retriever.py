@@ -58,7 +58,7 @@ def create_history_aware_retriever(
             f"but got {input_vars}"
         )
 
-    def messages_param_is_message_list(x: Dict):
+    def messages_param_is_message_list(x: Dict) -> bool:
         return (
             isinstance(x.get("messages", []), list)
             and len(x.get("messages", [])) > 0
