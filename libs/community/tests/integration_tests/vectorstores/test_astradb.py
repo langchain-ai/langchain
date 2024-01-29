@@ -16,7 +16,7 @@ Required to run this test:
 import json
 import math
 import os
-from typing import Dict, Iterable, List, Optional, TypedDict
+from typing import Iterable, List, Optional, TypedDict
 
 import pytest
 from astrapy.db import AstraDB as LibAstraDB
@@ -32,6 +32,7 @@ COLLECTION_NAME_DIM2 = "lc_test_d2"
 COLLECTION_NAME_DIM2_EUCLIDEAN = "lc_test_d2_eucl"
 
 # Ad-hoc embedding classes:
+
 
 class AstraDBCredentials(TypedDict, total=False):
     token: str
@@ -105,7 +106,7 @@ def _has_env_vars() -> bool:
 
 
 @pytest.fixture(scope="session")
-def astradb_credentials() -> AstraDBCredentials:
+def astradb_credentials() -> Iterable[AstraDBCredentials]:
     yield {
         "token": os.environ["ASTRA_DB_APPLICATION_TOKEN"],
         "api_endpoint": os.environ["ASTRA_DB_API_ENDPOINT"],

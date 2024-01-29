@@ -792,7 +792,7 @@ class AstraDBVectorStore(VectorStore):
 
 
 @deprecated(
-    since="0.0.0",
+    since="0.0.16",
     removal="0.2.0",
     alternative_import="langchain_astradb.vectorstores.AstraDBVectorStore",
 )

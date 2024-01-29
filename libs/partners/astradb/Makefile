@@ -61,10 +61,12 @@ duplicate_check:
 		-I "import maximal_marginal_relevance" \
 		-I alternative_import \
 		-I "since=" \
-		langchain_astradb/vectorstores.py ../../community/langchain_community/vectorstores/astradb.py
+		langchain_astradb/vectorstores.py \
+			../../community/langchain_community/vectorstores/astradb.py
 	diff \
 		-I ".vectorstores import AstraDBVectorStore" \
-		tests/integration_tests/test_vectorstores.py ../../community/tests/integration_tests/vectorstores/test_astradb.py 
+		tests/integration_tests/test_vectorstores.py \
+			../../community/tests/integration_tests/vectorstores/test_astradb.py 
 	echo "\n\nALL GOOD"
 
 ######################
