@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Any, List, Optional, Union
 
-import httpx
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.messages import (
@@ -74,6 +73,8 @@ class ChatGLM3(LLM):
 
     @property
     def client(self) -> Any:
+        import httpx
+
         return self.http_client or httpx.Client(timeout=self.timeout)
 
     def _get_payload(self, prompt: str) -> dict:
@@ -107,6 +108,8 @@ class ChatGLM3(LLM):
 
                 response = chatglm_llm("Who are you?")
         """
+        import httpx
+
         payload = self._get_payload(prompt)
         logger.debug(f"ChatGLM3 payload: {payload}")
 
