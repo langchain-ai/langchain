@@ -38,9 +38,9 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             This may also contain global and local secondary index keys.
         kms_key_id: an optional AWS KMS Key ID, AWS KMS Key ARN, or AWS KMS Alias for
             client-side encryption
-        ttl: Optional Time-to-live (TTL) in seconds. Allows you to define a per-item 
-            expiration timestamp that indicates when an item can be deleted from the 
-            table. DynamoDB handles deletion of expired items without consuming 
+        ttl: Optional Time-to-live (TTL) in seconds. Allows you to define a per-item
+            expiration timestamp that indicates when an item can be deleted from the
+            table. DynamoDB handles deletion of expired items without consuming
             write throughput. To enable this feature on the table, follow the
             [AWS DynamoDB documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-how-to.html)
     """
@@ -55,7 +55,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         boto3_session: Optional[Session] = None,
         kms_key_id: Optional[str] = None,
         ttl: Optional[int] = None,
-        ttl_key_name: str = "expireAt"
+        ttl_key_name: str = "expireAt",
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -145,6 +145,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         try:
             if self.ttl:
                 import time
+
                 expireAt = int(time.time()) + self.ttl
                 self.table.put_item(
                     Item={**self.key, "History": messages, self.ttl_key_name: expireAt}
