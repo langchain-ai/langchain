@@ -283,7 +283,7 @@ class EnsembleRetriever(BaseRetriever):
 
         # Associate each doc's content with its RRF score for later sorting by it
         # Duplicated contents across retrievers are collapsed & scored cumulatively
-        rrf_score: dict[str, float] = defaultdict(float)
+        rrf_score: Dict[str, float] = defaultdict(float)
         for doc_list, weight in zip(doc_lists, self.weights):
             for rank, doc in enumerate(doc_list, start=1):
                 rrf_score[doc.page_content] += weight / (rank + self.c)
