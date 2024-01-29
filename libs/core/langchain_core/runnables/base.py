@@ -1804,7 +1804,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             # Or equivalently:
             # sequence = RunnableSequence(first=runnable_1, last=runnable_2)
             sequence.invoke(1)
-            await runnable.ainvoke(1)
+            await sequence.ainvoke(1)
 
             sequence.batch([1, 2, 3])
             await sequence.abatch([1, 2, 3])
@@ -2451,9 +2451,83 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
 
 class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
-    """
-    A runnable that runs a mapping of runnables in parallel,
-    and returns a mapping of their outputs.
+    """A runnable that runs a mapping of runnables in parallel, and returns a mapping
+    of their outputs.
+
+    RunnableParallel is one of the two main composition primitives for the LCEL,
+    alongside RunnableSequence. It invokes runnables concurrently, providing the same
+    input to each.
+
+    A RunnableParallel can be instantiated directly or by using a dict literal within a
+    sequence.
+
+    Here is a simple example that uses functions to illustrate the use of
+    RunnableParallel:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import RunnableLambda
+
+            def add_one(x: int) -> int:
+                return x + 1
+
+            def mul_two(x: int) -> int:
+                return x * 2
+
+            def mul_three(x: int) -> int:
+                return x * 3
+
+            runnable_1 = RunnableLambda(add_one)
+            runnable_2 = RunnableLambda(mul_two)
+            runnable_3 = RunnableLambda(mul_three)
+
+            sequence = runnable_1 | {  # this dict is coerced to a RunnableParallel
+                "mul_two": runnable_2,
+                "mul_three": runnable_3,
+            }
+            # Or equivalently:
+            # sequence = runnable_1 | RunnableParallel(
+            #     {"mul_two": runnable_2, "mul_three": runnable_3}
+            # )
+            # Also equivalently:
+            # sequence = runnable_1 | RunnableParallel(
+            #     mul_two=runnable_2,
+            #     mul_three=runnable_3,
+            # )
+
+            sequence.invoke(1)
+            await sequence.ainvoke(1)
+
+            sequence.batch([1, 2, 3])
+            await sequence.abatch([1, 2, 3])
+
+    RunnableParallel makes it easy to run Runnables in parallel. In the below example,
+    we simultaneously stream output from two different Runnables:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableParallel
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI()
+            joke_chain = (
+                ChatPromptTemplate.from_template("tell me a joke about {topic}")
+                | model
+            )
+            poem_chain = (
+                ChatPromptTemplate.from_template("write a 2-line poem about {topic}")
+                | model
+            )
+
+            runnable = RunnableParallel(joke=joke_chain, poem=poem_chain)
+
+            # Display stream
+            output = {key: "" for key, _ in runnable.output_schema()}
+            for chunk in runnable.stream({"topic": "bear"}):
+                for key in chunk:
+                    output[key] = output[key] + chunk[key].content
+                print(output)
     """
 
     steps: Mapping[str, Runnable[Input, Any]]
@@ -2808,8 +2882,88 @@ RunnableMap = RunnableParallel
 
 
 class RunnableGenerator(Runnable[Input, Output]):
-    """
-    A runnable that runs a generator function.
+    """A runnable that runs a generator function.
+
+    RunnableGenerators can be instantiated directly or by using a generator within
+    a sequence.
+
+    RunnableGenerators can be used to implement custom behavior, such as custom output
+    parsers, while preserving streaming capabilities. Given a generator function with
+    a signature Iterator[A] -> Iterator[B], wrapping it in a RunnableGenerator allows
+    it to emit output chunks as soon as they are streamed in from the previous step.
+
+    Note that if a generator function has a signature A -> Iterator[B], such that it
+    requires its input from the previous step to be completed before emitting chunks
+    (e.g., most LLMs need the entire prompt available to start generating), it can
+    instead be wrapped in a RunnableLambda.
+
+    Here is an example to show the basic mechanics of a RunnableGenerator:
+
+        .. code-block:: python
+
+            from typing import Any, AsyncIterator, Iterator
+
+            from langchain_core.runnables import RunnableGenerator
+
+
+            def gen(input: Iterator[Any]) -> Iterator[str]:
+                for token in ["Have", " a", " nice", " day"]:
+                    yield token
+
+
+            runnable = RunnableGenerator(gen)
+            runnable.invoke(None)  # "Have a nice day"
+            list(runnable.stream(None))  # ["Have", " a", " nice", " day"]
+            runnable.batch([None, None])  # ["Have a nice day", "Have a nice day"]
+
+
+            # Async version:
+            async def agen(input: AsyncIterator[Any]) -> AsyncIterator[str]:
+                for token in ["Have", " a", " nice", " day"]:
+                    yield token
+
+            runnable = RunnableGenerator(agen)
+            await runnable.ainvoke(None)  # "Have a nice day"
+            [p async for p in runnable.astream(None)] # ["Have", " a", " nice", " day"]
+
+    RunnableGenerator makes it easy to implement custom behavior within a streaming
+    context. Below we show an example:
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableGenerator, RunnableLambda
+            from langchain_openai import ChatOpenAI
+            from langchain.schema import StrOutputParser
+
+
+            model = ChatOpenAI()
+            chant_chain = (
+                ChatPromptTemplate.from_template("Give me a 3 word chant about {topic}")
+                | model
+                | StrOutputParser()
+            )
+
+            def character_generator(input: Iterator[str]) -> Iterator[str]:
+                for token in input:
+                    if "," in token or "." in token:
+                        yield "👏" + token
+                    else:
+                        yield token
+
+
+            runnable = chant_chain | character_generator
+            assert type(runnable.last) is RunnableGenerator
+            "".join(runnable.stream({"topic": "waste"})) # Reduce👏, Reuse👏, Recycle👏.
+
+            # Note that RunnableLambda can be used to delay streaming of one step in a
+            # sequence until the previous step is finished:
+            def reverse_generator(input: str) -> Iterator[str]:
+                # Yield characters of input in reverse order.
+                for character in input[::-1]:
+                    yield character
+
+            runnable = chant_chain | RunnableLambda(reverse_generator)
+            "".join(runnable.stream({"topic": "waste"}))  # ".elcycer ,esuer ,ecudeR"
     """
 
     def __init__(
