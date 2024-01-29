@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    get_buffer_string,
+)
 
 
 class BaseChatMessageHistory(ABC):
@@ -37,21 +42,27 @@ class BaseChatMessageHistory(ABC):
     messages: List[BaseMessage]
     """A list of Messages stored in-memory."""
 
-    def add_user_message(self, message: str) -> None:
+    def add_user_message(self, message: Union[HumanMessage, str]) -> None:
         """Convenience method for adding a human message string to the store.
 
         Args:
-            message: The string contents of a human message.
+            message: The human message to add
         """
-        self.add_message(HumanMessage(content=message))
+        if isinstance(message, HumanMessage):
+            self.add_message(message)
+        else:
+            self.add_message(HumanMessage(content=message))
 
-    def add_ai_message(self, message: str) -> None:
+    def add_ai_message(self, message: Union[AIMessage, str]) -> None:
         """Convenience method for adding an AI message string to the store.
 
         Args:
-            message: The string contents of an AI message.
+            message: The AI message to add.
         """
-        self.add_message(AIMessage(content=message))
+        if isinstance(message, AIMessage):
+            self.add_message(message)
+        else:
+            self.add_message(AIMessage(content=message))
 
     @abstractmethod
     def add_message(self, message: BaseMessage) -> None:
@@ -65,3 +76,6 @@ class BaseChatMessageHistory(ABC):
     @abstractmethod
     def clear(self) -> None:
         """Remove all messages from the store"""
+
+    def __str__(self) -> str:
+        return get_buffer_string(self.messages)

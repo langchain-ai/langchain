@@ -2,7 +2,7 @@
 sidebar_position: 3
 sidebar_class_name: hidden
 ---
-# Memory
+# [Beta] Memory
 
 Most LLM applications have a conversational interface. An essential component of a conversation is being able to refer to information introduced earlier in the conversation.
 At bare minimum, a conversational system should be able to access some window of past messages directly.
@@ -12,6 +12,23 @@ We call this ability to store information about past interactions "memory".
 LangChain provides a lot of utilities for adding memory to a system.
 These utilities can be used by themselves or incorporated seamlessly into a chain.
 
+Most of memory-related functionality in LangChain is marked as beta. This is for two reasons:
+
+1. Most functionality (with some exceptions, see below) are not production ready
+
+2. Most functionality (with some exceptions, see below) work with Legacy chains, not the newer LCEL syntax.
+
+The main exception to this is the `ChatMessageHistory` functionality. This functionality is largely production ready and does integrate with LCEL.
+
+- [LCEL Runnables](/docs/expression_language/how_to/message_history): For an overview of how to use `ChatMessageHistory` with LCEL runnables, see these docs
+
+- [Integrations](/docs/integrations/memory): For an introduction to the various `ChatMessageHistory` integrations, see these docs
+
+
+
+
+## Introduction
+
 A memory system needs to support two basic actions: reading and writing.
 Recall that every chain defines some core execution logic that expects certain inputs.
 Some of these inputs come directly from the user, but some of these inputs can come from memory.
@@ -19,7 +36,7 @@ A chain will interact with its memory system twice in a given run.
 1. AFTER receiving the initial user inputs but BEFORE executing the core logic, a chain will READ from its memory system and augment the user inputs.
 2. AFTER executing the core logic but BEFORE returning the answer, a chain will WRITE the inputs and outputs of the current run to memory, so that they can be referred to in future runs.
 
-![memory-diagram](/img/memory_diagram.png)
+![Diagram illustrating the READ and WRITE operations of a memory system in a conversational interface.](/img/memory_diagram.png "Memory System Diagram")
 
 
 ## Building memory into a system
@@ -39,7 +56,7 @@ from in-memory lists to persistent databases.
 Keeping a list of chat messages is fairly straight-forward.
 What is less straight-forward are the data structures and algorithms built on top of chat messages that serve a view of those messages that is most useful.
 
-A very simply memory system might just return the most recent messages each run. A slightly more complex memory system might return a succinct summary of the past K messages.
+A very simple memory system might just return the most recent messages each run. A slightly more complex memory system might return a succinct summary of the past K messages.
 An even more sophisticated system might extract entities from stored messages and only return information about entities referenced in the current run.
 
 Each application can have different requirements for how memory is queried. The memory module should make it easy to both get started with simple memory systems and write your own custom systems if needed.
@@ -146,7 +163,7 @@ We'll use an `LLMChain`, and show working with both an LLM and a ChatModel.
 
 
 ```python
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
@@ -183,7 +200,7 @@ conversation({"question": "hi"})
 
 
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,

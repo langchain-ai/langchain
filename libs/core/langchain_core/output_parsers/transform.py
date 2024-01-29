@@ -92,7 +92,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             if acc_gen is None:
                 acc_gen = chunk_gen
             else:
-                acc_gen += chunk_gen
+                acc_gen = acc_gen + chunk_gen
 
             parsed = self.parse_result([acc_gen], partial=True)
             if parsed is not None and parsed != prev_parsed:
@@ -120,9 +120,9 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             if acc_gen is None:
                 acc_gen = chunk_gen
             else:
-                acc_gen += chunk_gen
+                acc_gen = acc_gen + chunk_gen
 
-            parsed = self.parse_result([acc_gen], partial=True)
+            parsed = await self.aparse_result([acc_gen], partial=True)
             if parsed is not None and parsed != prev_parsed:
                 if self.diff:
                     yield self._diff(prev_parsed, parsed)

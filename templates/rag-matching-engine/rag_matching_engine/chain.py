@@ -1,12 +1,12 @@
 import os
 
-from langchain.embeddings import VertexAIEmbeddings
-from langchain.llms import VertexAI
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain.vectorstores import MatchingEngine
+from langchain_community.embeddings import VertexAIEmbeddings
+from langchain_community.llms import VertexAI
+from langchain_community.vectorstores import MatchingEngine
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 # you need to preate the index first, for example, as described here:
 # https://github.com/GoogleCloudPlatform/generative-ai/blob/main/language/use-cases/document-qa/question_answering_documents_langchain_matching_engine.ipynb

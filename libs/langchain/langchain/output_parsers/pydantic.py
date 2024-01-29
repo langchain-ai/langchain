@@ -15,7 +15,11 @@ class PydanticOutputParser(BaseOutputParser[T]):
     """Parse an output using a pydantic model."""
 
     pydantic_object: Type[T]
-    """The pydantic model to parse."""
+    """The pydantic model to parse.
+    
+    Attention: To avoid potential compatibility issues, it's recommended to use
+        pydantic <2 or leverage the v1 namespace in pydantic >= 2.
+    """
 
     def parse(self, text: str) -> T:
         try:
@@ -51,3 +55,8 @@ class PydanticOutputParser(BaseOutputParser[T]):
     @property
     def _type(self) -> str:
         return "pydantic"
+
+    @property
+    def OutputType(self) -> Type[T]:
+        """Return the pydantic model."""
+        return self.pydantic_object

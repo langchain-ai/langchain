@@ -7,6 +7,7 @@ from langchain_core.output_parsers import (
     BaseTransformOutputParser,
     StrOutputParser,
 )
+from langchain_core.output_parsers.base import T
 
 # Backwards compatibility.
 NoOpOutputParser = StrOutputParser
@@ -20,4 +21,5 @@ __all__ = [
     "NoOpOutputParser",
     "StrOutputParser",
     "OutputParserException",
+    "T",
 ]
