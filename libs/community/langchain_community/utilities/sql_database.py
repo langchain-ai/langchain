@@ -1,10 +1,10 @@
 """SQLAlchemy wrapper around a database."""
 from __future__ import annotations
 
-import warnings
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence
 
 import sqlalchemy
+from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
@@ -272,11 +272,9 @@ class SQLDatabase:
             return sorted(self._include_tables)
         return sorted(self._all_tables - self._ignore_tables)
 
+    @deprecated("0.0.1", alternative="get_usable_table_name", removal="0.2.0")
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
-        warnings.warn(
-            "This method is deprecated - please use `get_usable_table_names`."
-        )
         return self.get_usable_table_names()
 
     @property
@@ -376,14 +374,14 @@ class SQLDatabase:
     def _execute(
         self,
         command: str,
-        fetch: Union[Literal["all"], Literal["one"]] = "all",
+        fetch: Literal["all", "one"] = "all",
     ) -> Sequence[Dict[str, Any]]:
         """
         Executes SQL command through underlying engine.
 
         If the statement returns no rows, an empty list is returned.
         """
-        with self._engine.begin() as connection:
+        with self._engine.begin() as connection:  # type: Connection
             if self._schema is not None:
                 if self.dialect == "snowflake":
                     connection.exec_driver_sql(
@@ -409,8 +407,9 @@ class SQLDatabase:
                     # If anybody using Sybase SQL anywhere database then it should not
                     # go to else condition. It should be same as mssql.
                     pass
-                else:  # postgresql and other compatible dialects
+                elif self.dialect == "postgresql":  # postgresql
                     connection.exec_driver_sql("SET search_path TO %s", (self._schema,))
+
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
@@ -426,7 +425,8 @@ class SQLDatabase:
     def run(
         self,
         command: str,
-        fetch: Union[Literal["all"], Literal["one"]] = "all",
+        fetch: Literal["all", "one"] = "all",
+        include_columns: bool = False,
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
@@ -434,12 +434,18 @@ class SQLDatabase:
         If the statement returns no rows, an empty string is returned.
         """
         result = self._execute(command, fetch)
-        # Convert columns values to string to avoid issues with sqlalchemy
-        # truncating text
+
         res = [
-            tuple(truncate_word(c, length=self._max_string_length) for c in r.values())
+            {
+                column: truncate_word(value, length=self._max_string_length)
+                for column, value in r.items()
+            }
             for r in result
         ]
+
+        if not include_columns:
+            res = [tuple(row.values()) for row in res]
+
         if not res:
             return ""
         else:
@@ -464,7 +470,8 @@ class SQLDatabase:
     def run_no_throw(
         self,
         command: str,
-        fetch: Union[Literal["all"], Literal["one"]] = "all",
+        fetch: Literal["all", "one"] = "all",
+        include_columns: bool = False,
     ) -> str:
         """Execute a SQL command and return a string representing the results.
 
@@ -474,7 +481,13 @@ class SQLDatabase:
         If the statement throws an error, the error message is returned.
         """
         try:
-            return self.run(command, fetch)
+            return self.run(command, fetch, include_columns)
         except SQLAlchemyError as e:
             """Format the error message"""
             return f"Error: {e}"
+
+    def get_context(self) -> Dict[str, Any]:
+        """Return db context that you may want in agent prompt."""
+        table_names = list(self.get_usable_table_names())
+        table_info = self.get_table_info_no_throw()
+        return {"table_info": table_info, "table_names": ", ".join(table_names)}

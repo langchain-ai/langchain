@@ -31,8 +31,8 @@ class SurrealDBStore(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain.vectorstores.surrealdb import SurrealDBStore
-            from langchain.embeddings import HuggingFaceEmbeddings
+            from langchain_community.vectorstores.surrealdb import SurrealDBStore
+            from langchain_community.embeddings import HuggingFaceEmbeddings
 
             embedding_function = HuggingFaceEmbeddings()
             dburl = "ws://localhost:8000/rpc"
@@ -55,14 +55,25 @@ class SurrealDBStore(VectorStore):
         embedding_function: Embeddings,
         **kwargs: Any,
     ) -> None:
-        from surrealdb import Surreal
+        try:
+            from surrealdb import Surreal
+        except ImportError as e:
+            raise ImportError(
+                """Cannot import from surrealdb.
+                please install with `pip install surrealdb`."""
+            ) from e
 
-        self.collection = kwargs.pop("collection", "documents")
+        self.dburl = kwargs.pop("dburl", "ws://localhost:8000/rpc")
+
+        if self.dburl[0:2] == "ws":
+            self.sdb = Surreal(self.dburl)
+        else:
+            raise ValueError("Only websocket connections are supported at this time.")
+
         self.ns = kwargs.pop("ns", "langchain")
         self.db = kwargs.pop("db", "database")
-        self.dburl = kwargs.pop("dburl", "ws://localhost:8000/rpc")
+        self.collection = kwargs.pop("collection", "documents")
         self.embedding_function = embedding_function
-        self.sdb = Surreal(self.dburl)
         self.kwargs = kwargs
 
     async def initialize(self) -> None:
@@ -70,12 +81,11 @@ class SurrealDBStore(VectorStore):
         Initialize connection to surrealdb database
         and authenticate if credentials are provided
         """
-        await self.sdb.connect(self.dburl)
+        await self.sdb.connect()
         if "db_user" in self.kwargs and "db_pass" in self.kwargs:
             user = self.kwargs.get("db_user")
             password = self.kwargs.get("db_pass")
             await self.sdb.signin({"user": user, "pass": password})
-
         await self.sdb.use(self.ns, self.db)
 
     @property

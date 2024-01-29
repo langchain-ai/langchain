@@ -52,7 +52,7 @@ This will return a completion like this `A gummy bear!` instead of a whole new a
 You can import this wrapper with the following code:
 
 ```
-from langchain.chat_models import ChatAnthropic
+from langchain_community.chat_models import ChatAnthropic
 model = ChatAnthropic()
 ```
 
@@ -60,7 +60,7 @@ When working with ChatModels, it is preferred that you design your prompts as `C
 Here is an example below of doing that:
 
 ```
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are a helpful chatbot"),
@@ -120,7 +120,7 @@ This `Anthropic` wrapper is subclassed from `LLM`.
 We can import it with:
 
 ```
-from langchain.llms import Anthropic
+from langchain_community.llms import Anthropic
 model = Anthropic()
 ```
 

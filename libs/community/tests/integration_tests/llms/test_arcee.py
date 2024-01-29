@@ -6,7 +6,7 @@ from pytest import CaptureFixture, MonkeyPatch
 from langchain_community.llms.arcee import Arcee
 
 
-@patch("langchain.utilities.arcee.requests.get")
+@patch("langchain_community.utilities.arcee.requests.get")
 def test_arcee_api_key_is_secret_string(mock_get: MagicMock) -> None:
     mock_response = mock_get.return_value
     mock_response.status_code = 200
@@ -24,7 +24,7 @@ def test_arcee_api_key_is_secret_string(mock_get: MagicMock) -> None:
     assert isinstance(arcee_without_env_var.arcee_api_key, SecretStr)
 
 
-@patch("langchain.utilities.arcee.requests.get")
+@patch("langchain_community.utilities.arcee.requests.get")
 def test_api_key_masked_when_passed_via_constructor(
     mock_get: MagicMock, capsys: CaptureFixture
 ) -> None:
@@ -47,7 +47,7 @@ def test_api_key_masked_when_passed_via_constructor(
     assert "**********" == captured.out
 
 
-@patch("langchain.utilities.arcee.requests.get")
+@patch("langchain_community.utilities.arcee.requests.get")
 def test_api_key_masked_when_passed_from_env(
     mock_get: MagicMock, capsys: CaptureFixture, monkeypatch: MonkeyPatch
 ) -> None:

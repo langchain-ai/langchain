@@ -1,8 +1,8 @@
+from langchain_community.llms.fake import FakeListLLM
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 
 from langchain.chains import create_history_aware_retriever
-from langchain.llms.fake import FakeListLLM
 from tests.unit_tests.retrievers.parrot_retriever import FakeParrotRetriever
 
 

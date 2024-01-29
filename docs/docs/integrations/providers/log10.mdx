@@ -17,7 +17,7 @@ Log10 is an [open-source](https://github.com/log10-io/log10) proxiless LLM data 
 Integration with log10 is a simple one-line `log10_callback` integration as shown below:
 
 ```python
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
 
 from log10.langchain import Log10Callback
@@ -40,9 +40,9 @@ llm = ChatOpenAI(model_name="gpt-3.5-turbo", callbacks=[log10_callback])
 ## How to use tags with Log10
 
 ```python
-from langchain.llms import OpenAI
-from langchain.chat_models import ChatAnthropic
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import OpenAI
+from langchain_community.chat_models import ChatAnthropic
+from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
 
 from log10.langchain import Log10Callback
@@ -74,7 +74,7 @@ You can also intermix direct OpenAI calls and Langchain LLM calls:
 import os
 from log10.load import log10, log10_session
 import openai
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 
 log10(openai)
 

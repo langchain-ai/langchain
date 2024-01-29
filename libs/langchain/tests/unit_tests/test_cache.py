@@ -3,6 +3,8 @@ from typing import Dict, Generator, List, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from langchain_community.chat_models import FakeListChatModel
+from langchain_community.llms import FakeListLLM
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load import dumps
@@ -15,9 +17,7 @@ from langchain.cache import (
     InMemoryCache,
     SQLAlchemyCache,
 )
-from langchain.chat_models import FakeListChatModel
 from langchain.globals import get_llm_cache, set_llm_cache
-from langchain.llms import FakeListLLM
 
 
 def get_sqlite_cache() -> SQLAlchemyCache:

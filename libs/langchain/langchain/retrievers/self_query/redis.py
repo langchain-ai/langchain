@@ -2,6 +2,17 @@ from __future__ import annotations
 
 from typing import Any, Tuple
 
+from langchain_community.vectorstores.redis import Redis
+from langchain_community.vectorstores.redis.filters import (
+    RedisFilterExpression,
+    RedisFilterField,
+    RedisFilterOperator,
+    RedisNum,
+    RedisTag,
+    RedisText,
+)
+from langchain_community.vectorstores.redis.schema import RedisModel
+
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
@@ -10,16 +21,6 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
-from langchain.vectorstores.redis import Redis
-from langchain.vectorstores.redis.filters import (
-    RedisFilterExpression,
-    RedisFilterField,
-    RedisFilterOperator,
-    RedisNum,
-    RedisTag,
-    RedisText,
-)
-from langchain.vectorstores.redis.schema import RedisModel
 
 _COMPARATOR_TO_BUILTIN_METHOD = {
     Comparator.EQ: "__eq__",

@@ -31,6 +31,14 @@ Agents select and use **Tools** and **Toolkits** for actions.
 from pathlib import Path
 from typing import Any
 
+from langchain_community.agent_toolkits import (
+    create_json_agent,
+    create_openapi_agent,
+    create_pbi_agent,
+    create_pbi_chat_agent,
+    create_spark_sql_agent,
+    create_sql_agent,
+)
 from langchain_core._api.path import as_import_path
 
 from langchain.agents.agent import (
@@ -42,13 +50,7 @@ from langchain.agents.agent import (
     LLMSingleActionAgent,
 )
 from langchain.agents.agent_iterator import AgentExecutorIterator
-from langchain.agents.agent_toolkits import (
-    create_json_agent,
-    create_openapi_agent,
-    create_pbi_agent,
-    create_pbi_chat_agent,
-    create_spark_sql_agent,
-    create_sql_agent,
+from langchain.agents.agent_toolkits.vectorstore.base import (
     create_vectorstore_agent,
     create_vectorstore_router_agent,
 )

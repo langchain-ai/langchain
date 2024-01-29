@@ -3,16 +3,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseLLMOutputParser
+from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Extra, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.output_parsers.json import SimpleJsonOutputParser
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -27,7 +27,7 @@ class ElasticsearchDatabaseChain(Chain):
         .. code-block:: python
 
             from langchain.chains import ElasticsearchDatabaseChain
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from elasticsearch import Elasticsearch
 
             database = Elasticsearch("http://localhost:9200")

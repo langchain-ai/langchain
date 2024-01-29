@@ -15,13 +15,10 @@ def test_convert_pydantic_to_openai_function() -> None:
         "name": "Data",
         "description": "The data to return.",
         "parameters": {
-            "title": "Data",
-            "description": "The data to return.",
             "type": "object",
             "properties": {
-                "key": {"title": "Key", "description": "API key", "type": "string"},
+                "key": {"description": "API key", "type": "string"},
                 "days": {
-                    "title": "Days",
                     "description": "Number of days to forecast",
                     "default": 0,
                     "type": "integer",
@@ -50,22 +47,17 @@ def test_convert_pydantic_to_openai_function_nested() -> None:
         "name": "Model",
         "description": "The model to return.",
         "parameters": {
-            "title": "Model",
-            "description": "The model to return.",
             "type": "object",
             "properties": {
                 "data": {
-                    "title": "Data",
                     "description": "The data to return.",
                     "type": "object",
                     "properties": {
                         "key": {
-                            "title": "Key",
                             "description": "API key",
                             "type": "string",
                         },
                         "days": {
-                            "title": "Days",
                             "description": "Number of days to forecast",
                             "default": 0,
                             "type": "integer",
