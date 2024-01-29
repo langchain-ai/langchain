@@ -325,8 +325,10 @@ class AstraDB(VectorStore):
 
     async def aclear(self) -> None:
         """Empty the collection of all its stored entries."""
-        await self.adelete_collection()
-        await self._aprovision_collection()
+        await self._ensure_db_setup()
+        if not self.async_astra_db:
+            await run_in_executor(None, self.clear)
+        await self.async_collection.delete_many({})
 
     def delete_by_document_id(self, document_id: str) -> bool:
         """
