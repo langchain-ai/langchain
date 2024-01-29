@@ -59,6 +59,7 @@ from langchain_community.document_loaders.blob_loaders import (
 from langchain_community.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain_community.document_loaders.brave_search import BraveSearchLoader
 from langchain_community.document_loaders.browserless import BrowserlessLoader
+from langchain_community.document_loaders.cassandra import CassandraLoader
 from langchain_community.document_loaders.chatgpt import ChatGPTLoader
 from langchain_community.document_loaders.chromium import AsyncChromiumLoader
 from langchain_community.document_loaders.college_confidential import (
@@ -267,6 +268,7 @@ __all__ = [
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
     "BrowserlessLoader",
+    "CassandraLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",

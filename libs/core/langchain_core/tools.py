@@ -111,25 +111,24 @@ class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
 
         args_schema_type = cls.__annotations__.get("args_schema", None)
 
-        if args_schema_type is not None:
-            if args_schema_type is None or args_schema_type == BaseModel:
-                # Throw errors for common mis-annotations.
-                # TODO: Use get_args / get_origin and fully
-                # specify valid annotations.
-                typehint_mandate = """
+        if args_schema_type is not None and args_schema_type == BaseModel:
+            # Throw errors for common mis-annotations.
+            # TODO: Use get_args / get_origin and fully
+            # specify valid annotations.
+            typehint_mandate = """
 class ChildTool(BaseTool):
     ...
     args_schema: Type[BaseModel] = SchemaClass
     ..."""
-                name = cls.__name__
-                raise SchemaAnnotationError(
-                    f"Tool definition for {name} must include valid type annotations"
-                    f" for argument 'args_schema' to behave as expected.\n"
-                    f"Expected annotation of 'Type[BaseModel]'"
-                    f" but got '{args_schema_type}'.\n"
-                    f"Expected class looks like:\n"
-                    f"{typehint_mandate}"
-                )
+            name = cls.__name__
+            raise SchemaAnnotationError(
+                f"Tool definition for {name} must include valid type annotations"
+                f" for argument 'args_schema' to behave as expected.\n"
+                f"Expected annotation of 'Type[BaseModel]'"
+                f" but got '{args_schema_type}'.\n"
+                f"Expected class looks like:\n"
+                f"{typehint_mandate}"
+            )
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""

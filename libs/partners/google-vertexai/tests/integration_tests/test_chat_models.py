@@ -1,5 +1,5 @@
 """Test ChatGoogleVertexAI chat model."""
-from typing import cast
+from typing import Optional, cast
 
 import pytest
 from langchain_core.messages import (
@@ -16,7 +16,7 @@ model_names_to_test = [None, "codechat-bison", "chat-bison", "gemini-pro"]
 
 
 @pytest.mark.parametrize("model_name", model_names_to_test)
-def test_initialization(model_name: str) -> None:
+def test_initialization(model_name: Optional[str]) -> None:
     """Test chat model initialization."""
     if model_name:
         model = ChatVertexAI(model_name=model_name)
@@ -30,7 +30,7 @@ def test_initialization(model_name: str) -> None:
 
 
 @pytest.mark.parametrize("model_name", model_names_to_test)
-def test_vertexai_single_call(model_name: str) -> None:
+def test_vertexai_single_call(model_name: Optional[str]) -> None:
     if model_name:
         model = ChatVertexAI(model_name=model_name)
     else:
@@ -164,7 +164,7 @@ def test_vertexai_single_call_with_examples() -> None:
 
 
 @pytest.mark.parametrize("model_name", model_names_to_test)
-def test_vertexai_single_call_with_history(model_name: str) -> None:
+def test_vertexai_single_call_with_history(model_name: Optional[str]) -> None:
     if model_name:
         model = ChatVertexAI(model_name=model_name)
     else:
@@ -203,7 +203,7 @@ def test_chat_vertexai_gemini_system_message_error(model_name: str) -> None:
 
 
 @pytest.mark.parametrize("model_name", model_names_to_test)
-def test_chat_vertexai_system_message(model_name: str) -> None:
+def test_chat_vertexai_system_message(model_name: Optional[str]) -> None:
     if model_name:
         model = ChatVertexAI(
             model_name=model_name, convert_system_message_to_human=True
