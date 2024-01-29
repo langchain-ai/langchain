@@ -37,6 +37,7 @@ EXPECTED_ALL = [
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
     "BrowserlessLoader",
+    "CassandraLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
