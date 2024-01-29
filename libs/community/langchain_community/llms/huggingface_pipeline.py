@@ -200,7 +200,7 @@ class HuggingFacePipeline(BaseLLM):
             batch_prompts = prompts[i : i + self.batch_size]
 
             # Process batch of prompts
-            responses = self.pipeline(batch_prompts,**self.model_kwargs)
+            responses = self.pipeline(batch_prompts, **self.model_kwargs)
 
             # Process each response in the batch
             for j, response in enumerate(responses):
