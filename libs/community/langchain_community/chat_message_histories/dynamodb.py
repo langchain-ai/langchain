@@ -38,10 +38,11 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             This may also contain global and local secondary index keys.
         kms_key_id: an optional AWS KMS Key ID, AWS KMS Key ARN, or AWS KMS Alias for
             client-side encryption
-        ttl: Optional Time-to-live (TTL) allows you to define a per-item expiration
-            timestamp that indicates when an item is no longer needed.
-            DynamoDB automatically deletes expired items within a few days of their 
-            expiration time, without consuming write throughput. 
+        ttl: Optional Time-to-live (TTL) in seconds. Allows you to define a per-item 
+            expiration timestamp that indicates when an item can be deleted from the 
+            table. DynamoDB handles deletion of expired items without consuming 
+            write throughput. To enable this feature on the table, follow the
+            [AWS DynamoDB documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-how-to.html)
     """
 
     def __init__(
