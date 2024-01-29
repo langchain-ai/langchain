@@ -1,14 +1,15 @@
 from __future__ import annotations
-from io import IOBase
-from typing import Any, List, Optional, Union, TYPE_CHECKING
 
+from io import IOBase
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from langchain_experimental.agents.agent_toolkits.pandas.base import (
     create_pandas_dataframe_agent,
 )
+
 if TYPE_CHECKING:
-    from langchain_core.language_models import LanguageModelLike
     from langchain.agents.agent import AgentExecutor
+    from langchain_core.language_models import LanguageModelLike
 
 
 def create_csv_agent(
@@ -18,21 +19,21 @@ def create_csv_agent(
     **kwargs: Any,
 ) -> AgentExecutor:
     """Create pandas dataframe agent by loading csv to a dataframe.
-    
+
     Args:
         llm: Language model to use for the agent.
-        path: A string path, file-like object or a list of string paths/file-like 
+        path: A string path, file-like object or a list of string paths/file-like
             objects that can be read in as pandas DataFrames with pd.read_csv().
         pandas_kwargs: Named arguments to pass to pd.read_csv().
         **kwargs: Additional kwargs to pass to langchain_experimental.agents.agent_toolkits.pandas.base.create_pandas_dataframe_agent().
-        
+
     Returns:
         An AgentExecutor with the specified agent_type agent and access to
         a PythonAstREPLTool with the loaded DataFrame(s) and any user-provided extra_tools.
-        
+
     Example:
         .. code-block:: python
-        
+
         from langchain_openai import ChatOpenAI
         from langchain_experimental.agents import create_csv_agent
 

@@ -187,7 +187,7 @@ def create_pandas_dataframe_agent(
             instead to pass constructor callbacks to AgentExecutor.
         prefix: Prompt prefix string.
         suffix: Prompt suffix string.
-        input_variables: DEPRECATED. Input variables automatically inferred from 
+        input_variables: DEPRECATED. Input variables automatically inferred from
             constructed prompt.
         verbose: AgentExecutor verbosity.
         return_intermediate_steps: Passed to AgentExecutor init.
