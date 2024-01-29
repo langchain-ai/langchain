@@ -97,7 +97,10 @@ class ChatGLM(LLM):
         # call api
         try:
             response = requests.post(
-                f"{self.endpoint_url}v1/chat/completions", headers=headers, json=payload,stream=False)
+                f"{self.endpoint_url}v1/chat/completions", 
+                headers=headers, 
+                json=payload,
+                stream=False)
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
         logger.debug(f"ChatGLM response: {response}")
