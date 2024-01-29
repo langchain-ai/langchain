@@ -74,6 +74,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "TileDB",
         "TimescaleVector",
         "Vald",
+        "VDMS",
         "Vearch",
         "VespaStore",
         "Weaviate",
