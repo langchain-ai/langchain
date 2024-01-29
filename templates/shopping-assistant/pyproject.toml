@@ -14,10 +14,10 @@ langchain-openai = "^0.0.5"
 langchainhub = "^0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.20"
 
 [tool.langserve]
-export_module = "shopping-assistant.agent"
+export_module = "shopping_assistant.agent"
 export_attr = "agent_executor"
 
 [tool.templates-hub]

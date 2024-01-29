@@ -33,7 +33,7 @@ And add the following code to your `server.py` file:
 ```python
 from shopping_assistant.agent import agent_executor as shopping_assistant_chain
 
-add_routes(app, shopping_assistant_chain, path="/shopping-assitant")
+add_routes(app, shopping_assistant_chain, path="/shopping-assistant")
 ```
 
 (Optional) Let's now configure LangSmith.
@@ -58,12 +58,12 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/solo-performance-prompting-agent/playground](http://127.0.0.1:8000/solo-performance-prompting-agent/playground)
+We can access the playground at [http://127.0.0.1:8000/shopping-assistant/playground](http://127.0.0.1:8000/shopping-assistant/playground)
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/solo-performance-prompting-agent")
+runnable = RemoteRunnable("http://localhost:8000/shopping-assistant")
 ```
