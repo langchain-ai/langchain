@@ -1,6 +1,7 @@
 import asyncio
 from functools import partial
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Optional, Type
+from langchain_core.callbacks.manager import AsyncCallbackManagerForToolRun, CallbackManagerForToolRun
 
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain_core.tools import BaseTool
@@ -20,7 +21,7 @@ class ConneryAction(BaseTool):
     action: Action
     connery_service: Any
 
-    def _run(self, **kwargs: Dict[str, str]) -> Dict[str, str]:
+    def _run(self, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs: Dict[str, str]) -> Dict[str, str]:
         """
         Runs the Connery Action with the provided input.
         Parameters:
@@ -31,7 +32,7 @@ class ConneryAction(BaseTool):
 
         return self.connery_service.run_action(self.action.id, kwargs)
 
-    async def _arun(self, **kwargs: Dict[str, str]) -> Dict[str, str]:
+    async def _arun(self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None, **kwargs: Dict[str, str]) -> Dict[str, str]:
         """
         Runs the Connery Action asynchronously with the provided input.
         Parameters:
