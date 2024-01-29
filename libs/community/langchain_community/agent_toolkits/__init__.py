@@ -18,6 +18,7 @@ from langchain_community.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain_community.agent_toolkits.azure_cognitive_services import (
     AzureCognitiveServicesToolkit,
 )
+from langchain_community.agent_toolkits.connery import ConneryToolkit
 from langchain_community.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
@@ -50,6 +51,7 @@ __all__ = [
     "AINetworkToolkit",
     "AmadeusToolkit",
     "AzureCognitiveServicesToolkit",
+    "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
     "JiraToolkit",

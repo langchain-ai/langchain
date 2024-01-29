@@ -90,6 +90,7 @@ zhipuai = {version = "^1.0.7", optional = true}
 elasticsearch = {version = "^8.12.0", optional = true}
 hdbcli = {version = "^2.19.21", optional = true}
 oci = {version = "^2.119.1", optional = true}
+rdflib = {version = "7.0.0", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -254,7 +255,8 @@ extended_testing = [
  "zhipuai",
  "elasticsearch",
  "hdbcli",
- "oci"
+ "oci",
+ "rdflib",
 ]
 
 [tool.ruff]
@@ -303,7 +305,7 @@ markers = [
 asyncio_mode = "auto"
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
