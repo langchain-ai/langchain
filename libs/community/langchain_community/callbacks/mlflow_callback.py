@@ -94,15 +94,19 @@ def analyze_text(
             files serialized to  HTML string.
     """
     resp: Dict[str, Any] = {}
-    textstat = import_textstat()
-    spacy = import_spacy()
-    text_complexity_metrics = {
-        key: getattr(textstat, key)(text) for key in get_text_complexity_metrics()
-    }
-    resp.update({"text_complexity_metrics": text_complexity_metrics})
-    resp.update(text_complexity_metrics)
+    try:
+        textstat = import_textstat()
+    except ImportError:
+        pass
+    else:
+        text_complexity_metrics = {
+            key: getattr(textstat, key)(text) for key in get_text_complexity_metrics()
+        }
+        resp.update({"text_complexity_metrics": text_complexity_metrics})
+        resp.update(text_complexity_metrics)
 
     if nlp is not None:
+        spacy = import_spacy()
         doc = nlp(text)
 
         dep_out = spacy.displacy.render(  # type: ignore
@@ -279,9 +283,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     ) -> None:
         """Initialize callback handler."""
         import_pandas()
-        import_textstat()
         import_mlflow()
-        spacy = import_spacy()
         super().__init__()
 
         self.name = name
@@ -303,14 +305,19 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
 
         self.action_records: list = []
+        self.nlp = None
         try:
-            self.nlp = spacy.load("en_core_web_sm")
-        except OSError:
-            logger.warning(
-                "Run `python -m spacy download en_core_web_sm` "
-                "to download en_core_web_sm model for text visualization."
-            )
-            self.nlp = None
+            spacy = import_spacy()
+        except ImportError:
+            pass
+        else:
+            try:
+                self.nlp = spacy.load("en_core_web_sm")
+            except OSError:
+                logger.warning(
+                    "Run `python -m spacy download en_core_web_sm` "
+                    "to download en_core_web_sm model for text visualization."
+                )
 
         self.metrics = {key: 0 for key in mlflow_callback_metrics()}
 

@@ -5,13 +5,13 @@ from json import JSONDecodeError
 from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     import openai
@@ -180,16 +180,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             OpenAIAssistantRunnable configured to run using the created assistant.
         """
         client = client or _get_openai_client()
-        openai_tools: List = []
-        for tool in tools:
-            oai_tool = (
-                tool if isinstance(tool, dict) else format_tool_to_openai_tool(tool)
-            )
-            openai_tools.append(oai_tool)
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=openai_tools,
+            tools=[convert_to_openai_tool(tool) for tool in tools],
             model=model,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)

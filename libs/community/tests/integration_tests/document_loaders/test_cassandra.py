@@ -59,11 +59,11 @@ def test_loader_table(keyspace: str) -> None:
     loader = CassandraLoader(table=CASSANDRA_TABLE)
     assert loader.load() == [
         Document(
-            page_content='{"row_id": "id1", "body_blob": "text1"}',
+            page_content="Row(row_id='id1', body_blob='text1')",
             metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace},
         ),
         Document(
-            page_content='{"row_id": "id2", "body_blob": "text2"}',
+            page_content="Row(row_id='id2', body_blob='text2')",
             metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace},
         ),
     ]
@@ -74,8 +74,8 @@ def test_loader_query(keyspace: str) -> None:
         query=f"SELECT body_blob FROM {keyspace}.{CASSANDRA_TABLE}"
     )
     assert loader.load() == [
-        Document(page_content='{"body_blob": "text1"}'),
-        Document(page_content='{"body_blob": "text2"}'),
+        Document(page_content="Row(body_blob='text1')"),
+        Document(page_content="Row(body_blob='text2')"),
     ]
 
 
@@ -103,7 +103,7 @@ def test_loader_metadata_mapper(keyspace: str) -> None:
     loader = CassandraLoader(table=CASSANDRA_TABLE, metadata_mapper=mapper)
     assert loader.load() == [
         Document(
-            page_content='{"row_id": "id1", "body_blob": "text1"}',
+            page_content="Row(row_id='id1', body_blob='text1')",
             metadata={
                 "table": CASSANDRA_TABLE,
                 "keyspace": keyspace,
@@ -111,7 +111,7 @@ def test_loader_metadata_mapper(keyspace: str) -> None:
             },
         ),
         Document(
-            page_content='{"row_id": "id2", "body_blob": "text2"}',
+            page_content="Row(row_id='id2', body_blob='text2')",
             metadata={
                 "table": CASSANDRA_TABLE,
                 "keyspace": keyspace,

@@ -13,7 +13,7 @@ There are many ways to contribute to LangChain. Here are some common ways people
 
 - [**Documentation**](https://python.langchain.com/docs/contributing/documentation): Help improve our docs, including this one!
 - [**Code**](https://python.langchain.com/docs/contributing/code): Help us write code, fix bugs, or improve our infrastructure.
-- [**Integrations**](https://python.langchain.com/docs/contributing/integration): Help us integrate with your favorite vendors and tools.
+- [**Integrations**](https://python.langchain.com/docs/contributing/integrations): Help us integrate with your favorite vendors and tools.
 
 ### 🚩GitHub Issues
 
