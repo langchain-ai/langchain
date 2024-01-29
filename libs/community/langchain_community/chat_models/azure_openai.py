@@ -6,6 +6,7 @@ import os
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -16,6 +17,11 @@ from langchain_community.utils.openai import is_openai_v1
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.10",
+    removal="0.2.0",
+    alternative_import="langchain_openai.AzureChatOpenAI",
+)
 class AzureChatOpenAI(ChatOpenAI):
     """`Azure OpenAI` Chat Completion API.
 

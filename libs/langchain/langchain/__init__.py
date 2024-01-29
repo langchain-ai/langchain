@@ -14,16 +14,11 @@ except metadata.PackageNotFoundError:
 del metadata  # optional, avoids polluting the results of dir(__package__)
 
 
-def _is_interactive_env() -> bool:
-    """Determine if running within IPython or Jupyter."""
-    import sys
-
-    return hasattr(sys, "ps2")
-
-
 def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     """Warn on import of deprecated module."""
-    if _is_interactive_env():
+    from langchain.utils.interactive_env import is_interactive_env
+
+    if is_interactive_env():
         # No warnings for interactive environments.
         # This is done to avoid polluting the output of interactive environments
         # where users rely on auto-complete and may trigger this warning
@@ -131,104 +126,107 @@ def __getattr__(name: str) -> Any:
     elif name == "Anthropic":
         from langchain_community.llms import Anthropic
 
-        _warn_on_import(name, replacement="langchain.llms.Anthropic")
+        _warn_on_import(name, replacement="langchain_community.llms.Anthropic")
 
         return Anthropic
     elif name == "Banana":
         from langchain_community.llms import Banana
 
-        _warn_on_import(name, replacement="langchain.llms.Banana")
+        _warn_on_import(name, replacement="langchain_community.llms.Banana")
 
         return Banana
     elif name == "CerebriumAI":
         from langchain_community.llms import CerebriumAI
 
-        _warn_on_import(name, replacement="langchain.llms.CerebriumAI")
+        _warn_on_import(name, replacement="langchain_community.llms.CerebriumAI")
 
         return CerebriumAI
     elif name == "Cohere":
         from langchain_community.llms import Cohere
 
-        _warn_on_import(name, replacement="langchain.llms.Cohere")
+        _warn_on_import(name, replacement="langchain_community.llms.Cohere")
 
         return Cohere
     elif name == "ForefrontAI":
         from langchain_community.llms import ForefrontAI
 
-        _warn_on_import(name, replacement="langchain.llms.ForefrontAI")
+        _warn_on_import(name, replacement="langchain_community.llms.ForefrontAI")
 
         return ForefrontAI
     elif name == "GooseAI":
         from langchain_community.llms import GooseAI
 
-        _warn_on_import(name, replacement="langchain.llms.GooseAI")
+        _warn_on_import(name, replacement="langchain_community.llms.GooseAI")
 
         return GooseAI
     elif name == "HuggingFaceHub":
         from langchain_community.llms import HuggingFaceHub
 
-        _warn_on_import(name, replacement="langchain.llms.HuggingFaceHub")
+        _warn_on_import(name, replacement="langchain_community.llms.HuggingFaceHub")
 
         return HuggingFaceHub
     elif name == "HuggingFaceTextGenInference":
         from langchain_community.llms import HuggingFaceTextGenInference
 
-        _warn_on_import(name, replacement="langchain.llms.HuggingFaceTextGenInference")
+        _warn_on_import(
+            name, replacement="langchain_community.llms.HuggingFaceTextGenInference"
+        )
 
         return HuggingFaceTextGenInference
     elif name == "LlamaCpp":
         from langchain_community.llms import LlamaCpp
 
-        _warn_on_import(name, replacement="langchain.llms.LlamaCpp")
+        _warn_on_import(name, replacement="langchain_community.llms.LlamaCpp")
 
         return LlamaCpp
     elif name == "Modal":
         from langchain_community.llms import Modal
 
-        _warn_on_import(name, replacement="langchain.llms.Modal")
+        _warn_on_import(name, replacement="langchain_community.llms.Modal")
 
         return Modal
     elif name == "OpenAI":
         from langchain_community.llms import OpenAI
 
-        _warn_on_import(name, replacement="langchain.llms.OpenAI")
+        _warn_on_import(name, replacement="langchain_community.llms.OpenAI")
 
         return OpenAI
     elif name == "Petals":
         from langchain_community.llms import Petals
 
-        _warn_on_import(name, replacement="langchain.llms.Petals")
+        _warn_on_import(name, replacement="langchain_community.llms.Petals")
 
         return Petals
     elif name == "PipelineAI":
         from langchain_community.llms import PipelineAI
 
-        _warn_on_import(name, replacement="langchain.llms.PipelineAI")
+        _warn_on_import(name, replacement="langchain_community.llms.PipelineAI")
 
         return PipelineAI
     elif name == "SagemakerEndpoint":
         from langchain_community.llms import SagemakerEndpoint
 
-        _warn_on_import(name, replacement="langchain.llms.SagemakerEndpoint")
+        _warn_on_import(name, replacement="langchain_community.llms.SagemakerEndpoint")
 
         return SagemakerEndpoint
     elif name == "StochasticAI":
         from langchain_community.llms import StochasticAI
 
-        _warn_on_import(name, replacement="langchain.llms.StochasticAI")
+        _warn_on_import(name, replacement="langchain_community.llms.StochasticAI")
 
         return StochasticAI
     elif name == "Writer":
         from langchain_community.llms import Writer
 
-        _warn_on_import(name, replacement="langchain.llms.Writer")
+        _warn_on_import(name, replacement="langchain_community.llms.Writer")
 
         return Writer
     elif name == "HuggingFacePipeline":
         from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 
         _warn_on_import(
-            name, replacement="langchain.llms.huggingface_pipeline.HuggingFacePipeline"
+            name,
+            replacement="langchain_community.llms.huggingface_pipeline.HuggingFacePipeline",
         )
 
         return HuggingFacePipeline
