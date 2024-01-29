@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Un
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -164,7 +164,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
 
     client: Any = Field(default_factory=_get_openai_client)
     """OpenAI or AzureOpenAI client."""
-    async_client: Any = Field(default_factory=_get_openai_async_client)
+    async_client: Any = None
     """OpenAI or AzureOpenAI async client."""
     assistant_id: str
     """OpenAI assistant id."""
@@ -172,6 +172,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
     """Frequency with which to check run progress in ms."""
     as_agent: bool = False
     """Use as a LangChain agent, compatible with the AgentExecutor."""
+
+    @root_validator()
+    def validate_async_client(cls, values: dict) -> dict:
+        if values["async_client"] is None:
+            import openai
+
+            api_key = values["client"].api_key
+            values["async_client"] = openai.AsyncOpenAI(api_key=api_key)
+        return values
 
     @classmethod
     def create_assistant(
