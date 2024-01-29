@@ -107,7 +107,7 @@ def beta(
                 warned = True
                 emit_warning()
             return wrapped(*args, **kwargs)
-        
+
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
             nonlocal warned
