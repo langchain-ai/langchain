@@ -3,8 +3,20 @@ sidebar_position: 3
 ---
 # Toolkits
 
-:::info
-For documentation on built-in toolkit integrations, visit [Integrations](/docs/integrations/toolkits/).
-:::
 
 Toolkits are collections of tools that are designed to be used together for specific tasks and have convenient loading methods.
+For a complete list of these, visit [Integrations](/docs/integrations/toolkits/).
+
+All Toolkits expose a `get_tools` method which returns a list of tools.
+You can therefore do:
+
+```python
+# Initialize a toolkit
+toolkit = ExampleTookit(...)
+
+# Get list of tools
+tools = toolkit.get_tools()
+
+# Create agent
+agent = create_agent_method(llm, tools, prompt)
+```

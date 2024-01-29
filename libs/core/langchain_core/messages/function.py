@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, List, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -15,6 +15,11 @@ class FunctionMessage(BaseMessage):
 
     type: Literal["function"] = "function"
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
+
 
 FunctionMessage.update_forward_refs()
 
@@ -26,6 +31,11 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"  # type: ignore[assignment]
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):

@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.313, <0.1"
+langchain = "^0.1"
 openai = "<2"
 tiktoken = "^0.5.1"
 faiss-cpu = "^1.7.4"

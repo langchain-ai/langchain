@@ -26,5 +26,5 @@ from langchain.retrievers import PubMedRetriever
 See a [usage example](/docs/integrations/document_loaders/pubmed).
 
 ```python
-from langchain.document_loaders import PubMedLoader
+from langchain_community.document_loaders import PubMedLoader
 ```

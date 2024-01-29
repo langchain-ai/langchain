@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Literal, Sequence
 
+from typing_extensions import TypedDict
+
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
     AnyMessage,
@@ -24,6 +26,11 @@ class PromptValue(Serializable, ABC):
         """Return whether this class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "prompt"]
+
     @abstractmethod
     def to_string(self) -> str:
         """Return prompt value as string."""
@@ -39,6 +46,11 @@ class StringPromptValue(PromptValue):
     text: str
     """Prompt text."""
     type: Literal["StringPromptValue"] = "StringPromptValue"
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "base"]
 
     def to_string(self) -> str:
         """Return prompt as string."""
@@ -66,6 +78,35 @@ class ChatPromptValue(PromptValue):
         """Return prompt as a list of messages."""
         return list(self.messages)
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
+
+class ImageURL(TypedDict, total=False):
+    detail: Literal["auto", "low", "high"]
+    """Specifies the detail level of the image."""
+
+    url: str
+    """Either a URL of the image or the base64 encoded image data."""
+
+
+class ImagePromptValue(PromptValue):
+    """Image prompt value."""
+
+    image_url: ImageURL
+    """Prompt image."""
+    type: Literal["ImagePromptValue"] = "ImagePromptValue"
+
+    def to_string(self) -> str:
+        """Return prompt as string."""
+        return self.image_url["url"]
+
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as messages."""
+        return [HumanMessage(content=[self.image_url])]
+
 
 class ChatPromptValueConcrete(ChatPromptValue):
     """Chat prompt value which explicitly lists out the message types it accepts.
@@ -74,3 +115,8 @@ class ChatPromptValueConcrete(ChatPromptValue):
     messages: Sequence[AnyMessage]
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]

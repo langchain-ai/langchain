@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
@@ -112,11 +112,11 @@ class LangChainTracer(BaseTracer):
         metadata: Optional[Dict[str, Any]] = None,
         name: Optional[str] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Run:
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
         chat_model_run = Run(
@@ -135,6 +135,7 @@ class LangChainTracer(BaseTracer):
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
+        return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
         run_ = run.copy()

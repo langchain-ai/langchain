@@ -1,10 +1,11 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
-from presidio_analyzer import RecognizerResult
-from presidio_anonymizer.entities import EngineResult
+if TYPE_CHECKING:
+    from presidio_analyzer import RecognizerResult
+    from presidio_anonymizer.entities import EngineResult
 
 MappingDataType = Dict[str, Dict[str, str]]
 
@@ -62,8 +63,8 @@ class DeanonymizerMapping:
 
 def create_anonymizer_mapping(
     original_text: str,
-    analyzer_results: List[RecognizerResult],
-    anonymizer_results: EngineResult,
+    analyzer_results: List["RecognizerResult"],
+    anonymizer_results: "EngineResult",
     is_reversed: bool = False,
 ) -> MappingDataType:
     """Creates or updates the mapping used to anonymize and/or deanonymize text.
