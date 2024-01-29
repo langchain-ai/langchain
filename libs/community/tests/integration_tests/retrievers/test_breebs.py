@@ -1,6 +1,8 @@
 from typing import List
+
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
+
 from langchain_community.retrievers.breebs import BreebsRetriever
 
 
