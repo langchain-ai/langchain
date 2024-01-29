@@ -3,7 +3,7 @@ from __future__ import annotations
 from concurrent.futures import Executor
 from typing import Any, ClassVar, Dict, Iterator, List, Optional, Union
 
-import vertexai  # type: ignore
+import vertexai  # type: ignore[import-untyped]
 from google.api_core.client_options import ClientOptions
 from google.cloud.aiplatform.gapic import (
     PredictionServiceAsyncClient,
@@ -19,24 +19,29 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from vertexai.language_models import (  # type: ignore
+from vertexai.language_models import (  # type: ignore[import-untyped]
     CodeGenerationModel,
     TextGenerationModel,
 )
-from vertexai.language_models._language_models import (  # type: ignore
+from vertexai.language_models._language_models import (  # type: ignore[import-untyped]
     TextGenerationResponse,
 )
-from vertexai.preview.generative_models import GenerativeModel, Image  # type: ignore
-from vertexai.preview.language_models import (  # type: ignore
+from vertexai.preview.generative_models import (  # type: ignore[import-untyped]
+    GenerativeModel,
+    Image,
+)
+from vertexai.preview.language_models import (  # type: ignore[import-untyped]
     CodeGenerationModel as PreviewCodeGenerationModel,
 )
 from vertexai.preview.language_models import (
     TextGenerationModel as PreviewTextGenerationModel,
 )
 
+from langchain_google_vertexai._enums import HarmBlockThreshold, HarmCategory
 from langchain_google_vertexai._utils import (
     create_retry_decorator,
     get_client_info,
+    get_generation_info,
     is_codey_model,
     is_gemini_model,
 )
@@ -66,7 +71,10 @@ def _completion_with_retry(
     ) -> Any:
         if is_gemini:
             return llm.client.generate_content(
-                prompt, stream=stream, generation_config=kwargs
+                prompt,
+                stream=stream,
+                safety_settings=kwargs.pop("safety_settings", None),
+                generation_config=kwargs,
             )
         else:
             if stream:
@@ -94,7 +102,9 @@ async def _acompletion_with_retry(
     ) -> Any:
         if is_gemini:
             return await llm.client.generate_content_async(
-                prompt, generation_config=kwargs
+                prompt,
+                generation_config=kwargs,
+                safety_settings=kwargs.pop("safety_settings", None),
             )
         return await llm.client.predict_async(prompt, **kwargs)
 
@@ -141,6 +151,21 @@ class _VertexAICommon(_VertexAIBase):
     """How many completions to generate for each prompt."""
     streaming: bool = False
     """Whether to stream the results or not."""
+    safety_settings: Optional[Dict[HarmCategory, HarmBlockThreshold]] = None
+    """The default safety settings to use for all generations. 
+    
+        For example: 
+
+            from langchain_google_vertexai import HarmBlockThreshold, HarmCategory
+
+            safety_settings = {
+                HarmCategory.HARM_CATEGORY_UNSPECIFIED: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            }
+            """  # noqa: E501
 
     @property
     def _llm_type(self) -> str:
@@ -237,8 +262,12 @@ class VertexAI(_VertexAICommon, BaseLLM):
         """Validate that the python package exists in environment."""
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
+        safety_settings = values["safety_settings"]
         is_gemini = is_gemini_model(values["model_name"])
         cls._init_vertexai(values)
+
+        if safety_settings and (not is_gemini or tuned_model_name):
+            raise ValueError("Safety settings are only supported for Gemini models")
 
         if is_codey_model(model_name):
             model_cls = CodeGenerationModel
@@ -257,8 +286,12 @@ class VertexAI(_VertexAICommon, BaseLLM):
             )
         else:
             if is_gemini:
-                values["client"] = model_cls(model_name=model_name)
-                values["client_preview"] = preview_model_cls(model_name=model_name)
+                values["client"] = model_cls(
+                    model_name=model_name, safety_settings=safety_settings
+                )
+                values["client_preview"] = preview_model_cls(
+                    model_name=model_name, safety_settings=safety_settings
+                )
             else:
                 values["client"] = model_cls.from_pretrained(model_name)
                 values["client_preview"] = preview_model_cls.from_pretrained(model_name)
@@ -282,17 +315,22 @@ class VertexAI(_VertexAICommon, BaseLLM):
         return result.total_tokens
 
     def _response_to_generation(
-        self, response: TextGenerationResponse
+        self, response: TextGenerationResponse, *, stream: bool = False
     ) -> GenerationChunk:
         """Converts a stream response to a generation chunk."""
+        generation_info = get_generation_info(
+            response, self._is_gemini_model, stream=stream
+        )
         try:
-            generation_info = {
-                "is_blocked": response.is_blocked,
-                "safety_attributes": response.safety_attributes,
-            }
-        except Exception:
-            generation_info = None
-        return GenerationChunk(text=response.text, generation_info=generation_info)
+            text = response.text
+        except AttributeError:
+            text = ""
+        except ValueError:
+            text = ""
+        return GenerationChunk(
+            text=text,
+            generation_info=generation_info,
+        )
 
     def _generate(
         self,
@@ -365,7 +403,14 @@ class VertexAI(_VertexAICommon, BaseLLM):
             run_manager=run_manager,
             **params,
         ):
-            chunk = self._response_to_generation(stream_resp)
+            # Gemini models return GenerationResponse even when streaming, which has a
+            # candidates field.
+            stream_resp = (
+                stream_resp
+                if isinstance(stream_resp, TextGenerationResponse)
+                else stream_resp.candidates[0]
+            )
+            chunk = self._response_to_generation(stream_resp, stream=True)
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
@@ -413,9 +458,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     @property
     def endpoint_path(self) -> str:
         return self.client.endpoint_path(
-            project=self.project,  # type: ignore
-            location=self.location,
-            endpoint=self.endpoint_id,
+            project=self.project, location=self.location, endpoint=self.endpoint_id
         )
 
     @property
