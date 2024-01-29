@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.325"
+langchain = "^0.1"
 tiktoken = ">=0.5.1"
 boto3 = ">=1.28.57"
 awscli = ">=1.29.57"

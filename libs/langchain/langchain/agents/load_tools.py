@@ -18,15 +18,15 @@ import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
-from langchain.agents.tools import Tool
+from langchain_core.tools import Tool
 from langchain_core.language_models import BaseLanguageModel
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
+from langchain_core.callbacks import BaseCallbackManager
+from langchain_core.callbacks import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
-from langchain.utilities.dalle_image_generator import DallEAPIWrapper
-from langchain.utilities.requests import TextRequestsWrapper
+from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
+from langchain_community.utilities.requests import TextRequestsWrapper
 from langchain_community.tools.arxiv.tool import ArxivQueryRun
 from langchain_community.tools.golden_query.tool import GoldenQueryRun
 from langchain_community.tools.pubmed.tool import PubmedQueryRun
@@ -77,32 +77,32 @@ from langchain_community.tools.dataforseo_api_search import DataForSeoAPISearchR
 from langchain_community.tools.dataforseo_api_search import DataForSeoAPISearchResults
 from langchain_community.tools.memorize.tool import Memorize
 from langchain_community.tools.reddit_search.tool import RedditSearchRun
-from langchain.utilities.arxiv import ArxivAPIWrapper
-from langchain.utilities.golden_query import GoldenQueryAPIWrapper
-from langchain.utilities.pubmed import PubMedAPIWrapper
-from langchain.utilities.bing_search import BingSearchAPIWrapper
-from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
-from langchain.utilities.google_lens import GoogleLensAPIWrapper
-from langchain.utilities.google_jobs import GoogleJobsAPIWrapper
-from langchain.utilities.google_search import GoogleSearchAPIWrapper
-from langchain.utilities.google_serper import GoogleSerperAPIWrapper
-from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
-from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
-from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
-from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
-from langchain.utilities.awslambda import LambdaWrapper
-from langchain.utilities.graphql import GraphQLAPIWrapper
-from langchain.utilities.searchapi import SearchApiAPIWrapper
-from langchain.utilities.searx_search import SearxSearchWrapper
-from langchain.utilities.serpapi import SerpAPIWrapper
-from langchain.utilities.stackexchange import StackExchangeAPIWrapper
-from langchain.utilities.twilio import TwilioAPIWrapper
-from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
-from langchain.utilities.wikipedia import WikipediaAPIWrapper
-from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
-from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
-from langchain.utilities.reddit_search import RedditSearchAPIWrapper
+from langchain_community.utilities.arxiv import ArxivAPIWrapper
+from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
+from langchain_community.utilities.pubmed import PubMedAPIWrapper
+from langchain_community.utilities.bing_search import BingSearchAPIWrapper
+from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
+from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
+from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
+from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
+from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
+from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
+from langchain_community.utilities.awslambda import LambdaWrapper
+from langchain_community.utilities.graphql import GraphQLAPIWrapper
+from langchain_community.utilities.searchapi import SearchApiAPIWrapper
+from langchain_community.utilities.searx_search import SearxSearchWrapper
+from langchain_community.utilities.serpapi import SerpAPIWrapper
+from langchain_community.utilities.stackexchange import StackExchangeAPIWrapper
+from langchain_community.utilities.twilio import TwilioAPIWrapper
+from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapper
+from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
+from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
+from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
+from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
 
 
 def _get_tools_requests_get() -> BaseTool:
@@ -353,9 +353,7 @@ def _get_scenexplain(**kwargs: Any) -> BaseTool:
 
 
 def _get_graphql_tool(**kwargs: Any) -> BaseTool:
-    graphql_endpoint = kwargs["graphql_endpoint"]
-    wrapper = GraphQLAPIWrapper(graphql_endpoint=graphql_endpoint)
-    return BaseGraphQLTool(graphql_wrapper=wrapper)
+    return BaseGraphQLTool(graphql_wrapper=GraphQLAPIWrapper(**kwargs))
 
 
 def _get_openweathermap(**kwargs: Any) -> BaseTool:
@@ -455,7 +453,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "stackexchange": (_get_stackexchange, []),
     "sceneXplain": (_get_scenexplain, []),
-    "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
+    "graphql": (_get_graphql_tool, ["graphql_endpoint", "custom_headers"]),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),
     "dataforseo-api-search": (
         _get_dataforseo_api_search,

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 
@@ -11,11 +11,12 @@ class SlackGetChannel(SlackBaseTool):
     """Tool that gets Slack channel information."""
 
     name: str = "get_channelid_name_dict"
-    description: str = "Use this tool to get channelid-name dict."
+    description: str = (
+        "Use this tool to get channelid-name dict. There is no input to this tool"
+    )
 
     def _run(
-        self,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, *args: Any, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         try:
             logging.getLogger(__name__)

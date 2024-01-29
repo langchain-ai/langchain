@@ -5,18 +5,7 @@ from urllib.parse import urlparse
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, PrivateAttr
-
-
-# Ignoring type because below is valid pydantic code
-# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class Params(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
-    """Parameters for MLflow"""
-
-    temperature: float = 0.0
-    n: int = 1
-    stop: Optional[List[str]] = None
-    max_tokens: Optional[int] = None
+from langchain_core.pydantic_v1 import Field, PrivateAttr
 
 
 class Mlflow(LLM):
@@ -33,7 +22,7 @@ class Mlflow(LLM):
             completions = Mlflow(
                 target_uri="http://localhost:5000",
                 endpoint="test",
-                params={"temperature": 0.1}
+                temperature=0.1,
             )
     """
 

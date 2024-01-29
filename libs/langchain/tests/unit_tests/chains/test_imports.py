@@ -1,4 +1,5 @@
-from langchain.chains import __all__
+from langchain import chains
+from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "APIChain",
@@ -58,8 +59,10 @@ EXPECTED_ALL = [
     "create_sql_query_chain",
     "create_history_aware_retriever",
     "create_retrieval_chain",
+    "load_summarize_chain",
 ]
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(chains.__all__) == set(EXPECTED_ALL)
+    assert_all_importable(chains)

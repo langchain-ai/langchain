@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.utilities import PythonREPL
+from langchain_community.utilities import PythonREPL
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT

@@ -1,10 +1,14 @@
 [tool.poetry]
 name = "langchain-nvidia-ai-endpoints"
-version = "0.0.1"
+version = "0.0.1.post2"
 description = "An integration package connecting NVIDIA AI Endpoints and LangChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/nvidia-ai-endpoints"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/nvidia-ai-endpoints"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

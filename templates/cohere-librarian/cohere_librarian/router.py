@@ -1,5 +1,5 @@
-from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableBranch
 
 from .blurb_matcher import book_rec_chain

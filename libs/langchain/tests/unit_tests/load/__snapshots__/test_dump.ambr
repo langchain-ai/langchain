@@ -30,10 +30,9 @@
     "lc": 1,
     "type": "constructor",
     "id": [
-      "tests",
-      "unit_tests",
-      "load",
-      "test_dump",
+      "my",
+      "special",
+      "namespace",
       "SpecialPerson"
     ],
     "kwargs": {

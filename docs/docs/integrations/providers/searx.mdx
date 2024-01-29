@@ -40,7 +40,7 @@ To use the wrapper we need to pass the host of the SearxNG instance to the wrapp
 You can use the wrapper to get results from a SearxNG instance. 
 
 ```python
-from langchain.utilities import SearxSearchWrapper
+from langchain_community.utilities import SearxSearchWrapper
 s = SearxSearchWrapper(searx_host="http://localhost:8888")
 s.run("what is a large language model?")
 ```

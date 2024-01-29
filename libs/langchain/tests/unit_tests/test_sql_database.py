@@ -1,6 +1,7 @@
 # flake8: noqa=E501
 """Test SQL database wrapper."""
 
+from langchain_community.utilities.sql_database import SQLDatabase, truncate_word
 from sqlalchemy import (
     Column,
     Integer,
@@ -11,8 +12,6 @@ from sqlalchemy import (
     create_engine,
     insert,
 )
-
-from langchain.utilities.sql_database import SQLDatabase, truncate_word
 
 metadata_obj = MetaData()
 
