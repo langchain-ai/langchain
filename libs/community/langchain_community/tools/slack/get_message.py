@@ -39,6 +39,6 @@ class SlackGetMessage(SlackBaseTool):
                 for message in messages
                 if "user" in message and "text" in message and "ts" in message
             ]
-            return json.dumps(filtered_messages)
+            return json.dumps(filtered_messages, ensure_ascii=False)
         except Exception as e:
             return "Error creating conversation: {}".format(e)
