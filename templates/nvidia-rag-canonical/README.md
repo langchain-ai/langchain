@@ -45,16 +45,16 @@ langchain app add nvidia-rag-canonical
 
 And add the following code to your `server.py` file:
 ```python
-from nvidia_rag_canonical import chain as rag_nvidia_chain
+from nvidia_rag_canonical import chain as nvidia_rag_canonical_chain
 
-add_routes(app, rag_nvidia_chain, path="/nvidia-rag")
+add_routes(app, nvidia_rag_canonical_chain, path="/nvidia-rag-canonical")
 ```
 
 If you want to set up an ingestion pipeline, you can add the following code to your `server.py` file:
 ```python
-from rag_nvidia_canonical import ingest as rag_nvidia_ingest
+from nvidia_rag_canonical import ingest as nvidia_rag_ingest
 
-add_routes(app, rag_nvidia_ingest, path="/nvidia-rag-ingest")
+add_routes(app, nvidia_rag_ingest, path="/nvidia-rag-ingest")
 ```
 Note that for files ingested by the ingestion API, the server will need to be restarted for the newly ingested files to be accessible by the retriever.
 
@@ -84,14 +84,14 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/nvidia-rag/playground](http://127.0.0.1:8000/nvidia-rag/playground)
+We can access the playground at [http://127.0.0.1:8000/nvidia-rag-canonical/playground](http://127.0.0.1:8000/nvidia-rag-canonical/playground)
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/nvidia-rag")
+runnable = RemoteRunnable("http://localhost:8000/nvidia-rag-canonical")
 ```
 
 

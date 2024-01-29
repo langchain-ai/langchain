@@ -59,6 +59,7 @@ from langchain_community.document_loaders.blob_loaders import (
 from langchain_community.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain_community.document_loaders.brave_search import BraveSearchLoader
 from langchain_community.document_loaders.browserless import BrowserlessLoader
+from langchain_community.document_loaders.cassandra import CassandraLoader
 from langchain_community.document_loaders.chatgpt import ChatGPTLoader
 from langchain_community.document_loaders.chromium import AsyncChromiumLoader
 from langchain_community.document_loaders.college_confidential import (
@@ -207,6 +208,7 @@ from langchain_community.document_loaders.unstructured import (
 from langchain_community.document_loaders.url import UnstructuredURLLoader
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain_community.document_loaders.url_selenium import SeleniumURLLoader
+from langchain_community.document_loaders.vsdx import VsdxLoader
 from langchain_community.document_loaders.weather import WeatherDataLoader
 from langchain_community.document_loaders.web_base import WebBaseLoader
 from langchain_community.document_loaders.whatsapp_chat import WhatsAppChatLoader
@@ -266,6 +268,7 @@ __all__ = [
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
     "BrowserlessLoader",
+    "CassandraLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
@@ -394,6 +397,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
