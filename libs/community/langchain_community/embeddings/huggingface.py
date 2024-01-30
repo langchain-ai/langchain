@@ -103,7 +103,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 except ImportError:
                     logging.warning(
                         "Unable to show progress because tqdm could not be imported."
-                        "Please install via `pip install tqdm`."
+                        "Please install it with `pip install tqdm`."
                     )
                     iter_ = texts
             else:
