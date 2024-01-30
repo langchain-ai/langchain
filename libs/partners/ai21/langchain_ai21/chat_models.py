@@ -117,7 +117,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def _astream(
         self,
@@ -126,7 +126,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _generate(
         self,
@@ -165,4 +165,4 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        raise NotImplementedError()
+        raise NotImplementedError

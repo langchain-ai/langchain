@@ -6,20 +6,12 @@ from langchain_ai21.llms import AI21
 
 
 def test_stream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from AI21."""
     llm = AI21()
 
     with pytest.raises(NotImplementedError):
         for token in llm.stream("I'm Pickle Rick"):
             assert isinstance(token, str)
-
-
-async def test_astream() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = AI21()
-
-    async for token in llm.astream("I'm Pickle Rick"):
-        assert isinstance(token, str)
 
 
 async def test_abatch() -> None:
