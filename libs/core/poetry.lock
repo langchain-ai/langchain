@@ -1124,13 +1124,13 @@ files = [
 
 [[package]]
 name = "langsmith"
-version = "0.0.84rc1"
+version = "0.0.86rc1"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.84rc1-py3-none-any.whl", hash = "sha256:c6acf6f1aade3780241b89ae42569b45ce1980d36df67d5fe712740654bbe77e"},
-    {file = "langsmith-0.0.84rc1.tar.gz", hash = "sha256:6fc575ae5a76265e3cee296ececee4caa3eafb4c1677aad3055510e1551bed2a"},
+    {file = "langsmith-0.0.86rc1-py3-none-any.whl", hash = "sha256:727ec95df8b4ae025f0cb16236a0ae2d6a0b96073d517d27af34c8d49adfbe3c"},
+    {file = "langsmith-0.0.86rc1.tar.gz", hash = "sha256:4aae9ca1561760c4a04d1a30759657bf725b5691d4f7edec864dfe1b051ee15d"},
 ]
 
 [package.dependencies]
@@ -2766,4 +2766,4 @@ extended-testing = ["jinja2"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f669892124a8042c5896ffc3ba190e372b37e8c69bbf176f628ab39f87588b6c"
+content-hash = "82260cc87d84786ac1d3f5f9bc50d02b87a8f663a7c28d67dd756db9a2598e52"
