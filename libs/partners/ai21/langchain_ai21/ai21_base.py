@@ -19,7 +19,6 @@ class AI21Base(BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        # TODO: use from env
         api_key = convert_to_secret_str(
             values.get("api_key") or os.getenv("AI21_API_KEY") or ""
         )
