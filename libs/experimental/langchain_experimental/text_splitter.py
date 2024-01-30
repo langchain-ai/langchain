@@ -91,10 +91,12 @@ class SemanticChunker(BaseDocumentTransformer):
         add_start_index: bool = False,
         breakpoint_threshold_type: BreakpointThresholdType = "percentile",
         breakpoint_threshold_amount: Optional[float] = None,
+        number_of_chunks: Optional[int] = None,
     ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
         self.breakpoint_threshold_type = breakpoint_threshold_type
+        self.number_of_chunks = number_of_chunks
         if breakpoint_threshold_amount is None:
             self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[
                 breakpoint_threshold_type
@@ -121,6 +123,20 @@ class SemanticChunker(BaseDocumentTransformer):
 
                 return np.mean(distances) + self.breakpoint_threshold_amount * iqr
 
+    def _threshold_from_clusters(self, distances: List[float]) -> float:
+        """
+        Calculate the threshold based on the number of chunks.
+        Inverse of percentile method.
+        """
+        x1, y1 = 1.0, 100.0
+        x2, y2 = len(distances), 1.0
+
+        # Linear interpolation formula
+        y = y1 + ((y2 - y1) / (x2 - x1)) * (cast(int, self.number_of_chunks) - x1)
+        y = min(max(y, 0), 100)
+
+        return cast(float, np.percentile(distances, y))
+
     def _calculate_sentence_distances(
         self, text: str
     ) -> Tuple[List[float], List[dict]]:
@@ -144,7 +160,12 @@ class SemanticChunker(BaseDocumentTransformer):
         text: str,
     ) -> List[str]:
         distances, sentences = self._calculate_sentence_distances(text)
-        breakpoint_distance_threshold = self._calculate_breakpoint_threshold(distances)
+        if self.number_of_chunks is not None:
+            breakpoint_distance_threshold = self._threshold_from_clusters(distances)
+        else:
+            breakpoint_distance_threshold = self._calculate_breakpoint_threshold(
+                distances
+            )
 
         indices_above_thresh = [
             i for i, x in enumerate(distances) if x > breakpoint_distance_threshold
