@@ -2,8 +2,8 @@ import os
 from typing import List, Optional
 
 import nomic  # type: ignore
-from nomic import embed
 from langchain_core.embeddings import Embeddings
+from nomic import embed
 
 
 class NomicEmbeddings(Embeddings):
@@ -22,39 +22,47 @@ class NomicEmbeddings(Embeddings):
         *,
         model: str,
         nomic_api_key: Optional[str] = None,
-        task_type: Optional[str] = None
     ):
         """Initialize NomicEmbeddings model.
 
         Args:
             model: model name
-            task_type: optionally, lock the model to a specific task type. By default
-                the model uses "search_query" when calling `embed_query` and
-                "search_document" for `embed_documents`.
             nomic_api_key: optionally, set the Nomic API key. Uses the NOMIC_API_KEY
                 environment variable by default.
         """
         _api_key = nomic_api_key or os.environ.get("NOMIC_API_KEY")
         nomic.login(_api_key)
         self.model = model
-        self.task_type = task_type
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
-        output = embed.text(
-            texts=texts,
-            model=self.model,
-            task_type=self.task_type
-            if self.task_type is not None
-            else "search_document",
-        )
+    def embed(self, texts: List[str], *, task_type: str) -> List[List[float]]:
+        """Embed texts.
+
+        Args:
+            texts: list of texts to embed
+            task_type: the task type to use when embedding. One of `search_query`,
+                `search_document`, `classification`, `clustering`
+        """
+        output = embed.text(texts=texts, model=self.model, task_type=task_type)
         return output["embeddings"]
 
-    def embed_query(self, text: str) -> List[float]:
-        """Embed query text."""
-        output = embed.text(
-            texts=[text],
-            model=self.model,
-            task_type=self.task_type if self.task_type is not None else "search_query",
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed search docs.
+
+        Args:
+            texts: list of texts to embed as documents
+        """
+        return self.embed(
+            texts=texts,
+            task_type="search_document",
         )
-        return output["embeddings"][0]
+
+    def embed_query(self, text: str) -> List[float]:
+        """Embed query text.
+
+        Args:
+            text: query text
+        """
+        return self.embed(
+            texts=[text],
+            task_type="search_query",
+        )[0]
