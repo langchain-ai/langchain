@@ -1,3 +1,4 @@
+import os
 import lancedb
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatOpenAI
