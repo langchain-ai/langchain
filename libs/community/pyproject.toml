@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.15"
+version = "0.0.16"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.14,<0.2"
+langchain-core = ">=0.1.16,<0.2"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -87,9 +87,11 @@ datasets = {version = "^2.15.0", optional = true}
 azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 oracle-ads = {version = "^2.9.1", optional = true}
 zhipuai = {version = "^1.0.7", optional = true}
+httpx = {version = "^0.24.1", optional = true}
 elasticsearch = {version = "^8.12.0", optional = true}
 hdbcli = {version = "^2.19.21", optional = true}
 oci = {version = "^2.119.1", optional = true}
+rdflib = {version = "7.0.0", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -252,9 +254,11 @@ extended_testing = [
  "azure-ai-documentintelligence",
  "oracle-ads",
  "zhipuai",
+ "httpx",
  "elasticsearch",
  "hdbcli",
- "oci"
+ "oci",
+ "rdflib",
 ]
 
 [tool.ruff]
@@ -303,7 +307,7 @@ markers = [
 asyncio_mode = "auto"
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
