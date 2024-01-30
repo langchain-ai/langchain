@@ -142,9 +142,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         stream_resp = self.client.completions.create(**params, stream=True)
         for data in stream_resp:
             delta = data.completion
-            yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(delta)
+                run_manager.on_llm_new_token(delta, chunk=chunk)
 
     async def _astream(
         self,
@@ -161,9 +162,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         stream_resp = await self.async_client.completions.create(**params, stream=True)
         async for data in stream_resp:
             delta = data.completion
-            yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(delta)
+                await run_manager.on_llm_new_token(delta, chunk=chunk)
 
     def _generate(
         self,

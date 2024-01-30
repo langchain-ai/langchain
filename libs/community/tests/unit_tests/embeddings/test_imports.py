@@ -3,6 +3,7 @@ from langchain_community.embeddings import __all__
 EXPECTED_ALL = [
     "OpenAIEmbeddings",
     "AzureOpenAIEmbeddings",
+    "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
@@ -56,6 +57,7 @@ EXPECTED_ALL = [
     "VoyageEmbeddings",
     "BookendEmbeddings",
     "VolcanoEmbeddings",
+    "OCIGenAIEmbeddings",
 ]
 
 
