@@ -20,6 +20,7 @@ from langchain_community.embeddings.aleph_alpha import (
 )
 from langchain_community.embeddings.awa import AwaEmbeddings
 from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
+from langchain_community.embeddings.baichuan import BaichuanTextEmbeddings
 from langchain_community.embeddings.baidu_qianfan_endpoint import (
     QianfanEmbeddingsEndpoint,
 )
@@ -92,6 +93,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "OpenAIEmbeddings",
     "AzureOpenAIEmbeddings",
+    "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
