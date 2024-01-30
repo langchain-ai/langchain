@@ -1,10 +1,10 @@
 from langchain_openai import (
-    ChatOpenAI,
-    OpenAI,
-    OpenAIEmbeddings,
     AzureChatOpenAI,
     AzureOpenAI,
     AzureOpenAIEmbeddings,
+    ChatOpenAI,
+    OpenAI,
+    OpenAIEmbeddings,
 )
 
 
