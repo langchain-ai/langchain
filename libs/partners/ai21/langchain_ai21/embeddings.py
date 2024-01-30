@@ -23,7 +23,7 @@ class AI21Embeddings(Embeddings, AI21Base):
         """Embed search docs."""
         response = self.client.embed.create(
             texts=texts,
-            type=EmbedType.SEGMENT,
+            type=EmbedType.QUERY,
             **kwargs,
         )
 
@@ -33,7 +33,7 @@ class AI21Embeddings(Embeddings, AI21Base):
         """Embed query text."""
         response = self.client.embed.create(
             texts=[text],
-            type=EmbedType.SEGMENT,
+            type=EmbedType.QUERY,
             **kwargs,
         )
 

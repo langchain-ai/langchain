@@ -44,7 +44,7 @@ def test_embed_query(mock_client_with_embeddings: Mock) -> None:
     assert response == _DUMMY_EMBEDDING_0
     mock_client_with_embeddings.embed.create.assert_called_once_with(
         texts=[text],
-        type=EmbedType.SEGMENT,
+        type=EmbedType.QUERY,
     )
 
 
@@ -57,5 +57,5 @@ def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
     assert response == [_DUMMY_EMBEDDING_0, _DUMMY_EMBEDDING_1, _DUMMY_EMBEDDING_2]
     mock_client_with_embeddings.embed.create.assert_called_once_with(
         texts=texts,
-        type=EmbedType.SEGMENT,
+        type=EmbedType.QUERY,
     )
