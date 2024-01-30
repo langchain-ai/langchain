@@ -70,9 +70,7 @@ def create_sql_agent(
         format_instructions: Formatting instructions to pass to
             ZeroShotAgent.create_prompt() when 'agent_type' is
             "zero-shot-react-description". Otherwise ignored.
-        input_variables: DEPRECATED. Input variables to explicitly specify as part of
-            ZeroShotAgent.create_prompt() when 'agent_type' is
-            "zero-shot-react-description". Otherwise ignored.
+        input_variables: DEPRECATED.
         top_k: Number of rows to query for by default.
         max_iterations: Passed to AgentExecutor init.
         max_execution_time: Passed to AgentExecutor init.
