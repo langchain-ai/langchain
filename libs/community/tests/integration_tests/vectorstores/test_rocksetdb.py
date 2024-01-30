@@ -1,6 +1,8 @@
 import logging
 import os
 
+import rockset
+import rockset.models
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.rocksetdb import Rockset
@@ -42,8 +44,6 @@ class TestRockset:
 
     @classmethod
     def setup_class(cls) -> None:
-        import rockset
-        import rockset.models
 
         assert os.environ.get("ROCKSET_API_KEY") is not None
         assert os.environ.get("ROCKSET_REGION") is not None
@@ -95,16 +95,18 @@ class TestRockset:
             client, embeddings, collection_name, text_key, embedding_key, workspace
         )
 
-    def test_rockset_insert_and_search(self) -> None:
-        """Test end to end vector search in Rockset"""
-
         texts = ["foo", "bar", "baz"]
         metadatas = [{"metadata_index": i} for i in range(len(texts))]
-        ids = self.rockset_vectorstore.add_texts(
+        ids = cls.rockset_vectorstore.add_texts(
             texts=texts,
             metadatas=metadatas,
         )
+
         assert len(ids) == len(texts)
+
+    def test_rockset_search(self) -> None:
+        """Test end-to-end vector search in Rockset"""
+
         # Test that `foo` is closest to `foo`
         output = self.rockset_vectorstore.similarity_search(
             query="foo", distance_func=Rockset.DistanceFunction.COSINE_SIM, k=1
@@ -115,6 +117,23 @@ class TestRockset:
         output = self.rockset_vectorstore.similarity_search(
             query="foo",
             distance_func=Rockset.DistanceFunction.COSINE_SIM,
+            k=1,
+            where_str="metadata_index != 0",
+        )
+        assert output == [Document(page_content="bar", metadata={"metadata_index": 1})]
+
+    def test_rockset_mmr_search(self) -> None:
+        """Test end-to-end mmr search in Rockset"""
+        output = self.rockset_vectorstore.max_marginal_relevance_search(
+            query="foo", distance_func=Rockset.DistanceFunction.COSINE_SIM, fetch_k=1, k=1
+        )
+        assert output == [Document(page_content="foo", metadata={"metadata_index": 0})]
+
+        # Find closest vector to `foo` which is not `foo`
+        output = self.rockset_vectorstore.max_marginal_relevance_search(
+            query="foo",
+            distance_func=Rockset.DistanceFunction.COSINE_SIM,
+            fetch_k=3,
             k=1,
             where_str="metadata_index != 0",
         )
@@ -148,6 +167,26 @@ LIMIT 4
         vector_str = ",".join(map(str, vector))
         expected = f"""\
 SELECT * EXCEPT({embedding_key}), \
+COSINE_SIM({embedding_key}, [{vector_str}]) as dist
+FROM {workspace}.{collection_name}
+WHERE age >= 10
+ORDER BY dist DESC
+LIMIT 4
+"""
+        assert q_str == expected
+
+    def test_build_query_sql_with_select_embeddings(self) -> None:
+        vector = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        q_str = self.rockset_vectorstore._build_query_sql(
+            vector,
+            Rockset.DistanceFunction.COSINE_SIM,
+            4,
+            "age >= 10",
+            False
+        )
+        vector_str = ",".join(map(str, vector))
+        expected = f"""\
+SELECT *, \
 COSINE_SIM({embedding_key}, [{vector_str}]) as dist
 FROM {workspace}.{collection_name}
 WHERE age >= 10

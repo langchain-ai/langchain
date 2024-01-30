@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
-from libs.core.langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 
 logger = logging.getLogger(__name__)
 
@@ -258,7 +258,7 @@ class Rockset(VectorStore):
 
         exclude_embeddings = True
         if "exclude_embeddings" in kwargs:
-            exclude_embeddings = kwargs["exclude_embedding"]
+            exclude_embeddings = kwargs["exclude_embeddings"]
         q_str = self._build_query_sql(embedding, distance_func, k, where_str, exclude_embeddings)
         try:
             query_response = self._client.Queries.query(sql={"query": q_str})
@@ -330,19 +330,22 @@ class Rockset(VectorStore):
             k=fetch_k,
             distance_func=distance_func,
             where_str=where_str,
+            exclude_embeddings=False,
             **kwargs
         )
 
-        embeddings = [doc[self._embedding_key] for doc in initial_docs]
+        embeddings = [doc.metadata[self._embedding_key] for doc in initial_docs]
 
         selected_indices = maximal_marginal_relevance(
             np.array(query_embedding), embeddings, lambda_mult=lambda_mult, k=k,
         )
 
-        return [initial_docs[i] for i in selected_indices]
+        # remove embeddings key before returning for cleanup to be consistent with
+        #   other search functions
+        for i in selected_indices:
+            del initial_docs[i].metadata[self._embedding_key]
 
-    def as_retriever(self, **kwargs: Any) -> RocksetVectorStoreRetriever:
-        return RocksetVectorStoreRetriever(vectorstore=self, **kwargs)
+        return [initial_docs[i] for i in selected_indices]
 
     # Helper functions
 
@@ -360,9 +363,9 @@ class Rockset(VectorStore):
         distance_str = f"""{distance_func.value}({self._embedding_key}, \
 [{q_embedding_str}]) as dist"""
         where_str = f"WHERE {where_str}\n" if where_str else ""
-        select_embedding = f"EXCEPT({self._embedding_key})," if exclude_embeddings else ""
+        select_embedding = f" EXCEPT({self._embedding_key})," if exclude_embeddings else ","
         return f"""\
-SELECT * {select_embedding} {distance_str}
+SELECT *{select_embedding} {distance_str}
 FROM {self._workspace}.{self._collection_name}
 {where_str}\
 ORDER BY dist {distance_func.order_by()}
@@ -390,47 +393,3 @@ LIMIT {str(k)}
             data=[DeleteDocumentsRequestData(id=i) for i in ids],
             workspace=self._workspace,
         )
-
-
-class RocksetVectorStoreRetriever(VectorStoreRetriever):
-    """Retriever for Rockset VectorStore."""
-
-    search_type: str = "similarity"
-    vectorstore: Rockset
-
-    SIMILARITY = "similarity"
-    SIMILARITY_SCORE_THRESHOLD = "similarity_score_threshold"
-    MMR = "mmr"
-    allowed_search_types = [
-        SIMILARITY,
-        SIMILARITY_SCORE_THRESHOLD,
-        MMR,
-    ]
-
-    search_kwargs: Dict[str, Any] = {
-        "k": 4,
-        "score_threshold": 0.9,
-        # set to None to avoid distance used in score_threshold search
-        "distance_threshold": None,
-    }
-
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        if self.search_type == RocksetVectorStoreRetriever.SIMILARITY:
-            return self.vectorstore.similarity_search(query, **self.search_kwargs)
-        elif self.search_type == RocksetVectorStoreRetriever.SIMILARITY_SCORE_THRESHOLD:
-            docs_and_similarities = (
-                self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
-                )
-            )
-            return [doc for doc, _ in docs_and_similarities]
-        elif self.search_type == RocksetVectorStoreRetriever.MMR:
-            return self.vectorstore.max_marginal_relevance_search(
-                query, exclude_embeddings=False, **self.search_kwargs
-            )
-        else:
-            error_msg = (f"search_type of {self.search_type} is unsupported. Select one of"
-                         f"{', '.join(RocksetVectorStoreRetriever.allowed_search_types)}.")
-            raise ValueError(error_msg)
