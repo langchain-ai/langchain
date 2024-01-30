@@ -4015,7 +4015,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return self.__class__(
             bound=self.bound,
             config=self.config,
-            kwargs={**self.kwargs, **kwargs},
+            kwargs=_kwargs,
             custom_input_type=self.custom_input_type,
             custom_output_type=self.custom_output_type,
         )
