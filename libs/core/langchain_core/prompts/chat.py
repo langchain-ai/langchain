@@ -470,7 +470,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         # TODO: Handle partials
         title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
         title = get_msg_title_repr(title, bold=html)
-        return f"{title}\n\n{self.prompt.pretty_repr(html=html)}"
+        prompts = self.prompt if isinstance(self.prompt, list) else [self.prompt]
+        prompt_reprs = "\n\n".join(prompt.pretty_repr(html=html) for prompt in prompts)
+        return f"{title}\n\n{prompt_reprs}"
 
 
 class HumanMessagePromptTemplate(_StringImageMessagePromptTemplate):
