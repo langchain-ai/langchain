@@ -160,5 +160,5 @@ def test_get_service(asr: RivaASR) -> None:
 def test_invoke(asr, stream) -> None:
     """Test the invoke method."""
     got = asr.invoke(stream)
-    exepected = " ".join([s.strip() for s in AUDIO_TEXT_MOCK]).strip()
-    assert got == exepected
+    expected = " ".join([s.strip() for s in AUDIO_TEXT_MOCK]).strip()
+    assert got == expected

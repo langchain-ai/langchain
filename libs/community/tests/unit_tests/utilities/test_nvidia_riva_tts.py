@@ -93,7 +93,7 @@ def test_transform(tts: RivaTTS):
             # odd indices will return the mocked data
             expected = AUDIO_DATA_MOCK[int((idx - 1) / 2)]
         else:
-            # even indicies will return the request config
+            # even indices will return the request config
             expected = AUDIO_SYNTH_CONFIG.encode()
         assert response == expected
 
@@ -117,7 +117,7 @@ async def test_atransform(tts: RivaTTS):
             # odd indices will return the mocked data
             expected = AUDIO_DATA_MOCK[int((idx - 1) / 2)]
         else:
-            # even indicies will return the request config
+            # even indices will return the request config
             expected = AUDIO_SYNTH_CONFIG.encode()
         assert response == expected
         idx += 1
