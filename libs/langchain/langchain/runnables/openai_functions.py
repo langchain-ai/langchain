@@ -1,11 +1,12 @@
 from operator import itemgetter
 from typing import Any, Callable, List, Mapping, Optional, Union
 
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import RouterRunnable, Runnable
+from langchain_core.runnables.base import RunnableBindingBase
 from typing_extensions import TypedDict
 
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.schema.messages import BaseMessage
-from langchain.schema.runnable import RouterRunnable, Runnable, RunnableBinding
 
 
 class OpenAIFunction(TypedDict):
@@ -19,7 +20,7 @@ class OpenAIFunction(TypedDict):
     """The parameters to the function."""
 
 
-class OpenAIFunctionsRouter(RunnableBinding[BaseMessage, Any]):
+class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
     """A runnable that routes to the selected function."""
 
     functions: Optional[List[OpenAIFunction]]

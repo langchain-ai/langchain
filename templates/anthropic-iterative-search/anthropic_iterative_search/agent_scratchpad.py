@@ -7,9 +7,10 @@ def _format_docs(docs):
     )
     return result
 
+
 def format_agent_scratchpad(intermediate_steps):
     thoughts = ""
     for action, observation in intermediate_steps:
         thoughts += action.log
-        thoughts += '</search_query>' + _format_docs(observation)
+        thoughts += "</search_query>" + _format_docs(observation)
     return thoughts

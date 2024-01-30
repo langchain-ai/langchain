@@ -2,18 +2,18 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.pydantic_v1 import root_validator
 
 
 class CombiningOutputParser(BaseOutputParser):
     """Combine multiple output parsers into one."""
 
+    parsers: List[BaseOutputParser]
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
-
-    parsers: List[BaseOutputParser]
 
     @root_validator()
     def validate_parsers(cls, values: Dict[str, Any]) -> Dict[str, Any]:

@@ -12,7 +12,7 @@ vectors, and then at query time to embed the unstructured query and retrieve the
 'most similar' to the embedded query. A vector store takes care of storing embedded data and performing vector search
 for you.
 
-![vector store diagram](/img/vector_stores.jpg)
+![Diagram illustrating the process of vector stores: 1. Load source data, 2. Query vector store, 3. Retrieve 'most similar' results.](/img/vector_stores.jpg "Vector Store Process Diagram")
 
 ## Get started
 
@@ -43,10 +43,10 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 ```
 
 ```python
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.document_loaders import TextLoader
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 
 # Load the document, split it into chunks, embed each chunk and load it into the vector store.
 raw_documents = TextLoader('../../../state_of_the_union.txt').load()
@@ -75,10 +75,10 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 ```
 
 ```python
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.document_loaders import TextLoader
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 
 # Load the document, split it into chunks, embed each chunk and load it into the vector store.
 raw_documents = TextLoader('../../../state_of_the_union.txt').load()
@@ -107,10 +107,10 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 ```
 
 ```python
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.document_loaders import TextLoader
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import LanceDB
+from langchain_community.vectorstores import LanceDB
 
 import lancedb
 
@@ -200,7 +200,7 @@ pip install qdrant-client
 ```
 
 ```python
-from langchain.vectorstores import Qdrant
+from langchain_community.vectorstores import Qdrant
 ```
 
 ### Create a vector store asynchronously

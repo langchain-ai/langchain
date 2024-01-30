@@ -2,10 +2,10 @@ import os
 from typing import Any, Callable, Union
 
 import pytest
+from langchain_core.outputs import Generation
 
 from langchain.cache import GPTCache
 from langchain.globals import get_llm_cache, set_llm_cache
-from langchain.schema import Generation
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 try:
@@ -45,7 +45,7 @@ def init_gptcache_map_with_llm(cache_obj: Any, llm: str) -> None:
     "init_func", [None, init_gptcache_map, init_gptcache_map_with_llm]
 )
 def test_gptcache_caching(
-    init_func: Union[Callable[[Any, str], None], Callable[[Any], None], None]
+    init_func: Union[Callable[[Any, str], None], Callable[[Any], None], None],
 ) -> None:
     """Test gptcache default caching behavior."""
     set_llm_cache(GPTCache(init_func))
