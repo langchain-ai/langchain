@@ -10,6 +10,7 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
     BaseLLMOutputParser,
@@ -23,7 +24,6 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
 )
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
 from langchain.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
