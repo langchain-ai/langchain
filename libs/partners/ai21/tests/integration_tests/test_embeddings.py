@@ -3,7 +3,7 @@ from langchain_ai21.embeddings import AI21Embeddings
 
 
 def test_langchain_ai21_embedding_documents() -> None:
-    """Test cohere embeddings."""
+    """Test AI21 embeddings."""
     documents = ["foo bar"]
     embedding = AI21Embeddings()
     output = embedding.embed_documents(documents)
@@ -12,7 +12,7 @@ def test_langchain_ai21_embedding_documents() -> None:
 
 
 def test_langchain_ai21_embedding_query() -> None:
-    """Test cohere embeddings."""
+    """Test AI21 embeddings."""
     document = "foo bar"
     embedding = AI21Embeddings()
     output = embedding.embed_query(document)
