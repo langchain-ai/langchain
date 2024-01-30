@@ -1,8 +1,9 @@
 from __future__ import annotations
-import requests
+
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
+import requests
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -111,6 +112,7 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
         else:
             raise ValueError("Unknown transcript format.")
 
+
 class AssemblyAIAudioLoaderById(BaseLoader):
     """
     Loader for AssemblyAI audio transcripts.
@@ -121,12 +123,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
     """
 
-    def __init__(
-        self,
-        transcript_id,
-        api_key,
-        transcript_format
-    ):
+    def __init__(self, transcript_id, api_key, transcript_format):
         """
         Initializes the AssemblyAI AssemblyAIAudioLoaderById.
 
@@ -137,93 +134,88 @@ class AssemblyAIAudioLoaderById(BaseLoader):
             api_key: AssemblyAI API key.
         """
 
-        
         self.api_key = api_key
         self.transcript_id = transcript_id
         self.transcript_format = transcript_format
 
-
     def load(self) -> List[Document]:
-
         """Load data into Document objects."""
-        HEADERS = {
-        "authorization": self.api_key
-        }
+        HEADERS = {"authorization": self.api_key}
 
         if self.transcript_format == TranscriptFormat.TEXT:
-
             try:
-                transcript_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}", headers=HEADERS)
+                transcript_response = requests.get(
+                    f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}",
+                    headers=HEADERS,
+                )
                 transcript_response.raise_for_status()
             except Exception as e:
                 print(f"An error occurred: {e}")
                 raise
 
-            transcript = transcript_response.json()['text']
+            transcript = transcript_response.json()["text"]
 
             return [
-                Document(
-                    page_content=transcript, metadata=transcript_response.json()
-                )
+                Document(page_content=transcript, metadata=transcript_response.json())
             ]
         elif self.transcript_format == TranscriptFormat.PARAGRAPHS:
-
             try:
-                paragraphs_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/paragraphs", headers=HEADERS)
+                paragraphs_response = requests.get(
+                    f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/paragraphs",
+                    headers=HEADERS,
+                )
                 paragraphs_response.raise_for_status()
             except Exception as e:
                 print(f"An error occurred: {e}")
                 raise
 
-            paragraphs = paragraphs_response.json()['paragraphs']
+            paragraphs = paragraphs_response.json()["paragraphs"]
 
-            return [
-                Document(page_content=p["text"], metadata=p)
-                for p in paragraphs
-            ]
-        
+            return [Document(page_content=p["text"], metadata=p) for p in paragraphs]
+
         elif self.transcript_format == TranscriptFormat.SENTENCES:
-
             try:
-                sentences_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/sentences", headers=HEADERS)
+                sentences_response = requests.get(
+                    f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/sentences",
+                    headers=HEADERS,
+                )
                 sentences_response.raise_for_status()
             except Exception as e:
                 print(f"An error occurred: {e}")
-                raise 
-            
-            sentences = sentences_response.json()['sentences']
+                raise
 
-            return [
-                Document(page_content=s["text"], metadata=s)
-                for s in sentences
-            ]
+            sentences = sentences_response.json()["sentences"]
 
+            return [Document(page_content=s["text"], metadata=s) for s in sentences]
 
         elif self.transcript_format == TranscriptFormat.SUBTITLES_SRT:
-
             try:
-                srt_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/srt", headers=HEADERS)
+                srt_response = requests.get(
+                    f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/srt",
+                    headers=HEADERS,
+                )
                 srt_response.raise_for_status()
             except Exception as e:
                 print(f"An error occurred: {e}")
-                raise 
+                raise
 
-            srt = srt_response.text 
+            srt = srt_response.text
 
             return [Document(page_content=srt)]
 
         elif self.transcript_format == TranscriptFormat.SUBTITLES_VTT:
-
             try:
-                vtt_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/vtt", headers=HEADERS)
+                vtt_response = requests.get(
+                    f"https://api.assemblyai.com/v2/transcript/{self.transcript_id}/vtt",
+                    headers=HEADERS,
+                )
                 vtt_response.raise_for_status()
             except Exception as e:
                 print(f"An error occurred: {e}")
-                raise 
+                raise
 
             vtt = vtt_response.text
 
             return [Document(page_content=vtt)]
         else:
             raise ValueError("Unknown transcript format.")
-
