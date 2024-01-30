@@ -1,7 +1,6 @@
 import importlib.util
 from typing import Any, Dict, List, Optional
 
-import spacy
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -56,6 +55,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             )
         try:
             # Try to load the spaCy model
+            import spacy
 
             values["nlp"] = spacy.load(model_name)
         except OSError:
