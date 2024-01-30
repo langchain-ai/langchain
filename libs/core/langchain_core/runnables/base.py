@@ -3967,6 +3967,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                         f"Configurable key '{key}' not found in runnable with"
                         f" config keys: {allowed_keys}"
                     )
+        if kwargs:
+            kwargs.pop("__on_collision__", None)
         super().__init__(
             bound=bound,
             kwargs=kwargs or {},
@@ -3975,6 +3977,41 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             custom_input_type=custom_input_type,
             custom_output_type=custom_output_type,
             **other_kwargs,
+        )
+
+    def bind(self, *, __on_collision__: Literal["overwrite", "add"]="overwrite", **kwargs: Any) -> Runnable[Input, Output]:
+        """Bind additional kwargs to a Runnable, returning a new Runnable.
+
+        Args:
+            __on_collision__: How to handle overlapping keys in self.kwargs and kwargs.
+                If "overwrite", then for overlapping keys the value from kwargs
+                overwrites self.kwargs. If "add" then addition operation is attempted
+                between self.kwargs[key] + kwargs[key].
+            **kwargs: The kwargs to bind to the Runnable.
+
+        Returns:
+            A new Runnable with the same type and config as the original,
+            but with the additional kwargs bound.
+        """
+        if __on_collision__ == "overwrite":
+            _kwargs = {**self.kwargs, **kwargs}
+        elif __on_collision__ == "add":
+            _kwargs = {**self.kwargs}
+            for k, v in kwargs.items():
+                if k in _kwargs:
+                    _kwargs[k] = _kwargs[k] + v
+                else:
+                    _kwargs[k] = v
+        else:
+            raise ValueError(
+                f"Unknown value for argument {__on_collision__=}. Expected one of "
+                f"'overwrite', 'add'.")
+        return self.__class__(
+            bound=self.bound,
+            config=self.config,
+            kwargs={**self.kwargs, **kwargs},
+            custom_input_type=self.custom_input_type,
+            custom_output_type=self.custom_output_type,
         )
 
     def get_name(
@@ -4218,23 +4255,6 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
-    def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
-        """Bind additional kwargs to a Runnable, returning a new Runnable.
-
-        Args:
-            **kwargs: The kwargs to bind to the Runnable.
-
-        Returns:
-            A new Runnable with the same type and config as the original,
-            but with the additional kwargs bound.
-        """
-        return self.__class__(
-            bound=self.bound,
-            config=self.config,
-            kwargs={**self.kwargs, **kwargs},
-            custom_input_type=self.custom_input_type,
-            custom_output_type=self.custom_output_type,
-        )
 
     def with_config(
         self,
