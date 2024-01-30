@@ -2,7 +2,7 @@
 """
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Dict
 
 from langchain_core.documents import Document
 
@@ -111,6 +111,17 @@ class PlaywrightURLLoader(BaseLoader):
         urls (List[str]): List of URLs to load.
         continue_on_failure (bool): If True, continue loading other URLs on failure.
         headless (bool): If True, the browser will run in headless mode.
+        proxy (Optional[Dict[str, str]]): If set, the browser will access URLs through the specified proxy.
+
+    Examples
+    --------
+    from langchain_community.document_loaders import PlaywrightURLLoader
+
+    loader = UnstructuredHTMLLoader(
+        "example.html", mode="elements", strategy="fast",
+    )
+    docs = loader.load()
+    
     """
 
     def __init__(
@@ -120,6 +131,7 @@ class PlaywrightURLLoader(BaseLoader):
         headless: bool = True,
         remove_selectors: Optional[List[str]] = None,
         evaluator: Optional[PlaywrightEvaluator] = None,
+        proxy: Optional[Dict[str, str]] = None
     ):
         """Load a list of URLs using Playwright."""
         try:
@@ -133,6 +145,7 @@ class PlaywrightURLLoader(BaseLoader):
         self.urls = urls
         self.continue_on_failure = continue_on_failure
         self.headless = headless
+        self.proxy= proxy
 
         if remove_selectors and evaluator:
             raise ValueError(
@@ -153,7 +166,8 @@ class PlaywrightURLLoader(BaseLoader):
         docs: List[Document] = list()
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=self.headless)
+         
+            browser = p.chromium.launch(headless=self.headless, proxy=self.proxy)
             for url in self.urls:
                 try:
                     page = browser.new_page()
@@ -186,7 +200,7 @@ class PlaywrightURLLoader(BaseLoader):
         docs: List[Document] = list()
 
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=self.headless)
+            browser = await p.chromium.launch(headless=self.headless, proxy=self.proxy)
             for url in self.urls:
                 try:
                     page = await browser.new_page()
