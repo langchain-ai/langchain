@@ -95,7 +95,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
             return embeddings.toList()
         else:
-            if show_progress:
+            if self.show_progress:
                 try:
                     from tqdm import tqdm
 
