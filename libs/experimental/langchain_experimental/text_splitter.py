@@ -68,7 +68,7 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
 BreakpointThresholdType = Literal["percentile", "standard_deviation"]
 BREAKPOINT_DEFAULTS: dict[BreakpointThresholdType, float] = {
     "percentile": 95,
-    "standard_deviation": 1,
+    "standard_deviation": 3,
 }
 
 
