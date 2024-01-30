@@ -145,8 +145,8 @@ class Pinecone(VectorStore):
             metadata[self._text_key] = text
 
         if async_req:
-            # For loops to avoid memory issues and optimize when using HTTP based embeddings
-            # The first loop runs the embeddings, it benefits when using OpenAI embeddings
+            # For loops to avoid memory issues when using HTTP-based embeddings
+            # First loop runs embeddings, benefits when using OpenAI embeddings
             # The second loops runs the pinecone upsert asynchronously.
             for i in range(0, len(texts), embedding_chunk_size):
                 chunk_texts = texts[i : i + embedding_chunk_size]

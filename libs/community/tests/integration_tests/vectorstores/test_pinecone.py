@@ -2,7 +2,7 @@ import importlib
 import os
 import time
 import uuid
-from typing import TYPE_CHECKING, List, Generator
+from typing import TYPE_CHECKING, Generator, List
 
 import numpy as np
 import pytest
@@ -36,13 +36,18 @@ def texts() -> Generator[List[str], None, None]:
 
     yield [doc.page_content for doc in documents]
 
+
 @pytest.fixture
 def mock_pool_not_supported(mocker):
     """
     This is the error thrown when multiprocessing is not supported.
     See https://github.com/langchain-ai/langchain/issues/11168
     """
-    mocker.patch('multiprocessing.synchronize.SemLock.__init__', side_effect=OSError('OSError: [Errno 38] Function not implemented'))
+    mocker.patch(
+        "multiprocessing.synchronize.SemLock.__init__",
+        side_effect=OSError("OSError: [Errno 38] Function not implemented"),
+    )
+
 
 def reset_pinecone() -> None:
     assert os.environ.get("PINECONE_API_KEY") is not None
@@ -311,9 +316,10 @@ class TestPinecone:
         query = "What did the president say about Ketanji Brown Jackson"
         _ = docsearch.similarity_search(query, k=1, namespace=namespace_name)
 
-
-    @pytest.mark.usefixtures('mock_pool_not_supported')
-    def test_that_async_freq_uses_multiprocessing(self, embedding_openai: OpenAIEmbeddings) -> None:
+    @pytest.mark.usefixtures("mock_pool_not_supported")
+    def test_that_async_freq_uses_multiprocessing(
+        self, embedding_openai: OpenAIEmbeddings
+    ) -> None:
         with pytest.raises(OSError):
             Pinecone.from_texts(
                 texts=["foo", "bar", "baz"] * 32,
@@ -321,12 +327,14 @@ class TestPinecone:
                 index_name=index_name,
                 async_req=True,
             )
-    
-    @pytest.mark.usefixtures('mock_pool_not_supported')
-    def test_that_async_freq_false_enabled_singlethreading(self, embedding_openai: OpenAIEmbeddings) -> None:
+
+    @pytest.mark.usefixtures("mock_pool_not_supported")
+    def test_that_async_freq_false_enabled_singlethreading(
+        self, embedding_openai: OpenAIEmbeddings
+    ) -> None:
         Pinecone.from_texts(
             texts=["foo", "bar", "baz"],
             embedding=embedding_openai,
             index_name=index_name,
-            async_req=False
+            async_req=False,
         )
