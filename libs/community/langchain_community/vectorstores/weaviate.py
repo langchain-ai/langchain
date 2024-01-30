@@ -425,8 +425,7 @@ class Weaviate(VectorStore):
             batch_size: Size of batch operations.
             index_name: Index name.
             text_key: Key to use for uploading/retrieving text to/from vectorstore.
-            vectorizer: The vectorizer module that the created class will use to create vectors.
-            (If not passed then it will be set to the default vectorizer module set on your weaviate instance)
+            vectorizer: The module that the class will use for vectorization.
             by_text: Whether to search by text or by embedding.
             relevance_score_fn: Function for converting whatever distance function the
                 vector store uses to a relevance score, which is a normalized similarity
