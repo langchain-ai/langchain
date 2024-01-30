@@ -25,6 +25,7 @@ _EXPECTED = [
     "BingSearchRun",
     "BraveSearch",
     "ClickTool",
+    "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
     "DeleteFileTool",

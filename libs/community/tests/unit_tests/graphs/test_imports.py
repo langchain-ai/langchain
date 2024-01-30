@@ -12,6 +12,7 @@ EXPECTED_ALL = [
     "ArangoGraph",
     "FalkorDBGraph",
     "TigerGraph",
+    "OntotextGraphDBGraph",
 ]
 
 
