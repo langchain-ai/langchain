@@ -1,6 +1,6 @@
 import copy
 import re
-from typing import Any, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Iterable, List, Literal, Optional, Sequence, Tuple, cast
 
 import numpy as np
 from langchain_community.utils.math import (
@@ -65,6 +65,13 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
     return distances, sentences
 
 
+BreakpointThresholdType = Literal["percentile", "standard_deviation"]
+BREAKPOINT_DEFAULTS: dict[BreakpointThresholdType, float] = {
+    "percentile": 95,
+    "standard_deviation": 1,
+}
+
+
 class SemanticChunker(BaseDocumentTransformer):
     """Splits the text based on semantic similarity.
 
@@ -77,11 +84,40 @@ class SemanticChunker(BaseDocumentTransformer):
     sentences, and then merges one that are similar in the embedding space.
     """
 
-    def __init__(self, embeddings: Embeddings, add_start_index: bool = False):
+    def __init__(
+        self,
+        embeddings: Embeddings,
+        add_start_index: bool = False,
+        breakpoint_threshold_type: BreakpointThresholdType = "percentile",
+        breakpoint_threshold_amount: Optional[float] = None,
+    ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
+        self.breakpoint_threshold_type = breakpoint_threshold_type
+        if breakpoint_threshold_amount is None:
+            self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[
+                breakpoint_threshold_type
+            ]
+        else:
+            self.breakpoint_threshold_amount = breakpoint_threshold_amount
 
-    def split_text(self, text: str) -> List[str]:
+    def _calculate_breakpoint_threshold(self, distances: List[float]) -> float:
+        match self.breakpoint_threshold_type:
+            case "percentile":
+                return cast(
+                    float,
+                    np.percentile(distances, self.breakpoint_threshold_amount),
+                )
+            case "standard_deviation":
+                return cast(
+                    float,
+                    np.mean(distances)
+                    + self.breakpoint_threshold_amount * np.std(distances),
+                )
+
+    def _calculate_sentence_distances(
+        self, text: str
+    ) -> Tuple[List[float], List[dict]]:
         """Split text into multiple components."""
         # Splitting the essay on '.', '?', and '!'
         single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
@@ -94,19 +130,22 @@ class SemanticChunker(BaseDocumentTransformer):
         )
         for i, sentence in enumerate(sentences):
             sentence["combined_sentence_embedding"] = embeddings[i]
-        distances, sentences = calculate_cosine_distances(sentences)
-        start_index = 0
 
-        # Create a list to hold the grouped sentences
-        chunks = []
-        breakpoint_percentile_threshold = 95
-        breakpoint_distance_threshold = np.percentile(
-            distances, breakpoint_percentile_threshold
-        )  # If you want more chunks, lower the percentile cutoff
+        return calculate_cosine_distances(sentences)
+
+    def split_text(
+        self,
+        text: str,
+    ) -> List[str]:
+        distances, sentences = self._calculate_sentence_distances(text)
+        breakpoint_distance_threshold = self._calculate_breakpoint_threshold(distances)
 
         indices_above_thresh = [
             i for i, x in enumerate(distances) if x > breakpoint_distance_threshold
-        ]  # The indices of those breakpoints on your list
+        ]
+
+        chunks = []
+        start_index = 0
 
         # Iterate through the breakpoints to slice the sentences
         for index in indices_above_thresh:
