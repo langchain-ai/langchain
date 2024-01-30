@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from langchain_core.documents import Document
 from langchain_community.vectorstores import DatabricksVectorSearch
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
@@ -113,6 +114,32 @@ EXAMPLE_SEARCH_RESPONSE = {
         "row_count": len(fake_texts),
         "data_array": sorted(
             [[str(uuid.uuid4()), s, random.uniform(0, 1)] for s in fake_texts],
+            key=lambda x: x[2],  # type: ignore
+            reverse=True,
+        ),
+    },
+    "next_page_token": "",
+}
+
+EXAMPLE_SEARCH_RESPONSE_WITH_EMBEDDING = {
+    "manifest": {
+        "column_count": 3,
+        "columns": [
+            {"name": DEFAULT_PRIMARY_KEY},
+            {"name": DEFAULT_TEXT_COLUMN},
+            {"name": DEFAULT_VECTOR_COLUMN},
+            {"name": "score"},
+        ],
+    },
+    "result": {
+        "row_count": len(fake_texts),
+        "data_array": sorted(
+            [
+                [str(uuid.uuid4()), s, e, random.uniform(0, 1)]
+                for s, e in zip(
+                    fake_texts, DEFAULT_EMBEDDING_MODEL.embed_documents(fake_texts)
+                )
+            ],
             key=lambda x: x[2],  # type: ignore
             reverse=True,
         ),
@@ -455,6 +482,43 @@ def test_similarity_search(index_details: dict) -> None:
     assert sorted([d.page_content for d in search_result]) == sorted(fake_texts)
     assert all([DEFAULT_PRIMARY_KEY in d.metadata for d in search_result])
 
+
+@pytest.mark.requires("databricks", "databricks.vector_search")
+@pytest.mark.parametrize("index_details", ALL_INDEXES)
+def test_similarity_search_score(index_details: dict) -> None:
+    index = mock_index(index_details)
+    index.similarity_search.return_value = EXAMPLE_SEARCH_RESPONSE
+    vectorsearch = default_databricks_vector_search(index)
+    retriever = vectorsearch.as_retriever(
+        search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.5}
+    )
+    query = "foo"
+    filters = {"some filter": True}
+    limit = 7
+
+    search_result = retriever.get_relevant_documents(query)
+
+    assert len(search_result) == len(fake_texts)
+    assert sorted([d.page_content for d in search_result]) == sorted(fake_texts)
+    assert all([DEFAULT_PRIMARY_KEY in d.metadata for d in search_result])
+
+
+@pytest.mark.requires("databricks", "databricks.vector_search")
+@pytest.mark.parametrize(
+    "index_details", [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX]
+)
+def test_mmr_search(index_details: dict) -> None:
+    index = mock_index(index_details)
+    index.similarity_search.return_value = EXAMPLE_SEARCH_RESPONSE_WITH_EMBEDDING
+    vectorsearch = default_databricks_vector_search(index)
+    query = "foo"
+    filters = {"some filter": True}
+    limit = 1
+
+    search_result = vectorsearch.max_marginal_relevance_search(
+        query, k=limit, filters=filters
+    )
+    assert [doc.page_content for doc in search_result] == ["foo"]
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
