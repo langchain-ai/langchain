@@ -185,7 +185,7 @@ class BaseSingleActionAgent(BaseModel):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
@@ -310,7 +310,7 @@ class BaseMultiActionAgent(BaseModel):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
@@ -397,10 +397,7 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        AgentAction,
-        AgentFinish,
-    ]:
+    ) -> Union[AgentAction, AgentFinish,]:
         """Based on past history and current inputs, decide what to do.
 
         Args:
@@ -461,10 +458,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        List[AgentAction],
-        AgentFinish,
-    ]:
+    ) -> Union[List[AgentAction], AgentFinish,]:
         """Based on past history and current inputs, decide what to do.
 
         Args:
@@ -496,10 +490,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        List[AgentAction],
-        AgentFinish,
-    ]:
+    ) -> Union[List[AgentAction], AgentFinish,]:
         """Based on past history and current inputs, decide what to do.
 
         Args:
