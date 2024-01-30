@@ -12,7 +12,7 @@ from langchain.tools.render import render_text_description
 
 
 def create_json_chat_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate, stop_sequene: bool = True
 ) -> Runnable:
     """Create an agent that uses JSON to format its logic, build for Chat Models.
 
@@ -20,7 +20,7 @@ def create_json_chat_agent(
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
-
+        stop_sequene: Stop on "Observation:" to avoid hallucinates, default is True
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
         variables as the prompt passed in does. It returns as output either an
@@ -148,7 +148,9 @@ def create_json_chat_agent(
         tools=render_text_description(list(tools)),
         tool_names=", ".join([t.name for t in tools]),
     )
-
+    if stop_sequene:
+        llm = llm.bind(stop=["\nObservation"])
+        
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_messages(
