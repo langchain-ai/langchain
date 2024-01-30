@@ -2,12 +2,13 @@ import importlib
 import os
 import time
 import uuid
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Generator
 
 import numpy as np
 import pytest
 from langchain_core.documents import Document
 
+from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.pinecone import Pinecone
 
@@ -18,6 +19,30 @@ index_name = "langchain-test-index"  # name of the index
 namespace_name = "langchain-test-namespace"  # name of the namespace
 dimension = 1536  # dimension of the embeddings
 
+
+@pytest.fixture(scope="module")
+def embedding_openai() -> OpenAIEmbeddings:
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY is not set")
+    return OpenAIEmbeddings()
+
+
+@pytest.fixture(scope="function")
+def texts() -> Generator[List[str], None, None]:
+    # Load the documents from a file located in the fixtures directory
+    documents = TextLoader(
+        os.path.join(os.path.dirname(__file__), "fixtures", "sharks.txt")
+    ).load()
+
+    yield [doc.page_content for doc in documents]
+
+@pytest.fixture
+def mock_pool_not_supported(mocker):
+    """
+    This is the error thrown when multiprocessing is not supported.
+    See https://github.com/langchain-ai/langchain/issues/11168
+    """
+    mocker.patch('multiprocessing.synchronize.SemLock.__init__', side_effect=OSError('OSError: [Errno 38] Function not implemented'))
 
 def reset_pinecone() -> None:
     assert os.environ.get("PINECONE_API_KEY") is not None
@@ -285,3 +310,23 @@ class TestPinecone:
 
         query = "What did the president say about Ketanji Brown Jackson"
         _ = docsearch.similarity_search(query, k=1, namespace=namespace_name)
+
+
+    @pytest.mark.usefixtures('mock_pool_not_supported')
+    def test_that_async_freq_uses_multiprocessing(self, embedding_openai: OpenAIEmbeddings) -> None:
+        with pytest.raises(OSError):
+            Pinecone.from_texts(
+                texts=["foo", "bar", "baz"] * 32,
+                embedding=embedding_openai,
+                index_name=index_name,
+                async_req=True,
+            )
+    
+    @pytest.mark.usefixtures('mock_pool_not_supported')
+    def test_that_async_freq_false_enabled_singlethreading(self, embedding_openai: OpenAIEmbeddings) -> None:
+        Pinecone.from_texts(
+            texts=["foo", "bar", "baz"],
+            embedding=embedding_openai,
+            index_name=index_name,
+            async_req=False
+        )

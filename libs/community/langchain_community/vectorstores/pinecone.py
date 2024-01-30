@@ -113,6 +113,7 @@ class Pinecone(VectorStore):
         namespace: Optional[str] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        async_req: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -128,6 +129,7 @@ class Pinecone(VectorStore):
             namespace: Optional pinecone namespace to add the texts to.
             batch_size: Batch size to use when adding the texts to the vectorstore.
             embedding_chunk_size: Chunk size to use when embedding the texts.
+            async_req: Whether to use asynchronous requests when adding the texts.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -142,26 +144,34 @@ class Pinecone(VectorStore):
         for metadata, text in zip(metadatas, texts):
             metadata[self._text_key] = text
 
-        # For loops to avoid memory issues and optimize when using HTTP based embeddings
-        # The first loop runs the embeddings, it benefits when using OpenAI embeddings
-        # The second loops runs the pinecone upsert asynchronously.
-        for i in range(0, len(texts), embedding_chunk_size):
-            chunk_texts = texts[i : i + embedding_chunk_size]
-            chunk_ids = ids[i : i + embedding_chunk_size]
-            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
-            embeddings = self._embed_documents(chunk_texts)
-            async_res = [
-                self._index.upsert(
-                    vectors=batch,
-                    namespace=namespace,
-                    async_req=True,
-                    **kwargs,
-                )
-                for batch in batch_iterate(
-                    batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
-                )
-            ]
-            [res.get() for res in async_res]
+        if async_req:
+            # For loops to avoid memory issues and optimize when using HTTP based embeddings
+            # The first loop runs the embeddings, it benefits when using OpenAI embeddings
+            # The second loops runs the pinecone upsert asynchronously.
+            for i in range(0, len(texts), embedding_chunk_size):
+                chunk_texts = texts[i : i + embedding_chunk_size]
+                chunk_ids = ids[i : i + embedding_chunk_size]
+                chunk_metadatas = metadatas[i : i + embedding_chunk_size]
+                embeddings = self._embed_documents(chunk_texts)
+                async_res = [
+                    self._index.upsert(
+                        vectors=batch,
+                        namespace=namespace,
+                        async_req=async_req,
+                        **kwargs,
+                    )
+                    for batch in batch_iterate(
+                        batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
+                    )
+                ]
+                [res.get() for res in async_res]
+        else:
+            self._index.upsert(
+                vectors=list(zip(ids, self._embed_documents(texts), metadatas)),
+                namespace=namespace,
+                async_req=async_req,
+                **kwargs,
+            )
 
         return ids
 
@@ -407,6 +417,7 @@ class Pinecone(VectorStore):
         upsert_kwargs: Optional[dict] = None,
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
+        async_req: bool = True,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -445,6 +456,7 @@ class Pinecone(VectorStore):
             namespace=namespace,
             batch_size=batch_size,
             embedding_chunk_size=embeddings_chunk_size,
+            async_req=async_req,
             **(upsert_kwargs or {}),
         )
         return pinecone
