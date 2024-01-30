@@ -79,6 +79,7 @@ def test_send_email() -> None:
             body="test",
             to="test@test.com",
             sender="test@test.com",
+            subject="test",
             channel="email",
         )
 
@@ -113,4 +114,4 @@ def test_email_validation() -> None:
             channel="email-validation",
         )
 
-        assert response == "Email address voviro5448@giratex.com is valid: true"
+        assert response == "true"

@@ -130,7 +130,7 @@ class InfobipAPIWrapper(BaseModel):
 
         response.raise_for_status()
         validation_status: bool = response.json()["validMailbox"]
-        return f"Email address {email_address} is valid: {validation_status}"
+        return str(validation_status)
 
     def run(
         self,
@@ -142,13 +142,13 @@ class InfobipAPIWrapper(BaseModel):
     ) -> str:
         if channel == "sms":
             if sender == "":
-                return "Sender must be specified for SMS messages"
+                raise ValueError("Sender must be specified for SMS messages")
 
             if to == "":
-                return "Destination must be specified for SMS messages"
+                raise ValueError("Destination must be specified for SMS messages")
 
             if body == "":
-                return "Body must be specified for SMS messages"
+                raise ValueError("Body must be specified for SMS messages")
 
             return self._send_sms(
                 sender=sender,
@@ -157,16 +157,16 @@ class InfobipAPIWrapper(BaseModel):
             )
         elif channel == "email":
             if sender == "":
-                return "Sender must be specified for email messages"
+                raise ValueError("Sender must be specified for email messages")
 
             if to == "":
-                return "Destination must be specified for email messages"
+                raise ValueError("Destination must be specified for email messages")
 
             if subject == "":
-                return "Subject must be specified for email messages"
+                raise ValueError("Subject must be specified for email messages")
 
             if body == "":
-                return "Body must be specified for email messages"
+                raise ValueError("Body must be specified for email messages")
 
             return self._send_email(
                 from_email=sender,
@@ -176,10 +176,10 @@ class InfobipAPIWrapper(BaseModel):
             )
         elif channel == "email-validation":
             if to == "":
-                return "Email address must be specified for email validation"
+                raise ValueError("Destination must be specified for email validation")
 
             return self._validate_email_address(
                 email_address=to,
             )
         else:
-            return "Invalid channel, must be one of: sms, email, email-validation"
+            raise ValueError(f"Channel {channel} is not supported")
