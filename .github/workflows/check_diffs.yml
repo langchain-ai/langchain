@@ -28,7 +28,7 @@ jobs:
         uses: Ana06/get-changed-files@v2.2.0
       - id: set-matrix
         run: |
-          python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
+          python .github/scripts/check_diff.py ${{ steps.files.outputs.added_modified_renamed }} >> $GITHUB_OUTPUT
     outputs:
       dirs-to-run: ${{ steps.set-matrix.outputs.dirs-to-run }}
   ci:
