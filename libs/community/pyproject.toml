@@ -87,6 +87,7 @@ datasets = {version = "^2.15.0", optional = true}
 azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 oracle-ads = {version = "^2.9.1", optional = true}
 zhipuai = {version = "^1.0.7", optional = true}
+httpx = {version = "^0.24.1", optional = true}
 elasticsearch = {version = "^8.12.0", optional = true}
 hdbcli = {version = "^2.19.21", optional = true}
 oci = {version = "^2.119.1", optional = true}
@@ -253,6 +254,7 @@ extended_testing = [
  "azure-ai-documentintelligence",
  "oracle-ads",
  "zhipuai",
+ "httpx",
  "elasticsearch",
  "hdbcli",
  "oci",
