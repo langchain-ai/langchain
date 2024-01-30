@@ -300,7 +300,6 @@ class Rockset(VectorStore):
         query: str,
         k: int = 4,
         fetch_k: int = 20,
-        distance_func: DistanceFunction = DistanceFunction.COSINE_SIM,
         where_str: Optional[str] = None,
         lambda_mult: float = 0.5,
         **kwargs: Any
@@ -328,7 +327,6 @@ class Rockset(VectorStore):
         initial_docs = self.similarity_search_by_vector(
             query_embedding,
             k=fetch_k,
-            distance_func=distance_func,
             where_str=where_str,
             exclude_embeddings=False,
             **kwargs
