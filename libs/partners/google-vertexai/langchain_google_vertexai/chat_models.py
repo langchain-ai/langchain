@@ -452,3 +452,28 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             )
         else:
             return self.client.start_chat(message_history=history.history, **kwargs)
+
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Get the number of tokens in the messages.
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            messages: The message inputs to tokenize.
+
+        Returns:
+            The sum of the number of tokens across the messages."""
+
+        if self._is_gemini_model:
+            conversation_text = ""
+            for message in messages:
+                conversation_text += f"\n{message.content}"
+
+            tokens = self.client.count_tokens(conversation_text)
+
+        else:
+            raise NotImplementedError(
+                """get_num_tokens_from_messages() is presently 
+                implemented only for gemini models"""
+            )
+
+        return tokens.total_tokens
