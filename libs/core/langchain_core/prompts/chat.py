@@ -466,6 +466,12 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 content=content, additional_kwargs=self.additional_kwargs
             )
 
+    def pretty_repr(self, html: bool = False) -> str:
+        # TODO: Handle partials
+        title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
+        title = get_msg_title_repr(title, bold=html)
+        return f"{title}\n\n{self.prompt.pretty_repr(html=html)}"
+
 
 class HumanMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Sequence, Union
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate

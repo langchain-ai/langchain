@@ -1,6 +1,6 @@
 """Agent for working with pandas objects."""
 import warnings
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
 from langchain.agents import AgentType, create_openai_tools_agent, create_react_agent
 from langchain.agents.agent import (
@@ -38,12 +38,13 @@ from langchain_experimental.tools.python.tool import PythonAstREPLTool
 
 def _get_multi_prompt(
     dfs: List[Any],
+    *,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    extra_tools: Sequence[BaseTool] = (),
-) -> Tuple[BasePromptTemplate, List[BaseTool]]:
+    tools: Sequence[BaseTool] = (),
+) -> BasePromptTemplate:
     if suffix is not None:
         suffix_to_use = suffix
     elif include_df_in_prompt:
@@ -52,10 +53,6 @@ def _get_multi_prompt(
         suffix_to_use = SUFFIX_NO_DF
     prefix = prefix if prefix is not None else MULTI_DF_PREFIX
 
-    df_locals = {}
-    for i, dataframe in enumerate(dfs):
-        df_locals[f"df{i + 1}"] = dataframe
-    tools = [PythonAstREPLTool(locals=df_locals)] + list(extra_tools)
     prompt = ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,
@@ -67,17 +64,18 @@ def _get_multi_prompt(
         partial_prompt = partial_prompt.partial(dfs_head=dfs_head)
     if "num_dfs" in partial_prompt.input_variables:
         partial_prompt = partial_prompt.partial(num_dfs=str(len(dfs)))
-    return partial_prompt, tools
+    return partial_prompt
 
 
 def _get_single_prompt(
     df: Any,
+    *,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    extra_tools: Sequence[BaseTool] = (),
-) -> Tuple[BasePromptTemplate, List[BaseTool]]:
+    tools: Sequence[BaseTool] = (),
+) -> BasePromptTemplate:
     if suffix is not None:
         suffix_to_use = suffix
     elif include_df_in_prompt:
@@ -86,7 +84,6 @@ def _get_single_prompt(
         suffix_to_use = SUFFIX_NO_DF
     prefix = prefix if prefix is not None else PREFIX
 
-    tools = [PythonAstREPLTool(locals={"df": df})] + list(extra_tools)
     prompt = ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,
@@ -97,12 +94,10 @@ def _get_single_prompt(
     if "df_head" in partial_prompt.input_variables:
         df_head = str(df.head(number_of_head_rows).to_markdown())
         partial_prompt = partial_prompt.partial(df_head=df_head)
-    return partial_prompt, tools
+    return partial_prompt
 
 
-def _get_prompt_and_tools(
-    df: Any, **kwargs: Any
-) -> Tuple[BasePromptTemplate, List[BaseTool]]:
+def _get_prompt(df: Any, **kwargs: Any) -> BasePromptTemplate:
     return (
         _get_multi_prompt(df, **kwargs)
         if isinstance(df, list)
@@ -112,41 +107,39 @@ def _get_prompt_and_tools(
 
 def _get_functions_single_prompt(
     df: Any,
+    *,
     prefix: Optional[str] = None,
     suffix: str = "",
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-) -> Tuple[ChatPromptTemplate, List[PythonAstREPLTool]]:
+) -> ChatPromptTemplate:
     if include_df_in_prompt:
         df_head = str(df.head(number_of_head_rows).to_markdown())
         suffix = (suffix or FUNCTIONS_WITH_DF).format(df_head=df_head)
     prefix = prefix if prefix is not None else PREFIX_FUNCTIONS
     system_message = SystemMessage(content=prefix + suffix)
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
-    return prompt, [PythonAstREPLTool(locals={"df": df})]
+    return prompt
 
 
 def _get_functions_multi_prompt(
     dfs: Any,
+    *,
     prefix: str = "",
     suffix: str = "",
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-) -> Tuple[ChatPromptTemplate, List[PythonAstREPLTool]]:
+) -> ChatPromptTemplate:
     if include_df_in_prompt:
         dfs_head = "\n\n".join([d.head(number_of_head_rows).to_markdown() for d in dfs])
         suffix = (suffix or FUNCTIONS_WITH_MULTI_DF).format(dfs_head=dfs_head)
     prefix = (prefix or MULTI_DF_PREFIX_FUNCTIONS).format(num_dfs=str(len(dfs)))
     system_message = SystemMessage(content=prefix + suffix)
     prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
-
-    locals = {f"df{i + 1}": df for i, df in enumerate(dfs)}
-    return prompt, [PythonAstREPLTool(locals=locals)]
+    return prompt
 
 
-def _get_functions_prompt_and_tools(
-    df: Any, **kwargs: Any
-) -> Tuple[ChatPromptTemplate, List[PythonAstREPLTool]]:
+def _get_functions_prompt(df: Any, **kwargs: Any) -> ChatPromptTemplate:
     return (
         _get_functions_multi_prompt(df, **kwargs)
         if isinstance(df, list)
@@ -173,7 +166,7 @@ def create_pandas_dataframe_agent(
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Pandas agent from an LLM and dataframe(s).
 
@@ -246,42 +239,49 @@ def create_pandas_dataframe_agent(
             f"Received additional kwargs {kwargs} which are no longer supported."
         )
 
+    df_locals = {}
+    if isinstance(df, list):
+        for i, dataframe in enumerate(df):
+            df_locals[f"df{i + 1}"] = dataframe
+    else:
+        df_locals["df"] = df
+    tools = [PythonAstREPLTool(locals=df_locals)] + list(extra_tools)
+
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         if include_df_in_prompt is not None and suffix is not None:
             raise ValueError(
                 "If suffix is specified, include_df_in_prompt should not be."
             )
-        prompt, tools = _get_prompt_and_tools(
+        prompt = _get_prompt(
             df,
             prefix=prefix,
             suffix=suffix,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
-            extra_tools=extra_tools,
+            tools=tools,
         )
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent] = RunnableAgent(
-            runnable=create_react_agent(llm, tools, prompt),
+            runnable=create_react_agent(llm, tools, prompt),  # type: ignore
             input_keys_arg=["input"],
             return_keys_arg=["output"],
         )
     elif agent_type in (AgentType.OPENAI_FUNCTIONS, "openai-tools"):
-        prompt, base_tools = _get_functions_prompt_and_tools(
+        prompt = _get_functions_prompt(
             df,
             prefix=prefix,
             suffix=suffix,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
         )
-        tools = list(base_tools) + list(extra_tools)
         if agent_type == AgentType.OPENAI_FUNCTIONS:
             agent = RunnableAgent(
-                runnable=create_openai_functions_agent(llm, tools, prompt),
+                runnable=create_openai_functions_agent(llm, tools, prompt),  # type: ignore
                 input_keys_arg=["input"],
                 return_keys_arg=["output"],
             )
         else:
             agent = RunnableMultiActionAgent(
-                runnable=create_openai_tools_agent(llm, tools, prompt),
+                runnable=create_openai_tools_agent(llm, tools, prompt),  # type: ignore
                 input_keys_arg=["input"],
                 return_keys_arg=["output"],
             )
