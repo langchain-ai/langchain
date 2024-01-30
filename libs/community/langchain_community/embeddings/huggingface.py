@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -15,6 +16,8 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
     "Represent this question for searching relevant passages: "
 )
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
+
+logger = logging.getLogger(__name__)
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
@@ -49,6 +52,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Keyword arguments to pass when calling the `encode` method of the model."""
     multi_process: bool = False
     """Run encode() on multiple GPUs."""
+    show_progress: bool = False
+    """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -88,9 +93,21 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             embeddings = self.client.encode_multi_process(texts, pool)
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
         else:
-            embeddings = self.client.encode(texts, **self.encode_kwargs)
+            if show_progress:
+                try:
+                    from tqdm import tqdm
 
-        return embeddings.tolist()
+                    iter_ = tqdm(texts, desc="HuggingFaceEmbeddings")
+                except ImportError:
+                    logging.warning(
+                        "Unable to show progress bar because tqdm could not be imported. "
+                        "Please install with `pip install tqdm`."
+                    )
+                    iter_ = texts
+            else:
+                embeddings = self.client.encode(texts, **self.encode_kwargs)
+
+        return [self.client.encode(text, **self.encode_kwargs) for text in iter_]
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
