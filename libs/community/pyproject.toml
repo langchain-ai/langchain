@@ -260,7 +260,7 @@ extended_testing = [
  "hdbcli",
  "oci",
  "rdflib",
- "text_generation",
+ "text-generation",
 ]
 
 [tool.ruff]
