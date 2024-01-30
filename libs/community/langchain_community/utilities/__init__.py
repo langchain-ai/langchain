@@ -128,6 +128,12 @@ def _import_graphql() -> Any:
     return GraphQLAPIWrapper
 
 
+def _import_infobip() -> Any:
+    from langchain_community.utilities.infobip import InfobipAPIWrapper
+
+    return InfobipAPIWrapper
+
+
 def _import_jira() -> Any:
     from langchain_community.utilities.jira import JiraAPIWrapper
 
@@ -311,6 +317,8 @@ def __getattr__(name: str) -> Any:
         return _import_google_serper()
     elif name == "GraphQLAPIWrapper":
         return _import_graphql()
+    elif name == "InfobipAPIWrapper":
+        return _import_infobip()
     elif name == "JiraAPIWrapper":
         return _import_jira()
     elif name == "MaxComputeAPIWrapper":
@@ -382,6 +390,7 @@ __all__ = [
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "GraphQLAPIWrapper",
+    "InfobipAPIWrapper",
     "JiraAPIWrapper",
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
