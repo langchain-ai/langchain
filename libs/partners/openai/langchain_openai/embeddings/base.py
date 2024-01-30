@@ -22,7 +22,13 @@ import numpy as np
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -70,7 +76,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
@@ -196,7 +202,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "please use the `AzureOpenAIEmbeddings` class."
             )
         client_params = {
-            "api_key": values["openai_api_key"],
+            "api_key": values["openai_api_key"].get_secret_value()
+            if values["openai_api_key"]
+            else None,
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],

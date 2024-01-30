@@ -2,17 +2,10 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import openai
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_openai.llms.base import BaseOpenAI
@@ -52,9 +45,9 @@ class AzureOpenAI(BaseOpenAI):
     """
     openai_api_version: str = Field(default="", alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
-    openai_api_key: Union[str, None] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
-    azure_ad_token: Union[str, None] = None
+    azure_ad_token: Optional[SecretStr] = None
     """Your Azure Active Directory token.
 
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
@@ -150,8 +143,12 @@ class AzureOpenAI(BaseOpenAI):
             "api_version": values["openai_api_version"],
             "azure_endpoint": values["azure_endpoint"],
             "azure_deployment": values["deployment_name"],
-            "api_key": values["openai_api_key"],
-            "azure_ad_token": values["azure_ad_token"],
+            "api_key": values["openai_api_key"].get_secret_value()
+            if values["openai_api_key"]
+            else None,
+            "azure_ad_token": values["azure_ad_token"].get_secret_value()
+            if values["azure_ad_token"]
+            else None,
             "azure_ad_token_provider": values["azure_ad_token_provider"],
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
