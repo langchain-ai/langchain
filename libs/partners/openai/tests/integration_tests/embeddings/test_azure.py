@@ -22,7 +22,7 @@ def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:
     return AzureOpenAIEmbeddings(
         azure_deployment=DEPLOYMENT_NAME,
         api_version=OPENAI_API_VERSION,
-        openai_api_base=OPENAI_API_BASE,
+        azure_endpoint=OPENAI_API_BASE,
         openai_api_key=OPENAI_API_KEY,
         **kwargs,
     )
@@ -109,7 +109,7 @@ def test_azure_openai_embedding_with_empty_string() -> None:
         openai.AzureOpenAI(
             api_version=OPENAI_API_VERSION,
             api_key=OPENAI_API_KEY,
-            base_url=embedding.openai_api_base,
+            azure_endpoint=OPENAI_API_BASE,
             azure_deployment=DEPLOYMENT_NAME,
         )  # type: ignore
         .embeddings.create(input="", model="text-embedding-ada-002")
