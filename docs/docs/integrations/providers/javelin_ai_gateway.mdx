@@ -52,7 +52,7 @@ print(result)
 
 ```python
 from langchain_community.embeddings import JavelinAIGatewayEmbeddings
-from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
 embeddings = JavelinAIGatewayEmbeddings(
     gateway_uri="http://localhost:8000",

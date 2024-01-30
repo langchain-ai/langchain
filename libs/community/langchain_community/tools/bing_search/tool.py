@@ -31,7 +31,7 @@ class BingSearchRun(BaseTool):
 class BingSearchResults(BaseTool):
     """Tool that queries the Bing Search API and gets back json."""
 
-    name: str = "Bing Search Results JSON"
+    name: str = "bing_search_results_json"
     description: str = (
         "A wrapper around Bing Search. "
         "Useful for when you need to answer questions about current events. "
