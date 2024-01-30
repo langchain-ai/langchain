@@ -1,4 +1,5 @@
 import unittest
+from typing import List
 
 import pytest
 
@@ -13,6 +14,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     ToolMessage,
+    convert_to_messages,
     get_buffer_string,
     message_chunk_to_message,
     messages_from_dict,
@@ -203,3 +205,278 @@ def test_message_chunk_to_message() -> None:
     assert message_chunk_to_message(
         FunctionMessageChunk(name="hello", content="I am")
     ) == FunctionMessage(name="hello", content="I am")
+
+
+def test_tool_calls_merge() -> None:
+    chunks: List[dict] = [
+        dict(content=""),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_CwGAsESnXehQEjiAIWzinlva",
+                        "function": {"arguments": "", "name": "person"},
+                        "type": "function",
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": '{"na', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": 'me": ', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": '"jane"', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": ', "a', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": 'ge": ', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": None,
+                        "function": {"arguments": "2}", "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": "call_zXSIylHvc5x3JUAPcHZR5GZI",
+                        "function": {"arguments": "", "name": "person"},
+                        "type": "function",
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": '{"na', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": 'me": ', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": '"bob",', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": ' "ag', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": 'e": 3', "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "index": 1,
+                        "id": None,
+                        "function": {"arguments": "}", "name": None},
+                        "type": None,
+                    }
+                ]
+            },
+        ),
+        dict(content=""),
+    ]
+
+    final = None
+
+    for chunk in chunks:
+        msg = AIMessageChunk(**chunk)
+        if final is None:
+            final = msg
+        else:
+            final = final + msg
+
+    assert final == AIMessageChunk(
+        content="",
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "index": 0,
+                    "id": "call_CwGAsESnXehQEjiAIWzinlva",
+                    "function": {
+                        "arguments": '{"name": "jane", "age": 2}',
+                        "name": "person",
+                    },
+                    "type": "function",
+                },
+                {
+                    "index": 1,
+                    "id": "call_zXSIylHvc5x3JUAPcHZR5GZI",
+                    "function": {
+                        "arguments": '{"name": "bob", "age": 3}',
+                        "name": "person",
+                    },
+                    "type": "function",
+                },
+            ]
+        },
+    )
+
+
+def test_convert_to_messages() -> None:
+    # dicts
+    assert convert_to_messages(
+        [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello!"},
+            {"role": "ai", "content": "Hi!"},
+            {"role": "human", "content": "Hello!", "name": "Jane"},
+            {
+                "role": "assistant",
+                "content": "Hi!",
+                "name": "JaneBot",
+                "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'},
+            },
+            {"role": "function", "name": "greet", "content": "Hi!"},
+            {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
+        ]
+    ) == [
+        SystemMessage(content="You are a helpful assistant."),
+        HumanMessage(content="Hello!"),
+        AIMessage(content="Hi!"),
+        HumanMessage(content="Hello!", name="Jane"),
+        AIMessage(
+            content="Hi!",
+            name="JaneBot",
+            additional_kwargs={
+                "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'}
+            },
+        ),
+        FunctionMessage(name="greet", content="Hi!"),
+        ToolMessage(tool_call_id="tool_id", content="Hi!"),
+    ]
+
+    # tuples
+    assert convert_to_messages(
+        [
+            ("system", "You are a helpful assistant."),
+            "hello!",
+            ("ai", "Hi!"),
+            ("human", "Hello!"),
+            ("assistant", "Hi!"),
+        ]
+    ) == [
+        SystemMessage(content="You are a helpful assistant."),
+        HumanMessage(content="hello!"),
+        AIMessage(content="Hi!"),
+        HumanMessage(content="Hello!"),
+        AIMessage(content="Hi!"),
+    ]

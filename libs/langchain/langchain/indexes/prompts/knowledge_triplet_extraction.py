@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from langchain.graphs.networkx_graph import KG_TRIPLE_DELIMITER
+from langchain_community.graphs.networkx_graph import KG_TRIPLE_DELIMITER
 from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (

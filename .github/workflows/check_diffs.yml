@@ -5,11 +5,6 @@ on:
   push:
     branches: [master]
   pull_request:
-    paths:
-      - ".github/actions/**"
-      - ".github/tools/**"
-      - ".github/workflows/**"
-      - "libs/**"
 
 # If another push to the same PR or branch happens while this workflow is still running,
 # cancel the earlier run in favor of the next run.
@@ -26,13 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - id: files
         uses: Ana06/get-changed-files@v2.2.0
       - id: set-matrix
-        run: echo "dirs-to-run=$(python .github/scripts/check_diff.py ${{ steps.files.outputs.all }})" >> $GITHUB_OUTPUT
+        run: |
+          python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
       dirs-to-run: ${{ steps.set-matrix.outputs.dirs-to-run }}
   ci:

@@ -21,7 +21,7 @@ pip install huggingface_hub
 See a [usage example](/docs/integrations/llms/huggingface_hub).
 
 ```python
-from langchain.llms import HuggingFaceHub
+from langchain_community.llms import HuggingFaceHub
 ```
 
 ### Hugging Face Local Pipelines
@@ -37,7 +37,7 @@ pip install transformers
 See a [usage example](/docs/integrations/llms/huggingface_pipelines).
 
 ```python
-from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 ```
 
 ### Hugging Face TextGen Inference
@@ -55,33 +55,26 @@ pip install text_generation
 See a [usage example](/docs/integrations/llms/huggingface_textgen_inference).
 
 ```python
-from langchain.llms import HuggingFaceTextGenInference
+from langchain_community.llms import HuggingFaceTextGenInference
 ```
 
+## Chat models
 
+### Models from Hugging Face
 
-## Document Loaders
+We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
 
-### Hugging Face dataset
-
->[Hugging Face Hub](https://huggingface.co/docs/hub/index) is home to over 75,000 
-> [datasets](https://huggingface.co/docs/hub/index#datasets) in more than 100 languages 
-> that can be used for a broad range of tasks across NLP, Computer Vision, and Audio.
-> They used for a diverse range of tasks such as translation, automatic speech 
-> recognition, and image classification.
-
-We need to install `datasets` python package.
+We need to install several python packages.
 
 ```bash
-pip install datasets
+pip install huggingface_hub
+pip install transformers
 ```
-
-See a [usage example](/docs/integrations/document_loaders/hugging_face_dataset).
+See a [usage example](/docs/integrations/chat/huggingface).
 
 ```python
-from langchain.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
+from langchain_community.chat_models.huggingface import ChatHuggingFace
 ```
-
 
 ## Embedding Models
 
@@ -105,14 +98,14 @@ pip install sentence_transformers
 See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
 
 ```python
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 ```
 #### HuggingFaceInstructEmbeddings
 
 See a [usage example](/docs/integrations/text_embedding/instruct_embeddings).
 
 ```python
-from langchain.embeddings import HuggingFaceInstructEmbeddings
+from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 ```
 
 #### HuggingFaceBgeEmbeddings
@@ -123,8 +116,50 @@ from langchain.embeddings import HuggingFaceInstructEmbeddings
 See a [usage example](/docs/integrations/text_embedding/bge_huggingface).
 
 ```python
-from langchain.embeddings import HuggingFaceBgeEmbeddings
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 ```
+
+### Hugging Face Text Embeddings Inference (TEI)
+
+>[Hugging Face Text Embeddings Inference (TEI)](https://huggingface.co/docs/text-generation-inference/index) is a toolkit for deploying and serving open-source
+> text embeddings and sequence classification models. `TEI` enables high-performance extraction for the most popular models,
+>including `FlagEmbedding`, `Ember`, `GTE` and `E5`.
+
+We need to install `huggingface-hub` python package.
+
+```bash
+pip install huggingface-hub
+```
+
+See a [usage example](/docs/integrations/text_embedding/text_embeddings_inference).
+
+```python
+from langchain_community.embeddings import HuggingFaceHubEmbeddings
+```
+
+
+## Document Loaders
+
+### Hugging Face dataset
+
+>[Hugging Face Hub](https://huggingface.co/docs/hub/index) is home to over 75,000 
+> [datasets](https://huggingface.co/docs/hub/index#datasets) in more than 100 languages 
+> that can be used for a broad range of tasks across NLP, Computer Vision, and Audio.
+> They used for a diverse range of tasks such as translation, automatic speech 
+> recognition, and image classification.
+
+We need to install `datasets` python package.
+
+```bash
+pip install datasets
+```
+
+See a [usage example](/docs/integrations/document_loaders/hugging_face_dataset).
+
+```python
+from langchain_community.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
+```
+
 
 
 ## Tools

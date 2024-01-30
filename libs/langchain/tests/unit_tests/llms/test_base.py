@@ -16,10 +16,6 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 EXPECTED_ALL = [
     "BaseLLM",
     "LLM",
-    "_get_verbosity",
-    "create_base_retry_decorator",
-    "get_prompts",
-    "update_cache",
     "BaseLanguageModel",
 ]
 

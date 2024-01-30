@@ -62,8 +62,9 @@ class CacheBackedEmbeddings(Embeddings):
 
         .. code-block: python
 
-            from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+            from langchain.embeddings import CacheBackedEmbeddings
             from langchain.storage import LocalFileStore
+            from langchain_community.embeddings import OpenAIEmbeddings
 
             store = LocalFileStore('./my_cache')
 

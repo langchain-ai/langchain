@@ -72,8 +72,8 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, Harrison Chase"
-author = "Harrison Chase"
+copyright = "2023, LangChain, Inc."
+author = "LangChain, Inc."
 
 version = data["tool"]["poetry"]["version"]
 release = version
@@ -136,18 +136,25 @@ html_theme_path = ["themes"]
 # redirects dictionary maps from old links to new links
 html_additional_pages = {}
 redirects = {
-    "index": "api_reference",
+    "index": "langchain_api_reference",
 }
 for old_link in redirects:
     html_additional_pages[old_link] = "redirects.html"
 
+partners_dir = Path(__file__).parent.parent.parent / "libs/partners"
+partners = [
+    (p.name, p.name.replace("-", "_") + "_api_reference")
+    for p in partners_dir.iterdir()
+]
+
 html_context = {
     "display_github": True,  # Integrate GitHub
-    "github_user": "hwchase17",  # Username
+    "github_user": "langchain-ai",  # Username
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
     "redirects": redirects,
+    "partners": partners,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

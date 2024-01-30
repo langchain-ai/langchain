@@ -1,4 +1,4 @@
 """For backwards compatibility."""
-from langchain.utilities.python import PythonREPL
+from langchain_community.utilities.python import PythonREPL
 
 __all__ = ["PythonREPL"]
