@@ -3979,7 +3979,12 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             **other_kwargs,
         )
 
-    def bind(self, *, __on_collision__: Literal["overwrite", "add"]="overwrite", **kwargs: Any) -> Runnable[Input, Output]:
+    def bind(
+        self,
+        *,
+        __on_collision__: Literal["overwrite", "add"] = "overwrite",
+        **kwargs: Any,
+    ) -> Runnable[Input, Output]:
         """Bind additional kwargs to a Runnable, returning a new Runnable.
 
         Args:
@@ -4005,7 +4010,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         else:
             raise ValueError(
                 f"Unknown value for argument {__on_collision__=}. Expected one of "
-                f"'overwrite', 'add'.")
+                f"'overwrite', 'add'."
+            )
         return self.__class__(
             bound=self.bound,
             config=self.config,
@@ -4254,7 +4260,6 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
-
 
     def with_config(
         self,
