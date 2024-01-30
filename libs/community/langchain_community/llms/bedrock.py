@@ -229,9 +229,16 @@ class BedrockBase(BaseModel, ABC):
     config: Optional[Config] = None
     """An optional botocore.config.Config instance to pass to the client."""
 
+    provider: Optional[str]
+    """The model provider, e.g., amazon, cohere, ai21, etc. When not supplied, provider
+    is extracted from the first part of the model_id e.g. 'amazon' in 
+    'amazon.titan-text-express-v1'. Model providers for custom models can be specified
+    here with the ARN supplied as the model_id."""
+
     model_id: str
     """Id of the model to call, e.g., amazon.titan-text-express-v1, this is
-    equivalent to the modelId property in the list-foundation-models api"""
+    equivalent to the modelId property in the list-foundation-models api or it can be
+    used to supply the ARN of the fine-tuned model."""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model."""
@@ -353,7 +360,16 @@ class BedrockBase(BaseModel, ABC):
         }
 
     def _get_provider(self) -> str:
-        return self.model_id.split(".")[0]
+        if self.provider:
+            return self.provider
+        else:
+            if self.model_id.startswith("arn"):
+                raise ValueError(
+                    "Model provider should be supplied when passing a model ARN as "
+                    "model_id"
+                )
+            else:
+                return self.model_id.split(".")[0]
 
     @property
     def _model_is_anthropic(self) -> bool:
