@@ -56,14 +56,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
             def foo(input) -> None:
                 '''Fake function that raises an exception.'''
-                raise ValueError("Invoking foo failed. At time {time.time()}")
+                raise ValueError(f"Invoking foo failed. At time {time.time()}")
 
             runnable = RunnableLambda(foo)
 
             runnable_with_retries = runnable.with_retry(
-                retry_exception_types=(ValueError,), # Retry only on ValueError
+                retry_if_exception_type=(ValueError,), # Retry only on ValueError
                 wait_exponential_jitter=True, # Add jitter to the exponential backoff
-                max_attempt_number=2, # Try twice
+                stop_after_attempt=2, # Try twice
             )
 
             # The method invocation above is equivalent to the longer form below:

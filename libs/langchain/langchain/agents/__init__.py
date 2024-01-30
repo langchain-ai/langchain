@@ -57,6 +57,9 @@ from langchain.agents.agent_toolkits.vectorstore.base import (
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
+from langchain.agents.gigachat_functions_agent.base import (
+    create_gigachat_functions_agent,
+)
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.json_chat.base import create_json_chat_agent
 from langchain.agents.load_tools import (
@@ -148,6 +151,7 @@ __all__ = [
     "tool",
     "XMLAgent",
     "create_openai_functions_agent",
+    "create_gigachat_functions_agent",
     "create_xml_agent",
     "create_react_agent",
     "create_openai_tools_agent",

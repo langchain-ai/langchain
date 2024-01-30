@@ -21,6 +21,7 @@ EXPECTED_ALL = [
     "StructuredChatAgent",
     "Tool",
     "ZeroShotAgent",
+    "create_gigachat_functions_agent",
     "create_json_agent",
     "create_openapi_agent",
     "create_pbi_agent",

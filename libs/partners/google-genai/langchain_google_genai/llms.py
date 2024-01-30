@@ -121,6 +121,17 @@ Supported examples:
        not return the full n completions if duplicates are generated."""
     max_retries: int = 6
     """The maximum number of retries to make when generating."""
+    client_options: Optional[Dict] = Field(
+        None,
+        description=(
+            "A dictionary of client options to pass to the Google API client, "
+            "such as `api_endpoint`."
+        ),
+    )
+    transport: Optional[str] = Field(
+        None,
+        description="A string, one of: [`rest`, `grpc`, `grpc_asyncio`].",
+    )
 
     @property
     def is_gemini(self) -> bool:
@@ -133,7 +144,7 @@ Supported examples:
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate api key, python package exists."""
+        """Validates params and passes them to google-generativeai package."""
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
@@ -142,7 +153,11 @@ Supported examples:
         if isinstance(google_api_key, SecretStr):
             google_api_key = google_api_key.get_secret_value()
 
-        genai.configure(api_key=google_api_key)
+        genai.configure(
+            api_key=google_api_key,
+            transport=values.get("transport"),
+            client_options=values.get("client_options"),
+        )
 
         if _is_gemini_model(model_name):
             values["client"] = genai.GenerativeModel(model_name=model_name)

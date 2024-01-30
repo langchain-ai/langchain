@@ -2268,7 +2268,7 @@ shapely = ">=1.7.1"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.9"
+version = "0.1.12"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -2278,7 +2278,7 @@ develop = true
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
-langsmith = "~0.0.63"
+langsmith = "^0.0.83"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -2294,18 +2294,18 @@ url = "../core"
 
 [[package]]
 name = "gigachat"
-version = "0.1.13"
+version = "0.1.15"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "gigachat-0.1.13-py3-none-any.whl", hash = "sha256:1e2135f73699f191cbd50efd5973bd5348766b9214f0f79faf368bdccbda24e0"},
-    {file = "gigachat-0.1.13.tar.gz", hash = "sha256:cb1a67011ad6bdd35949545ca3ce4da1c827734aa2bde5bb03e35e7eede9b4ef"},
+    {file = "gigachat-0.1.15-py3-none-any.whl", hash = "sha256:5e43145247fa55c4906d4ffc1bff206a8ae9c9ac57f5a69396ff65f73af473ac"},
+    {file = "gigachat-0.1.15.tar.gz", hash = "sha256:aebf615a22e72dec877cd72ea1d434fe5ddfb9d5040a8a222425c35f8886defe"},
 ]
 
 [package.dependencies]
 httpx = "<1"
-pydantic = ">=1,<3"
+pydantic = ">=1,<2"
 
 [[package]]
 name = "gitdb"
@@ -3926,13 +3926,13 @@ files = [
 
 [[package]]
 name = "langsmith"
-version = "0.0.69"
+version = "0.0.83"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.69-py3-none-any.whl", hash = "sha256:49a2546bb83eedb0552673cf81a068bb08078d6d48471f4f1018e1d5c6aa46b1"},
-    {file = "langsmith-0.0.69.tar.gz", hash = "sha256:8fb5297f274db0576ec650d9bab0319acfbb6622d62bc5bb9fe31c6235dc0358"},
+    {file = "langsmith-0.0.83-py3-none-any.whl", hash = "sha256:a5bb7ac58c19a415a9d5f51db56dd32ee2cd7343a00825bbc2018312eb3d122a"},
+    {file = "langsmith-0.0.83.tar.gz", hash = "sha256:94427846b334ad9bdbec3266fee12903fe9f5448f628667689d0412012aaf392"},
 ]
 
 [package.dependencies]
@@ -9186,4 +9186,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "82995e724b0691127b74a49e4214f42b36cfc20fc21017a20d200b35cd50079c"
+content-hash = "0698d9d7b36ec65a58fef9b4c13a5d497f38a9004772605f284e8b6651fe53c5"

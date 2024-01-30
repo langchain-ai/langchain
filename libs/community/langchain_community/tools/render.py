@@ -6,6 +6,9 @@ This module contains various ways to render tools.
 """
 from langchain_core.tools import BaseTool
 
+from langchain_community.utils.gigachat_functions import (
+    convert_pydantic_to_gigachat_function,
+)
 from langchain_community.utils.openai_functions import (
     FunctionDescription,
     ToolDescription,
@@ -17,6 +20,31 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API."""
     if tool.args_schema:
         return convert_pydantic_to_openai_function(
+            tool.args_schema, name=tool.name, description=tool.description
+        )
+    else:
+        return {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": {
+                # This is a hack to get around the fact that some tools
+                # do not expose an args_schema, and expect an argument
+                # which is a string.
+                # And Open AI does not support an array type for the
+                # parameters.
+                "properties": {
+                    "__arg1": {"title": "__arg1", "type": "string"},
+                },
+                "required": ["__arg1"],
+                "type": "object",
+            },
+        }
+
+
+def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
+    """Format tool into the OpenAI function API."""
+    if tool.args_schema:
+        return convert_pydantic_to_gigachat_function(
             tool.args_schema, name=tool.name, description=tool.description
         )
     else:

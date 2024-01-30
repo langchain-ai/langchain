@@ -97,6 +97,7 @@ class _BaseGigaChat(Serializable):
             cert_file=self.cert_file,
             key_file=self.key_file,
             key_file_password=self.key_file_password,
+            verbose=self.verbose,
         )
 
     @root_validator()
@@ -211,6 +212,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
                 )
             if self.verbose:
                 logger.info("Giga response: %s", res.message.content)
+
         token_usage = response.usage
         llm_output = {"token_usage": token_usage, "model_name": response.model}
         return LLMResult(generations=generations, llm_output=llm_output)

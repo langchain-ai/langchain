@@ -1,18 +1,26 @@
 import json
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+import re
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
+    ChatMessageChunk,
     HumanMessage,
+    HumanMessageChunk,
     SystemMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_pydantic_field_names
 
@@ -45,10 +53,26 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-class WasmChatService(BaseChatModel):
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    role = _dict.get("role")
+    content = _dict.get("content") or ""
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(content=content)
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)
+
+
+class LlamaEdgeChatService(BaseChatModel):
     """Chat with LLMs via `llama-api-server`
 
-    For the information about `llama-api-server`, visit https://github.com/second-state/llama-utils
+    For the information about `llama-api-server`, visit https://github.com/second-state/LlamaEdge
     """
 
     request_timeout: int = 60
@@ -57,6 +81,8 @@ class WasmChatService(BaseChatModel):
     """URL of WasmChat service"""
     model: str = "NA"
     """model name, default is `NA`."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -96,6 +122,12 @@ class WasmChatService(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._stream(
+                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
+
         res = self._chat(messages, **kwargs)
 
         if res.status_code != 200:
@@ -104,6 +136,64 @@ class WasmChatService(BaseChatModel):
         response = res.json()
 
         return self._create_chat_result(response)
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        res = self._chat(messages, **kwargs)
+
+        default_chunk_class = AIMessageChunk
+        substring = '"object":"chat.completion.chunk"}'
+        for line in res.iter_lines():
+            chunks = []
+            if line:
+                json_string = line.decode("utf-8")
+
+                # Find all positions of the substring
+                positions = [m.start() for m in re.finditer(substring, json_string)]
+                positions = [-1 * len(substring)] + positions
+
+                for i in range(len(positions) - 1):
+                    chunk = json.loads(
+                        json_string[
+                            positions[i] + len(substring) : positions[i + 1]
+                            + len(substring)
+                        ]
+                    )
+                    chunks.append(chunk)
+
+            for chunk in chunks:
+                if not isinstance(chunk, dict):
+                    chunk = chunk.dict()
+                if len(chunk["choices"]) == 0:
+                    continue
+
+                choice = chunk["choices"][0]
+                chunk = _convert_delta_to_message_chunk(
+                    choice["delta"], default_chunk_class
+                )
+                if (
+                    choice.get("finish_reason") is not None
+                    and choice.get("finish_reason") == "stop"
+                ):
+                    break
+                finish_reason = choice.get("finish_reason")
+                generation_info = (
+                    dict(finish_reason=finish_reason)
+                    if finish_reason is not None
+                    else None
+                )
+                default_chunk_class = chunk.__class__
+                chunk = ChatGenerationChunk(
+                    message=chunk, generation_info=generation_info
+                )
+                yield chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
         if self.service_url is None:
@@ -114,10 +204,17 @@ class WasmChatService(BaseChatModel):
 
         service_url = f"{self.service_url}/v1/chat/completions"
 
-        payload = {
-            "model": self.model,
-            "messages": [_convert_message_to_dict(m) for m in messages],
-        }
+        if self.streaming:
+            payload = {
+                "model": self.model,
+                "messages": [_convert_message_to_dict(m) for m in messages],
+                "stream": self.streaming,
+            }
+        else:
+            payload = {
+                "model": self.model,
+                "messages": [_convert_message_to_dict(m) for m in messages],
+            }
 
         res = requests.post(
             url=service_url,

@@ -22,7 +22,7 @@ from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
-    FunctionMessage,
+    ToolMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -98,7 +98,7 @@ def test__convert_message_to_dict_chat(role: str) -> None:
 
 
 def test__convert_message_to_dict_type_error() -> None:
-    message = FunctionMessage(name="bar", content="foo")
+    message = ToolMessage(content="foo", tool_call_id="baz")
     with pytest.raises(TypeError):
         _convert_message_to_dict(message)
 

@@ -1,6 +1,7 @@
 import logging
-from typing import Any, AsyncIterator, Iterator, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Type
 
+from gigachat.models import Messages
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -14,9 +15,16 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
+    ChatMessageChunk,
+    FunctionMessage,
+    FunctionMessageChunk,
     HumanMessage,
+    HumanMessageChunk,
     SystemMessage,
+    SystemMessageChunk,
+    ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
@@ -25,15 +33,20 @@ from langchain_community.llms.gigachat import _BaseGigaChat
 logger = logging.getLogger(__name__)
 
 
-def _convert_dict_to_message(message: Any) -> BaseMessage:
+def _convert_dict_to_message(message: Messages) -> BaseMessage:
     from gigachat.models import MessagesRole
+
+    additional_kwargs: Dict = {}
+    if message.function_call:
+        # Dump to JSON to use the same logic as OpenAI
+        additional_kwargs["function_call"] = message.function_call
 
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
     elif message.role == MessagesRole.USER:
         return HumanMessage(content=message.content)
     elif message.role == MessagesRole.ASSISTANT:
-        return AIMessage(content=message.content)
+        return AIMessage(content=message.content, additional_kwargs=additional_kwargs)
     else:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
@@ -46,11 +59,76 @@ def _convert_message_to_dict(message: BaseMessage) -> Any:
     elif isinstance(message, HumanMessage):
         return Messages(role=MessagesRole.USER, content=message.content)
     elif isinstance(message, AIMessage):
-        return Messages(role=MessagesRole.ASSISTANT, content=message.content)
+        return Messages(
+            role=MessagesRole.ASSISTANT,
+            content=message.content,
+            function_call=message.additional_kwargs.get("function_call", None),
+        )
     elif isinstance(message, ChatMessage):
         return Messages(role=MessagesRole(message.role), content=message.content)
+    elif isinstance(message, FunctionMessage):
+        return Messages(role=MessagesRole.FUNCTION, content=message.content)
     else:
         raise TypeError(f"Got unknown type {message}")
+
+
+def _convert_function_to_dict(function: Dict) -> Any:
+    from gigachat.models import Function, FunctionParameters
+
+    res = Function(name=function["name"], description=function["description"])
+
+    if "parameters" in function:
+        if isinstance(function["parameters"], dict):
+            if "properties" in function["parameters"]:
+                props = function["parameters"]["properties"]
+                properties = {}
+
+                for k, v in props.items():
+                    properties[k] = {"type": v["type"], "description": v["description"]}
+
+                res.parameters = FunctionParameters(
+                    type="object",
+                    properties=properties,
+                    required=props.get("required", []),
+                )
+            else:
+                raise TypeError(
+                    f"No properties in parameters in {function['parameters']}"
+                )
+        else:
+            raise TypeError(f"Got unknown type {function['parameters']}")
+
+    return res
+
+
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    role = _dict.get("role")
+    content = _dict.get("content") or ""
+    additional_kwargs: Dict = {}
+    if _dict.get("function_call"):
+        function_call = dict(_dict["function_call"])
+        if "name" in function_call and function_call["name"] is None:
+            function_call["name"] = ""
+        additional_kwargs["function_call"] = function_call
+    if _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = _dict["tool_calls"]
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)
 
 
 class GigaChat(_BaseGigaChat, BaseChatModel):
@@ -65,13 +143,16 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             giga = GigaChat(credentials=..., verify_ssl_certs=False)
     """
 
-    def _build_payload(self, messages: List[BaseMessage]) -> Any:
+    def _build_payload(self, messages: List[BaseMessage], **kwargs: Any) -> Any:
         from gigachat.models import Chat
 
         payload = Chat(
             messages=[_convert_message_to_dict(m) for m in messages],
             profanity_check=self.profanity_check,
         )
+
+        payload.functions = kwargs.get("functions", None)
+
         if self.temperature is not None:
             payload.temperature = self.temperature
         if self.max_tokens is not None:
@@ -117,7 +198,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             )
             return generate_from_stream(stream_iter)
 
-        payload = self._build_payload(messages)
+        payload = self._build_payload(messages, **kwargs)
         response = self._client.chat(payload)
 
         return self._create_chat_result(response)
@@ -137,7 +218,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
 
-        payload = self._build_payload(messages)
+        payload = self._build_payload(messages, **kwargs)
         response = await self._client.achat(payload)
 
         return self._create_chat_result(response)
@@ -149,14 +230,27 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        payload = self._build_payload(messages)
+        payload = self._build_payload(messages, **kwargs)
 
         for chunk in self._client.stream(payload):
-            if chunk.choices:
-                content = chunk.choices[0].delta.content
-                yield ChatGenerationChunk(message=AIMessageChunk(content=content))
-                if run_manager:
-                    run_manager.on_llm_new_token(content)
+            if not isinstance(chunk, dict):
+                chunk = chunk.dict()
+            if len(chunk["choices"]) == 0:
+                continue
+
+            choice = chunk["choices"][0]
+            content = choice.get("delta", {}).get("content", {})
+            chunk = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
+
+            finish_reason = choice.get("finish_reason")
+
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
+
+            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            if run_manager:
+                run_manager.on_llm_new_token(content)
 
     async def _astream(
         self,
@@ -165,14 +259,27 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        payload = self._build_payload(messages)
+        payload = self._build_payload(messages, **kwargs)
 
         async for chunk in self._client.astream(payload):
-            if chunk.choices:
-                content = chunk.choices[0].delta.content
-                yield ChatGenerationChunk(message=AIMessageChunk(content=content))
-                if run_manager:
-                    await run_manager.on_llm_new_token(content)
+            if not isinstance(chunk, dict):
+                chunk = chunk.dict()
+            if len(chunk["choices"]) == 0:
+                continue
+
+            choice = chunk["choices"][0]
+            content = choice.get("delta", {}).get("content", {})
+            chunk = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
+
+            finish_reason = choice.get("finish_reason")
+
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
+
+            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            if run_manager:
+                await run_manager.on_llm_new_token(content)
 
     class Config:
         extra = "allow"

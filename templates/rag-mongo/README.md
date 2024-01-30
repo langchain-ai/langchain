@@ -97,15 +97,15 @@ We will first follow the standard MongoDB Atlas setup instructions [here](https:
 
 This can be done by going to the deployement overview page and connecting to you database
 
-![connect.png](_images/connect.png)
+![Screenshot highlighting the 'Connect' button in MongoDB Atlas.](_images/connect.png "MongoDB Atlas Connect Button")
 
 We then look at the drivers available
 
-![driver.png](_images/driver.png)
+![Screenshot showing the MongoDB Atlas drivers section for connecting to the database.](_images/driver.png "MongoDB Atlas Drivers Section")
 
 Among which we will see our URI listed
 
-![uri.png](_images/uri.png)
+![Screenshot displaying an example of a MongoDB URI in the connection instructions.](_images/uri.png "MongoDB URI Example")
 
 Let's then set that as an environment variable locally:
 
@@ -131,23 +131,23 @@ Note that you can (and should!) change this to ingest data of your choice
 
 We can first connect to the cluster where our database lives
 
-![cluster.png](_images%2Fcluster.png)
+![Screenshot of the MongoDB Atlas interface showing the cluster overview with a 'Connect' button.](_images/cluster.png "MongoDB Atlas Cluster Overview")
 
 We can then navigate to where all our collections are listed
 
-![collections.png](_images%2Fcollections.png)
+![Screenshot of the MongoDB Atlas interface showing the collections overview within a database.](_images/collections.png "MongoDB Atlas Collections Overview")
 
 We can then find the collection we want and look at the search indexes for that collection
 
-![search-indexes.png](_images%2Fsearch-indexes.png)
+![Screenshot showing the search indexes section in MongoDB Atlas for a specific collection.](_images/search-indexes.png "MongoDB Atlas Search Indexes")
 
 That should likely be empty, and we want to create a new one:
 
-![create.png](_images%2Fcreate.png)
+![Screenshot highlighting the 'Create Index' button in MongoDB Atlas.](_images/create.png "MongoDB Atlas Create Index Button")
 
 We will use the JSON editor to create it
 
-![json_editor.png](_images%2Fjson_editor.png)
+![Screenshot showing the JSON Editor option for creating a search index in MongoDB Atlas.](_images/json_editor.png "MongoDB Atlas JSON Editor Option")
 
 And we will paste the following JSON in:
 
@@ -165,7 +165,6 @@ And we will paste the following JSON in:
    }
  }
 ```
-![json.png](_images%2Fjson.png)
+![Screenshot of the JSON configuration for a search index in MongoDB Atlas.](_images/json.png "MongoDB Atlas Search Index JSON Configuration")
 
 From there, hit "Next" and then "Create Search Index". It will take a little bit but you should then have an index over your data!
-

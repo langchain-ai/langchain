@@ -28,7 +28,7 @@ PYTHON_TO_JSON_TYPES = {
 
 
 class FunctionDescription(TypedDict):
-    """Representation of a callable function to the OpenAI API."""
+    """Representation of a callable function to send to an LLM."""
 
     name: str
     """The name of the function."""
@@ -54,6 +54,28 @@ def convert_pydantic_to_openai_function(
     """Converts a Pydantic model to a function description for the OpenAI API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
+    return {
+        "name": name or schema["title"],
+        "description": description or schema["description"],
+        "parameters": schema,
+    }
+
+
+def convert_pydantic_to_gigachat_function(
+    model: Type[BaseModel],
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+) -> FunctionDescription:
+    """Converts a Pydantic model to a function description for the GigaChat API."""
+    schema = dereference_refs(model.schema())
+    schema.pop("definitions", None)
+    if "properties" in schema:
+        for key in schema["properties"]:
+            if "type" not in schema["properties"][key]:
+                schema["properties"][key]["type"] = "object"
+            if "description" not in schema["properties"][key]:
+                schema["properties"][key]["description"] = ""
     return {
         "name": name or schema["title"],
         "description": description or schema["description"],

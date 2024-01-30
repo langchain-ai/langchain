@@ -18,10 +18,10 @@ import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
-from langchain.agents.tools import Tool
+from langchain_core.tools import Tool
 from langchain_core.language_models import BaseLanguageModel
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
+from langchain_core.callbacks import BaseCallbackManager
+from langchain_core.callbacks import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain

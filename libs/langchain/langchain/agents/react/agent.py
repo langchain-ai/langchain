@@ -17,6 +17,20 @@ def create_react_agent(
 ) -> Runnable:
     """Create an agent that uses ReAct prompting.
 
+    Args:
+        llm: LLM to use as the agent.
+        tools: Tools this agent has access to.
+        prompt: The prompt to use, must have input keys:
+            `tools`: contains descriptions and arguments for each tool.
+            `tool_names`: contains all tool names.
+            `agent_scratchpad`: contains previous agent actions and tool outputs.
+
+
+    Returns:
+        A Runnable sequence representing an agent. It takes as input all the same input
+        variables as the prompt passed in does. It returns as output either an
+        AgentAction or AgentFinish.
+
     Examples:
 
         .. code-block:: python
@@ -45,18 +59,34 @@ def create_react_agent(
                 }
             )
 
-    Args:
-        llm: LLM to use as the agent.
-        tools: Tools this agent has access to.
-        prompt: The prompt to use, must have input keys of
-            `tools`, `tool_names`, and `agent_scratchpad`.
+    Creating prompt example:
 
-    Returns:
-        A runnable sequence representing an agent. It takes as input all the same input
-        variables as the prompt passed in does. It returns as output either an
-        AgentAction or AgentFinish.
+        .. code-block:: python
 
-    """
+            from langchain_core.prompts import PromptTemplate
+
+            template = '''Answer the following questions as best you can. You have access to the following tools:
+
+            {tools}
+
+            Use the following format:
+
+            Question: the input question you must answer
+            Thought: you should always think about what to do
+            Action: the action to take, should be one of [{tool_names}]
+            Action Input: the input to the action
+            Observation: the result of the action
+            ... (this Thought/Action/Action Input/Observation can repeat N times)
+            Thought: I now know the final answer
+            Final Answer: the final answer to the original input question
+
+            Begin!
+
+            Question: {input}
+            Thought:{agent_scratchpad}'''
+
+            prompt = PromptTemplate.from_template(template)
+    """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
         prompt.input_variables
     )

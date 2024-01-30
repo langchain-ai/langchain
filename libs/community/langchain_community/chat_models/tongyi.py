@@ -315,9 +315,7 @@ class ChatTongyi(BaseChatModel):
             )
             resp = await asyncio.get_running_loop().run_in_executor(
                 None,
-                functools.partial(
-                    self.completion_with_retry, **{"run_manager": run_manager, **params}
-                ),
+                functools.partial(self.completion_with_retry, **params),
             )
             generations.append(
                 ChatGeneration(**self._chat_generation_from_qwen_resp(resp))

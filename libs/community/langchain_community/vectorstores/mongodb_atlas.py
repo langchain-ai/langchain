@@ -221,12 +221,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return MongoDB documents most similar to the given query and their scores.
 
-        Uses the knnBeta Operator available in MongoDB Atlas Search.
-        This feature is in early access and available only for evaluation purposes, to
-        validate functionality, and to gather feedback from a small closed group of
-        early access users. It is not recommended for production deployments as we
-        may introduce breaking changes.
-        For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
+        Uses the $vectorSearch stage
+        performs aNN search on a vector in the specified field.
+        Index the field as "vector" using Atlas Vector Search "vectorSearch" index type
+
+        For more info : https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
 
         Args:
             query: Text to look up documents similar to.
@@ -234,7 +233,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             pre_filter: (Optional) dictionary of argument(s) to prefilter document
                 fields on.
             post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
-                following the knnBeta vector search.
+                following the vector Search.
 
         Returns:
             List of documents most similar to the query and their scores.
@@ -258,12 +257,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[Document]:
         """Return MongoDB documents most similar to the given query.
 
-        Uses the knnBeta Operator available in MongoDB Atlas Search.
-        This feature is in early access and available only for evaluation purposes, to
-        validate functionality, and to gather feedback from a small closed group of
-        early access users. It is not recommended for production deployments as we
-        may introduce breaking changes.
-        For more: https://www.mongodb.com/docs/atlas/atlas-search/knn-beta
+        Uses the $vectorSearch stage
+        performs aNN search on a vector in the specified field.
+        Index the field as "vector" using Atlas Vector Search "vectorSearch" index type
+
+        For more info : https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
 
         Args:
             query: Text to look up documents similar to.
@@ -271,7 +269,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             pre_filter: (Optional) dictionary of argument(s) to prefilter document
                 fields on.
             post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
-                following the knnBeta vector search.
+                following the vector search.
 
         Returns:
             List of documents most similar to the query and their scores.
@@ -311,7 +309,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             pre_filter: (Optional) dictionary of argument(s) to prefilter on document
                 fields.
             post_filter_pipeline: (Optional) pipeline of MongoDB aggregation stages
-                following the knnBeta vector search.
+                following the vector search.
         Returns:
             List of documents selected by maximal marginal relevance.
         """

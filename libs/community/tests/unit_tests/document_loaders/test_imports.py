@@ -132,6 +132,7 @@ EXPECTED_ALL = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "SurrealDBLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",

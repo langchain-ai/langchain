@@ -5,6 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
@@ -20,14 +21,12 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
 )
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.tools import BaseTool
 
 from langchain.agents import BaseMultiActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (
     format_to_openai_function_messages,
 )
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
-from langchain.tools import BaseTool
 
 # For backwards compatibility
 _FunctionsAgentAction = AgentActionMessageLog

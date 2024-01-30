@@ -17,12 +17,12 @@ class DDGInput(BaseModel):
 
 
 class DuckDuckGoSearchRun(BaseTool):
-    """Tool that queries the DuckDuckGo search API."""
+    """Утилита для обращения к API поисковой системе DuckDuckGo"""
 
     name: str = "duckduckgo_search"
     description: str = (
-        "Обертка вокруг поиска DuckDuckGo. "
-        "Полезен, когда вам нужно ответить на вопросы о текущих событиях. "
+        "Поиск в DuckDuckGo. "
+        "Полезен, когда нужно ответить на вопросы о текущих событиях. "
         "Входными данными должен быть поисковый запрос."
     )
     api_wrapper: DuckDuckGoSearchAPIWrapper = Field(

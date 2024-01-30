@@ -36,7 +36,7 @@ A chain will interact with its memory system twice in a given run.
 1. AFTER receiving the initial user inputs but BEFORE executing the core logic, a chain will READ from its memory system and augment the user inputs.
 2. AFTER executing the core logic but BEFORE returning the answer, a chain will WRITE the inputs and outputs of the current run to memory, so that they can be referred to in future runs.
 
-![memory-diagram](/img/memory_diagram.png)
+![Diagram illustrating the READ and WRITE operations of a memory system in a conversational interface.](/img/memory_diagram.png "Memory System Diagram")
 
 
 ## Building memory into a system
