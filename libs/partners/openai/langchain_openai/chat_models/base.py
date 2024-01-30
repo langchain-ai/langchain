@@ -56,6 +56,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validat
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
+    convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
@@ -318,8 +319,8 @@ class ChatOpenAI(BaseChatModel):
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
 
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
         )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (

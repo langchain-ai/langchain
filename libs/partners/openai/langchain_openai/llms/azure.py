@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import openai
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_openai.llms.base import BaseOpenAI
 
@@ -85,17 +85,21 @@ class AzureOpenAI(BaseOpenAI):
         # Check OPENAI_KEY for backwards compatibility.
         # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
         # other forms of azure credentials.
-        values["openai_api_key"] = (
+        openai_api_key = (
             values["openai_api_key"]
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
+        )
+        values["openai_api_key"] = (
+            convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
 
         values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
             "AZURE_OPENAI_ENDPOINT"
         )
-        values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
-            "AZURE_OPENAI_AD_TOKEN"
+        azure_ad_token = values["azure_ad_token"] or os.getenv("AZURE_OPENAI_AD_TOKEN")
+        values["azure_ad_token"] = (
+            convert_to_secret_str(azure_ad_token) if azure_ad_token else None
         )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
