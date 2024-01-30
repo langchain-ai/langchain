@@ -128,11 +128,13 @@ class SemanticChunker(BaseDocumentTransformer):
         Calculate the threshold based on the number of chunks.
         Inverse of percentile method.
         """
-        x1, y1 = 1.0, 100.0
-        x2, y2 = len(distances), 1.0
+        x1, y1 = len(distances), 0.0
+        x2, y2 = 1.0, 100.0
+
+        x = max(min(self.number_of_chunks, x1), x2)
 
         # Linear interpolation formula
-        y = y1 + ((y2 - y1) / (x2 - x1)) * (cast(int, self.number_of_chunks) - x1)
+        y = y1 + ((y2 - y1) / (x2 - x1)) * (x - x1)
         y = min(max(y, 0), 100)
 
         return cast(float, np.percentile(distances, y))
