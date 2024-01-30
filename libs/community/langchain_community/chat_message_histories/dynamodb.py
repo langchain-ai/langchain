@@ -56,6 +56,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         kms_key_id: Optional[str] = None,
         ttl: Optional[int] = None,
         ttl_key_name: str = "expireAt",
+        history_size: Optional[int] = None,
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -75,6 +76,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.key: Dict = key or {primary_key_name: session_id}
         self.ttl = ttl
         self.ttl_key_name = ttl_key_name
+        self.history_size = history_size
 
         if kms_key_id:
             try:
@@ -141,6 +143,9 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         messages = messages_to_dict(self.messages)
         _message = message_to_dict(message)
         messages.append(_message)
+
+        if self.history_size:
+            messages = messages[-self.history_size :]
 
         try:
             if self.ttl:
