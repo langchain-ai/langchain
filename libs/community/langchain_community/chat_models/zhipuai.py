@@ -122,7 +122,7 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
 
 
 def _convert_delta_to_message_chunk(
-    dct: Dict[str, Any], default_class: Type[BaseMessageChunk]
+        dct: Dict[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = dct.get("role")
     content = dct.get("content", "")
@@ -156,7 +156,7 @@ class ChatZhipuAI(BaseChatModel):
     zhipuai_chat = ChatZhipuAI(
         temperature=0.5,
         api_key="your-api-key",
-        model="chatglm_turbo",
+        model="glm-4"
     )
 
     """
@@ -204,9 +204,10 @@ class ChatZhipuAI(BaseChatModel):
         emulator.
     """
 
-    model_name: Literal["glm-4", "glm-3-turbo"] = Field(defalut="glm-4", alias="model")
+    model_name: Optional[str] = Field(default="glm-4", alias="model")
     """
     Model name to use, see 'https://open.bigmodel.cn/dev/api#language'.
+    or you can use any finetune model of glm series.
     """
 
     temperature: float = 0.95
@@ -256,7 +257,7 @@ class ChatZhipuAI(BaseChatModel):
         return values
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
+            self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
@@ -280,12 +281,12 @@ class ChatZhipuAI(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stream: Optional[bool] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         """Generate a chat response."""
         should_stream = stream if stream is not None else self.streaming
@@ -312,11 +313,11 @@ class ChatZhipuAI(BaseChatModel):
         return self._create_chat_result(response.json())
 
     def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the chat response in chunks."""
         message_dicts, params = self._create_message_dicts(messages, stop)
@@ -329,7 +330,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         with httpx.Client(headers=headers) as client:
             with connect_sse(
-                client, "POST", self.zhipuai_api_base, json=payload
+                    client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
                 for sse in event_source.iter_sse():
                     chunk = json.loads(sse.data)
@@ -356,12 +357,12 @@ class ChatZhipuAI(BaseChatModel):
                         break
 
     async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            stream: Optional[bool] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
@@ -387,11 +388,11 @@ class ChatZhipuAI(BaseChatModel):
         return self._create_chat_result(response.json())
 
     async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
@@ -403,7 +404,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         async with httpx.AsyncClient(headers=headers) as client:
             async with aconnect_sse(
-                client, "POST", self.zhipuai_api_base, json=payload
+                    client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
                 for sse in event_source.iter_sse():
                     chunk = json.loads(sse.data)
