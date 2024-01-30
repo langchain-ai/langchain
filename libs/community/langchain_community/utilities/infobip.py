@@ -31,27 +31,21 @@ class InfobipAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:
-            from infobip_channels.sms.channel import SMSChannel
             from infobip_channels.email.channel import EmailChannel
+            from infobip_channels.sms.channel import SMSChannel
         except ImportError:
             raise ImportError(
                 "Could not import infobip-api-python-sdk python package. "
                 "Please install it with `pip install infobip-api-python-sdk`."
             )
 
-        api_key = get_from_dict_or_env(
-            values, "api_key", "INFOBIP_API_KEY"
-        )
+        api_key = get_from_dict_or_env(values, "api_key", "INFOBIP_API_KEY")
         values["api_key"] = api_key
 
-        base_url = get_from_dict_or_env(
-            values, "base_url", "INFOBIP_BASE_URL"
-        )
+        base_url = get_from_dict_or_env(values, "base_url", "INFOBIP_BASE_URL")
         values["base_url"] = base_url
 
-        from_email = get_from_dict_or_env(
-            values, "from_email", "INFOBIP_FROM_EMAIL"
-        )
+        from_email = get_from_dict_or_env(values, "from_email", "INFOBIP_FROM_EMAIL")
         values["from_email"] = from_email
 
         auth_params: Dict = {
@@ -72,7 +66,7 @@ class InfobipAPIWrapper(BaseModel):
                 "from": self.from_email,
                 "to": to,
                 "subject": subject,
-                "text": message
+                "text": message,
             }
             email_response = self.email_channel.send_email_message(payload)
             return email_response.messages[0].message_id
