@@ -174,3 +174,11 @@ def test_vertexai_single_call_fails_no_message() -> None:
         str(exc_info.value)
         == "You should provide at least one message to start the chat!"
     )
+
+
+def test_get_num_tokens_from_messages() -> None:
+    model = ChatVertexAI(model_name="gemini-pro", temperature=0.0)
+    message = HumanMessage(content="Hello")
+    token = model.get_num_tokens_from_messages(messages=[message])
+    assert isinstance(token, int)
+    assert token == 2
