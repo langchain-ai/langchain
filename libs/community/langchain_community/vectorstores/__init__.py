@@ -476,6 +476,12 @@ def _import_zilliz() -> Any:
     return Zilliz
 
 
+def _import_neuraldb() -> Any:
+    from langchain_community.vectorstores.thirdai_neuraldb import NeuralDBVectorStore
+
+    return NeuralDBVectorStore
+
+
 def _import_lantern() -> Any:
     from langchain_community.vectorstores.lantern import Lantern
 
@@ -629,6 +635,8 @@ def __getattr__(name: str) -> Any:
         return _import_zilliz()
     elif name == "VespaStore":
         return _import_vespa()
+    elif name == "NeuralDBVectorStore":
+        return _import_neuraldb()
     elif name == "Lantern":
         return _import_lantern()
     else:
@@ -708,5 +716,6 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "NeuralDBVectorStore",
     "Lantern",
 ]

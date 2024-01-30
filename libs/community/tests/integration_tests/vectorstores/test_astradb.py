@@ -189,6 +189,31 @@ class TestAstraDBVectorStore:
         else:
             v_store_2.clear()
 
+    async def test_astradb_vectorstore_create_delete_async(
+        self, astradb_credentials: AstraDBCredentials
+    ) -> None:
+        """Create and delete."""
+        emb = SomeEmbeddings(dimension=2)
+        # creation by passing the connection secrets
+        v_store = AstraDBVectorStore(
+            embedding=emb,
+            collection_name=COLLECTION_NAME_DIM2,
+            **astradb_credentials,
+        )
+        await v_store.adelete_collection()
+        # Creation by passing a ready-made astrapy client:
+        from astrapy.db import AsyncAstraDB
+
+        astra_db_client = AsyncAstraDB(
+            **astradb_credentials,
+        )
+        v_store_2 = AstraDBVectorStore(
+            embedding=emb,
+            collection_name="lc_test_2_async",
+            async_astra_db_client=astra_db_client,
+        )
+        await v_store_2.adelete_collection()
+
     @pytest.mark.skipif(
         SKIP_COLLECTION_DELETE,
         reason="Collection-deletion tests are suppressed",
@@ -224,6 +249,39 @@ class TestAstraDBVectorStore:
             assert len(res1) == 0
         finally:
             v_store.delete_collection()
+
+    async def test_astradb_vectorstore_pre_delete_collection_async(
+        self, astradb_credentials: AstraDBCredentials
+    ) -> None:
+        """Use of the pre_delete_collection flag."""
+        emb = SomeEmbeddings(dimension=2)
+        # creation by passing the connection secrets
+
+        v_store = AstraDBVectorStore(
+            embedding=emb,
+            collection_name=COLLECTION_NAME_DIM2,
+            **astradb_credentials,
+        )
+        try:
+            await v_store.aadd_texts(
+                texts=["aa"],
+                metadatas=[
+                    {"k": "a", "ord": 0},
+                ],
+                ids=["a"],
+            )
+            res1 = await v_store.asimilarity_search("aa", k=5)
+            assert len(res1) == 1
+            v_store = AstraDBVectorStore(
+                embedding=emb,
+                pre_delete_collection=True,
+                collection_name=COLLECTION_NAME_DIM2,
+                **astradb_credentials,
+            )
+            res1 = await v_store.asimilarity_search("aa", k=5)
+            assert len(res1) == 0
+        finally:
+            await v_store.adelete_collection()
 
     def test_astradb_vectorstore_from_x(
         self, astradb_credentials: AstraDBCredentials
@@ -268,6 +326,46 @@ class TestAstraDBVectorStore:
                 v_store_2.delete_collection()
             else:
                 v_store_2.clear()
+
+    async def test_astradb_vectorstore_from_x_async(
+        self, astradb_credentials: AstraDBCredentials
+    ) -> None:
+        """from_texts and from_documents methods."""
+        emb = SomeEmbeddings(dimension=2)
+        # prepare empty collection
+        AstraDBVectorStore(
+            embedding=emb,
+            collection_name=COLLECTION_NAME_DIM2,
+            **astradb_credentials,
+        ).clear()
+        # from_texts
+        v_store = await AstraDBVectorStore.afrom_texts(
+            texts=["Hi", "Ho"],
+            embedding=emb,
+            collection_name=COLLECTION_NAME_DIM2,
+            **astradb_credentials,
+        )
+        try:
+            assert (await v_store.asimilarity_search("Ho", k=1))[0].page_content == "Ho"
+        finally:
+            await v_store.adelete_collection()
+
+        # from_documents
+        v_store_2 = await AstraDBVectorStore.afrom_documents(
+            [
+                Document(page_content="Hee"),
+                Document(page_content="Hoi"),
+            ],
+            embedding=emb,
+            collection_name=COLLECTION_NAME_DIM2,
+            **astradb_credentials,
+        )
+        try:
+            assert (await v_store_2.asimilarity_search("Hoi", k=1))[
+                0
+            ].page_content == "Hoi"
+        finally:
+            await v_store_2.adelete_collection()
 
     def test_astradb_vectorstore_crud(self, store_someemb: AstraDBVectorStore) -> None:
         """Basic add/delete/update behaviour."""
@@ -327,6 +425,66 @@ class TestAstraDBVectorStore:
         res4 = store_someemb.similarity_search("ww", k=1, filter={"k": "w"})
         assert res4[0].metadata["ord"] == 205
 
+    async def test_astradb_vectorstore_crud_async(
+        self, store_someemb: AstraDBVectorStore
+    ) -> None:
+        """Basic add/delete/update behaviour."""
+        res0 = await store_someemb.asimilarity_search("Abc", k=2)
+        assert res0 == []
+        # write and check again
+        await store_someemb.aadd_texts(
+            texts=["aa", "bb", "cc"],
+            metadatas=[
+                {"k": "a", "ord": 0},
+                {"k": "b", "ord": 1},
+                {"k": "c", "ord": 2},
+            ],
+            ids=["a", "b", "c"],
+        )
+        res1 = await store_someemb.asimilarity_search("Abc", k=5)
+        assert {doc.page_content for doc in res1} == {"aa", "bb", "cc"}
+        # partial overwrite and count total entries
+        await store_someemb.aadd_texts(
+            texts=["cc", "dd"],
+            metadatas=[
+                {"k": "c_new", "ord": 102},
+                {"k": "d_new", "ord": 103},
+            ],
+            ids=["c", "d"],
+        )
+        res2 = await store_someemb.asimilarity_search("Abc", k=10)
+        assert len(res2) == 4
+        # pick one that was just updated and check its metadata
+        res3 = await store_someemb.asimilarity_search_with_score_id(
+            query="cc", k=1, filter={"k": "c_new"}
+        )
+        print(str(res3))
+        doc3, score3, id3 = res3[0]
+        assert doc3.page_content == "cc"
+        assert doc3.metadata == {"k": "c_new", "ord": 102}
+        assert score3 > 0.999  # leaving some leeway for approximations...
+        assert id3 == "c"
+        # delete and count again
+        del1_res = await store_someemb.adelete(["b"])
+        assert del1_res is True
+        del2_res = await store_someemb.adelete(["a", "c", "Z!"])
+        assert del2_res is False  # a non-existing ID was supplied
+        assert len(await store_someemb.asimilarity_search("xy", k=10)) == 1
+        # clear store
+        await store_someemb.aclear()
+        assert await store_someemb.asimilarity_search("Abc", k=2) == []
+        # add_documents with "ids" arg passthrough
+        await store_someemb.aadd_documents(
+            [
+                Document(page_content="vv", metadata={"k": "v", "ord": 204}),
+                Document(page_content="ww", metadata={"k": "w", "ord": 205}),
+            ],
+            ids=["v", "w"],
+        )
+        assert len(await store_someemb.asimilarity_search("xy", k=10)) == 2
+        res4 = await store_someemb.asimilarity_search("ww", k=1, filter={"k": "w"})
+        assert res4[0].metadata["ord"] == 205
+
     def test_astradb_vectorstore_mmr(self, store_parseremb: AstraDBVectorStore) -> None:
         """
         MMR testing. We work on the unit circle with angle multiples
@@ -345,6 +503,34 @@ class TestAstraDBVectorStore:
             [_v_from_i(i, N_val) for i in i_vals], metadatas=[{"i": i} for i in i_vals]
         )
         res1 = store_parseremb.max_marginal_relevance_search(
+            _v_from_i(3, N_val),
+            k=2,
+            fetch_k=3,
+        )
+        res_i_vals = {doc.metadata["i"] for doc in res1}
+        assert res_i_vals == {0, 4}
+
+    async def test_astradb_vectorstore_mmr_async(
+        self, store_parseremb: AstraDBVectorStore
+    ) -> None:
+        """
+        MMR testing. We work on the unit circle with angle multiples
+        of 2*pi/20 and prepare a store with known vectors for a controlled
+        MMR outcome.
+        """
+
+        def _v_from_i(i: int, N: int) -> str:
+            angle = 2 * math.pi * i / N
+            vector = [math.cos(angle), math.sin(angle)]
+            return json.dumps(vector)
+
+        i_vals = [0, 4, 5, 13]
+        N_val = 20
+        await store_parseremb.aadd_texts(
+            [_v_from_i(i, N_val) for i in i_vals],
+            metadatas=[{"i": i} for i in i_vals],
+        )
+        res1 = await store_parseremb.amax_marginal_relevance_search(
             _v_from_i(3, N_val),
             k=2,
             fetch_k=3,
@@ -435,6 +621,25 @@ class TestAstraDBVectorStore:
         sco_near, sco_far = scores
         assert abs(1 - sco_near) < 0.001 and abs(sco_far) < 0.001
 
+    async def test_astradb_vectorstore_similarity_scale_async(
+        self, store_parseremb: AstraDBVectorStore
+    ) -> None:
+        """Scale of the similarity scores."""
+        await store_parseremb.aadd_texts(
+            texts=[
+                json.dumps([1, 1]),
+                json.dumps([-1, -1]),
+            ],
+            ids=["near", "far"],
+        )
+        res1 = await store_parseremb.asimilarity_search_with_score(
+            json.dumps([0.5, 0.5]),
+            k=2,
+        )
+        scores = [sco for _, sco in res1]
+        sco_near, sco_far = scores
+        assert abs(1 - sco_near) < 0.001 and abs(sco_far) < 0.001
+
     def test_astradb_vectorstore_massive_delete(
         self, store_someemb: AstraDBVectorStore
     ) -> None:
@@ -458,7 +663,7 @@ class TestAstraDBVectorStore:
         SKIP_COLLECTION_DELETE,
         reason="Collection-deletion tests are suppressed",
     )
-    def test_astradb_vectorstore_drop(
+    def test_astradb_vectorstore_delete_collection(
         self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """behaviour of 'delete_collection'."""
@@ -524,6 +729,43 @@ class TestAstraDBVectorStore:
                 v_store.delete_collection()
             else:
                 v_store.clear()
+
+    async def test_astradb_vectorstore_custom_params_async(
+        self, astradb_credentials: AstraDBCredentials
+    ) -> None:
+        """Custom batch size and concurrency params."""
+        emb = SomeEmbeddings(dimension=2)
+        v_store = AstraDBVectorStore(
+            embedding=emb,
+            collection_name="lc_test_c_async",
+            batch_size=17,
+            bulk_insert_batch_concurrency=13,
+            bulk_insert_overwrite_concurrency=7,
+            bulk_delete_concurrency=19,
+            **astradb_credentials,
+        )
+        try:
+            # add_texts
+            N = 50
+            texts = [str(i + 1 / 7.0) for i in range(N)]
+            ids = ["doc_%i" % i for i in range(N)]
+            await v_store.aadd_texts(texts=texts, ids=ids)
+            await v_store.aadd_texts(
+                texts=texts,
+                ids=ids,
+                batch_size=19,
+                batch_concurrency=7,
+                overwrite_concurrency=13,
+            )
+            #
+            await v_store.adelete(ids[: N // 2])
+            await v_store.adelete(ids[N // 2 :], concurrency=23)
+            #
+        finally:
+            if not SKIP_COLLECTION_DELETE:
+                await v_store.adelete_collection()
+            else:
+                await v_store.aclear()
 
     def test_astradb_vectorstore_metrics(
         self, astradb_credentials: AstraDBCredentials
