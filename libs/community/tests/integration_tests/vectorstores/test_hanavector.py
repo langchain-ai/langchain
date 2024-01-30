@@ -73,8 +73,6 @@ def setup_module(module):
         test_setup.schema_name = generateSchemaName(cur)
         sql_str = f"CREATE SCHEMA {test_setup.schema_name}"
         cur.execute(sql_str)
-        sql_str = f"SET SCHEMA {test_setup.schema_name}"
-        cur.execute(sql_str)
     except dbapi.ProgrammingError:
         pass
     finally:
@@ -109,7 +107,7 @@ def metadatas() -> List[str]:
 def drop_table(connection, table_name):
     try:
         cur = connection.cursor()
-        sql_str = f"DROP TABLE {table_name}"
+        sql_str = f"DROP TABLE {test_setup.schema_name}.{table_name}"
         cur.execute(sql_str)
     except dbapi.ProgrammingError:
         pass
@@ -129,6 +127,7 @@ def test_hanavector_non_existing_table() -> None:
         connection=test_setup.conn,
         embedding=embedding,
         distance_strategy=DistanceStrategy.COSINE,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -141,7 +140,10 @@ def test_hanavector_table_with_missing_columns() -> None:
     try:
         drop_table(test_setup.conn, table_name)
         cur = test_setup.conn.cursor()
-        sql_str = f"CREATE TABLE {table_name}(WRONG_COL NVARCHAR(500));"
+        sql_str = (
+            f"CREATE TABLE {test_setup.schema_name}.{table_name}"
+            "(WRONG_COL NVARCHAR(500));"
+        )
         cur.execute(sql_str)
     finally:
         cur.close()
@@ -153,6 +155,7 @@ def test_hanavector_table_with_missing_columns() -> None:
             connection=test_setup.conn,
             embedding=embedding,
             distance_strategy=DistanceStrategy.COSINE,
+            schema_name=test_setup.schema_name,
             table_name=table_name,
         )
         exception_occured = False
@@ -171,7 +174,8 @@ def test_hanavector_table_with_nvarchar_content(texts: List[str]) -> None:
         drop_table(test_setup.conn, table_name)
         cur = test_setup.conn.cursor()
         sql_str = (
-            f"CREATE TABLE {table_name}({content_column} NVARCHAR(2048), "
+            f"CREATE TABLE {test_setup.schema_name}.{table_name}"
+            f"({content_column} NVARCHAR(2048), "
             f"{metadata_column} NVARCHAR(2048), {vector_column} REAL_VECTOR);"
         )
         cur.execute(sql_str)
@@ -182,6 +186,7 @@ def test_hanavector_table_with_nvarchar_content(texts: List[str]) -> None:
         connection=test_setup.conn,
         embedding=embedding,
         distance_strategy=DistanceStrategy.COSINE,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
         content_column=content_column,
         metadata_column=metadata_column,
@@ -193,7 +198,7 @@ def test_hanavector_table_with_nvarchar_content(texts: List[str]) -> None:
     # check that embeddings have been created in the table
     number_of_texts = len(texts)
     number_of_rows = -1
-    sql_str = f"SELECT COUNT(*) FROM {table_name}"
+    sql_str = f"SELECT COUNT(*) FROM {test_setup.schema_name}.{table_name}"
     cur = test_setup.conn.cursor()
     cur.execute(sql_str)
     if cur.has_result_set():
@@ -212,7 +217,8 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
         drop_table(test_setup.conn, table_name)
         cur = test_setup.conn.cursor()
         sql_str = (
-            f"CREATE TABLE {table_name}({content_column} INTEGER, "
+            f"CREATE TABLE {test_setup.schema_name}.{table_name}"
+            f"({content_column} INTEGER, "
             f"{metadata_column} INTEGER, {vector_column} INTEGER);"
         )
         cur.execute(sql_str)
@@ -226,6 +232,7 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
             connection=test_setup.conn,
             embedding=embedding,
             distance_strategy=DistanceStrategy.COSINE,
+            schema_name=test_setup.schema_name,
             table_name=table_name,
         )
         exception_occured = False
@@ -249,6 +256,7 @@ def test_hanavector_non_existing_table_fixed_vector_length() -> None:
         connection=test_setup.conn,
         embedding=embedding,
         distance_strategy=DistanceStrategy.COSINE,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
         vector_column=vector_column,
         vector_column_length=vector_column_length,
@@ -256,7 +264,7 @@ def test_hanavector_non_existing_table_fixed_vector_length() -> None:
 
     assert vectordb._table_exists(table_name)
     vectordb._check_column(
-        table_name, vector_column, "REAL_VECTOR", vector_column_length
+        table_name, vector_column, ["REAL_VECTOR"], vector_column_length
     )
 
 
@@ -268,7 +276,10 @@ def test_hanavector_add_texts(texts: List[str]) -> None:
 
     # Check if table is created
     vectordb = HanaDB(
-        connection=test_setup.conn, embedding=embedding, table_name=table_name
+        connection=test_setup.conn,
+        embedding=embedding,
+        schema_name=test_setup.schema_name,
+        table_name=table_name,
     )
 
     vectordb.add_texts(texts=texts)
@@ -276,7 +287,7 @@ def test_hanavector_add_texts(texts: List[str]) -> None:
     # check that embeddings have been created in the table
     number_of_texts = len(texts)
     number_of_rows = -1
-    sql_str = f"SELECT COUNT(*) FROM {table_name}"
+    sql_str = f"SELECT COUNT(*) FROM {test_setup.schema_name}.{table_name}"
     cur = test_setup.conn.cursor()
     cur.execute(sql_str)
     if cur.has_result_set():
@@ -296,6 +307,7 @@ def test_hanavector_from_texts(texts: List[str]) -> None:
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
     # test if vectorDB is instance of HanaDB
@@ -304,7 +316,7 @@ def test_hanavector_from_texts(texts: List[str]) -> None:
     # check that embeddings have been created in the table
     number_of_texts = len(texts)
     number_of_rows = -1
-    sql_str = f"SELECT COUNT(*) FROM {table_name}"
+    sql_str = f"SELECT COUNT(*) FROM {test_setup.schema_name}.{table_name}"
     cur = test_setup.conn.cursor()
     cur.execute(sql_str)
     if cur.has_result_set():
@@ -324,6 +336,7 @@ def test_hanavector_similarity_search_simple(texts: List[str]) -> None:
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -341,6 +354,7 @@ def test_hanavector_similarity_search_by_vector_simple(texts: List[str]) -> None
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -362,6 +376,7 @@ def test_hanavector_similarity_search_simple_euclidean_distance(
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
         distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
     )
@@ -384,6 +399,7 @@ def test_hanavector_similarity_search_with_metadata(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -411,6 +427,7 @@ def test_hanavector_similarity_search_with_metadata_filter(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -449,6 +466,7 @@ def test_hanavector_similarity_search_with_metadata_filter_string(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -472,6 +490,7 @@ def test_hanavector_similarity_search_with_metadata_filter_bool(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -495,6 +514,7 @@ def test_hanavector_similarity_search_with_metadata_filter_invalid_type(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -519,6 +539,7 @@ def test_hanavector_similarity_search_with_score(
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -544,6 +565,7 @@ def test_hanavector_similarity_search_with_relevance_score(
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -569,6 +591,7 @@ def test_hanavector_similarity_search_with_relevance_score_with_euclidian_distan
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
         distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
     )
@@ -595,6 +618,7 @@ def test_hanavector_similarity_search_with_score_with_euclidian_distance(
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
         distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
     )
@@ -619,6 +643,7 @@ def test_hanavector_delete_with_filter(texts: List[str], metadatas: List[dict]) 
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -646,6 +671,7 @@ async def test_hanavector_delete_with_filter_async(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -673,6 +699,7 @@ def test_hanavector_delete_all_with_empty_filter(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -700,6 +727,7 @@ def test_hanavector_delete_called_wrong(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -731,6 +759,7 @@ def test_hanavector_max_marginal_relevance_search(texts: List[str]) -> None:
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -752,6 +781,7 @@ def test_hanavector_max_marginal_relevance_search_vector(texts: List[str]) -> No
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -775,6 +805,7 @@ async def test_hanavector_max_marginal_relevance_search_async(texts: List[str]) 
         connection=test_setup.conn,
         texts=texts,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
@@ -801,38 +832,48 @@ def test_hanavector_filter_prepared_statement_params(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
+        schema_name=test_setup.schema_name,
         table_name=table_name,
     )
 
     cur = test_setup.conn.cursor()
     sql_str = (
-        f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.start') = '100'"
+        f"SELECT * FROM {test_setup.schema_name}.{table_name} "
+        "WHERE JSON_VALUE(VEC_META, '$.start') = '100'"
     )
     cur.execute(sql_str)
     rows = cur.fetchall()
     assert len(rows) == 1
 
     query_value = 100
-    sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.start') = ?"
+    sql_str = (
+        f"SELECT * FROM {test_setup.schema_name}.{table_name} "
+        "WHERE JSON_VALUE(VEC_META, '$.start') = ?"
+    )
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
     assert len(rows) == 1
 
     sql_str = (
-        f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.quality') = 'good'"
+        f"SELECT * FROM {test_setup.schema_name}.{table_name} "
+        "WHERE JSON_VALUE(VEC_META, '$.quality') = 'good'"
     )
     cur.execute(sql_str)
     rows = cur.fetchall()
     assert len(rows) == 1
 
     query_value = "good"
-    sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.quality') = ?"
+    sql_str = (
+        f"SELECT * FROM {test_setup.schema_name}.{table_name} "
+        "WHERE JSON_VALUE(VEC_META, '$.quality') = ?"
+    )
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
     assert len(rows) == 1
 
     sql_str = (
-        f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = false"
+        f"SELECT * FROM {test_setup.schema_name}.{table_name} "
+        "WHERE JSON_VALUE(VEC_META, '$.ready') = false"
     )
     cur.execute(sql_str)
     rows = cur.fetchall()
@@ -840,14 +881,20 @@ def test_hanavector_filter_prepared_statement_params(
 
     # query_value = True
     query_value = "true"
-    sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
+    sql_str = (
+        f"SELECT * FROM {test_setup.schema_name}.{table_name} "
+        "WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
+    )
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
     assert len(rows) == 2
 
     # query_value = False
     query_value = "false"
-    sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
+    sql_str = (
+        f"SELECT * FROM {test_setup.schema_name}.{table_name} "
+        "WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
+    )
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
     assert len(rows) == 1
@@ -868,6 +915,7 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
             texts=texts,
             metadatas=invalid_metadatas,
             embedding=embedding,
+            schema_name=test_setup.schema_name,
             table_name=table_name,
         )
     except ValueError:
@@ -884,6 +932,26 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
             texts=texts,
             metadatas=invalid_metadatas,
             embedding=embedding,
+            schema_name=test_setup.schema_name,
+            table_name=table_name,
+        )
+    except ValueError:
+        exception_occured = True
+    assert exception_occured
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_non_existing_schema() -> None:
+    table_name = "TEST_TABLE_NON_EXISTING_SCHEMA"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    exception_occured = False
+    try:
+        HanaDB(
+            connection=test_setup.conn,
+            embedding=embedding,
+            schema_name="DOES_NOT_EXIST",
             table_name=table_name,
         )
     except ValueError:

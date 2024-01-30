@@ -57,6 +57,7 @@ class HanaDB(VectorStore):
         connection: dbapi.Connection,
         embedding: Embeddings,
         distance_strategy: DistanceStrategy = default_distance_strategy,
+        schema_name: str = None,
         table_name: str = default_table_name,
         content_column: str = default_content_column,
         metadata_column: str = default_metadata_column,
@@ -75,23 +76,29 @@ class HanaDB(VectorStore):
             if key is distance_strategy:
                 valid_distance = True
         if not valid_distance:
-            raise ValueError(
-                "Unsupported distance_strategy: {}".format(distance_strategy)
-            )
+            raise ValueError(f"Unsupported distance_strategy: {distance_strategy}")
 
         self.connection = connection
         self.embedding = embedding
         self.distance_strategy = distance_strategy
+        self.schema_name = schema_name
         self.table_name = HanaDB._sanitize_name(table_name)
         self.content_column = HanaDB._sanitize_name(content_column)
         self.metadata_column = HanaDB._sanitize_name(metadata_column)
         self.vector_column = HanaDB._sanitize_name(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
 
+        # Check current schema
+        if self.schema_name:
+            if not self._schema_exists(self.schema_name):
+                raise ValueError(f"Schema does not exist: {self.schema_name}")
+        else:
+            self.schema_name = self._get_current_schema()
+
         # Check if the table exists, and eventually create it
         if not self._table_exists(self.table_name):
             sql_str = (
-                f"CREATE TABLE {self.table_name}("
+                f"CREATE TABLE {self.schema_name}.{self.table_name}("
                 f"{self.content_column} NCLOB, "
                 f"{self.metadata_column} NCLOB, "
                 f"{self.vector_column} REAL_VECTOR "
@@ -117,14 +124,11 @@ class HanaDB(VectorStore):
             self.vector_column_length,
         )
 
-    def _table_exists(self, table_name) -> bool:
-        sql_str = (
-            "SELECT COUNT(*) FROM SYS.TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA"
-            " AND TABLE_NAME = ?"
-        )
+    def _schema_exists(self, schema_name) -> bool:
+        sql_str = "SELECT COUNT(*) FROM SYS.SCHEMAS WHERE SCHEMA_NAME = ?"
         try:
             cur = self.connection.cursor()
-            cur.execute(sql_str, (table_name))
+            cur.execute(sql_str, (schema_name))
             if cur.has_result_set():
                 rows = cur.fetchall()
                 if rows[0][0] == 1:
@@ -133,15 +137,43 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
+    def _table_exists(self, table_name) -> bool:
+        sql_str = (
+            "SELECT COUNT(*) FROM SYS.TABLES WHERE SCHEMA_NAME = ?"
+            " AND TABLE_NAME = ?"
+        )
+        try:
+            cur = self.connection.cursor()
+            cur.execute(sql_str, (self.schema_name, table_name))
+            if cur.has_result_set():
+                rows = cur.fetchall()
+                if rows[0][0] == 1:
+                    return True
+        finally:
+            cur.close()
+        return False
+
+    def _get_current_schema(self) -> str:
+        sql_str = "SELECT CURRENT_SCHEMA FROM dummy"
+        try:
+            cur = self.connection.cursor()
+            cur.execute(sql_str)
+            if cur.has_result_set():
+                rows = cur.fetchall()
+                return rows[0][0]
+        finally:
+            cur.close()
+        raise ValueError("Could not detect current schema")
+
     def _check_column(self, table_name, column_name, column_type, column_length=None):
         sql_str = (
             "SELECT DATA_TYPE_NAME, LENGTH FROM SYS.TABLE_COLUMNS WHERE "
-            "SCHEMA_NAME = CURRENT_SCHEMA "
+            "SCHEMA_NAME = ? "
             "AND TABLE_NAME = ? AND COLUMN_NAME = ?"
         )
         try:
             cur = self.connection.cursor()
-            cur.execute(sql_str, (table_name, column_name))
+            cur.execute(sql_str, (self.schema_name, table_name, column_name))
             if cur.has_result_set():
                 rows = cur.fetchall()
                 if len(rows) == 0:
@@ -226,7 +258,8 @@ class HanaDB(VectorStore):
                     else self.embedding.embed_documents([text])[0]
                 )
                 sql_str = (
-                    f"INSERT INTO {self.table_name} ({self.content_column}, "
+                    f"INSERT INTO {self.schema_name}.{self.table_name} "
+                    f"({self.content_column}, "
                     f"{self.metadata_column}, {self.vector_column}) "
                     f"VALUES (?, ?, TO_REAL_VECTOR (?));"
                 )
@@ -250,6 +283,7 @@ class HanaDB(VectorStore):
         metadatas: Optional[List[dict]] = None,
         connection: dbapi.Connection = None,
         distance_strategy: DistanceStrategy = default_distance_strategy,
+        schema_name: str = None,
         table_name: str = default_table_name,
         content_column: str = default_content_column,
         metadata_column: str = default_metadata_column,
@@ -268,6 +302,7 @@ class HanaDB(VectorStore):
             connection=connection,
             embedding=embedding,
             distance_strategy=distance_strategy,
+            schema_name=schema_name,
             table_name=table_name,
             content_column=content_column,
             metadata_column=metadata_column,
@@ -343,7 +378,7 @@ class HanaDB(VectorStore):
             f"  TO_NVARCHAR({self.vector_column}), "  # row[2]
             f"  {distance_func_name}({self.vector_column}, TO_REAL_VECTOR "
             f"     (ARRAY({embedding_as_str}))) AS CS "  # row[3]
-            f"FROM {self.table_name}"
+            f"FROM {self.schema_name}.{self.table_name}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
         where_str, query_tuple = self._create_where_by_filter(filter)
@@ -449,7 +484,7 @@ class HanaDB(VectorStore):
             raise ValueError("Parameter 'filter' is required when calling 'delete'")
 
         where_str, query_tuple = self._create_where_by_filter(filter)
-        sql_str = f"DELETE FROM {self.table_name} {where_str}"
+        sql_str = f"DELETE FROM {self.schema_name}.{self.table_name} {where_str}"
 
         try:
             cur = self.connection.cursor()
@@ -570,6 +605,4 @@ class HanaDB(VectorStore):
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             return HanaDB._euclidean_relevance_score_fn
         else:
-            raise ValueError(
-                "Unsupported distance_strategy: {}".format(self.distance_strategy)
-            )
+            raise ValueError(f"Unsupported distance_strategy: {self.distance_strategy}")
