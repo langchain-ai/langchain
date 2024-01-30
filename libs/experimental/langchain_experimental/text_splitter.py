@@ -65,10 +65,11 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
     return distances, sentences
 
 
-BreakpointThresholdType = Literal["percentile", "standard_deviation"]
+BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile"]
 BREAKPOINT_DEFAULTS: dict[BreakpointThresholdType, float] = {
     "percentile": 95,
     "standard_deviation": 3,
+    "interquartile": 1.5,
 }
 
 
@@ -114,6 +115,11 @@ class SemanticChunker(BaseDocumentTransformer):
                     np.mean(distances)
                     + self.breakpoint_threshold_amount * np.std(distances),
                 )
+            case "interquartile":
+                q1, q3 = np.percentile(distances, [25, 75])
+                iqr = q3 - q1
+
+                return np.mean(distances) + self.breakpoint_threshold_amount * iqr
 
     def _calculate_sentence_distances(
         self, text: str
