@@ -393,6 +393,7 @@ class Weaviate(VectorStore):
         batch_size: Optional[int] = None,
         index_name: Optional[str] = None,
         text_key: str = "text",
+        vectorizer: Optional[str] = None,
         by_text: bool = False,
         relevance_score_fn: Optional[
             Callable[[float], float]
@@ -424,6 +425,8 @@ class Weaviate(VectorStore):
             batch_size: Size of batch operations.
             index_name: Index name.
             text_key: Key to use for uploading/retrieving text to/from vectorstore.
+            vectorizer: The vectorizer module that the created class will use to create vectors.
+            (If not passed then it will be set to the default vectorizer module set on your weaviate instance)
             by_text: Whether to search by text or by embedding.
             relevance_score_fn: Function for converting whatever distance function the
                 vector store uses to a relevance score, which is a normalized similarity
@@ -461,6 +464,11 @@ class Weaviate(VectorStore):
 
         index_name = index_name or f"LangChain_{uuid4().hex}"
         schema = _default_schema(index_name, text_key)
+
+        # check if the vectorizer parameter exists then set it to the scehma
+        if vectorizer:
+            schema["vectorizer"] = vectorizer
+
         # check whether the index already exists
         if not client.schema.exists(index_name):
             client.schema.create_class(schema)
