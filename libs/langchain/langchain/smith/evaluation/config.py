@@ -150,6 +150,7 @@ class RunEvalConfig(BaseModel):
         criteria: Optional[CRITERIA_TYPE] = None
         llm: Optional[BaseLanguageModel] = None
         evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
+        prompt: Optional[BasePromptTemplate] = None
 
         def __init__(
             self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
@@ -170,6 +171,7 @@ class RunEvalConfig(BaseModel):
         criteria: Optional[CRITERIA_TYPE] = None
         llm: Optional[BaseLanguageModel] = None
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_CRITERIA
+        prompt: Optional[BasePromptTemplate] = None
 
         def __init__(
             self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
