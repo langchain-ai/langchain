@@ -314,23 +314,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
-        try:
-            parsed_input = self._parse_input(tool_input)
-        except ValidationError as e:
-            if not self.handle_validation_error:
-                raise e
-            elif isinstance(self.handle_validation_error, bool):
-                observation = "Tool input validation error"
-            elif isinstance(self.handle_validation_error, str):
-                observation = self.handle_validation_error
-            elif callable(self.handle_validation_error):
-                observation = self.handle_validation_error(e)
-            else:
-                raise ValueError(
-                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
-                    f"str or callable. Received: {self.handle_validation_error}"
-                )
-            return observation
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -354,12 +337,28 @@ class ChildTool(BaseTool):
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
                 if new_arg_supported
                 else self._run(*tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 run_manager.on_tool_error(e)
@@ -405,23 +404,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
-        try:
-            parsed_input = self._parse_input(tool_input)
-        except ValidationError as e:
-            if not self.handle_validation_error:
-                raise e
-            elif isinstance(self.handle_validation_error, bool):
-                observation = "Tool input validation error"
-            elif isinstance(self.handle_validation_error, str):
-                observation = self.handle_validation_error
-            elif callable(self.handle_validation_error):
-                observation = self.handle_validation_error(e)
-            else:
-                raise ValueError(
-                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
-                    f"str or callable. Received: {self.handle_validation_error}"
-                )
-            return observation
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -444,6 +426,7 @@ class ChildTool(BaseTool):
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
@@ -451,6 +434,21 @@ class ChildTool(BaseTool):
                 if new_arg_supported
                 else await self._arun(*tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 await run_manager.on_tool_error(e)
