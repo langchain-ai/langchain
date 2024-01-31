@@ -1,11 +1,10 @@
-import importlib
 import os
 import time
 import uuid
-from typing import TYPE_CHECKING, List
+from typing import List
 
 import numpy as np
-import pinecone
+import pinecone  # type: ignore
 import pytest
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
