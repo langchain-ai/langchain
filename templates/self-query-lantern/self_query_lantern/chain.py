@@ -84,7 +84,10 @@ def initialize(
 
     # Set up a vector store to store your vectors and metadata
     Lantern.from_documents(
-        documents, embedding=embeddings, collection_name=collection_name, connection_string=connection_string
+        documents,
+        embedding=embeddings,
+        collection_name=collection_name,
+        connection_string=connection_string,
     )
 
 
