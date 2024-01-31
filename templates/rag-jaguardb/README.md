@@ -6,7 +6,7 @@ This template performs RAG using JaguarDB and OpenAI.
 ## Environment Setup
 
 You should export two environment variables, one being your Jaguar URI, the other being your OpenAI API KEY.
-If you do not have a JaguarDB URI, see the `Setup Jaguar` section at the bottom for instructions on how to do so.
+If you do not have JaguarDB set up, see the `Setup Jaguar` section at the bottom for instructions on how to do so.
 
 ```shell
 export JAGUAR_API_KEY=...
@@ -72,3 +72,20 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/rag-mongo")
 ```
+
+## JaguarDB Setup
+
+To utilize JaguarDB, you can use docker pull and docker run commands to quickly setup JaguarDB. 
+
+```shell
+docker pull jaguardb/jaguardb 
+docker run -d -p 8888:8888 --name jaguardb jaguardb/jaguardb
+```
+
+To launch the JaguarDB client terminal to interact with JaguarDB server: 
+
+```shell 
+docker exec -it jaguardb /home/jaguar/jaguar/bin/jag
+```
+
+Another option is to download an already-built binary package of JaguarDB on Linux, and deploy the database on a single node or in a cluster of nodes. The streamlined process enables you to quickly start using JaguarDB and leverage its powerful features and functionalities. [here](http://www.jaguardb.com/download.html).   
