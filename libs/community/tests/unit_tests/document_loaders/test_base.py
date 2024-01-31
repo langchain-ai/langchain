@@ -29,14 +29,18 @@ def test_base_blob_parser() -> None:
     assert docs[0].page_content == "foo"
 
 
-async def test_default_aload():
+async def test_default_aload() -> None:
     class FakeLoader(BaseLoader):
         def load(self) -> List[Document]:
             return list(self.lazy_load())
 
         def lazy_load(self) -> Iterator[Document]:
-            yield Document(page_content="foo")
+            yield from [
+                Document(page_content="foo"),
+                Document(page_content="bar"),
+                ]
 
     loader = FakeLoader()
     docs = loader.load()
-    assert docs == [Document(page_content="foo")]
+    assert docs == [Document(page_content="foo"), Document(page_content="bar")]
+    assert docs == [doc async for doc in loader.alazy_load()]
