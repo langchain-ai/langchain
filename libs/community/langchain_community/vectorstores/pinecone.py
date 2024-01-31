@@ -144,34 +144,33 @@ class Pinecone(VectorStore):
         for metadata, text in zip(metadatas, texts):
             metadata[self._text_key] = text
 
-        if async_req:
-            # For loops to avoid memory issues when using HTTP-based embeddings
-            # First loop runs embeddings, benefits when using OpenAI embeddings
-            # The second loops runs the pinecone upsert asynchronously.
-            for i in range(0, len(texts), embedding_chunk_size):
-                chunk_texts = texts[i : i + embedding_chunk_size]
-                chunk_ids = ids[i : i + embedding_chunk_size]
-                chunk_metadatas = metadatas[i : i + embedding_chunk_size]
-                embeddings = self._embed_documents(chunk_texts)
+        # For loops to avoid memory issues when using HTTP-based embeddings
+        # First loop runs embeddings, benefits when using OpenAI embeddings
+        for i in range(0, len(texts), embedding_chunk_size):
+            chunk_texts = texts[i : i + embedding_chunk_size]
+            chunk_ids = ids[i : i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
+            embeddings = self._embed_documents(chunk_texts)
+            vector_tuples = zip(chunk_ids, embeddings, chunk_metadatas)
+            if async_req:
+                # Runs the pinecone upsert asynchronously.
                 async_res = [
                     self._index.upsert(
-                        vectors=batch,
+                        vectors=batch_vector_tuples,
                         namespace=namespace,
                         async_req=async_req,
                         **kwargs,
                     )
-                    for batch in batch_iterate(
-                        batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
-                    )
+                    for batch_vector_tuples in batch_iterate(batch_size, vector_tuples)
                 ]
                 [res.get() for res in async_res]
-        else:
-            self._index.upsert(
-                vectors=list(zip(ids, self._embed_documents(texts), metadatas)),
-                namespace=namespace,
-                async_req=async_req,
-                **kwargs,
-            )
+            else:
+                self._index.upsert(
+                    vectors=vector_tuples,
+                    namespace=namespace,
+                    async_req=async_req,
+                    **kwargs,
+                )
 
         return ids
 
