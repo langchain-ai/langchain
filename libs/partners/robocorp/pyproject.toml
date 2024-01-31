@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-robocorp"
-version = "0.0.1.post3"
+version = "0.0.3"
 description = "An integration package connecting Robocorp and LangChain"
 authors = []
 readme = "README.md"
@@ -14,7 +14,7 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
 requests = "^2.31.0"
-types-requests = "^2.31.0.20231231"
+types-requests = "^2.31.0.6"
 langsmith = ">=0.0.83,<0.1"
 
 [tool.poetry.group.test]

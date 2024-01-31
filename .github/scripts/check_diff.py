@@ -36,13 +36,7 @@ if __name__ == "__main__":
         elif "libs/partners" in file:
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}"):
-                dirs_to_run.update(
-                    (
-                        f"libs/partners/{partner_dir}",
-                        "libs/langchain",
-                        "libs/experimental",
-                    )
-                )
+                dirs_to_run.add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted
         elif "libs/langchain" in file:
             dirs_to_run.update(("libs/langchain", "libs/experimental"))
