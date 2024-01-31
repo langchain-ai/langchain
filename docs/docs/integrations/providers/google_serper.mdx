@@ -14,14 +14,14 @@ It is broken into two parts: setup, and then references to the specific Google S
 There exists a GoogleSerperAPIWrapper utility which wraps this API. To import this utility:
 
 ```python
-from langchain.utilities import GoogleSerperAPIWrapper
+from langchain_community.utilities import GoogleSerperAPIWrapper
 ```
 
 You can use it as part of a Self Ask chain:
 
 ```python
-from langchain.utilities import GoogleSerperAPIWrapper
-from langchain.llms.openai import OpenAI
+from langchain_community.utilities import GoogleSerperAPIWrapper
+from langchain_openai import OpenAI
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 

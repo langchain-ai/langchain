@@ -8,10 +8,9 @@ from langchain_core.output_parsers import (
     BaseCumulativeTransformOutputParser,
     BaseGenerationOutputParser,
 )
+from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, root_validator
-
-from langchain.output_parsers.json import parse_partial_json
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -78,17 +77,20 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                 raise OutputParserException(f"Could not parse function call: {exc}")
         try:
             if partial:
-                if self.args_only:
-                    return parse_partial_json(
-                        function_call["arguments"], strict=self.strict
-                    )
-                else:
-                    return {
-                        **function_call,
-                        "arguments": parse_partial_json(
+                try:
+                    if self.args_only:
+                        return parse_partial_json(
                             function_call["arguments"], strict=self.strict
-                        ),
-                    }
+                        )
+                    else:
+                        return {
+                            **function_call,
+                            "arguments": parse_partial_json(
+                                function_call["arguments"], strict=self.strict
+                            ),
+                        }
+                except json.JSONDecodeError:
+                    return None
             else:
                 if self.args_only:
                     try:
@@ -134,10 +136,52 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
 
 
 class PydanticOutputFunctionsParser(OutputFunctionsParser):
-    """Parse an output as a pydantic object."""
+    """Parse an output as a pydantic object.
+
+    This parser is used to parse the output of a ChatModel that uses
+    OpenAI function format to invoke functions.
+
+    The parser extracts the function call invocation and matches
+    them to the pydantic schema provided.
+
+    An exception will be raised if the function call does not match
+    the provided schema.
+
+    Example:
+
+        ... code-block:: python
+
+            message = AIMessage(
+                content="This is a test message",
+                additional_kwargs={
+                    "function_call": {
+                        "name": "cookie",
+                        "arguments": json.dumps({"name": "value", "age": 10}),
+                    }
+                },
+            )
+            chat_generation = ChatGeneration(message=message)
+
+            class Cookie(BaseModel):
+                name: str
+                age: int
+
+            class Dog(BaseModel):
+                species: str
+
+            # Full output
+            parser = PydanticOutputFunctionsParser(
+                pydantic_schema={"cookie": Cookie, "dog": Dog}
+            )
+            result = parser.parse_result([chat_generation])
+    """
 
     pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
-    """The pydantic schema to parse the output with."""
+    """The pydantic schema to parse the output with.
+    
+    If multiple schemas are provided, then the function name will be used to
+    determine which schema to use.
+    """
 
     @root_validator(pre=True)
     def validate_schema(cls, values: Dict) -> Dict:

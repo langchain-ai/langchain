@@ -9,19 +9,29 @@ sidebar_class_name: hidden
 
 The core element of any language model application is...the model. LangChain gives you the building blocks to interface with any language model.
 
-- [Prompts](/docs/modules/model_io/prompts/): Templatize, dynamically select, and manage model inputs
-- [Chat models](/docs/modules/model_io/chat/): Models that are backed by a language model but take a list of Chat Messages as input and return a Chat Message
-- [LLMs](/docs/modules/model_io/llms/): Models that take a text string as input and return a text string
-- [Output parsers](/docs/modules/model_io/output_parsers/): Extract information from model outputs
+![Flowchart illustrating the Model I/O process with steps Format, Predict, and Parse, showing the transformation from input variables to structured output.](/img/model_io.jpg "Model Input/Output Process Diagram")
 
-![model_io_diagram](/img/model_io.jpg)
+## [Conceptual Guide](/docs/modules/model_io/concepts)
 
+A conceptual explanation of messages, prompts, LLMs vs ChatModels, and output parsers. You should read this before getting started.
 
-## LLMs vs Chat models
+## [Quickstart](/docs/modules/model_io/quick_start)
 
-LLMs and chat models are subtly but importantly different. LLMs in LangChain refer to pure text completion models.
-The APIs they wrap take a string prompt as input and output a string completion. OpenAI's GPT-3 is implemented as an LLM.
-Chat models are often backed by LLMs but tuned specifically for having conversations.
-And, crucially, their provider APIs use a different interface than pure text completion models. Instead of a single string,
-they take a list of chat messages as input. Usually these messages are labeled with the speaker (usually one of "System",
-"AI", and "Human"). And they return an AI chat message as output. GPT-4 and Anthropic's Claude-2 are both implemented as chat models.
+Covers the basics of getting started working with different types of models. You should walk through [this section] if you want to get an overview of the functionality.
+
+## [Prompts](/docs/modules/model_io/prompts/)
+
+[This section](/docs/modules/model_io/prompts/) deep dives into the different types of prompt templates and how to use them.
+
+## [LLMs](/docs/modules/model_io/llms/)
+
+[This section](/docs/modules/model_io/llms/) covers functionality related to the LLM class. This is a type of model that takes a text string as input and returns a text string.
+
+## [ChatModels](/docs/modules/model_io/chat/)
+
+[This section](/docs/modules/model_io/chat/) covers functionality related to the ChatModel class. This is a type of model that takes a list of messages as input and returns a message.
+
+## [Output Parsers](/docs/modules/model_io/output_parsers/)
+
+Output parsers are responsible for transforming the output of LLMs and ChatModels into more structured data. [This section](/docs/modules/model_io/output_parsers/) covers the different types of output parsers.
+

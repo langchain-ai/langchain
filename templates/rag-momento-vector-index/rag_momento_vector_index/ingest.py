@@ -1,10 +1,10 @@
 ### Ingest code - you may need to run this the first time
 import os
 
-from langchain.document_loaders import WebBaseLoader
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import MomentoVectorIndex
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import MomentoVectorIndex
 from momento import (
     CredentialProvider,
     PreviewVectorIndexClient,

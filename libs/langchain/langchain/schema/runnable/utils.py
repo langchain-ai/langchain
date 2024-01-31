@@ -1,5 +1,7 @@
 from langchain_core.runnables.utils import (
+    Addable,
     AddableDict,
+    AnyConfigurableField,
     ConfigurableField,
     ConfigurableFieldMultiOption,
     ConfigurableFieldSingleOption,
@@ -44,4 +46,6 @@ __all__ = [
     "gather_with_concurrency",
     "Input",
     "Output",
+    "Addable",
+    "AnyConfigurableField",
 ]

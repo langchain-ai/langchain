@@ -7,7 +7,10 @@ EXPECTED_ALL = [
     "BaseLLM",
     "LLM",
     "LanguageModelInput",
+    "LanguageModelOutput",
+    "LanguageModelLike",
     "get_tokenizer",
+    "LanguageModelLike",
 ]
 
 

@@ -8,10 +8,12 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Mapping,
     Optional,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -30,7 +32,12 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
 
 
-class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
+FormatOutputType = TypeVar("FormatOutputType")
+
+
+class BasePromptTemplate(
+    RunnableSerializable[Dict, PromptValue], Generic[FormatOutputType], ABC
+):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
@@ -43,6 +50,11 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
         default_factory=dict
     )
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "prompt_template"]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -67,13 +79,26 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
             **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
         )
 
+    def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
+        if not isinstance(inner_input, dict):
+            raise TypeError(
+                f"Expected mapping type as input to {self.__class__.__name__}. "
+                f"Received {type(inner_input)}."
+            )
+        missing = set(self.input_variables).difference(inner_input)
+        if missing:
+            raise KeyError(
+                f"Input to {self.__class__.__name__} is missing variables {missing}. "
+                f" Expected: {self.input_variables}"
+                f" Received: {list(inner_input.keys())}"
+            )
+        return self.format_prompt(**inner_input)
+
     def invoke(
         self, input: Dict, config: Optional[RunnableConfig] = None
     ) -> PromptValue:
         return self._call_with_config(
-            lambda inner_input: self.format_prompt(
-                **{key: inner_input[key] for key in self.input_variables}
-            ),
+            self._format_prompt_with_error_handling,
             input,
             config,
             run_type="prompt",
@@ -81,7 +106,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
 
     @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
+        """Create Prompt Value."""
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:
@@ -124,7 +149,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
         return {**partial_kwargs, **kwargs}
 
     @abstractmethod
-    def format(self, **kwargs: Any) -> str:
+    def format(self, **kwargs: Any) -> FormatOutputType:
         """Format the prompt with the inputs.
 
         Args:
@@ -192,7 +217,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
     """Format a document into a string based on a prompt template.
 
     First, this pulls information from the document from two sources:
@@ -218,7 +243,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
     Example:
         .. code-block:: python
 
-            from langchain_core import Document
+            from langchain_core.documents import Document
             from langchain_core.prompts import PromptTemplate
 
             doc = Document(page_content="This is a joke", metadata={"page": "1"})

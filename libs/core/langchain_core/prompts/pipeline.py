@@ -28,6 +28,11 @@ class PipelinePromptTemplate(BasePromptTemplate):
     pipeline_prompts: List[Tuple[str, BasePromptTemplate]]
     """A list of tuples, consisting of a string (`name`) and a Prompt Template."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "pipeline"]
+
     @root_validator(pre=True)
     def get_input_variables(cls, values: Dict) -> Dict:
         """Get input variables."""

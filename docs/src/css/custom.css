@@ -36,23 +36,6 @@
   --ifm-color-primary-lightest: #4fddbf;
 }
 
-.mendable-search {
-  width: 175px;
-}
-
-/* Reduce width on mobile for Mendable Search */
-@media (max-width: 500px) {
-  .mendable-search {
-    width: 150px;
-  }
-}
-
-@media (max-width: 380px) {
-  .mendable-search {
-    width: 140px;
-  }
-}
-
 .footer__links {
   margin-top: 1rem;
   margin-bottom: 3rem;
