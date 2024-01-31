@@ -9,7 +9,6 @@ You don't have to run any ETL jobs, embedding services or LLM Api.
 Your answers to questions will be always up to date with latest changes.
 You can listen to many sources simultaneously. 
 
-You can also use Pathway with the [self-query retrieval technique](https://python.langchain.com/docs/modules/data_connection/retrievers/self_query).
 
 ## Environment Setup
 
@@ -64,7 +63,7 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/rag-pathway/playground](http://127.0.0.1:8000/rag-pathway/playground)  
+We can access the playground at [http://127.0.0.1:8000/playground](http://127.0.0.1:8000/playground)  
 
 We can access the template from code with:
 
@@ -73,3 +72,9 @@ from langserve.client import RemoteRunnable
 
 runnable = RemoteRunnable("http://localhost:8000/rag-pathway")
 ```
+
+## Running the vector store in another process
+
+The template runs the vectorstore in a thread. However, you can also run it as a standalone
+process as simply as `python -m rag_pathway.server`. Then, set the flag `create_vectorstore`
+in `rag_pathway/chain.py` to use the standalone server.
