@@ -112,6 +112,8 @@ class Pinecone(VectorStore):
         namespace: Optional[str] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        *,
+        async_req: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -153,7 +155,7 @@ class Pinecone(VectorStore):
                 self._index.upsert(
                     vectors=batch,
                     namespace=namespace,
-                    async_req=True,
+                    async_req=async_req,
                     **kwargs,
                 )
                 for batch in batch_iterate(
@@ -206,6 +208,9 @@ class Pinecone(VectorStore):
             namespace=namespace,
             filter=filter,
         )
+        import pdb
+
+        pdb.set_trace()
         for res in results["matches"]:
             metadata = res["metadata"]
             if self._text_key in metadata:
