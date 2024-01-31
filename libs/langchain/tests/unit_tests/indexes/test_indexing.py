@@ -1243,7 +1243,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "SemaDB",
         "SupabaseVectorStore",
         "SurrealDBStore",
-        "TiDBVector",
+        "TiDBVectorStore",
         "TileDB",
         "TimescaleVector",
         "Vald",

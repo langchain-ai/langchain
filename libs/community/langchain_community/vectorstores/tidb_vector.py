@@ -6,44 +6,55 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
-DEFAULT_TiDB_VECTOR_STORE_NAME = "langchain_tidb_vector"
+DEFAULT_TiDB_VECTOR_STORE_NAME = "langchain_vector"
 
 
-class TiDBVector(VectorStore):
+class TiDBVectorStore(VectorStore):
     def __init__(
         self,
         connection_string: str,
         embedding_function: Embeddings,
-        tidb_vectorstore: Optional[Any] = None,
-        vectorstore_name: str = DEFAULT_TiDB_VECTOR_STORE_NAME,
+        table_name: str = DEFAULT_TiDB_VECTOR_STORE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
-        drop_existing_vectorstore: bool = False,
+        drop_existing_table: bool = False,
         **kwargs: Any,
     ) -> None:
         """
-        Initialize a TiDB Vector Store.
+        Initialize a TiDB Vector Store in Langchain with a flexible
+        and standardized table structure for storing vector data
+        which remains fixed regardless of the dynamic table name setting.
+
+        The vector table schema includes:
+        - 'id': a UUID for each entry.
+        - 'embedding': stores vector data in a VectorType column.
+        - 'document': a Text column for the original data or additional information.
+        - 'meta': a JSON column for flexible metadata storage.
+        - 'create_time' and 'update_time': timestamp columns for tracking data changes.
+
+        This table structure caters to general use cases and
+        complex scenarios where the table serves as a semantic layer for advanced
+        data integration and analysis, leveraging SQL for join queries.
 
         Args:
             connection_string (str): The connection string for the TiDB database,
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
             embedding_function: The embedding function used to generate embeddings.
-            tidb_vectorstore (Optional): The existing TiDB Vector Store to use.
-            vectorstore_name (str, optional): The name of the TiDB Vector Store,
-                defaults to "langchain_tidb_vector".
+            table_name (str, optional): The name of table used to store vector data,
+                defaults to "langchain_vector".
             distance_strategy: The strategy used for similarity search,
                 defaults to "cosine", valid values: "l2", "cosine".
             engine_args (Optional[Dict]): Additional arguments for the database engine,
                 defaults to None.
-            drop_existing_vectorstore: Drop the existing TiDB Vector Store
-                before initializing, defaults to False.
+            drop_existing_table: Drop the existing TiDB table before initializing,
+                defaults to False.
             **kwargs (Any): Additional keyword arguments.
 
         Examples:
             .. code-block:: python
 
-            from langchain_community.vectorstores.tidb_vector import TiDBVector
+            from langchain_community.vectorstores import TiDBVectorStore
             from langchain_openai import OpenAIEmbeddings
 
             embeddingFunc = OpenAIEmbeddings()
@@ -54,7 +65,7 @@ class TiDBVector(VectorStore):
                 texts = [..., ...],
                 connection_string=CONNECTION_STRING,
                 distance_strategy="l2",
-                vectorstore_name="tidb_vector_langchain",
+                table_name="tidb_vector_langchain",
             )
 
             query = "What did the president say about Ketanji Brown Jackson"
@@ -68,19 +79,19 @@ class TiDBVector(VectorStore):
         self._distance_strategy = distance_strategy
 
         try:
-            from tidb_vector.integrations import VectorStore as TiDBVectorStore
+            from tidb_vector.integrations import TiDBVectorClient
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
                 "Please install it with `pip install tidbvec`."
             )
 
-        self._tidb = tidb_vectorstore or TiDBVectorStore(
+        self._tidb = TiDBVectorClient(
             connection_string=connection_string,
-            table_name=vectorstore_name,
+            table_name=table_name,
             distance_strategy=distance_strategy,
             engine_args=engine_args,
-            drop_existing_table=drop_existing_vectorstore,
+            drop_existing_table=drop_existing_table,
             **kwargs,
         )
 
@@ -88,6 +99,11 @@ class TiDBVector(VectorStore):
     def embeddings(self) -> Embeddings:
         """Return the function used to generate embeddings."""
         return self._embedding_function
+
+    @property
+    def tidb_vector_client(self) -> Any:
+        """Return the TiDB Vector Client."""
+        return self._tidb
 
     @property
     def distance_strategy(self) -> Any:
@@ -103,12 +119,12 @@ class TiDBVector(VectorStore):
         embedding: Embeddings,
         connection_string: str,
         metadatas: Optional[List[dict]] = None,
-        vectorstore_name: str = DEFAULT_TiDB_VECTOR_STORE_NAME,
+        table_name: str = DEFAULT_TiDB_VECTOR_STORE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
-        drop_existing_vectorstore: bool = False,
+        drop_existing_table: bool = False,
         **kwargs: Any,
     ) -> VectorStore:
         """
@@ -121,16 +137,16 @@ class TiDBVector(VectorStore):
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
             metadatas: The list of metadata dictionaries corresponding to each text,
                 defaults to None.
-            vectorstore_name (str, optional): The name of the TiDB Vector Store,
-                defaults to "langchain_tidb_vector".
+            table_name (str, optional): The name of table used to store vector data,
+                defaults to "langchain_vector".
             distance_strategy: The distance strategy used for similarity search,
                 defaults to "cosine", allowed strategies: "l2", "cosine".
             ids (Optional[List[str]]): The list of IDs corresponding to each text,
                 defaults to None.
             engine_args: Additional arguments for the underlying database engine,
                 defaults to None.
-            drop_existing_vectorstore: Drop the existing TiDB Vector Store
-                before creating a new one, defaults to False.
+            drop_existing_table: Drop the existing TiDB table before initializing,
+                defaults to False.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
@@ -141,11 +157,11 @@ class TiDBVector(VectorStore):
 
         vs = cls(
             connection_string=connection_string,
-            vectorstore_name=vectorstore_name,
+            table_name=table_name,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
             engine_args=engine_args,
-            drop_existing_vectorstore=drop_existing_vectorstore,
+            drop_existing_table=drop_existing_table,
             **kwargs,
         )
 
@@ -156,11 +172,11 @@ class TiDBVector(VectorStore):
         return vs
 
     @classmethod
-    def from_existing_vectorstore(
+    def from_existing_vector_table(
         cls,
         embedding: Embeddings,
         connection_string: str,
-        vectorstore_name: str,
+        table_name: str,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
@@ -173,8 +189,8 @@ class TiDBVector(VectorStore):
             embedding (Embeddings): The function to use for generating embeddings.
             connection_string (str): The connection string for the TiDB database,
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
-            vectorstore_name (str): The name of the TiDB Vector Store,
-                defaults to "langchain_tidb_vector".
+            table_name (str, optional): The name of table used to store vector data,
+                defaults to "langchain_vector".
             distance_strategy: The distance strategy used for similarity search,
                 defaults to "cosine", allowed strategies: "l2", "cosine".
             engine_args: Additional arguments for the underlying database engine,
@@ -188,27 +204,24 @@ class TiDBVector(VectorStore):
         """
 
         try:
-            from tidb_vector.integrations import VectorStore as TiDBVectorStore
+            from tidb_vector.integrations import TiDBVectorClient
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
                 "Please install it with `pip install tidbvec`."
             )
 
-        tidb_vectorstore = TiDBVectorStore.get_vectorstore(
-            connection_string=connection_string,
-            table_name=vectorstore_name,
-            distance_strategy=distance_strategy,
-            engine_args=engine_args,
-            **kwargs,
-        )
-
-        return cls(
-            connection_string=connection_string,
-            tidb_vectorstore=tidb_vectorstore,
-            embedding_function=embedding,
-            distance_strategy=distance_strategy,
-        )
+        if TiDBVectorClient.check_table_existence(connection_string, table_name):
+            return cls(
+                connection_string=connection_string,
+                table_name=table_name,
+                embedding_function=embedding,
+                distance_strategy=distance_strategy,
+                engine_args=engine_args,
+                **kwargs,
+            )
+        else:
+            raise ValueError(f"Table {table_name} does not exist in the TiDB database.")
 
     def drop_vectorstore(self) -> None:
         """
