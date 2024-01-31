@@ -23,6 +23,7 @@ from langchain_core.runnables.base import (
     RunnableParallel,
     RunnableSequence,
     RunnableSerializable,
+    chain,
 )
 from langchain_core.runnables.branch import RunnableBranch
 from langchain_core.runnables.config import (
@@ -50,6 +51,7 @@ from langchain_core.runnables.utils import (
 )
 
 __all__ = [
+    "chain",
     "AddableDict",
     "ConfigurableField",
     "ConfigurableFieldSingleOption",

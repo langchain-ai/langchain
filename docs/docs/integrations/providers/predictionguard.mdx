@@ -11,7 +11,7 @@ It is broken into two parts: installation and setup, and then references to spec
 
 There exists a Prediction Guard LLM wrapper, which you can access with 
 ```python
-from langchain.llms import PredictionGuard
+from langchain_community.llms import PredictionGuard
 ```
 
 You can provide the name of the Prediction Guard model as an argument when initializing the LLM:
@@ -36,7 +36,7 @@ Basic usage of the controlled or guarded LLM wrapper:
 import os
 
 import predictionguard as pg
-from langchain.llms import PredictionGuard
+from langchain_community.llms import PredictionGuard
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
@@ -79,7 +79,7 @@ import os
 
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from langchain.llms import PredictionGuard
+from langchain_community.llms import PredictionGuard
 
 # Optional, add your OpenAI API Key. This is optional, as Prediction Guard allows
 # you to access all the latest open access models (see https://docs.predictionguard.com)

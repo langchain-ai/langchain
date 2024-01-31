@@ -2,12 +2,12 @@ import os
 from typing import Iterable
 
 import pytest
+from langchain_community.chat_message_histories.astradb import (
+    AstraDBChatMessageHistory,
+)
 from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories.astradb import (
-    AstraDBChatMessageHistory,
-)
 
 
 def _has_env_vars() -> bool:

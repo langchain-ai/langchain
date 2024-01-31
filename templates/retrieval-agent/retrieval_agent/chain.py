@@ -5,14 +5,14 @@ from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.chat_models import AzureChatOpenAI
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import BaseRetriever, Document
-from langchain.tools.render import format_tool_to_openai_function
 from langchain.tools.retriever import create_retriever_tool
-from langchain.utilities.arxiv import ArxivAPIWrapper
+from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
+from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_openai import AzureChatOpenAI
 
 
 class ArxivRetriever(BaseRetriever, ArxivAPIWrapper):
@@ -67,10 +67,9 @@ arxiv_tool = create_retriever_tool(ArxivRetriever(), "arxiv", description)
 tools = [arxiv_tool]
 llm = AzureChatOpenAI(
     temperature=0,
-    deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
-    openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
-    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-    openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
 )
 assistant_system_message = """You are a helpful research assistant. \
 Lookup relevant information as needed."""

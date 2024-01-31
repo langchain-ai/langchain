@@ -27,8 +27,8 @@ def import_all_modules(package_name: str) -> dict:
             if module_name not in (
                 "langchain.chains.llm_bash",
                 "langchain.chains.llm_symbolic_math",
-                "langchain.tools.python",
-                "langchain.vectorstores._pgvector_data_models",
+                "langchain_community.tools.python",
+                "langchain_community.vectorstores._pgvector_data_models",
             ):
                 importlib.import_module(module_name)
                 new_classes = import_all_modules(module_name)

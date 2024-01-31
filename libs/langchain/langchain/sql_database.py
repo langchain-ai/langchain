@@ -1,4 +1,4 @@
 """Keep here for backwards compatibility."""
-from langchain.utilities.sql_database import SQLDatabase
+from langchain_community.utilities.sql_database import SQLDatabase
 
 __all__ = ["SQLDatabase"]

@@ -22,11 +22,13 @@ from langchain_core.callbacks.manager import (
 from langchain_core.tracers.context import (
     collect_runs,
     register_configure_hook,
+    tracing_enabled,
     tracing_v2_enabled,
 )
 from langchain_core.utils.env import env_var_is_set
 
 __all__ = [
+    "tracing_enabled",
     "tracing_v2_enabled",
     "collect_runs",
     "trace_as_chain_group",

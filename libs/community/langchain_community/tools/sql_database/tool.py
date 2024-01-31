@@ -1,8 +1,8 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import (
@@ -24,12 +24,16 @@ class BaseSQLDatabaseTool(BaseModel):
         pass
 
 
+class _QuerySQLDataBaseToolInput(BaseModel):
+    query: str = Field(..., description="A detailed and correct SQL query.")
+
+
 class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for querying a SQL database."""
 
     name: str = "sql_db_query"
     description: str = """
-    Input to this tool is a detailed and correct SQL query, output is a result from the database.
+    Execute a SQL query against the database and get back the result..
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
@@ -43,15 +47,22 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         return self.db.run_no_throw(query)
 
 
+class _InfoSQLDatabaseToolInput(BaseModel):
+    table_names: str = Field(
+        ...,
+        description=(
+            "A comma-separated list of the table names for which to return the schema. "
+            "Example input: 'table1, table2, table3'"
+        ),
+    )
+
+
 class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting metadata about a SQL database."""
 
     name: str = "sql_db_schema"
-    description: str = """
-    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.    
-
-    Example Input: "table1, table2, table3"
-    """
+    description: str = "Get the schema and sample rows for the specified SQL tables."
+    args_schema: Type[BaseModel] = _InfoSQLDatabaseToolInput
 
     def _run(
         self,

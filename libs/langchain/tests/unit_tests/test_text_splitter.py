@@ -13,6 +13,7 @@ from langchain.text_splitter import (
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
+    TextSplitter,
     Tokenizer,
     split_text_on_tokens,
 )
@@ -169,19 +170,47 @@ def test_create_documents_with_metadata() -> None:
     assert docs == expected_docs
 
 
-def test_create_documents_with_start_index() -> None:
+@pytest.mark.parametrize(
+    "splitter, text, expected_docs",
+    [
+        (
+            CharacterTextSplitter(
+                separator=" ", chunk_size=7, chunk_overlap=3, add_start_index=True
+            ),
+            "foo bar baz 123",
+            [
+                Document(page_content="foo bar", metadata={"start_index": 0}),
+                Document(page_content="bar baz", metadata={"start_index": 4}),
+                Document(page_content="baz 123", metadata={"start_index": 8}),
+            ],
+        ),
+        (
+            RecursiveCharacterTextSplitter(
+                chunk_size=6,
+                chunk_overlap=0,
+                separators=["\n\n", "\n", " ", ""],
+                add_start_index=True,
+            ),
+            "w1 w1 w1 w1 w1 w1 w1 w1 w1",
+            [
+                Document(page_content="w1 w1", metadata={"start_index": 0}),
+                Document(page_content="w1 w1", metadata={"start_index": 6}),
+                Document(page_content="w1 w1", metadata={"start_index": 12}),
+                Document(page_content="w1 w1", metadata={"start_index": 18}),
+                Document(page_content="w1", metadata={"start_index": 24}),
+            ],
+        ),
+    ],
+)
+def test_create_documents_with_start_index(
+    splitter: TextSplitter, text: str, expected_docs: List[Document]
+) -> None:
     """Test create documents method."""
-    texts = ["foo bar baz 123"]
-    splitter = CharacterTextSplitter(
-        separator=" ", chunk_size=7, chunk_overlap=3, add_start_index=True
-    )
-    docs = splitter.create_documents(texts)
-    expected_docs = [
-        Document(page_content="foo bar", metadata={"start_index": 0}),
-        Document(page_content="bar baz", metadata={"start_index": 4}),
-        Document(page_content="baz 123", metadata={"start_index": 8}),
-    ]
+    docs = splitter.create_documents([text])
     assert docs == expected_docs
+    for doc in docs:
+        s_i = doc.metadata["start_index"]
+        assert text[s_i : s_i + len(doc.page_content)] == doc.page_content
 
 
 def test_metadata_not_shallow() -> None:
@@ -1032,6 +1061,87 @@ def test_md_header_text_splitter_3() -> None:
         ),
     ]
 
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_preserve_headers_1() -> None:
+    """Test markdown splitter by header: Preserve Headers."""
+
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bat\n\n"
+        "Hi this is Jim\n\n"
+        "Hi Joe\n\n"
+        "## Baz\n\n"
+        "# Bar\n\n"
+        "This is Alice\n\n"
+        "This is Bob"
+    )
+    headers_to_split_on = [
+        ("#", "Header 1"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        Document(
+            page_content="# Foo  \n## Bat  \nHi this is Jim  \nHi Joe  \n## Baz",
+            metadata={"Header 1": "Foo"},
+        ),
+        Document(
+            page_content="# Bar  \nThis is Alice  \nThis is Bob",
+            metadata={"Header 1": "Bar"},
+        ),
+    ]
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_preserve_headers_2() -> None:
+    """Test markdown splitter by header: Preserve Headers."""
+
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        "### Boo \n\n"
+        "Hi this is Lance\n\n"
+        "## Baz\n\n"
+        "Hi this is Molly\n"
+        "    ## Buz\n"
+        "# Bop"
+    )
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        Document(
+            page_content="# Foo  \n## Bar  \nHi this is Jim  \nHi this is Joe",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+        Document(
+            page_content="### Boo  \nHi this is Lance",
+            metadata={"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
+        ),
+        Document(
+            page_content="## Baz  \nHi this is Molly",
+            metadata={"Header 1": "Foo", "Header 2": "Baz"},
+        ),
+        Document(
+            page_content="## Buz",
+            metadata={"Header 1": "Foo", "Header 2": "Buz"},
+        ),
+        Document(page_content="# Bop", metadata={"Header 1": "Bop"}),
+    ]
     assert output == expected_output
 
 
