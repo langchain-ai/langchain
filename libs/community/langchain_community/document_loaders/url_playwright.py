@@ -115,13 +115,18 @@ class PlaywrightURLLoader(BaseLoader):
 
     Examples
     --------
+    # crwal with proxy 
     from langchain_community.document_loaders import PlaywrightURLLoader
-
-    loader = UnstructuredHTMLLoader(
-        "example.html", mode="elements", strategy="fast",
-    )
-    docs = loader.load()
-    
+    urls = [
+        "https://api.ipify.org/?format=json",
+    ]
+    proxy={
+        "server": "https://xx.xx.xx:15818", # https://<host>:<port>
+        "username": "username",
+        "password": "password"
+    }
+    loader = PlaywrightURLLoader(urls=urls, proxy=proxy)
+    data = loader.load()
     """
 
     def __init__(
@@ -220,3 +225,5 @@ class PlaywrightURLLoader(BaseLoader):
                         raise e
             await browser.close()
         return docs
+
+
