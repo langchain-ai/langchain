@@ -113,6 +113,8 @@ class NeptuneRdfGraph:
         self.query_endpoint = query_endpoint
         self.hide_comments = hide_comments
 
+        self.session = boto3.Session() if self.use_iam_auth else None
+
         # Set schema
         self.schema = ""
         self.schema_elements = {}
@@ -137,13 +139,12 @@ class NeptuneRdfGraph:
         self,
         query: str,
     ):
-        session = boto3.Session()
         request_data = {"query": query}
         data = request_data
         request_hdr = None
 
         if self.use_iam_auth:
-            credentials = session.get_credentials()
+            credentials = self.session.get_credentials()
             credentials = credentials.get_frozen_credentials()
             access_key = credentials.access_key
             secret_key = credentials.secret_key
