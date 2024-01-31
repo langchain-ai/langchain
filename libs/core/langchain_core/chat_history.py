@@ -14,14 +14,15 @@ from langchain_core.messages import (
 class BaseChatMessageHistory(ABC):
     """Abstract base class for storing chat message history.
 
-    Implementations should over-ride the add_messages method to handle bulk addition of messages.
+    Implementations should over-ride the add_messages method to handle bulk addition
+    of messages.
 
-    The default implementation of add_message will correctly call add_messages, so it is not
-    necessary to implement both methods.
+    The default implementation of add_message will correctly call add_messages, so
+    it is not necessary to implement both methods.
 
-    When used for updating history, users should favor usage of `add_messages` over `add_message` or other
-    variants like `add_user_message` and `add_ai_message` to avoid unnecessary round-trips to the underlying
-    persistence layer.
+    When used for updating history, users should favor usage of `add_messages`
+    over `add_message` or other variants like `add_user_message` and `add_ai_message`
+    to avoid unnecessary round-trips to the underlying persistence layer.
 
     Example: Shows a default implementation.
 
@@ -58,8 +59,9 @@ class BaseChatMessageHistory(ABC):
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
         """Convenience method for adding a human message string to the store.
 
-        Please note that this is a convenience method. Code should favor the bulk add_messages
-        interface instead to save on round-trips to the underlying persistence layer.
+        Please note that this is a convenience method. Code should favor the
+        bulk add_messages interface instead to save on round-trips to the underlying
+        persistence layer.
 
         This method may be deprecated in a future release.
 
@@ -74,8 +76,9 @@ class BaseChatMessageHistory(ABC):
     def add_ai_message(self, message: Union[AIMessage, str]) -> None:
         """Convenience method for adding an AI message string to the store.
 
-        Please note that this is a convenience method. Code should favor the bulk add_messages
-        interface instead to save on round-trips to the underlying persistence layer.
+        Please note that this is a convenience method. Code should favor the bulk
+        add_messages interface instead to save on round-trips to the underlying
+        persistence layer.
 
         This method may be deprecated in a future release.
 
