@@ -11,7 +11,7 @@ from different APIs and services.
 """
 
 
-import logging
+import logging  # NOQA
 from typing import Any
 
 from langchain_community.embeddings.aleph_alpha import (
