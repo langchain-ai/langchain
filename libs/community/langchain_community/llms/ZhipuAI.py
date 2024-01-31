@@ -41,16 +41,14 @@ class ZhipuAI(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
-        return {
-            **{"model_kwargs": _model_kwargs}
-        }
+        return {**{"model_kwargs": _model_kwargs}}
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """
         Example:
@@ -64,6 +62,7 @@ class ZhipuAI(LLM):
         # call api
         try:
             from zhipuai import ZhipuAI as zp
+            
             client = zp(api_key=self.ZhipuAI_api_key)
             response = client.chat.completions.create(
                 model="glm-4",  # 填写需要调用的模型名称
@@ -72,7 +71,7 @@ class ZhipuAI(LLM):
                 ],
                 max_tokens=self.max_token,
                 temperature=self.temperature,
-                top_p=self.top_p
+                top_p=self.top_p,
             )
         except ImportError:
             raise ImportError(
@@ -83,7 +82,6 @@ class ZhipuAI(LLM):
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
         logger.debug(f"ZhipuAI response: {response}")
-
 
         try:
             parsed_response = response.choices[0].message.content
