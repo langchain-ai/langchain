@@ -93,8 +93,12 @@ class AstraDBVectorStore(VectorStore):
           token (Optional[str]): API token for Astra DB usage.
           api_endpoint (Optional[str]): full URL to the API endpoint,
               such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-          astra_db_client (Optional[Any]): *alternative to token+api_endpoint*,
+          astra_db_client (Optional[AstraDBClient]):
+              *alternative to token+api_endpoint*,
               you can pass an already-created 'astrapy.db.AstraDB' instance.
+          async_astra_db_client (Optional[AsyncAstraDBClient]):
+              same as `astra_db_client`, but the basis for the async API
+              of the vector store.
           namespace (Optional[str]): namespace (aka keyspace) where the
               collection is created. Defaults to the database's "default namespace".
           metric (Optional[str]): similarity function to use out of those
@@ -127,6 +131,14 @@ class AstraDBVectorStore(VectorStore):
       (specifically, how often a write is an update of an existing id).
       Remember you can pass concurrency settings to individual calls to
       add_texts and add_documents as well.
+
+      A note on passing astra_db_client and/or async_astra_db_client instead
+      of the credentials (token, api_endpoint):
+      - if you pass only the async client when creating the store,
+        the sync methods will error when called.
+      - conversely, if you pass only the sync client, the async methods will
+        still be available, but will be wrapping its sync counterpart
+        in a `run_in_executor` construct instead of using the native async.
     """
 
     @staticmethod
@@ -716,9 +728,11 @@ class AstraDBVectorStore(VectorStore):
 
                 async def _handle_missing_document(missing_document: DocDict) -> str:
                     # self.async_collection is not None here for sure
-                    replacement_result = await self.async_collection.find_one_and_replace(  # type: ignore
-                        filter={"_id": missing_document["_id"]},
-                        replacement=missing_document,
+                    replacement_result = (
+                        await self.async_collection.find_one_and_replace(  # type: ignore
+                            filter={"_id": missing_document["_id"]},
+                            replacement=missing_document,
+                        )
                     )
                     return replacement_result["data"]["document"]["_id"]
 

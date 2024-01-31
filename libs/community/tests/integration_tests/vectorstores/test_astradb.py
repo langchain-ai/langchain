@@ -31,6 +31,8 @@ SKIP_COLLECTION_DELETE = int(os.environ.get("TEST_SKIP_COLLECTION_DELETE", "1"))
 COLLECTION_NAME_DIM2 = "lc_test_d2"
 COLLECTION_NAME_DIM2_EUCLIDEAN = "lc_test_d2_eucl"
 
+MATCH_EPSILON = 0.0001
+
 # Ad-hoc embedding classes:
 
 
@@ -212,7 +214,10 @@ class TestAstraDBVectorStore:
             collection_name="lc_test_2_async",
             async_astra_db_client=astra_db_client,
         )
-        await v_store_2.adelete_collection()
+        if not SKIP_COLLECTION_DELETE:
+            await v_store_2.adelete_collection()
+        else:
+            await v_store_2.aclear()
 
     @pytest.mark.skipif(
         SKIP_COLLECTION_DELETE,
@@ -250,6 +255,10 @@ class TestAstraDBVectorStore:
         finally:
             v_store.delete_collection()
 
+    @pytest.mark.skipif(
+        SKIP_COLLECTION_DELETE,
+        reason="Collection-deletion tests are suppressed",
+    )
     async def test_astradb_vectorstore_pre_delete_collection_async(
         self, astradb_credentials: AstraDBCredentials
     ) -> None:
@@ -348,7 +357,10 @@ class TestAstraDBVectorStore:
         try:
             assert (await v_store.asimilarity_search("Ho", k=1))[0].page_content == "Ho"
         finally:
-            await v_store.adelete_collection()
+            if not SKIP_COLLECTION_DELETE:
+                await v_store.adelete_collection()
+            else:
+                await v_store.aclear()
 
         # from_documents
         v_store_2 = await AstraDBVectorStore.afrom_documents(
@@ -365,7 +377,10 @@ class TestAstraDBVectorStore:
                 0
             ].page_content == "Hoi"
         finally:
-            await v_store_2.adelete_collection()
+            if not SKIP_COLLECTION_DELETE:
+                await v_store_2.adelete_collection()
+            else:
+                await v_store_2.aclear()
 
     def test_astradb_vectorstore_crud(self, store_someemb: AstraDBVectorStore) -> None:
         """Basic add/delete/update behaviour."""
@@ -619,7 +634,7 @@ class TestAstraDBVectorStore:
         )
         scores = [sco for _, sco in res1]
         sco_near, sco_far = scores
-        assert abs(1 - sco_near) < 0.001 and abs(sco_far) < 0.001
+        assert abs(1 - sco_near) < MATCH_EPSILON and abs(sco_far) < MATCH_EPSILON
 
     async def test_astradb_vectorstore_similarity_scale_async(
         self, store_parseremb: AstraDBVectorStore
@@ -638,7 +653,7 @@ class TestAstraDBVectorStore:
         )
         scores = [sco for _, sco in res1]
         sco_near, sco_far = scores
-        assert abs(1 - sco_near) < 0.001 and abs(sco_far) < 0.001
+        assert abs(1 - sco_near) < MATCH_EPSILON and abs(sco_far) < MATCH_EPSILON
 
     def test_astradb_vectorstore_massive_delete(
         self, store_someemb: AstraDBVectorStore
