@@ -267,15 +267,17 @@ class AstraDBVectorStore(VectorStore):
 
     def _ensure_astra_db_client(self) -> None:
         """
-        If no error is raised, then self.collection
-        is also set (as per constructor flow).
+        If no error is raised, that means self.collection
+        is also not None (as per constructor flow).
         """
         if not self.astra_db:
             raise ValueError("Missing AstraDB client")
 
     async def _setup_db(self, pre_delete_collection: bool) -> None:
         if pre_delete_collection:
-            await self.async_astra_db.delete_collection(
+            # _setup_db is called from the constructor only, from a place
+            # where async_astra_db is not None for sure
+            await self.async_astra_db.delete_collection(  # type: ignore
                 collection_name=self.collection_name,
             )
         await self._aprovision_collection()
@@ -298,7 +300,9 @@ class AstraDBVectorStore(VectorStore):
         Internal-usage method, no object members are set,
         other than working on the underlying actual storage.
         """
-        self.astra_db.create_collection(
+        self._ensure_astra_db_client()
+        # self.astra_db is not None (by _ensure_astra_db_client)
+        self.astra_db.create_collection(  # type: ignore
             dimension=self._get_embedding_dimension(),
             collection_name=self.collection_name,
             metric=self.metric,
@@ -311,11 +315,14 @@ class AstraDBVectorStore(VectorStore):
         Internal-usage method, no object members are set,
         other than working on the underlying actual storage.
         """
-        await self.async_astra_db.create_collection(
-            dimension=self._get_embedding_dimension(),
-            collection_name=self.collection_name,
-            metric=self.metric,
-        )
+        if not self.async_astra_db:
+            await run_in_executor(None, self._provision_collection)
+        else:
+            await self.async_astra_db.create_collection(
+                dimension=self._get_embedding_dimension(),
+                collection_name=self.collection_name,
+                metric=self.metric,
+            )
 
     @property
     def embeddings(self) -> Embeddings:
@@ -336,14 +343,18 @@ class AstraDBVectorStore(VectorStore):
 
     def clear(self) -> None:
         """Empty the collection of all its stored entries."""
-        self.collection.delete_many(filter={})
+        self._ensure_astra_db_client()
+        # self.collection is not None (by _ensure_astra_db_client)
+        self.collection.delete_many(filter={})  # type: ignore
 
     async def aclear(self) -> None:
         """Empty the collection of all its stored entries."""
         await self._ensure_db_setup()
         if not self.async_astra_db:
-            await run_in_executor(None, self.clear)
-        await self.async_collection.delete_many({})
+            return await run_in_executor(None, self.clear)
+        else:
+            # async_collection not None if so is async_astra_db (constr. flow)
+            await self.async_collection.delete_many({})  # type: ignore
 
     def delete_by_document_id(self, document_id: str) -> bool:
         """
@@ -351,7 +362,8 @@ class AstraDBVectorStore(VectorStore):
         Return True if a document has indeed been deleted, False if ID not found.
         """
         self._ensure_astra_db_client()
-        deletion_response = self.collection.delete_one(document_id)
+        # self.collection is not None (by _ensure_astra_db_client)
+        deletion_response = self.collection.delete_one(document_id)  # type: ignore
         return ((deletion_response or {}).get("status") or {}).get(
             "deletedCount", 0
         ) == 1
@@ -449,7 +461,8 @@ class AstraDBVectorStore(VectorStore):
         Use with caution.
         """
         self._ensure_astra_db_client()
-        self.astra_db.delete_collection(
+        # self.astra_db is not None (by _ensure_astra_db_client)
+        self.astra_db.delete_collection(  # type: ignore
             collection_name=self.collection_name,
         )
 
@@ -462,10 +475,11 @@ class AstraDBVectorStore(VectorStore):
         """
         await self._ensure_db_setup()
         if not self.async_astra_db:
-            await run_in_executor(None, self.delete_collection)
-        await self.async_astra_db.delete_collection(
-            collection_name=self.collection_name,
-        )
+            return await run_in_executor(None, self.delete_collection)
+        else:
+            await self.async_astra_db.delete_collection(
+                collection_name=self.collection_name,
+            )
 
     @staticmethod
     def _get_documents_to_insert(
@@ -586,7 +600,8 @@ class AstraDBVectorStore(VectorStore):
         )
 
         def _handle_batch(document_batch: List[DocDict]) -> List[str]:
-            im_result = self.collection.insert_many(
+            # self.collection is not None (by _ensure_astra_db_client)
+            im_result = self.collection.insert_many(  # type: ignore
                 documents=document_batch,
                 options={"ordered": False},
                 partial_failures_allowed=True,
@@ -596,7 +611,8 @@ class AstraDBVectorStore(VectorStore):
             )
 
             def _handle_missing_document(missing_document: DocDict) -> str:
-                replacement_result = self.collection.find_one_and_replace(
+                # self.collection is not None (by _ensure_astra_db_client)
+                replacement_result = self.collection.find_one_and_replace(  # type: ignore
                     filter={"_id": missing_document["_id"]},
                     replacement=missing_document,
                 )
@@ -666,7 +682,7 @@ class AstraDBVectorStore(VectorStore):
         """
         await self._ensure_db_setup()
         if not self.async_collection:
-            await super().aadd_texts(
+            return await super().aadd_texts(
                 texts,
                 metadatas,
                 ids=ids,
@@ -674,57 +690,60 @@ class AstraDBVectorStore(VectorStore):
                 batch_concurrency=batch_concurrency,
                 overwrite_concurrency=overwrite_concurrency,
             )
-        if kwargs:
-            warnings.warn(
-                "Method 'aadd_texts' of AstraDB vector store invoked with "
-                f"unsupported arguments ({', '.join(sorted(kwargs.keys()))}), "
-                "which will be ignored."
-            )
-
-        embedding_vectors = await self.embedding.aembed_documents(list(texts))
-        documents_to_insert = self._get_documents_to_insert(
-            texts, embedding_vectors, metadatas, ids
-        )
-
-        async def _handle_batch(document_batch: List[DocDict]) -> List[str]:
-            im_result = await self.async_collection.insert_many(
-                documents=document_batch,
-                options={"ordered": False},
-                partial_failures_allowed=True,
-            )
-            batch_inserted, missing_from_batch = self._get_missing_from_batch(
-                document_batch, im_result
-            )
-
-            async def _handle_missing_document(missing_document: DocDict) -> str:
-                replacement_result = await self.async_collection.find_one_and_replace(
-                    filter={"_id": missing_document["_id"]},
-                    replacement=missing_document,
+        else:
+            if kwargs:
+                warnings.warn(
+                    "Method 'aadd_texts' of AstraDB vector store invoked with "
+                    f"unsupported arguments ({', '.join(sorted(kwargs.keys()))}), "
+                    "which will be ignored."
                 )
-                return replacement_result["data"]["document"]["_id"]
 
-            _u_max_workers = (
-                overwrite_concurrency or self.bulk_insert_overwrite_concurrency
+            embedding_vectors = await self.embedding.aembed_documents(list(texts))
+            documents_to_insert = self._get_documents_to_insert(
+                texts, embedding_vectors, metadatas, ids
             )
-            batch_replaced = await gather_with_concurrency(
-                _u_max_workers,
-                *[_handle_missing_document(doc) for doc in missing_from_batch],
-            )
-            return batch_inserted + batch_replaced
 
-        _b_max_workers = batch_concurrency or self.bulk_insert_batch_concurrency
-        all_ids_nested = await gather_with_concurrency(
-            _b_max_workers,
-            *[
-                _handle_batch(batch)
-                for batch in batch_iterate(
-                    batch_size or self.batch_size,
-                    documents_to_insert,
+            async def _handle_batch(document_batch: List[DocDict]) -> List[str]:
+                # self.async_collection is not None here for sure
+                im_result = await self.async_collection.insert_many(  # type: ignore
+                    documents=document_batch,
+                    options={"ordered": False},
+                    partial_failures_allowed=True,
                 )
-            ],
-        )
+                batch_inserted, missing_from_batch = self._get_missing_from_batch(
+                    document_batch, im_result
+                )
 
-        return [iid for id_list in all_ids_nested for iid in id_list]
+                async def _handle_missing_document(missing_document: DocDict) -> str:
+                    # self.async_collection is not None here for sure
+                    replacement_result = await self.async_collection.find_one_and_replace(  # type: ignore
+                        filter={"_id": missing_document["_id"]},
+                        replacement=missing_document,
+                    )
+                    return replacement_result["data"]["document"]["_id"]
+
+                _u_max_workers = (
+                    overwrite_concurrency or self.bulk_insert_overwrite_concurrency
+                )
+                batch_replaced = await gather_with_concurrency(
+                    _u_max_workers,
+                    *[_handle_missing_document(doc) for doc in missing_from_batch],
+                )
+                return batch_inserted + batch_replaced
+
+            _b_max_workers = batch_concurrency or self.bulk_insert_batch_concurrency
+            all_ids_nested = await gather_with_concurrency(
+                _b_max_workers,
+                *[
+                    _handle_batch(batch)
+                    for batch in batch_iterate(
+                        batch_size or self.batch_size,
+                        documents_to_insert,
+                    )
+                ],
+            )
+
+            return [iid for id_list in all_ids_nested for iid in id_list]
 
     def similarity_search_with_score_id_by_vector(
         self,
