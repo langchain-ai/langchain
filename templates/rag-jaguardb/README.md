@@ -70,7 +70,7 @@ We can access the template from code with:
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-mongo")
+runnable = RemoteRunnable("http://localhost:8000/rag-jaguardb")
 ```
 
 ## JaguarDB Setup
