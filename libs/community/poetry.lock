@@ -8049,13 +8049,13 @@ files = [
 
 [[package]]
 name = "tidbvec"
-version = "0.0.5"
+version = "0.0.6"
 description = ""
 optional = true
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "tidbvec-0.0.5-py3-none-any.whl", hash = "sha256:c7f8f08b1056867648bc6275fd80fe489728fadc32b5c3af8dc9394c32208947"},
-    {file = "tidbvec-0.0.5.tar.gz", hash = "sha256:26e67d3baf115e22ff7be2c98716237570acfb100190d6bb3d1b1569eeaca26e"},
+    {file = "tidbvec-0.0.6-py3-none-any.whl", hash = "sha256:78a9fc242ee9ea0eedf88c8fcbb6b8bb48bd852b97f8d1b499343f2e558a05fe"},
+    {file = "tidbvec-0.0.6.tar.gz", hash = "sha256:c0cd4b6ca75d560d93db1ffca94155af2b9deb31b57acb1f634ab25a9d38fb07"},
 ]
 
 [package.dependencies]
@@ -9247,4 +9247,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b2c288a23719cdfa0adac6d69d37a905e8bb87cc6820a9428c660b71828f3160"
+content-hash = "fc5c2b760a22feef64f26d5b3775e7fb2c313722362ed55ae860d345c1c99240"
