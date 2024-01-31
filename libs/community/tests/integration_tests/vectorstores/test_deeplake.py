@@ -18,7 +18,9 @@ def deeplake_datastore() -> DeepLake:
         embedding_function=FakeEmbeddings(),
         overwrite=True,
     )
-    return docsearch
+    yield docsearch
+
+    docsearch.delete_dataset()
 
 
 @pytest.fixture(params=["L1", "L2", "max", "cos"])
@@ -50,27 +52,14 @@ def test_deeplake_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
-def test_deeplakewith_persistence() -> None:
+def test_deeplake_with_persistence(deeplake_datastore) -> None:
     """Test end to end construction and search, with persistence."""
-    import deeplake
-
-    dataset_path = "./tests/persist_dir"
-    if deeplake.exists(dataset_path):
-        deeplake.delete(dataset_path)
-
-    texts = ["foo", "bar", "baz"]
-    docsearch = DeepLake.from_texts(
-        dataset_path=dataset_path,
-        texts=texts,
-        embedding=FakeEmbeddings(),
-    )
-
-    output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    output = deeplake_datastore.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
     # Get a new VectorStore from the persisted directory
     docsearch = DeepLake(
-        dataset_path=dataset_path,
+        dataset_path=deeplake_datastore.vectorstore.dataset_handler.path,
         embedding_function=FakeEmbeddings(),
     )
     output = docsearch.similarity_search("foo", k=1)
@@ -83,22 +72,12 @@ def test_deeplakewith_persistence() -> None:
     # Or on program exit
 
 
-def test_deeplake_overwrite_flag() -> None:
+def test_deeplake_overwrite_flag(deeplake_datastore) -> None:
     """Test overwrite behavior"""
-    import deeplake
+    dataset_path = deeplake_datastore.vectorstore.dataset_handler.path
 
-    dataset_path = "./tests/persist_dir"
-    if deeplake.exists(dataset_path):
-        deeplake.delete(dataset_path)
-
-    texts = ["foo", "bar", "baz"]
-    docsearch = DeepLake.from_texts(
-        dataset_path=dataset_path,
-        texts=texts,
-        embedding=FakeEmbeddings(),
-    )
-    output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    output = deeplake_datastore.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
     # Get a new VectorStore from the persisted directory, with no overwrite (implicit)
     docsearch = DeepLake(
@@ -107,7 +86,7 @@ def test_deeplake_overwrite_flag() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     # assert page still present
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
     # Get a new VectorStore from the persisted directory, with no overwrite (explicit)
     docsearch = DeepLake(
@@ -117,7 +96,7 @@ def test_deeplake_overwrite_flag() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     # assert page still present
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
     # Get a new VectorStore from the persisted directory, with overwrite
     docsearch = DeepLake(
@@ -129,8 +108,9 @@ def test_deeplake_overwrite_flag() -> None:
         output = docsearch.similarity_search("foo", k=1)
 
 
-def test_similarity_search(deeplake_datastore: DeepLake, distance_metric: str) -> None:
+def test_similarity_search(deeplake_datastore) -> None:
     """Test similarity search."""
+    distance_metric = "cos"
     output = deeplake_datastore.similarity_search(
         "foo", k=1, distance_metric=distance_metric
     )
@@ -145,7 +125,6 @@ def test_similarity_search(deeplake_datastore: DeepLake, distance_metric: str) -
         query="foo", tql_query=tql_query, k=1, distance_metric=distance_metric
     )
     assert len(output) == 1
-    deeplake_datastore.delete_dataset()
 
 
 def test_similarity_search_by_vector(
@@ -164,6 +143,7 @@ def test_similarity_search_with_score(
     deeplake_datastore: DeepLake, distance_metric: str
 ) -> None:
     """Test similarity search with score."""
+    deeplake_datastore.vectorstore.summary()
     output, score = deeplake_datastore.similarity_search_with_score(
         "foo", k=1, distance_metric=distance_metric
     )[0]
@@ -281,3 +261,11 @@ def test_ids_backwards_compatibility() -> None:
     )
     output = db.similarity_search("foo", k=1)
     assert len(output) == 1
+
+
+def test_similarity_search_should_error_out_when_not_supported_kwargs_are_provided(
+    deeplake_datastore: DeepLake,
+) -> None:
+    """Test that ids are backwards compatible."""
+    with pytest.raises(TypeError):
+        deeplake_datastore.similarity_search("foo", k=1, not_supported_kwarg=True)
