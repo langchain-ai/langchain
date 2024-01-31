@@ -1,14 +1,16 @@
 """Unit tests to verify function of the Riva ASR implementation."""
-from typing import Generator
+from typing import Generator, TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
-import riva.client.proto.riva_asr_pb2 as rasr
 from langchain_community.utilities.nvidia_riva import (
     AudioStream,
     RivaASR,
     RivaAudioEncoding,
 )
+
+if TYPE_CHECKING:
+    import riva.client.proto.riva_asr_pb2 as rasr
 
 AUDIO_DATA_MOCK = [
     b"This",
@@ -40,8 +42,11 @@ def response_generator(
     empty: bool = False,
     final: bool = False,
     alternatives: bool = True,
-) -> rasr.StreamingRecognizeResponse:
+) -> "rasr.StreamingRecognizeResponse":
     """Create a pseudo streaming response."""
+    # pylint: disable-next=import-outside-toplevel
+    import riva.client.proto.riva_asr_pb2 as rasr
+
     if empty:
         return rasr.StreamingRecognizeResponse()
 
@@ -68,8 +73,8 @@ def response_generator(
 
 
 def streaming_recognize_mock(
-    generator: Generator[rasr.StreamingRecognizeRequest, None, None], **_
-) -> Generator[rasr.StreamingRecognizeResponse, None, None]:
+    generator: Generator["rasr.StreamingRecognizeRequest", None, None], **_
+) -> Generator["rasr.StreamingRecognizeResponse", None, None]:
     """A mock function to fake a streaming call to Riva."""
     yield response_generator(empty=True)
     yield response_generator(alternatives=False)
@@ -128,6 +133,9 @@ def test_init_defaults() -> None:
 @pytest.mark.requires("riva.client")
 def test_config(asr: RivaASR) -> None:
     """Verify the Riva config is properly assembled."""
+    # pylint: disable-next=import-outside-toplevel
+    import riva.client.proto.riva_asr_pb2 as rasr
+
     expected = rasr.StreamingRecognitionConfig(
         interim_results=True,
         config=rasr.RecognitionConfig(

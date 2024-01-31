@@ -1,9 +1,12 @@
 """Unit tests to verify function of the Riva TTS implementation."""
-from unittest.mock import Mock, patch
+from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
-import riva.client.proto.riva_tts_pb2 as rtts
 from langchain_community.utilities.nvidia_riva import RivaAudioEncoding, RivaTTS
+
+if TYPE_CHECKING:
+    import riva.client.proto.riva_tts_pb2 as rtts
 
 AUDIO_TEXT_MOCK = ["This is a test.", "Hello world"]
 AUDIO_DATA_MOCK = [s.encode() for s in AUDIO_TEXT_MOCK]
@@ -26,8 +29,11 @@ AUDIO_SYNTH_CONFIG = (
 )
 
 
-def synthesize_online_mock(request: rtts.SynthesizeSpeechRequest, **_):
+def synthesize_online_mock(request: "rtts.SynthesizeSpeechRequest", **_):
     """A mock function to fake a streaming call to Riva."""
+    # pylint: disable-next=import-outside-toplevel
+    import riva.client.proto.riva_tts_pb2 as rtts
+
     yield rtts.SynthesizeSpeechResponse(
         audio=f"[{request.language_code},{request.encoding},{request.sample_rate_hz},{request.voice_name}]".encode()
     )
