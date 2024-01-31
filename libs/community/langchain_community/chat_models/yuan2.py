@@ -83,7 +83,6 @@ def _create_retry_decorator(llm: ChatYuan2) -> Callable[[Any], Any]:
 
 async def acompletion_with_retry(llm: ChatYuan2, **kwargs: Any) -> Any:
     """Use tenacity to retry the async completion call."""
-
     retry_decorator = _create_retry_decorator(llm)
 
     @retry_decorator
@@ -252,7 +251,6 @@ class ChatYuan2(BaseChatModel):
 
     class Config:
         """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)

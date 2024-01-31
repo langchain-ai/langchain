@@ -90,9 +90,7 @@ def test_chat_yuan2_streaming() -> None:
         callback_manager=callback_manager,
     )
     messages = [
-        HumanMessage(
-            content="Hello"
-        ),
+        HumanMessage(content="Hello"),
     ]
     response = chat(messages)
     assert callback_handler.llm_streams > 0
@@ -139,9 +137,7 @@ async def test_async_chat_yuan2_streaming() -> None:
         callback_manager=callback_manager,
     )
     messages = [
-        HumanMessage(
-            content="Hello"
-        ),
+        HumanMessage(content="Hello"),
     ]
     response = await chat.agenerate([messages])
     assert callback_handler.llm_streams > 0
