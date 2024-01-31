@@ -1,0 +1,11 @@
+input_variables: [text, style]
+output_parser: null
+messages:
+  - role: system
+    prompt:
+      template: 'Ты — опытный копирайтер. Перепиши маркетинговый текст с учётом вида текста и выбранной тональности.'
+  - role: user
+    prompt:
+      template: 'Текст: {text}. Стиль: {style}.'
+template_format: f-string
+_type: chat
