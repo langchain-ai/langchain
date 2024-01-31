@@ -99,7 +99,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
 
     optional: bool = False
 
-    max_messages: Optional[PositiveInt] = None
+    k: Optional[PositiveInt] = None
     """Optional maximum on the number of messages to include."""
 
     @classmethod
@@ -135,8 +135,8 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                     f"variable {self.variable_name} should be a list of base messages,"
                     f" got {value}"
                 )
-        if self.max_messages:
-            value = value[-self.max_messages :]
+        if self.k:
+            value = value[-self.k * 2 :]
         return value
 
     @property
