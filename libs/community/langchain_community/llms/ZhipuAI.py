@@ -3,9 +3,15 @@ from typing import Any, List, Mapping, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
 
-from langchain.llms.utils import enforce_stop_tokens
+try:
+    from langchain.llms.base import LLM
+    from langchain.llms.utils import enforce_stop_tokens
+except ImportError:
+            raise ImportError(
+                "Could not import langchain python package. "
+                "Please it install it with `pip install langchain`."
+            )
 
 logger = logging.getLogger(__name__)
 
