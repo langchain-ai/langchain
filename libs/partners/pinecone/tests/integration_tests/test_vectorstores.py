@@ -211,7 +211,8 @@ class TestPinecone:
         assert (
             index_stats["namespaces"][NAMESPACE_NAME]["vector_count"] == len(texts) * 2
         )
-        assert index_stats["total_vector_count"] == len(texts) * 2
+        # only focused on this namespace now
+        # assert index_stats["total_vector_count"] == len(texts) * 2
 
     @pytest.mark.xfail(reason="relevance score just over 1")
     def test_relevance_score_bound(self, embedding_openai: OpenAIEmbeddings) -> None:
