@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import google.api_core
 import google.generativeai as genai  # type: ignore[import]
+from google.generativeai.generative_models import safety_types
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -76,8 +77,12 @@ def _completion_with_retry(
         )
         try:
             if is_gemini:
+                print(f"kwargs : {kwargs}")
                 return llm.client.generate_content(
-                    contents=prompt, stream=stream, generation_config=generation_config
+                    contents=prompt,
+                    stream=stream,
+                    generation_config=generation_config,
+                    safety_settings=kwargs.pop("safety_settings", None),
                 )
             return llm.client.generate_text(prompt=prompt, **kwargs)
         except google.api_core.exceptions.FailedPrecondition as exc:
@@ -143,6 +148,24 @@ Supported examples:
         description="A string, one of: [`rest`, `grpc`, `grpc_asyncio`].",
     )
 
+    safety_settings: Optional[
+        Dict[safety_types.HarmCategory, safety_types.HarmBlockThreshold]
+    ] = None
+    """The default safety settings to use for all generations. 
+    
+        For example: 
+
+            from langchain_google_vertexai import HarmBlockThreshold, HarmCategory
+
+            safety_settings = {
+                safety_types.HarmCategory.HARM_CATEGORY_UNSPECIFIED: safety_types.HarmBlockThreshold.BLOCK_NONE,
+                safety_types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: safety_types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                safety_types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: safety_types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                safety_types.HarmCategory.HARM_CATEGORY_HARASSMENT: safety_types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+                safety_types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: safety_types.HarmBlockThreshold.BLOCK_NONE,
+            }
+            """  # noqa: E501
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"google_api_key": "GOOGLE_API_KEY"}
@@ -172,6 +195,8 @@ class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
         )
         model_name = values["model"]
 
+        safety_settings = values["safety_settings"]
+
         if isinstance(google_api_key, SecretStr):
             google_api_key = google_api_key.get_secret_value()
 
@@ -181,8 +206,15 @@ class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
             client_options=values.get("client_options"),
         )
 
+        if safety_settings and (
+            not GoogleModelFamily(model_name) == GoogleModelFamily.GEMINI
+        ):
+            raise ValueError("Safety settings are only supported for Gemini models")
+
         if GoogleModelFamily(model_name) == GoogleModelFamily.GEMINI:
-            values["client"] = genai.GenerativeModel(model_name=model_name)
+            values["client"] = genai.GenerativeModel(
+                model_name=model_name, safety_settings=safety_settings
+            )
         else:
             values["client"] = genai
 
