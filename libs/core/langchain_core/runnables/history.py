@@ -35,21 +35,21 @@ GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
-    """A runnable that manages chat message history for another runnable.
+    """Runnable that manages chat message history for another Runnable.
 
     A chat message history is a sequence of messages that represent a conversation.
 
-    RunnableWithMessageHistory wraps another runnable and manages the chat message
+    RunnableWithMessageHistory wraps another Runnable and manages the chat message
     history for it; it is responsible for reading and updating the chat message
     history.
 
-    The formats supports for the inputs and outputs of the wrapped runnable
+    The formats supports for the inputs and outputs of the wrapped Runnable
     are described below.
 
     RunnableWithMessageHistory must always be called with a config that contains
     the appropriate parameters for the chat message history factory.
 
-    By default the runnable is expected to take a single configuration parameter
+    By default the Runnable is expected to take a single configuration parameter
     called `session_id` which is a string. This parameter is used to create a new
     or look up an existing chat message history that matches the given session_id.
 
