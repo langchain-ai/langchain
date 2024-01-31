@@ -31,8 +31,8 @@ from langchain_core.vectorstores import VectorStore
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    from astrapy.db import AstraDB as LibAstraDB
-    from astrapy.db import AsyncAstraDB as LibAsyncAstraDB
+    from astrapy.db import AstraDB as AstraDBClient
+    from astrapy.db import AsyncAstraDB as AsyncAstraDBClient
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -156,8 +156,8 @@ class AstraDBVectorStore(VectorStore):
         collection_name: str,
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[LibAstraDB] = None,
-        async_astra_db_client: Optional[LibAsyncAstraDB] = None,
+        astra_db_client: Optional[AstraDBClient] = None,
+        async_astra_db_client: Optional[AsyncAstraDBClient] = None,
         namespace: Optional[str] = None,
         metric: Optional[str] = None,
         batch_size: Optional[int] = None,
@@ -171,11 +171,9 @@ class AstraDBVectorStore(VectorStore):
         """
         try:
             from astrapy.db import (
-                AstraDB as LibAstraDB,
+                AstraDB as AstraDBClient,
             )
-            from astrapy.db import (
-                AstraDBCollection as LibAstraDBCollection,
-            )
+            from astrapy.db import AstraDBCollection
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
                 "Could not import a recent astrapy python package. "
@@ -217,36 +215,40 @@ class AstraDBVectorStore(VectorStore):
         self.async_collection = None
 
         if token and api_endpoint:
-            self.astra_db = LibAstraDB(
+            self.astra_db = AstraDBClient(
                 token=self.token,
                 api_endpoint=self.api_endpoint,
                 namespace=self.namespace,
             )
             try:
-                from astrapy.db import AsyncAstraDB as LibAsyncAstraDB
+                from astrapy.db import AsyncAstraDB as AsyncAstraDBClient
 
-                self.async_astra_db = LibAsyncAstraDB(
+                self.async_astra_db = AsyncAstraDBClient(
                     token=self.token,
                     api_endpoint=self.api_endpoint,
                     namespace=self.namespace,
                 )
             except (ImportError, ModuleNotFoundError):
+                # This will be reverted once landing in partner package
+                # with strict version management
                 pass
 
         if self.astra_db is not None:
-            self.collection = LibAstraDBCollection(
+            self.collection = AstraDBCollection(
                 collection_name=self.collection_name,
                 astra_db=self.astra_db,
             )
 
         self.async_setup_db_task: Optional[Task] = None
         if self.async_astra_db is not None:
-            # if we are here, either the caller is passing an AsyncAstraDB
-            # or the AsyncAstraDB import above has succeeded: in any case,
-            # the following will not be a problem:
-            from astrapy.db import AsyncAstraDBCollection as LibAsyncAstraDBCollection
-
-            self.async_collection = LibAsyncAstraDBCollection(
+            try:
+                from astrapy.db import AsyncAstraDBCollection
+            except (ImportError, ModuleNotFoundError):
+                raise ImportError(
+                    "Could not import a recent astrapy python package. "
+                    "Please install it with `pip install --upgrade astrapy`."
+                )
+            self.async_collection = AsyncAstraDBCollection(
                 collection_name=self.collection_name,
                 astra_db=self.async_astra_db,
             )
@@ -264,6 +266,10 @@ class AstraDBVectorStore(VectorStore):
                 self.clear()
 
     def _ensure_astra_db_client(self) -> None:
+        """
+        If no error is raised, then self.collection
+        is also set (as per constructor flow).
+        """
         if not self.astra_db:
             raise ValueError("Missing AstraDB client")
 
@@ -738,7 +744,8 @@ class AstraDBVectorStore(VectorStore):
         metadata_parameter = self._filter_to_metadata(filter)
         #
         hits = list(
-            self.collection.paginated_find(
+            # self.collection is not None (by _ensure_astra_db_client)
+            self.collection.paginated_find(  # type: ignore
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": k, "includeSimilarity": True},
@@ -1019,7 +1026,8 @@ class AstraDBVectorStore(VectorStore):
         metadata_parameter = self._filter_to_metadata(filter)
 
         prefetch_hits = list(
-            self.collection.paginated_find(
+            # self.collection is not None (by _ensure_astra_db_client)
+            self.collection.paginated_find(  # type: ignore
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": fetch_k, "includeSimilarity": True},
