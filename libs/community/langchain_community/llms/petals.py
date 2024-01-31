@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -60,7 +60,7 @@ class Petals(LLM):
     """Holds any model parameters valid for `create` call
     not explicitly specified."""
 
-    huggingface_api_key: Optional[str] = None
+    huggingface_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic config."""
@@ -89,8 +89,8 @@ class Petals(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        huggingface_api_key = get_from_dict_or_env(
-            values, "huggingface_api_key", "HUGGINGFACE_API_KEY"
+        huggingface_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "huggingface_api_key", "HUGGINGFACE_API_KEY")
         )
         try:
             from petals import AutoDistributedModelForCausalLM
@@ -101,7 +101,7 @@ class Petals(LLM):
             values["client"] = AutoDistributedModelForCausalLM.from_pretrained(
                 model_name
             )
-            values["huggingface_api_key"] = huggingface_api_key
+            values["huggingface_api_key"] = huggingface_api_key.get_secret_value()
 
         except ImportError:
             raise ImportError(

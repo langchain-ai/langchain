@@ -27,7 +27,7 @@ class TavilySearchResults(BaseTool):
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query."
     )
-    api_wrapper: TavilySearchAPIWrapper
+    api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)
     max_results: int = 5
     args_schema: Type[BaseModel] = TavilyInput
 
@@ -70,7 +70,7 @@ class TavilyAnswer(BaseTool):
         "Input should be a search query. "
         "This returns only the answer - not the original source data."
     )
-    api_wrapper: TavilySearchAPIWrapper
+    api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)
     args_schema: Type[BaseModel] = TavilyInput
 
     def _run(

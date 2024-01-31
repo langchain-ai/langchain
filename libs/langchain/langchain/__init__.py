@@ -14,16 +14,11 @@ except metadata.PackageNotFoundError:
 del metadata  # optional, avoids polluting the results of dir(__package__)
 
 
-def _is_interactive_env() -> bool:
-    """Determine if running within IPython or Jupyter."""
-    import sys
-
-    return hasattr(sys, "ps2")
-
-
 def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     """Warn on import of deprecated module."""
-    if _is_interactive_env():
+    from langchain.utils.interactive_env import is_interactive_env
+
+    if is_interactive_env():
         # No warnings for interactive environments.
         # This is done to avoid polluting the output of interactive environments
         # where users rely on auto-complete and may trigger this warning
@@ -129,106 +124,109 @@ def __getattr__(name: str) -> Any:
 
         return Wikipedia
     elif name == "Anthropic":
-        from langchain.llms import Anthropic
+        from langchain_community.llms import Anthropic
 
-        _warn_on_import(name, replacement="langchain.llms.Anthropic")
+        _warn_on_import(name, replacement="langchain_community.llms.Anthropic")
 
         return Anthropic
     elif name == "Banana":
-        from langchain.llms import Banana
+        from langchain_community.llms import Banana
 
-        _warn_on_import(name, replacement="langchain.llms.Banana")
+        _warn_on_import(name, replacement="langchain_community.llms.Banana")
 
         return Banana
     elif name == "CerebriumAI":
-        from langchain.llms import CerebriumAI
+        from langchain_community.llms import CerebriumAI
 
-        _warn_on_import(name, replacement="langchain.llms.CerebriumAI")
+        _warn_on_import(name, replacement="langchain_community.llms.CerebriumAI")
 
         return CerebriumAI
     elif name == "Cohere":
-        from langchain.llms import Cohere
+        from langchain_community.llms import Cohere
 
-        _warn_on_import(name, replacement="langchain.llms.Cohere")
+        _warn_on_import(name, replacement="langchain_community.llms.Cohere")
 
         return Cohere
     elif name == "ForefrontAI":
-        from langchain.llms import ForefrontAI
+        from langchain_community.llms import ForefrontAI
 
-        _warn_on_import(name, replacement="langchain.llms.ForefrontAI")
+        _warn_on_import(name, replacement="langchain_community.llms.ForefrontAI")
 
         return ForefrontAI
     elif name == "GooseAI":
-        from langchain.llms import GooseAI
+        from langchain_community.llms import GooseAI
 
-        _warn_on_import(name, replacement="langchain.llms.GooseAI")
+        _warn_on_import(name, replacement="langchain_community.llms.GooseAI")
 
         return GooseAI
     elif name == "HuggingFaceHub":
-        from langchain.llms import HuggingFaceHub
+        from langchain_community.llms import HuggingFaceHub
 
-        _warn_on_import(name, replacement="langchain.llms.HuggingFaceHub")
+        _warn_on_import(name, replacement="langchain_community.llms.HuggingFaceHub")
 
         return HuggingFaceHub
     elif name == "HuggingFaceTextGenInference":
-        from langchain.llms import HuggingFaceTextGenInference
+        from langchain_community.llms import HuggingFaceTextGenInference
 
-        _warn_on_import(name, replacement="langchain.llms.HuggingFaceTextGenInference")
+        _warn_on_import(
+            name, replacement="langchain_community.llms.HuggingFaceTextGenInference"
+        )
 
         return HuggingFaceTextGenInference
     elif name == "LlamaCpp":
-        from langchain.llms import LlamaCpp
+        from langchain_community.llms import LlamaCpp
 
-        _warn_on_import(name, replacement="langchain.llms.LlamaCpp")
+        _warn_on_import(name, replacement="langchain_community.llms.LlamaCpp")
 
         return LlamaCpp
     elif name == "Modal":
-        from langchain.llms import Modal
+        from langchain_community.llms import Modal
 
-        _warn_on_import(name, replacement="langchain.llms.Modal")
+        _warn_on_import(name, replacement="langchain_community.llms.Modal")
 
         return Modal
     elif name == "OpenAI":
-        from langchain.llms import OpenAI
+        from langchain_community.llms import OpenAI
 
-        _warn_on_import(name, replacement="langchain.llms.OpenAI")
+        _warn_on_import(name, replacement="langchain_community.llms.OpenAI")
 
         return OpenAI
     elif name == "Petals":
-        from langchain.llms import Petals
+        from langchain_community.llms import Petals
 
-        _warn_on_import(name, replacement="langchain.llms.Petals")
+        _warn_on_import(name, replacement="langchain_community.llms.Petals")
 
         return Petals
     elif name == "PipelineAI":
-        from langchain.llms import PipelineAI
+        from langchain_community.llms import PipelineAI
 
-        _warn_on_import(name, replacement="langchain.llms.PipelineAI")
+        _warn_on_import(name, replacement="langchain_community.llms.PipelineAI")
 
         return PipelineAI
     elif name == "SagemakerEndpoint":
-        from langchain.llms import SagemakerEndpoint
+        from langchain_community.llms import SagemakerEndpoint
 
-        _warn_on_import(name, replacement="langchain.llms.SagemakerEndpoint")
+        _warn_on_import(name, replacement="langchain_community.llms.SagemakerEndpoint")
 
         return SagemakerEndpoint
     elif name == "StochasticAI":
-        from langchain.llms import StochasticAI
+        from langchain_community.llms import StochasticAI
 
-        _warn_on_import(name, replacement="langchain.llms.StochasticAI")
+        _warn_on_import(name, replacement="langchain_community.llms.StochasticAI")
 
         return StochasticAI
     elif name == "Writer":
-        from langchain.llms import Writer
+        from langchain_community.llms import Writer
 
-        _warn_on_import(name, replacement="langchain.llms.Writer")
+        _warn_on_import(name, replacement="langchain_community.llms.Writer")
 
         return Writer
     elif name == "HuggingFacePipeline":
-        from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+        from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 
         _warn_on_import(
-            name, replacement="langchain.llms.huggingface_pipeline.HuggingFacePipeline"
+            name,
+            replacement="langchain_community.llms.huggingface_pipeline.HuggingFacePipeline",
         )
 
         return HuggingFacePipeline
@@ -259,76 +257,96 @@ def __getattr__(name: str) -> Any:
 
         return BasePromptTemplate
     elif name == "ArxivAPIWrapper":
-        from langchain.utilities import ArxivAPIWrapper
+        from langchain_community.utilities import ArxivAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.ArxivAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.ArxivAPIWrapper"
+        )
 
         return ArxivAPIWrapper
     elif name == "GoldenQueryAPIWrapper":
-        from langchain.utilities import GoldenQueryAPIWrapper
+        from langchain_community.utilities import GoldenQueryAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.GoldenQueryAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.GoldenQueryAPIWrapper"
+        )
 
         return GoldenQueryAPIWrapper
     elif name == "GoogleSearchAPIWrapper":
-        from langchain.utilities import GoogleSearchAPIWrapper
+        from langchain_community.utilities import GoogleSearchAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.GoogleSearchAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.GoogleSearchAPIWrapper"
+        )
 
         return GoogleSearchAPIWrapper
     elif name == "GoogleSerperAPIWrapper":
-        from langchain.utilities import GoogleSerperAPIWrapper
+        from langchain_community.utilities import GoogleSerperAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.GoogleSerperAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.GoogleSerperAPIWrapper"
+        )
 
         return GoogleSerperAPIWrapper
     elif name == "PowerBIDataset":
-        from langchain.utilities import PowerBIDataset
+        from langchain_community.utilities import PowerBIDataset
 
-        _warn_on_import(name, replacement="langchain.utilities.PowerBIDataset")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.PowerBIDataset"
+        )
 
         return PowerBIDataset
     elif name == "SearxSearchWrapper":
-        from langchain.utilities import SearxSearchWrapper
+        from langchain_community.utilities import SearxSearchWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.SearxSearchWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.SearxSearchWrapper"
+        )
 
         return SearxSearchWrapper
     elif name == "WikipediaAPIWrapper":
-        from langchain.utilities import WikipediaAPIWrapper
+        from langchain_community.utilities import WikipediaAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.WikipediaAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.WikipediaAPIWrapper"
+        )
 
         return WikipediaAPIWrapper
     elif name == "WolframAlphaAPIWrapper":
-        from langchain.utilities import WolframAlphaAPIWrapper
+        from langchain_community.utilities import WolframAlphaAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.WolframAlphaAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.WolframAlphaAPIWrapper"
+        )
 
         return WolframAlphaAPIWrapper
     elif name == "SQLDatabase":
-        from langchain.utilities import SQLDatabase
+        from langchain_community.utilities import SQLDatabase
 
-        _warn_on_import(name, replacement="langchain.utilities.SQLDatabase")
+        _warn_on_import(name, replacement="langchain_community.utilities.SQLDatabase")
 
         return SQLDatabase
     elif name == "FAISS":
-        from langchain.vectorstores import FAISS
+        from langchain_community.vectorstores import FAISS
 
-        _warn_on_import(name, replacement="langchain.vectorstores.FAISS")
+        _warn_on_import(name, replacement="langchain_community.vectorstores.FAISS")
 
         return FAISS
     elif name == "ElasticVectorSearch":
-        from langchain.vectorstores import ElasticVectorSearch
+        from langchain_community.vectorstores import ElasticVectorSearch
 
-        _warn_on_import(name, replacement="langchain.vectorstores.ElasticVectorSearch")
+        _warn_on_import(
+            name, replacement="langchain_community.vectorstores.ElasticVectorSearch"
+        )
 
         return ElasticVectorSearch
     # For backwards compatibility
     elif name == "SerpAPIChain" or name == "SerpAPIWrapper":
-        from langchain.utilities import SerpAPIWrapper
+        from langchain_community.utilities import SerpAPIWrapper
 
-        _warn_on_import(name, replacement="langchain.utilities.SerpAPIWrapper")
+        _warn_on_import(
+            name, replacement="langchain_community.utilities.SerpAPIWrapper"
+        )
 
         return SerpAPIWrapper
     elif name == "verbose":

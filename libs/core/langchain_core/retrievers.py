@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-import asyncio
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+)
+from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -18,8 +22,13 @@ if TYPE_CHECKING:
         Callbacks,
     )
 
+RetrieverInput = str
+RetrieverOutput = List[Document]
+RetrieverLike = Runnable[RetrieverInput, RetrieverOutput]
+RetrieverOutputLike = Runnable[Any, RetrieverOutput]
 
-class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
+
+class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """Abstract base class for a Document retrieval system.
 
     A retrieval system is defined as something that can take string queries and return
@@ -106,30 +115,32 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
         )
 
     def invoke(
-        self, input: str, config: Optional[RunnableConfig] = None
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Document]:
-        config = config or {}
+        config = ensure_config(config)
         return self.get_relevant_documents(
             input,
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            **kwargs,
         )
 
     async def ainvoke(
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> List[Document]:
-        config = config or {}
+        config = ensure_config(config)
         return await self.aget_relevant_documents(
             input,
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            **kwargs,
         )
 
     @abstractmethod
@@ -154,8 +165,11 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
         Returns:
             List of relevant documents
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._get_relevant_documents, run_manager=run_manager), query
+        return await run_in_executor(
+            None,
+            self._get_relevant_documents,
+            query,
+            run_manager=run_manager.get_sync(),
         )
 
     def get_relevant_documents(
@@ -196,7 +210,6 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
             dumpd(self),
             query,
             name=run_name,
-            **kwargs,
         )
         try:
             _kwargs = kwargs if self._expects_other_args else {}
@@ -212,7 +225,6 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
         else:
             run_manager.on_retriever_end(
                 result,
-                **kwargs,
             )
             return result
 
@@ -254,7 +266,6 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
             dumpd(self),
             query,
             name=run_name,
-            **kwargs,
         )
         try:
             _kwargs = kwargs if self._expects_other_args else {}
@@ -270,6 +281,5 @@ class BaseRetriever(RunnableSerializable[str, List[Document]], ABC):
         else:
             await run_manager.on_retriever_end(
                 result,
-                **kwargs,
             )
             return result

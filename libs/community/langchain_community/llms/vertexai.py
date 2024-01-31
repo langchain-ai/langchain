@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterator, List, Optional, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -200,6 +201,11 @@ class _VertexAICommon(_VertexAIBase):
         return params
 
 
+@deprecated(
+    since="0.0.12",
+    removal="0.2.0",
+    alternative_import="langchain_google_vertexai.VertexAI",
+)
 class VertexAI(_VertexAICommon, BaseLLM):
     """Google Vertex AI large language models."""
 
@@ -385,6 +391,11 @@ class VertexAI(_VertexAICommon, BaseLLM):
                 )
 
 
+@deprecated(
+    since="0.0.12",
+    removal="0.2.0",
+    alternative_import="langchain_google_vertexai.VertexAIModelGarden",
+)
 class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     """Large language models served from Vertex AI Model Garden."""
 

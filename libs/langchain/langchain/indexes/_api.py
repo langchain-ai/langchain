@@ -24,11 +24,11 @@ from typing import (
     cast,
 )
 
+from langchain_community.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.vectorstores import VectorStore
 
-from langchain.document_loaders.base import BaseLoader
 from langchain.indexes.base import NAMESPACE_UUID, RecordManager
 
 T = TypeVar("T")

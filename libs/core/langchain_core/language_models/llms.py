@@ -8,7 +8,6 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -37,6 +36,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -48,11 +48,17 @@ from langchain_core.callbacks import (
 from langchain_core.globals import get_llm_cache
 from langchain_core.language_models.base import BaseLanguageModel, LanguageModelInput
 from langchain_core.load import dumpd
-from langchain_core.messages import AIMessage, BaseMessage, get_buffer_string
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    convert_to_messages,
+    get_buffer_string,
+)
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator, validator
-from langchain_core.runnables import RunnableConfig, get_config_list
+from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
+from langchain_core.runnables.config import run_in_executor
 
 logger = logging.getLogger(__name__)
 
@@ -157,14 +163,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     It should take in a prompt and return a string."""
 
     cache: Optional[bool] = None
+    """Whether to cache the response."""
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    """Callbacks to add to the run trace."""
     tags: Optional[List[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    """[DEPRECATED]"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -205,8 +214,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return input
         elif isinstance(input, str):
             return StringPromptValue(text=input)
-        elif isinstance(input, list):
-            return ChatPromptValue(messages=input)
+        elif isinstance(input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(input))
         else:
             raise ValueError(
                 f"Invalid input type {type(input)}. "
@@ -221,7 +230,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
-        config = config or {}
+        config = ensure_config(config)
         return (
             self.generate_prompt(
                 [self._convert_input(input)],
@@ -244,7 +253,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
-        config = config or {}
+        config = ensure_config(config)
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
             stop=stop,
@@ -362,7 +371,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             prompt = self._convert_input(input).to_string()
-            config = config or {}
+            config = ensure_config(config)
             params = self.dict()
             params["stop"] = stop
             params = {**params, **kwargs}
@@ -419,7 +428,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
         else:
             prompt = self._convert_input(input).to_string()
-            config = config or {}
+            config = ensure_config(config)
             params = self.dict()
             params["stop"] = stop
             params = {**params, **kwargs}
@@ -483,8 +492,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._generate, **kwargs), prompts, stop, run_manager
+        return await run_in_executor(
+            None,
+            self._generate,
+            prompts,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
 
     def _stream(
@@ -571,7 +585,30 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_name: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompt and input."""
+        """Pass a sequence of prompts to a model and return generations.
+
+        This method should make use of batched calls for models that expose a batched
+        API.
+
+        Use this method when you want to:
+            1. take advantage of batched calls,
+            2. need more output from the model than just the top generated value,
+            3. are building chains that are agnostic to the underlying language model
+                type (e.g., pure text completion models vs chat models).
+
+        Args:
+            prompts: List of string prompts.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An LLMResult, which contains a list of candidate Generations for each input
+                prompt and additional model provider-specific output.
+        """
         if not isinstance(prompts, list):
             raise ValueError(
                 "Argument 'prompts' is expected to be of type List[str], received"
@@ -749,7 +786,30 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_name: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompt and input."""
+        """Asynchronously pass a sequence of prompts to a model and return generations.
+
+        This method should make use of batched calls for models that expose a batched
+        API.
+
+        Use this method when you want to:
+            1. take advantage of batched calls,
+            2. need more output from the model than just the top generated value,
+            3. are building chains that are agnostic to the underlying language model
+                type (e.g., pure text completion models vs chat models).
+
+        Args:
+            prompts: List of string prompts.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An LLMResult, which contains a list of candidate Generations for each input
+                prompt and additional model provider-specific output.
+        """
         # Create callback managers
         if isinstance(callbacks, list) and (
             isinstance(callbacks[0], (list, BaseCallbackManager))
@@ -871,6 +931,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def __call__(
         self,
         prompt: str,
@@ -922,6 +983,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         )
         return result.generations[0][0].text
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -931,6 +993,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         return self(text, stop=_stop, **kwargs)
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -946,6 +1009,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         content = self(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
 
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -955,6 +1019,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         return await self._call_async(text, stop=_stop, **kwargs)
 
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],
@@ -1049,8 +1114,13 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._call, **kwargs), prompt, stop, run_manager
+        return await run_in_executor(
+            None,
+            self._call,
+            prompt,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
 
     def _generate(

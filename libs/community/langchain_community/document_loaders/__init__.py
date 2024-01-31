@@ -34,6 +34,7 @@ from langchain_community.document_loaders.arxiv import ArxivLoader
 from langchain_community.document_loaders.assemblyai import (
     AssemblyAIAudioTranscriptLoader,
 )
+from langchain_community.document_loaders.astradb import AstraDBLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
@@ -58,6 +59,7 @@ from langchain_community.document_loaders.blob_loaders import (
 from langchain_community.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain_community.document_loaders.brave_search import BraveSearchLoader
 from langchain_community.document_loaders.browserless import BrowserlessLoader
+from langchain_community.document_loaders.cassandra import CassandraLoader
 from langchain_community.document_loaders.chatgpt import ChatGPTLoader
 from langchain_community.document_loaders.chromium import AsyncChromiumLoader
 from langchain_community.document_loaders.college_confidential import (
@@ -77,6 +79,9 @@ from langchain_community.document_loaders.dataframe import DataFrameLoader
 from langchain_community.document_loaders.diffbot import DiffbotLoader
 from langchain_community.document_loaders.directory import DirectoryLoader
 from langchain_community.document_loaders.discord import DiscordChatLoader
+from langchain_community.document_loaders.doc_intelligence import (
+    AzureAIDocumentIntelligenceLoader,
+)
 from langchain_community.document_loaders.docugami import DocugamiLoader
 from langchain_community.document_loaders.docusaurus import DocusaurusLoader
 from langchain_community.document_loaders.dropbox import DropboxLoader
@@ -176,6 +181,7 @@ from langchain_community.document_loaders.snowflake_loader import SnowflakeLoade
 from langchain_community.document_loaders.spreedly import SpreedlyLoader
 from langchain_community.document_loaders.srt import SRTLoader
 from langchain_community.document_loaders.stripe import StripeLoader
+from langchain_community.document_loaders.surrealdb import SurrealDBLoader
 from langchain_community.document_loaders.telegram import (
     TelegramChatApiLoader,
     TelegramChatFileLoader,
@@ -202,6 +208,7 @@ from langchain_community.document_loaders.unstructured import (
 from langchain_community.document_loaders.url import UnstructuredURLLoader
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain_community.document_loaders.url_selenium import SeleniumURLLoader
+from langchain_community.document_loaders.vsdx import VsdxLoader
 from langchain_community.document_loaders.weather import WeatherDataLoader
 from langchain_community.document_loaders.web_base import WebBaseLoader
 from langchain_community.document_loaders.whatsapp_chat import WhatsAppChatLoader
@@ -245,8 +252,10 @@ __all__ = [
     "ArcGISLoader",
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
+    "AstraDBLoader",
     "AsyncHtmlLoader",
     "AzureAIDataLoader",
+    "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
@@ -259,6 +268,7 @@ __all__ = [
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
     "BrowserlessLoader",
+    "CassandraLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
@@ -354,6 +364,7 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "SurrealDBLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
@@ -386,6 +397,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",

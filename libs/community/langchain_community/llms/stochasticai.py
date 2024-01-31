@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -33,7 +33,7 @@ class StochasticAI(LLM):
     """Holds any model parameters valid for `create` call not
     explicitly specified."""
 
-    stochasticai_api_key: Optional[str] = None
+    stochasticai_api_key: Optional[SecretStr] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -61,8 +61,8 @@ class StochasticAI(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        stochasticai_api_key = get_from_dict_or_env(
-            values, "stochasticai_api_key", "STOCHASTICAI_API_KEY"
+        stochasticai_api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "stochasticai_api_key", "STOCHASTICAI_API_KEY")
         )
         values["stochasticai_api_key"] = stochasticai_api_key
         return values
@@ -107,7 +107,7 @@ class StochasticAI(LLM):
             url=self.api_url,
             json={"prompt": prompt, "params": params},
             headers={
-                "apiKey": f"{self.stochasticai_api_key}",
+                "apiKey": f"{self.stochasticai_api_key.get_secret_value()}",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -119,7 +119,7 @@ class StochasticAI(LLM):
             response_get = requests.get(
                 url=response_post_json["data"]["responseUrl"],
                 headers={
-                    "apiKey": f"{self.stochasticai_api_key}",
+                    "apiKey": f"{self.stochasticai_api_key.get_secret_value()}",
                     "Accept": "application/json",
                     "Content-Type": "application/json",
                 },

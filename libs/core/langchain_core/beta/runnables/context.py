@@ -12,17 +12,19 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
 )
 
+from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
     Runnable,
     RunnableSerializable,
     coerce_to_runnable,
 )
-from langchain_core.runnables.config import RunnableConfig, patch_config
+from langchain_core.runnables.config import RunnableConfig, ensure_config, patch_config
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 
 T = TypeVar("T")
@@ -108,8 +110,6 @@ def _config_with_context(
                 raise ValueError(
                     f"Deadlock detected between context keys {key} and {dep}"
                 )
-        if len(getters) < 1:
-            raise ValueError(f"Expected at least one getter for context key {key}")
         if len(setters) != 1:
             raise ValueError(f"Expected exactly one setter for context key {key}")
         setter_idx = setters[0][1]
@@ -118,7 +118,8 @@ def _config_with_context(
                 f"Context setter for key {key} must be defined after all getters."
             )
 
-        context_funcs[getters[0][0].id] = partial(getter, events[key], values)
+        if getters:
+            context_funcs[getters[0][0].id] = partial(getter, events[key], values)
         context_funcs[setters[0][0].id] = partial(setter, events[key], values)
 
     return patch_config(config, configurable=context_funcs)
@@ -156,12 +157,16 @@ def config_with_context(
     return _config_with_context(config, steps, _setter, _getter, threading.Event)
 
 
+@beta()
 class ContextGet(RunnableSerializable):
     """Get a context value."""
 
     prefix: str = ""
 
     key: Union[str, List[str]]
+
+    def __str__(self) -> str:
+        return f"ContextGet({_print_keys(self.key)})"
 
     @property
     def ids(self) -> List[str]:
@@ -183,7 +188,7 @@ class ContextGet(RunnableSerializable):
         ]
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             return {key: configurable[id_]() for key, id_ in zip(self.key, self.ids)}
@@ -193,7 +198,7 @@ class ContextGet(RunnableSerializable):
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
@@ -216,6 +221,7 @@ def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
     return coerce_to_runnable(value)
 
 
+@beta()
 class ContextSet(RunnableSerializable):
     """Set a context value."""
 
@@ -242,6 +248,9 @@ class ContextSet(RunnableSerializable):
             },
             prefix=prefix,
         )
+
+    def __str__(self) -> str:
+        return f"ContextSet({_print_keys(list(self.keys.keys()))})"
 
     @property
     def ids(self) -> List[str]:
@@ -275,7 +284,7 @@ class ContextSet(RunnableSerializable):
         ]
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):
             if mapper is not None:
@@ -287,7 +296,7 @@ class ContextSet(RunnableSerializable):
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):
             if mapper is not None:
@@ -345,3 +354,10 @@ class PrefixContext:
         **kwargs: SetValue,
     ) -> ContextSet:
         return ContextSet(_key, _value, prefix=self.prefix, **kwargs)
+
+
+def _print_keys(keys: Union[str, Sequence[str]]) -> str:
+    if isinstance(keys, str):
+        return f"'{keys}'"
+    else:
+        return ", ".join(f"'{k}'" for k in keys)

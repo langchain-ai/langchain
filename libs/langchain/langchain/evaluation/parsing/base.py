@@ -1,4 +1,5 @@
 """Evaluators for parsing strings."""
+import json
 from operator import eq
 from typing import Any, Callable, Optional, Union, cast
 
@@ -68,7 +69,7 @@ class JsonValidityEvaluator(StringEvaluator):
 
         """
         try:
-            parse_json_markdown(prediction)
+            parse_json_markdown(prediction, parser=json.loads)
             return {"score": 1}
         except Exception as e:
             return {"score": 0, "reasoning": str(e)}

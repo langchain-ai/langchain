@@ -15,7 +15,7 @@ class WatsonxLLM(BaseLLM):
     """
     IBM watsonx.ai large language models.
 
-    To use, you should have ``ibm_watson_machine_learning`` python package installed,
+    To use, you should have ``ibm_watsonx_ai`` python package installed,
     and the environment variable ``WATSONX_APIKEY`` set with your API key, or pass
     it as a named parameter to the constructor.
 
@@ -23,7 +23,7 @@ class WatsonxLLM(BaseLLM):
     Example:
         .. code-block:: python
 
-            from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames
+            from ibm_watsonx_ai.metanames import GenTextParamsMetaNames
             parameters = {
                 GenTextParamsMetaNames.DECODING_METHOD: "sample",
                 GenTextParamsMetaNames.MAX_NEW_TOKENS: 100,
@@ -34,7 +34,7 @@ class WatsonxLLM(BaseLLM):
             }
 
             from langchain_community.llms import WatsonxLLM
-            llm = WatsonxLLM(
+            watsonx_llm = WatsonxLLM(
                 model_id="google/flan-ul2",
                 url="https://us-south.ml.cloud.ibm.com",
                 apikey="*****",
@@ -45,6 +45,9 @@ class WatsonxLLM(BaseLLM):
 
     model_id: str = ""
     """Type of model to use."""
+
+    deployment_id: str = ""
+    """Type of deployed model to use."""
 
     project_id: str = ""
     """ID of the Watson Studio project."""
@@ -159,7 +162,7 @@ class WatsonxLLM(BaseLLM):
                 )
 
         try:
-            from ibm_watson_machine_learning.foundation_models import Model
+            from ibm_watsonx_ai.foundation_models import ModelInference
 
             credentials = {
                 "url": values["url"].get_secret_value() if values["url"] else None,
@@ -186,8 +189,9 @@ class WatsonxLLM(BaseLLM):
                 key: value for key, value in credentials.items() if value is not None
             }
 
-            watsonx_model = Model(
+            watsonx_model = ModelInference(
                 model_id=values["model_id"],
+                deployment_id=values["deployment_id"],
                 credentials=credentials_without_none_value,
                 params=values["params"],
                 project_id=values["project_id"],
@@ -198,8 +202,8 @@ class WatsonxLLM(BaseLLM):
 
         except ImportError:
             raise ImportError(
-                "Could not import ibm_watson_machine_learning python package. "
-                "Please install it with `pip install ibm_watson_machine_learning`."
+                "Could not import ibm_watsonx_ai python package. "
+                "Please install it with `pip install ibm_watsonx_ai`."
             )
         return values
 
@@ -208,6 +212,7 @@ class WatsonxLLM(BaseLLM):
         """Get the identifying parameters."""
         return {
             "model_id": self.model_id,
+            "deployment_id": self.deployment_id,
             "params": self.params,
             "project_id": self.project_id,
             "space_id": self.space_id,
@@ -244,6 +249,12 @@ class WatsonxLLM(BaseLLM):
             "input_token_count": input_token_count,
         }
 
+    def _get_chat_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
+        params: Dict[str, Any] = {**self.params} if self.params else None
+        if stop is not None:
+            params = (params or {}) | {"stop_sequences": stop}
+        return params
+
     def _create_llm_result(self, response: List[dict]) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
@@ -257,8 +268,33 @@ class WatsonxLLM(BaseLLM):
                 )
                 generations.append([gen])
         final_token_usage = self._extract_token_usage(response)
-        llm_output = {"token_usage": final_token_usage, "model_id": self.model_id}
+        llm_output = {
+            "token_usage": final_token_usage,
+            "model_id": self.model_id,
+            "deployment_id": self.deployment_id,
+        }
         return LLMResult(generations=generations, llm_output=llm_output)
+
+    def _stream_response_to_generation_chunk(
+        self,
+        stream_response: Dict[str, Any],
+    ) -> GenerationChunk:
+        """Convert a stream response to a generation chunk."""
+        if not stream_response["results"]:
+            return GenerationChunk(text="")
+        return GenerationChunk(
+            text=stream_response["results"][0]["generated_text"],
+            generation_info=dict(
+                finish_reason=stream_response["results"][0].get("stop_reason", None),
+                llm_output={
+                    "generated_token_count": stream_response["results"][0].get(
+                        "generated_token_count", None
+                    ),
+                    "model_id": self.model_id,
+                    "deployment_id": self.deployment_id,
+                },
+            ),
+        )
 
     def _call(
         self,
@@ -277,7 +313,7 @@ class WatsonxLLM(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = watsonxllm("What is a molecule")
+                response = watsonx_llm("What is a molecule")
         """
         result = self._generate(
             prompts=[prompt], stop=stop, run_manager=run_manager, **kwargs
@@ -302,8 +338,9 @@ class WatsonxLLM(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = watsonxllm.generate(["What is a molecule"])
+                response = watsonx_llm.generate(["What is a molecule"])
         """
+        params = self._get_chat_params(stop=stop)
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
             if len(prompts) > 1:
@@ -320,9 +357,12 @@ class WatsonxLLM(BaseLLM):
                 else:
                     generation += chunk
             assert generation is not None
+            if isinstance(generation.generation_info, dict):
+                llm_output = generation.generation_info.pop("llm_output")
+                return LLMResult(generations=[[generation]], llm_output=llm_output)
             return LLMResult(generations=[[generation]])
         else:
-            response = self.watsonx_model.generate(prompt=prompts)
+            response = self.watsonx_model.generate(prompt=prompts, params=params)
             return self._create_llm_result(response)
 
     def _stream(
@@ -342,12 +382,16 @@ class WatsonxLLM(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = watsonxllm.stream("What is a molecule")
+                response = watsonx_llm.stream("What is a molecule")
                 for chunk in response:
                     print(chunk, end='')
         """
-        for chunk in self.watsonx_model.generate_text_stream(prompt=prompt):
-            if chunk:
-                yield GenerationChunk(text=chunk)
-                if run_manager:
-                    run_manager.on_llm_new_token(chunk)
+        params = self._get_chat_params(stop=stop)
+        for stream_resp in self.watsonx_model.generate_text_stream(
+            prompt=prompt, raw_response=True, params=params
+        ):
+            chunk = self._stream_response_to_generation_chunk(stream_resp)
+            yield chunk
+
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)

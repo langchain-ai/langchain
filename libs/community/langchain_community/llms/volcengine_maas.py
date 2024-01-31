@@ -5,8 +5,8 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class VolcEngineMaasBase(BaseModel):
@@ -14,9 +14,9 @@ class VolcEngineMaasBase(BaseModel):
 
     client: Any
 
-    volc_engine_maas_ak: Optional[str] = None
+    volc_engine_maas_ak: Optional[SecretStr] = None
     """access key for volc engine"""
-    volc_engine_maas_sk: Optional[str] = None
+    volc_engine_maas_sk: Optional[SecretStr] = None
     """secret key for volc engine"""
 
     endpoint: Optional[str] = "maas-api.ml-platform-cn-beijing.volces.com"
@@ -54,8 +54,12 @@ class VolcEngineMaasBase(BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        ak = get_from_dict_or_env(values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
-        sk = get_from_dict_or_env(values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
+        volc_engine_maas_ak = convert_to_secret_str(
+            get_from_dict_or_env(values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
+        )
+        volc_engine_maas_sk = convert_to_secret_str(
+            get_from_dict_or_env(values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
+        )
         endpoint = values["endpoint"]
         if values["endpoint"] is not None and values["endpoint"] != "":
             endpoint = values["endpoint"]
@@ -68,10 +72,11 @@ class VolcEngineMaasBase(BaseModel):
                 connection_timeout=values["connect_timeout"],
                 socket_timeout=values["read_timeout"],
             )
-            maas.set_ak(ak)
-            values["volc_engine_maas_ak"] = ak
-            values["volc_engine_maas_sk"] = sk
-            maas.set_sk(sk)
+            maas.set_ak(volc_engine_maas_ak.get_secret_value())
+            maas.set_sk(volc_engine_maas_sk.get_secret_value())
+
+            values["volc_engine_maas_ak"] = volc_engine_maas_ak
+            values["volc_engine_maas_sk"] = volc_engine_maas_sk
             values["client"] = maas
         except ImportError:
             raise ImportError(

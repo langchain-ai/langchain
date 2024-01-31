@@ -36,7 +36,7 @@ A selection of advanced retrieval methods that involve transforming the original
 
 ## 🧠Advanced Retrieval - Query Construction
 
-A selection of advanced retrieval methods that involve constructing a query in a separate DSL from natural language, which enable natural languge chat over various structured databases.
+A selection of advanced retrieval methods that involve constructing a query in a separate DSL from natural language, which enable natural language chat over various structured databases.
 
 - [Elastic Query Generator](../elastic-query-generator): Generate elastic search queries from natural language.
 - [Neo4j Cypher Generation](../neo4j-cypher): Generate cypher statements from natural language. Available with a ["full text" option](../neo4j-cypher-ft) as well.

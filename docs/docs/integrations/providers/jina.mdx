@@ -9,7 +9,7 @@ It is broken into two parts: installation and setup, and then references to spec
 There exists a Jina Embeddings wrapper, which you can access with 
 
 ```python
-from langchain.embeddings import JinaEmbeddings
+from langchain_community.embeddings import JinaEmbeddings
 
 # you can pas jina_api_key, if none is passed it will be taken from `JINA_API_TOKEN` environment variable
 embeddings = JinaEmbeddings(jina_api_key='jina_**', model_name='jina-embeddings-v2-base-en')

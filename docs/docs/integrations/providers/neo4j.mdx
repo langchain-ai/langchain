@@ -26,7 +26,7 @@ whether for semantic search or example selection.
 To import this vectorstore:
 
 ```python
-from langchain.vectorstores import Neo4jVector
+from langchain_community.vectorstores import Neo4jVector
 ```
 
 For a more detailed walkthrough of the Neo4j vector index wrapper, see [documentation](/docs/integrations/vectorstores/neo4jvector)
@@ -37,7 +37,7 @@ There exists a wrapper around Neo4j graph database that allows you to generate C
 and use them to retrieve relevant information from the database.
 
 ```python
-from langchain.graphs import Neo4jGraph
+from langchain_community.graphs import Neo4jGraph
 from langchain.chains import GraphCypherQAChain
 ```
 
@@ -51,7 +51,7 @@ By coupling Diffbot's NLP API with Neo4j, a graph database, you can create power
 These graph structures are fully queryable and can be integrated into various applications.
 
 ```python
-from langchain.graphs import Neo4jGraph
+from langchain_community.graphs import Neo4jGraph
 from langchain_experimental.graph_transformers.diffbot import DiffbotGraphTransformer
 ```
 

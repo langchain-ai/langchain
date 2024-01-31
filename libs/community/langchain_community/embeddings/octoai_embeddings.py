@@ -41,7 +41,7 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
             values, "octoai_api_token", "OCTOAI_API_TOKEN"
         )
         values["endpoint_url"] = get_from_dict_or_env(
-            values, "endpoint_url", "ENDPOINT_URL"
+            values, "endpoint_url", "https://text.octoai.run/v1/embeddings"
         )
         return values
 
@@ -59,19 +59,29 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
         """Compute embeddings using an OctoAI instruct model."""
         from octoai import client
 
+        embedding = []
         embeddings = []
         octoai_client = client.Client(token=self.octoai_api_token)
 
         for text in texts:
             parameter_payload = {
-                "sentence": str([text]),  # for item in text]),
-                "instruction": str([instruction]),  # for item in text]),
+                "sentence": str([text]),
+                "input": str([text]),
+                "instruction": str([instruction]),
+                "model": "thenlper/gte-large",
                 "parameters": self.model_kwargs or {},
             }
 
             try:
                 resp_json = octoai_client.infer(self.endpoint_url, parameter_payload)
-                embedding = resp_json["embeddings"]
+                if "embeddings" in resp_json:
+                    embedding = resp_json["embeddings"]
+                elif "data" in resp_json:
+                    json_data = resp_json["data"]
+                    for item in json_data:
+                        if "embedding" in item:
+                            embedding.append(item["embedding"])
+
             except Exception as e:
                 raise ValueError(f"Error raised by the inference endpoint: {e}") from e
 

@@ -1,5 +1,5 @@
 """Google Trends API Toolkit."""
 
-from langchain.tools.google_trends.tool import GoogleTrendsQueryRun
+from langchain_community.tools.google_trends.tool import GoogleTrendsQueryRun
 
 __all__ = ["GoogleTrendsQueryRun"]

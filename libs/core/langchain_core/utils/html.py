@@ -67,23 +67,37 @@ def extract_sub_links(
     Returns:
         List[str]: sub links
     """
-    base_url = base_url if base_url is not None else url
+    base_url_to_use = base_url if base_url is not None else url
+    parsed_base_url = urlparse(base_url_to_use)
     all_links = find_all_links(raw_html, pattern=pattern)
     absolute_paths = set()
     for link in all_links:
+        parsed_link = urlparse(link)
         # Some may be absolute links like https://to/path
-        if link.startswith("http"):
-            absolute_paths.add(link)
+        if parsed_link.scheme == "http" or parsed_link.scheme == "https":
+            absolute_path = link
         # Some may have omitted the protocol like //to/path
         elif link.startswith("//"):
-            absolute_paths.add(f"{urlparse(url).scheme}:{link}")
+            absolute_path = f"{urlparse(url).scheme}:{link}"
         else:
-            absolute_paths.add(urljoin(url, link))
-    res = []
+            absolute_path = urljoin(url, parsed_link.path)
+        absolute_paths.add(absolute_path)
+
+    results = []
     for path in absolute_paths:
-        if any(path.startswith(exclude) for exclude in exclude_prefixes):
+        if any(path.startswith(exclude_prefix) for exclude_prefix in exclude_prefixes):
             continue
-        if prevent_outside and not path.startswith(base_url):
-            continue
-        res.append(path)
-    return res
+
+        if prevent_outside:
+            parsed_path = urlparse(path)
+
+            if parsed_base_url.netloc != parsed_path.netloc:
+                continue
+
+            # Will take care of verifying rest of path after netloc
+            # if it's more specific
+            if not path.startswith(base_url_to_use):
+                continue
+
+        results.append(path)
+    return results
