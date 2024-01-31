@@ -5,9 +5,9 @@ from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers.json import parse_json_markdown
 
 from langchain.agents.agent import AgentOutputParser
-from langchain.output_parsers.json import parse_json_markdown
 
 logger = logging.getLogger(__name__)
 

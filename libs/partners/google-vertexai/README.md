@@ -10,7 +10,7 @@ pip install -U langchain-google-vertexai
 
 ## Chat Models
 
-`ChatVertexAI` class exposes models .
+`ChatVertexAI` class exposes models such as `gemini-pro` and `chat-bison`.
 
 To use, you should have Google Cloud project with APIs enabled, and configured credentials. Initialize the model as:
 
@@ -63,7 +63,7 @@ The value of `image_url` can be any of the following:
 
 You can use Google Cloud's embeddings models as:
 
-```
+```python
 from langchain_google_vertexai import VertexAIEmbeddings
 
 embeddings = VertexAIEmbeddings()

@@ -63,7 +63,7 @@ def test_konko_chat_test() -> None:
 
 def test_konko_chat_test_openai() -> None:
     """Evaluate basic ChatKonko functionality."""
-    chat_instance = ChatKonko(max_tokens=10, model="gpt-3.5-turbo")
+    chat_instance = ChatKonko(max_tokens=10, model="meta-llama/llama-2-70b-chat")
     msg = HumanMessage(content="Hi")
     chat_response = chat_instance([msg])
     assert isinstance(chat_response, BaseMessage)
