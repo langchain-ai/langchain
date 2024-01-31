@@ -38,7 +38,7 @@ async def test_default_aload() -> None:
             yield from [
                 Document(page_content="foo"),
                 Document(page_content="bar"),
-                ]
+            ]
 
     loader = FakeLoader()
     docs = loader.load()
