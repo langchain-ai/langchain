@@ -6,7 +6,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
-DEFAULT_TiDB_VECTOR_STORE_NAME = "langchain_vector"
+DEFAULT_TiDB_VECTOR_TABLE_NAME = "langchain_vector"
 
 
 class TiDBVectorStore(VectorStore):
@@ -14,7 +14,7 @@ class TiDBVectorStore(VectorStore):
         self,
         connection_string: str,
         embedding_function: Embeddings,
-        table_name: str = DEFAULT_TiDB_VECTOR_STORE_NAME,
+        table_name: str = DEFAULT_TiDB_VECTOR_TABLE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
@@ -41,8 +41,9 @@ class TiDBVectorStore(VectorStore):
             connection_string (str): The connection string for the TiDB database,
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
             embedding_function: The embedding function used to generate embeddings.
-            table_name (str, optional): The name of table used to store vector data,
-                defaults to "langchain_vector".
+            table_name (str, optional): The name of the table that will be used to
+                store vector data. If you do not provide a table name,
+                a default table named `langchain_vector` will be created automatically.
             distance_strategy: The strategy used for similarity search,
                 defaults to "cosine", valid values: "l2", "cosine".
             engine_args (Optional[Dict]): Additional arguments for the database engine,
@@ -119,7 +120,7 @@ class TiDBVectorStore(VectorStore):
         embedding: Embeddings,
         connection_string: str,
         metadatas: Optional[List[dict]] = None,
-        table_name: str = DEFAULT_TiDB_VECTOR_STORE_NAME,
+        table_name: str = DEFAULT_TiDB_VECTOR_TABLE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         *,
