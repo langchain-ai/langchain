@@ -59,10 +59,6 @@ class BaseLoader(ABC):
             f"{self.__class__.__name__} does not implement lazy_load()"
         )
 
-    async def aload(self) -> List[Document]:
-        """Load data into Document objects."""
-        return [doc async for doc in self.alazy_load()]
-
     async def alazy_load(self) -> AsyncIterator[Document]:
         """A lazy loader for Documents."""
         iterator = await run_in_executor(None, self.lazy_load)

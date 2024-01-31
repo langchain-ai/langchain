@@ -40,12 +40,6 @@ class ToyLoader(BaseLoader):
         """Load the documents from the source."""
         return list(self.lazy_load())
 
-    async def alazy_load(
-        self,
-    ) -> AsyncIterator[Document]:
-        for document in self.documents:
-            yield document
-
 
 class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary."""
