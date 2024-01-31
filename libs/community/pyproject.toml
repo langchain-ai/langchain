@@ -260,7 +260,6 @@ extended_testing = [
  "elasticsearch",
  "hdbcli",
  "oci",
- "nvidia-riva-client",
  "protobuf"
 ]
 
