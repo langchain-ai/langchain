@@ -103,6 +103,7 @@ class DirectoryLoader(BaseLoader):
                     if self.silent_errors:
                         logger.warning(f"Error loading file {str(item)}: {e}")
                     else:
+                        logger.error(f"Error loading file {str(item)}")
                         raise e
                 finally:
                     if pbar:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
@@ -139,6 +140,11 @@ def _parse_video_id(url: str) -> Optional[str]:
     return video_id
 
 
+class TranscriptFormat(Enum):
+    TEXT = "text"
+    LINES = "lines"
+
+
 class YoutubeLoader(BaseLoader):
     """Load `YouTube` transcripts."""
 
@@ -148,6 +154,7 @@ class YoutubeLoader(BaseLoader):
         add_video_info: bool = False,
         language: Union[str, Sequence[str]] = "en",
         translation: Optional[str] = None,
+        transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
         continue_on_failure: bool = False,
     ):
         """Initialize with YouTube video ID."""
@@ -159,6 +166,7 @@ class YoutubeLoader(BaseLoader):
         else:
             self.language = language
         self.translation = translation
+        self.transcript_format = transcript_format
         self.continue_on_failure = continue_on_failure
 
     @staticmethod
@@ -214,9 +222,19 @@ class YoutubeLoader(BaseLoader):
 
         transcript_pieces = transcript.fetch()
 
-        transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
-
-        return [Document(page_content=transcript, metadata=metadata)]
+        if self.transcript_format == TranscriptFormat.TEXT:
+            transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
+            return [Document(page_content=transcript, metadata=metadata)]
+        elif self.transcript_format == TranscriptFormat.LINES:
+            return [
+                Document(
+                    page_content=t["text"].strip(" "),
+                    metadata=dict((key, t[key]) for key in t if key != "text"),
+                )
+                for t in transcript_pieces
+            ]
+        else:
+            raise ValueError("Unknown transcript format.")
 
     def _get_video_info(self) -> dict:
         """Get important video information.

@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "langchain-together"
-version = "0.0.2.post1"
+version = "0.0.2.post2"
 description = "An integration package connecting Together and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/together"

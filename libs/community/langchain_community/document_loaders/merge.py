@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from typing import AsyncIterator, Iterator, List
 
 from langchain_core.documents import Document
 
@@ -26,3 +26,9 @@ class MergedDataLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load docs."""
         return list(self.lazy_load())
+
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        """Lazy load docs from each individual loader."""
+        for loader in self.loaders:
+            async for document in loader.alazy_load():
+                yield document
