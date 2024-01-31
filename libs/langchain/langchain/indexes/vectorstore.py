@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Type
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.llms.openai import OpenAI
 from langchain_community.vectorstores.chroma import Chroma
 from langchain_core.documents import Document
