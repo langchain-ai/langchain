@@ -68,6 +68,7 @@ class Pinecone(VectorStore):
         text_key: str,
         namespace: Optional[str] = None,
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
+        include_text_missing: bool = False,
     ):
         """Initialize with Pinecone client."""
         pinecone = _import_pinecone()
@@ -85,6 +86,7 @@ class Pinecone(VectorStore):
         self._text_key = text_key
         self._namespace = namespace
         self.distance_strategy = distance_strategy
+        self._include_text_missing = include_text_missing
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -209,14 +211,16 @@ class Pinecone(VectorStore):
         )
         for res in results["matches"]:
             metadata = res["metadata"]
+            text = ""
             if self._text_key in metadata:
                 text = metadata.pop(self._text_key)
-                score = res["score"]
-                docs.append((Document(page_content=text, metadata=metadata), score))
-            else:
+            elif not self._include_text_missing:
                 logger.warning(
                     f"Found document with no `{self._text_key}` key. Skipping."
                 )
+                continue
+            score = res["score"]
+            docs.append((Document(page_content=text, metadata=metadata), score))
         return docs
 
     def similarity_search(
@@ -457,10 +461,17 @@ class Pinecone(VectorStore):
         text_key: str = "text",
         namespace: Optional[str] = None,
         pool_threads: int = 4,
+        include_text_missing: bool = False,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
-        return cls(pinecone_index, embedding, text_key, namespace)
+        return cls(
+            pinecone_index,
+            embedding,
+            text_key,
+            namespace,
+            include_text_missing=include_text_missing,
+        )
 
     def delete(
         self,
