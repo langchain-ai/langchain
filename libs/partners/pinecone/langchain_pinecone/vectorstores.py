@@ -208,9 +208,6 @@ class Pinecone(VectorStore):
             namespace=namespace,
             filter=filter,
         )
-        import pdb
-
-        pdb.set_trace()
         for res in results["matches"]:
             metadata = res["metadata"]
             if self._text_key in metadata:
