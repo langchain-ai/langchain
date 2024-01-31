@@ -62,7 +62,7 @@ class ZhipuAI(LLM):
         # call api
         try:
             from zhipuai import ZhipuAI as zp
-            
+
             client = zp(api_key=self.ZhipuAI_api_key)
             response = client.chat.completions.create(
                 model="glm-4",  # 填写需要调用的模型名称
