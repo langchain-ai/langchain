@@ -2,13 +2,13 @@
 
 [[package]]
 name = "ai21"
-version = "2.0.0rc11"
+version = "2.0.0"
 description = ""
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "ai21-2.0.0rc11-py3-none-any.whl", hash = "sha256:81b15af1f1f5f76605d379c7b20cda47ac10f04bdb8aa55acd1e20676d2c787f"},
-    {file = "ai21-2.0.0rc11.tar.gz", hash = "sha256:eda27dacfedd37bd0cffcd4cd1a7ab063452611ee80c6637a61afbfe95c54675"},
+    {file = "ai21-2.0.0-py3-none-any.whl", hash = "sha256:0f40b0fe9254b1ddface81681aa18b74635dbf318ca1aeab38c31b500ecd1fe5"},
+    {file = "ai21-2.0.0.tar.gz", hash = "sha256:37ac1bda7c2584aafc05cfc69f3e43f7c46571aea29ff292a1f40950f4d9aa70"},
 ]
 
 [package.dependencies]
@@ -340,22 +340,22 @@ requests = ">=2,<3"
 
 [[package]]
 name = "marshmallow"
-version = "3.20.1"
+version = "3.20.2"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "marshmallow-3.20.1-py3-none-any.whl", hash = "sha256:684939db93e80ad3561392f47be0230743131560a41c5110684c16e21ade0a5c"},
-    {file = "marshmallow-3.20.1.tar.gz", hash = "sha256:5d2371bbe42000f2b3fb5eaa065224df7d8f8597bc19a1bbfa5bfe7fba8da889"},
+    {file = "marshmallow-3.20.2-py3-none-any.whl", hash = "sha256:c21d4b98fee747c130e6bc8f45c4b3199ea66bc00c12ee1f639f0aeca034d5e9"},
+    {file = "marshmallow-3.20.2.tar.gz", hash = "sha256:4c1daff273513dc5eb24b219a8035559dc573c8f322558ef85f5438ddd1236dd"},
 ]
 
 [package.dependencies]
 packaging = ">=17.0"
 
 [package.extras]
-dev = ["flake8 (==6.0.0)", "flake8-bugbear (==23.7.10)", "mypy (==1.4.1)", "pre-commit (>=2.4,<4.0)", "pytest", "pytz", "simplejson", "tox"]
-docs = ["alabaster (==0.7.13)", "autodocsumm (==0.2.11)", "sphinx (==7.0.1)", "sphinx-issues (==3.0.1)", "sphinx-version-warning (==1.1.2)"]
-lint = ["flake8 (==6.0.0)", "flake8-bugbear (==23.7.10)", "mypy (==1.4.1)", "pre-commit (>=2.4,<4.0)"]
+dev = ["pre-commit (>=2.4,<4.0)", "pytest", "pytz", "simplejson", "tox"]
+docs = ["alabaster (==0.7.15)", "autodocsumm (==0.2.12)", "sphinx (==7.2.6)", "sphinx-issues (==3.0.1)", "sphinx-version-warning (==1.1.2)"]
+lint = ["pre-commit (>=2.4,<4.0)"]
 tests = ["pytest", "pytz", "simplejson"]
 
 [[package]]
@@ -972,4 +972,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b239078ccc4e1f7f82eaa24e1571d2e7f2a444f904fb1e9faf8a90bcda470f12"
+content-hash = "297b81de4c1b418e4b8b31afd1c58c03952cb670d86d4cb4399ea940a256f566"
