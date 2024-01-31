@@ -342,11 +342,11 @@ class TestAstraDBVectorStore:
         """from_texts and from_documents methods."""
         emb = SomeEmbeddings(dimension=2)
         # prepare empty collection
-        AstraDBVectorStore(
+        await AstraDBVectorStore(
             embedding=emb,
             collection_name=COLLECTION_NAME_DIM2,
             **astradb_credentials,
-        ).clear()
+        ).aclear()
         # from_texts
         v_store = await AstraDBVectorStore.afrom_texts(
             texts=["Hi", "Ho"],

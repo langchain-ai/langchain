@@ -265,6 +265,7 @@ class AstraDBVectorStore(VectorStore):
                 astra_db=self.async_astra_db,
             )
             try:
+                asyncio.get_running_loop()
                 self.async_setup_db_task = asyncio.create_task(
                     self._setup_db(pre_delete_collection)
                 )
