@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import google.api_core
 import google.generativeai as genai  # type: ignore[import]
+from google.generativeai.types import HarmCategory,HarmBlockThreshold
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -142,6 +143,22 @@ Supported examples:
         None,
         description="A string, one of: [`rest`, `grpc`, `grpc_asyncio`].",
     )
+    safety_settings: Optional[Dict[HarmCategory, HarmBlockThreshold]] = None
+    """The default safety settings to use for all generations. 
+    
+        For example: 
+
+            from google.generativeai.types import HarmCategory,HarmBlockThreshold
+
+            safety_settings = {
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            }
+            """
+
+
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

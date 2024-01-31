@@ -485,7 +485,8 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         if values.get("top_k") is not None and values["top_k"] <= 0:
             raise ValueError("top_k must be positive")
         model = values["model"]
-        values["client"] = genai.GenerativeModel(model_name=model)
+        safety_settings = values["safety_settings"]
+        values["client"] = genai.GenerativeModel(model_name=model, safety_settings=safety_settings)
         return values
 
     @property
