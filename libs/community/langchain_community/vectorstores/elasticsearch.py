@@ -529,7 +529,7 @@ class ElasticsearchStore(VectorStore):
 
         if es_connection is not None:
             self.client = es_connection.options(
-                headers={"user-agent": self.get_user_agent()}
+                headers=dict(es_connection._headers) | {"user-agent": self.get_user_agent()}
             )
         elif es_url is not None or es_cloud_id is not None:
             self.client = ElasticsearchStore.connect_to_elasticsearch(
