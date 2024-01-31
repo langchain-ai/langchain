@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Callable, Dict, List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -41,18 +42,16 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
             embeddings = YandexGPTEmbeddings(iam_token="t1.9eu...", model_uri="emb://<folder-id>/text-search-query/latest")
     """
 
-    iam_token: str = ""
+    iam_token: SecretStr = ""
     """Yandex Cloud IAM token for service account
     with the `ai.languageModels.user` role"""
-    api_key: str = ""
+    api_key: SecretStr = ""
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
     model_uri: str = ""
     """Model uri to use."""
     folder_id: str = ""
     """Yandex Cloud folder ID"""
-    model_uri: str = ""
-    """Model uri to use."""
     model_name: str = "text-search-query"
     """Model name to use."""
     model_version: str = "latest"
@@ -61,28 +60,34 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     """The url of the API."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
+    sleep_interval: float = 0.0
+    """Delay between API requests"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
-        iam_token = get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN", "")
+        iam_token = convert_to_secret_str(
+            get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN", "")
+        )
         values["iam_token"] = iam_token
-        api_key = get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
+        api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
+        )
         values["api_key"] = api_key
         folder_id = get_from_dict_or_env(values, "folder_id", "YC_FOLDER_ID", "")
         values["folder_id"] = folder_id
-        if api_key == "" and iam_token == "":
+        if api_key.get_secret_value() == "" and iam_token.get_secret_value() == "":
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
         if values["iam_token"]:
             values["_grpc_metadata"] = [
-                ("authorization", f"Bearer {values['iam_token']}")
+                ("authorization", f"Bearer {values['iam_token'].get_secret_value()}")
             ]
             if values["folder_id"]:
                 values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
         else:
             values["_grpc_metadata"] = (
-                ("authorization", f"Api-Key {values['api_key']}"),
+                ("authorization", f"Api-Key {values['api_key'].get_secret_value()}"),
             )
         if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
@@ -152,7 +157,8 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str]):
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     result = []
     channel_credentials = grpc.ssl_channel_credentials()
@@ -162,6 +168,7 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str]):
         request = TextEmbeddingRequest(model_uri=self.model_uri, text=text)
         stub = EmbeddingsServiceStub(channel)
         res = stub.TextEmbedding(request, metadata=self._grpc_metadata)
-        result.append(res.embedding)
+        result.append(list(res.embedding))
+        time.sleep(self.sleep_interval)
 
     return result

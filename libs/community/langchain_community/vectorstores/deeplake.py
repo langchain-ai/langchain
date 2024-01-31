@@ -51,6 +51,7 @@ class DeepLake(VectorStore):
     """
 
     _LANGCHAIN_DEFAULT_DEEPLAKE_PATH = "./deeplake/"
+    _valid_search_kwargs = ["lambda_mult"]
 
     def __init__(
         self,
@@ -219,11 +220,7 @@ class DeepLake(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
-        if kwargs:
-            unsupported_items = "`, `".join(set(kwargs.keys()))
-            raise TypeError(
-                f"`{unsupported_items}` is/are not a valid argument to add_text method"
-            )
+        self._validate_kwargs(kwargs, "add_texts")
 
         kwargs = {}
         if ids:
@@ -371,6 +368,9 @@ class DeepLake(VectorStore):
         Raises:
             ValueError: if both `embedding` and `embedding_function` are not specified.
         """
+        if kwargs.get("tql_query"):
+            logger.warning("`tql_query` is deprecated. Please use `tql` instead.")
+            kwargs["tql"] = kwargs.pop("tql_query")
 
         if kwargs.get("tql"):
             return self._search_tql(
@@ -383,6 +383,8 @@ class DeepLake(VectorStore):
                 use_maximal_marginal_relevance=use_maximal_marginal_relevance,
                 filter=filter,
             )
+
+        self._validate_kwargs(kwargs, "search")
 
         if embedding_function:
             if isinstance(embedding_function, Embeddings):
@@ -417,7 +419,6 @@ class DeepLake(VectorStore):
             return_tensors=["embedding", "metadata", "text", self._id_tensor_name],
             deep_memory=deep_memory,
         )
-
         scores = result["score"]
         embeddings = result["embedding"]
         metadatas = result["metadata"]
@@ -445,6 +446,9 @@ class DeepLake(VectorStore):
         ]
 
         if return_score:
+            if not isinstance(scores, list):
+                scores = [scores]
+
             return [(doc, score) for doc, score in zip(docs, scores)]
 
         return docs
@@ -899,3 +903,30 @@ class DeepLake(VectorStore):
             "better to use `db.vectorstore.dataset` instead."
         )
         return self.vectorstore.dataset
+
+    @classmethod
+    def _validate_kwargs(cls, kwargs, method_name):
+        if kwargs:
+            valid_items = cls._get_valid_args(method_name)
+            unsupported_items = cls._get_unsupported_items(kwargs, valid_items)
+
+            if unsupported_items:
+                raise TypeError(
+                    f"`{unsupported_items}` are not a valid "
+                    f"argument to {method_name} method"
+                )
+
+    @classmethod
+    def _get_valid_args(cls, method_name):
+        if method_name == "search":
+            return cls._valid_search_kwargs
+        else:
+            return []
+
+    @staticmethod
+    def _get_unsupported_items(kwargs, valid_items):
+        kwargs = {k: v for k, v in kwargs.items() if k not in valid_items}
+        unsupported_items = None
+        if kwargs:
+            unsupported_items = "`, `".join(set(kwargs.keys()))
+        return unsupported_items

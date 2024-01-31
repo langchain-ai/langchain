@@ -60,3 +60,9 @@ def test_generativeai_stream() -> None:
     llm = GoogleGenerativeAI(temperature=0, model="gemini-pro")
     outputs = list(llm.stream("Please say foo:"))
     assert isinstance(outputs[0], str)
+
+
+def test_generativeai_get_num_tokens_gemini() -> None:
+    llm = GoogleGenerativeAI(temperature=0, model="gemini-pro")
+    output = llm.get_num_tokens("How are you?")
+    assert output == 4
