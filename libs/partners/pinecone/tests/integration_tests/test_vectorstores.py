@@ -13,9 +13,9 @@ from pinecone import PodSpec
 
 from langchain_pinecone import Pinecone
 
-index_name = "langchain-test-index"  # name of the index
-namespace_name = "langchain-test-namespace"  # name of the namespace
-dimension = 1536  # dimension of the embeddings
+INDEX_NAME = "langchain-test-index"  # name of the index
+NAMESPACE_NAME = "langchain-test-namespace"  # name of the namespace
+DIMENSION = 1536  # dimension of the embeddings
 
 
 class TestPinecone:
@@ -28,23 +28,23 @@ class TestPinecone:
         client = pinecone.Pinecone(api_key=os.environ["PINECONE_API_KEY"])
         index_list = client.list_indexes()
         for i in index_list:
-            if i["name"] == index_name:
-                client.delete_index(index_name)
+            if i["name"] == INDEX_NAME:
+                client.delete_index(INDEX_NAME)
                 break
         client.create_index(
-            name=index_name,
-            dimension=dimension,
+            name=INDEX_NAME,
+            dimension=DIMENSION,
             metric="cosine",
             spec=PodSpec(environment=os.environ["PINECONE_ENVIRONMENT"]),
         )
 
-        cls.index = client.Index(index_name)
+        cls.index = client.Index(INDEX_NAME)
 
         # insure the index is empty
         index_stats = cls.index.describe_index_stats()
-        assert index_stats["dimension"] == dimension
-        if index_stats["namespaces"].get(namespace_name) is not None:
-            assert index_stats["namespaces"][namespace_name]["vector_count"] == 0
+        assert index_stats["dimension"] == DIMENSION
+        if index_stats["namespaces"].get(NAMESPACE_NAME) is not None:
+            assert index_stats["namespaces"][NAMESPACE_NAME]["vector_count"] == 0
 
     @classmethod
     def teardown_class(cls) -> None:
@@ -55,15 +55,20 @@ class TestPinecone:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the vectors in the index
+        print("called")
         index_stats = self.index.describe_index_stats()
         for _namespace_name in index_stats["namespaces"].keys():
             self.index.delete(delete_all=True, namespace=_namespace_name)
+        time.sleep(20)  # prevent race condition with previous step
 
     @pytest.fixture
     def embedding_openai(self) -> OpenAIEmbeddings:
         return OpenAIEmbeddings()
 
-    @pytest.mark.vcr()
+    @pytest.fixture
+    def texts(self) -> List[str]:
+        return ["foo", "bar", "baz"]
+
     def test_from_texts(
         self, texts: List[str], embedding_openai: OpenAIEmbeddings
     ) -> None:
@@ -75,13 +80,13 @@ class TestPinecone:
         docsearch = Pinecone.from_texts(
             texts=texts,
             embedding=embedding_openai,
-            index_name=index_name,
-            namespace=namespace_name,
+            index_name=INDEX_NAME,
+            namespace=NAMESPACE_NAME,
         )
-        output = docsearch.similarity_search(unique_id, k=1, namespace=namespace_name)
+        time.sleep(20)  # prevent race condition
+        output = docsearch.similarity_search(unique_id, k=1, namespace=NAMESPACE_NAME)
         assert output == [Document(page_content=needs)]
 
-    @pytest.mark.vcr()
     def test_from_texts_with_metadatas(
         self, texts: List[str], embedding_openai: OpenAIEmbeddings
     ) -> None:
@@ -95,16 +100,16 @@ class TestPinecone:
         docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
-            index_name=index_name,
+            index_name=INDEX_NAME,
             metadatas=metadatas,
-            namespace=namespace_name,
+            namespace=NAMESPACE_NAME,
         )
-        output = docsearch.similarity_search(needs, k=1, namespace=namespace_name)
+        time.sleep(20)  # prevent race condition
+        output = docsearch.similarity_search(needs, k=1, namespace=NAMESPACE_NAME)
 
         # TODO: why metadata={"page": 0.0}) instead of {"page": 0}?
         assert output == [Document(page_content=needs, metadata={"page": 0.0})]
 
-    @pytest.mark.vcr()
     def test_from_texts_with_scores(self, embedding_openai: OpenAIEmbeddings) -> None:
         """Test end to end construction and search with scores and IDs."""
         texts = ["foo", "bar", "baz"]
@@ -112,12 +117,14 @@ class TestPinecone:
         docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
-            index_name=index_name,
+            index_name=INDEX_NAME,
             metadatas=metadatas,
-            namespace=namespace_name,
+            namespace=NAMESPACE_NAME,
         )
+        print(texts)
+        time.sleep(20)  # prevent race condition
         output = docsearch.similarity_search_with_score(
-            "foo", k=3, namespace=namespace_name
+            "foo", k=3, namespace=NAMESPACE_NAME
         )
         docs = [o[0] for o in output]
         scores = [o[1] for o in output]
@@ -141,9 +148,9 @@ class TestPinecone:
         Pinecone.from_texts(
             texts_1,
             embedding_openai,
-            index_name=index_name,
+            index_name=INDEX_NAME,
             metadatas=metadatas,
-            namespace=f"{index_name}-1",
+            namespace=f"{INDEX_NAME}-1",
         )
 
         texts_2 = ["foo2", "bar2", "baz2"]
@@ -152,18 +159,20 @@ class TestPinecone:
         Pinecone.from_texts(
             texts_2,
             embedding_openai,
-            index_name=index_name,
+            index_name=INDEX_NAME,
             metadatas=metadatas,
-            namespace=f"{index_name}-2",
+            namespace=f"{INDEX_NAME}-2",
         )
+
+        time.sleep(20)  # prevent race condition
 
         # Search with namespace
         docsearch = Pinecone.from_existing_index(
-            index_name=index_name,
+            index_name=INDEX_NAME,
             embedding=embedding_openai,
-            namespace=f"{index_name}-1",
+            namespace=f"{INDEX_NAME}-1",
         )
-        output = docsearch.similarity_search("foo", k=20, namespace=f"{index_name}-1")
+        output = docsearch.similarity_search("foo", k=20, namespace=f"{INDEX_NAME}-1")
         # check that we don't get results from the other namespace
         page_contents = sorted(set([o.page_content for o in output]))
         assert all(content in ["foo", "bar", "baz"] for content in page_contents)
@@ -177,25 +186,26 @@ class TestPinecone:
             texts=texts,
             ids=ids,
             embedding=embedding_openai,
-            index_name=index_name,
-            namespace=index_name,
+            index_name=INDEX_NAME,
+            namespace=INDEX_NAME,
         )
         index_stats = self.index.describe_index_stats()
-        assert index_stats["namespaces"][index_name]["vector_count"] == len(texts)
+        time.sleep(20)  # prevent race condition
+        assert index_stats["namespaces"][INDEX_NAME]["vector_count"] == len(texts)
 
         ids_1 = [uuid.uuid4().hex for _ in range(len(texts))]
         Pinecone.from_texts(
             texts=texts,
             ids=ids_1,
             embedding=embedding_openai,
-            index_name=index_name,
-            namespace=index_name,
+            index_name=INDEX_NAME,
+            namespace=INDEX_NAME,
         )
+        time.sleep(20)  # prevent race condition
         index_stats = self.index.describe_index_stats()
-        assert index_stats["namespaces"][index_name]["vector_count"] == len(texts) * 2
+        assert index_stats["namespaces"][INDEX_NAME]["vector_count"] == len(texts) * 2
         assert index_stats["total_vector_count"] == len(texts) * 2
 
-    @pytest.mark.vcr()
     def test_relevance_score_bound(self, embedding_openai: OpenAIEmbeddings) -> None:
         """Ensures all relevance scores are between 0 and 1."""
         texts = ["foo", "bar", "baz"]
@@ -203,7 +213,7 @@ class TestPinecone:
         docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
-            index_name=index_name,
+            index_name=INDEX_NAME,
             metadatas=metadatas,
         )
         # wait for the index to be ready
@@ -257,12 +267,12 @@ class TestPinecone:
             embedding_openai,
             ids=uuids,
             metadatas=metadatas,
-            index_name=index_name,
-            namespace=namespace_name,
+            index_name=INDEX_NAME,
+            namespace=NAMESPACE_NAME,
             pool_threads=pool_threads,
             batch_size=batch_size,
             embeddings_chunk_size=embeddings_chunk_size,
         )
 
         query = "What did the president say about Ketanji Brown Jackson"
-        _ = docsearch.similarity_search(query, k=1, namespace=namespace_name)
+        _ = docsearch.similarity_search(query, k=1, namespace=NAMESPACE_NAME)

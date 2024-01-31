@@ -200,7 +200,7 @@ class Pinecone(VectorStore):
             namespace = self._namespace
         docs = []
         results = self._index.query(
-            vector=[embedding],
+            vector=embedding,
             top_k=k,
             include_metadata=True,
             namespace=namespace,
