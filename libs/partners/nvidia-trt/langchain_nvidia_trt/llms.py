@@ -84,7 +84,9 @@ class TritonTensorRTLLM(BaseLLM):
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that python package exists in environment."""
         if not values.get("client"):
-            values["client"] = grpcclient.InferenceServerClient(values["server_url"], verbose=values.get("verbose",False))
+            values["client"] = grpcclient.InferenceServerClient(
+                values["server_url"], verbose=values.get("verbose", False)
+            )
         return values
 
     @property
