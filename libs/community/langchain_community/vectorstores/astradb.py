@@ -275,6 +275,13 @@ class AstraDB(VectorStore):
             )
         return self._embedding_dimension
 
+    async def _aget_embedding_dimension(self) -> int:
+        if self._embedding_dimension is None:
+            self._embedding_dimension = len(
+                await self.embedding.aembed_query("This is a sample sentence.")
+            )
+        return self._embedding_dimension
+
     def _provision_collection(self) -> None:
         """
         Run the API invocation to create the collection on the backend.
@@ -295,8 +302,9 @@ class AstraDB(VectorStore):
         Internal-usage method, no object members are set,
         other than working on the underlying actual storage.
         """
+        dimension = await self._aget_embedding_dimension()
         await self.async_astra_db.create_collection(
-            dimension=self._get_embedding_dimension(),
+            dimension=dimension,
             collection_name=self.collection_name,
             metric=self.metric,
         )
