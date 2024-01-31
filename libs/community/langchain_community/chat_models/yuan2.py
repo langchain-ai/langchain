@@ -39,10 +39,14 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
+)
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionMessage,
 )
 from tenacity import (
     before_sleep_log,
@@ -50,11 +54,6 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-)
-
-from openai.types.chat import (
-    ChatCompletion,
-    ChatCompletionMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -208,7 +207,10 @@ class ChatYuan2(BaseChatModel):
     yuan2_api_key: Optional[str] = Field(default="EMPTY", alias="api_key")
     """Automatically inferred from env var `YUAN2_API_KEY` if not provided."""
 
-    yuan2_api_base: Optional[str] = Field(default="http://127.0.0.1:8000", alias="base_url")
+    yuan2_api_base: Optional[str] = Field(
+        default="http://127.0.0.1:8000",
+        alias="base_url"
+    )
     """Base URL path for API requests, an OpenAI compatible API server."""
 
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -233,7 +235,8 @@ class ChatYuan2(BaseChatModel):
     # """The top-k value to use for sampling."""
 
     # do_sample: bool = False
-    # """The do_sample is a Boolean value that determines whether to use the sampling method during text generation."""
+    # """The do_sample is a Boolean value that determines whether
+    # to use the sampling method during text generation."""
 
     # echo: Optional[bool] = False
     # """Whether to echo the prompt."""
@@ -308,7 +311,6 @@ class ChatYuan2(BaseChatModel):
                 **client_params
             ).chat.completions
 
-
         return values
 
     @property
@@ -339,7 +341,9 @@ class ChatYuan2(BaseChatModel):
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
-        logger.debug(f"type(llm_outputs): {type(llm_outputs)}; llm_outputs: {llm_outputs}")
+        logger.debug(
+            f"type(llm_outputs): {type(llm_outputs)}; llm_outputs: {llm_outputs}"
+        )
         for output in llm_outputs:
             if output is None:
                 # Happens in streaming

@@ -1,13 +1,16 @@
 """Test ChatYuan2 wrapper."""
 
 import pytest
+from langchain_community.chat_models.yuan2 import (
+    ChatYuan2,
+    _convert_message_to_dict,
+    _convert_dict_to_message,
+)
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
-
-from langchain_community.chat_models.yuan2 import ChatYuan2, _convert_message_to_dict, _convert_dict_to_message
 
 
 @pytest.mark.requires("openai")

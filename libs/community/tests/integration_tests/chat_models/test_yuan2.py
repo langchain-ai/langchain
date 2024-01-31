@@ -152,4 +152,3 @@ async def test_async_chat_yuan2_streaming() -> None:
         assert isinstance(generation, ChatGeneration)
         assert isinstance(generation.text, str)
         assert generation.text == generation.message.content
-
