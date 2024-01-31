@@ -70,9 +70,7 @@ def create_sql_agent(
         format_instructions: Formatting instructions to pass to
             ZeroShotAgent.create_prompt() when 'agent_type' is
             "zero-shot-react-description". Otherwise ignored.
-        input_variables: DEPRECATED. Input variables to explicitly specify as part of
-            ZeroShotAgent.create_prompt() when 'agent_type' is
-            "zero-shot-react-description". Otherwise ignored.
+        input_variables: DEPRECATED.
         top_k: Number of rows to query for by default.
         max_iterations: Passed to AgentExecutor init.
         max_execution_time: Passed to AgentExecutor init.
@@ -123,6 +121,9 @@ def create_sql_agent(
         raise ValueError(
             "Must provide exactly one of 'toolkit' or 'db'. Received both."
         )
+    if input_variables:
+        kwargs = kwargs or {}
+        kwargs["input_variables"] = input_variables
     if kwargs:
         warnings.warn(
             f"Received additional kwargs {kwargs} which are no longer supported."
@@ -203,7 +204,10 @@ def create_sql_agent(
         )
 
     else:
-        raise ValueError(f"Agent type {agent_type} not supported at the moment.")
+        raise ValueError(
+            f"Agent type {agent_type} not supported at the moment. Must be one of "
+            "'openai-tools', 'openai-functions', or 'zero-shot-react-description'."
+        )
 
     return AgentExecutor(
         name="SQL Agent Executor",
