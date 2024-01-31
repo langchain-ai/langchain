@@ -1,0 +1,43 @@
+@base <https://swapi.co/resource/>.
+@prefix voc:  <https://swapi.co/vocabulary/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+{
+
+<besalisk/71>
+        a              voc:Besalisk , voc:Character ;
+        rdfs:label     "Dexter Jettster" ;
+        voc:eyeColor   "yellow" ;
+        voc:gender     "male" ;
+        voc:height     198.0 ;
+        voc:mass       102.0 ;
+        voc:skinColor  "brown" .
+
+}
+
+<https://swapi.co/ontology/> {
+
+  voc:Character a owl:Class .
+  voc:Species a owl:Class .
+
+  voc:Besalisk a voc:Species;
+    rdfs:label "Besalisk";
+    voc:averageHeight 178.0;
+    voc:averageLifespan "75";
+    voc:character <https://swapi.co/resource/besalisk/71>;
+    voc:language "besalisk";
+    voc:skinColor "brown";
+    voc:eyeColor "yellow" .
+
+  voc:averageHeight a owl:DatatypeProperty .
+  voc:averageLifespan a owl:DatatypeProperty .
+  voc:character a owl:ObjectProperty .
+  voc:language a owl:DatatypeProperty .
+  voc:skinColor a owl:DatatypeProperty .
+  voc:eyeColor a owl:DatatypeProperty .
+  voc:gender a owl:DatatypeProperty .
+  voc:height a owl:DatatypeProperty .
+  voc:mass a owl:DatatypeProperty .
+
+}
