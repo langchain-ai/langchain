@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, Callable
-import numpy as np
+from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Type
 
+import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
@@ -446,7 +446,9 @@ class DatabricksVectorSearch(VectorStore):
             lambda_mult=lambda_mult,
         )
 
-        candidates = self._parse_search_response(search_resp, ignore_cols=[embedding_column])
+        candidates = self._parse_search_response(
+            search_resp, ignore_cols=[embedding_column]
+        )
         selected_results = [r[0] for i, r in enumerate(candidates) if i in mmr_selected]
         return selected_results
 
