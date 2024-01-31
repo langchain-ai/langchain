@@ -474,7 +474,12 @@ async def aindex(
         try:
             async_doc_iterator = docs_source.alazy_load()
         except NotImplementedError:
-            async_doc_iterator = _to_async_iterator(await docs_source.aload())
+            # Exception triggered when neither lazy_load nor alazy_load are implemented.
+            # * The default implementation of alazy_load uses lazy_load.
+            # * The default implementation of lazy_load raises NotImplementedError.
+            # In such a case, we use the load method and convert it to an async
+            # iterator.
+            async_doc_iterator = _to_async_iterator(docs_source.load())
     else:
         if hasattr(docs_source, "__aiter__"):
             async_doc_iterator = docs_source  # type: ignore[assignment]
