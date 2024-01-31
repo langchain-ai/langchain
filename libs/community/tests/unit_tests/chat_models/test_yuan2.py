@@ -1,6 +1,5 @@
 """Test ChatYuan2 wrapper."""
 
-import pytest
 from langchain_community.chat_models.yuan2 import (
     ChatYuan2,
     _convert_message_to_dict,
@@ -11,7 +10,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-
+import pytest
 
 @pytest.mark.requires("openai")
 def test_yuan2_model_param() -> None:
