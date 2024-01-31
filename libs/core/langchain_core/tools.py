@@ -111,25 +111,24 @@ class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
 
         args_schema_type = cls.__annotations__.get("args_schema", None)
 
-        if args_schema_type is not None:
-            if args_schema_type is None or args_schema_type == BaseModel:
-                # Throw errors for common mis-annotations.
-                # TODO: Use get_args / get_origin and fully
-                # specify valid annotations.
-                typehint_mandate = """
+        if args_schema_type is not None and args_schema_type == BaseModel:
+            # Throw errors for common mis-annotations.
+            # TODO: Use get_args / get_origin and fully
+            # specify valid annotations.
+            typehint_mandate = """
 class ChildTool(BaseTool):
     ...
     args_schema: Type[BaseModel] = SchemaClass
     ..."""
-                name = cls.__name__
-                raise SchemaAnnotationError(
-                    f"Tool definition for {name} must include valid type annotations"
-                    f" for argument 'args_schema' to behave as expected.\n"
-                    f"Expected annotation of 'Type[BaseModel]'"
-                    f" but got '{args_schema_type}'.\n"
-                    f"Expected class looks like:\n"
-                    f"{typehint_mandate}"
-                )
+            name = cls.__name__
+            raise SchemaAnnotationError(
+                f"Tool definition for {name} must include valid type annotations"
+                f" for argument 'args_schema' to behave as expected.\n"
+                f"Expected annotation of 'Type[BaseModel]'"
+                f" but got '{args_schema_type}'.\n"
+                f"Expected class looks like:\n"
+                f"{typehint_mandate}"
+            )
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
@@ -312,7 +311,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
-        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -341,6 +339,7 @@ class ChildTool(BaseTool):
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
@@ -392,7 +391,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
-        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -416,6 +414,7 @@ class ChildTool(BaseTool):
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
