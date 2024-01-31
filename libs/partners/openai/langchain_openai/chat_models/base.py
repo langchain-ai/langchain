@@ -12,11 +12,13 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
     Tuple,
     Type,
+    TypedDict,
     Union,
     cast,
 )
@@ -50,13 +52,18 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import (
+    convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+    convert_to_openai_tool,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -177,6 +184,10 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)  # type: ignore
 
 
+class _FunctionCall(TypedDict):
+    name: str
+
+
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
@@ -230,10 +241,7 @@ class ChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    # When updating this to use a SecretStr
-    # Check for classes that derive from this class (as some of them
-    # may assume openai_api_key is a str)
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
@@ -311,8 +319,8 @@ class ChatOpenAI(BaseChatModel):
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
 
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
         )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
@@ -331,7 +339,9 @@ class ChatOpenAI(BaseChatModel):
         )
 
         client_params = {
-            "api_key": values["openai_api_key"],
+            "api_key": values["openai_api_key"].get_secret_value()
+            if values["openai_api_key"]
+            else None,
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
@@ -626,11 +636,19 @@ class ChatOpenAI(BaseChatModel):
 
     def bind_functions(
         self,
-        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
-        function_call: Optional[str] = None,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        function_call: Optional[
+            Union[_FunctionCall, str, Literal["auto", "none"]]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind functions (and other objects) to this chat model.
+
+        Assumes model is compatible with OpenAI function-calling API.
+
+        NOTE: Using bind_tools is recommended instead, as the `functions` and
+            `function_call` request parameters are officially marked as deprecated by
+            OpenAI.
 
         Args:
             functions: A list of function definitions to bind to this chat model.
@@ -647,19 +665,76 @@ class ChatOpenAI(BaseChatModel):
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
         if function_call is not None:
-            if len(formatted_functions) != 1:
+            function_call = (
+                {"name": function_call}
+                if isinstance(function_call, str)
+                and function_call not in ("auto", "none")
+                else function_call
+            )
+            if isinstance(function_call, dict) and len(formatted_functions) != 1:
                 raise ValueError(
                     "When specifying `function_call`, you must provide exactly one "
                     "function."
                 )
-            if formatted_functions[0]["name"] != function_call:
+            if (
+                isinstance(function_call, dict)
+                and formatted_functions[0]["name"] != function_call["name"]
+            ):
                 raise ValueError(
                     f"Function call {function_call} was specified, but the only "
                     f"provided function was {formatted_functions[0]['name']}."
                 )
-            function_call_ = {"name": function_call}
-            kwargs = {**kwargs, "function_call": function_call_}
+            kwargs = {**kwargs, "function_call": function_call}
         return super().bind(
             functions=formatted_functions,
+            **kwargs,
+        )
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "none"]]] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any), or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice is not None:
+            if isinstance(tool_choice, str) and tool_choice not in ("auto", "none"):
+                tool_choice = {"type": "function", "function": {"name": tool_choice}}
+            if isinstance(tool_choice, dict) and len(formatted_tools) != 1:
+                raise ValueError(
+                    "When specifying `tool_choice`, you must provide exactly one "
+                    f"tool. Received {len(formatted_tools)} tools."
+                )
+            if (
+                isinstance(tool_choice, dict)
+                and formatted_tools[0]["function"]["name"]
+                != tool_choice["function"]["name"]
+            ):
+                raise ValueError(
+                    f"Tool choice {tool_choice} was specified, but the only "
+                    f"provided tool was {formatted_tools[0]['function']['name']}."
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(
+            tools=formatted_tools,
             **kwargs,
         )
