@@ -9,6 +9,7 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
+from langchain_core.runnables import run_in_executor
 
 
 class BaseChatMessageHistory(ABC):
@@ -56,6 +57,10 @@ class BaseChatMessageHistory(ABC):
     messages: List[BaseMessage]
     """A list of Messages stored in-memory."""
 
+    async def amessages(self) -> List[BaseMessage]:
+        """Return messages stored in memory."""
+        return await run_in_executor(None, lambda: self.messages)
+
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
         """Convenience method for adding a human message string to the store.
 
@@ -98,7 +103,7 @@ class BaseChatMessageHistory(ABC):
         """
         if type(self).add_messages != BaseChatMessageHistory.add_messages:
             # This means that the sub-class has implemented an efficient add_messages
-            # method, so we should usage of add_message to that.
+            # method, so we should use it.
             self.add_messages([message])
         else:
             raise NotImplementedError(
@@ -118,9 +123,21 @@ class BaseChatMessageHistory(ABC):
         for message in messages:
             self.add_message(message)
 
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Add a list of messages.
+
+        Args:
+            messages: A list of BaseMessage objects to store.
+        """
+        await run_in_executor(None, self.add_messages, messages)
+
     @abstractmethod
     def clear(self) -> None:
         """Remove all messages from the store"""
+
+    async def aclear(self) -> None:
+        """Remove all messages from the store"""
+        await run_in_executor(None, self.clear)
 
     def __str__(self) -> str:
         """Return a string representation of the chat history."""
