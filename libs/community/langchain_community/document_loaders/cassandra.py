@@ -1,4 +1,5 @@
-import json
+from __future__ import annotations
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,13 +15,6 @@ from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
 
-
-def default_page_content_mapper(row: Any) -> str:
-    if hasattr(row, "_asdict"):
-        return json.dumps(row._asdict())
-    return json.dumps(row)
-
-
 _NOT_SET = object()
 
 if TYPE_CHECKING:
@@ -33,10 +27,10 @@ class CassandraLoader(BaseLoader):
     def __init__(
         self,
         table: Optional[str] = None,
-        session: Optional["Session"] = None,
+        session: Optional[Session] = None,
         keyspace: Optional[str] = None,
-        query: Optional[Union[str, "Statement"]] = None,
-        page_content_mapper: Callable[[Any], str] = default_page_content_mapper,
+        query: Optional[Union[str, Statement]] = None,
+        page_content_mapper: Callable[[Any], str] = str,
         metadata_mapper: Callable[[Any], dict] = lambda _: {},
         *,
         query_parameters: Union[dict, Sequence] = None,
@@ -45,7 +39,7 @@ class CassandraLoader(BaseLoader):
         query_custom_payload: dict = None,
         query_execution_profile: Any = _NOT_SET,
         query_paging_state: Any = None,
-        query_host: "Host" = None,
+        query_host: Host = None,
         query_execute_as: str = None,
     ) -> None:
         """
@@ -61,6 +55,7 @@ class CassandraLoader(BaseLoader):
             query: The query used to load the data.
                 (do not use together with the table parameter)
             page_content_mapper: a function to convert a row to string page content.
+                Defaults to the str representation of the row.
             query_parameters: The query parameters used when calling session.execute .
             query_timeout: The query timeout used when calling session.execute .
             query_custom_payload: The query custom_payload used when calling
