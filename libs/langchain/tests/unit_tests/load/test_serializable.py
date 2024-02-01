@@ -44,12 +44,12 @@ def test_serializable_mapping() -> None:
     # exported from the langchain module, but we keep for whoever has
     # already serialized it.
     to_skip = {
-        ("langchain", "schema", "prompt_template", "ImagePromptTemplate"): (
+        ("langchain", "prompts", "image", "ImagePromptTemplate"): (
             "langchain_core",
             "prompts",
             "image",
             "ImagePromptTemplate",
-        )
+        ),
     }
     serializable_modules = import_all_modules("langchain")
     missing = set(SERIALIZABLE_MAPPING).difference(
@@ -66,3 +66,6 @@ def test_serializable_mapping() -> None:
         # Import class
         cls = getattr(mod, import_obj)
         assert list(k) == cls.lc_id()
+
+
+def test_image_prompt_template_serializag

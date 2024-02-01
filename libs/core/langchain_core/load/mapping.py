@@ -516,6 +516,12 @@ _OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "system",
         "SystemMessage",
     ),
+    ("langchain", "schema", "prompt_template", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
+    ),
 }
 
 # Needed for backwards compatibility for a few versions where we serialized
