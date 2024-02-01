@@ -1,5 +1,5 @@
 ---
-name: cd . / make spell_check
+name: CI / cd . / make spell_check
 
 on:
   push:
