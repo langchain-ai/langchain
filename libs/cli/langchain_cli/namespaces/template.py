@@ -9,10 +9,9 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from langserve.packages import get_langserve_export
 from typing_extensions import Annotated
 
-from langchain_cli.utils.packages import get_package_root
+from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -130,3 +129,15 @@ def serve(
         port=port if port is not None else 8000,
         host=host_str,
     )
+
+
+@package_cli.command()
+def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:
+    """
+    List all or search for available templates.
+    """
+    from langchain_cli.utils.github import list_packages
+
+    packages = list_packages(contains=contains)
+    for package in packages:
+        typer.echo(package)

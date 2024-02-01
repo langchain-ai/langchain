@@ -21,7 +21,6 @@ Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive 
 
 from __future__ import annotations
 
-import asyncio
 import copy
 import logging
 import pathlib
@@ -29,7 +28,6 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from functools import partial
 from io import BytesIO, StringIO
 from typing import (
     AbstractSet,
@@ -51,16 +49,16 @@ from typing import (
 )
 
 import requests
-
-from langchain.docstore.document import Document
-from langchain.schema import BaseDocumentTransformer
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 logger = logging.getLogger(__name__)
 
 TS = TypeVar("TS", bound="TextSplitter")
 
 
-def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing spacy
+def _make_spacy_pipeline_for_splitting(
+    pipeline: str, *, max_length: int = 1_000_000
+) -> Any:  # avoid importing spacy
     try:
         import spacy
     except ImportError:
@@ -74,6 +72,7 @@ def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])
+        sentencizer.max_length = max_length
     return sentencizer
 
 
@@ -142,12 +141,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            index = -1
+            index = 0
+            previous_chunk_len = 0
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    index = text.find(chunk, index + 1)
+                    offset = index + previous_chunk_len - self._chunk_overlap
+                    index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
+                    previous_chunk_len = len(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
@@ -282,14 +284,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Transform sequence of documents by splitting them."""
         return self.split_documents(list(documents))
 
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Asynchronously transform a sequence of documents by splitting them."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.transform_documents, **kwargs), documents
-        )
-
 
 class CharacterTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
@@ -332,13 +326,17 @@ class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
     def __init__(
-        self, headers_to_split_on: List[Tuple[str, str]], return_each_line: bool = False
+        self,
+        headers_to_split_on: List[Tuple[str, str]],
+        return_each_line: bool = False,
+        strip_headers: bool = True,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
         Args:
             headers_to_split_on: Headers we want to track
             return_each_line: Return each line w/ associated headers
+            strip_headers: Strip split headers from the content of the chunk
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -347,6 +345,8 @@ class MarkdownHeaderTextSplitter:
         self.headers_to_split_on = sorted(
             headers_to_split_on, key=lambda split: len(split[0]), reverse=True
         )
+        # Strip headers split headers from the content of the chunk
+        self.strip_headers = strip_headers
 
     def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
         """Combine lines with common metadata into chunks
@@ -364,6 +364,23 @@ class MarkdownHeaderTextSplitter:
                 # has the same metadata as the current line,
                 # append the current content to the last lines's content
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
+            elif (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] != line["metadata"]
+                # may be issues if other metadata is present
+                and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
+                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and not self.strip_headers
+            ):
+                # If the last line in the aggregated list
+                # has different metadata as the current line,
+                # and has shallower header level than the current line,
+                # and the last line is a header,
+                # and we are not stripping headers,
+                # append the current content to the last line's content
+                aggregated_chunks[-1]["content"] += "  \n" + line["content"]
+                # and update the last line's metadata
+                aggregated_chunks[-1]["metadata"] = line["metadata"]
             else:
                 # Otherwise, append the current line to the aggregated list
                 aggregated_chunks.append(line)
@@ -391,16 +408,23 @@ class MarkdownHeaderTextSplitter:
         initial_metadata: Dict[str, str] = {}
 
         in_code_block = False
+        opening_fence = ""
 
         for line in lines:
             stripped_line = line.strip()
 
-            if stripped_line.startswith("```"):
-                # code block in one row
-                if stripped_line.count("```") >= 2:
+            if not in_code_block:
+                # Exclude inline code spans
+                if stripped_line.startswith("```") and stripped_line.count("```") == 1:
+                    in_code_block = True
+                    opening_fence = "```"
+                elif stripped_line.startswith("~~~"):
+                    in_code_block = True
+                    opening_fence = "~~~"
+            else:
+                if stripped_line.startswith(opening_fence):
                     in_code_block = False
-                else:
-                    in_code_block = not in_code_block
+                    opening_fence = ""
 
             if in_code_block:
                 current_content.append(stripped_line)
@@ -452,6 +476,9 @@ class MarkdownHeaderTextSplitter:
                             }
                         )
                         current_content.clear()
+
+                    if not self.strip_headers:
+                        current_content.append(stripped_line)
 
                     break
             else:
@@ -574,7 +601,9 @@ class HTMLHeaderTextSplitter:
                 "Unable to import lxml, please install with `pip install lxml`."
             ) from e
         # use lxml library to parse html document and return xml ElementTree
-        parser = etree.HTMLParser()
+        # Explicitly encoding in utf-8 allows non-English
+        # html files to be processed without garbled characters
+        parser = etree.HTMLParser(encoding="utf-8")
         tree = etree.parse(file, parser)
 
         # document transformation for "structure-aware" chunking is handled with xsl.
@@ -647,7 +676,7 @@ class Tokenizer:
     """Overlap in tokens between chunks"""
     tokens_per_chunk: int
     """Maximum number of tokens per chunk"""
-    decode: Callable[[list[int]], str]
+    decode: Callable[[List[int]], str]
     """ Function to decode a list of token ids to a string"""
     encode: Callable[[str], List[int]]
     """ Function to encode a string to a list of token ids"""
@@ -662,6 +691,8 @@ def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
     chunk_ids = input_ids[start_idx:cur_idx]
     while start_idx < len(input_ids):
         splits.append(tokenizer.decode(chunk_ids))
+        if cur_idx == len(input_ids):
+            break
         start_idx += tokenizer.tokens_per_chunk - tokenizer.chunk_overlap
         cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
         chunk_ids = input_ids[start_idx:cur_idx]
@@ -1375,21 +1406,60 @@ class SpacyTextSplitter(TextSplitter):
     """Splitting text using Spacy package.
 
 
-    Per default, Spacy's `en_core_web_sm` model is used. For a faster, but
+    Per default, Spacy's `en_core_web_sm` model is used and
+    its default max_length is 1000000 (it is the length of maximum character
+    this model takes which can be increased for large files). For a faster, but
     potentially less accurate splitting, you can use `pipeline='sentencizer'`.
     """
 
     def __init__(
-        self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
+        self,
+        separator: str = "\n\n",
+        pipeline: str = "en_core_web_sm",
+        max_length: int = 1_000_000,
+        **kwargs: Any,
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        self._tokenizer = _make_spacy_pipeline_for_splitting(pipeline)
+        self._tokenizer = _make_spacy_pipeline_for_splitting(
+            pipeline, max_length=max_length
+        )
         self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         splits = (s.text for s in self._tokenizer(text).sents)
+        return self._merge_splits(splits, self._separator)
+
+
+class KonlpyTextSplitter(TextSplitter):
+    """Splitting text using Konlpy package.
+
+    It is good for splitting Korean text.
+    """
+
+    def __init__(
+        self,
+        separator: str = "\n\n",
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the Konlpy text splitter."""
+        super().__init__(**kwargs)
+        self._separator = separator
+        try:
+            from konlpy.tag import Kkma
+        except ImportError:
+            raise ImportError(
+                """
+                Konlpy is not installed, please install it with 
+                `pip install konlpy`
+                """
+            )
+        self.kkma = Kkma()
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        splits = self.kkma.sentences(text)
         return self._merge_splits(splits, self._separator)
 
 

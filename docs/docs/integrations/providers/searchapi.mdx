@@ -14,14 +14,14 @@ This page covers how to use the [SearchApi](https://www.searchapi.io/) Google Se
 There is a SearchApiAPIWrapper utility which wraps this API. To import this utility:
 
 ```python
-from langchain.utilities import SearchApiAPIWrapper
+from langchain_community.utilities import SearchApiAPIWrapper
 ```
 
 You can use it as part of a Self Ask chain:
 
 ```python
-from langchain.utilities import SearchApiAPIWrapper
-from langchain.llms.openai import OpenAI
+from langchain_community.utilities import SearchApiAPIWrapper
+from langchain_openai import OpenAI
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 

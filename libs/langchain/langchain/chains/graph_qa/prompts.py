@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_ENTITY_EXTRACTION_TEMPLATE = """Extract all entities from the following text. As a guideline, a proper noun is generally capitalized. You should definitely extract all names and places.
 
@@ -197,6 +197,68 @@ SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
 )
 
+GRAPHDB_SPARQL_GENERATION_TEMPLATE = """
+Write a SPARQL SELECT query for querying a graph database.
+The ontology schema delimited by triple backticks in Turtle format is:
+```
+{schema}
+```
+Use only the classes and properties provided in the schema to construct the SPARQL query.
+Do not use any classes or properties that are not explicitly provided in the SPARQL query.
+Include all necessary prefixes.
+Do not include any explanations or apologies in your responses.
+Do not wrap the query in backticks.
+Do not include any text except the SPARQL query generated.
+The question delimited by triple backticks is:
+```
+{prompt}
+```
+"""
+GRAPHDB_SPARQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "prompt"],
+    template=GRAPHDB_SPARQL_GENERATION_TEMPLATE,
+)
+
+GRAPHDB_SPARQL_FIX_TEMPLATE = """
+This following SPARQL query delimited by triple backticks
+```
+{generated_sparql}
+```
+is not valid.
+The error delimited by triple backticks is
+```
+{error_message}
+```
+Give me a correct version of the SPARQL query.
+Do not change the logic of the query.
+Do not include any explanations or apologies in your responses.
+Do not wrap the query in backticks.
+Do not include any text except the SPARQL query generated.
+The ontology schema delimited by triple backticks in Turtle format is:
+```
+{schema}
+```
+"""
+
+GRAPHDB_SPARQL_FIX_PROMPT = PromptTemplate(
+    input_variables=["error_message", "generated_sparql", "schema"],
+    template=GRAPHDB_SPARQL_FIX_TEMPLATE,
+)
+
+GRAPHDB_QA_TEMPLATE = """Task: Generate a natural language response from the results of a SPARQL query.
+You are an assistant that creates well-written and human understandable answers.
+The information part contains the information provided, which you can use to construct an answer.
+The information provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
+Make your response sound like the information is coming from an AI assistant, but don't add any information.
+Don't use internal knowledge to answer the question, just say you don't know if no information is available.
+Information:
+{context}
+
+Question: {prompt}
+Helpful Answer:"""
+GRAPHDB_QA_PROMPT = PromptTemplate(
+    input_variables=["context", "prompt"], template=GRAPHDB_QA_TEMPLATE
+)
 
 AQL_GENERATION_TEMPLATE = """Task: Generate an ArangoDB Query Language (AQL) query from a User Input.
 
@@ -320,7 +382,7 @@ Instructions:
 Generate the query in openCypher format and follow these rules:
 Do not use `NONE`, `ALL` or `ANY` predicate functions, rather use list comprehensions.
 Do not use `REDUCE` function. Rather use a combination of list comprehension and the `UNWIND` clause to achieve similar results.
-Do not use `FOREACH` clause. Rather use a combination of `WITH` and `UNWIND` clauses to achieve similar results.
+Do not use `FOREACH` clause. Rather use a combination of `WITH` and `UNWIND` clauses to achieve similar results.{extra_instructions}
 \n"""
 
 NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
@@ -328,18 +390,18 @@ NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
 )
 
 NEPTUNE_OPENCYPHER_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"],
+    input_variables=["schema", "question", "extra_instructions"],
     template=NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE,
 )
 
 NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE = """
-Write an openCypher query to answer the following question. Do not explain the answer. Only return the query. 
+Write an openCypher query to answer the following question. Do not explain the answer. Only return the query.{extra_instructions}
 Question:  "{question}". 
 Here is the property graph schema: 
 {schema}
 \n"""
 
 NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT = PromptTemplate(
-    input_variables=["schema", "question"],
+    input_variables=["schema", "question", "extra_instructions"],
     template=NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE,
 )

@@ -180,7 +180,6 @@ def test_simple_sequential_functionality() -> None:
     assert output == expected_output
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("isAsync", [False, True])
 async def test_simple_sequential_functionality_with_callbacks(isAsync: bool) -> None:
     """Test simple sequential functionality."""

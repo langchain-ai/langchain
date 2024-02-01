@@ -3,9 +3,10 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import BaseModel
+
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.messages import BaseMessage
 
 
 class BaseFakeCallbackHandler(BaseModel):

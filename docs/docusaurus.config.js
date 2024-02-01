@@ -14,9 +14,6 @@ const config = {
   title: "🦜️🔗 Langchain",
   tagline: "LangChain Python Docs",
   favicon: "img/favicon.ico",
-  customFields: {
-    mendableAnonKey: process.env.MENDABLE_ANON_KEY,
-  },
   // Set the production url of your site here
   url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
@@ -25,6 +22,11 @@ const config = {
 
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "throw",
+
+  themes: ["@docusaurus/theme-mermaid"],
+  markdown: {
+    mermaid: true,
+  },
 
   plugins: [
     () => ({
@@ -176,16 +178,26 @@ const config = {
             position: "left",
             items: [
               {
-                to: "/docs/community",
-                label: "Community",
+                to: "/docs/packages",
+                label: "Versioning",
+              },
+              {
+                type: "docSidebar",
+                sidebarId: "changelog",
+                label: "Changelog",
               },
               {
                 to: "/docs/contributing",
                 label: "Developer's guide",
               },
               {
-                to: "/docs/additional_resources/dependents",
-                label: "Dependents",
+                type: "docSidebar",
+                sidebarId: "templates",
+                label: "Templates",
+              },
+              {
+                label: "Cookbooks",
+                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
                 to: "/docs/additional_resources/tutorials",
@@ -195,17 +207,11 @@ const config = {
                 to: "/docs/additional_resources/youtube",
                 label: "YouTube videos"
               },
-              { label: "Gallery", href: "https://github.com/kyrolabs/awesome-langchain" }
             ]
           },
           {
-            href: "https://chat.langchain.com",
-            label: "Chat our docs",
-            position: "right",
-          },
-          {
             type: "dropdown",
-            label: "Also by LangChain",
+            label: "🦜️🔗",
             position: "right",
             items: [
               {
@@ -213,8 +219,20 @@ const config = {
                 label: "LangSmith",
               },
               {
+                href: "https://docs.smith.langchain.com/",
+                label: "LangSmith Docs",
+              },
+              {
                 href: "https://github.com/langchain-ai/langserve",
                 label: "LangServe GitHub",
+              },
+              {
+                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
+                label: "Templates GitHub",
+              },
+              {
+                label: "Templates Hub",
+                href: "https://templates.langchain.com",
               },
               {
                 href: "https://smith.langchain.com/hub",
@@ -225,6 +243,11 @@ const config = {
                 label: "JS/TS Docs",
               },
             ]
+          },
+          {
+            href: "https://chat.langchain.com",
+            label: "Chat",
+            position: "right",
           },
           // Please keep GitHub link to the right for consistency.
           {
@@ -280,6 +303,18 @@ const config = {
         ],
         copyright: `Copyright © ${new Date().getFullYear()} LangChain, Inc.`,
       },
+      algolia: {
+        // The application ID provided by Algolia
+        appId: "VAU016LAWS",
+
+        // Public API key: it is safe to commit it
+        // this is linked to erick@langchain.dev currently
+        apiKey: "6c01842d6a88772ed2236b9c85806441",
+
+        indexName: "python-langchain",
+
+        contextualSearch: true,
+      },
     }),
 
   scripts: [
@@ -289,6 +324,7 @@ const config = {
       async: true,
     },
   ],
+  
 };
 
 module.exports = config;

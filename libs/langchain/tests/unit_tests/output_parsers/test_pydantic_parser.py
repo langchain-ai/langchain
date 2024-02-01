@@ -2,9 +2,10 @@
 from enum import Enum
 from typing import Optional
 
+from langchain_core.exceptions import OutputParserException
+from langchain_core.pydantic_v1 import BaseModel, Field
+
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import OutputParserException
 
 
 class Actions(Enum):
@@ -75,3 +76,28 @@ def test_pydantic_output_parser_fail() -> None:
         assert "Failed to parse TestModel from completion" in str(e)
     else:
         assert False, "Expected OutputParserException"
+
+
+def test_pydantic_output_parser_type_inference() -> None:
+    """Test pydantic output parser type inference."""
+
+    class SampleModel(BaseModel):
+        foo: int
+        bar: str
+
+    # Ignoring mypy error that appears in python 3.8, but not 3.11.
+    # This seems to be functionally correct, so we'll ignore the error.
+    pydantic_parser = PydanticOutputParser(
+        pydantic_object=SampleModel  # type: ignore[var-annotated]
+    )
+    schema = pydantic_parser.get_output_schema().schema()
+
+    assert schema == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "string"},
+            "foo": {"title": "Foo", "type": "integer"},
+        },
+        "required": ["foo", "bar"],
+        "title": "SampleModel",
+        "type": "object",
+    }
