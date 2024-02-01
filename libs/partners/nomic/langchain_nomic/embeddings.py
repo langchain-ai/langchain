@@ -30,7 +30,8 @@ class NomicEmbeddings(Embeddings):
                 environment variable by default.
         """
         _api_key = nomic_api_key or os.environ.get("NOMIC_API_KEY")
-        nomic.login(_api_key)
+        if _api_key:
+            nomic.login(_api_key)
         self.model = model
 
     def embed(self, texts: List[str], *, task_type: str) -> List[List[float]]:
