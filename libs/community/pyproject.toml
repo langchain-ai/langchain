@@ -261,7 +261,7 @@ extended_testing = [
  "rdflib",
 ]
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
