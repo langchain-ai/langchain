@@ -36,28 +36,28 @@ env:
 
 jobs:
   lint:
-    name: ""
+    name: "-"
     uses: ./.github/workflows/_lint.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   test:
-    name: 
+    name: "-"
     uses: ./.github/workflows/_test.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   compile-integration-tests:
-    name: 
+    name: "-"
     uses: ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   dependencies:
-    name: 
+    name: "-"
     uses: ./.github/workflows/_dependencies.yml
     with:
       working-directory: ${{ inputs.working-directory }}
