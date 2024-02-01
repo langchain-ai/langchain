@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import logging
-import numpy as np
 from enum import Enum
-from typing import Any, Iterable, List, Optional, Tuple, Dict
+from typing import Any, Iterable, List, Optional, Tuple
 
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
+import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import VectorStore
 
-from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
@@ -259,7 +258,9 @@ class Rockset(VectorStore):
         exclude_embeddings = True
         if "exclude_embeddings" in kwargs:
             exclude_embeddings = kwargs["exclude_embeddings"]
-        q_str = self._build_query_sql(embedding, distance_func, k, where_str, exclude_embeddings)
+        q_str = self._build_query_sql(
+            embedding, distance_func, k, where_str, exclude_embeddings
+        )
         try:
             query_response = self._client.Queries.query(sql={"query": q_str})
         except Exception as e:
@@ -302,7 +303,7 @@ class Rockset(VectorStore):
         fetch_k: int = 20,
         where_str: Optional[str] = None,
         lambda_mult: float = 0.5,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """Return docs selected using the maximal marginal relevance.
 
@@ -329,13 +330,16 @@ class Rockset(VectorStore):
             k=fetch_k,
             where_str=where_str,
             exclude_embeddings=False,
-            **kwargs
+            **kwargs,
         )
 
         embeddings = [doc.metadata[self._embedding_key] for doc in initial_docs]
 
         selected_indices = maximal_marginal_relevance(
-            np.array(query_embedding), embeddings, lambda_mult=lambda_mult, k=k,
+            np.array(query_embedding),
+            embeddings,
+            lambda_mult=lambda_mult,
+            k=k,
         )
 
         # remove embeddings key before returning for cleanup to be consistent with
@@ -361,7 +365,9 @@ class Rockset(VectorStore):
         distance_str = f"""{distance_func.value}({self._embedding_key}, \
 [{q_embedding_str}]) as dist"""
         where_str = f"WHERE {where_str}\n" if where_str else ""
-        select_embedding = f" EXCEPT({self._embedding_key})," if exclude_embeddings else ","
+        select_embedding = (
+            f" EXCEPT({self._embedding_key})," if exclude_embeddings else ","
+        )
         return f"""\
 SELECT *{select_embedding} {distance_str}
 FROM {self._workspace}.{self._collection_name}

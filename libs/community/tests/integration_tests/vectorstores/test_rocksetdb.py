@@ -44,7 +44,6 @@ class TestRockset:
 
     @classmethod
     def setup_class(cls) -> None:
-
         assert os.environ.get("ROCKSET_API_KEY") is not None
         assert os.environ.get("ROCKSET_REGION") is not None
 
@@ -125,7 +124,10 @@ class TestRockset:
     def test_rockset_mmr_search(self) -> None:
         """Test end-to-end mmr search in Rockset"""
         output = self.rockset_vectorstore.max_marginal_relevance_search(
-            query="foo", distance_func=Rockset.DistanceFunction.COSINE_SIM, fetch_k=1, k=1
+            query="foo",
+            distance_func=Rockset.DistanceFunction.COSINE_SIM,
+            fetch_k=1,
+            k=1,
         )
         assert output == [Document(page_content="foo", metadata={"metadata_index": 0})]
 
@@ -178,11 +180,7 @@ LIMIT 4
     def test_build_query_sql_with_select_embeddings(self) -> None:
         vector = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
         q_str = self.rockset_vectorstore._build_query_sql(
-            vector,
-            Rockset.DistanceFunction.COSINE_SIM,
-            4,
-            "age >= 10",
-            False
+            vector, Rockset.DistanceFunction.COSINE_SIM, 4, "age >= 10", False
         )
         vector_str = ",".join(map(str, vector))
         expected = f"""\
