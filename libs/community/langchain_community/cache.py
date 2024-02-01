@@ -47,6 +47,8 @@ from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
+from libs.community.langchain_community.vectorstores.azure_cosmos_db import CosmosDBSimilarityType
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
@@ -61,6 +63,7 @@ from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
 
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
+from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 
 logger = logging.getLogger(__file__)
 
@@ -1555,3 +1558,182 @@ class AstraDBSemanticCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear the *whole* semantic cache."""
         self.astra_db.truncate_collection(self.collection_name)
+
+
+class CosmosDBMongoVCoreSemanticCache(BaseCache):
+    """Cache that uses Cosmos DB Mongo vCore vector-store backend"""
+
+    def __init__(
+            self,
+            cosmosdb_connection_string: str,
+            embedding: Embeddings,
+            *,
+            cosmosdb_client: Optional[Any] = None,
+            database_name: str = None,
+            collection_name: str = None,
+            num_lists: int = 100,
+            similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
+            kind: str = "vector-ivf",
+            dimensions: int = 1536,
+            m: int = 16,
+            ef_construction: int = 64,
+            ef_search: int = 40
+    ):
+        """
+        Args:
+            cosmosdb_connection_string: Cosmos DB Mongo vCore connection string
+            cosmosdb_client: Cosmos DB Mongo vCore client
+            embedding (Embedding): Embedding provider for semantic encoding and search.
+            database_name: Database name for the CosmosDBMongoVCoreSemanticCache
+            collection_name: Collection name for the CosmosDBMongoVCoreSemanticCache
+            num_lists: This integer is the number of clusters that the
+                inverted file (IVF) index uses to group the vector data.
+                We recommend that numLists is set to documentCount/1000
+                for up to 1 million documents and to sqrt(documentCount)
+                for more than 1 million documents.
+                Using a numLists value of 1 is akin to performing
+                brute-force search, which has limited performance
+            dimensions: Number of dimensions for vector similarity.
+                The maximum number of supported dimensions is 2000
+            similarity: Similarity metric to use with the IVF index.
+
+                Possible options are:
+                    - CosmosDBSimilarityType.COS (cosine distance),
+                    - CosmosDBSimilarityType.L2 (Euclidean distance), and
+                    - CosmosDBSimilarityType.IP (inner product).
+            kind: Type of vector index to create.
+                Possible options are:
+                    - vector-ivf
+                    - vector-hnsw: available as a preview feature only,
+                                   to enable visit https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/preview-features
+            m: The max number of connections per layer (16 by default, minimum
+               value is 2, maximum value is 100). Higher m is suitable for datasets
+               with high dimensionality and/or high accuracy requirements.
+            ef_construction: the size of the dynamic candidate list for constructing
+                            the graph (64 by default, minimum value is 4, maximum
+                            value is 1000). Higher ef_construction will result in
+                            better index quality and higher accuracy, but it will
+                            also increase the time required to build the index.
+                            ef_construction has to be at least 2 * m
+            ef_search: The size of the dynamic candidate list for search (40 by default).
+                      A higher value provides better recall at the cost of speed.
+        """
+
+        if not cosmosdb_connection_string:
+            raise ValueError(" CosmosDB connection string can be empty.")
+
+        self.cosmosdb_connection_string = cosmosdb_connection_string
+        self.cosmosdb_client = cosmosdb_client
+        self.embedding = embedding
+        self.database_name = "CosmosMongoVCoreCacheDB" if not database_name else database_name
+        self.collection_name = "CosmosMongoVCoreCacheColl" if not collection_name else collection_name
+        self.num_lists = num_lists
+        self.dimensions = dimensions
+        self.similarity = similarity
+        self.kind = kind
+        self.m = m
+        self.ef_construction = ef_construction
+        self.ef_search = ef_search
+        self._cache_dict: Dict[str, AzureCosmosDBVectorSearch] = {}
+
+    def _index_name(self, llm_string: str) -> str:
+        hashed_index = _hash(llm_string)
+        return f"cache:{hashed_index}"
+
+    def _get_llm_cache(self, llm_string: str):
+        try:
+            from pymongo import MongoClient
+        except ImportError:
+            raise ImportError(
+                "Could not import pymongo, please install it with "
+                "`pip install pymongo`."
+            )
+
+        index_name = self._index_name(llm_string)
+
+        namespace = self.database_name + "." + self.collection_name
+
+        # return vectorstore client for the specific llm string
+        if index_name in self._cache_dict:
+            return self._cache_dict[index_name]
+
+        # create new vectorstore client for the specific llm string
+        if self.cosmosdb_client:
+            collection = self.cosmosdb_client[self.database_name][self.collection_name]
+            self._cache_dict[index_name] = AzureCosmosDBVectorSearch(
+                collection=collection,
+                embedding=self.embedding,
+                index_name=index_name,
+            )
+        else:
+            self._cache_dict[index_name] = AzureCosmosDBVectorSearch.from_connection_string(
+                connection_string=self.cosmosdb_connection_string,
+                namespace=namespace,
+                embedding=self.embedding,
+                index_name=index_name,
+            )
+
+        # create index for the vectorstore
+        vectorstore = self._cache_dict[index_name]
+        vectorstore.create_index(
+            self.kind,
+            self.num_lists,
+            self.similarity,
+            self.dimensions,
+            self.m,
+            self.ef_construction)
+
+        return vectorstore
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        llm_cache = self._get_llm_cache(llm_string)
+        generations: List = []
+        # Read from a Hash
+        results = llm_cache.similarity_search(
+            query=prompt,
+            k=1,
+            kind=self.kind,
+            ef_search=self.ef_search
+        )
+        if results:
+            for document in results:
+                try:
+                    generations.extend(loads(document.metadata["return_val"]))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.extend(
+                        _load_generations_from_json(document.metadata["return_val"])
+                    )
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "CosmosDBMongoVCoreSemanticCache only supports caching of "
+                    f"normal LLM generations, got {type(gen)}")
+
+        llm_cache = self._get_llm_cache(llm_string)
+        metadata = {
+            "llm_string": llm_string,
+            "prompt": prompt,
+            "return_val": dumps([g for g in return_val]),
+        }
+        llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear semantic cache for a given llm_string."""
+        index_name = self._index_name(kwargs["llm_string"])
+        if index_name in self._cache_dict:
+            self._cache_dict[index_name].delete_index()
+            del self._cache_dict[index_name]
+
