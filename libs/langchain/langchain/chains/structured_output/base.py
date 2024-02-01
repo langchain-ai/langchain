@@ -1,45 +1,15 @@
+import json
 from typing import Sequence, Union, Dict, Any, Type, Callable, Optional, Literal
 
 from pydantic import BaseModel
 
 from langchain.output_parsers.openai_functions import PydanticOutputFunctionsParser, \
     JsonOutputFunctionsParser, PydanticAttrOutputFunctionsParser
-from langchain_core.output_parsers import BaseOutputParser, BaseGenerationOutputParser
+from langchain_core.output_parsers import BaseOutputParser, BaseGenerationOutputParser, \
+    JsonOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import convert_to_openai_function
-
-
-def get_openai_output_parser(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
-) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
-    """Get the appropriate function output parser given the user functions.
-
-    Args:
-        functions: Sequence where element is a dictionary, a pydantic.BaseModel class,
-            or a Python function. If a dictionary is passed in, it is assumed to
-            already be a valid OpenAI function.
-
-    Returns:
-        A PydanticOutputFunctionsParser if functions are Pydantic classes, otherwise
-            a JsonOutputFunctionsParser. If there's only one function and it is
-            not a Pydantic class, then the output parser will automatically extract
-            only the function arguments and not the function name.
-    """
-    function_names = [convert_to_openai_function(f)["name"] for f in functions]
-    if isinstance(functions[0], type) and issubclass(functions[0], BaseModel):
-        if len(functions) > 1:
-            pydantic_schema: Union[Dict, Type[BaseModel]] = {
-                name: fn for name, fn in zip(function_names, functions)
-            }
-        else:
-            pydantic_schema = functions[0]
-        output_parser: Union[
-            BaseOutputParser, BaseGenerationOutputParser
-        ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
-    else:
-        output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
-    return output_parser
 
 
 def create_openai_fn_runnable(
@@ -85,14 +55,14 @@ def create_openai_fn_runnable(
 
                 from typing import Optional
 
-                from langchain.chains.openai_functions import create_openai_fn_runnable
-                from langchain_community.chat_models import ChatOpenAI
+                from langchain.chains.structured_output import create_openai_fn_runnable
+                from langchain_openai import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
                 from langchain_core.pydantic_v1 import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
-                    \"\"\"Record some identifying information about a person.\"\"\"
+                    '''Record some identifying information about a person.'''
 
                     name: str = Field(..., description="The person's name")
                     age: int = Field(..., description="The person's age")
@@ -100,7 +70,7 @@ def create_openai_fn_runnable(
 
 
                 class RecordDog(BaseModel):
-                    \"\"\"Record some identifying information about a dog.\"\"\"
+                    '''Record some identifying information about a dog.'''
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
@@ -162,24 +132,24 @@ def create_structured_output_runnable(
     Returns:
         A runnable sequence that will pass the given function to the model when run.
 
-    Example:
+    OpenAI functions example:
         .. code-block:: python
 
                 from typing import Optional
 
-                from langchain.chains.openai_functions import create_structured_output_runnable
-                from langchain_community.chat_models import ChatOpenAI
+                from langchain.chains.structured_output import create_structured_output_runnable
+                from langchain_openai import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
                 from langchain_core.pydantic_v1 import BaseModel, Field
 
                 class Dog(BaseModel):
-                    \"\"\"Identifying information about a dog.\"\"\"
+                    '''Identifying information about a dog.'''
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 prompt = ChatPromptTemplate.from_messages(
                     [
                         ("system", "You are a world class algorithm for extracting information in structured formats."),
@@ -190,13 +160,94 @@ def create_structured_output_runnable(
                 chain = create_structured_output_runnable(Dog, llm, prompt, method="openai-functions")
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
+                
+    OpenAI json response format example:
+        .. code-block:: python
+        
+                from typing import Optional
+
+                from langchain.chains.structured_output import create_structured_output_runnable
+                from langchain_openai import ChatOpenAI
+                from langchain_core.prompts import ChatPromptTemplate
+                from langchain_core.pydantic_v1 import BaseModel, Field
+
+                class Dog(BaseModel):
+                    '''Identifying information about a dog.'''
+
+                    name: str = Field(..., description="The dog's name")
+                    color: str = Field(..., description="The dog's color")
+                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                system = '''You are a world class assistant for extracting information in structured JSON formats. \
+                
+                Extract a valid JSON blob from the user input that matches the following JSON Schema:
+                
+                {output_schema}'''
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        ("system", system),
+                        ("human", "{input}"),
+                    ]
+                )
+                chain = create_structured_output_runnable(Dog, llm, prompt, method="openai-json")
+                chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
     """  # noqa: E501
     if method == "openai-functions":
-        return _create_openai_functions_structured_output_runnable(output_schema, llm, prompt, output_parser=output_parser, method=method, **kwargs)
+        return _create_openai_functions_structured_output_runnable(output_schema, llm, prompt, output_parser=output_parser, enforce_single_function_usage=enforce_single_function_usage, **kwargs)
     elif method == "openai-json":
-        ...
+        return _create_openai_json_runnable(output_schema, llm, prompt, output_parser=output_parser, **kwargs)
     else:
         raise ValueError(f"Invalid method {method}. Expected one of 'openai-functions', 'openai-json'.")
+
+
+def get_openai_output_parser(
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
+    """Get the appropriate function output parser given the user functions.
+
+    Returns:
+        A PydanticOutputFunctionsParser if functions are Pydantic classes, otherwise
+            a JsonOutputFunctionsParser. If there's only one function and it is
+            not a Pydantic class, then the output parser will automatically extract
+            only the function arguments and not the function name.
+    """
+    function_names = [convert_to_openai_function(f)["name"] for f in functions]
+    if isinstance(functions[0], type) and issubclass(functions[0], BaseModel):
+        if len(functions) > 1:
+            pydantic_schema: Union[Dict, Type[BaseModel]] = {
+                name: fn for name, fn in zip(function_names, functions)
+            }
+        else:
+            pydantic_schema = functions[0]
+        output_parser: Union[
+            BaseOutputParser, BaseGenerationOutputParser
+        ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+    else:
+        output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
+    return output_parser
+
+
+def _create_openai_json_runnable(
+    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    llm: Runnable,
+    prompt: BasePromptTemplate,
+    *,
+    output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
+) -> Runnable:
+    """"""
+
+        schema_as_dict = convert_to_openai_function(output_schema)["parameters"]
+    else:
+        output_parser = output_parser or JsonOutputParser()
+        schema_as_dict = output_schema
+
+    if "output_schema" in prompt.input_variables:
+        prompt = prompt.partial(output_schema=json.dumps(schema_as_dict, indent=2))
+
+    llm = llm.bind(response_format={"type": "json_object"})
+    return prompt | llm | output_parser
+
 
 def _create_openai_functions_structured_output_runnable(
     output_schema: Union[Dict[str, Any], Type[BaseModel]],
