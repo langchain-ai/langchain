@@ -127,7 +127,7 @@ class RivaAuthMixin(BaseModel):
             ssl_cert=self.ssl_cert, use_ssl=use_ssl, uri=url_no_scheme
         )
 
-    @validator("url", pre=True)
+    @validator("url", pre=True, allow_reuse=True)
     @classmethod
     def _validate_url(cls, val: Any) -> AnyHttpUrl:
         """Do some initial conversations for the URL before checking."""
@@ -250,8 +250,8 @@ class AudioStream:
     """A message containing streaming audio."""
 
     _put_lock: threading.Lock
-    _queue: queue.Queue[StreamInputType]
-    output: queue.Queue[StreamOutputType]
+    _queue: queue.Queue
+    output: queue.Queue
     hangup: _Event
     user_talking: _Event
     user_quiet: _Event
@@ -554,7 +554,7 @@ class RivaTTS(
             ) from err
 
     def invoke(
-        self, input: TTSInputType, _: RunnableConfig | None = None
+        self, input: TTSInputType, _: Union[RunnableConfig, None] = None
     ) -> TTSOutputType:
         """Perform TTS by taking a string and outputting the entire audio file."""
         return b"".join(self.transform(iter([input])))
@@ -605,8 +605,8 @@ class RivaTTS(
     ) -> AsyncGenerator[TTSOutputType, None]:
         """Intercept async transforms and route them to the synchronous transform in a thread."""
         loop = asyncio.get_running_loop()
-        input_queue: queue.Queue[Union[TTSInputType, SentinelT]] = queue.Queue()
-        out_queue: asyncio.Queue[Union[TTSOutputType, SentinelT]] = asyncio.Queue()
+        input_queue: queue.Queue = queue.Queue()
+        out_queue: asyncio.Queue = asyncio.Queue()
 
         async def _producer() -> None:
             """Produce input into the input queue."""
