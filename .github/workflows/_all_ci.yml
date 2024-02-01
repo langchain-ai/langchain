@@ -68,7 +68,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    name: Python ${{ matrix.python-version }} extended tests
+    name: make extended_tests / python${{ matrix.python-version }}
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}

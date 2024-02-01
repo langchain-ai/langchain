@@ -1,4 +1,4 @@
-name: compile-integration-test
+name: poetry run pytest -m compile tests/integration_tests
 
 on:
   workflow_call:
