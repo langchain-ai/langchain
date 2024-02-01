@@ -60,6 +60,8 @@ duplicate_check:
 	# vector store (trimming community to ignore the alias at the end)
 	diff \
 		-I "import maximal_marginal_relevance" \
+		-I ".vectorstores import AstraDB" \
+		-I "import OpenAIEmbeddings" \
 		langchain_astradb/vectorstores/astradb.py \
 		<(head -n -4 ../../community/langchain_community/vectorstores/astradb.py)
 	# vector store test module

@@ -19,7 +19,6 @@ import os
 from typing import Iterable, List, Optional, TypedDict
 
 import pytest
-from astrapy.db import AstraDB as LibAstraDB
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -163,6 +162,8 @@ class TestAstraDBVectorStore:
         self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """Create and delete."""
+        from astrapy.db import AstraDB as LibAstraDB
+
         emb = SomeEmbeddings(dimension=2)
         # creation by passing the connection secrets
         v_store = AstraDBVectorStore(
