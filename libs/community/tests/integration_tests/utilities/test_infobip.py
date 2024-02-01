@@ -77,8 +77,8 @@ def test_send_email() -> None:
 
         response: str = infobip.run(
             body="test",
-            to="test@test.com",
-            sender="test@test.com",
+            to="test@example.com",
+            sender="test@example.com",
             subject="test",
             channel="email",
         )
@@ -93,7 +93,7 @@ def test_email_validation() -> None:
     )
 
     json_response: Dict = {
-        "to": "voviro5448@giratex.com",
+        "to": "test@example.com",
         "validMailbox": "true",
         "validSyntax": True,
         "catchAll": False,
@@ -110,7 +110,7 @@ def test_email_validation() -> None:
             status=200,
         )
         response: str = infobip.run(
-            to="voviro5448@giratex.com",
+            to="test@example.com",
             channel="email-validation",
         )
 
