@@ -181,6 +181,6 @@ class LanceDB(VectorStore):
                 pa.field(self._text_key, pa.string()),
             ]
         )
-        db = self.lancedb.connect("./lancedb")
+        db = self.lancedb.connect("/tmp/lancedb")
         tbl = db.create_table(self._table_name, schema=schema, mode="overwrite")
         return tbl
