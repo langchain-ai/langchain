@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+
 from langchain_community.utilities.nvidia_riva import RivaAudioEncoding, RivaTTS
 
 if TYPE_CHECKING:

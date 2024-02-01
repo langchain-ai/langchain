@@ -1,4 +1,4 @@
-"""A common module for NVIDIA Riva that contains utilities and Riva Runanbles for ASR and TTS."""
+"""A common module for NVIDIA Riva Runnables."""
 import asyncio
 import logging
 import pathlib
@@ -69,7 +69,8 @@ _TRANSFORM_END = SentinelT()
 class RivaAudioEncoding(str, Enum):
     """An enum of the possible choices for Riva audio encoding.
 
-    The list of types exposed by the Riva GRPC Protobuf files can be found with the following commands:
+    The list of types exposed by the Riva GRPC Protobuf files can be found
+    with the following commands:
     ```python
     import riva.client
     print(riva.client.AudioEncoding.keys())
@@ -93,7 +94,8 @@ class RivaAudioEncoding(str, Enum):
             return {1: cls.LINEAR_PCM, 6: cls.ALAW, 7: cls.MULAW}[format_code]
         except KeyError as err:
             raise NotImplementedError(
-                f"The following wave file format code is not supported by Riva: {format_code}"
+                "The following wave file format code is "
+                f"not supported by Riva: {format_code}"
             ) from err
 
     @property
@@ -148,7 +150,11 @@ class RivaCommonConfigMixin(BaseModel):
     )
     language_code: str = Field(
         default="en-US",
-        description="The [BCP-47 language code](https://www.rfc-editor.org/rfc/bcp/bcp47.txt) for the target language.",
+        description=(
+            "The [BCP-47 language code]"
+            "(https://www.rfc-editor.org/rfc/bcp/bcp47.txt) for "
+            "the target language."
+        ),
     )
 
 
@@ -285,7 +291,7 @@ class AudioStream:
             self._queue.task_done()
 
     async def __aiter__(self) -> AsyncIterator[StreamInputType]:
-        """Iterate through all items in the queue until the Hangup Sentinel is observed."""
+        """Iterate through all items in the queue until HANGUP."""
         while True:
             # get next item
             try:
@@ -414,11 +420,17 @@ class RivaASR(
     )
     profanity_filter: bool = Field(
         True,
-        description="Controls whether or not Riva should attempt to filter profanity out of the transcribed text.",
+        description=(
+            "Controls whether or not Riva should attempt to filter "
+            "profanity out of the transcribed text."
+        ),
     )
     enable_automatic_punctuation: bool = Field(
         True,
-        description="Controls whether Riva should attempt to correct senetence puncuation in the transcribed text.",
+        description=(
+            "Controls whether Riva should attempt to correct "
+            "senetence puncuation in the transcribed text."
+        ),
     )
 
     @root_validator(pre=True)
@@ -461,7 +473,7 @@ class RivaASR(
         _: Optional[RunnableConfig] = None,
         **__: Optional[Any],
     ) -> ASROutputType:
-        """Transcribe the audio bytes into a string with Riva stop when the person stops talking."""
+        """Transcribe the audio bytes into a string with Riva."""
         # create an output text generator with Riva
         if not input.running:
             service = self._get_service()
@@ -523,7 +535,8 @@ class RivaTTS(
         None,
         description=(
             "The directory where all audio files should be saved. "
-            "A null value indicates that wave files should not be saved. This is useful for debugging purposes."
+            "A null value indicates that wave files should not be saved. "
+            "This is useful for debugging purposes."
         ),
     )
 
@@ -603,7 +616,7 @@ class RivaTTS(
         input: AsyncIterator[TTSInputType],
         _: Optional[RunnableConfig] = None,
     ) -> AsyncGenerator[TTSOutputType, None]:
-        """Intercept async transforms and route them to the synchronous transform in a thread."""
+        """Intercept async transforms and route them to the synchronous transform."""
         loop = asyncio.get_running_loop()
         input_queue: queue.Queue = queue.Queue()
         out_queue: asyncio.Queue = asyncio.Queue()

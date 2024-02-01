@@ -1,8 +1,9 @@
 """Unit tests to verify function of the Riva ASR implementation."""
-from typing import Generator, TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 from unittest.mock import patch
 
 import pytest
+
 from langchain_community.utilities.nvidia_riva import (
     AudioStream,
     RivaASR,
