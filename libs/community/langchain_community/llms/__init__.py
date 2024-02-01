@@ -76,6 +76,12 @@ def _import_azureml_endpoint() -> Any:
     return AzureMLOnlineEndpoint
 
 
+def _import_baichuan() -> Any:
+    from langchain_community.llms.baichuan import BaichuanLLM
+
+    return BaichuanLLM
+
+
 def _import_baidu_qianfan_endpoint() -> Any:
     from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
 
@@ -589,6 +595,8 @@ def __getattr__(name: str) -> Any:
         return _import_aviary()
     elif name == "AzureMLOnlineEndpoint":
         return _import_azureml_endpoint()
+    elif name == "Baichuan":
+        return _import_baichuan()
     elif name == "QianfanLLMEndpoint":
         return _import_baidu_qianfan_endpoint()
     elif name == "Banana":

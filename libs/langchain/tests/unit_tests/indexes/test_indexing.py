@@ -12,7 +12,6 @@ from typing import (
 )
 from unittest.mock import patch
 
-import langchain_community.vectorstores
 import pytest
 import pytest_asyncio
 from langchain_community.document_loaders.base import BaseLoader
@@ -44,15 +43,8 @@ class ToyLoader(BaseLoader):
     async def alazy_load(
         self,
     ) -> AsyncIterator[Document]:
-        async def async_generator() -> AsyncIterator[Document]:
-            for document in self.documents:
-                yield document
-
-        return async_generator()
-
-    async def aload(self) -> List[Document]:
-        """Load the documents from the source."""
-        return [doc async for doc in await self.alazy_load()]
+        for document in self.documents:
+            yield document
 
 
 class InMemoryVectorStore(VectorStore):
@@ -233,7 +225,7 @@ async def test_aindexing_same_content(
         ]
     )
 
-    assert await aindex(await loader.alazy_load(), arecord_manager, vector_store) == {
+    assert await aindex(loader, arecord_manager, vector_store) == {
         "num_added": 2,
         "num_deleted": 0,
         "num_skipped": 0,
@@ -244,9 +236,7 @@ async def test_aindexing_same_content(
 
     for _ in range(2):
         # Run the indexing again
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store) == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -348,9 +338,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 2,
             "num_deleted": 0,
             "num_skipped": 0,
@@ -360,9 +348,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -383,9 +369,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 1,
             "num_deleted": 1,
             "num_skipped": 1,
@@ -403,9 +387,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -474,7 +456,7 @@ async def test_aincremental_fails_with_bad_source_ids(
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
         await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -483,7 +465,7 @@ async def test_aincremental_fails_with_bad_source_ids(
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
         await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -594,7 +576,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -611,7 +593,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -641,7 +623,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -780,7 +762,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader.lazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -804,7 +786,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader.lazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -839,7 +821,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 3).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader.lazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -884,9 +866,7 @@ async def test_aindexing_with_no_docs(
     """Check edge case when loader returns no new docs."""
     loader = ToyLoader(documents=[])
 
-    assert await aindex(
-        await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-    ) == {
+    assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
         "num_added": 0,
         "num_deleted": 0,
         "num_skipped": 0,
@@ -1174,83 +1154,3 @@ async def test_aindexing_force_update(
         "num_skipped": 0,
         "num_updated": 2,
     }
-
-
-def test_compatible_vectorstore_documentation() -> None:
-    """Test which vectorstores are compatible with the indexing API.
-
-    This serves as a reminder to update the documentation in [1]
-    that specifies which vectorstores are compatible with the
-    indexing API.
-
-    Ideally if a developer adds a new vectorstore or modifies
-    an existing one in such a way that affects its compatibility
-    with the Indexing API, he/she will see this failed test
-    case and 1) update docs in [1] and 2) update the `documented`
-    dict in this test case.
-
-    [1] langchain/docs/docs_skeleton/docs/modules/data_connection/indexing.ipynb
-    """
-
-    # Check if a vectorstore is compatible with the indexing API
-    def check_compatibility(vector_store: VectorStore) -> bool:
-        """Check if a vectorstore is compatible with the indexing API."""
-        methods = ["delete", "add_documents"]
-        for method in methods:
-            if not hasattr(vector_store, method):
-                return False
-        # Checking if the vectorstore has overridden the default delete method
-        # implementation which just raises a NotImplementedError
-        if getattr(vector_store, "delete") == VectorStore.delete:
-            return False
-        return True
-
-    # Check all vector store classes for compatibility
-    compatible = set()
-    for class_name in langchain_community.vectorstores.__all__:
-        # Get the definition of the class
-        cls = getattr(langchain_community.vectorstores, class_name)
-
-        # If the class corresponds to a vectorstore, check its compatibility
-        if issubclass(cls, VectorStore):
-            is_compatible = check_compatibility(cls)
-            if is_compatible:
-                compatible.add(class_name)
-
-    # These are mentioned in the indexing.ipynb documentation
-    documented = {
-        "AnalyticDB",
-        "AstraDB",
-        "AzureCosmosDBVectorSearch",
-        "AwaDB",
-        "Bagel",
-        "Cassandra",
-        "Chroma",
-        "DashVector",
-        "DatabricksVectorSearch",
-        "DeepLake",
-        "Dingo",
-        "ElasticVectorSearch",
-        "ElasticsearchStore",
-        "FAISS",
-        "HanaDB",
-        "MomentoVectorIndex",
-        "MyScale",
-        "PGVector",
-        "Pinecone",
-        "Qdrant",
-        "Redis",
-        "ScaNN",
-        "SemaDB",
-        "SupabaseVectorStore",
-        "SurrealDBStore",
-        "TileDB",
-        "TimescaleVector",
-        "Vald",
-        "Vearch",
-        "VespaStore",
-        "Weaviate",
-        "ZepVectorStore",
-        "Lantern",
-    }
-    assert compatible == documented
