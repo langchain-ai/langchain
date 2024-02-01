@@ -155,7 +155,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         Returns:
             The response as a dictionary.
         """
-        headers = headers = {
+        headers = {
             "Content-Type": "application/json",
             **(self.headers if isinstance(self.headers, dict) else {}),
         }
