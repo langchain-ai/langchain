@@ -156,7 +156,7 @@ Supported examples:
     
         For example: 
 
-            from langchain_google_vertexai import HarmBlockThreshold, HarmCategory
+            from google.generativeai.types.safety_types import HarmBlockThreshold, HarmCategory
 
             safety_settings = {
                 HarmCategory.HARM_CATEGORY_UNSPECIFIED: HarmBlockThreshold.BLOCK_NONE,
