@@ -174,12 +174,5 @@ class InfobipAPIWrapper(BaseModel):
                 subject=subject,
                 body=body,
             )
-        elif channel == "email-validation":
-            if to == "":
-                raise ValueError("Destination must be specified for email validation")
-
-            return self._validate_email_address(
-                email_address=to,
-            )
         else:
             raise ValueError(f"Channel {channel} is not supported")

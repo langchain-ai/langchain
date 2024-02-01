@@ -84,34 +84,3 @@ def test_send_email() -> None:
         )
 
         assert response == "123"
-
-
-def test_email_validation() -> None:
-    infobip: InfobipAPIWrapper = InfobipAPIWrapper(
-        infobip_api_key="test",
-        infobip_base_url="https://api.infobip.com",
-    )
-
-    json_response: Dict = {
-        "to": "test@example.com",
-        "validMailbox": "true",
-        "validSyntax": True,
-        "catchAll": False,
-        "didYouMean": None,
-        "disposable": False,
-        "roleBased": False,
-    }
-
-    with responses.RequestsMock() as rsps:
-        rsps.add(
-            responses.POST,
-            "https://api.infobip.com/email/2/validation",
-            json=json_response,
-            status=200,
-        )
-        response: str = infobip.run(
-            to="test@example.com",
-            channel="email-validation",
-        )
-
-        assert response == "true"
