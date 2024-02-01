@@ -368,8 +368,8 @@ class BedrockBase(BaseModel, ABC):
                 "Model provider should be supplied when passing a model ARN as "
                 "model_id"
             )
-        else:
-            return self.model_id.split(".")[0]
+
+        return self.model_id.split(".")[0]
 
     @property
     def _model_is_anthropic(self) -> bool:
