@@ -36,7 +36,7 @@ env:
 
 jobs:
   lint:
-    name: 
+    name: ""
     uses: ./.github/workflows/_lint.yml
     with:
       working-directory: ${{ inputs.working-directory }}
