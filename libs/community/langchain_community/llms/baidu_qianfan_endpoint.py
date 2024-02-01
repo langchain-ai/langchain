@@ -40,7 +40,12 @@ class QianfanLLMEndpoint(LLM):
                 endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
     """
 
+    init_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """init kwargs for qianfan client init, such as `query_per_second` which is 
+        associated with qianfan resource object to limit QPS"""
+
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """extra params for model invoke using with `do`."""
 
     client: Any
 
@@ -91,6 +96,7 @@ class QianfanLLMEndpoint(LLM):
         )
 
         params = {
+            **values.get("init_kwargs", {}),
             "model": values["model"],
         }
         if values["qianfan_ak"].get_secret_value() != "":

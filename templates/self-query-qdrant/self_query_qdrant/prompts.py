@@ -1,4 +1,4 @@
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 llm_context_prompt_template = """
 Answer the user query using provided passages. Each passage has metadata given as 

@@ -1,5 +1,5 @@
 name: release
-
+run-name: Release ${{ inputs.working-directory }} by @${{ github.actor }}
 on:
   workflow_call:
     inputs:
@@ -16,11 +16,12 @@ on:
 
 env:
   PYTHON_VERSION: "3.10"
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.7.1"
 
 jobs:
   build:
     if: github.ref == 'refs/heads/master'
+    environment: Scheduled testing
     runs-on: ubuntu-latest
 
     outputs:
@@ -117,11 +118,18 @@ jobs:
         #   are not found on test PyPI can be resolved and installed anyway.
         #   (https://test.pypi.org/simple). This will include the PKG_NAME==VERSION
         #   package because VERSION will not have been uploaded to regular PyPI yet.
-        #
+        # - attempt install again after 5 seconds if it fails because there is
+        #   sometimes a delay in availability on test pypi
         run: |
           poetry run pip install \
             --extra-index-url https://test.pypi.org/simple/ \
-            "$PKG_NAME==$VERSION"
+            "$PKG_NAME==$VERSION" || \
+          ( \
+            sleep 5 && \
+            poetry run pip install \
+              --extra-index-url https://test.pypi.org/simple/ \
+              "$PKG_NAME==$VERSION" \
+          )
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
@@ -149,6 +157,12 @@ jobs:
         run: make tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: 'Authenticate to Google Cloud'
+        id: 'auth'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
       - name: Run integration tests
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         env:
@@ -156,9 +170,21 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+          GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Run unit tests with minimum dependency versions
+        if: ${{ (inputs.working-directory == 'libs/langchain') || (inputs.working-directory == 'libs/community') || (inputs.working-directory == 'libs/experimental') }}
+        run: |
+          poetry run pip install -r _test_minimum_requirements.txt
+          make tests
+        working-directory: ${{ inputs.working-directory }}
 
   publish:
     needs:
