@@ -6,7 +6,8 @@ import uuid
 from typing import Any, Generic, Iterator, List, Optional, Sequence, Tuple, TypeVar
 
 import sqlalchemy
-from sqlalchemy import JSON, UUID
+from sqlalchemy import JSON
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session, relationship
 
 try:
