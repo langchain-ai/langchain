@@ -627,12 +627,6 @@ OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat",
         "SystemMessagePromptTemplate",
     ),
-    ("langchain_core", "prompts", "image", "ImagePromptTemplate"): (
-        "langchain_core",
-        "prompts",
-        "image",
-        "ImagePromptTemplate",
-    ),
     ("langchain_core", "agents", "AgentActionMessageLog"): (
         "langchain_core",
         "agents",

@@ -66,6 +66,3 @@ def test_serializable_mapping() -> None:
         # Import class
         cls = getattr(mod, import_obj)
         assert list(k) == cls.lc_id()
-
-
-def test_image_prompt_template_serializag
