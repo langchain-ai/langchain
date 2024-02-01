@@ -16,7 +16,7 @@ from ai21.models import (
 from pytest_mock import MockerFixture
 
 
-BASIC_DUMMY_LLM_PARAMETERS = {
+BASIC_EXAMPLE_LLM_PARAMETERS = {
     "num_results": 3,
     "max_tokens": 20,
     "min_tokens": 10,

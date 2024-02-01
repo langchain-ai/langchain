@@ -8,7 +8,7 @@ from ai21.models import (
 )
 
 from langchain_ai21 import AI21
-from tests.unit_tests.conftest import BASIC_DUMMY_LLM_PARAMETERS
+from libs.partners.ai21.tests.unit_tests.conftest import BASIC_EXAMPLE_LLM_PARAMETERS
 
 
 @pytest.mark.requires("ai21")
@@ -52,7 +52,7 @@ def test_generate(mock_client_with_completion):
         client=mock_client_with_completion,
         custom_model=custom_model,
         epoch=epoch,
-        **BASIC_DUMMY_LLM_PARAMETERS,
+        **BASIC_EXAMPLE_LLM_PARAMETERS,
     )
 
     # Make call to testing function
@@ -77,7 +77,7 @@ def test_generate(mock_client_with_completion):
                 custom_model=custom_model,
                 stop_sequences=stop,
                 epoch=epoch,
-                **BASIC_DUMMY_LLM_PARAMETERS,
+                **BASIC_EXAMPLE_LLM_PARAMETERS,
             ),
             call(
                 prompt=prompt1,
@@ -85,7 +85,7 @@ def test_generate(mock_client_with_completion):
                 custom_model=custom_model,
                 stop_sequences=stop,
                 epoch=epoch,
-                **BASIC_DUMMY_LLM_PARAMETERS,
+                **BASIC_EXAMPLE_LLM_PARAMETERS,
             ),
         ]
     )

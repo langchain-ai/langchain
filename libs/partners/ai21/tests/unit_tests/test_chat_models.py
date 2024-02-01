@@ -18,7 +18,7 @@ from langchain_core.messages import (
     AIMessage,
     ChatMessage as LangChainChatMessage,
 )
-from tests.unit_tests.conftest import BASIC_DUMMY_LLM_PARAMETERS
+from libs.partners.ai21.tests.unit_tests.conftest import BASIC_EXAMPLE_LLM_PARAMETERS
 
 
 @pytest.mark.requires("ai21")
@@ -169,7 +169,7 @@ def test_invoke(mock_client_with_chat):
     llm = ChatAI21(
         api_key="test_key",
         client=mock_client_with_chat,
-        **BASIC_DUMMY_LLM_PARAMETERS,
+        **BASIC_EXAMPLE_LLM_PARAMETERS,
     )
     llm.invoke(input=chat_input, config=dict(tags=["foo"]))
 
@@ -178,7 +178,7 @@ def test_invoke(mock_client_with_chat):
         messages=[ChatMessage(role=RoleType.USER, text=chat_input)],
         system="",
         stop_sequences=None,
-        **BASIC_DUMMY_LLM_PARAMETERS,
+        **BASIC_EXAMPLE_LLM_PARAMETERS,
     )
 
 
@@ -195,7 +195,7 @@ def test_generate(mock_client_with_chat):
     ]
     llm = ChatAI21(
         client=mock_client_with_chat,
-        **BASIC_DUMMY_LLM_PARAMETERS,
+        **BASIC_EXAMPLE_LLM_PARAMETERS,
     )
 
     llm.generate(messages=[messages0, messages1])
@@ -210,7 +210,7 @@ def test_generate(mock_client_with_chat):
                 ],
                 system="",
                 stop_sequences=None,
-                **BASIC_DUMMY_LLM_PARAMETERS,
+                **BASIC_EXAMPLE_LLM_PARAMETERS,
             ),
             call(
                 model="j2-ultra",
@@ -219,7 +219,7 @@ def test_generate(mock_client_with_chat):
                 ],
                 system="system message",
                 stop_sequences=None,
-                **BASIC_DUMMY_LLM_PARAMETERS,
+                **BASIC_EXAMPLE_LLM_PARAMETERS,
             ),
         ]
     )
