@@ -19,7 +19,7 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
         base_url="https://ollama-hostname:8000",
         model="foo",
         headers={
-            "Authentication": "Bearer TEST-TOKEN-VALUE",
+            "Authorization": "Bearer TEST-TOKEN-VALUE",
             "Referer": "https://application-host",
         },
     )
@@ -28,7 +28,7 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
         assert url == "https://ollama-hostname:8000/api/embeddings"
         assert headers == {
             "Content-Type": "application/json",
-            "Authentication": "Bearer TEST-TOKEN-VALUE",
+            "Authorization": "Bearer TEST-TOKEN-VALUE",
             "Referer": "https://application-host",
         }
         assert json is not None
