@@ -159,6 +159,7 @@ from langchain_community.document_loaders.pdf import (
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
+from langchain_community.document_loaders.pebblo import PebbloSafeLoader
 from langchain_community.document_loaders.polars_dataframe import PolarsDataFrameLoader
 from langchain_community.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain_community.document_loaders.psychic import PsychicLoader
@@ -282,6 +283,7 @@ __all__ = [
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
+    "PebbloSafeLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
