@@ -10,8 +10,6 @@ from ai21.models import (
 from langchain_ai21 import AI21
 from tests.unit_tests.conftest import BASIC_DUMMY_LLM_PARAMETERS
 
-os.environ["AI21_API_KEY"] = "test_key"
-
 
 @pytest.mark.requires("ai21")
 def test_initialization__when_default_parameters() -> None:

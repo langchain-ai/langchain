@@ -9,7 +9,6 @@ from pytest_mock import MockerFixture
 
 from langchain_ai21.embeddings import AI21Embeddings
 
-os.environ["AI21_API_KEY"] = "test_key"
 
 _DUMMY_EMBEDDING_0 = [1.0, 2.0, 3.0]
 _DUMMY_EMBEDDING_1 = [4.0, 5.0, 6.0]
@@ -37,7 +36,7 @@ def mock_client_with_embeddings(mocker: MockerFixture) -> Mock:
 
 @pytest.mark.requires("ai21")
 def test_embed_query(mock_client_with_embeddings: Mock) -> None:
-    llm = AI21Embeddings(client=mock_client_with_embeddings)
+    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key="test_key")
 
     text = "Hello embeddings world!"
     response = llm.embed_query(text=text)
@@ -50,7 +49,7 @@ def test_embed_query(mock_client_with_embeddings: Mock) -> None:
 
 @pytest.mark.requires("ai21")
 def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
-    llm = AI21Embeddings(client=mock_client_with_embeddings)
+    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key="test_key")
 
     texts = ["Hello embeddings world!", "Some other text", "Some more text"]
     response = llm.embed_documents(texts=texts)

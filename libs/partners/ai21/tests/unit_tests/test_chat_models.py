@@ -20,13 +20,11 @@ from langchain_core.messages import (
 )
 from tests.unit_tests.conftest import BASIC_DUMMY_LLM_PARAMETERS
 
-os.environ["AI21_API_KEY"] = "test_key"
-
 
 @pytest.mark.requires("ai21")
 def test_initialization__when_default_parameters_in_init() -> None:
     """Test chat model initialization."""
-    ChatAI21()
+    ChatAI21(api_key="test_key")
 
 
 @pytest.mark.requires("ai21")
@@ -43,6 +41,7 @@ def test_initialization__when_custom_parameters_in_init():
     count_penalty = Penalty(scale=0.2, apply_to_punctuation=True, apply_to_emojis=True)
 
     llm = ChatAI21(
+        api_key="test_key",
         model=model,
         num_results=num_results,
         max_tokens=max_tokens,
@@ -168,6 +167,7 @@ def test_invoke(mock_client_with_chat):
     chat_input = "I'm Pickle Rick"
 
     llm = ChatAI21(
+        api_key="test_key",
         client=mock_client_with_chat,
         **BASIC_DUMMY_LLM_PARAMETERS,
     )
