@@ -1,5 +1,4 @@
 """Test AI21 Chat API wrapper."""
-import os
 from unittest.mock import call
 
 import pytest

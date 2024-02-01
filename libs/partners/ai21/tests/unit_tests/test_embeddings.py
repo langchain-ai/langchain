@@ -1,5 +1,4 @@
 """Test embedding model integration."""
-import os
 from unittest.mock import Mock
 
 import pytest
@@ -8,7 +7,6 @@ from ai21.models import EmbedResult, EmbedResponse, EmbedType
 from pytest_mock import MockerFixture
 
 from langchain_ai21.embeddings import AI21Embeddings
-
 
 _EXAMPLE_EMBEDDING_0 = [1.0, 2.0, 3.0]
 _EXAMPLE_EMBEDDING_1 = [4.0, 5.0, 6.0]
