@@ -29,7 +29,7 @@ jobs:
         git grep 'from langchain import' {docs/docs,templates,cookbook} | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
   lint:
-      name: make lint
+      name: "-"
       uses:
         ./.github/workflows/_lint.yml
       with:
