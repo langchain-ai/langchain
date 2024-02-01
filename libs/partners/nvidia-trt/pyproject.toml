@@ -4,11 +4,16 @@ version = "0.0.1"
 description = "An integration package connecting TritonTensorRT and LangChain"
 authors = []
 readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/nvidia-trt"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
-tritonclient = { extras = ["all"], version = "^2.40.0" }
+tritonclient = {extras = ["grpc"], version = "^2.42.0"}
 lint = "^1.2.1"
 types-protobuf = "^4.24.0.4"
 protobuf = "^3.5.0"
