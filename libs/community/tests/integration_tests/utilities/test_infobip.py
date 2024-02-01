@@ -22,7 +22,7 @@ def test_send_sms() -> None:
                     "id": 26,
                     "name": "PENDING_ACCEPTED",
                 },
-                "to": "+1234567890",
+                "to": "41793026727",
             }
         ]
     }
@@ -37,8 +37,8 @@ def test_send_sms() -> None:
 
         response: str = infobip.run(
             body="test",
-            to="+1234567890",
-            sender="+1234567890",
+            to="41793026727",
+            sender="41793026727",
             channel="sms",
         )
         assert response == "123"
@@ -54,7 +54,7 @@ def test_send_email() -> None:
         "bulkId": "123",
         "messages": [
             {
-                "to": "test@test.com",
+                "to": "test@example.com",
                 "messageId": "123",
                 "status": {
                     "groupId": 1,

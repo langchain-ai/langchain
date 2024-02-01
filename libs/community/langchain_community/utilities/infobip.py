@@ -46,7 +46,7 @@ class InfobipAPIWrapper(BaseModel):
         session.headers.update(
             {
                 "Authorization": f"App {self.infobip_api_key}",
-                "User-Agent": "langchain-community",
+                "User-Agent": "infobip-langchain-community",
             }
         )
         return session
@@ -78,9 +78,17 @@ class InfobipAPIWrapper(BaseModel):
             f"{self.infobip_base_url}/sms/2/text/advanced",
             json=json,
         )
-        response.raise_for_status()
 
-        return response.json()["messages"][0]["messageId"]
+        response_json: Dict = response.json()
+        if response.status_code != 200:
+            return response_json["requestError"]["serviceException"]["text"]
+
+        try:
+            return response_json["messages"][0]["messageId"]
+        except KeyError:
+            return (
+                "Could not get message ID from response, message was sent successfully"
+            )
 
     def _send_email(
         self, from_email: str, to_email: str, subject: str, body: str
@@ -107,30 +115,17 @@ class InfobipAPIWrapper(BaseModel):
             data=data,
         )
 
-        response.raise_for_status()
-        return response.json()["messages"][0]["messageId"]
+        response_json: Dict = response.json()
 
-    def _validate_email_address(self, email_address: str) -> str:
-        """Validate an email address."""
-        json: Dict = {
-            "to": email_address,
-        }
+        if response.status_code != 200:
+            return response_json["requestError"]["serviceException"]["text"]
 
-        session: requests.Session = self._get_requests_session()
-        session.headers.update(
-            {
-                "Content-Type": "application/json",
-            }
-        )
-
-        response: requests.Response = session.post(
-            f"{self.infobip_base_url}/email/2/validation",
-            json=json,
-        )
-
-        response.raise_for_status()
-        validation_status: bool = response.json()["validMailbox"]
-        return str(validation_status)
+        try:
+            return response_json["messages"][0]["messageId"]
+        except KeyError:
+            return (
+                "Could not get message ID from response, message was sent successfully"
+            )
 
     def run(
         self,
