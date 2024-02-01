@@ -80,7 +80,6 @@ def _completion_with_retry(
         )
         try:
             if is_gemini:
-                print(f"kwargs : {kwargs}")
                 return llm.client.generate_content(
                     contents=prompt,
                     stream=stream,
@@ -258,6 +257,7 @@ class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
                     is_gemini=True,
                     run_manager=run_manager,
                     generation_config=generation_config,
+                    safety_settings=kwargs.pop("safety_settings", None),
                 )
                 candidates = [
                     "".join([p.text for p in c.content.parts]) for c in res.candidates

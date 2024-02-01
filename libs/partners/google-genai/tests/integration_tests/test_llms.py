@@ -5,7 +5,7 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
 """
 
 import pytest
-from google.generativeai.types.safety_types import (  # type: ignore
+from google.generativeai.types.safety_types import (  # type: ignore[import]
     HarmBlockThreshold,
     HarmCategory,
 )
@@ -79,11 +79,17 @@ def test_safety_settings_gemini() -> None:
     assert isinstance(output, LLMResult)
     assert len(output.generations[0]) == 0
 
-    # test blocked prompt with safety filters
+    # safety filters
     safety_settings = {
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,  # noqa: E501
     }
 
+    # test with safety filters directly to generate
+    output = llm.generate(["how to make a bomb"], safety_settings=safety_settings)
+    assert isinstance(output, LLMResult)
+    assert len(output.generations[0]) > 0
+
+    # test  with safety filters on instnatiation
     llm = GoogleGenerativeAI(
         model="gemini-pro",
         safety_settings=safety_settings,
