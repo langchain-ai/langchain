@@ -41,7 +41,7 @@ class ConversationBufferMemory(BaseChatMemory):
 
     async def abuffer_as_str(self) -> str:
         """Exposes the buffer as a string in case return_messages is True."""
-        messages = await self.chat_memory.amessages()
+        messages = await self.chat_memory.aget_messages()
         return self._buffer_as_str(messages)
 
     @property
@@ -51,7 +51,7 @@ class ConversationBufferMemory(BaseChatMemory):
 
     async def abuffer_as_messages(self) -> List[BaseMessage]:
         """Exposes the buffer as a list of messages in case return_messages is False."""
-        return await self.chat_memory.amessages()
+        return await self.chat_memory.aget_messages()
 
     @property
     def memory_variables(self) -> List[str]:

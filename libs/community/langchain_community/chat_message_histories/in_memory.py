@@ -13,7 +13,7 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
 
     messages: List[BaseMessage] = Field(default_factory=list)
 
-    async def amessages(self) -> List[BaseMessage]:
+    async def aget_messages(self) -> List[BaseMessage]:
         return self.messages
 
     def add_message(self, message: BaseMessage) -> None:
