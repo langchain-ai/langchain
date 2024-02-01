@@ -3,7 +3,6 @@ from typing import List, Optional
 
 import nomic  # type: ignore
 from langchain_core.embeddings import Embeddings
-from nomic import embed
 
 
 class NomicEmbeddings(Embeddings):
@@ -42,6 +41,9 @@ class NomicEmbeddings(Embeddings):
             task_type: the task type to use when embedding. One of `search_query`,
                 `search_document`, `classification`, `clustering`
         """
+        # TODO: do this via nomic.embed when fixed in nomic sdk
+        from nomic import embed
+
         output = embed.text(texts=texts, model=self.model, task_type=task_type)
         return output["embeddings"]
 
