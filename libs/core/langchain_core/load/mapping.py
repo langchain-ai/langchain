@@ -115,6 +115,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat",
         "SystemMessagePromptTemplate",
     ),
+    ("langchain", "schema", "prompt_template", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
+    ),
     ("langchain", "schema", "agent", "AgentActionMessageLog"): (
         "langchain_core",
         "agents",
