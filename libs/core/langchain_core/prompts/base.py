@@ -47,9 +47,7 @@ class BasePromptTemplate(
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
-    partial_variables: Mapping[str, Any] = Field(
-        default_factory=dict
-    )
+    partial_variables: Mapping[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

@@ -64,7 +64,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
 
-    chunk_metadata_fields: Optional[Sequence[str]] = None
+    child_metadata_fields: Optional[Sequence[str]] = None
     """Metadata fields to leave in child documents. If None, leave all parent document 
         metadata.
     """
@@ -110,9 +110,9 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         for i, doc in enumerate(documents):
             _id = doc_ids[i]
             sub_docs = self.child_splitter.split_documents([doc])
-            if self.chunk_metadata_fields is not None:
+            if self.child_metadata_fields is not None:
                 for _doc in sub_docs:
-                    _doc.metadata = {k: _doc.metadata[k] for k in self.chunk_metadata_fields}
+                    _doc.metadata = {k: _doc.metadata[k] for k in self.child_metadata_fields}
             for _doc in sub_docs:
                 _doc.metadata[self.id_key] = _id
             docs.extend(sub_docs)

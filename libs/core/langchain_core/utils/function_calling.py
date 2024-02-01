@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -10,6 +11,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -19,6 +21,7 @@ from typing import (
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.json_schema import dereference_refs
 
@@ -311,3 +314,32 @@ def convert_to_openai_tool(
         return tool
     function = convert_to_openai_function(tool)
     return {"type": "function", "function": function}
+
+
+def convert_tool_examples_to_messages(examples: Sequence[Dict]) -> List[BaseMessage]:
+    return [
+        msg for example in examples for msg in convert_tool_example_to_message(example)
+    ]
+
+
+def convert_tool_example_to_message(example: Dict) -> List[BaseMessage]:
+    messages: List[BaseMessage] = [HumanMessage(content=example["input"])]
+    openai_tool_calls = []
+    for tool_call in example["tool_calls"]:
+        openai_tool_calls.append(
+            {
+                "id": tool_call["id"],
+                "type": "function",
+                "function": {
+                    "name": tool_call["name"],
+                    "arguments": json.dumps(tool_call["arguments"]),
+                },
+            }
+        )
+    messages.append(
+        AIMessage(content="", additional_kwargs={"tool_calls": openai_tool_calls})
+    )
+    tool_outputs = example.get("tool_outputs", [""] * len(openai_tool_calls))
+    for output, tool_call in zip(tool_outputs, openai_tool_calls):
+        messages.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
+    return messages
