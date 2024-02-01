@@ -41,7 +41,6 @@ class InfobipAPIWrapper(BaseModel):
         adapter: HTTPAdapter = HTTPAdapter(max_retries=retry_strategy)
 
         session = requests.Session()
-        session.mount("http://", adapter)
         session.mount("https://", adapter)
         session.headers.update(
             {
