@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Literal
+from typing import Any, List, Literal, Optional
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Field
@@ -16,6 +16,12 @@ class Document(Serializable):
         documents, etc.).
     """
     type: Literal["Document"] = "Document"
+
+    def __init__(
+        self, page_content: str, metadata: Optional[dict] = None, **kwargs: Any
+    ) -> None:
+        metadata = metadata or {}
+        super().__init__(page_content=page_content, metadata=metadata, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
