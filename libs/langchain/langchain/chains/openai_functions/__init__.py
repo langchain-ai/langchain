@@ -1,11 +1,10 @@
 from langchain.chains.openai_functions.base import (
     convert_to_openai_function,
     create_openai_fn_chain,
-    create_openai_fn_runnable,
     create_structured_output_chain,
-    create_structured_output_runnable,
-    get_openai_output_parser,
 )
+from langchain.chains.structured_output.base import get_openai_output_parser, \
+    create_openai_fn_runnable, create_structured_output_runnable
 from langchain.chains.openai_functions.citation_fuzzy_match import (
     create_citation_fuzzy_match_chain,
 )
@@ -33,7 +32,4 @@ __all__ = [
     "create_qa_with_sources_chain",
     "create_structured_output_chain",
     "create_openai_fn_chain",
-    "create_structured_output_runnable",
-    "create_openai_fn_runnable",
-    "get_openai_output_parser",
 ]
