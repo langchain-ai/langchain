@@ -1,4 +1,4 @@
-name: make test
+name: test
 
 on:
   workflow_call:

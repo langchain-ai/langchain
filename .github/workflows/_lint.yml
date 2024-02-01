@@ -1,4 +1,4 @@
-name: make lint
+name: lint
 
 on:
   workflow_call:
