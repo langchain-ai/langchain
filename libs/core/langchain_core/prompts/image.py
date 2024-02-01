@@ -74,3 +74,6 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             # Don't check literal values here: let the API check them
             output["detail"] = detail  # type: ignore[typeddict-item]
         return output
+
+    def pretty_repr(self, html: bool = False) -> str:
+        raise NotImplementedError()
