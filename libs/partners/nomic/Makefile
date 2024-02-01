@@ -6,9 +6,12 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
-integration_tests: TEST_FILE=tests/integration_tests/
+integration_tests: TEST_FILE = tests/integration_tests/
 
-test tests integration_tests:
+test integration_tests:
+	poetry run pytest $(TEST_FILE)
+
+tests:
 	poetry run pytest $(TEST_FILE)
 
 
@@ -20,8 +23,8 @@ test tests integration_tests:
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
-lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/openai --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
-lint_package: PYTHON_FILES=langchain_openai
+lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/nomic --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_nomic
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
@@ -41,7 +44,7 @@ spell_check:
 spell_fix:
 	poetry run codespell --toml pyproject.toml -w
 
-check_imports: $(shell find langchain_openai -name '*.py')
+check_imports: $(shell find langchain_nomic -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 ######################
