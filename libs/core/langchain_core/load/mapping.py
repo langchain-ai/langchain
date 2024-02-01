@@ -115,7 +115,7 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat",
         "SystemMessagePromptTemplate",
     ),
-    ("langchain", "schema", "prompt_template", "ImagePromptTemplate"): (
+    ("langchain", "prompts", "image", "ImagePromptTemplate"): (
         "langchain_core",
         "prompts",
         "image",
@@ -620,6 +620,12 @@ OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "prompts",
         "chat",
         "SystemMessagePromptTemplate",
+    ),
+    ("langchain_core", "prompts", "image", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
     ),
     ("langchain_core", "agents", "AgentActionMessageLog"): (
         "langchain_core",
