@@ -11,31 +11,30 @@ from langchain_core.messages import (
     SystemMessage,
 )
 
-from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.chat_model.upstage import ChatUpstage
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("upstage")
 def test_openai_model_param() -> None:
-    llm = ChatOpenAI(model="foo")
+    llm = ChatUpstage(model="foo")
     assert llm.model_name == "foo"
-    llm = ChatOpenAI(model_name="foo")
+    llm = ChatUpstage(model_name="foo")
     assert llm.model_name == "foo"
 
 
 @pytest.fixture
 def mock_completion() -> dict:
     return {
-        "id": "chatcmpl-7fcZavknQda3SQ",
+        "id": "chatcmpl-sefo30fdj",
         "object": "chat.completion",
         "created": 1689989000,
-        "model": "gpt-3.5-turbo-0613",
+        "model": "upstage/solar-1-mini-chat",
         "choices": [
             {
                 "index": 0,
                 "message": {
                     "role": "assistant",
-                    "content": "Bar Baz",
+                    "content": "Upstage Bar",
                 },
                 "finish_reason": "stop",
             }
@@ -43,9 +42,9 @@ def mock_completion() -> dict:
     }
 
 
-@pytest.mark.requires("openai")
-def test_openai_predict(mock_completion: dict) -> None:
-    llm = ChatOpenAI()
+@pytest.mark.requires("upstage")
+def test_upstage_predict(mock_completion: dict) -> None:
+    llm = ChatUpstage()
     mock_client = MagicMock()
     completed = False
 
@@ -61,13 +60,13 @@ def test_openai_predict(mock_completion: dict) -> None:
         mock_client,
     ):
         res = llm.predict("bar")
-        assert res == "Bar Baz"
+        assert res == "Upstage Bar"
     assert completed
 
 
-@pytest.mark.requires("openai")
-async def test_openai_apredict(mock_completion: dict) -> None:
-    llm = ChatOpenAI()
+@pytest.mark.requires("upstage")
+async def test_upstage_apredict(mock_completion: dict) -> None:
+    llm = ChatUpstage()
     mock_client = MagicMock()
     completed = False
 
@@ -83,5 +82,5 @@ async def test_openai_apredict(mock_completion: dict) -> None:
         mock_client,
     ):
         res = llm.predict("bar")
-        assert res == "Bar Baz"
+        assert res == "Upstage Bar"
     assert completed
