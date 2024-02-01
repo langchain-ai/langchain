@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 .PHONY: all format lint test tests integration_tests docker_tests help extended_tests duplicate_check
 
 # Default target executed when no arguments are given to make.
@@ -56,18 +57,18 @@ check_imports: $(shell find langchain_astradb -name '*.py')
 ##############################################
 
 duplicate_check:
-	# vector store
+	# vector store (trimming community to ignore the alias at the end)
 	diff \
 		-I "import maximal_marginal_relevance" \
-		-I alternative_import \
-		-I "since=" \
 		langchain_astradb/vectorstores/astradb.py \
-			../../community/langchain_community/vectorstores/astradb.py
+		<(head -n -4 ../../community/langchain_community/vectorstores/astradb.py)
+	# vector store test module
 	diff \
-		-I ".vectorstores import AstraDBVectorStore" \
+		-I ".vectorstores import AstraDB" \
 		tests/integration_tests/vectorstores/test_astradb.py \
-			../../community/tests/integration_tests/vectorstores/test_astradb.py 
-	echo "\n\nALL GOOD"
+		../../community/tests/integration_tests/vectorstores/test_astradb.py 
+	#
+	echo -e "\n\nALL GOOD"
 
 ######################
 # HELP

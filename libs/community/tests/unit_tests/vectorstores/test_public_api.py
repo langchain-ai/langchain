@@ -11,7 +11,6 @@ _EXPECTED = [
     "AzureSearch",
     "Bagel",
     "Cassandra",
-    "AstraDBVectorStore",
     "AstraDB",
     "Chroma",
     "Clarifai",

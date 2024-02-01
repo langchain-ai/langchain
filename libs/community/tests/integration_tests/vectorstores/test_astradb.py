@@ -23,7 +23,7 @@ from astrapy.db import AstraDB as LibAstraDB
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
-from langchain_community.vectorstores import AstraDBVectorStore
+from langchain_community.vectorstores import AstraDB as AstraDBVectorStore
 
 # Faster testing (no actual collection deletions). On by default
 SKIP_COLLECTION_DELETE = int(os.environ.get("TEST_SKIP_COLLECTION_DELETE", "1")) != 0

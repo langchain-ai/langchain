@@ -1,7 +1,6 @@
 from langchain_astradb import __all__
 
 EXPECTED_ALL = [
-    "AstraDB",
     "AstraDBVectorStore",
 ]
 

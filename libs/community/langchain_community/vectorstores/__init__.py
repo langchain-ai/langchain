@@ -124,12 +124,6 @@ def _import_astradb() -> Any:
     return AstraDB
 
 
-def _import_astradb_vectorstore() -> Any:
-    from langchain_community.vectorstores.astradb import AstraDBVectorStore
-
-    return AstraDBVectorStore
-
-
 def _import_chroma() -> Any:
     from langchain_community.vectorstores.chroma import Chroma
 
@@ -517,8 +511,6 @@ def __getattr__(name: str) -> Any:
         return _import_baiducloud_vector_search()
     elif name == "Cassandra":
         return _import_cassandra()
-    elif name == "AstraDBVectorStore":
-        return _import_astradb_vectorstore()
     elif name == "AstraDB":
         return _import_astradb()
     elif name == "Chroma":
@@ -654,7 +646,6 @@ __all__ = [
     "Bagel",
     "Cassandra",
     "AstraDB",
-    "AstraDBVectorStore",
     "Chroma",
     "Clarifai",
     "Clickhouse",

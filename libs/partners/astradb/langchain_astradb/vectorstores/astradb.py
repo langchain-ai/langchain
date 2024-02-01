@@ -20,7 +20,6 @@ from typing import (
 )
 
 import numpy as np
-from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import run_in_executor
@@ -73,8 +72,8 @@ class AstraDBVectorStore(VectorStore):
     Example:
         .. code-block:: python
 
-                from langchain_community.vectorstores import AstraDBVectorStore
-                from langchain_community.embeddings.openai import OpenAIEmbeddings
+                from langchain_astradb.vectorstores import AstraDBVectorStore
+                from langchain_astradb.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 vectorstore = AstraDBVectorStore(
@@ -452,7 +451,7 @@ class AstraDBVectorStore(VectorStore):
         """
         if kwargs:
             warnings.warn(
-                "Method 'adelete' of AstraDB vector store invoked with "
+                "Method 'adelete' of AstraDBVectorStore invoked with "
                 f"unsupported arguments ({', '.join(sorted(kwargs.keys()))}), "
                 "which will be ignored."
             )
@@ -706,7 +705,7 @@ class AstraDBVectorStore(VectorStore):
         else:
             if kwargs:
                 warnings.warn(
-                    "Method 'aadd_texts' of AstraDB vector store invoked with "
+                    "Method 'aadd_texts' of AstraDBVectorStore invoked with "
                     f"unsupported arguments ({', '.join(sorted(kwargs.keys()))}), "
                     "which will be ignored."
                 )
@@ -1266,7 +1265,7 @@ class AstraDBVectorStore(VectorStore):
             metadatas (Optional[List[dict]]): metadata dicts for the texts.
             ids (Optional[List[str]]): ids to associate to the texts.
             *Additional arguments*: you can pass any argument that you would
-                to 'add_texts' and/or to the 'AstraDB' class constructor
+                to 'add_texts' and/or to the 'AstraDBVectorStore' constructor
                 (see these methods for details). These arguments will be
                 routed to the respective methods as they are.
 
@@ -1301,7 +1300,7 @@ class AstraDBVectorStore(VectorStore):
             metadatas (Optional[List[dict]]): metadata dicts for the texts.
             ids (Optional[List[str]]): ids to associate to the texts.
             *Additional arguments*: you can pass any argument that you would
-                to 'add_texts' and/or to the 'AstraDB' class constructor
+                to 'add_texts' and/or to the 'AstraDBVectorStore' constructor
                 (see these methods for details). These arguments will be
                 routed to the respective methods as they are.
 
@@ -1337,12 +1336,3 @@ class AstraDBVectorStore(VectorStore):
             an `AstraDBVectorStore` vectorstore.
         """
         return super().from_documents(documents, embedding, **kwargs)
-
-
-@deprecated(
-    since="0.0.0",
-    removal="0.2.0",
-    alternative_import="langchain_astradb.vectorstores.AstraDBVectorStore",
-)
-class AstraDB(AstraDBVectorStore):
-    pass
