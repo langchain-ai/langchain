@@ -36,35 +36,35 @@ env:
 
 jobs:
   lint:
-    name: make lint
+    name: "-"
     uses: ./.github/workflows/_lint.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   test:
-    name: make test
+    name: "-"
     uses: ./.github/workflows/_test.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   compile-integration-tests:
-    name: poetry run pytest -m compile tests/integration_tests
+    name: "-"
     uses: ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   dependencies:
-    name: check dependencies
+    name: "-"
     uses: ./.github/workflows/_dependencies.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   extended-tests:
-    name: make extended_tests / python${{ matrix.python-version }}
+    name: "make extended_tests #${{ matrix.python-version }}"
     runs-on: ubuntu-latest
     strategy:
       matrix:
