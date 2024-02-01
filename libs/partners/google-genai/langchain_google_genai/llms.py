@@ -5,7 +5,10 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import google.api_core
 import google.generativeai as genai  # type: ignore[import]
-from google.generativeai.generative_models import safety_types
+from google.generativeai.types.safety_types import (  # type: ignore
+    HarmBlockThreshold,
+    HarmCategory,
+)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -148,9 +151,7 @@ Supported examples:
         description="A string, one of: [`rest`, `grpc`, `grpc_asyncio`].",
     )
 
-    safety_settings: Optional[
-        Dict[safety_types.HarmCategory, safety_types.HarmBlockThreshold]
-    ] = None
+    safety_settings: Optional[Dict[HarmCategory, HarmBlockThreshold]] = None
     """The default safety settings to use for all generations. 
     
         For example: 
@@ -158,11 +159,11 @@ Supported examples:
             from langchain_google_vertexai import HarmBlockThreshold, HarmCategory
 
             safety_settings = {
-                safety_types.HarmCategory.HARM_CATEGORY_UNSPECIFIED: safety_types.HarmBlockThreshold.BLOCK_NONE,
-                safety_types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: safety_types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                safety_types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: safety_types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                safety_types.HarmCategory.HARM_CATEGORY_HARASSMENT: safety_types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
-                safety_types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: safety_types.HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_UNSPECIFIED: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
             }
             """  # noqa: E501
 

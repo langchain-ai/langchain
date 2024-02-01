@@ -5,8 +5,9 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
 """
 
 import pytest
-from google.generativeai.generative_models import (  # type: ignore
-    safety_types,
+from google.generativeai.types.safety_types import (  # type: ignore
+    HarmBlockThreshold,
+    HarmCategory,
 )
 from langchain_core.outputs import LLMResult
 
@@ -80,7 +81,7 @@ def test_safety_settings_gemini() -> None:
 
     # test blocked prompt with safety filters
     safety_settings = {
-        safety_types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: safety_types.HarmBlockThreshold.BLOCK_NONE,  # noqa: E501
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,  # noqa: E501
     }
 
     llm = GoogleGenerativeAI(
