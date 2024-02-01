@@ -1,4 +1,4 @@
-name: integration tests
+name: compile-integration-test
 
 on:
   workflow_call:
