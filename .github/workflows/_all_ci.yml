@@ -64,7 +64,7 @@ jobs:
     secrets: inherit
 
   extended-tests:
-    name: make extended_tests / python${{ matrix.python-version }}
+    name: make extended_tests \#${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
