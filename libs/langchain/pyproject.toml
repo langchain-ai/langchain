@@ -20,7 +20,7 @@ SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
 numpy = "^1"
-aiohttp = "^3.8.3"
+aiohttp = "^3.9.2"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 azure-core = {version = "^1.26.4", optional=true}
