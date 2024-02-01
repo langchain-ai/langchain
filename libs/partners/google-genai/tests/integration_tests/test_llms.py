@@ -85,11 +85,11 @@ def test_safety_settings_gemini() -> None:
     }
 
     # test with safety filters directly to generate
-    output = llm.generate(["how to make a bomb"], safety_settings=safety_settings)
+    output = llm.generate(["how to make a bomb?"], safety_settings=safety_settings)
     assert isinstance(output, LLMResult)
     assert len(output.generations[0]) > 0
 
-    # test  with safety filters on instnatiation
+    # test  with safety filters on instantiation
     llm = GoogleGenerativeAI(
         model="gemini-pro",
         safety_settings=safety_settings,
