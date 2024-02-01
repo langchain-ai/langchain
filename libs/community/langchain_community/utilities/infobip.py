@@ -80,8 +80,11 @@ class InfobipAPIWrapper(BaseModel):
         )
 
         response_json: Dict = response.json()
-        if response.status_code != 200:
-            return response_json["requestError"]["serviceException"]["text"]
+        try:
+            if response.status_code != 200:
+                return response_json["requestError"]["serviceException"]["text"]
+        except KeyError:
+            return "Failed to send message"
 
         try:
             return response_json["messages"][0]["messageId"]
@@ -117,8 +120,11 @@ class InfobipAPIWrapper(BaseModel):
 
         response_json: Dict = response.json()
 
-        if response.status_code != 200:
-            return response_json["requestError"]["serviceException"]["text"]
+        try:
+            if response.status_code != 200:
+                return response_json["requestError"]["serviceException"]["text"]
+        except KeyError:
+            return "Failed to send message"
 
         try:
             return response_json["messages"][0]["messageId"]
