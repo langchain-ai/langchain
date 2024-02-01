@@ -36,10 +36,7 @@ class KuzuGraph:
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Kùzu database"""
-        params_list = []
-        for param_name in params:
-            params_list.append([param_name, params[param_name]])
-        result = self.conn.execute(query, params_list)
+        result = self.conn.execute(query, params)
         column_names = result.get_column_names()
         return_list = []
         while result.has_next():
