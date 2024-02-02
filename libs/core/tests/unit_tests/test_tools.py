@@ -18,6 +18,7 @@ from langchain_core.tools import (
     StructuredTool,
     Tool,
     ToolException,
+    _create_subset_model,
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -321,7 +322,7 @@ def test_structured_tool_from_function_docstring() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
-        "title": "fooSchemaSchema",
+        "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -354,7 +355,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
         },
-        "title": "fooSchemaSchema",
+        "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -454,7 +455,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
-        "title": "fooSchemaSchema",
+        "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -685,7 +686,7 @@ def test_structured_tool_from_function() -> None:
     }
 
     assert structured_tool.args_schema.schema() == {
-        "title": "fooSchemaSchema",
+        "title": "fooSchema",
         "type": "object",
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
@@ -821,3 +822,16 @@ async def test_async_validation_error_handling_non_validation_error(
     _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
         await _tool.arun({})
+
+
+def test_optional_subset_model_rewrite() -> None:
+    class MyModel(BaseModel):
+        a: Optional[str]
+        b: str
+        c: Optional[List[Optional[str]]]
+
+    model2 = _create_subset_model("model2", MyModel, ["a", "b", "c"])
+
+    assert "a" not in model2.schema()["required"]  # should be optional
+    assert "b" in model2.schema()["required"]  # should be required
+    assert "c" not in model2.schema()["required"]  # should be optional
