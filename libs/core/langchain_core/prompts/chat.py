@@ -508,7 +508,6 @@ class SystemMessagePromptTemplate(_StringImageMessagePromptTemplate):
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     """Base class for chat prompt templates."""
-    type: str = "base"
 
     @property
     def lc_attributes(self) -> Dict:
