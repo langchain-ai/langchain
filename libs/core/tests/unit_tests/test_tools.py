@@ -1,4 +1,5 @@
 """Test the base tool implementation."""
+
 import json
 from datetime import datetime
 from enum import Enum
@@ -835,3 +836,38 @@ def test_optional_subset_model_rewrite() -> None:
     assert "a" not in model2.schema()["required"]  # should be optional
     assert "b" in model2.schema()["required"]  # should be required
     assert "c" not in model2.schema()["required"]  # should be optional
+
+
+@pytest.mark.parametrize(
+    "inputs, expected",
+    [
+        # Check not required
+        ({"bar": "bar"}, {"bar": "bar", "baz": 3, "buzz": "buzz"}),
+        # Check overwritten
+        (
+            {"bar": "bar", "baz": 4, "buzz": "not-buzz"},
+            {"bar": "bar", "baz": 4, "buzz": "not-buzz"},
+        ),
+        # Check validation error when missing
+        ({}, None),
+        # Check validation error when wrong type
+        ({"bar": "bar", "baz": "not-an-int"}, None),
+        # Check OK when None explicitly passed
+        ({"bar": "bar", "baz": None}, {"bar": "bar", "baz": None, "buzz": "buzz"}),
+    ],
+)
+def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> None:
+    @tool
+    def foo(bar: str, baz: Optional[int] = 3, buzz: Optional[str] = "buzz") -> dict:
+        """The foo."""
+        return {
+            "bar": bar,
+            "baz": baz,
+            "buzz": buzz,
+        }
+
+    if expected is not None:
+        assert foo.invoke(inputs) == expected  # type: ignore
+    else:
+        with pytest.raises(ValidationError):
+            foo.invoke(inputs)  # type: ignore
