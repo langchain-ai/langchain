@@ -1,0 +1,11 @@
+input_variables: [text]
+output_parser: null
+messages:
+  - role: system
+    prompt:
+      template: 'Классифицируй обращения пользователя в подходящую категорию. Категории: Статус заказа, Возврат и обмен товаров, Характеристики продукта, Технические проблемы, Другое. В ответе укажи только категорию.'
+  - role: user
+    prompt:
+      template: '{text}'
+template_format: f-string
+_type: chat
