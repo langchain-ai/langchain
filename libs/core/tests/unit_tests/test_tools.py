@@ -1,14 +1,13 @@
 """Test the base tool implementation."""
 
 import json
+import sys
 from datetime import datetime
 from enum import Enum
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
-from typing_extensions import Annotated
-
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -25,6 +24,7 @@ from langchain_core.tools import (
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
+from typing_extensions import Annotated
 
 
 def test_unnamed_decorator() -> None:
@@ -74,6 +74,7 @@ def test_structured_args() -> None:
     assert structured_api.run(args) == expected_result
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Requires Python 3.10 or above")
 def test_structured_args_description() -> None:
     class _AnnotatedTool(BaseTool):
         name: str = "structured_api"
@@ -906,6 +907,7 @@ def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> No
             foo.invoke(inputs)  # type: ignore
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Requires Python 3.10 or above")
 def test_create_schema_from_function_with_descriptions() -> None:
     def foo(bar: int, baz: str) -> str:
         """Docstring
