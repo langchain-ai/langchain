@@ -1012,14 +1012,14 @@ class Milvus(VectorStore):
         try:
             query_result = self.col.query(
                     expr=expr,
-                    output_fields=["pk"]
+                    output_fields=[self._primary_field]
                 )
         except MilvusException as exc:
             logger.error(
                 "Failed to get ids: %s error: %s", self.collection_name, exc
             )
             raise exc
-        ids = [item.get("pk") for item in query_result]
+        ids = [item.get(self._primary_field) for item in query_result]
         return ids
     
     def upsert(self,
