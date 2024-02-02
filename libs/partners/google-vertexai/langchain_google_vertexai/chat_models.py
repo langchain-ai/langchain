@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union, cast
 from urllib.parse import urlparse
 
+import proto
 import requests
 from google.cloud.aiplatform_v1beta1.types.content import Part as GapicPart
 from google.cloud.aiplatform_v1beta1.types.tool import FunctionCall
@@ -30,8 +31,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
-from proto.marshal.collections.maps import MapComposite  # type: ignore
-from proto.marshal.collections.repeated import RepeatedComposite  # type: ignore
 from vertexai.language_models import (  # type: ignore
     ChatMessage,
     ChatModel,
@@ -274,48 +273,15 @@ def _parse_response_candidate(response_candidate: "Candidate") -> AIMessage:
     first_part = response_candidate.content.parts[0]
     if first_part.function_call:
         function_call = {"name": first_part.function_call.name}
-
         # dump to match other function calling llm for now
-        arguments = {}
-        for arg in first_part.function_call.args:
-            arg_value = first_part.function_call.args[arg]
-            if isinstance(arg_value, RepeatedComposite):
-                result = _convert_repeatedcomposite(arg_value)
-                arguments[arg] = result
-            elif isinstance(arg_value, MapComposite):
-                arguments[arg] = _convert_mapcomposite(arg_value)
-            else:
-                arguments[arg] = arg_value
-        function_call["arguments"] = json.dumps(arguments)
-
+        function_call_args_dict = proto.Message.to_dict(first_part.function_call)[
+            "args"
+        ]
+        function_call["arguments"] = json.dumps(
+            {k: function_call_args_dict[k] for k in function_call_args_dict}
+        )
         additional_kwargs["function_call"] = function_call
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
-
-
-def _convert_mapcomposite(mapcomposite: MapComposite):
-    map = {}
-    for k, v in mapcomposite.items():
-        if isinstance(v, RepeatedComposite):
-            map[k] = _convert_repeatedcomposite(v)
-        elif isinstance(v, MapComposite):
-            map[k] = _convert_mapcomposite(v)
-        else:
-            map[k] = v
-    return map
-
-
-def _convert_repeatedcomposite(repeated_composite: RepeatedComposite):
-    _ = []
-    for composite in repeated_composite:
-        if isinstance(composite, RepeatedComposite):
-            obj_list = _convert_repeatedcomposite(composite)
-            _.append(obj_list)
-        elif isinstance(composite, MapComposite):
-            map = _convert_mapcomposite(composite)
-            _.append(map)
-        else:
-            _.append(composite)
-    return _
 
 
 class ChatVertexAI(_VertexAICommon, BaseChatModel):

@@ -11,12 +11,18 @@ from google.cloud.aiplatform_v1beta1.types import (
     FunctionCall,
     Part,
 )
+from google.cloud.aiplatform_v1beta1.types import (
+    content as gapic_content_types,
+)
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
 from vertexai.language_models import ChatMessage, InputOutputTextPair  # type: ignore
+from vertexai.preview.generative_models import (  # type: ignore
+    Candidate,
+)
 
 from langchain_google_vertexai.chat_models import (
     ChatVertexAI,
@@ -212,20 +218,21 @@ def test_default_params_gemini() -> None:
 
 
 @pytest.mark.parametrize(
-    "content, expected",
+    "raw_candidate, expected",
     [
         (
-            Content(
-                role="model",
-                parts=[
-                    Part(
-                        text="",
-                        function_call=FunctionCall(
-                            name="Information",
-                            args={"name": "Ben"},
-                        ),
-                    )
-                ],
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"name": "Ben"},
+                            ),
+                        )
+                    ],
+                )
             ),
             {
                 "name": "Information",
@@ -233,17 +240,18 @@ def test_default_params_gemini() -> None:
             },
         ),
         (
-            Content(
-                role="model",
-                parts=[
-                    Part(
-                        text="",
-                        function_call=FunctionCall(
-                            name="Information",
-                            args={"info": ["A", "B", "C"]},
-                        ),
-                    )
-                ],
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"info": ["A", "B", "C"]},
+                            ),
+                        )
+                    ],
+                )
             ),
             {
                 "name": "Information",
@@ -251,22 +259,23 @@ def test_default_params_gemini() -> None:
             },
         ),
         (
-            Content(
-                role="model",
-                parts=[
-                    Part(
-                        text="",
-                        function_call=FunctionCall(
-                            name="Information",
-                            args={
-                                "people": [
-                                    {"name": "Joe", "age": 30},
-                                    {"name": "Martha"},
-                                ]
-                            },
-                        ),
-                    )
-                ],
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={
+                                    "people": [
+                                        {"name": "Joe", "age": 30},
+                                        {"name": "Martha"},
+                                    ]
+                                },
+                            ),
+                        )
+                    ],
+                )
             ),
             {
                 "name": "Information",
@@ -279,17 +288,18 @@ def test_default_params_gemini() -> None:
             },
         ),
         (
-            Content(
-                role="model",
-                parts=[
-                    Part(
-                        text="",
-                        function_call=FunctionCall(
-                            name="Information",
-                            args={"info": [[1, 2, 3], [4, 5, 6]]},
-                        ),
-                    )
-                ],
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"info": [[1, 2, 3], [4, 5, 6]]},
+                            ),
+                        )
+                    ],
+                )
             ),
             {
                 "name": "Information",
@@ -298,11 +308,8 @@ def test_default_params_gemini() -> None:
         ),
     ],
 )
-def test_parse_response_candidate(content, expected) -> None:
-    response_candidate = StubGeminiResponse(
-        text="", content=content, citation_metadata=Mock()
-    )
-
+def test_parse_response_candidate(raw_candidate, expected) -> None:
+    response_candidate = Candidate._from_gapic(raw_candidate)
     result = _parse_response_candidate(response_candidate)
     result_arguments = json.loads(
         result.additional_kwargs["function_call"]["arguments"]
