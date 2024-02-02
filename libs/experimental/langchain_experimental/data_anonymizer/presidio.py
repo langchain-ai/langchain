@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from presidio_analyzer import AnalyzerEngine, EntityRecognizer
     from presidio_analyzer.nlp_engine import NlpEngineProvider
     from presidio_anonymizer import AnonymizerEngine
-    from presidio_anonymizer.entities import OperatorConfig
+    from presidio_anonymizer.entities import ConflictResolutionStrategy, OperatorConfig
 
 
 def _import_analyzer_engine() -> "AnalyzerEngine":
@@ -102,7 +102,7 @@ class PresidioAnonymizerBase(AnonymizerBase):
         self,
         analyzed_fields: Optional[List[str]] = None,
         operators: Optional[Dict[str, OperatorConfig]] = None,
-        languages_config: Dict = DEFAULT_LANGUAGES_CONFIG,
+        languages_config: Optional[Dict] = None,
         add_default_faker_operators: bool = True,
         faker_seed: Optional[int] = None,
     ):
@@ -123,6 +123,8 @@ class PresidioAnonymizerBase(AnonymizerBase):
                 Defaults to None, in which case faker will be seeded randomly
                 and provide random values.
         """
+        if languages_config is None:
+            languages_config = DEFAULT_LANGUAGES_CONFIG
         OperatorConfig = _import_operator_config()
         AnalyzerEngine = _import_analyzer_engine()
         NlpEngineProvider = _import_nlp_engine_provider()
@@ -183,6 +185,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         text: str,
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
+        conflict_resolution: Optional[ConflictResolutionStrategy] = None,
     ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
@@ -204,8 +207,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         """
         if language is None:
             language = self.supported_languages[0]
-
-        if language not in self.supported_languages:
+        elif language not in self.supported_languages:
             raise ValueError(
                 f"Language '{language}' is not supported. "
                 f"Supported languages are: {self.supported_languages}. "
@@ -237,7 +239,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
 
         filtered_analyzer_results = (
             self._anonymizer._remove_conflicts_and_get_text_manipulation_data(
-                analyzer_results
+                analyzer_results, conflict_resolution
             )
         )
 
@@ -260,10 +262,12 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         self,
         analyzed_fields: Optional[List[str]] = None,
         operators: Optional[Dict[str, OperatorConfig]] = None,
-        languages_config: Dict = DEFAULT_LANGUAGES_CONFIG,
+        languages_config: Optional[Dict] = None,
         add_default_faker_operators: bool = True,
         faker_seed: Optional[int] = None,
     ):
+        if languages_config is None:
+            languages_config = DEFAULT_LANGUAGES_CONFIG
         super().__init__(
             analyzed_fields,
             operators,
@@ -292,6 +296,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         text: str,
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
+        conflict_resolution: Optional[ConflictResolutionStrategy] = None,
     ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
@@ -348,7 +353,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
 
         filtered_analyzer_results = (
             self._anonymizer._remove_conflicts_and_get_text_manipulation_data(
-                analyzer_results
+                analyzer_results, conflict_resolution
             )
         )
 

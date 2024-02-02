@@ -6,7 +6,7 @@ import asyncio
 from collections import defaultdict
 from collections.abc import Hashable
 from itertools import chain
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, TypeVar, cast
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -209,7 +209,7 @@ class EnsembleRetriever(BaseRetriever):
         # Enforce that retrieved docs are Documents for each list in retriever_docs
         for i in range(len(retriever_docs)):
             retriever_docs[i] = [
-                Document(page_content=doc) if not isinstance(doc, Document) else doc
+                Document(page_content=cast(str, doc)) if isinstance(doc, str) else doc
                 for doc in retriever_docs[i]
             ]
 

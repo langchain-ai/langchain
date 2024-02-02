@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Optional,
@@ -130,13 +129,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value}"
             )
-        for v in convert_to_messages(value):
-            if not isinstance(v, BaseMessage):
-                raise ValueError(
-                    f"variable {self.variable_name} should be a list of base messages,"
-                    f" got {value}"
-                )
-        return value
+        return convert_to_messages(value)
 
     @property
     def input_variables(self) -> List[str]:
@@ -453,7 +446,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 content=text, additional_kwargs=self.additional_kwargs
             )
         else:
-            content = []
+            content: List = []
             for prompt in self.prompt:
                 inputs = {var: kwargs[var] for var in prompt.input_variables}
                 if isinstance(prompt, StringPromptTemplate):
@@ -465,6 +458,14 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             return self._msg_class(
                 content=content, additional_kwargs=self.additional_kwargs
             )
+
+    def pretty_repr(self, html: bool = False) -> str:
+        # TODO: Handle partials
+        title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
+        title = get_msg_title_repr(title, bold=html)
+        prompts = self.prompt if isinstance(self.prompt, list) else [self.prompt]
+        prompt_reprs = "\n\n".join(prompt.pretty_repr(html=html) for prompt in prompts)
+        return f"{title}\n\n{prompt_reprs}"
 
 
 class HumanMessagePromptTemplate(_StringImageMessagePromptTemplate):
@@ -747,13 +748,20 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         # Automatically infer input variables from messages
         input_vars: Set[str] = set()
+        partial_vars: Dict[str, Any] = {}
         for _message in _messages:
-            if isinstance(
+            if isinstance(_message, MessagesPlaceholder) and _message.optional:
+                partial_vars[_message.variable_name] = []
+            elif isinstance(
                 _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
             ):
                 input_vars.update(_message.input_variables)
 
-        return cls(input_variables=sorted(input_vars), messages=_messages)
+        return cls(
+            input_variables=sorted(input_vars),
+            messages=_messages,
+            partial_variables=partial_vars,
+        )
 
     def format(self, **kwargs: Any) -> str:
         """Format the chat template into a string.
@@ -791,7 +799,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 raise ValueError(f"Unexpected input: {message_template}")
         return result
 
-    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> ChatPromptTemplate:
+    def partial(self, **kwargs: Any) -> ChatPromptTemplate:
         """Get a new ChatPromptTemplate with some input variables already filled in.
 
         Args:

@@ -56,6 +56,9 @@ class Milvus(VectorStore):
             default of index.
         drop_old (Optional[bool]): Whether to drop the current collection. Defaults
             to False.
+        auto_id (bool): Whether to enable auto id for primary key. Defaults to False.
+            If False, you needs to provide text ids (string less than 65535 bytes).
+            If True, Milvus will generate unique integers as primary keys.
         primary_field (str): Name of the primary key field. Defaults to "pk".
         text_field (str): Name of the text field. Defaults to "text".
         vector_field (str): Name of the vector field. Defaults to "vector".
@@ -102,6 +105,7 @@ class Milvus(VectorStore):
             embedding_function = Embeddings,
             collection_name = "LangChainCollection",
             drop_old = True,
+            auto_id = True
         )
 
     Raises:
@@ -119,6 +123,7 @@ class Milvus(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: Optional[bool] = False,
+        auto_id: bool = False,
         *,
         primary_field: str = "pk",
         text_field: str = "text",
@@ -159,8 +164,9 @@ class Milvus(VectorStore):
         self.index_params = index_params
         self.search_params = search_params
         self.consistency_level = consistency_level
+        self.auto_id = auto_id
 
-        # In order for a collection to be compatible, pk needs to be auto'id and int
+        # In order for a collection to be compatible, pk needs to be varchar
         self._primary_field = primary_field
         # In order for compatibility, the text field will need to be called "text"
         self._text_field = text_field
@@ -327,11 +333,22 @@ class Milvus(VectorStore):
             FieldSchema(self._text_field, DataType.VARCHAR, max_length=65_535)
         )
         # Create the primary key field
-        fields.append(
-            FieldSchema(
-                self._primary_field, DataType.INT64, is_primary=True, auto_id=True
+        if self.auto_id:
+            fields.append(
+                FieldSchema(
+                    self._primary_field, DataType.INT64, is_primary=True, auto_id=True
+                )
             )
-        )
+        else:
+            fields.append(
+                FieldSchema(
+                    self._primary_field,
+                    DataType.VARCHAR,
+                    is_primary=True,
+                    auto_id=False,
+                    max_length=65_535,
+                )
+            )
         # Create the vector field, supports binary or float vectors
         fields.append(
             FieldSchema(self._vector_field, infer_dtype_bydata(embeddings[0]), dim=dim)
@@ -369,8 +386,6 @@ class Milvus(VectorStore):
             schema = self.col.schema
             for x in schema.fields:
                 self.fields.append(x.name)
-            # Since primary field is auto-id, no need to track it
-            self.fields.remove(self._primary_field)
 
     def _get_index(self) -> Optional[dict[str, Any]]:
         """Return the vector index information if it exists"""
@@ -467,6 +482,8 @@ class Milvus(VectorStore):
         metadatas: Optional[List[dict]] = None,
         timeout: Optional[int] = None,
         batch_size: int = 1000,
+        *,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Insert text data into Milvus.
@@ -483,10 +500,12 @@ class Milvus(VectorStore):
                 that they all fit in memory.
             metadatas (Optional[List[dict]]): Metadata dicts attached to each of
                 the texts. Defaults to None.
+            should be less than 65535 bytes. Required and work when auto_id is False.
             timeout (Optional[int]): Timeout for each batch insert. Defaults
                 to None.
             batch_size (int, optional): Batch size to use for insertion.
                 Defaults to 1000.
+            ids (Optional[List[str]]): List of text ids. The length of each item
 
         Raises:
             MilvusException: Failure to add texts
@@ -497,6 +516,16 @@ class Milvus(VectorStore):
         from pymilvus import Collection, MilvusException
 
         texts = list(texts)
+        if not self.auto_id:
+            assert isinstance(
+                ids, list
+            ), "A list of valid ids are required when auto_id is False."
+            assert len(set(ids)) == len(
+                texts
+            ), "Different lengths of texts and unique ids are provided."
+            assert all(
+                len(x.encode()) <= 65_535 for x in ids
+            ), "Each id should be a string less than 65535 bytes."
 
         try:
             embeddings = self.embedding_func.embed_documents(texts)
@@ -524,6 +553,9 @@ class Milvus(VectorStore):
             self._vector_field: embeddings,
         }
 
+        if not self.auto_id:
+            insert_dict[self._primary_field] = ids
+
         if self._metadata_field is not None:
             for d in metadatas:
                 insert_dict.setdefault(self._metadata_field, []).append(d)
@@ -532,7 +564,12 @@ class Milvus(VectorStore):
             if metadatas is not None:
                 for d in metadatas:
                     for key, value in d.items():
-                        if key in self.fields:
+                        keys = (
+                            [x for x in self.fields if x != self._primary_field]
+                            if self.auto_id
+                            else [x for x in self.fields]
+                        )
+                        for key in keys:
                             insert_dict.setdefault(key, []).append(value)
 
         # Total insert count
@@ -700,7 +737,7 @@ class Milvus(VectorStore):
             param = self.search_params
 
         # Determine result metadata fields.
-        output_fields = self.fields[:]
+        output_fields = [x for x in self.fields if x != self._primary_field]
         output_fields.remove(self._vector_field)
 
         # Perform the search.
@@ -864,6 +901,30 @@ class Milvus(VectorStore):
                 ret.append(documents[x])
         return ret
 
+    def delete(
+        self, ids: Optional[List[str]] = None, expr: Optional[str] = None, **kwargs: str
+    ):
+        """Delete by vector ID or boolean expression.
+        Refer to [Milvus documentation](https://milvus.io/docs/delete_data.md)
+        for notes and examples of expressions.
+
+        Args:
+            ids: List of ids to delete.
+            expr: Boolean expression that specifies the entities to delete.
+            kwargs: Other parameters in Milvus delete api.
+        """
+        if isinstance(ids, list) and len(ids) > 0:
+            expr = f"{self._primary_field} in {ids}"
+            if expr is not None:
+                logger.warning(
+                    "Both ids and expr are provided. " "Ignore expr and delete by ids."
+                )
+        else:
+            assert isinstance(
+                expr, str
+            ), "Either ids list or expr string must be provided."
+        return self.col.delete(expr=expr, **kwargs)
+
     @classmethod
     def from_texts(
         cls,
@@ -876,6 +937,8 @@ class Milvus(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: bool = False,
+        *,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Milvus:
         """Create a Milvus collection, indexes it with HNSW, and insert data.
@@ -897,10 +960,16 @@ class Milvus(VectorStore):
                 Defaults to None.
             drop_old (Optional[bool], optional): Whether to drop the collection with
                 that name if it exists. Defaults to False.
+            ids (Optional[List[str]]): List of text ids. Defaults to None.
 
         Returns:
             Milvus: Milvus Vector Store
         """
+        if isinstance(ids, list) and len(ids) > 0:
+            auto_id = False
+        else:
+            auto_id = True
+
         vector_db = cls(
             embedding_function=embedding,
             collection_name=collection_name,
@@ -909,9 +978,10 @@ class Milvus(VectorStore):
             index_params=index_params,
             search_params=search_params,
             drop_old=drop_old,
+            auto_id=auto_id,
             **kwargs,
         )
-        vector_db.add_texts(texts=texts, metadatas=metadatas)
+        vector_db.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return vector_db
 
     def _parse_document(self, data: dict) -> Document:
