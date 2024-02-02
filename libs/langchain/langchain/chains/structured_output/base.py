@@ -106,6 +106,7 @@ def create_openai_fn_runnable(
     return prompt | llm.bind(**llm_kwargs) | output_parser
 
 
+# TODO: implement mode='openai-tools'.
 def create_structured_output_runnable(
     output_schema: Union[Dict[str, Any], Type[BaseModel]],
     llm: Runnable,
@@ -123,21 +124,28 @@ def create_structured_output_runnable(
             is passed in, it's assumed to already be a valid JsonSchema.
             For best results, pydantic.BaseModels should have docstrings describing what
             the schema represents and descriptions for the parameters.
-        llm: Language model to use, assumed to support the OpenAI function-calling API.
-        prompt: BasePromptTemplate to pass to the model.
-        output_parser: BaseLLMOutputParser to use for parsing model outputs. By default
-            will be inferred from the function types. If pydantic.BaseModels are passed
-            in, then the OutputParser will try to parse outputs using those. Otherwise
-            model outputs will simply be parsed as JSON.
-        mode: ...
+        llm: Language model to use. Assumed to support the OpenAI function-calling API 
+            if mode is 'openai-function'. Assumed to support OpenAI response_format 
+            parameter if mode is 'openai-json'.
+        prompt: BasePromptTemplate to pass to the model. If mode is 'openai-json' and 
+            prompt has input variable 'output_schema' then the given output_schema 
+            will be converted to a JsonSchema and inserted in the prompt.
+        output_parser: Output parser to use for parsing model outputs. By default
+            will be inferred from the function types. If pydantic.BaseModel is passed
+            in, then the OutputParser will try to parse outputs using the pydantic 
+            class. Otherwise model outputs will be parsed as JSON.
+        mode: How structured outputs are extracted from the model. If 'openai-functions' 
+            then OpenAI function calling is used. If 'openai-json' then OpenAI model 
+            with response_format set to JSON is used.
         enforce_single_function_usage: Only used if mode is 'openai-functions'. Only 
             used if a single function is passed in. If
             True, then the model will be forced to use the given function. If False,
             then the model will be given the option to use the given function or not.
-        **kwargs: .
+        **kwargs: Additional named arguments.
 
     Returns:
-        A runnable sequence that will pass the given function to the model when run.
+        A runnable sequence that will return a structured output matching the given 
+            output_schema.
 
     OpenAI functions example:
         .. code-block:: python
