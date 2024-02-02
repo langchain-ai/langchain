@@ -9,8 +9,6 @@ from typing import (
     Union,
 )
 
-from langchain.chains.structured_output.base import get_openai_output_parser, \
-    create_structured_output_runnable, create_openai_fn_runnable
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import (
@@ -24,6 +22,11 @@ from langchain_core.utils.function_calling import (
 )
 
 from langchain.chains import LLMChain
+from langchain.chains.structured_output.base import (
+    create_openai_fn_runnable,
+    create_structured_output_runnable,
+    get_openai_output_parser,
+)
 from langchain.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
 )
@@ -228,5 +231,3 @@ def create_structured_output_chain(
         output_parser=output_parser,
         **kwargs,
     )
-
-

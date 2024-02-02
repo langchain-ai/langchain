@@ -1,15 +1,22 @@
 import json
-from typing import Sequence, Union, Dict, Any, Type, Callable, Optional, Literal
+from typing import Any, Callable, Dict, Literal, Optional, Sequence, Type, Union
 
-from pydantic import BaseModel
-
-from langchain.output_parsers.openai_functions import PydanticOutputFunctionsParser, \
-    JsonOutputFunctionsParser, PydanticAttrOutputFunctionsParser
-from langchain_core.output_parsers import BaseOutputParser, BaseGenerationOutputParser, \
-    JsonOutputParser
+from langchain_core.output_parsers import (
+    BaseGenerationOutputParser,
+    BaseOutputParser,
+    JsonOutputParser,
+)
 from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import convert_to_openai_function
+
+from langchain.output_parsers import PydanticOutputParser
+from langchain.output_parsers.openai_functions import (
+    JsonOutputFunctionsParser,
+    PydanticAttrOutputFunctionsParser,
+    PydanticOutputFunctionsParser,
+)
 
 
 def create_openai_fn_runnable(
@@ -105,7 +112,7 @@ def create_structured_output_runnable(
     prompt: BasePromptTemplate,
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
-    method: Literal["openai-functions", "openai-json"]="openai-functions",
+    method: Literal["openai-functions", "openai-json"] = "openai-functions",
     enforce_single_function_usage: bool = True,
     **kwargs: Any,
 ) -> Runnable:
@@ -194,17 +201,34 @@ def create_structured_output_runnable(
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
     """  # noqa: E501
     if method == "openai-functions":
-        return _create_openai_functions_structured_output_runnable(output_schema, llm, prompt, output_parser=output_parser, enforce_single_function_usage=enforce_single_function_usage, **kwargs)
+        return _create_openai_functions_structured_output_runnable(
+            output_schema,
+            llm,
+            prompt,
+            output_parser=output_parser,
+            enforce_single_function_usage=enforce_single_function_usage,
+            **kwargs,
+        )
     elif method == "openai-json":
-        return _create_openai_json_runnable(output_schema, llm, prompt, output_parser=output_parser, **kwargs)
+        return _create_openai_json_runnable(
+            output_schema, llm, prompt, output_parser=output_parser, **kwargs
+        )
     else:
-        raise ValueError(f"Invalid method {method}. Expected one of 'openai-functions', 'openai-json'.")
+        raise ValueError(
+            f"Invalid method {method}. Expected one of 'openai-functions', "
+            f"'openai-json'."
+        )
 
 
 def get_openai_output_parser(
-        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
     """Get the appropriate function output parser given the user functions.
+
+    Args:
+        functions: Sequence where element is a dictionary, a pydantic.BaseModel class,
+            or a Python function. If a dictionary is passed in, it is assumed to
+            already be a valid OpenAI function.
 
     Returns:
         A PydanticOutputFunctionsParser if functions are Pydantic classes, otherwise
@@ -236,10 +260,13 @@ def _create_openai_json_runnable(
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
 ) -> Runnable:
     """"""
-
+    if isinstance(output_schema, type) and issubclass(output_schema, BaseModel):
+        output_parser = output_parser or PydanticOutputParser(
+            pydantic_object=output_schema, raise_error=False
+        )
         schema_as_dict = convert_to_openai_function(output_schema)["parameters"]
     else:
-        output_parser = output_parser or JsonOutputParser()
+        output_parser = output_parser or JsonOutputParser(raise_error=False)
         schema_as_dict = output_schema
 
     if "output_schema" in prompt.input_variables:

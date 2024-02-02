@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import warnings
 from json import JSONDecodeError
 from typing import Any, Callable, List, Optional, Type
 
@@ -195,6 +196,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """
 
     pydantic_object: Optional[Type[BaseModel]] = None
+    raise_error: bool = True
+    """Whether to raise errors raised during parsing."""
 
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
@@ -211,7 +214,12 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             try:
                 return parse_json_markdown(text)
             except JSONDecodeError as e:
-                raise OutputParserException(f"Invalid json output: {text}") from e
+                msg = f"Invalid json output: {text}"
+                if self.raise_error:
+                    raise OutputParserException(msg, llm_output=text) from e
+                else:
+                    warnings.warn(msg)
+                    return text
 
     def parse(self, text: str) -> Any:
         return self.parse_result([Generation(text=text)])
