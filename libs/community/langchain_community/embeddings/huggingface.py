@@ -53,7 +53,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     multi_process: bool = False
     """Run encode() on multiple GPUs."""
     show_progress: bool = False
-    """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
+    """Whether to show a progress bar."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -95,21 +95,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
             return embeddings.toList()
         else:
-            if self.show_progress:
-                try:
-                    from tqdm import tqdm
+            embeddings = self.client.encode(texts, show_progress_bar=self.show_progress, **self.encode_kwargs)
 
-                    iter_ = tqdm(texts, desc="HuggingFaceEmbeddings")
-                except ImportError:
-                    logging.warning(
-                        "Unable to show progress because tqdm could not be imported."
-                        "Please install it with `pip install tqdm`."
-                    )
-                    iter_ = texts
-            else:
-                embeddings = self.client.encode(texts, **self.encode_kwargs)
-
-        return [self.client.encode(text, **self.encode_kwargs) for text in iter_]
+        return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
