@@ -200,21 +200,20 @@ def create_pandas_dataframe_agent(
         a PythonAstREPLTool with the DataFrame(s) and any user-provided extra_tools.
 
     Example:
-
         .. code-block:: python
 
-        from langchain_openai import ChatOpenAI
-        from langchain_experimental.agents import create_pandas_dataframe_agent
-        import pandas as pd
+            from langchain_openai import ChatOpenAI
+            from langchain_experimental.agents import create_pandas_dataframe_agent
+            import pandas as pd
 
-        df = pd.read_csv("titanic.csv")
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        agent_executor = create_pandas_dataframe_agent(
-            llm,
-            df,
-            agent_type="openai-tools",
-            verbose=True
-        )
+            df = pd.read_csv("titanic.csv")
+            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+            agent_executor = create_pandas_dataframe_agent(
+                llm,
+                df,
+                agent_type="openai-tools",
+                verbose=True
+            )
 
     """  # noqa: E501
     try:

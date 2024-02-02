@@ -28,7 +28,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    name: Python ${{ matrix.python-version }}
+    name: "make test #${{ matrix.python-version }}"
     steps:
       - uses: actions/checkout@v4
 
