@@ -620,7 +620,10 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    result, self.collection_name, self.content_payload_key, self.metadata_payload_key
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key
                 ),
                 result.score,
             )
@@ -713,7 +716,10 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    result, self.collection_name, self.content_payload_key, self.metadata_payload_key
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key
                 ),
                 result.score,
             )
@@ -1051,7 +1057,10 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    results[i], self.collection_name, self.content_payload_key, self.metadata_payload_key
+                    results[i],
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key
                 ),
                 results[i].score,
             )
@@ -1123,7 +1132,10 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    results[i], self.collection_name, self.content_payload_key, self.metadata_payload_key
+                    results[i],
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key
                 ),
                 results[i].score,
             )
