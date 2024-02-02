@@ -14,13 +14,11 @@ All functionality related to Konko
 2. Enable a Python3.8+ environment
 3. Install the SDK
 ```shell
-pip install konko
-```
+pip install konko```
 4. Set API Keys as environment variables(`KONKO_API_KEY`,`OPENAI_API_KEY`)
 - ```shell
 export KONKO_API_KEY={your_KONKO_API_KEY_here}
-export OPENAI_API_KEY={your_OPENAI_API_KEY_here} #Optional
-```
+export OPENAI_API_KEY={your_OPENAI_API_KEY_here} #Optional```
 - Please see [the Konko docs](https://docs.konko.ai/docs/getting-started) for more details.
 
 
@@ -39,8 +37,7 @@ See a usage [example](/docs/integrations/llms/konko).
   from langchain.llms import Konko
   llm = Konko(max_tokens=800, model='mistralai/Mistral-7B-v0.1')
   prompt = "Generate a Product Description for Apple Iphone 15"
-  response = llm(prompt)
-  ```
+  response = llm(prompt)```
 
 ## Chat Models
 
@@ -51,8 +48,6 @@ See a usage [example](/docs/integrations/chat/konko).
   ```python
   chat_instance = ChatKonko(max_tokens=10, model = 'mistralai/mistral-7b-instruct-v0.1')
   msg = HumanMessage(content="Hi")
-  chat_response = chat_instance([msg])
-  
-  ```
+  chat_response = chat_instance([msg])```
 
 For further assistance, contact [support@konko.ai](mailto:support@konko.ai) or join our [Discord](https://discord.gg/TXV2s3z7RZ).
