@@ -10,7 +10,6 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.tools.render import render_text_description
 from langchain.tools.retriever import create_retriever_tool
-
 from langchain_community.chat_models.fireworks import ChatFireworks
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 
