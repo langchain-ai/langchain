@@ -3,9 +3,7 @@ from typing import List
 from langchain import hub
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_log_to_str
-from langchain.agents.output_parsers import (
-    ReActJsonSingleInputOutputParser,
-)
+from langchain.agents.output_parsers import ReActJsonSingleInputOutputParser
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.tools.render import render_text_description
