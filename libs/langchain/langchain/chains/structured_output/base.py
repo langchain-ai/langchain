@@ -112,7 +112,7 @@ def create_structured_output_runnable(
     prompt: BasePromptTemplate,
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
-    method: Literal["openai-functions", "openai-json"] = "openai-functions",
+    mode: Literal["openai-functions", "openai-json"] = "openai-functions",
     enforce_single_function_usage: bool = True,
     **kwargs: Any,
 ) -> Runnable:
@@ -129,8 +129,8 @@ def create_structured_output_runnable(
             will be inferred from the function types. If pydantic.BaseModels are passed
             in, then the OutputParser will try to parse outputs using those. Otherwise
             model outputs will simply be parsed as JSON.
-        method: ...
-        enforce_single_function_usage: Only used if method is 'openai-functions'. Only 
+        mode: ...
+        enforce_single_function_usage: Only used if mode is 'openai-functions'. Only 
             used if a single function is passed in. If
             True, then the model will be forced to use the given function. If False,
             then the model will be given the option to use the given function or not.
@@ -164,7 +164,7 @@ def create_structured_output_runnable(
                         ("human", "Tip: Make sure to answer in the correct format"),
                     ]
                 )
-                chain = create_structured_output_runnable(Dog, llm, prompt, method="openai-functions")
+                chain = create_structured_output_runnable(Dog, llm, prompt, mode="openai-functions")
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
                 
@@ -197,10 +197,10 @@ def create_structured_output_runnable(
                         ("human", "{input}"),
                     ]
                 )
-                chain = create_structured_output_runnable(Dog, llm, prompt, method="openai-json")
+                chain = create_structured_output_runnable(Dog, llm, prompt, mode="openai-json")
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
     """  # noqa: E501
-    if method == "openai-functions":
+    if mode == "openai-functions":
         return _create_openai_functions_structured_output_runnable(
             output_schema,
             llm,
@@ -209,13 +209,13 @@ def create_structured_output_runnable(
             enforce_single_function_usage=enforce_single_function_usage,
             **kwargs,
         )
-    elif method == "openai-json":
+    elif mode == "openai-json":
         return _create_openai_json_runnable(
             output_schema, llm, prompt, output_parser=output_parser, **kwargs
         )
     else:
         raise ValueError(
-            f"Invalid method {method}. Expected one of 'openai-functions', "
+            f"Invalid mode {mode}. Expected one of 'openai-functions', "
             f"'openai-json'."
         )
 
