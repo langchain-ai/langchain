@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-import warnings
 from json import JSONDecodeError
 from typing import Any, Callable, List, Optional, Type
 
