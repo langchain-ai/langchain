@@ -422,6 +422,12 @@ def _import_typesense() -> Any:
     return Typesense
 
 
+def _import_upstash() -> Any:
+    from langchain_community.vectorstores.upstash import UpstashVectorStore
+
+    return UpstashVectorStore
+
+
 def _import_usearch() -> Any:
     from langchain_community.vectorstores.usearch import USearch
 
@@ -609,6 +615,8 @@ def __getattr__(name: str) -> Any:
         return _import_timescalevector()
     elif name == "Typesense":
         return _import_typesense()
+    elif name == "UpstashVectorStore":
+        return _import_upstash()
     elif name == "USearch":
         return _import_usearch()
     elif name == "Vald":
@@ -695,6 +703,7 @@ __all__ = [
     "Tigris",
     "TimescaleVector",
     "Typesense",
+    "UpstashVectorStore",
     "USearch",
     "Vald",
     "Vearch",
