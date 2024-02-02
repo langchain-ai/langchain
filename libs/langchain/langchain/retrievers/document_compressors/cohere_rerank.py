@@ -12,19 +12,12 @@ from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from cohere import Client
-else:
-    # We do to avoid pydantic annotation issues when actually instantiating
-    # while keeping this import optional
-    try:
-        from cohere import Client
-    except ImportError:
-        pass
 
 
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
 
-    client: Client
+    client: Any
     """Cohere client to use for compressing documents."""
     top_n: Optional[int] = 3
     """Number of documents to return."""
