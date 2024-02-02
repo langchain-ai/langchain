@@ -52,7 +52,12 @@ class _MockStructuredTool(BaseTool):
     args_schema: Type[BaseModel] = _MockSchema
     description: str = "A Structured Tool"
 
-    def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def _run(
+        self,
+        arg1: int,
+        arg2: bool,
+        arg3: Optional[dict] = None,
+    ) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     async def _arun(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
@@ -67,6 +72,32 @@ def test_structured_args() -> None:
     expected_result = "1 True {'foo': 'bar'}"
     args = {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}}
     assert structured_api.run(args) == expected_result
+
+
+def test_structured_args_description() -> None:
+    class _AnnotatedTool(BaseTool):
+        name: str = "structured_api"
+        description: str = "A Structured Tool"
+
+        def _run(
+            self,
+            arg1: int,
+            arg2: Annotated[bool, "V important"],
+            arg3: Optional[dict] = None,
+        ) -> str:
+            return f"{arg1} {arg2} {arg3}"
+
+        async def _arun(
+            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+        ) -> str:
+            raise NotImplementedError
+
+    expected = {
+        "arg1": {"title": "Arg1", "type": "integer"},
+        "arg2": {"title": "Arg2", "type": "boolean", "description": "V important"},
+        "arg3": {"title": "Arg3", "type": "object"},
+    }
+    assert _AnnotatedTool().args == expected
 
 
 def test_misannotated_base_tool_raises_error() -> None:
