@@ -8,9 +8,10 @@ results with function calling even though it is not fine tuned for this task: ht
 
 ## Environment Setup
 
-There are various great ways to run OSS models. We will use the HuggingFace Hub.
+There are various great ways to run OSS models. We will use FireworksAI as an easy way to run the models. See [here](https://python.langchain.com/docs/integrations/providers/fireworks) for more information.
 
-Run `huggingface-cli login` locally to sign in to the HuggingFace Hub.
+Set the `FIREWORKS_API_KEY` environment variable to access Fireworks.
+
 
 ## Usage
 
