@@ -23,6 +23,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
+    ensure_config,
     get_config_list,
     get_executor_for_config,
 )
@@ -259,7 +260,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     def _prepare(
         self, config: Optional[RunnableConfig] = None
     ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
-        config = config or {}
+        config = ensure_config(config)
         specs_by_id = {spec.id: (key, spec) for key, spec in self.fields.items()}
         configurable_fields = {
             specs_by_id[k][0]: v
@@ -392,7 +393,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     def _prepare(
         self, config: Optional[RunnableConfig] = None
     ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
-        config = config or {}
+        config = ensure_config(config)
         which = config.get("configurable", {}).get(self.which.id, self.default_key)
         # remap configurable keys for the chosen alternative
         if self.prefix_keys:

@@ -28,11 +28,12 @@ Here is the output schema:
 
 YAML_FORMAT_INSTRUCTIONS = """The output should be formatted as a YAML instance that conforms to the given JSON schema below.
 
-As an example, for the schema
+# Examples
+## Schema
 ```
-{{'title': 'Players', 'description': 'A list of players', 'type': 'array', 'items': {{'$ref': '#/definitions/Player'}}, 'definitions': {{'Player': {{'title': 'Player', 'type': 'object', 'properties': {{'name': {{'title': 'Name', 'description': 'Player name', 'type': 'string'}}, 'avg': {{'title': 'Avg', 'description': 'Batting average', 'type': 'number'}}}}, 'required': ['name', 'avg']}}}}}}
+{{"title": "Players", "description": "A list of players", "type": "array", "items": {{"$ref": "#/definitions/Player"}}, "definitions": {{"Player": {{"title": "Player", "type": "object", "properties": {{"name": {{"title": "Name", "description": "Player name", "type": "string"}}, "avg": {{"title": "Avg", "description": "Batting average", "type": "number"}}}}, "required": ["name", "avg"]}}}}}}
 ```
-a well formatted instance would be:
+## Well formatted instance
 ```
 - name: John Doe
   avg: 0.3
@@ -40,12 +41,22 @@ a well formatted instance would be:
   avg: 1.4
 ```
 
+## Schema
+```
+{{"properties": {{"habit": {{ "description": "A common daily habit", "type": "string" }}, "sustainable_alternative": {{ "description": "An environmentally friendly alternative to the habit", "type": "string"}}}}, "required": ["habit", "sustainable_alternative"]}}
+```
+## Well formatted instance
+```
+habit: Using disposable water bottles for daily hydration.
+sustainable_alternative: Switch to a reusable water bottle to reduce plastic waste and decrease your environmental footprint.
+``` 
+
 Please follow the standard YAML formatting conventions with an indent of 2 spaces and make sure that the data types adhere strictly to the following JSON schema: 
 ```
 {schema}
 ```
 
-Make sure to always enclose the YAML output in triple backticks (```)"""
+Make sure to always enclose the YAML output in triple backticks (```). Please do not add anything other than valid YAML output!"""
 
 
 PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS = """The output should be formatted as a string as the operation, followed by a colon, followed by the column or row to be queried on, followed by optional array parameters.

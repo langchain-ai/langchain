@@ -1,6 +1,7 @@
 from uuid import UUID
 
 import pytest
+from langchain_community.llms import FakeListLLM
 from langchain_core.tools import Tool
 
 from langchain.agents import (
@@ -9,7 +10,6 @@ from langchain.agents import (
     AgentType,
     initialize_agent,
 )
-from langchain.llms import FakeListLLM
 from langchain.schema import RUN_KEY
 from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler

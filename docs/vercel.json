@@ -1,8 +1,100 @@
 {
   "redirects": [
     {
-      "source": "docs/docs/integrations/providers/alibabacloud_opensearch",
-      "destination": "docs/docs/integrations/providers/alibaba_cloud"
+      "source": "/docs/use_cases/qa_structured/sql",
+      "destination": "/docs/use_cases/sql/"
+    },
+    {
+      "source": "/docs/contributing/packages",
+      "destination": "/docs/packages"
+    },
+    {
+      "source": "/docs/community",
+      "destination": "/docs/contributing"
+    },
+    {
+      "source": "/docs/modules/chains/(.+)",
+      "destination": "/docs/modules/chains"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/custom_llm_agent",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/custom-functions-with-openai-functions-agent",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/custom_llm_chat_agent",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/custom_mrkl_agent",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/streaming_stdout_final_only",
+      "destination": "/docs/modules/agents/how_to/streaming"
+    },
+    {
+      "source": "/docs/modules/data_connection/document_transformers/text_splitters(/?)",
+      "destination": "/docs/modules/data_connection/document_transformers/"
+    },
+    {
+      "source": "/docs/modules/data_connection/document_transformers/text_splitters/:path*",
+      "destination": "/docs/modules/data_connection/document_transformers/:path*"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/example_selectors/:path*",
+      "destination": "/docs/modules/model_io/prompts/example_selector_types/:path*"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/prompt_templates(/?)",
+      "destination": "/docs/modules/model_io/prompts/"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/prompts_pipelining",
+      "destination": "/docs/modules/model_io/prompts/composition"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/prompt_templates/:path*",
+      "destination": "/docs/modules/model_io/prompts/:path*"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/comma_separated",
+      "destination": "/docs/modules/model_io/output_parsers/types/comma_separated"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/enum",
+      "destination": "/docs/modules/model_io/output_parsers/types/enum"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/output_fixing_parser",
+      "destination": "/docs/modules/model_io/output_parsers/types/output_fixing_parser"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/pandas_dataframe",
+      "destination": "/docs/modules/model_io/output_parsers/types/pandas_dataframe"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/structured",
+      "destination": "/docs/modules/model_io/output_parsers/types/structured"
+    },
+    {
+      "source": "/docs/modules/model_io/output_parsers/xml",
+      "destination": "/docs/modules/model_io/output_parsers/types/xml"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/code_understanding",
+      "destination": "/docs/use_cases/code_understanding"
+    },
+    {
+      "source": "/docs/use_cases/question_answering/document-context-aware-QA",
+      "destination": "/docs/modules/data_connection/document_transformers/"
+    },
+    {
+      "source": "/docs/integrations/providers/alibabacloud_opensearch",
+      "destination": "/docs/integrations/providers/alibaba_cloud"
     },
     {
       "source": "/docs/integrations/chat/pai_eas_chat_endpoint",
@@ -15,6 +107,14 @@
     {
       "source": "/docs/integrations/chat/hunyuan",
       "destination": "/docs/integrations/chat/tencent_hunyuan"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/excel",
+      "destination": "/docs/integrations/document_loaders/microsoft_excel"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/onenote",
+      "destination": "/docs/integrations/document_loaders/microsoft_onenote"
     },
     {
       "source": "/docs/integrations/providers/aws_dynamodb",
@@ -198,7 +298,7 @@
     },
     {
       "source": "/docs/use_cases/qa_structured/integrations/sqlite",
-      "destination": "/cookbook"
+      "destination": "/docs/use_cases/sql/"
     },
     {
       "source": "/docs/use_cases/more/graph/tot",
@@ -229,16 +329,8 @@
       "destination": "/docs/use_cases/question_answering/"
     },
     {
-      "source": "/docs/use_cases/code_understanding",
-      "destination": "/docs/use_cases/question_answering/code_understanding"
-    },
-    {
       "source": "/docs/use_cases/question_answering/how_to/conversational_retrieval_agents",
       "destination": "/docs/use_cases/question_answering/conversational_retrieval_agents"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/document-context-aware-QA",
-      "destination": "/docs/use_cases/question_answering/document-context-aware-QA"
     },
     {
       "source": "/docs/use_cases/question_answering/question_answering",
@@ -249,28 +341,12 @@
       "destination": "/docs/use_cases/question_answering/local_retrieval_qa"
     },
     {
-      "source": "/docs/use_cases/question_answering/how_to/multi_retrieval_qa_router",
-      "destination": "/docs/use_cases/question_answering/multi_retrieval_qa_router"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/multiple_retrieval",
-      "destination": "/docs/use_cases/question_answering/multiple_retrieval"
-    },
-    {
       "source": "/docs/use_cases/question_answering/how_to/qa_citations",
       "destination": "/cookbook"
     },
     {
       "source": "/docs/use_cases/question_answering/how_to/question_answering",
-      "destination": "/docs/use_cases/question_answering/question_answering"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/vector_db_qa",
-      "destination": "/docs/use_cases/question_answering/vector_db_qa"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/vector_db_text_generation",
-      "destination": "/docs/use_cases/question_answering/vector_db_text_generation"
+      "destination": "/docs/use_cases/question_answering/"
     },
     {
       "source": "/docs/use_cases/more/agents/agent_simulations(/?)",
@@ -307,10 +383,6 @@
     {
       "source": "/docs/modules/agents/agents/examples/mrkl_chat(.html?)",
       "destination": "/docs/modules/agents/"
-    },
-    {
-      "source": "/docs/use_cases(/?)",
-      "destination": "/docs/use_cases/question_answering/"
     },
     {
       "source": "/docs/integrations(/?)",
@@ -487,10 +559,6 @@
     {
       "source": "/docs/integrations/bananadev",
       "destination": "/docs/integrations/providers/bananadev"
-    },
-    {
-      "source": "/en/latest/ecosystem/baseten.html",
-      "destination": "/docs/integrations/providers/baseten"
     },
     {
       "source": "/docs/integrations/baseten",
@@ -757,10 +825,6 @@
       "destination": "/docs/integrations/providers/modal"
     },
     {
-      "source": "/en/latest/ecosystem/modelscope.html",
-      "destination": "/docs/integrations/providers/modelscope"
-    },
-    {
       "source": "/docs/integrations/modelscope",
       "destination": "/docs/integrations/providers/modelscope"
     },
@@ -997,176 +1061,24 @@
       "destination": "/docs/integrations/providers/:path*"
     },
     {
-      "source": "/en/latest/ecosystem/deployments.html",
-      "destination": "/docs/guides/deployments/template_repos"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/agent_benchmarking.html",
-      "destination": "/docs/guides/evaluation/agent_benchmarking"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/agent_vectordb_sota_pg.html",
-      "destination": "/docs/guides/evaluation/agent_vectordb_sota_pg"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/benchmarking_template.html",
-      "destination": "/docs/guides/evaluation/benchmarking_template"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/data_augmented_question_answering.html",
-      "destination": "/docs/guides/evaluation/data_augmented_question_answering"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/generic_agent_evaluation.html",
-      "destination": "/docs/guides/evaluation/generic_agent_evaluation"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/huggingface_datasets.html",
-      "destination": "/docs/guides/evaluation/huggingface_datasets"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/llm_math.html",
-      "destination": "/docs/guides/evaluation/llm_math"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/openapi_eval.html",
-      "destination": "/docs/guides/evaluation/openapi_eval"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/qa_benchmarking_pg.html",
-      "destination": "/docs/guides/evaluation/qa_benchmarking_pg"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/qa_benchmarking_sota.html",
-      "destination": "/docs/guides/evaluation/qa_benchmarking_sota"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/qa_generation.html",
-      "destination": "/docs/guides/evaluation/qa_generation"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/question_answering.html",
-      "destination": "/docs/guides/evaluation/question_answering"
-    },
-    {
-      "source": "/en/latest/use_cases/evaluation/sql_qa_benchmarking_chinook.html",
-      "destination": "/docs/guides/evaluation/sql_qa_benchmarking_chinook"
-    },
-    {
-      "source": "/en/latest/additional_resources/model_laboratory.html",
-      "destination": "/docs/guides/model_laboratory"
-    },
-    {
-      "source": "/en/latest/modules/agents/agents/examples/openai_functions_agent.html",
-      "destination": "/docs/modules/agents/agent_types/openai_functions_agent"
-    },
-    {
-      "source": "/en/latest/modules/agents/agents/examples/react.html",
-      "destination": "/docs/modules/agents/agent_types/react_docstore"
-    },
-    {
-      "source": "/en/latest/modules/agents/agents/examples/self_ask_with_search.html",
-      "destination": "/docs/modules/agents/agent_types/self_ask_with_search"
-    },
-    {
-      "source": "/en/latest/modules/agents/agent_executors/examples/agent_vectorstore.html",
-      "destination": "/docs/modules/agents/how_to/agent_vectorstore"
-    },
-    {
-      "source": "/en/latest/modules/agents/agent_executors/examples/async_agent.html",
-      "destination": "/docs/modules/agents/how_to/async_agent"
-    },
-    {
-      "source": "/en/latest/modules/agents/agent_executors/examples/chatgpt_clone.html",
-      "destination": "/docs/modules/agents/how_to/chatgpt_clone"
-    },
-    {
-      "source": "/en/latest/modules/agents/agents/custom_agent.html",
-      "destination": "/docs/modules/agents/how_to/custom_agent"
-    },
-    {
-      "source": "/docs/integrations/toolkits/vectorstore",
-      "destination": "/docs/modules/agents/how_to/vectorstore"
-    },
-    {
-      "source": "/en/latest/modules/agents/agents/custom_agent_with_tool_retrieval.html",
-      "destination": "/docs/modules/agents/how_to/custom_agent_with_tool_retrieval"
-    },
-    {
-      "source": "/en/latest/modules/agents/agents/custom_mrkl_agent.html",
-      "destination": "/docs/modules/agents/how_to/custom_mrkl_agent"
-    },
-    {
-      "source": "/en/latest/modules/agents/agents/custom_multi_action_agent.html",
-      "destination": "/docs/modules/agents/how_to/custom_multi_action_agent"
-    },
-    {
-      "source": "/en/latest/modules/agents/agent_executors/examples/handle_parsing_errors.html",
-      "destination": "/docs/modules/agents/how_to/handle_parsing_errors"
-    },
-    {
-      "source": "/en/latest/modules/agents/agent_executors/examples/intermediate_steps.html",
-      "destination": "/docs/modules/agents/how_to/intermediate_steps"
-    },
-    {
-      "source": "/en/latest/modules/agents/agent_executors/examples/max_iterations.html",
-      "destination": "/docs/modules/agents/how_to/max_iterations"
-    },
-    {
-      "source": "/en/latest/modules/agents/agent_executors/examples/max_time_limit.html",
-      "destination": "/docs/modules/agents/how_to/max_time_limit"
-    },
-    {
-      "source": "/en/latest/modules/agents/agent_executors/examples/sharedmemory_for_tools.html",
-      "destination": "/docs/modules/agents/how_to/sharedmemory_for_tools"
-    },
-    {
-      "source": "/en/latest/modules/agents/streaming_stdout_final_only.html",
-      "destination": "/docs/modules/agents/how_to/streaming_stdout_final_only"
-    },
-    {
-      "source": "/en/latest/modules/agents/toolkits/examples/azure_cognitive_services.html",
-      "destination": "/docs/integrations/toolkits/azure_cognitive_services"
-    },
-    {
       "source": "/docs/modules/agents/toolkits/azure_cognitive_services",
       "destination": "/docs/integrations/toolkits/azure_cognitive_services"
-    },
-    {
-      "source": "/en/latest/modules/agents/toolkits/examples/csv.html",
-      "destination": "/docs/integrations/toolkits/csv"
     },
     {
       "source": "/docs/modules/agents/toolkits/csv",
       "destination": "/docs/integrations/toolkits/csv"
     },
     {
-      "source": "/en/latest/modules/agents/toolkits/examples/gmail.html",
-      "destination": "/docs/integrations/toolkits/gmail"
-    },
-    {
       "source": "/docs/modules/agents/toolkits/gmail",
       "destination": "/docs/integrations/toolkits/gmail"
-    },
-    {
-      "source": "/en/latest/modules/agents/toolkits/examples/jira.html",
-      "destination": "/docs/integrations/toolkits/jira"
     },
     {
       "source": "/docs/modules/agents/toolkits/jira",
       "destination": "/docs/integrations/toolkits/jira"
     },
     {
-      "source": "/en/latest/modules/agents/toolkits/examples/json.html",
-      "destination": "/docs/integrations/toolkits/json"
-    },
-    {
       "source": "/docs/modules/agents/toolkits/json",
       "destination": "/docs/integrations/toolkits/json"
-    },
-    {
-      "source": "/en/latest/modules/agents/toolkits/examples/openapi.html",
-      "destination": "/docs/integrations/toolkits/openapi"
     },
     {
       "source": "/docs/modules/agents/toolkits/openapi",
@@ -1510,7 +1422,7 @@
     },
     {
       "source": "/docs/integrations/tools/sqlite",
-      "destination": "/docs/use_cases/qa_structured/sqlite"
+      "destination": "/docs/use_cases/sql"
     },
     {
       "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
@@ -1523,10 +1435,6 @@
     {
       "source": "/docs/modules/callbacks/integrations/argilla",
       "destination": "/docs/integrations/callbacks/argilla"
-    },
-    {
-      "source": "/en/latest/modules/chains/examples/extraction.html",
-      "destination": "/docs/modules/chains/additional/extraction"
     },
     {
       "source": "/en/latest/modules/chains/examples/flare.html",
@@ -3602,11 +3510,7 @@
     },
     {
       "source": "/en/latest/use_cases/tabular.html",
-      "destination": "/docs/use_cases/qa_structured"
-    },
-    {
-      "source": "/docs/use_cases/sql(/?)",
-      "destination": "/docs/use_cases/qa_structured/sql"
+      "destination": "/docs/use_cases/sql"
     },
     {
       "source": "/en/latest/youtube.html",
@@ -3761,102 +3665,6 @@
       "destination": "/docs/:path*"
     },
     {
-      "source": "/docs/modules/chains/additional/constitutional_chain",
-      "destination": "/docs/guides/safety/constitutional_chain"
-    },
-    {
-      "source": "/docs/modules/chains/additional/moderation",
-      "destination": "/docs/guides/safety/moderation"
-    },
-    {
-      "source": "/docs/modules/chains/popular/api",
-      "destination": "/docs/use_cases/apis/api"
-    },
-    {
-      "source": "/docs/modules/chains/additional/analyze_document",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/chains/popular/chat_vector_db",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/modules/chains/additional/multi_retrieval_qa_router",
-      "destination": "/docs/use_cases/question_answering/multi_retrieval_qa_router"
-    },
-    {
-      "source": "/docs/modules/chains/additional/question_answering",
-      "destination": "/docs/use_cases/question_answering/question_answering"
-    },
-    {
-      "source": "/docs/modules/chains/popular/vector_db_qa",
-      "destination": "/docs/use_cases/question_answering/vector_db_qa"
-    },
-    {
-      "source": "/docs/modules/chains/popular/summarize",
-      "destination": "/docs/use_cases/summarization/summarize"
-    },
-    {
-      "source": "/docs/modules/chains/popular/sqlite",
-      "destination": "/docs/use_cases/qa_structured/sql"
-    },
-    {
-      "source": "/docs/modules/chains/popular/openai_functions",
-      "destination": "/docs/modules/chains/how_to/openai_functions"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_requests",
-      "destination": "/docs/use_cases/apis/llm_requests"
-    },
-    {
-      "source": "/docs/modules/chains/additional/openai_openapi",
-      "destination": "/docs/use_cases/apis/openai_openapi"
-    },
-    {
-      "source": "/docs/modules/chains/additional/openapi",
-      "destination": "/docs/use_cases/apis/openapi"
-    },
-    {
-      "source": "/docs/modules/chains/additional/openapi_openai",
-      "destination": "/docs/use_cases/apis/openapi_openai"
-    },
-    {
-      "source": "/docs/modules/chains/additional/cpal",
-      "destination": "/docs/use_cases/more/code_writing/cpal"
-    },
-    {
-      "source": "/docs/use_cases/code_writing/cpal",
-      "destination": "/docs/use_cases/more/code_writing/cpal"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_bash",
-      "destination": "/docs/use_cases/more/code_writing/llm_bash"
-    },
-    {
-      "source": "/docs/use_cases/code_writing/llm_bash",
-      "destination": "/docs/use_cases/more/code_writing/llm_bash"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_math",
-      "destination": "/docs/use_cases/more/code_writing/llm_math"
-    },
-    {
-      "source": "/docs/use_cases/code_writing/llm_math",
-      "destination": "/docs/use_cases/more/code_writing/llm_math"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_symbolic_math",
-      "destination": "/docs/use_cases/more/code_writing/llm_symbolic_math"
-    },
-    {
-      "source": "/docs/use_cases/code_writing/llm_symbolic_math",
-      "destination": "/docs/use_cases/more/code_writing/llm_symbolic_math"
-    },
-    {
-      "source": "/docs/modules/chains/additional/pal",
-      "destination": "/docs/use_cases/more/code_writing/pal"
-    },
-    {
       "source": "/docs/use_cases/code_writing/pal",
       "destination": "/docs/use_cases/more/code_writing/pal"
     },
@@ -3869,82 +3677,6 @@
       "destination": "/docs/use_cases/more/code_writing/"
     },
     {
-      "source": "/docs/modules/chains/additional/graph_arangodb_qa",
-      "destination": "/docs/use_cases/graph/graph_arangodb_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_cypher_qa",
-      "destination": "/docs/use_cases/graph/graph_cypher_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_hugegraph_qa",
-      "destination": "/docs/use_cases/graph/graph_hugegraph_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_kuzu_qa",
-      "destination": "/docs/use_cases/graph/graph_kuzu_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_falkordb_qa",
-      "destination": "/docs/use_cases/graph/graph_falkordb_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_nebula_qa",
-      "destination": "/docs/use_cases/graph/graph_nebula_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_qa",
-      "destination": "/docs/use_cases/graph/graph_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/graph_sparql_qa",
-      "destination": "/docs/use_cases/graph/graph_sparql_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/neptune_cypher_qa",
-      "destination": "/docs/use_cases/graph/neptune_cypher_qa"
-    },
-    {
-      "source": "/docs/modules/chains/additional/tot",
-      "destination": "/docs/use_cases/graph/tot"
-    },
-    {
-      "source": "/docs/modules/chains/additional/flare",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/chains/additional/hyde",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/chains/additional/qa_citations",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/chains/additional/vector_db_text_generation",
-      "destination": "/docs/use_cases/question_answering/vector_db_text_generation"
-    },
-    {
-      "source": "/docs/modules/chains/additional/openai_functions_retrieval_qa",
-      "destination": "/docs/use_cases/question_answering/integrations/openai_functions_retrieval_qa"
-    },
-    {
-      "source": "/docs/use_cases/question_answering//semantic-search-over-chat",
-      "destination": "/docs/use_cases/question_answering/integrations/semantic-search-over-chat"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_checker",
-      "destination": "/docs/use_cases/more/self_check/llm_checker"
-    },
-    {
-      "source": "/docs/use_cases/self_check/llm_checker",
-      "destination": "/docs/use_cases/more/self_check/llm_checker"
-    },
-    {
-      "source": "/docs/modules/chains/additional/llm_summarization_checker",
-      "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
-    },
-    {
       "source": "/docs/use_cases/self_check/llm_summarization_checker",
       "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
     },
@@ -3955,13 +3687,6 @@
     {
       "source": "/docs/use_cases/self_check(/?)",
       "destination": "/docs/use_cases/more/self_check/"
-    }, {
-      "source": "/docs/modules/chains/additional/elasticsearch_database",
-      "destination": "/docs/use_cases/qa_structured/integrations/elasticsearch"
-    },
-    {
-      "source": "/docs/modules/chains/additional/tagging",
-      "destination": "/docs/use_cases/tagging"
     },
     {
       "source": "docs/integrations/providers/agent_with_wandb_tracing",
@@ -3990,6 +3715,10 @@
     {
       "source": "/docs/integrations/providers/google_document_ai",
       "destination": "/docs/integrations/platforms/google#google-document-ai"
+    },
+    {
+      "source": "/docs/integrations/tools/metaphor_search",
+      "destination": "/docs/integrations/tools/exa_search"
     }
   ]
 }

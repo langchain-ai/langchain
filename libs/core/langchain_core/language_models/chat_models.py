@@ -4,7 +4,6 @@ import asyncio
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,6 +16,7 @@ from typing import (
     cast,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -34,6 +34,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    convert_to_messages,
     message_chunk_to_message,
 )
 from langchain_core.outputs import (
@@ -45,6 +46,7 @@ from langchain_core.outputs import (
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.runnables.config import ensure_config, run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
@@ -108,7 +110,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """Callback manager to add to the run trace."""
+    """[DEPRECATED] Callback manager to add to the run trace."""
     tags: Optional[List[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
@@ -142,8 +144,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             return input
         elif isinstance(input, str):
             return StringPromptValue(text=input)
-        elif isinstance(input, list):
-            return ChatPromptValue(messages=input)
+        elif isinstance(input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(input))
         else:
             raise ValueError(
                 f"Invalid input type {type(input)}. "
@@ -158,7 +160,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        config = config or {}
+        config = ensure_config(config)
         return cast(
             ChatGeneration,
             self.generate_prompt(
@@ -180,7 +182,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        config = config or {}
+        config = ensure_config(config)
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
             stop=stop,
@@ -206,7 +208,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
             )
         else:
-            config = config or {}
+            config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
@@ -260,10 +262,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if type(self)._astream == BaseChatModel._astream:
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
+                BaseMessageChunk,
+                await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
         else:
-            config = config or {}
+            config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
@@ -344,7 +347,30 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Top Level call"""
+        """Pass a sequence of prompts to the model and return model generations.
+
+        This method should make use of batched calls for models that expose a batched
+        API.
+
+        Use this method when you want to:
+            1. take advantage of batched calls,
+            2. need more output from the model than just the top generated value,
+            3. are building chains that are agnostic to the underlying language model
+                type (e.g., pure text completion models vs chat models).
+
+        Args:
+            messages: List of list of messages.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An LLMResult, which contains a list of candidate Generations for each input
+                prompt and additional model provider-specific output.
+        """
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
 
@@ -406,7 +432,30 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Top Level call"""
+        """Asynchronously pass a sequence of prompts to a model and return generations.
+
+        This method should make use of batched calls for models that expose a batched
+        API.
+
+        Use this method when you want to:
+            1. take advantage of batched calls,
+            2. need more output from the model than just the top generated value,
+            3. are building chains that are agnostic to the underlying language model
+                type (e.g., pure text completion models vs chat models).
+
+        Args:
+            messages: List of list of messages.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An LLMResult, which contains a list of candidate Generations for each input
+                prompt and additional model provider-specific output.
+        """
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
 
@@ -604,8 +653,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self._generate, **kwargs), messages, stop, run_manager
+        return await run_in_executor(
+            None,
+            self._generate,
+            messages,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
 
     def _stream(
@@ -626,6 +680,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> AsyncIterator[ChatGenerationChunk]:
         raise NotImplementedError()
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def __call__(
         self,
         messages: List[BaseMessage],
@@ -657,11 +712,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Unexpected generation type")
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def call_as_llm(
         self, message: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
         return self.predict(message, stop=stop, **kwargs)
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -675,6 +732,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -688,6 +746,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _stop = list(stop)
         return self(messages, stop=_stop, **kwargs)
 
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -703,6 +762,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],
@@ -765,7 +825,11 @@ class SimpleChatModel(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        func = partial(
-            self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
+        return await run_in_executor(
+            None,
+            self._generate,
+            messages,
+            stop=stop,
+            run_manager=run_manager.get_sync() if run_manager else None,
+            **kwargs,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)

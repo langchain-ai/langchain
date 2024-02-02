@@ -1,6 +1,6 @@
 import os
 
-from langchain.vectorstores import Vectara
+from langchain_community.vectorstores import Vectara
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough

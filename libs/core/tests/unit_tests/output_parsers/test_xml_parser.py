@@ -22,7 +22,22 @@ DEF_RESULT_EXPECTED = {
 
 @pytest.mark.parametrize(
     "result",
-    [DEF_RESULT_ENCODING, DEF_RESULT_ENCODING[DEF_RESULT_ENCODING.find("\n") :]],
+    [
+        DEF_RESULT_ENCODING,
+        DEF_RESULT_ENCODING[DEF_RESULT_ENCODING.find("\n") :],
+        f"""
+```xml
+{DEF_RESULT_ENCODING}
+```
+""",
+        f"""
+Some random text
+```xml
+{DEF_RESULT_ENCODING}
+```
+More random text
+""",
+    ],
 )
 def test_xml_output_parser(result: str) -> None:
     """Test XMLOutputParser."""

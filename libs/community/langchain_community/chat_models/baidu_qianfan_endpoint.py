@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, cast
 
@@ -83,7 +81,12 @@ class QianfanChatEndpoint(BaseChatModel):
                 endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
     """
 
+    init_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """init kwargs for qianfan client init, such as `query_per_second` which is 
+        associated with qianfan resource object to limit QPS"""
+
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """extra params for model invoke using with `do`."""
 
     client: Any
 
@@ -134,6 +137,7 @@ class QianfanChatEndpoint(BaseChatModel):
             )
         )
         params = {
+            **values.get("init_kwargs", {}),
             "model": values["model"],
             "stream": values["streaming"],
         }
@@ -238,7 +242,14 @@ class QianfanChatEndpoint(BaseChatModel):
         """
         if self.streaming:
             completion = ""
+            token_usage = {}
+            chat_generation_info: Dict = {}
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
+                chat_generation_info = (
+                    chunk.generation_info
+                    if chunk.generation_info is not None
+                    else chat_generation_info
+                )
                 completion += chunk.text
             lc_msg = AIMessage(content=completion, additional_kwargs={})
             gen = ChatGeneration(
@@ -247,7 +258,10 @@ class QianfanChatEndpoint(BaseChatModel):
             )
             return ChatResult(
                 generations=[gen],
-                llm_output={"token_usage": {}, "model_name": self.model},
+                llm_output={
+                    "token_usage": chat_generation_info.get("usage", {}),
+                    "model_name": self.model,
+                },
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = self.client.do(**params)
@@ -273,7 +287,13 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             token_usage = {}
+            chat_generation_info: Dict = {}
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
+                chat_generation_info = (
+                    chunk.generation_info
+                    if chunk.generation_info is not None
+                    else chat_generation_info
+                )
                 completion += chunk.text
 
             lc_msg = AIMessage(content=completion, additional_kwargs={})
@@ -283,7 +303,10 @@ class QianfanChatEndpoint(BaseChatModel):
             )
             return ChatResult(
                 generations=[gen],
-                llm_output={"token_usage": {}, "model_name": self.model},
+                llm_output={
+                    "token_usage": chat_generation_info.get("usage", {}),
+                    "model_name": self.model,
+                },
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
         response_payload = await self.client.ado(**params)
@@ -309,16 +332,19 @@ class QianfanChatEndpoint(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stream"] = True
         for res in self.client.do(**params):
             if res:
                 msg = _convert_dict_to_message(res)
+                additional_kwargs = msg.additional_kwargs.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
                     message=AIMessageChunk(
                         content=msg.content,
                         role="assistant",
-                        additional_kwargs=msg.additional_kwargs,
+                        additional_kwargs=additional_kwargs,
                     ),
+                    generation_info=msg.additional_kwargs,
                 )
                 yield chunk
                 if run_manager:
@@ -332,16 +358,19 @@ class QianfanChatEndpoint(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stream"] = True
         async for res in await self.client.ado(**params):
             if res:
                 msg = _convert_dict_to_message(res)
+                additional_kwargs = msg.additional_kwargs.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
                     message=AIMessageChunk(
                         content=msg.content,
                         role="assistant",
-                        additional_kwargs=msg.additional_kwargs,
+                        additional_kwargs=additional_kwargs,
                     ),
+                    generation_info=msg.additional_kwargs,
                 )
                 yield chunk
                 if run_manager:

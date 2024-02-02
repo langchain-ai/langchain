@@ -1,17 +1,12 @@
 ---
 sidebar_position: 1
 ---
-# Document transformers
-
-:::info
-Head to [Integrations](/docs/integrations/document_transformers/) for documentation on built-in document transformer integrations with 3rd-party tools.
-:::
+# Text Splitters
 
 Once you've loaded documents, you'll often want to transform them to better suit your application. The simplest example
 is you may want to split a long document into smaller chunks that can fit into your model's context window. LangChain
 has a number of built-in document transformers that make it easy to split, combine, filter, and otherwise manipulate documents.
 
-## Text splitters
 
 When you want to deal with long pieces of text, it is necessary to split up that text into chunks.
 As simple as this sounds, there is a lot of potential complexity here. Ideally, you want to keep the semantically related pieces of text together. What "semantically related" means could depend on the type of text.
@@ -28,68 +23,36 @@ That means there are two different axes along which you can customize your text 
 1. How the text is split
 2. How the chunk size is measured
 
-### Get started with text splitters
+## Types of Text Splitters
 
-The default recommended text splitter is the RecursiveCharacterTextSplitter. This text splitter takes a list of characters. It tries to create chunks based on splitting on the first character, but if any chunks are too large it then moves onto the next character, and so forth. By default the characters it tries to split on are `["\n\n", "\n", " ", ""]`
+LangChain offers many different types of text splitters. Below is a table listing all of them, along with a few characteristics:
 
-In addition to controlling which characters you can split on, you can also control a few other things:
+**Name**: Name of the text splitter
 
-- `length_function`: how the length of chunks is calculated. Defaults to just counting number of characters, but it's pretty common to pass a token counter here.
-- `chunk_size`: the maximum size of your chunks (as measured by the length function).
-- `chunk_overlap`: the maximum overlap between chunks. It can be nice to have some overlap to maintain some continuity between chunks (e.g. do a sliding window).
-- `add_start_index`: whether to include the starting position of each chunk within the original document in the metadata.
+**Splits On**: How this text splitter splits text
 
-```python
-# This is a long document we can split up.
-with open('../../state_of_the_union.txt') as f:
-    state_of_the_union = f.read()
-```
+**Adds Metadata**: Whether or not this text splitter adds metadata about where each chunk came from.
+
+**Description**: Description of the splitter, including recommendation on when to use it.
 
 
-```python
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-```
+| Name      | Splits On                             | Adds Metadata | Description                                                                                                                                                                             |
+|-----------|---------------------------------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Recursive | A list of user defined characters     |               | Recursively splits text. Splitting text recursively serves the purpose of trying to keep related pieces of text next to each other. This is the recommended way to start splitting text. |
+| HTML      | HTML specific characters              | ✅             | Splits text based on HTML-specific characters. Notably, this adds in relevant information about where that chunk came from (based on the HTML)                                          |
+| Markdown  | Markdown specific characters          | ✅             | Splits text based on Markdown-specific characters. Notably, this adds in relevant information about where that chunk came from (based on the Markdown)                                  |
+| Code      | Code (Python, JS) specific characters |               | Splits text based on characters specific to coding languages. 15 different languages are available to choose from.                                                                      |
+| Token     | Tokens                                |               | Splits text on tokens. There exist a few different ways to measure tokens.                                                                                                              |
+| Character | A user defined character              |               | Splits text based on a user defined character. One of the simpler methods.                                                                                                              |
+| [Experimental] Semantic Chunker | Sentences             |               | First splits on sentences. Then combines ones next to each other if they are semantically similar enough. Taken from [Greg Kamradt](https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/5_Levels_Of_Text_Splitting.ipynb)                                                                                                              |
 
 
-```python
-text_splitter = RecursiveCharacterTextSplitter(
-    # Set a really small chunk size, just to show.
-    chunk_size = 100,
-    chunk_overlap  = 20,
-    length_function = len,
-    add_start_index = True,
-)
-```
-
-
-```python
-texts = text_splitter.create_documents([state_of_the_union])
-print(texts[0])
-print(texts[1])
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    page_content='Madam Speaker, Madam Vice President, our First Lady and Second Gentleman. Members of Congress and' metadata={'start_index': 0}
-    page_content='of Congress and the Cabinet. Justices of the Supreme Court. My fellow Americans.' metadata={'start_index': 82}
-```
-
-</CodeOutputBlock>
-
-
-### Evaluate text splitters
+## Evaluate text splitters
 
 You can evaluate text splitters with the [Chunkviz utility](https://www.chunkviz.com/) created by `Greg Kamradt`.
 `Chunkviz` is a great tool for visualizing how your text splitter is working. It will show you how your text is 
 being split up and help in tuning up the splitting parameters.
 
+## Other Document Transforms
 
-## Other transformations:
-### Filter redundant docs, translate docs, extract metadata, and more
-
-We can do perform a number of transformations on docs which are not simply splitting the text. With the
-`EmbeddingsRedundantFilter` we can identify similar documents and filter out redundancies. With integrations like
-[doctran](https://github.com/psychic-api/doctran/tree/main) we can do things like translate documents from one language
-to another, extract desired properties and add them to metadata, and convert conversational dialogue into a Q/A format
-set of documents.
+Text splitting is only one example of transformations that you may want to do on documents before passing them to an LLM. Head to [Integrations](/docs/integrations/document_transformers/) for documentation on built-in document transformer integrations with 3rd-party tools.

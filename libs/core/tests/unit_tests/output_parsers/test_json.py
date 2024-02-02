@@ -137,6 +137,43 @@ TEXT_BEFORE_AND_AFTER = """Action: Testing
 ```
 This should do the trick"""
 
+WITHOUT_END_BRACKET = """Here is a response formatted as schema:
+
+```json
+{
+  "foo": "bar"
+  
+
+"""
+
+WITH_END_BRACKET = """Here is a response formatted as schema:
+
+```json
+{
+  "foo": "bar"
+}
+  
+"""
+
+WITH_END_TICK = """Here is a response formatted as schema:
+
+```json
+{
+  "foo": "bar"
+}
+``` 
+"""
+
+WITH_END_TEXT = """Here is a response formatted as schema:
+
+```
+{
+  "foo": "bar"
+
+``` 
+This should do the trick 
+"""
+
 TEST_CASES = [
     GOOD_JSON,
     JSON_WITH_NEW_LINES,
@@ -147,6 +184,11 @@ TEST_CASES = [
     NO_TICKS_WHITE_SPACE,
     TEXT_BEFORE,
     TEXT_AFTER,
+    TEXT_BEFORE_AND_AFTER,
+    WITHOUT_END_BRACKET,
+    WITH_END_BRACKET,
+    WITH_END_TICK,
+    WITH_END_TEXT,
 ]
 
 
@@ -198,6 +240,9 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar": "foo}', '{"foo": "bar", "bar": "foo}"}'),
     ('{"foo": "bar", "bar": "foo[', '{"foo": "bar", "bar": "foo["}'),
     ('{"foo": "bar", "bar": "foo\\"', '{"foo": "bar", "bar": "foo\\""}'),
+    ('{"foo": "bar", "bar":', '{"foo": "bar"}'),
+    ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
+    ('{"foo": "bar", ', '{"foo": "bar"}'),
 ]
 
 
@@ -486,3 +531,9 @@ async def test_partial_text_json_output_parser_diff_async() -> None:
     chain = input_iter | SimpleJsonOutputParser(diff=True)
 
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF
+
+
+def test_raises_error() -> None:
+    parser = SimpleJsonOutputParser()
+    with pytest.raises(Exception):
+        parser.invoke("hi")

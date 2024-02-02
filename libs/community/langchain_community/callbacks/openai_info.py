@@ -1,4 +1,5 @@
 """Callback Handler that prints to std out."""
+import threading
 from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -67,10 +68,12 @@ MODEL_COST_PER_1K_TOKENS = {
     "babbage-002-finetuned": 0.0016,
     "davinci-002-finetuned": 0.012,
     "gpt-3.5-turbo-0613-finetuned": 0.012,
+    "gpt-3.5-turbo-1106-finetuned": 0.012,
     # Fine Tuned output
     "babbage-002-finetuned-completion": 0.0016,
     "davinci-002-finetuned-completion": 0.012,
     "gpt-3.5-turbo-0613-finetuned-completion": 0.016,
+    "gpt-3.5-turbo-1106-finetuned-completion": 0.016,
     # Azure Fine Tuned input
     "babbage-002-azure-finetuned": 0.0004,
     "davinci-002-azure-finetuned": 0.002,
@@ -154,6 +157,10 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     successful_requests: int = 0
     total_cost: float = 0.0
 
+    def __init__(self) -> None:
+        super().__init__()
+        self._lock = threading.Lock()
+
     def __repr__(self) -> str:
         return (
             f"Tokens Used: {self.total_tokens}\n"
@@ -182,9 +189,13 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Collect token usage."""
         if response.llm_output is None:
             return None
-        self.successful_requests += 1
+
         if "token_usage" not in response.llm_output:
+            with self._lock:
+                self.successful_requests += 1
             return None
+
+        # compute tokens and cost for this request
         token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
@@ -194,10 +205,17 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 model_name, completion_tokens, is_completion=True
             )
             prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
+        else:
+            completion_cost = 0
+            prompt_cost = 0
+
+        # update shared state behind lock
+        with self._lock:
             self.total_cost += prompt_cost + completion_cost
-        self.total_tokens += token_usage.get("total_tokens", 0)
-        self.prompt_tokens += prompt_tokens
-        self.completion_tokens += completion_tokens
+            self.total_tokens += token_usage.get("total_tokens", 0)
+            self.prompt_tokens += prompt_tokens
+            self.completion_tokens += completion_tokens
+            self.successful_requests += 1
 
     def __copy__(self) -> "OpenAICallbackHandler":
         """Return a copy of the callback handler."""

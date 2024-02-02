@@ -154,18 +154,18 @@ class NumberedListOutputParser(ListOutputParser):
 class MarkdownListOutputParser(ListOutputParser):
     """Parse a markdown list."""
 
-    pattern = r"-\s([^\n]+)"
+    pattern = r"^\s*[-*]\s([^\n]+)$"
 
     def get_format_instructions(self) -> str:
         return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
 
     def parse(self, text: str) -> List[str]:
         """Parse the output of an LLM call."""
-        return re.findall(self.pattern, text)
+        return re.findall(self.pattern, text, re.MULTILINE)
 
     def parse_iter(self, text: str) -> Iterator[re.Match]:
         """Parse the output of an LLM call."""
-        return re.finditer(self.pattern, text)
+        return re.finditer(self.pattern, text, re.MULTILINE)
 
     @property
     def _type(self) -> str:

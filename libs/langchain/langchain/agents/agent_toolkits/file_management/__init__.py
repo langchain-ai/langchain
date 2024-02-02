@@ -1,6 +1,6 @@
 """Local file management toolkit."""
 
-from langchain.agents.agent_toolkits.file_management.toolkit import (
+from langchain_community.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
 

@@ -34,6 +34,7 @@ langchain-core = { path = "libs/core/", develop = true }
 langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
+langchain-openai = { path = "libs/partners/openai", develop = true }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -44,6 +45,7 @@ langchain-core = { path = "libs/core/", develop = true }
 langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
+langchain-openai = { path = "libs/partners/openai", develop = true }
 
 [tool.poetry.group.test.dependencies]
 
@@ -51,7 +53,7 @@ langchain-experimental = { path = "libs/experimental/", develop = true }
 [tool.poetry.group.typing.dependencies]
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates'
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is

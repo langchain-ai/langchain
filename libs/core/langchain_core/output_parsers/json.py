@@ -3,12 +3,15 @@ from __future__ import annotations
 import json
 import re
 from json import JSONDecodeError
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Type
 
 import jsonpatch  # type: ignore[import]
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
+from langchain_core.outputs import Generation
+from langchain_core.pydantic_v1 import BaseModel
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
@@ -99,20 +102,31 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     if is_inside_string:
         new_s += '"'
 
-    # Close any remaining open structures in the reverse order that they were opened.
-    for closing_char in reversed(stack):
-        new_s += closing_char
+    # Try to parse mods of string until we succeed or run out of characters.
+    while new_s:
+        final_s = new_s
 
-    # Attempt to parse the modified string as JSON.
-    try:
-        return json.loads(new_s, strict=strict)
-    except json.JSONDecodeError:
-        # If we still can't parse the string as JSON, return None to indicate failure.
-        return None
+        # Close any remaining open structures in the reverse
+        # order that they were opened.
+        for closing_char in reversed(stack):
+            final_s += closing_char
+
+        # Attempt to parse the modified string as JSON.
+        try:
+            return json.loads(final_s, strict=strict)
+        except json.JSONDecodeError:
+            # If we still can't parse the string as JSON,
+            # try removing the last character
+            new_s = new_s[:-1]
+
+    # If we got here, we ran out of characters to remove
+    # and still couldn't parse the string as JSON, so return the parse error
+    # for the original string.
+    return json.loads(s, strict=strict)
 
 
 def parse_json_markdown(
-    json_string: str, *, parser: Callable[[str], Any] = json.loads
+    json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
 ) -> dict:
     """
     Parse a JSON string from a Markdown string.
@@ -124,7 +138,7 @@ def parse_json_markdown(
         The parsed JSON object as a Python dictionary.
     """
     # Try to find JSON string within triple backticks
-    match = re.search(r"```(json)?(.*)```", json_string, re.DOTALL)
+    match = re.search(r"```(json)?(.*)(```)?", json_string, re.DOTALL)
 
     # If no match found, assume the entire string is a JSON string
     if match is None:
@@ -170,7 +184,7 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
     return json_obj
 
 
-class SimpleJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
+class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """Parse the output of an LLM call to a JSON object.
 
     When used in streaming mode, it will yield partial JSON objects containing
@@ -180,16 +194,48 @@ class SimpleJsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
+    pydantic_object: Optional[Type[BaseModel]] = None
+
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def parse(self, text: str) -> Any:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        text = result[0].text
         text = text.strip()
-        try:
-            return parse_json_markdown(text.strip(), parser=parse_partial_json)
-        except JSONDecodeError as e:
-            raise OutputParserException(f"Invalid json output: {text}") from e
+        if partial:
+            try:
+                return parse_json_markdown(text)
+            except JSONDecodeError:
+                return None
+        else:
+            try:
+                return parse_json_markdown(text)
+            except JSONDecodeError as e:
+                raise OutputParserException(f"Invalid json output: {text}") from e
+
+    def parse(self, text: str) -> Any:
+        return self.parse_result([Generation(text=text)])
+
+    def get_format_instructions(self) -> str:
+        if self.pydantic_object is None:
+            return "Return a JSON object."
+        else:
+            schema = self.pydantic_object.schema()
+
+            # Remove extraneous fields.
+            reduced_schema = schema
+            if "title" in reduced_schema:
+                del reduced_schema["title"]
+            if "type" in reduced_schema:
+                del reduced_schema["type"]
+            # Ensure json in context is well-formed with double quotes.
+            schema_str = json.dumps(reduced_schema)
+            return JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
     @property
     def _type(self) -> str:
         return "simple_json_output_parser"
+
+
+# For backwards compatibility
+SimpleJsonOutputParser = JsonOutputParser

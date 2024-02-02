@@ -1,11 +1,25 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import warnings
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+)
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
@@ -20,6 +34,8 @@ from langchain_community.utilities.anthropic import (
 if TYPE_CHECKING:
     from botocore.config import Config
 
+AMAZON_BEDROCK_TRACE_KEY = "amazon-bedrock-trace"
+GUARDRAILS_BODY_KEY = "amazon-bedrock-guardrailAssessment"
 HUMAN_PROMPT = "\n\nHuman:"
 ASSISTANT_PROMPT = "\n\nAssistant:"
 ALTERNATION_ERROR = (
@@ -103,21 +119,26 @@ class LLMInputOutputAdapter:
         return input_body
 
     @classmethod
-    def prepare_output(cls, provider: str, response: Any) -> str:
+    def prepare_output(cls, provider: str, response: Any) -> dict:
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            return response_body.get("completion")
+            text = response_body.get("completion")
         else:
             response_body = json.loads(response.get("body").read())
 
-        if provider == "ai21":
-            return response_body.get("completions")[0].get("data").get("text")
-        elif provider == "cohere":
-            return response_body.get("generations")[0].get("text")
-        elif provider == "meta":
-            return response_body.get("generation")
-        else:
-            return response_body.get("results")[0].get("outputText")
+            if provider == "ai21":
+                text = response_body.get("completions")[0].get("data").get("text")
+            elif provider == "cohere":
+                text = response_body.get("generations")[0].get("text")
+            elif provider == "meta":
+                text = response_body.get("generation")
+            else:
+                text = response_body.get("results")[0].get("outputText")
+
+        return {
+            "text": text,
+            "body": response_body,
+        }
 
     @classmethod
     def prepare_output_stream(
@@ -128,26 +149,63 @@ class LLMInputOutputAdapter:
         if not stream:
             return
 
-        if provider not in cls.provider_to_output_key_map:
+        output_key = cls.provider_to_output_key_map.get(provider, None)
+
+        if not output_key:
             raise ValueError(
                 f"Unknown streaming response output key for provider: {provider}"
             )
 
         for event in stream:
             chunk = event.get("chunk")
-            if chunk:
-                chunk_obj = json.loads(chunk.get("bytes").decode())
-                if provider == "cohere" and (
-                    chunk_obj["is_finished"]
-                    or chunk_obj[cls.provider_to_output_key_map[provider]]
-                    == "<EOS_TOKEN>"
-                ):
-                    return
+            if not chunk:
+                continue
 
+            chunk_obj = json.loads(chunk.get("bytes").decode())
+
+            if provider == "cohere" and (
+                chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
+            ):
+                return
                 # chunk obj format varies with provider
-                yield GenerationChunk(
-                    text=chunk_obj[cls.provider_to_output_key_map[provider]]
-                )
+            yield GenerationChunk(
+                text=chunk_obj[output_key],
+                generation_info={
+                    GUARDRAILS_BODY_KEY: chunk_obj.get(GUARDRAILS_BODY_KEY)
+                    if GUARDRAILS_BODY_KEY in chunk_obj
+                    else None,
+                },
+            )
+
+    @classmethod
+    async def aprepare_output_stream(
+        cls, provider: str, response: Any, stop: Optional[List[str]] = None
+    ) -> AsyncIterator[GenerationChunk]:
+        stream = response.get("body")
+
+        if not stream:
+            return
+
+        output_key = cls.provider_to_output_key_map.get(provider, None)
+
+        if not output_key:
+            raise ValueError(
+                f"Unknown streaming response output key for provider: {provider}"
+            )
+
+        for event in stream:
+            chunk = event.get("chunk")
+            if not chunk:
+                continue
+
+            chunk_obj = json.loads(chunk.get("bytes").decode())
+
+            if provider == "cohere" and (
+                chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
+            ):
+                return
+
+            yield GenerationChunk(text=chunk_obj[output_key])
 
 
 class BedrockBase(BaseModel, ABC):
@@ -190,6 +248,53 @@ class BedrockBase(BaseModel, ABC):
         "ai21": "stop_sequences",
         "cohere": "stop_sequences",
     }
+
+    guardrails: Optional[Mapping[str, Any]] = {
+        "id": None,
+        "version": None,
+        "trace": False,
+    }
+    """
+    An optional dictionary to configure guardrails for Bedrock.
+
+    This field 'guardrails' consists of two keys: 'id' and 'version',
+    which should be strings, but are initialized to None. It's used to
+    determine if specific guardrails are enabled and properly set.
+
+    Type:
+        Optional[Mapping[str, str]]: A mapping with 'id' and 'version' keys.
+
+    Example:
+    llm = Bedrock(model_id="<model_id>", client=<bedrock_client>,
+                  model_kwargs={},
+                  guardrails={
+                        "id": "<guardrail_id>",
+                        "version": "<guardrail_version>"})
+
+    To enable tracing for guardrails, set the 'trace' key to True and pass a callback handler to the
+    'run_manager' parameter of the 'generate', '_call' methods.
+
+    Example:
+    llm = Bedrock(model_id="<model_id>", client=<bedrock_client>,
+                  model_kwargs={},
+                  guardrails={
+                        "id": "<guardrail_id>",
+                        "version": "<guardrail_version>",
+                        "trace": True},
+                callbacks=[BedrockAsyncCallbackHandler()])
+
+    [https://python.langchain.com/docs/modules/callbacks/] for more information on callback handlers.
+
+    class BedrockAsyncCallbackHandler(AsyncCallbackHandler):
+        async def on_llm_error(
+            self,
+            error: BaseException,
+            **kwargs: Any,
+        ) -> Any:
+            reason = kwargs.get("reason")
+            if reason == "GUARDRAIL_INTERVENED":
+                ...Logic to handle guardrail intervention...
+    """  # noqa: E501
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -254,6 +359,47 @@ class BedrockBase(BaseModel, ABC):
     def _model_is_anthropic(self) -> bool:
         return self._get_provider() == "anthropic"
 
+    @property
+    def _guardrails_enabled(self) -> bool:
+        """
+        Determines if guardrails are enabled and correctly configured.
+        Checks if 'guardrails' is a dictionary with non-empty 'id' and 'version' keys.
+        Checks if 'guardrails.trace' is true.
+
+        Returns:
+            bool: True if guardrails are correctly configured, False otherwise.
+        Raises:
+            TypeError: If 'guardrails' lacks 'id' or 'version' keys.
+        """
+        try:
+            return (
+                isinstance(self.guardrails, dict)
+                and bool(self.guardrails["id"])
+                and bool(self.guardrails["version"])
+            )
+
+        except KeyError as e:
+            raise TypeError(
+                "Guardrails must be a dictionary with 'id' and 'version' keys."
+            ) from e
+
+    def _get_guardrails_canonical(self) -> Dict[str, Any]:
+        """
+        The canonical way to pass in guardrails to the bedrock service
+        adheres to the following format:
+
+        "amazon-bedrock-guardrailDetails": {
+            "guardrailId": "string",
+            "guardrailVersion": "string"
+        }
+        """
+        return {
+            "amazon-bedrock-guardrailDetails": {
+                "guardrailId": self.guardrails.get("id"),
+                "guardrailVersion": self.guardrails.get("version"),
+            }
+        }
+
     def _prepare_input_and_invoke(
         self,
         prompt: str,
@@ -265,16 +411,31 @@ class BedrockBase(BaseModel, ABC):
 
         provider = self._get_provider()
         params = {**_model_kwargs, **kwargs}
+        if self._guardrails_enabled:
+            params.update(self._get_guardrails_canonical())
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
         accept = "application/json"
         contentType = "application/json"
 
+        request_options = {
+            "body": body,
+            "modelId": self.model_id,
+            "accept": accept,
+            "contentType": contentType,
+        }
+
+        if self._guardrails_enabled:
+            request_options["guardrail"] = "ENABLED"
+            if self.guardrails.get("trace"):
+                request_options["trace"] = "ENABLED"
+
         try:
-            response = self.client.invoke_model(
-                body=body, modelId=self.model_id, accept=accept, contentType=contentType
-            )
-            text = LLMInputOutputAdapter.prepare_output(provider, response)
+            response = self.client.invoke_model(**request_options)
+
+            text, body = LLMInputOutputAdapter.prepare_output(
+                provider, response
+            ).values()
 
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
@@ -282,7 +443,48 @@ class BedrockBase(BaseModel, ABC):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
 
+        # Verify and raise a callback error if any intervention occurs or a signal is
+        # sent from a Bedrock service,
+        # such as when guardrails are triggered.
+        services_trace = self._get_bedrock_services_signal(body)
+
+        if services_trace.get("signal") and run_manager is not None:
+            run_manager.on_llm_error(
+                Exception(
+                    f"Error raised by bedrock service: {services_trace.get('reason')}"
+                ),
+                **services_trace,
+            )
+
         return text
+
+    def _get_bedrock_services_signal(self, body: dict) -> dict:
+        """
+        This function checks the response body for an interrupt flag or message that indicates
+        whether any of the Bedrock services have intervened in the processing flow. It is
+        primarily used to identify modifications or interruptions imposed by these services
+        during the request-response cycle with a Large Language Model (LLM).
+        """  # noqa: E501
+
+        if (
+            self._guardrails_enabled
+            and self.guardrails.get("trace")
+            and self._is_guardrails_intervention(body)
+        ):
+            return {
+                "signal": True,
+                "reason": "GUARDRAIL_INTERVENED",
+                "trace": body.get(AMAZON_BEDROCK_TRACE_KEY),
+            }
+
+        return {
+            "signal": False,
+            "reason": None,
+            "trace": None,
+        }
+
+    def _is_guardrails_intervention(self, body: dict) -> bool:
+        return body.get(GUARDRAILS_BODY_KEY) == "GUARDRAIL_INTERVENED"
 
     def _prepare_input_and_invoke_stream(
         self,
@@ -308,16 +510,28 @@ class BedrockBase(BaseModel, ABC):
             _model_kwargs["stream"] = True
 
         params = {**_model_kwargs, **kwargs}
+
+        if self._guardrails_enabled:
+            params.update(self._get_guardrails_canonical())
+
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
 
+        request_options = {
+            "body": body,
+            "modelId": self.model_id,
+            "accept": "application/json",
+            "contentType": "application/json",
+        }
+
+        if self._guardrails_enabled:
+            request_options["guardrail"] = "ENABLED"
+            if self.guardrails.get("trace"):
+                request_options["trace"] = "ENABLED"
+
         try:
-            response = self.client.invoke_model_with_response_stream(
-                body=body,
-                modelId=self.model_id,
-                accept="application/json",
-                contentType="application/json",
-            )
+            response = self.client.invoke_model_with_response_stream(**request_options)
+
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
 
@@ -325,7 +539,55 @@ class BedrockBase(BaseModel, ABC):
             provider, response, stop
         ):
             yield chunk
+            # verify and raise callback error if any middleware intervened
+            self._get_bedrock_services_signal(chunk.generation_info)
+
             if run_manager is not None:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
+    async def _aprepare_input_and_invoke_stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        _model_kwargs = self.model_kwargs or {}
+        provider = self._get_provider()
+
+        if stop:
+            if provider not in self.provider_stop_sequence_key_name_map:
+                raise ValueError(
+                    f"Stop sequence key name for {provider} is not supported."
+                )
+            _model_kwargs[self.provider_stop_sequence_key_name_map.get(provider)] = stop
+
+        if provider == "cohere":
+            _model_kwargs["stream"] = True
+
+        params = {**_model_kwargs, **kwargs}
+        input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
+        body = json.dumps(input_body)
+
+        response = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: self.client.invoke_model_with_response_stream(
+                body=body,
+                modelId=self.model_id,
+                accept="application/json",
+                contentType="application/json",
+            ),
+        )
+
+        async for chunk in LLMInputOutputAdapter.aprepare_output_stream(
+            provider, response, stop
+        ):
+            yield chunk
+            if run_manager is not None and asyncio.iscoroutinefunction(
+                run_manager.on_llm_new_token
+            ):
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            elif run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
 
@@ -443,7 +705,68 @@ class Bedrock(LLM, BedrockBase):
                 completion += chunk.text
             return completion
 
-        return self._prepare_input_and_invoke(prompt=prompt, stop=stop, **kwargs)
+        return self._prepare_input_and_invoke(
+            prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+        )
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncGenerator[GenerationChunk, None]:
+        """Call out to Bedrock service with streaming.
+
+        Args:
+            prompt (str): The prompt to pass into the model
+            stop (Optional[List[str]], optional): Stop sequences. These will
+                override any stop sequences in the `model_kwargs` attribute.
+                Defaults to None.
+            run_manager (Optional[CallbackManagerForLLMRun], optional): Callback
+                run managers used to process the output. Defaults to None.
+
+        Yields:
+            AsyncGenerator[GenerationChunk, None]: Generator that asynchronously yields
+            the streamed responses.
+        """
+        async for chunk in self._aprepare_input_and_invoke_stream(
+            prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+        ):
+            yield chunk
+
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Call out to Bedrock service model.
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The string generated by the model.
+
+        Example:
+            .. code-block:: python
+
+                response = await llm._acall("Tell me a joke.")
+        """
+
+        if not self.streaming:
+            raise ValueError("Streaming must be set to True for async operations. ")
+
+        chunks = [
+            chunk.text
+            async for chunk in self._astream(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            )
+        ]
+        return "".join(chunks)
 
     def get_num_tokens(self, text: str) -> int:
         if self._model_is_anthropic:

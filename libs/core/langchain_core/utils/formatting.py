@@ -1,21 +1,10 @@
 """Utilities for formatting strings."""
 from string import Formatter
-from typing import Any, List, Mapping, Sequence, Union
+from typing import Any, List, Mapping, Sequence
 
 
 class StrictFormatter(Formatter):
     """A subclass of formatter that checks for extra keys."""
-
-    def check_unused_args(
-        self,
-        used_args: Sequence[Union[int, str]],
-        args: Sequence,
-        kwargs: Mapping[str, Any],
-    ) -> None:
-        """Check to see if extra parameters are passed."""
-        extra = set(kwargs).difference(used_args)
-        if extra:
-            raise KeyError(extra)
 
     def vformat(
         self, format_string: str, args: Sequence, kwargs: Mapping[str, Any]
