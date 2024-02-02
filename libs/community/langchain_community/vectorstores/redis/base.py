@@ -502,7 +502,7 @@ class Redis(VectorStore):
         cls,
         embedding: Embeddings,
         index_name: str,
-        schema: Union[Dict[str, str], str, os.PathLike, Dict[str, list[Dict[str, str]]]],
+        schema: Union[Dict[str, str], str, os.PathLike, Dict[str, ListOfDict]],
         key_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> Redis:
@@ -529,7 +529,7 @@ class Redis(VectorStore):
             embedding (Embeddings): Embedding model class (i.e. OpenAIEmbeddings)
                 for embedding queries.
             index_name (str): Name of the index to connect to.
-            schema (Union[Dict[str, str], str, os.PathLike, Dict[str, list[Dict[str, str]]]]): Schema of the index
+            schema (Union[Dict[str, str], str, os.PathLike, Dict[str, ListOfDict]]): Schema of the index
                 and the vector schema. Can be a dict, or path to yaml file.
             key_prefix (Optional[str]): Prefix to use for all keys in Redis associated
                 with this index.
