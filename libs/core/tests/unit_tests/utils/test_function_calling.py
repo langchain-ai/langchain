@@ -81,7 +81,7 @@ def test_function_optional_param() -> None:
         a: Optional[str],
         b: str,
         c: Optional[List[Optional[str]]],
-    ):
+    ) -> None:
         """A test function"""
         pass
 
