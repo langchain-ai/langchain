@@ -7,6 +7,7 @@ from typing import Callable, Dict, Union
 import yaml
 
 from langchain_core.output_parsers.string import StrOutputParser
+from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
@@ -79,6 +80,8 @@ def _load_output_parser(config: dict) -> dict:
         output_parser_type = _config.pop("_type")
         if output_parser_type == "default":
             output_parser = StrOutputParser(**_config)
+        elif output_parser_type == "simple_json_output_parser":
+            output_parser = SimpleJsonOutputParser(**_config)
         else:
             raise ValueError(f"Unsupported output parser {output_parser_type}")
         config["output_parser"] = output_parser
