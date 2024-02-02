@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union, cast
 from urllib.parse import urlparse
 
-import proto
+import proto  # type: ignore
 import requests
 from google.cloud.aiplatform_v1beta1.types.content import Part as GapicPart
 from google.cloud.aiplatform_v1beta1.types.tool import FunctionCall
