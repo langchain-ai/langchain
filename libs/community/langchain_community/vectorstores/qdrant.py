@@ -623,7 +623,7 @@ class Qdrant(VectorStore):
                     result,
                     self.collection_name,
                     self.content_payload_key,
-                    self.metadata_payload_key
+                    self.metadata_payload_key,
                 ),
                 result.score,
             )
@@ -719,7 +719,7 @@ class Qdrant(VectorStore):
                     result,
                     self.collection_name,
                     self.content_payload_key,
-                    self.metadata_payload_key
+                    self.metadata_payload_key,
                 ),
                 result.score,
             )
@@ -1060,7 +1060,7 @@ class Qdrant(VectorStore):
                     results[i],
                     self.collection_name,
                     self.content_payload_key,
-                    self.metadata_payload_key
+                    self.metadata_payload_key,
                 ),
                 results[i].score,
             )
@@ -1135,7 +1135,7 @@ class Qdrant(VectorStore):
                     results[i],
                     self.collection_name,
                     self.content_payload_key,
-                    self.metadata_payload_key
+                    self.metadata_payload_key,
                 ),
                 results[i].score,
             )

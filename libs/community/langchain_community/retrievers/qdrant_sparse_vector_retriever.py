@@ -123,7 +123,7 @@ class QdrantSparseVectorRetriever(BaseRetriever):
                 point,
                 self.collection_name,
                 self.content_payload_key,
-                self.metadata_payload_key
+                self.metadata_payload_key,
             )
             for point in results
         ]
