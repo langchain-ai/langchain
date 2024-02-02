@@ -1,26 +1,30 @@
-import json
-import os
-from unittest import mock
 
-from langchain_core.documents import Document
-from requests import Response
+import responses
 
 from langchain_community.retrievers.you import YouRetriever
 
+from ..utilities.test_you import (
+    MOCK_OUTPUT_PARSED,
+    MOCK_RESPONSE_RAW,
+    TEST_ENDPOINT,
+)
+
 
 class TestYouRetriever:
+    @responses.activate
     def test_get_relevant_documents(self) -> None:
-        os.environ["YDC_API_KEY"] = "MOCK KEY!"
-        retriever = YouRetriever()
+        responses.add(responses.GET, TEST_ENDPOINT, json=MOCK_RESPONSE_RAW, status=200)
+        query = "Test query text"
+        you_wrapper = YouRetriever(num_web_results=1)
+        raw_results = you_wrapper.get_relevant_documents(query)
+        expected_result = MOCK_OUTPUT_PARSED
+        assert raw_results == expected_result
 
-        with mock.patch("requests.get") as mock_get:
-            fixture = {"hits": [{"snippets": ["yo"]}, {"snippets": ["bird up"]}]}
-            response = Response()
-            response._content = bytes(json.dumps(fixture).encode("utf-8"))
-            mock_get.return_value = response
-
-            actual = retriever.get_relevant_documents("test")
-            assert actual == [
-                Document(page_content="yo"),
-                Document(page_content="bird up"),
-            ]
+    @responses.activate
+    def test_invoke(self) -> None:
+        responses.add(responses.GET, TEST_ENDPOINT, json=MOCK_RESPONSE_RAW, status=200)
+        query = "Test query text"
+        you_wrapper = YouRetriever(num_web_results=1)
+        raw_results = you_wrapper.invoke(query)
+        expected_result = MOCK_OUTPUT_PARSED
+        assert raw_results == expected_result
