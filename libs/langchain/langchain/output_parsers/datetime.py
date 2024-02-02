@@ -4,8 +4,7 @@ from typing import List
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
-
-from langchain.utils import comma_list
+from langchain_core.utils import comma_list
 
 
 def _generate_random_datetime_strings(
