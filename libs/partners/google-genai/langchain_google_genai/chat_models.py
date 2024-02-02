@@ -571,10 +571,10 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
                 generation_t=ChatGenerationChunk,
             )
             gen = cast(ChatGenerationChunk, _chat_result.generations[0])
-            yield gen
+            
             if run_manager:
                 run_manager.on_llm_new_token(gen.text)
-
+            yield gen
     async def _astream(
         self,
         messages: List[BaseMessage],
@@ -597,10 +597,10 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
                 generation_t=ChatGenerationChunk,
             )
             gen = cast(ChatGenerationChunk, _chat_result.generations[0])
-            yield gen
+            
             if run_manager:
                 await run_manager.on_llm_new_token(gen.text)
-
+            yield gen
     def _prepare_chat(
         self,
         messages: List[BaseMessage],
