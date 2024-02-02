@@ -166,7 +166,8 @@ class _EmbeddingDistanceChainMixin(Chain):
 
     @staticmethod
     def _hamming_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
-        """Compute the Hamming distance between two vectors.
+        """
+        Compute the Hamming distance between two vectors.
 
         Args:
             a (np.ndarray): The first vector.
@@ -175,7 +176,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         Returns:
             np.floating: The Hamming distance.
         """
-        return np.mean(a != b)
+        return np.sum(a != b) / a.size
 
     def _compute_score(self, vectors: np.ndarray) -> float:
         """Compute the score based on the distance metric.
