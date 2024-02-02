@@ -4,7 +4,6 @@ import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
-from tqdm.autonotebook import trange
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -323,7 +322,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts (Documents): A list of texts to get embeddings for.
-
+            batch_size: max_client_batch_size supported by your HuggingFace Inference
         Returns:
             Embedded texts as List[List[float]], where each inner List[float]
                 corresponds to a single input text.
@@ -343,8 +342,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         all_embeddings = []
         length_sorted_idx = np.argsort([-self._text_length(sen) for sen in texts])
 
-        for start_index in trange(0, len(texts), batch_size, desc="Batches",
-                                  disable=not show_progress_bar):
+        for start_index in range(0, len(texts), batch_size):
             sentences_batch = texts[start_index:start_index + batch_size]
 
             response = requests.post(
