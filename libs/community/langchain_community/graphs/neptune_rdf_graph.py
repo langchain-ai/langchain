@@ -65,7 +65,8 @@ class NeptuneRdfGraph:
     """Neptune wrapper for RDF graph operations.
 
     Args:
-        query_endpoint: SPARQL endpoint for Neptune
+        host: SPARQL endpoint host for Neptune
+        port: SPARQL endpoint port for Neptune. Defaults 8182.
         use_iam_auth: boolean indicating IAM auth is enabled in Neptune cluster
         region_name: AWS region required if use_iam_auth is True, e.g., us-west-2
         hide_comments: whether to include ontology comments in schema for prompt
@@ -74,14 +75,16 @@ class NeptuneRdfGraph:
         .. code-block:: python
 
         graph = NeptuneRdfGraph(
-            query_endpoint='<SPARQL endpoint>',
+            host='<SPARQL host'>,
+            port=<SPARQL port>,
             use_iam_auth=False
         )
         schema = graph.get_schema()
 
         OR
         graph = NeptuneRdfGraph(
-            query_endpoint='<SPARQL endpoint>',
+            host='<SPARQL host'>,
+            port=<SPARQL port>,
             use_iam_auth=False
         )
         schema_elem = graph.get_schema_elements()
@@ -103,22 +106,23 @@ class NeptuneRdfGraph:
 
     def __init__(
         self,
-        query_endpoint: str,
+        host: str,
+        port: int = 8182,
         use_iam_auth: bool = False,
         region_name: Optional[str] = None,
         hide_comments: bool = False,
     ) -> None:
         self.use_iam_auth = use_iam_auth
         self.region_name = region_name
-        self.query_endpoint = query_endpoint
         self.hide_comments = hide_comments
+        self.query_endpoint=f"https://{host}:{port}/sparql"
 
         self.session = boto3.Session() if self.use_iam_auth else None
 
         # Set schema
         self.schema = ""
         self.schema_elements = {}
-        self.load_schema()
+        self._refresh_schema()
 
     @property
     def get_schema(self) -> str:
@@ -185,10 +189,10 @@ class NeptuneRdfGraph:
             for elemrec in self.schema_elements[elem]:
                 uri = elemrec["uri"]
                 local = elemrec["local"]
-                str = f"<{uri}> ({local})"
+                resstr = f"<{uri}> ({local})"
                 if self.hide_comments is False:
-                    str = str + f", {elemrec['comment']}"
-                reslist.append(str)
+                    resstr = resstr + f", {elemrec['comment']}"
+                reslist.append(resstr)
             elemstr[elem] = ", ".join(reslist)
 
         self.schema = (
@@ -204,18 +208,17 @@ class NeptuneRdfGraph:
             f"{elemstr['oprops']}"
         )
 
-    """
-    Private method split URI into prefix and local
-    """
-
     @staticmethod
     def _get_local_name(iri: str):
+        """
+        Private method split URI into prefix and local
+        """
         if "#" in iri:
-            toks = iri.split("#")
-            return [f"{toks[0]}#", toks[-1]]
+            tokens = iri.split("#")
+            return [f"{tokens[0]}#", tokens[-1]]
         elif "/" in iri:
-            toks = iri.split("/")
-            return [f"{'/'.join(toks[0:len(toks)-1])}/", toks[-1]]
+            tokens = iri.split("/")
+            return [f"{'/'.join(tokens[0:len(tokens)-1])}/", tokens[-1]]
         else:
             raise ValueError(f"Unexpected IRI '{iri}', contains neither '#' nor '/'.")
 
@@ -223,7 +226,7 @@ class NeptuneRdfGraph:
     Query Neptune to introspect schema.
     """
 
-    def load_schema(self) -> None:
+    def _refresh_schema(self) -> None:
         self.schema_elements["distinct_prefixes"] = {}
 
         for elem in ELEM_TYPES:
@@ -231,13 +234,13 @@ class NeptuneRdfGraph:
             reslist = []
             for r in items["results"]["bindings"]:
                 uri = r["elem"]["value"]
-                toks = self._get_local_name(uri)
-                elem_record = {"uri": uri, "local": toks[1]}
+                tokens = self._get_local_name(uri)
+                elem_record = {"uri": uri, "local": tokens[1]}
                 if not self.hide_comments:
                     elem_record["comment"] = r["com"]["value"] if "com" in r else ""
                 reslist.append(elem_record)
-                if toks[0] not in self.schema_elements["distinct_prefixes"]:
-                    self.schema_elements["distinct_prefixes"][toks[0]] = "y"
+                if tokens[0] not in self.schema_elements["distinct_prefixes"]:
+                    self.schema_elements["distinct_prefixes"][tokens[0]] = "y"
 
             self.schema_elements[elem] = reslist
 
