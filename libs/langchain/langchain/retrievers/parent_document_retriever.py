@@ -112,7 +112,9 @@ class ParentDocumentRetriever(MultiVectorRetriever):
             sub_docs = self.child_splitter.split_documents([doc])
             if self.child_metadata_fields is not None:
                 for _doc in sub_docs:
-                    _doc.metadata = {k: _doc.metadata[k] for k in self.child_metadata_fields}
+                    _doc.metadata = {
+                        k: _doc.metadata[k] for k in self.child_metadata_fields
+                    }
             for _doc in sub_docs:
                 _doc.metadata[self.id_key] = _id
             docs.extend(sub_docs)
