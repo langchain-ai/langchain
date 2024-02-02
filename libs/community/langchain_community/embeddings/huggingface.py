@@ -16,8 +16,6 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
 )
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
 
-logger = logging.getLogger(__name__)
-
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
