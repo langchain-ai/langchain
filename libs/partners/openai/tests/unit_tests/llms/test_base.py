@@ -30,6 +30,7 @@ def test_openai_incorrect_field() -> None:
     assert llm.model_kwargs == {"foo": "bar"}
 
 
+@pytest.fixture
 def mock_completion() -> dict:
     return {
         "id": "cmpl-3evkmQda5Hu7fcZavknQda3SQ",
