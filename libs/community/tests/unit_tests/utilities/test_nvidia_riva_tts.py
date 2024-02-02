@@ -24,11 +24,6 @@ CONFIG = {
     "sample_rate_hertz": 5,
 }
 
-AUDIO_SYNTH_CONFIG = (
-    f"[{CONFIG['language_code']},{CONFIG['encoding'].riva_pb2},"
-    f"{CONFIG['sample_rate_hertz']},{CONFIG['voice_name']}]"
-)
-
 
 def synthesize_online_mock(request: "rtts.SynthesizeSpeechRequest", **_):
     """A mock function to fake a streaming call to Riva."""
@@ -81,9 +76,14 @@ def test_get_service(tts: RivaTTS) -> None:
 )
 def test_invoke(tts: RivaTTS):
     """Test the invoke method."""
+    audio_synth_config = (
+        f"[{CONFIG['language_code']},{CONFIG['encoding'].riva_pb2},"
+        f"{CONFIG['sample_rate_hertz']},{CONFIG['voice_name']}]"
+    )
+
     input = " ".join(AUDIO_TEXT_MOCK).strip()
     response = tts.invoke(input)
-    expected = (AUDIO_SYNTH_CONFIG + AUDIO_SYNTH_CONFIG.join(AUDIO_TEXT_MOCK)).encode()
+    expected = (audio_synth_config + audio_synth_config.join(AUDIO_TEXT_MOCK)).encode()
     assert response == expected
 
 
@@ -94,14 +94,18 @@ def test_invoke(tts: RivaTTS):
 )
 def test_transform(tts: RivaTTS):
     """Test the transform method."""
-    expected = (AUDIO_SYNTH_CONFIG + AUDIO_SYNTH_CONFIG.join(AUDIO_TEXT_MOCK)).encode()
+    audio_synth_config = (
+        f"[{CONFIG['language_code']},{CONFIG['encoding'].riva_pb2},"
+        f"{CONFIG['sample_rate_hertz']},{CONFIG['voice_name']}]"
+    )
+    expected = (audio_synth_config + audio_synth_config.join(AUDIO_TEXT_MOCK)).encode()
     for idx, response in enumerate(tts.transform(iter(AUDIO_TEXT_MOCK))):
         if idx % 2:
             # odd indices will return the mocked data
             expected = AUDIO_DATA_MOCK[int((idx - 1) / 2)]
         else:
             # even indices will return the request config
-            expected = AUDIO_SYNTH_CONFIG.encode()
+            expected = audio_synth_config.encode()
         assert response == expected
 
 
@@ -112,7 +116,11 @@ def test_transform(tts: RivaTTS):
 )
 async def test_atransform(tts: RivaTTS):
     """Test the transform method."""
-    expected = (AUDIO_SYNTH_CONFIG + AUDIO_SYNTH_CONFIG.join(AUDIO_TEXT_MOCK)).encode()
+    audio_synth_config = (
+        f"[{CONFIG['language_code']},{CONFIG['encoding'].riva_pb2},"
+        f"{CONFIG['sample_rate_hertz']},{CONFIG['voice_name']}]"
+    )
+    expected = (audio_synth_config + audio_synth_config.join(AUDIO_TEXT_MOCK)).encode()
     idx = 0
 
     async def _fake_async_iterable() -> bytes:
@@ -125,6 +133,6 @@ async def test_atransform(tts: RivaTTS):
             expected = AUDIO_DATA_MOCK[int((idx - 1) / 2)]
         else:
             # even indices will return the request config
-            expected = AUDIO_SYNTH_CONFIG.encode()
+            expected = audio_synth_config.encode()
         assert response == expected
         idx += 1
