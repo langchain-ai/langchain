@@ -175,6 +175,7 @@ jobs:
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 

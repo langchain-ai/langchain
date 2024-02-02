@@ -11,10 +11,6 @@ from langchain_community.storage.astradb import (
     AstraDBStore,
 )
 from langchain_community.storage.redis import RedisStore
-from langchain_community.storage.sql import (
-    SQLDocStore,
-    SQLStrStore,
-)
 from langchain_community.storage.upstash_redis import (
     UpstashRedisByteStore,
     UpstashRedisStore,
@@ -26,6 +22,4 @@ __all__ = [
     "RedisStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
-    "SQLDocStore",
-    "SQLStrStore",
 ]
