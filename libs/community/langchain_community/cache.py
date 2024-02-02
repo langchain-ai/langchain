@@ -28,6 +28,7 @@ import logging
 import uuid
 import warnings
 from datetime import timedelta
+from enum import Enum
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -47,7 +48,9 @@ from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
-from libs.community.langchain_community.vectorstores.azure_cosmos_db import CosmosDBSimilarityType
+from langchain_community.vectorstores.azure_cosmos_db import CosmosDBDocumentType, \
+    CosmosDBSimilarityType, \
+    CosmosDBVectorSearchType
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -1560,8 +1563,11 @@ class AstraDBSemanticCache(BaseCache):
         self.astra_db.truncate_collection(self.collection_name)
 
 
-class CosmosDBMongoVCoreSemanticCache(BaseCache):
+class AzureCosmosDBSemanticCache(BaseCache):
     """Cache that uses Cosmos DB Mongo vCore vector-store backend"""
+
+    DEFAULT_DATABASE_NAME = "CosmosMongoVCoreCacheDB"
+    DEFAULT_COLLECTION_NAME = "CosmosMongoVCoreCacheColl"
 
     def __init__(
             self,
@@ -1573,11 +1579,12 @@ class CosmosDBMongoVCoreSemanticCache(BaseCache):
             collection_name: str = None,
             num_lists: int = 100,
             similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
-            kind: str = "vector-ivf",
+            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
             dimensions: int = 1536,
             m: int = 16,
             ef_construction: int = 64,
-            ef_search: int = 40
+            ef_search: int = 40,
+            score_threshold: Optional[float] = None
     ):
         """
         Args:
@@ -1617,7 +1624,11 @@ class CosmosDBMongoVCoreSemanticCache(BaseCache):
                             ef_construction has to be at least 2 * m
             ef_search: The size of the dynamic candidate list for search (40 by default).
                       A higher value provides better recall at the cost of speed.
+            score_threshold: Maximum score used to filter the vector search documents.
         """
+
+        self._validate_enum_value(similarity, CosmosDBSimilarityType)
+        self._validate_enum_value(kind, CosmosDBVectorSearchType)
 
         if not cosmosdb_connection_string:
             raise ValueError(" CosmosDB connection string can be empty.")
@@ -1625,8 +1636,8 @@ class CosmosDBMongoVCoreSemanticCache(BaseCache):
         self.cosmosdb_connection_string = cosmosdb_connection_string
         self.cosmosdb_client = cosmosdb_client
         self.embedding = embedding
-        self.database_name = "CosmosMongoVCoreCacheDB" if not database_name else database_name
-        self.collection_name = "CosmosMongoVCoreCacheColl" if not collection_name else collection_name
+        self.database_name = database_name or self.DEFAULT_DATABASE_NAME
+        self.collection_name = collection_name or self.DEFAULT_COLLECTION_NAME
         self.num_lists = num_lists
         self.dimensions = dimensions
         self.similarity = similarity
@@ -1634,6 +1645,7 @@ class CosmosDBMongoVCoreSemanticCache(BaseCache):
         self.m = m
         self.ef_construction = ef_construction
         self.ef_search = ef_search
+        self.score_threshold = score_threshold
         self._cache_dict: Dict[str, AzureCosmosDBVectorSearch] = {}
 
     def _index_name(self, llm_string: str) -> str:
@@ -1675,13 +1687,14 @@ class CosmosDBMongoVCoreSemanticCache(BaseCache):
 
         # create index for the vectorstore
         vectorstore = self._cache_dict[index_name]
-        vectorstore.create_index(
-            self.kind,
-            self.num_lists,
-            self.similarity,
-            self.dimensions,
-            self.m,
-            self.ef_construction)
+        if not vectorstore.index_exists():
+            vectorstore.create_index(
+                self.kind,
+                self.num_lists,
+                self.similarity,
+                self.dimensions,
+                self.m,
+                self.ef_construction)
 
         return vectorstore
 
@@ -1694,7 +1707,8 @@ class CosmosDBMongoVCoreSemanticCache(BaseCache):
             query=prompt,
             k=1,
             kind=self.kind,
-            ef_search=self.ef_search
+            ef_search=self.ef_search,
+            score_threshold=self.score_threshold
         )
         if results:
             for document in results:
@@ -1734,6 +1748,11 @@ class CosmosDBMongoVCoreSemanticCache(BaseCache):
         """Clear semantic cache for a given llm_string."""
         index_name = self._index_name(kwargs["llm_string"])
         if index_name in self._cache_dict:
-            self._cache_dict[index_name].delete_index()
-            del self._cache_dict[index_name]
+            self._cache_dict[index_name].get_collection().delete_many({})
+            # self._cache_dict[index_name].clear_collection()
+
+    @staticmethod
+    def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
+        if not isinstance(value, enum_type):
+            raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
 

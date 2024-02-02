@@ -178,8 +178,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
             self,
             kind: str = "vector-ivf",
             num_lists: int = 100,
-            dimensions: int = 1536,
             similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
+            dimensions: int = 1536,
             m: int = 16,
             ef_construction: int = 64,
     ) -> dict[str, Any]:
@@ -287,7 +287,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             self, kind, m, ef_construction, similarity, dimensions
     ) -> Dict[str, any]:
         command = {
-            "createIndexes": "<collection_name>",
+            "createIndexes": self._collection.name,
             "indexes": [
                 {
                     "name": self._index_name,
@@ -396,8 +396,11 @@ class AzureCosmosDBVectorSearch(VectorStore):
         return AzureCosmosDBVectorSearchRetriever(vectorstore=self, **kwargs, tags=tags)
 
     def _similarity_search_with_score(
-            self, embeddings: List[float], k: int = 4,
-            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF, ef_search: int = 40,
+            self,
+            embeddings: List[float],
+            k: int = 4,
+            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+            ef_search: int = 40,
             score_threshold: Optional[float] = None
     ) -> List[Tuple[Document, float]]:
         """Returns a list of documents with their scores
@@ -432,16 +435,16 @@ class AzureCosmosDBVectorSearch(VectorStore):
         # TODO: Update this once similarity score is supported by vector_hnsw search
         score = 0.0
         for res in cursor:
-            if score_threshold is not None or kind == CosmosDBVectorSearchType.VECTOR_IVF:
+            if score_threshold is not None and kind == CosmosDBVectorSearchType.VECTOR_IVF:
                 score = res.pop("similarityScore")
                 if score < score_threshold:
                     continue
-            else:
-                document_object_field = res.pop("document")
-                text = document_object_field.pop(self._text_key)
-                docs.append(
-                    (Document(page_content=text, metadata=document_object_field), score)
-                )
+
+            document_object_field = res.pop("document") if kind == CosmosDBVectorSearchType.VECTOR_IVF else res
+            text = document_object_field.pop(self._text_key)
+            docs.append(
+                (Document(page_content=text, metadata=document_object_field), score)
+            )
 
         return docs
 
@@ -486,7 +489,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
         return pipeline
 
     def similarity_search_with_score(
-            self, query: str, k: int = 4, kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+            self,
+            query: str,
+            k: int = 4,
+            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
             ef_search: int = 40,
             score_threshold: Optional[float] = None
     ) -> List[Tuple[Document, float]]:
@@ -496,17 +502,22 @@ class AzureCosmosDBVectorSearch(VectorStore):
         return docs
 
     def similarity_search(
-            self, query: str, k: int = 4, kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+            self,
+            query: str,
+            k: int = 4,
+            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
             ef_search: int = 40,
+            score_threshold: Optional[float] = None,
             **kwargs: Any
     ) -> List[Document]:
-        docs_and_scores = self.similarity_search_with_score(query, k=k, kind=kind, ef_search=ef_search)
+        docs_and_scores = self.similarity_search_with_score(query, k=k, kind=kind, ef_search=ef_search, score_threshold=score_threshold)
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
             self,
             embedding: List[float],
             k: int = 4,
+            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
             fetch_k: int = 20,
             lambda_mult: float = 0.5,
             score_threshold: Optional[float] = None,
@@ -514,7 +525,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
     ) -> List[Document]:
         # Retrieves the docs with similarity scores
         # sorted by similarity scores in DESC order
-        docs = self._similarity_search_with_score(embedding, k=fetch_k, score_threshold=score_threshold)
+        docs = self._similarity_search_with_score(embedding, k=fetch_k, kind=kind, score_threshold=score_threshold)
 
         # Re-ranks the docs using MMR
         mmr_doc_indexes = maximal_marginal_relevance(
@@ -530,6 +541,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             self,
             query: str,
             k: int = 4,
+            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
             fetch_k: int = 20,
             lambda_mult: float = 0.5,
             score_threshold: Optional[float] = None,
@@ -539,9 +551,12 @@ class AzureCosmosDBVectorSearch(VectorStore):
         embeddings = self._embedding.embed_query(query)
 
         docs = self.max_marginal_relevance_search_by_vector(
-            embeddings, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, score_threshold=score_threshold
+            embeddings, k=k, kind=kind, fetch_k=fetch_k, lambda_mult=lambda_mult, score_threshold=score_threshold
         )
         return docs
+
+    def get_collection(self):
+        return self._collection
 
 
 class AzureCosmosDBVectorSearchRetriever(BaseRetriever):
@@ -552,7 +567,8 @@ class AzureCosmosDBVectorSearchRetriever(BaseRetriever):
     search_type: str = "similarity"
     """Type of search to perform. Can be either
     'similarity',
-    'similarity_score_threshold'
+    'similarity_score_threshold',
+    'mmr'
     """
 
     search_kwargs: Dict[str, Any] = {
