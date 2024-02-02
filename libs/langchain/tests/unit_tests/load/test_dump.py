@@ -171,40 +171,41 @@ def test_person_with_invalid_kwargs() -> None:
         dumps(person, invalid_kwarg="hello")
 
 
-def test_aliases_hidden():
-    class TestClass(Serializable):
-        my_favorite_secret: str = Field(alias="my_favorite_secret_alias")
-        my_other_secret: str = Field()
+class TestClass(Serializable):
+    my_favorite_secret: str = Field(alias="my_favorite_secret_alias")
+    my_other_secret: str = Field()
 
-        class Config:
-            """Configuration for this pydantic object."""
+    class Config:
+        """Configuration for this pydantic object."""
 
-            allow_population_by_field_name = True
+        allow_population_by_field_name = True
 
-        @root_validator(pre=True)
-        def get_from_env(cls, values: Dict) -> Dict:
-            """Get the values from the environment."""
-            if "my_favorite_secret" not in values:
-                values["my_favorite_secret"] = os.getenv("MY_FAVORITE_SECRET")
-            if "my_other_secret" not in values:
-                values["my_other_secret"] = os.getenv("MY_OTHER_SECRET")
-            return values
+    @root_validator(pre=True)
+    def get_from_env(cls, values: Dict) -> Dict:
+        """Get the values from the environment."""
+        if "my_favorite_secret" not in values:
+            values["my_favorite_secret"] = os.getenv("MY_FAVORITE_SECRET")
+        if "my_other_secret" not in values:
+            values["my_other_secret"] = os.getenv("MY_OTHER_SECRET")
+        return values
 
-        @classmethod
-        def is_lc_serializable(cls) -> bool:
-            return True
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
 
-        @classmethod
-        def get_lc_namespace(cls) -> List[str]:
-            return ["my", "special", "namespace"]
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return ["my", "special", "namespace"]
 
-        @property
-        def lc_secrets(self) -> Dict[str, str]:
-            return {
-                "my_favorite_secret": "MY_FAVORITE_SECRET",
-                "my_other_secret": "MY_OTHER_SECRET",
-            }
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {
+            "my_favorite_secret": "MY_FAVORITE_SECRET",
+            "my_other_secret": "MY_OTHER_SECRET",
+        }
 
+
+def test_aliases_hidden() -> None:
     test_class = TestClass(my_favorite_secret="hello", my_other_secret="world")
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
