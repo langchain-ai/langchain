@@ -49,7 +49,7 @@ def _create_subset_model(
             # this isn't perfect but should work for most functions
             field.outer_type_
             if field.required and not field.allow_none
-            else Union[field.outer_type_, None]
+            else Optional[field.outer_type_]
         )
         fields[field_name] = (t, field.field_info)
     rtn = create_model(name, **fields)  # type: ignore
