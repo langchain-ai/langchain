@@ -306,6 +306,7 @@ class _ImageTemplateParam(TypedDict, total=False):
 
 class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
+    type: str = "user"
 
     prompt: Union[
         StringPromptTemplate, List[Union[StringPromptTemplate, ImagePromptTemplate]]
@@ -477,13 +478,13 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
 class HumanMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
-
+    type: str = "human"
     _msg_class: Type[BaseMessage] = HumanMessage
 
 
 class AIMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """AI message prompt template. This is a message sent from the AI."""
-
+    type: str = "ai"
     _msg_class: Type[BaseMessage] = AIMessage
 
     @classmethod
@@ -496,7 +497,7 @@ class SystemMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """System message prompt template.
     This is a message that is not sent to the user.
     """
-
+    type: str = "system"
     _msg_class: Type[BaseMessage] = SystemMessage
 
     @classmethod
@@ -507,6 +508,7 @@ class SystemMessagePromptTemplate(_StringImageMessagePromptTemplate):
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     """Base class for chat prompt templates."""
+    type: str = "base"
 
     @property
     def lc_attributes(self) -> Dict:
