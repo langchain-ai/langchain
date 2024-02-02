@@ -7,6 +7,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
+from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -20,6 +21,7 @@ from langchain_core.tools import (
     Tool,
     ToolException,
     _create_subset_model,
+    create_schema_from_function,
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -871,3 +873,47 @@ def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> No
     else:
         with pytest.raises(ValidationError):
             foo.invoke(inputs)  # type: ignore
+
+
+def test_create_schema_from_function_with_descriptions() -> None:
+    def foo(bar: int, baz: str) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        raise NotImplementedError()
+
+    schema = create_schema_from_function("foo", foo)
+    assert schema.schema() == {
+        "title": "fooSchema",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
+        },
+        "required": ["bar", "baz"],
+    }
+
+    def foo_annotated(
+        bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"]
+    ) -> str:
+        """Docstring
+        Args:
+            bar: int
+        """
+        raise NotImplementedError()
+
+    schema = create_schema_from_function("foo_annotated", foo_annotated)
+    assert schema.schema() == {
+        "title": "foo_annotatedSchema",
+        "type": "object",
+        "properties": {
+            "bar": {
+                "title": "Bar",
+                "type": "integer",
+                "description": "This is bar\nit's useful",
+            },
+        },
+        "required": ["bar"],
+    }
