@@ -3846,9 +3846,9 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     RunnableEach makes it easy to run multiple inputs for the runnable.
     In the below example, we associate and run three three inputs
     with a Runnable:
-    
+
         .. code-block:: python
-        
+
             from langchain_core.runnables.base import RunnableEach
             from langchain_openai import ChatOpenAI
             from langchain_core.prompts import ChatPromptTemplate
