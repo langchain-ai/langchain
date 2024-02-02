@@ -620,7 +620,7 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    result, self.content_payload_key, self.metadata_payload_key
+                    result, self.collection_name, self.content_payload_key, self.metadata_payload_key
                 ),
                 result.score,
             )
@@ -713,7 +713,7 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    result, self.content_payload_key, self.metadata_payload_key
+                    result, self.collection_name, self.content_payload_key, self.metadata_payload_key
                 ),
                 result.score,
             )
@@ -1051,7 +1051,7 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    results[i], self.content_payload_key, self.metadata_payload_key
+                    results[i], self.collection_name, self.content_payload_key, self.metadata_payload_key
                 ),
                 results[i].score,
             )
@@ -1123,7 +1123,7 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    results[i], self.content_payload_key, self.metadata_payload_key
+                    results[i], self.collection_name, self.content_payload_key, self.metadata_payload_key
                 ),
                 results[i].score,
             )
@@ -1938,12 +1938,13 @@ class Qdrant(VectorStore):
     def _document_from_scored_point(
         cls,
         scored_point: Any,
+        collection_name: str,
         content_payload_key: str,
         metadata_payload_key: str,
     ) -> Document:
         metadata = scored_point.payload.get(metadata_payload_key) or {}
         metadata["_id"] = scored_point.id
-        metadata["_collection_name"] = scored_point.collection_name
+        metadata["_collection_name"] = collection_name
         return Document(
             page_content=scored_point.payload.get(content_payload_key),
             metadata=metadata,
