@@ -89,8 +89,6 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             pool = self.client.start_multi_process_pool()
             embeddings = self.client.encode_multi_process(texts, pool)
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
-
-            return embeddings.toList()
         else:
             embeddings = self.client.encode(texts, show_progress_bar=self.show_progress, **self.encode_kwargs)
 
