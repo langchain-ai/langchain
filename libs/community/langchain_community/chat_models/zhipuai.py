@@ -252,10 +252,10 @@ class ChatZhipuAI(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["zhipuai_api_key"] = get_from_dict_or_env(
-            values, "zhipuai_api_key", "ZHIPU_API_KEY"
+            values, "zhipuai_api_key", "ZHIPUAI_API_KEY"
         )
         values["zhipuai_api_base"] = get_from_dict_or_env(
-            values, "zhipuai_api_base", "ZHIPU_API_BASE", default=ZHIPU_API_BASE
+            values, "zhipuai_api_base", "ZHIPUAI_API_BASE", default=ZHIPU_API_BASE
         )
 
         return values
