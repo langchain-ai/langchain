@@ -446,7 +446,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 content=text, additional_kwargs=self.additional_kwargs
             )
         else:
-            content = []
+            content: List = []
             for prompt in self.prompt:
                 inputs = {var: kwargs[var] for var in prompt.input_variables}
                 if isinstance(prompt, StringPromptTemplate):
