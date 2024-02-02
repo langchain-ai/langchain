@@ -20,6 +20,7 @@ from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
+    ValidationError,
     create_model,
     root_validator,
     validate_arguments,
@@ -168,6 +169,11 @@ class ChildTool(BaseTool):
         Union[bool, str, Callable[[ToolException], str]]
     ] = False
     """Handle the content of the ToolException thrown."""
+
+    handle_validation_error: Optional[
+        Union[bool, str, Callable[[ValidationError], str]]
+    ] = False
+    """Handle the content of the ValidationError thrown."""
 
     class Config(Serializable.Config):
         """Configuration for this pydantic object."""
@@ -346,6 +352,21 @@ class ChildTool(BaseTool):
                 if new_arg_supported
                 else self._run(*tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 run_manager.on_tool_error(e)
@@ -422,6 +443,21 @@ class ChildTool(BaseTool):
                 if new_arg_supported
                 else await self._arun(*tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 await run_manager.on_tool_error(e)
