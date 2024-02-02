@@ -260,8 +260,8 @@ class VDMS(VectorStore):
             "AddDescriptorSet",
             collection_name,
             self._embedding_dimension,
-            engine=engine,
-            metric=metric,
+            engine=engine.value if hasattr(engine, "value") else engine,
+            metric=metric.value if hasattr(metric, "value") else metric,
         )
 
         all_queries.append(query)

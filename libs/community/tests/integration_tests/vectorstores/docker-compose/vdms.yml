@@ -7,5 +7,5 @@ services:
     ports:
       - ${VDMS_DBPORT:-55555}:55555
     # restart: on-failure:0
-    hostname: vdms-test
-    container_name: vdms-test
+    # hostname: vdms-test
+    container_name: ${VDMS_NAME:-vdms-test}
