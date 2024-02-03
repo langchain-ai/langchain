@@ -76,27 +76,27 @@ Since we are using [`SupabaseVectorStore`](https://python.langchain.com/docs/int
 First, install the LangChain CLI:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag_supabase
+langchain app new my-app --package rag-supabase
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag_supabase
+langchain app add rag-supabase
 ```
 
 And add the following code to your `server.py` file:
 
 ```python
-from dotenv import load_dotenv
+from rag_supabase.chain import chain as rag_supabase_chain
 
-load_dotenv()
+add_routes(app, rag_supabase_chain, path="/rag-supabase")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -120,14 +120,14 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/rag_supabase/playground](http://127.0.0.1:8000/rag_supabase/playground)  
+We can access the playground at [http://127.0.0.1:8000/rag-supabase/playground](http://127.0.0.1:8000/rag-supabase/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag_supabase")
+runnable = RemoteRunnable("http://localhost:8000/rag-supabase")
 ```
 
 TODO: Add details about setting up the Supabase database

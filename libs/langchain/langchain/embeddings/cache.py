@@ -14,8 +14,9 @@ import uuid
 from functools import partial
 from typing import Callable, List, Sequence, Union, cast
 
-from langchain.schema import BaseStore
-from langchain.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.stores import BaseStore, ByteStore
+
 from langchain.storage.encoder_backed import EncoderBackedStore
 
 NAMESPACE_UUID = uuid.UUID(int=1985)
@@ -61,8 +62,9 @@ class CacheBackedEmbeddings(Embeddings):
 
         .. code-block: python
 
-            from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+            from langchain.embeddings import CacheBackedEmbeddings
             from langchain.storage import LocalFileStore
+            from langchain_community.embeddings import OpenAIEmbeddings
 
             store = LocalFileStore('./my_cache')
 
@@ -150,7 +152,7 @@ class CacheBackedEmbeddings(Embeddings):
     def from_bytes_store(
         cls,
         underlying_embeddings: Embeddings,
-        document_embedding_cache: BaseStore[str, bytes],
+        document_embedding_cache: ByteStore,
         *,
         namespace: str = "",
     ) -> CacheBackedEmbeddings:

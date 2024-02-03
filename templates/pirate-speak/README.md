@@ -12,7 +12,7 @@ Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -29,7 +29,7 @@ langchain app add pirate-speak
 
 And add the following code to your `server.py` file:
 ```python
-from pirate_speak import chain as pirate_speak_chain
+from pirate_speak.chain import chain as pirate_speak_chain
 
 add_routes(app, pirate_speak_chain, path="/pirate-speak")
 ```

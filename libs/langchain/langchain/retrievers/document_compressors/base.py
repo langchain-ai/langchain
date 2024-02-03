@@ -1,11 +1,12 @@
-import asyncio
 from abc import ABC, abstractmethod
 from inspect import signature
 from typing import List, Optional, Sequence, Union
 
+from langchain_core.documents import BaseDocumentTransformer, Document
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables.config import run_in_executor
+
 from langchain.callbacks.manager import Callbacks
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseDocumentTransformer, Document
 
 
 class BaseDocumentCompressor(BaseModel, ABC):
@@ -27,7 +28,7 @@ class BaseDocumentCompressor(BaseModel, ABC):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Compress retrieved documents given the query context."""
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None, self.compress_documents, documents, query, callbacks
         )
 

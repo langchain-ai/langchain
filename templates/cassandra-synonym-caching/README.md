@@ -1,7 +1,7 @@
 
 # cassandra-synonym-caching
 
-This template provides a simple chain template showcasing the usage of LLM Caching backed by Astra DB / Apache Cassandra®.
+This template provides a simple chain template showcasing the usage of LLM Caching backed by Apache Cassandra® or Astra DB through CQL.
 
 ## Environment Setup
 
@@ -18,7 +18,7 @@ _Note:_ you can alternatively use a regular Cassandra cluster: to do so, make su
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:

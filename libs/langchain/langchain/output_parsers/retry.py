@@ -2,14 +2,11 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import (
-    BaseOutputParser,
-    BasePromptTemplate,
-    OutputParserException,
-    PromptValue,
-)
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompt_values import PromptValue
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
@@ -59,7 +56,7 @@ class RetryOutputParser(BaseOutputParser[T]):
         prompt: BasePromptTemplate = NAIVE_RETRY_PROMPT,
         max_retries: int = 1,
     ) -> RetryOutputParser[T]:
-        """Create an OutputFixingParser from a language model and a parser.
+        """Create an RetryOutputParser from a language model and a parser.
 
         Args:
             llm: llm to use for fixing

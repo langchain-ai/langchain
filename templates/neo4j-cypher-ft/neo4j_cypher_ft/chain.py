@@ -2,16 +2,12 @@ from typing import List, Optional
 
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.openai_functions import create_structured_output_chain
-from langchain.chat_models import ChatOpenAI
-from langchain.graphs import Neo4jGraph
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough
-
-try:
-    from pydantic.v1.main import BaseModel, Field
-except ImportError:
-    from pydantic.main import BaseModel, Field
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.graphs import Neo4jGraph
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import RunnablePassthrough
 
 # Connection to Neo4j
 graph = Neo4jGraph()
@@ -127,3 +123,12 @@ chain = (
     | qa_llm
     | StrOutputParser()
 )
+
+# Add typing for input
+
+
+class Question(BaseModel):
+    question: str
+
+
+chain = chain.with_types(input_type=Question)
