@@ -32,7 +32,7 @@ def test_qdrant_similarity_search(
         vector_name=vector_name,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert_documents_equals(actual=output, expected=[Document(page_content="foo")])
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -58,7 +58,7 @@ def test_qdrant_similarity_search_by_vector(
     )
     embeddings = ConsistentFakeEmbeddings().embed_query("foo")
     output = docsearch.similarity_search_by_vector(embeddings, k=1)
-    assert output == [Document(page_content="foo")]
+    assert_documents_equals(output, [Document(page_content="foo")])
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -86,7 +86,7 @@ def test_qdrant_similarity_search_with_score_by_vector(
     output = docsearch.similarity_search_with_score_by_vector(embeddings, k=1)
     assert len(output) == 1
     document, score = output[0]
-    assert document == Document(page_content="foo")
+    assert_documents_equals(actual=[document], expected=[Document(page_content="foo")])
     assert score >= 0
 
 
@@ -113,12 +113,16 @@ def test_qdrant_similarity_search_filters(
     output = docsearch.similarity_search(
         "foo", k=1, filter={"page": 1, "metadata": {"page": 2, "pages": [3]}}
     )
-    assert output == [
-        Document(
-            page_content="bar",
-            metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}},
-        )
-    ]
+
+    assert_documents_equals(
+        actual=output,
+        expected=[
+            Document(
+                page_content="bar",
+                metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}},
+            )
+        ],
+    )
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
@@ -240,12 +244,15 @@ def test_qdrant_similarity_search_filters_with_qdrant_filters(
         ]
     )
     output = docsearch.similarity_search("foo", k=1, filter=qdrant_filter)
-    assert output == [
-        Document(
-            page_content="bar",
-            metadata={"page": 1, "details": {"page": 2, "pages": [3, -1]}},
-        )
-    ]
+    assert_documents_equals(
+        actual=output,
+        expected=[
+            Document(
+                page_content="bar",
+                metadata={"page": 1, "details": {"page": 2, "pages": [3, -1]}},
+            )
+        ],
+    )
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -274,3 +281,18 @@ def test_qdrant_similarity_search_with_relevance_scores(
     assert all(
         (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
     )
+
+
+def assert_documents_equals(actual: list[Document], expected: list[Document]):
+    assert len(actual) == len(expected)
+
+    for actual_doc, expected_doc in zip(actual, expected):
+        assert actual_doc.page_content == expected_doc.page_content
+
+        assert "_id" in actual_doc.metadata
+        assert "_collection_name" in actual_doc.metadata
+
+        actual_doc.metadata.pop("_id", None)
+        actual_doc.metadata.pop("_collection_name", None)
+
+        assert actual_doc.metadata == expected_doc.metadata
