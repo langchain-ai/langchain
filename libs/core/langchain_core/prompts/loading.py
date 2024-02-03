@@ -6,8 +6,7 @@ from typing import Callable, Dict, Union
 
 import yaml
 
-from langchain_core.output_parsers.string import StrOutputParser
-from langchain_core.output_parsers.json import SimpleJsonOutputParser
+import langchain_core.output_parsers
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
@@ -73,15 +72,24 @@ def _load_examples(config: dict) -> dict:
     return config
 
 
+def _get_output_parsers_map() -> Dict[str, langchain_core.output_parsers.BaseOutputParser]:
+    parsers_map = {}
+    for parser in langchain_core.output_parsers.__all__:
+        parser_class = getattr(langchain_core.output_parsers, parser)
+        if hasattr(parser_class, '_type'):
+            if len(parser_class.__abstractmethods__) == 0:
+                parsers_map[parser_class()._type] = parser_class  # pylint: disable=abstract-class-instantiated
+    return parsers_map
+
+
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
     if "output_parser" in config and config["output_parser"]:
+        output_parsers_map = _get_output_parsers_map()
         _config = config.pop("output_parser")
         output_parser_type = _config.pop("_type")
-        if output_parser_type == "default":
-            output_parser = StrOutputParser(**_config)
-        elif output_parser_type == "simple_json_output_parser":
-            output_parser = SimpleJsonOutputParser(**_config)
+        if output_parser_type in output_parsers_map:
+            output_parser = output_parsers_map[output_parser_type](**_config)
         else:
             raise ValueError(f"Unsupported output parser {output_parser_type}")
         config["output_parser"] = output_parser
