@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
@@ -99,7 +99,7 @@ def create_extraction_chain_pydantic(
     """
 
     class PydanticSchema(BaseModel):
-        info: List[pydantic_schema]  # type: ignore
+        info: Union[List[pydantic_schema], pydantic_schema]  # type: ignore
 
     openai_schema = pydantic_schema.schema()
     openai_schema = _resolve_schema_references(
