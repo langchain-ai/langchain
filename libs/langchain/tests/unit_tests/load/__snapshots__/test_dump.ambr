@@ -191,7 +191,8 @@
                 }
               }
             }
-          ]
+          ],
+          "partial_variables": {}
         }
       }
     }
