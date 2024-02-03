@@ -1,5 +1,6 @@
 """Test MistralAI Chat API wrapper."""
 import os
+from typing import Any, AsyncGenerator, Generator
 from unittest.mock import patch
 
 import pytest
@@ -16,8 +17,10 @@ from langchain_core.messages import (
 from mistralai.models.chat_completion import (  # type: ignore[import]
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
-    ChatMessage as MistralChatMessage,
     DeltaMessage,
+)
+from mistralai.models.chat_completion import (
+    ChatMessage as MistralChatMessage,
 )
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
@@ -84,24 +87,24 @@ def _make_completion_response_from_token(token: str) -> ChatCompletionStreamResp
     )
 
 
-def mock_chat_stream(*args, **kwargs):
+def mock_chat_stream(*args: Any, **kwargs: Any) -> Generator:
     for token in ["Hello", " how", " can", " I", " help", "?"]:
         yield _make_completion_response_from_token(token)
 
 
-async def mock_chat_astream():
+async def mock_chat_astream() -> AsyncGenerator:
     for token in ["Hello", " how", " can", " I", " help", "?"]:
         yield _make_completion_response_from_token(token)
 
 
-async def mock_acompletion(*args, **kwargs):
+async def mock_acompletion(*args: Any, **kwargs: Any) -> AsyncGenerator:
     return mock_chat_astream()
 
 
 class MyCustomHandler(BaseCallbackHandler):
     last_token: str = ""
 
-    def on_llm_new_token(self, token: str, **kwargs) -> None:
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         self.last_token = token
 
 
