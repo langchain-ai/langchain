@@ -158,7 +158,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
 def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
     """Load chat prompt from config"""
     messages = config.pop("messages")
-    messages = [(m['type'], m['prompt']['template']) for m in messages]
+    messages = [(m["type"], m["prompt"]["template"]) for m in messages]
     return ChatPromptTemplate.from_messages(messages=messages)
 
 
