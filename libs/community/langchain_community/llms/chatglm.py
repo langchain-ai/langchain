@@ -110,7 +110,6 @@ class ChatGLM(LLM):
             parsed_response = response.json()
             text = parsed_response.get(
                 "choices", [{}])[0].get("message", "").get("content", "")
-
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
                 f"Error raised during decoding response from inference endpoint: {e}."
