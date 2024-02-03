@@ -24,7 +24,6 @@ from pinecone import Pinecone as PineconeClient  # type: ignore
 from langchain_pinecone._utilities import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    from langchain_core.documents import Document
     from pinecone import Index
 
 logger = logging.getLogger(__name__)
@@ -41,12 +40,14 @@ class Pinecone(VectorStore):
             from langchain_pinecone import Pinecone
             from langchain_openai import OpenAIEmbeddings
 
-            # The environment should be the one specified next to the API key
-            # in your Pinecone console
-            pinecone.init(api_key="***", environment="...")
-            index = pinecone.Index("langchain-demo")
             embeddings = OpenAIEmbeddings()
-            vectorstore = Pinecone(index, embeddings, "text")
+            index_name = "my-index"
+            namespace = "my-namespace"
+            vectorstore = Pinecone(
+                index_name=index_name,
+                embedding=embedding,
+                namespace=namespace,
+            )
     """
 
     def __init__(
