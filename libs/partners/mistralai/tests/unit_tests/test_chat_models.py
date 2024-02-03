@@ -92,13 +92,9 @@ def mock_chat_stream(*args: Any, **kwargs: Any) -> Generator:
         yield _make_completion_response_from_token(token)
 
 
-async def mock_chat_astream() -> AsyncGenerator:
+async def mock_chat_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
     for token in ["Hello", " how", " can", " I", " help", "?"]:
         yield _make_completion_response_from_token(token)
-
-
-async def mock_acompletion(*args: Any, **kwargs: Any) -> AsyncGenerator:
-    return mock_chat_astream()
 
 
 class MyCustomHandler(BaseCallbackHandler):
@@ -108,10 +104,7 @@ class MyCustomHandler(BaseCallbackHandler):
         self.last_token = token
 
 
-@patch(
-    "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
-    new=mock_chat_stream,
-)
+@patch("mistralai.client.MistralClient.chat_stream", new=mock_chat_stream)
 def test_stream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatMistralAI(callbacks=[callback])
@@ -119,10 +112,7 @@ def test_stream_with_callback() -> None:
         assert callback.last_token == token.content
 
 
-@patch(
-    "langchain_mistralai.chat_models.acompletion_with_retry",
-    new=mock_acompletion,
-)
+@patch("mistralai.async_client.MistralAsyncClient.chat_stream", new=mock_chat_astream)
 async def test_astream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatMistralAI(callbacks=[callback])
