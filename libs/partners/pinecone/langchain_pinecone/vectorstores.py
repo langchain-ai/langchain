@@ -58,7 +58,7 @@ class Pinecone(VectorStore):
         # (keeping param for backwards compatibility)
         index: Optional[Any] = None,
         embedding: Optional[Embeddings] = None,
-        text_key: Optional[str] = None,
+        text_key: Optional[str] = "text",
         namespace: Optional[str] = None,
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
         *,
