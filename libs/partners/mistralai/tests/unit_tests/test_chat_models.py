@@ -17,10 +17,8 @@ from langchain_core.messages import (
 from mistralai.models.chat_completion import (  # type: ignore[import]
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
-    DeltaMessage,
-)
-from mistralai.models.chat_completion import (
     ChatMessage as MistralChatMessage,
+    DeltaMessage,
 )
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
