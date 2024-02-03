@@ -47,9 +47,7 @@ class BasePromptTemplate(
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
-    partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
-        default_factory=dict
-    )
+    partial_variables: Mapping[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -143,8 +141,7 @@ class BasePromptTemplate(
     def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
         # Get partial params:
         partial_kwargs = {
-            k: v if isinstance(v, str) else v()
-            for k, v in self.partial_variables.items()
+            k: v if not callable(v) else v() for k, v in self.partial_variables.items()
         }
         return {**partial_kwargs, **kwargs}
 
