@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import pytest
@@ -283,7 +283,7 @@ def test_qdrant_similarity_search_with_relevance_scores(
     )
 
 
-def assert_documents_equals(actual: list[Document], expected: list[Document]):
+def assert_documents_equals(actual: List[Document], expected: List[Document]):
     assert len(actual) == len(expected)
 
     for actual_doc, expected_doc in zip(actual, expected):
