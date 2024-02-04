@@ -39,6 +39,7 @@ EXPECTED_ALL = [
     "LlamaEdgeChatService",
     "GPTRouter",
     "ChatZhipuAI",
+    "ChatPerplexity",
 ]
 
 

@@ -16,19 +16,25 @@ from typing import (
 )
 
 import requests
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import Field, root_validator
-from langchain.schema import (
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    generate_from_stream,
+)
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
 )
-from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
-from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatResult,
+    GenerationChunk,
+)
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -74,7 +80,7 @@ class ChatPerplexity(BaseChatModel):
     """Whether to stream the results or not."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    model_name: str = Field(default="mistral-7b-instruct", alias="model")
+    model: str = Field(default="pplx-70b-online", alias="model")
 
     class Config:
         """Configuration for this pydantic object."""
@@ -252,13 +258,40 @@ class ChatPerplexity(BaseChatModel):
         if run_manager:
             run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
+        prompt = self._convert_messages_to_prompt(
+            messages,
+        )
+        params: Dict[str, Any] = {
+            "prompt": prompt,
+            **self._default_params,
+            **kwargs,
+        }
+        if stop:
+            params["stop_sequences"] = stop
+        response = self.client.completions.create(**params)
+        completion = response.completion
+        message = AIMessage(content=completion)
+        return ChatResult(generations=[ChatGeneration(message=message)])
+
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
         pplx_creds: Dict[str, Any] = {
             "api_key": self.pplx_api_key,
             "api_base": "https://api.perplexity.ai",
-            "model": self.model_name,
+            "model": self.model,
         }
         return {**pplx_creds, **self._default_params}
 
@@ -266,9 +299,3 @@ class ChatPerplexity(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "perplexitychat"
-
-    def __init__(self, model_name, temperature, verbose, **kwargs):
-        super().__init__(**kwargs)
-        self.model_name = model_name
-        self.temperature = temperature
-        self.verbose = verbose
