@@ -370,3 +370,15 @@ class UpstashVectorStore(VectorStore):
                 "Either ids or delete_all should be provided")
 
         return None
+
+    def info(self):
+        """Get statistics about the index.
+
+        Returns:
+            - total number of vectors
+            - total number of vectors waiting to be indexed
+            - total size of the index on disk in bytes
+            - dimension count for the index
+            - similarity function selected for the index
+        """
+        return self._index.info()
