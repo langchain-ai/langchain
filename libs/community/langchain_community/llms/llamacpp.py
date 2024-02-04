@@ -11,8 +11,7 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import build_extra_kwargs
 
-if TYPE_CHECKING:
-    from llama_cpp import LlamaGrammar
+from llama_cpp import LlamaGrammar
 
 logger = logging.getLogger(__name__)
 
