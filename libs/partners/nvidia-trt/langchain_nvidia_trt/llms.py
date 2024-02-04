@@ -398,7 +398,7 @@ class StreamingResponseGenerator(queue.Queue):
         val = self.get()
         if val is None or val in self._stop_words:
             self.client.stop_stream(
-                "tensorrt_llm", self.request_id, signal=not self._batch
+                self.client.model_name, self.request_id, signal=not self._batch
             )
             raise StopIteration()
         return val
