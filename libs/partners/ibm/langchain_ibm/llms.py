@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
-from ibm_watsonx_ai.foundation_models import ModelInference
+from ibm_watsonx_ai.foundation_models import ModelInference  # type: ignore
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
