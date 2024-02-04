@@ -16,22 +16,6 @@ class YouRetriever(BaseRetriever, YouSearchAPIWrapper):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        import requests
-
-        headers = {"X-API-Key": self.ydc_api_key}
-        if self.endpoint_type == "search":
-            return self.results(
-                query=query,
-                num_web_results=self.num_web_results,
-                safesearch=self.safesearch,
-                country=self.country,
-            )
-        elif self.endpoint_type == "snippet":
-            results = requests.get(
-                f"https://api.ydc-index.io/snippet_search?query={query}",
-                headers=headers,
-            ).json()
-            print(results)
-            return [Document(page_content=snippet) for snippet in results]
-        else:
-            raise RuntimeError(f"Invalid endpoint type provided {self.endpoint_type}")
+        return self.results(
+            self,
+        )

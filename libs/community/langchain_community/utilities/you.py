@@ -3,7 +3,7 @@
 In order to set this up, follow instructions at:
 """
 import json
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import aiohttp
 import requests
@@ -75,14 +75,13 @@ class YouSearchAPIWrapper(BaseModel):
     """
 
     ydc_api_key: Optional[str] = None
-    num_web_results: Optional[int] = 5
-    safesearch: Optional[str] = "moderate"
+    num_web_results: Optional[int] = None
+    safesearch: Optional[str] = None
     country: Optional[str] = None
     k: Optional[int] = None
     n_snippets_per_hit: Optional[int] = None
-    endpoint_type: str = "search"
-    if endpoint_type == "web" or endpoint_type == "snippet":
-        endpoint_type = "search"
+    # @todo deprecate `snippet`, not part of API
+    endpoint_type: Literal["search", "news", "rag", "snippet"] = "search"
     # should deprecate n_hits
     n_hits: Optional[int] = None
 
@@ -103,6 +102,12 @@ class YouSearchAPIWrapper(BaseModel):
             List[YouDocument]: A dictionary of parsed results
         """
 
+        # return news results
+        if (self.endpoint_type == 'news'):
+            return [Document(
+                page_content=result['description'], 
+                metadata=result) for result in raw_search_results["news"]["results"]]
+        
         docs = []
         for hit in raw_search_results["hits"]:
             n_snippets_per_hit = self.n_snippets_per_hit or len(hit["snippets"])
@@ -125,9 +130,7 @@ class YouSearchAPIWrapper(BaseModel):
     def raw_results(
         self,
         query: str,
-        num_web_results: Optional[int] = None,
-        safesearch: Optional[str] = None,
-        country: Optional[str] = None,
+        **kwargs: Any,
     ) -> YouAPIOutput:
         """Run query through you.com Search and return hits.
 
@@ -142,10 +145,11 @@ class YouSearchAPIWrapper(BaseModel):
         headers = {"X-API-Key": self.ydc_api_key}
         params = {
             "query": query,
-            "num_web_results": num_web_results or self.num_web_results,
-            "safesearch": safesearch or self.safesearch,
-            "country": country or self.country,
+            **{key: value for key, value in kwargs.items() if value is not None},
         }
+        # @todo deprecate `snippet`, not part of API
+        if self.endpoint_type == "snippet":
+            self.endpoint_type = "search"
         response = requests.get(
             # type: ignore
             f"{YOU_API_URL}/{self.endpoint_type}",
@@ -158,17 +162,13 @@ class YouSearchAPIWrapper(BaseModel):
     def results(
         self,
         query: str,
-        num_web_results: Optional[int] = num_web_results,
-        safesearch: Optional[str] = safesearch,
-        country: Optional[str] = country,
+        **kwargs: Any,
     ) -> List[YouDocument]:
         """Run query through you.com Search and parses results into Documents."""
 
         raw_search_results = self.raw_results(
             query,
-            num_web_results=num_web_results,
-            safesearch=safesearch,
-            country=country,
+            **{key: value for key, value in kwargs.items() if value is not None},
         )
         return self._parse_results(raw_search_results)
 
