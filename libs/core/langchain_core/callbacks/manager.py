@@ -212,10 +212,10 @@ def shielded(func: Func) -> Func:
     """
 
     @functools.wraps(func)
-    async def wrapped(*args, **kwargs):
+    async def wrapped(*args: Any, **kwargs: Any) -> Any:
         return await asyncio.shield(func(*args, **kwargs))
 
-    return wrapped
+    return cast(Func, wrapped)
 
 
 def handle_event(
