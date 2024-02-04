@@ -92,7 +92,6 @@ jobs:
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
         run: |
-          pip freeze
           make lint_package
 
       - name: Install test dependencies
