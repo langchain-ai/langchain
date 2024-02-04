@@ -74,6 +74,26 @@ async def test_vertexai_agenerate(model_name: str) -> None:
     # xfail: content is not same right now
     # assert sync_generation == async_generation
 
+@pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
+async def test_vertexai_agenerate_stream_enabled(model_name: str) -> None:
+    model = ChatVertexAI(temperature=0, model_name=model_name)
+    message = HumanMessage(content="Hello")
+    response = await model.agenerate([[message]], stream=True)
+    assert isinstance(response, LLMResult)
+    assert isinstance(response.generations[0][0].message, AIMessage)  # type: ignore
+
+    sync_response = model.generate([[message]], stream=True)
+    sync_generation = cast(ChatGeneration, sync_response.generations[0][0])
+    async_generation = cast(ChatGeneration, response.generations[0][0])
+
+    # assert some properties to make debugging easier
+
+    # xfail: this is not equivalent with temp=0 right now
+    # assert sync_generation.message.content == async_generation.message.content
+    assert sync_generation.generation_info == async_generation.generation_info
+
+    # xfail: content is not same right now
+    # assert sync_generation == async_generation
 
 @pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
 def test_vertexai_stream(model_name: str) -> None:
@@ -82,6 +102,16 @@ def test_vertexai_stream(model_name: str) -> None:
 
     sync_response = model.stream([message])
     for chunk in sync_response:
+        assert isinstance(chunk, AIMessageChunk)
+
+
+@pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
+async def test_vertexai_astream(model_name: str) -> None:
+    model = ChatVertexAI(temperature=0, model_name=model_name)
+    message = HumanMessage(content="Hello")
+
+    async_response = model.astream([message])
+    async for chunk in async_response:
         assert isinstance(chunk, AIMessageChunk)
 
 

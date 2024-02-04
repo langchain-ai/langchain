@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import Executor
-from typing import Any, ClassVar, Dict, Iterator, List, Optional, Union
+from typing import Any, AsyncIterator, ClassVar, Dict, Iterator, List, Optional, Union
 
 import vertexai  # type: ignore[import-untyped]
 from google.api_core.client_options import ClientOptions
@@ -87,6 +87,7 @@ def _completion_with_retry(
 async def _acompletion_with_retry(
     llm: VertexAI,
     prompt: str,
+    stream: bool = False,
     is_gemini: bool = False,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
@@ -103,10 +104,14 @@ async def _acompletion_with_retry(
         if is_gemini:
             return await llm.client.generate_content_async(
                 prompt,
+                stream=stream,
                 generation_config=kwargs,
                 safety_settings=kwargs.pop("safety_settings", None),
             )
-        return await llm.client.predict_async(prompt, **kwargs)
+        else:
+            if stream:
+                return llm.client.predict_streaming_async(prompt, **kwargs)
+            return await llm.client.predict_async(prompt, **kwargs)
 
     return await _acompletion_with_retry_inner(prompt, is_gemini, **kwargs)
 
@@ -403,21 +408,46 @@ class VertexAI(_VertexAICommon, BaseLLM):
             run_manager=run_manager,
             **params,
         ):
-            # Gemini models return GenerationResponse even when streaming, which has a
-            # candidates field.
-            stream_resp = (
-                stream_resp
-                if isinstance(stream_resp, TextGenerationResponse)
-                else stream_resp.candidates[0]
+            for chunk in self._get_stream_chunk(stream_resp, run_manager):
+                yield chunk
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        params = self._prepare_params(stop=stop, stream=True, **kwargs)
+        async for stream_resp in await _acompletion_with_retry(
+            self,
+            prompt,
+            stream=True,
+            is_gemini=self._is_gemini_model,
+            run_manager=run_manager,
+            **params,
+        ):
+            for chunk in self._get_stream_chunk(stream_resp, run_manager):
+                yield chunk
+
+    def _get_stream_chunk(
+        self, stream_resp: Any, run_manager: Optional[CallbackManagerForLLMRun] = None
+    ):
+        # Gemini models return GenerationResponse even when streaming, which has a
+        # candidates field.
+        stream_resp = (
+            stream_resp
+            if isinstance(stream_resp, TextGenerationResponse)
+            else stream_resp.candidates[0]
+        )
+        chunk = self._response_to_generation(stream_resp, stream=True)
+        yield chunk
+        if run_manager:
+            run_manager.on_llm_new_token(
+                chunk.text,
+                chunk=chunk,
+                verbose=self.verbose,
             )
-            chunk = self._response_to_generation(stream_resp, stream=True)
-            yield chunk
-            if run_manager:
-                run_manager.on_llm_new_token(
-                    chunk.text,
-                    chunk=chunk,
-                    verbose=self.verbose,
-                )
 
 
 class VertexAIModelGarden(_VertexAIBase, BaseLLM):

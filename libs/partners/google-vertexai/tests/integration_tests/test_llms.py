@@ -95,6 +95,20 @@ def test_stream(model_name: str) -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.parametrize(
+    "model_name",
+    model_names_to_test_with_default,
+)
+async def test_astream(model_name: str) -> None:
+    llm = (
+        VertexAI(temperature=0, model_name=model_name)
+        if model_name
+        else VertexAI(temperature=0)
+    )
+    async for token in llm.astream("I'm Pickle Rick"):
+        assert isinstance(token, str)
+
+
 async def test_vertex_consistency() -> None:
     llm = VertexAI(temperature=0)
     output = llm.generate(["Please say foo:"])

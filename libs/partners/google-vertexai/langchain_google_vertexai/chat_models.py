@@ -6,7 +6,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional, Union, cast
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Type, Union, cast
 from urllib.parse import urlparse
 
 import requests
@@ -18,6 +18,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
+    agenerate_from_stream,
     generate_from_stream,
 )
 from langchain_core.messages import (
@@ -29,7 +30,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.tools import BaseTool
 from vertexai.language_models import (  # type: ignore
     ChatMessage,
     ChatModel,
@@ -44,6 +46,9 @@ from vertexai.preview.generative_models import (  # type: ignore
     GenerativeModel,
     Image,
     Part,
+)
+from vertexai.preview.generative_models import (
+    Tool as VertexTool,
 )
 
 from langchain_google_vertexai._utils import (
@@ -361,17 +366,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             msg_params["candidate_count"] = params.pop("candidate_count")
 
         if self._is_gemini_model:
-            history_gemini = _parse_chat_history_gemini(
-                messages,
-                project=self.project,
-                convert_system_message_to_human=self.convert_system_message_to_human,
-            )
-            message = history_gemini.pop()
-            chat = self.client.start_chat(history=history_gemini)
-
             # set param to `functions` until core tool/function calling implemented
             raw_tools = params.pop("functions") if "functions" in params else None
-            tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
+            chat, message, tools = self._start_gemini_chat(
+                messages=messages, raw_tools=raw_tools
+            )
             response = chat.send_message(
                 message,
                 generation_config=params,
@@ -424,8 +423,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             ValueError: if the last message in the list is not from human.
         """
         if "stream" in kwargs:
-            kwargs.pop("stream")
-            logger.warning("ChatVertexAI does not currently support async streaming.")
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
 
         params = self._prepare_params(stop=stop, **kwargs)
         safety_settings = kwargs.pop("safety_settings", None)
@@ -434,16 +435,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             msg_params["candidate_count"] = params.pop("candidate_count")
 
         if self._is_gemini_model:
-            history_gemini = _parse_chat_history_gemini(
-                messages,
-                project=self.project,
-                convert_system_message_to_human=self.convert_system_message_to_human,
-            )
-            message = history_gemini.pop()
-            chat = self.client.start_chat(history=history_gemini)
             # set param to `functions` until core tool/function calling implemented
             raw_tools = params.pop("functions") if "functions" in params else None
-            tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
+            chat, message, tools = self._start_gemini_chat(
+                messages=messages, raw_tools=raw_tools
+            )
             response = await chat.send_message_async(
                 message,
                 generation_config=params,
@@ -483,16 +479,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         params = self._prepare_params(stop=stop, stream=True, **kwargs)
         if self._is_gemini_model:
-            history_gemini = _parse_chat_history_gemini(
-                messages,
-                project=self.project,
-                convert_system_message_to_human=self.convert_system_message_to_human,
-            )
-            message = history_gemini.pop()
-            chat = self.client.start_chat(history=history_gemini)
             # set param to `functions` until core tool/function calling implemented
             raw_tools = params.pop("functions") if "functions" in params else None
-            tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
+            chat, message, tools = self._start_gemini_chat(
+                messages=messages, raw_tools=raw_tools
+            )
             responses = chat.send_message(
                 message, stream=True, generation_config=params, tools=tools
             )
@@ -514,13 +505,80 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
                 params["examples"] = _parse_examples(examples)
             chat = self._start_chat(history, **params)
             responses = chat.send_message_streaming(question.content, **params)
-        for response in responses:
-            if run_manager:
-                run_manager.on_llm_new_token(response.text)
-            yield ChatGenerationChunk(
-                message=AIMessageChunk(content=response.text),
-                generation_info=get_generation_info(response, self._is_gemini_model),
+            for response in responses:
+                if run_manager:
+                    run_manager.on_llm_new_token(response.text)
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(content=response.text),
+                    generation_info=get_generation_info(
+                        response, self._is_gemini_model
+                    ),
+                )
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        if "stream" in kwargs:
+            kwargs.pop("stream")
+        params = self._prepare_params(stop=stop, stream=True, **kwargs)
+        if self._is_gemini_model:
+            # set param to `functions` until core tool/function calling implemented
+            raw_tools = params.pop("functions") if "functions" in params else None
+            chat, message, tools = self._start_gemini_chat(
+                messages=messages, raw_tools=raw_tools
             )
+            async for response in await chat.send_message_async(
+                message,
+                generation_config=params,
+                tools=tools,
+                stream=True,
+            ):
+                message = _parse_response_candidate(response.candidates[0])
+                if run_manager:
+                    run_manager.on_llm_new_token(message.content)
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=message.content,
+                        additional_kwargs=message.additional_kwargs,
+                    )
+                )
+        else:
+            question = _get_question(messages)
+            history = _parse_chat_history(messages[:-1])
+            examples = kwargs.get("examples", None)
+            if examples:
+                params["examples"] = _parse_examples(examples)
+            chat = self._start_chat(history, **params)
+            async for response in chat.send_message_streaming_async(
+                question.content, **params
+            ):
+                if run_manager:
+                    run_manager.on_llm_new_token(response.text)
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(content=response.text),
+                    generation_info=get_generation_info(
+                        response, self._is_gemini_model
+                    ),
+                )
+
+    def _start_gemini_chat(
+        self,
+        messages: List[BaseMessage],
+        raw_tools: List[Union[BaseTool, Type[BaseModel]]],
+    ) -> tuple[ChatSession, Content, VertexTool]:
+        history_gemini = _parse_chat_history_gemini(
+            messages,
+            project=self.project,
+            convert_system_message_to_human=self.convert_system_message_to_human,
+        )
+        message = history_gemini.pop()
+        chat = self.client.start_chat(history=history_gemini)
+        tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
+        return chat, message, tools
 
     def _start_chat(
         self, history: _ChatHistory, **kwargs: Any
