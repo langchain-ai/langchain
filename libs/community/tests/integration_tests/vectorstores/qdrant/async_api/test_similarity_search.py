@@ -11,6 +11,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 from tests.integration_tests.vectorstores.qdrant.async_api.fixtures import (
     qdrant_locations,
 )
+from tests.integration_tests.vectorstores.qdrant.common import assert_documents_equals
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -37,7 +38,7 @@ async def test_qdrant_similarity_search(
         location=qdrant_location,
     )
     output = await docsearch.asimilarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert_documents_equals(output, [Document(page_content="foo")])
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])

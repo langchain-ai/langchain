@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pytest
@@ -8,6 +8,7 @@ from langchain_community.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
+from tests.integration_tests.vectorstores.qdrant.common import assert_documents_equals
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -281,18 +282,3 @@ def test_qdrant_similarity_search_with_relevance_scores(
     assert all(
         (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
     )
-
-
-def assert_documents_equals(actual: List[Document], expected: List[Document]):
-    assert len(actual) == len(expected)
-
-    for actual_doc, expected_doc in zip(actual, expected):
-        assert actual_doc.page_content == expected_doc.page_content
-
-        assert "_id" in actual_doc.metadata
-        assert "_collection_name" in actual_doc.metadata
-
-        actual_doc.metadata.pop("_id")
-        actual_doc.metadata.pop("_collection_name")
-
-        assert actual_doc.metadata == expected_doc.metadata
