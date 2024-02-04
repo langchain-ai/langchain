@@ -39,14 +39,21 @@ class SchemaAnnotationError(TypeError):
 
 
 def _create_subset_model(
-    name: str, model: BaseModel, field_names: list
+    name: str, model: Type[BaseModel], field_names: list
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
     for field_name in field_names:
         field = model.__fields__[field_name]
-        fields[field_name] = (field.outer_type_, field.field_info)
-    return create_model(name, **fields)  # type: ignore
+        t = (
+            # this isn't perfect but should work for most functions
+            field.outer_type_
+            if field.required and not field.allow_none
+            else Optional[field.outer_type_]
+        )
+        fields[field_name] = (t, field.field_info)
+    rtn = create_model(name, **fields)  # type: ignore
+    return rtn
 
 
 def _get_filtered_args(
@@ -764,7 +771,8 @@ class StructuredTool(BaseTool):
         description = f"{name}{sig} - {description.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
-            _args_schema = create_schema_from_function(f"{name}Schema", source_function)
+            # schema name is appended within function
+            _args_schema = create_schema_from_function(name, source_function)
         return cls(
             name=name,
             func=func,
