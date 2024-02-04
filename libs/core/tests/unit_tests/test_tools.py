@@ -30,7 +30,7 @@ def test_unnamed_decorator() -> None:
     def search_api(
         query: str,
         n: int = Field(3, description="result count"),
-    ) -> str:
+    ) -> List[str]:
         """Search the API for the query by n count."""
         return ["API result"] * n
 
