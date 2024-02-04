@@ -11,7 +11,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -27,15 +27,17 @@ def test_unnamed_decorator() -> None:
     """Test functionality with unnamed decorator."""
 
     @tool
-    def search_api(query: str) -> str:
-        """Search the API for the query."""
-        return "API result"
+    def search_api(
+        query: str,
+        n: int = Field(3, description="result count"),
+    ) -> str:
+        """Search the API for the query by n count."""
+        return ["API result"] * n
 
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert not search_api.return_direct
-    assert search_api("test") == "API result"
-
+    assert search_api("test") == ["API result"] * 3
 
 class _MockSchema(BaseModel):
     arg1: int
