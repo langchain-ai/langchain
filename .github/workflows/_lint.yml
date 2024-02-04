@@ -105,7 +105,7 @@ jobs:
         # It doesn't matter how you change it, any change will cause a cache-bust.
         working-directory: ${{ inputs.working-directory }}
         run: |
-          poetry install --with test
+          poetry install --with test,test_integration
 
       - name: Get .mypy_cache_test to speed up mypy
         uses: actions/cache@v3
