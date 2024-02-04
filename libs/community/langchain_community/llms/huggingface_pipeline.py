@@ -191,16 +191,18 @@ class HuggingFacePipeline(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        pipeline_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> LLMResult:
         # List to hold all results
         text_generations: List[str] = []
+        pipeline_kwargs = pipeline_kwargs or {}
 
         for i in range(0, len(prompts), self.batch_size):
             batch_prompts = prompts[i : i + self.batch_size]
 
             # Process batch of prompts
-            responses = self.pipeline(batch_prompts)
+            responses = self.pipeline(batch_prompts, **pipeline_kwargs)
 
             # Process each response in the batch
             for j, response in enumerate(responses):
