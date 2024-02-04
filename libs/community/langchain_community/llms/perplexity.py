@@ -29,8 +29,8 @@ from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
+from langchain_core.pydantic_v1 import root_validator
 from openai import OpenAI
-from pydantic import root_validator
 
 logger = logging.getLogger(__name__)
 
