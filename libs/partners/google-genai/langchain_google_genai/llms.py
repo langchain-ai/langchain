@@ -299,6 +299,7 @@ class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
             is_gemini=True,
             run_manager=run_manager,
             generation_config=generation_config,
+            safety_settings=kwargs.pop("safety_settings", None),
             **kwargs,
         ):
             chunk = GenerationChunk(text=stream_resp.text)
