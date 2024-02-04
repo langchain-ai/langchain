@@ -317,9 +317,9 @@ class ChatMistralAI(BaseChatModel):
                 continue
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
             if run_manager:
                 run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
+            yield ChatGenerationChunk(message=chunk)
 
     async def _astream(
         self,
@@ -342,9 +342,9 @@ class ChatMistralAI(BaseChatModel):
                 continue
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
             if run_manager:
                 await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
+            yield ChatGenerationChunk(message=chunk)
 
     async def _agenerate(
         self,
