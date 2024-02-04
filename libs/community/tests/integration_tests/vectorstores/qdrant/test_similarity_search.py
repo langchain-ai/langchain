@@ -292,7 +292,7 @@ def assert_documents_equals(actual: List[Document], expected: List[Document]):
         assert "_id" in actual_doc.metadata
         assert "_collection_name" in actual_doc.metadata
 
-        actual_doc.metadata.pop("_id", None)
-        actual_doc.metadata.pop("_collection_name", None)
+        actual_doc.metadata.pop("_id")
+        actual_doc.metadata.pop("_collection_name")
 
         assert actual_doc.metadata == expected_doc.metadata
