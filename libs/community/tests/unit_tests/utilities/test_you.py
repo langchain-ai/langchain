@@ -26,6 +26,7 @@ MOCK_RESPONSE_RAW = {
     "latency": 0.16670823097229004,
 }
 
+
 def generate_parsed_metadata(num=0):
     """generate metadata for testing"""
     hit = MOCK_RESPONSE_RAW["hits"][num]
@@ -36,22 +37,21 @@ def generate_parsed_metadata(num=0):
         "description": hit["description"],
     }
 
+
 # Mocks of parsed metadata
 MOCK_PARSED_METADATA_0 = generate_parsed_metadata()
 MOCK_PARSED_METADATA_1 = generate_parsed_metadata(1)
+
 
 def generate_parsed_output(num=0):
     """generate parsed output for testing"""
     hit = MOCK_RESPONSE_RAW["hits"][num]
     output = []
-    for snippit in hit['snippets']:
-        doc = Document(
-            page_content=snippit,
-            metadata=generate_parsed_metadata(num)
-        )
+    for snippit in hit["snippets"]:
+        doc = Document(page_content=snippit, metadata=generate_parsed_metadata(num))
         output.append(doc)
     return output
-    
+
 
 # Mock results after parsing
 MOCK_PARSED_OUTPUT = generate_parsed_output()
@@ -63,44 +63,39 @@ LIMITED_PARSED_OUTPUT.append(generate_parsed_output(1)[0])
 
 # copied from you api docs
 NEWS_RESPONSE_RAW = {
-  "news": {
-    "results": [
-      {
-        "age": "18 hours ago",
-        "breaking": True,
-        "description": "Search on YDC for the news",
-        "meta_url": {
-          "hostname": "www.reuters.com",
-          "netloc": "reuters.com",
-          "path": "› 2023  › 10  › 18  › politics  › inflation  › index.html",
-          "scheme": "https"
-        },
-        "page_age": "2 days",
-        "page_fetched": "2023-10-12T23:00:00Z",
-        "thumbnail": {
-          "original": "https://reuters.com/news.jpg"
-        },
-        "title": "Breaking News about the World's Greatest Search Engine!",
-        "type": "news",
-        "url": "https://news.you.com"
-      }
-    ]
-  }
+    "news": {
+        "results": [
+            {
+                "age": "18 hours ago",
+                "breaking": True,
+                "description": "Search on YDC for the news",
+                "meta_url": {
+                    "hostname": "www.reuters.com",
+                    "netloc": "reuters.com",
+                    "path": "› 2023  › 10  › 18  › politics  › inflation  › index.html",
+                    "scheme": "https",
+                },
+                "page_age": "2 days",
+                "page_fetched": "2023-10-12T23:00:00Z",
+                "thumbnail": {"original": "https://reuters.com/news.jpg"},
+                "title": "Breaking News about the World's Greatest Search Engine!",
+                "type": "news",
+                "url": "https://news.you.com",
+            }
+        ]
+    }
 }
 
 NEWS_RESPONSE_PARSED = [
-    Document(
-        page_content=result['description'],
-        metadata=result
-    ) for result in NEWS_RESPONSE_RAW["news"]["results"]]
+    Document(page_content=result["description"], metadata=result)
+    for result in NEWS_RESPONSE_RAW["news"]["results"]
+]
+
 
 @responses.activate
 def test_raw_results() -> None:
     responses.add(
-        responses.GET,
-        f"{TEST_ENDPOINT}/search",
-        json=MOCK_RESPONSE_RAW,
-        status=200
+        responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
     )
 
     query = "Test query text"
@@ -110,13 +105,11 @@ def test_raw_results() -> None:
     expected_result = MOCK_RESPONSE_RAW
     assert raw_results == expected_result
 
+
 @responses.activate
 def test_raw_results_defaults() -> None:
     responses.add(
-        responses.GET,
-        f"{TEST_ENDPOINT}/search",
-        json=MOCK_RESPONSE_RAW,
-        status=200
+        responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
     )
 
     query = "Test query text"
@@ -126,18 +119,16 @@ def test_raw_results_defaults() -> None:
     expected_result = MOCK_RESPONSE_RAW
     assert raw_results == expected_result
 
+
 @responses.activate
 def test_raw_results_news() -> None:
     responses.add(
-        responses.GET,
-        f"{TEST_ENDPOINT}/news",
-        json=NEWS_RESPONSE_RAW,
-        status=200
+        responses.GET, f"{TEST_ENDPOINT}/news", json=NEWS_RESPONSE_RAW, status=200
     )
 
     query = "Test news text"
     # ensure limit on number of docs returned
-    you_wrapper = YouSearchAPIWrapper(endpoint_type='news')
+    you_wrapper = YouSearchAPIWrapper(endpoint_type="news")
     raw_results = you_wrapper.raw_results(query)
     expected_result = NEWS_RESPONSE_RAW
     assert raw_results == expected_result
@@ -146,10 +137,7 @@ def test_raw_results_news() -> None:
 @responses.activate
 def test_results() -> None:
     responses.add(
-        responses.GET,
-        f"{TEST_ENDPOINT}/search",
-        json=MOCK_RESPONSE_RAW,
-        status=200
+        responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
     )
 
     query = "Test query text"
@@ -158,13 +146,11 @@ def test_results() -> None:
     expected_result = MOCK_PARSED_OUTPUT
     assert results == expected_result
 
+
 @responses.activate
 def test_results_max_docs() -> None:
     responses.add(
-        responses.GET,
-        f"{TEST_ENDPOINT}/search",
-        json=MOCK_RESPONSE_RAW,
-        status=200
+        responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
     )
 
     query = "Test query text"
@@ -173,13 +159,11 @@ def test_results_max_docs() -> None:
     expected_result = generate_parsed_output()
     assert results == expected_result
 
+
 @responses.activate
 def test_results_limit_snippets() -> None:
     responses.add(
-        responses.GET,
-        f"{TEST_ENDPOINT}/search",
-        json=MOCK_RESPONSE_RAW,
-        status=200
+        responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
     )
 
     query = "Test query text"
@@ -188,20 +172,19 @@ def test_results_limit_snippets() -> None:
     expected_result = LIMITED_PARSED_OUTPUT
     assert results == expected_result
 
+
 @responses.activate
 def test_results_news() -> None:
     responses.add(
-        responses.GET,
-        f"{TEST_ENDPOINT}/news",
-        json=NEWS_RESPONSE_RAW,
-        status=200
+        responses.GET, f"{TEST_ENDPOINT}/news", json=NEWS_RESPONSE_RAW, status=200
     )
 
     query = "Test news text"
     # ensure limit on number of docs returned
-    you_wrapper = YouSearchAPIWrapper(endpoint_type='news')
+    you_wrapper = YouSearchAPIWrapper(endpoint_type="news")
     raw_results = you_wrapper.results(query)
     expected_result = NEWS_RESPONSE_PARSED
     assert raw_results == expected_result
+
 
 # @todo test async methods

@@ -20,6 +20,4 @@ class YouRetriever(BaseRetriever, YouSearchAPIWrapper):
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
-        return self.results(
-            query, run_manager=run_manager.get_child(), **kwargs
-        )
+        return self.results(query, run_manager=run_manager.get_child(), **kwargs)

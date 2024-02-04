@@ -16,10 +16,7 @@ class TestYouRetriever:
     @responses.activate
     def test_get_relevant_documents(self) -> None:
         responses.add(
-            responses.GET, 
-            f"{TEST_ENDPOINT}/search", 
-            json=MOCK_RESPONSE_RAW, 
-            status=200
+            responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
         you_wrapper = YouRetriever()
@@ -30,10 +27,7 @@ class TestYouRetriever:
     @responses.activate
     def test_invoke(self) -> None:
         responses.add(
-            responses.GET,
-            f"{TEST_ENDPOINT}/search",
-            json=MOCK_RESPONSE_RAW,
-            status=200
+            responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
         you_wrapper = YouRetriever()
@@ -44,10 +38,7 @@ class TestYouRetriever:
     @responses.activate
     def test_invoke_max_docs(self) -> None:
         responses.add(
-            responses.GET,
-            f"{TEST_ENDPOINT}/search",
-            json=MOCK_RESPONSE_RAW,
-            status=200
+            responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
         you_wrapper = YouRetriever(k=2)
@@ -58,10 +49,7 @@ class TestYouRetriever:
     @responses.activate
     def test_invoke_limit_snippets(self) -> None:
         responses.add(
-            responses.GET,
-            f"{TEST_ENDPOINT}/search",
-            json=MOCK_RESPONSE_RAW,
-            status=200
+            responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
 
         query = "Test query text"
@@ -73,15 +61,12 @@ class TestYouRetriever:
     @responses.activate
     def test_invoke_news(self) -> None:
         responses.add(
-            responses.GET,
-            f"{TEST_ENDPOINT}/news",
-            json=NEWS_RESPONSE_RAW,
-            status=200
+            responses.GET, f"{TEST_ENDPOINT}/news", json=NEWS_RESPONSE_RAW, status=200
         )
 
         query = "Test news text"
         # ensure limit on number of docs returned
-        you_wrapper = YouRetriever(endpoint_type='news')
+        you_wrapper = YouRetriever(endpoint_type="news")
         results = you_wrapper.results(query)
         expected_result = NEWS_RESPONSE_PARSED
         assert results == expected_result

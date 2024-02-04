@@ -68,7 +68,7 @@ class YouSearchAPIWrapper(BaseModel):
     n_snippets_per_hit: int, optional
         limit the number of snippets returned per hit
     endpoint_type: str, optional
-        you.com endpoints: search, news, rag; 
+        you.com endpoints: search, news, rag;
         `web` and `snippet` alias `search`
         `rag` returns `{'message': 'Forbidden'}`
         @todo `news` endpoint
@@ -103,11 +103,12 @@ class YouSearchAPIWrapper(BaseModel):
         """
 
         # return news results
-        if (self.endpoint_type == 'news'):
-            return [Document(
-                page_content=result['description'], 
-                metadata=result) for result in raw_search_results["news"]["results"]]
-        
+        if self.endpoint_type == "news":
+            return [
+                Document(page_content=result["description"], metadata=result)
+                for result in raw_search_results["news"]["results"]
+            ]
+
         docs = []
         for hit in raw_search_results["hits"]:
             n_snippets_per_hit = self.n_snippets_per_hit or len(hit["snippets"])
@@ -148,13 +149,13 @@ class YouSearchAPIWrapper(BaseModel):
             "num_web_results": self.num_web_results,
             "safesearch": self.safesearch,
             "country": self.country,
-            **kwargs
+            **kwargs,
         }
 
         params = {k: v for k, v in params.items() if v is not None}
         # news endpoint expects `q` instead of `query`
         if self.endpoint_type == "news":
-            params['q'] = params['query']
+            params["q"] = params["query"]
             del params["query"]
 
         # @todo deprecate `snippet`, not part of API
