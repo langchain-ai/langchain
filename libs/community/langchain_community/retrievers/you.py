@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -14,8 +14,12 @@ class YouRetriever(BaseRetriever, YouSearchAPIWrapper):
     """
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         return self.results(
-            self,
+            query, run_manager=run_manager.get_child(), **kwargs
         )

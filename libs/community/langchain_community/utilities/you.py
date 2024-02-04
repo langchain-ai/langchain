@@ -145,8 +145,18 @@ class YouSearchAPIWrapper(BaseModel):
         headers = {"X-API-Key": self.ydc_api_key}
         params = {
             "query": query,
-            **{key: value for key, value in kwargs.items() if value is not None},
+            "num_web_results": self.num_web_results,
+            "safesearch": self.safesearch,
+            "country": self.country,
+            **kwargs
         }
+
+        params = {k: v for k, v in params.items() if v is not None}
+        # news endpoint expects `q` instead of `query`
+        if self.endpoint_type == "news":
+            params['q'] = params['query']
+            del params["query"]
+
         # @todo deprecate `snippet`, not part of API
         if self.endpoint_type == "snippet":
             self.endpoint_type = "search"
