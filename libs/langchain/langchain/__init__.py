@@ -129,6 +129,12 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain_community.llms.Anthropic")
 
         return Anthropic
+    elif name == "Perplexity":
+        from langchain_community.llms import Perplexity
+
+        _warn_on_import(name, replacement="langchain_community.llms.Perplexity")
+
+        return Perplexity
     elif name == "Banana":
         from langchain_community.llms import Banana
 
@@ -401,6 +407,7 @@ __all__ = [
     "WolframAlphaAPIWrapper",
     "WikipediaAPIWrapper",
     "Anthropic",
+    "Perplexity",
     "Banana",
     "CerebriumAI",
     "Cohere",
