@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
-import asyncio
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -80,14 +80,14 @@ class UpstashVectorStore(VectorStore):
         if index:
             if not isinstance(index, AsyncIndex):
                 raise ValueError(
-                    f"Passed index object should be an instance of upstash_vector.AsyncIndex, " f"got {type(index)}"
+                    f"Passed index object should be an instance of upstash_vector.AsyncIndex, "
+                    f"got {type(index)}"
                 )
             self._index = index
             logger.info("Using the index passed as parameter")
         elif index_url and index_token:
             self._index = AsyncIndex(url=index_url, token=index_token)
-            logger.info(
-                "Created index from the index_url and index_token parameters")
+            logger.info("Created index from the index_url and index_token parameters")
         else:
             self._index = AsyncIndex.from_env()
             logger.info("Created index using environment variables")
@@ -148,9 +148,9 @@ class UpstashVectorStore(VectorStore):
         # The first loop runs the embeddings, it benefits when using OpenAI embeddings
         # The second loops runs the pinecone upsert asynchronously.
         for i in range(0, len(texts), embedding_chunk_size):
-            chunk_texts = texts[i: i + embedding_chunk_size]
-            chunk_ids = ids[i: i + embedding_chunk_size]
-            chunk_metadatas = metadatas[i: i + embedding_chunk_size]
+            chunk_texts = texts[i : i + embedding_chunk_size]
+            chunk_ids = ids[i : i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
             async_res = [
@@ -165,6 +165,7 @@ class UpstashVectorStore(VectorStore):
 
             async def upsert_all():
                 return await asyncio.gather(*async_res)
+
             asyncio.run(upsert_all())
 
         return ids
@@ -197,18 +198,19 @@ class UpstashVectorStore(VectorStore):
         """Return texts whose embedding is closest to the given embedding"""
 
         docs = []
-        results = asyncio.run(self._index.query(
-            vector=embedding,
-            top_k=k,
-            include_metadata=True,
-        ))
+        results = asyncio.run(
+            self._index.query(
+                vector=embedding,
+                top_k=k,
+                include_metadata=True,
+            )
+        )
         for res in results:
             metadata = res.metadata
             if metadata and self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 score = res.score
-                docs.append(
-                    (Document(page_content=text, metadata=metadata), score))
+                docs.append((Document(page_content=text, metadata=metadata), score))
             else:
                 logger.warning(
                     f"Found document with no `{self._text_key}` key. Skipping."
@@ -231,9 +233,7 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        docs_and_scores = self.similarity_search_with_score(
-            query, k=k, **kwargs
-        )
+        docs_and_scores = self.similarity_search_with_score(query, k=k, **kwargs)
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
@@ -259,12 +259,14 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        results = asyncio.run(self._index.query(
-            vector=embedding,
-            top_k=fetch_k,
-            include_vectors=True,
-            include_metadata=True,
-        ))
+        results = asyncio.run(
+            self._index.query(
+                vector=embedding,
+                top_k=fetch_k,
+                include_vectors=True,
+                include_metadata=True,
+            )
+        )
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
             [item.vector for item in results],
@@ -273,8 +275,7 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop(
-                (self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
             for metadata in selected
         ]
 
@@ -333,8 +334,13 @@ class UpstashVectorStore(VectorStore):
                     embeddings,
                 )
         """
-        vector_store = cls(embedding=embedding, text_key=text_key,
-                           index=index, index_url=index_url, index_token=index_token)
+        vector_store = cls(
+            embedding=embedding,
+            text_key=text_key,
+            index=index,
+            index_url=index_url,
+            index_token=index_token,
+        )
 
         vector_store.add_texts(
             texts,
@@ -349,7 +355,7 @@ class UpstashVectorStore(VectorStore):
         self,
         ids: Optional[List[str]] = None,
         delete_all: Optional[bool] = None,
-        batch_size=1000
+        batch_size=1000,
     ) -> None:
         """Delete by vector IDs
 
@@ -363,11 +369,10 @@ class UpstashVectorStore(VectorStore):
             self._index.reset()
         elif ids is not None:
             for i in range(0, len(ids), batch_size):
-                chunk = ids[i: i + batch_size]
+                chunk = ids[i : i + batch_size]
                 self._index.delete(ids=chunk)
         else:
-            raise ValueError(
-                "Either ids or delete_all should be provided")
+            raise ValueError("Either ids or delete_all should be provided")
 
         return None
 
