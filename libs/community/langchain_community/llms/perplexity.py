@@ -6,7 +6,6 @@ import logging
 import os
 from typing import (
     Any,
-    AsyncIterator,
     Dict,
     Iterator,
     List,
@@ -17,66 +16,29 @@ from typing import (
 )
 
 import requests
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import BaseChatModel, generate_from_stream
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import BaseChatModel
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     AIMessage,
     BaseMessage,
-    ChatGeneration,
     ChatMessage,
-    ChatResult,
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.messages import AIMessageChunk
-from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.outputs import GenerationChunk
 from openai import OpenAI
 from pydantic import root_validator
 
 logger = logging.getLogger(__name__)
 
 
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    role = _dict["role"]
-    if role == "user":
-        return HumanMessage(content=_dict["content"])
-    elif role == "assistant":
-        content = _dict["content"] or ""
-        return AIMessage(content=content)
-    elif role == "system":
-        return SystemMessage(content=_dict["content"])
-    else:
-        return ChatMessage(content=_dict["content"], role=role)
-
-
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    message_dict: Dict[str, Any]
-    if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
-    elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
-    elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
-    elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
-    else:
-        raise TypeError(f"Got unknown type {message}")
-
-    return message_dict
-
-
 class PerplexityChat(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
     To use, you should have the ``openai`` python package installed, and the
-    environment variable ``PPLX_API_KEY`` set to your API key, which you
-    can generate at https://www.perplexity.ai.
-
+    environment variable ``PPLX_API_KEY`` set to your API key.
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
 
@@ -179,6 +141,21 @@ class PerplexityChat(BaseChatModel):
             **self.model_kwargs,
         }
 
+    def _convert_message_to_dict(self, message: BaseMessage) -> dict:
+        message_dict: Dict[str, Any]
+        if isinstance(message, ChatMessage):
+            message_dict = {"role": message.role, "content": message.content}
+        elif isinstance(message, SystemMessage):
+            message_dict = {"role": "system", "content": message.content}
+        elif isinstance(message, HumanMessage):
+            message_dict = {"role": "user", "content": message.content}
+        elif isinstance(message, AIMessage):
+            message_dict = {"role": "assistant", "content": message.content}
+        else:
+            raise TypeError(f"Got unknown type {message}")
+
+        return message_dict
+
     def completion(self, **kwargs: Any) -> Any:
         def _completion(**kwargs: Any) -> Any:
             payload = {"model": kwargs["model"], "messages": kwargs["messages"]}
@@ -210,51 +187,6 @@ class PerplexityChat(BaseChatModel):
                     overall_token_usage[k] = v
         return {"token_usage": overall_token_usage}
 
-    def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-        buffer = bytes()
-        for chunk in self.completion(messages=message_dicts, **params):
-            buffer += chunk
-        j = buffer.decode()
-        j = json.loads(j)
-        delta = ""
-        content = j["choices"][0]["message"]["content"]
-        chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
-        yield chunk
-        if run_manager:
-            run_manager.on_llm_new_token(delta, chunk=chunk)
-
-    def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._stream(
-                messages=messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
-
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        buffer = bytes()
-        for chunk in self.completion(messages=message_dicts, **params):
-            buffer += chunk
-        j = buffer.decode()
-        j = json.loads(j)
-        content = j["choices"][0]["message"]["content"]
-        message = AIMessage(content=content)
-        return ChatResult(generations=[ChatGeneration(message=message)])
-
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
@@ -263,38 +195,62 @@ class PerplexityChat(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = [self._convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
-        generations = []
-        response = json.loads(response.text)
-        for res in response["choices"]:
-            message = _convert_dict_to_message(res["message"])
-            gen = ChatGeneration(message=message)
-            generations.append(gen)
-        llm_output = {"token_usage": response["usage"]}
-        return ChatResult(generations=generations, llm_output=llm_output)
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        r"""Call out to Perplexity's completion endpoint.
 
-    async def _astream(
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The string generated by the model.
+
+        Example:
+            .. code-block:: python
+
+                prompt = "What are the biggest risks facing humanity?"
+                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
+                response = model(prompt)
+
+        """
+        if self.streaming:
+            completion = ""
+            for chunk in self._stream(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                completion += chunk.text
+            return completion
+
+        params = {**self._default_params, **kwargs}
+        response = self.client.completions.create(
+            prompt=self._wrap_prompt(prompt),
+            **params,
+        )
+        return response.completion
+
+    def _stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        prompt = self._convert_messages_to_prompt(messages)
-        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
-        if stop:
-            params["stop_sequences"] = stop
-
-        stream_resp = await self.async_client.completions.create(**params, stream=True)
-        async for data in stream_resp:
-            delta = data.completion
-            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-            yield chunk
-            if run_manager:
-                await run_manager.on_llm_new_token(delta, chunk=chunk)
+    ) -> Iterator[GenerationChunk]:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+        for token in self.completion(messages=message_dicts, **params):
+            chunk = GenerationChunk(text=token.completion)
+        yield chunk
+        if run_manager:
+            run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
