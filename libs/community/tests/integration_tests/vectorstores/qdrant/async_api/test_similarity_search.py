@@ -20,11 +20,11 @@ from tests.integration_tests.vectorstores.qdrant.common import assert_documents_
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search(
-        batch_size: int,
-        content_payload_key: str,
-        metadata_payload_key: str,
-        vector_name: Optional[str],
-        qdrant_location: str,
+    batch_size: int,
+    content_payload_key: str,
+    metadata_payload_key: str,
+    vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -47,11 +47,11 @@ async def test_qdrant_similarity_search(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_by_vector(
-        batch_size: int,
-        content_payload_key: str,
-        metadata_payload_key: str,
-        vector_name: Optional[str],
-        qdrant_location: str,
+    batch_size: int,
+    content_payload_key: str,
+    metadata_payload_key: str,
+    vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -75,11 +75,11 @@ async def test_qdrant_similarity_search_by_vector(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_score_by_vector(
-        batch_size: int,
-        content_payload_key: str,
-        metadata_payload_key: str,
-        vector_name: Optional[str],
-        qdrant_location: str,
+    batch_size: int,
+    content_payload_key: str,
+    metadata_payload_key: str,
+    vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -104,7 +104,7 @@ async def test_qdrant_similarity_search_with_score_by_vector(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_filters(
-        batch_size: int, vector_name: Optional[str], qdrant_location: str
+    batch_size: int, vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -129,17 +129,17 @@ async def test_qdrant_similarity_search_filters(
         [
             Document(
                 page_content="bar",
-                metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}}
+                metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}},
             )
-        ]
+        ],
     )
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
-        vector_name: Optional[str],
-        qdrant_location: str,
+    vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -166,8 +166,8 @@ async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
-        vector_name: Optional[str],
-        qdrant_location: str,
+    vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -195,8 +195,8 @@ async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
-        vector_name: Optional[str],
-        qdrant_location: str,
+    vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -230,8 +230,8 @@ async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_filters_with_qdrant_filters(
-        vector_name: Optional[str],
-        qdrant_location: str,
+    vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     from qdrant_client.http import models as rest
@@ -273,7 +273,7 @@ async def test_qdrant_similarity_search_filters_with_qdrant_filters(
                 page_content="bar",
                 metadata={"page": 1, "details": {"page": 2, "pages": [3, -1]}},
             )
-        ]
+        ],
     )
 
 
@@ -283,11 +283,11 @@ async def test_qdrant_similarity_search_filters_with_qdrant_filters(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_scores(
-        batch_size: int,
-        content_payload_key: str,
-        metadata_payload_key: str,
-        vector_name: str,
-        qdrant_location: str,
+    batch_size: int,
+    content_payload_key: str,
+    metadata_payload_key: str,
+    vector_name: str,
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
