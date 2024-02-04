@@ -1,4 +1,4 @@
-"""ZHIPU AI chat models wrapper."""
+"""ZhipuAI chat models wrapper."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ from langchain_core.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 API_TOKEN_TTL_SECONDS = 3 * 60
-ZHIPU_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
 
 @contextmanager
@@ -57,10 +57,10 @@ async def aconnect_sse(client: Any, method: str, url: str, **kwargs: Any):
 
 
 def _get_jwt_token(api_key: str) -> str:
-    """Gets JWT token for ZHIPU API, see 'https://open.bigmodel.cn/dev/api#nosdk'.
+    """Gets JWT token for ZhipuAI API, see 'https://open.bigmodel.cn/dev/api#nosdk'.
 
     Args:
-        api_key: The API key for ZHIPU API.
+        api_key: The API key for ZhipuAI API.
 
     Returns:
         The JWT token.
@@ -148,7 +148,7 @@ def _convert_delta_to_message_chunk(
 
 class ChatZhipuAI(BaseChatModel):
     """
-    `ZHIPU AI` large language chat models API.
+    `ZhipuAI` large language chat models API.
 
     To use, you should have the ``PyJWT`` python package installed.
 
@@ -255,7 +255,7 @@ class ChatZhipuAI(BaseChatModel):
             values, "zhipuai_api_key", "ZHIPUAI_API_KEY"
         )
         values["zhipuai_api_base"] = get_from_dict_or_env(
-            values, "zhipuai_api_base", "ZHIPUAI_API_BASE", default=ZHIPU_API_BASE
+            values, "zhipuai_api_base", "ZHIPUAI_API_BASE", default=ZHIPUAI_API_BASE
         )
 
         return values
