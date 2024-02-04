@@ -17,6 +17,7 @@ from typing import (
 
 import requests
 from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.chat_models.base import BaseChatModel
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     AIMessage,
@@ -26,8 +27,6 @@ from langchain.schema import (
     SystemMessage,
 )
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from openai import OpenAI
 from pydantic import root_validator
@@ -35,8 +34,8 @@ from pydantic import root_validator
 logger = logging.getLogger(__name__)
 
 
-class Perplexity(LLM, BaseLanguageModel):
-    """`Perplexity AI` models API.
+class ChatPerplexity(BaseChatModel):
+    """`Perplexity AI` Chat models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``PPLX_API_KEY`` set to your API key.
@@ -46,9 +45,8 @@ class Perplexity(LLM, BaseLanguageModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import Perplexity
-            model = Perplexity(model="<model_name>", perplexity_api_key="my-api-key")
-            response = model("What are the biggest risks facing humanity?")
+            from langchain.chat_models import PerplexityChat
+            chat = PerplexityChat()
     """
 
     @property
