@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator, List, Optional
+from typing import TYPE_CHECKING, AsyncIterator, Iterator, List, Optional
 
 from langchain_core.documents import Document
+from langchain_core.runnables import run_in_executor
 
 from langchain_community.document_loaders.blob_loaders import Blob
 
@@ -52,13 +53,21 @@ class BaseLoader(ABC):
 
     # Attention: This method will be upgraded into an abstractmethod once it's
     #            implemented in all the existing subclasses.
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """A lazy loader for Documents."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
         )
+
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        """A lazy loader for Documents."""
+        iterator = await run_in_executor(None, self.lazy_load)
+        done = object()
+        while True:
+            doc = await run_in_executor(None, next, iterator, done)
+            if doc is done:
+                break
+            yield doc
 
 
 class BaseBlobParser(ABC):

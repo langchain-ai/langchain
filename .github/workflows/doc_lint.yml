@@ -1,5 +1,5 @@
 ---
-name: Docs, templates, cookbook lint
+name: CI / cd .
 
 on:
   push:
@@ -15,6 +15,7 @@ on:
 
 jobs:
   check:
+    name: Check for "from langchain import x" imports
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +29,7 @@ jobs:
         git grep 'from langchain import' {docs/docs,templates,cookbook} | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
   lint:
+      name: "-"
       uses:
         ./.github/workflows/_lint.yml
       with:

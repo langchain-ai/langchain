@@ -8,10 +8,12 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Mapping,
     Optional,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -30,7 +32,12 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
 
 
-class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
+FormatOutputType = TypeVar("FormatOutputType")
+
+
+class BasePromptTemplate(
+    RunnableSerializable[Dict, PromptValue], Generic[FormatOutputType], ABC
+):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
@@ -40,9 +47,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
-    partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
-        default_factory=dict
-    )
+    partial_variables: Mapping[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -136,13 +141,12 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
         # Get partial params:
         partial_kwargs = {
-            k: v if isinstance(v, str) else v()
-            for k, v in self.partial_variables.items()
+            k: v if not callable(v) else v() for k, v in self.partial_variables.items()
         }
         return {**partial_kwargs, **kwargs}
 
     @abstractmethod
-    def format(self, **kwargs: Any) -> str:
+    def format(self, **kwargs: Any) -> FormatOutputType:
         """Format the prompt with the inputs.
 
         Args:
@@ -210,7 +214,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
     """Format a document into a string based on a prompt template.
 
     First, this pulls information from the document from two sources:
@@ -236,7 +240,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
     Example:
         .. code-block:: python
 
-            from langchain_core import Document
+            from langchain_core.documents import Document
             from langchain_core.prompts import PromptTemplate
 
             doc = Document(page_content="This is a joke", metadata={"page": "1"})
