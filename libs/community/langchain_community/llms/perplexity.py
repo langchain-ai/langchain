@@ -175,20 +175,6 @@ class Perplexity(LLM, BaseLanguageModel):
 
         return _completion(**kwargs)
 
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
-        overall_token_usage: dict = {}
-        for output in llm_outputs:
-            if output is None:
-                # Happens in streaming
-                continue
-            token_usage = output["token_usage"]
-            for k, v in token_usage.items():
-                if k in overall_token_usage:
-                    overall_token_usage[k] += v
-                else:
-                    overall_token_usage[k] = v
-        return {"token_usage": overall_token_usage}
-
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
