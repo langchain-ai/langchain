@@ -12,8 +12,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-langchain-core = ">=0.1.13,<0.2"
-ibm-watsonx-ai = ">=0.1.4"
+langchain-core = ">=0.1.18,<0.2"
+ibm-watsonx-ai = "^0.1.4"
 
 [tool.poetry.group.test]
 optional = true

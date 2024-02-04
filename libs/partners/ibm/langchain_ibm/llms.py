@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
+from ibm_watsonx_ai.foundation_models import ModelInference
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
@@ -161,50 +162,38 @@ class WatsonxLLM(BaseLLM):
                     get_from_dict_or_env(values, "instance_id", "WATSONX_INSTANCE_ID")
                 )
 
-        try:
-            from ibm_watsonx_ai.foundation_models import ModelInference  # type: ignore
+        credentials = {
+            "url": values["url"].get_secret_value() if values["url"] else None,
+            "apikey": values["apikey"].get_secret_value() if values["apikey"] else None,
+            "token": values["token"].get_secret_value() if values["token"] else None,
+            "password": values["password"].get_secret_value()
+            if values["password"]
+            else None,
+            "username": values["username"].get_secret_value()
+            if values["username"]
+            else None,
+            "instance_id": values["instance_id"].get_secret_value()
+            if values["instance_id"]
+            else None,
+            "version": values["version"].get_secret_value()
+            if values["version"]
+            else None,
+        }
+        credentials_without_none_value = {
+            key: value for key, value in credentials.items() if value is not None
+        }
 
-            credentials = {
-                "url": values["url"].get_secret_value() if values["url"] else None,
-                "apikey": values["apikey"].get_secret_value()
-                if values["apikey"]
-                else None,
-                "token": values["token"].get_secret_value()
-                if values["token"]
-                else None,
-                "password": values["password"].get_secret_value()
-                if values["password"]
-                else None,
-                "username": values["username"].get_secret_value()
-                if values["username"]
-                else None,
-                "instance_id": values["instance_id"].get_secret_value()
-                if values["instance_id"]
-                else None,
-                "version": values["version"].get_secret_value()
-                if values["version"]
-                else None,
-            }
-            credentials_without_none_value = {
-                key: value for key, value in credentials.items() if value is not None
-            }
+        watsonx_model = ModelInference(
+            model_id=values["model_id"],
+            deployment_id=values["deployment_id"],
+            credentials=credentials_without_none_value,
+            params=values["params"],
+            project_id=values["project_id"],
+            space_id=values["space_id"],
+            verify=values["verify"],
+        )
+        values["watsonx_model"] = watsonx_model
 
-            watsonx_model = ModelInference(
-                model_id=values["model_id"],
-                deployment_id=values["deployment_id"],
-                credentials=credentials_without_none_value,
-                params=values["params"],
-                project_id=values["project_id"],
-                space_id=values["space_id"],
-                verify=values["verify"],
-            )
-            values["watsonx_model"] = watsonx_model
-
-        except ImportError:
-            raise ImportError(
-                "Could not import ibm_watsonx_ai python package. "
-                "Please install it with `pip install ibm_watsonx_ai`."
-            )
         return values
 
     @property
@@ -389,6 +378,8 @@ class WatsonxLLM(BaseLLM):
         for stream_resp in self.watsonx_model.generate_text_stream(
             prompt=prompt, raw_response=True, params=params
         ):
+            if not isinstance(stream_resp, dict):
+                stream_resp = stream_resp.dict()
             chunk = self._stream_response_to_generation_chunk(stream_resp)
             yield chunk
 
