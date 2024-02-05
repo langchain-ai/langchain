@@ -94,11 +94,11 @@ def _create_retry_decorator(
     import openai
 
     errors = [
-        openai.error.Timeout,
-        openai.error.APIError,
-        openai.error.APIConnectionError,
-        openai.error.RateLimitError,
-        openai.error.ServiceUnavailableError,
+        openai.error.Timeout,  # type: ignore
+        openai.error.APIError,  # type: ignore
+        openai.error.APIConnectionError,  # type: ignore
+        openai.error.RateLimitError,  # type: ignore
+        openai.error.ServiceUnavailableError,  # type: ignore
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager

@@ -154,7 +154,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             values["client"] = openai.AzureOpenAI(**client_params).embeddings
             values["async_client"] = openai.AsyncAzureOpenAI(**client_params).embeddings
         else:
-            values["client"] = openai.Embedding
+            values["client"] = openai.Embedding  # type: ignore
         return values
 
     @property
