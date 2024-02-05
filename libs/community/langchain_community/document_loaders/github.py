@@ -197,7 +197,7 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
 
     file_filter: Optional[Callable[[str], bool]]
 
-    def get_file_paths(self):
+    def get_file_paths(self) -> List[Dict]:
         base_url = (
             f"{self.github_api_url}/api/v3/repos/{self.repo}/git/trees/"
             f"{self.branch}?recursive=1"
@@ -220,7 +220,7 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
             if not (self.file_filter and not self.file_filter(f["path"]))
         ]
 
-    def get_file_content_by_path(self, path: str):
+    def get_file_content_by_path(self, path: str) -> str:
         base_url = f"{self.github_api_url}/api/v3/repos/{self.repo}/contents/{path}"
         response = requests.get(base_url, headers=self.headers)
         response.raise_for_status()
