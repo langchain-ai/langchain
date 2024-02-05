@@ -3,7 +3,6 @@ from __future__ import annotations
 from concurrent.futures import Executor
 from typing import Any, ClassVar, Dict, Iterator, List, Optional, Union
 
-import vertexai  # type: ignore[import-untyped]
 from google.api_core.client_options import ClientOptions
 from google.cloud.aiplatform.gapic import (
     PredictionServiceAsyncClient,

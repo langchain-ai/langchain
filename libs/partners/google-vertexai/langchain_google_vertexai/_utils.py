@@ -2,19 +2,19 @@
 
 import dataclasses
 from importlib import metadata
-from typing import Any, Callable, Dict, Optional, Union, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import google.api_core
+import vertexai
 from google.api_core.gapic_v1.client_info import ClientInfo
 from google.auth.credentials import Credentials
-from google.cloud.aiplatform import initializer
 from google.cloud import storage
+from google.cloud.aiplatform import initializer
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import create_base_retry_decorator
-import vertexai
 from vertexai.generative_models._generative_models import (  # type: ignore[import-untyped]
     Candidate,
 )

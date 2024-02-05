@@ -1,6 +1,6 @@
 """Utilities to init Vertex AI."""
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -80,8 +80,8 @@ def init_vertexai(
         ImportError: If importing vertexai SDK did not succeed.
     """
     try:
-        from google.cloud.aiplatform import initializer
         import vertexai
+        from google.cloud.aiplatform import initializer
     except ImportError:
         raise_vertex_import_error()
 
