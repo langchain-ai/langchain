@@ -181,7 +181,6 @@ setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
 
 [tool.poetry.extras]
-tree_sitter = ["tree-sitter", "tree-sitter-languages"]
 cli = ["typer"]
 
 # An extra used to be able to add extended testing.
