@@ -154,7 +154,9 @@ def create_json_chat_agent(
         tool_names=", ".join([t.name for t in tools]),
     )
     if stop_sequence:
-        llm = llm.bind(stop=["\nObservation"])
+        llm_to_use = llm.bind(stop=["\nObservation"])
+    else:
+        llm_to_use = llm
 
     agent = (
         RunnablePassthrough.assign(
@@ -163,7 +165,7 @@ def create_json_chat_agent(
             )
         )
         | prompt
-        | llm
+        | llm_to_use
         | JSONAgentOutputParser()
     )
     return agent
