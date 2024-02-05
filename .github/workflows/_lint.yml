@@ -86,7 +86,7 @@ jobs:
         with:
           path: |
             ${{ env.WORKDIR }}/.mypy_cache
-          key: mypy-lint-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
+          key: mypy-lint-2.0-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
 
 
       - name: Analysing the code with our lint
@@ -114,7 +114,7 @@ jobs:
         with:
           path: |
             ${{ env.WORKDIR }}/.mypy_cache_test
-          key: mypy-test-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
+          key: mypy-test-2.0-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
