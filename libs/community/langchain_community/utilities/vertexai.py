@@ -53,7 +53,10 @@ def raise_vertex_import_error(minimum_expected_version: str = "1.38.0") -> None:
 
 
 def _get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
-    langchain_version = metadata.version("langchain")
+    try:
+        langchain_version = metadata.version("langchain")
+    except metadata.PackageNotFoundError:
+        langchain_version = "0.0.0"
     client_library_version = (
         f"{langchain_version}-{module}" if module else langchain_version
     )

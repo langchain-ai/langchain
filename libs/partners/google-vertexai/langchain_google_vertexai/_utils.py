@@ -1,7 +1,7 @@
 """Utilities to init Vertex AI."""
 
 import dataclasses
-import pkg_resources
+from importlib import metadata
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import google.api_core
@@ -66,7 +66,10 @@ def get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
     Returns:
         Tuple[str, str]: The client library version and user agent.
     """
-    langchain_version = pkg_resources.get_distribution("langchain").version
+    try:
+        langchain_version = metadata.version("langchain")
+    except metadata.PackageNotFoundError:
+        langchain_version = "0.0.0"
     client_library_version = (
         f"{langchain_version}-{module}" if module else langchain_version
     )
