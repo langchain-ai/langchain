@@ -310,7 +310,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
         if safety_settings and not is_gemini:
             raise ValueError("Safety settings are only supported for Gemini models")
-
+        values["module"] = "vertexai-chat"
         cls._init_vertexai(values)
         if is_gemini:
             values["client"] = GenerativeModel(

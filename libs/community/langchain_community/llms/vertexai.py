@@ -181,7 +181,7 @@ class _VertexAICommon(_VertexAIBase):
 
     @classmethod
     def _try_init_vertexai(cls, values: Dict) -> None:
-        allowed_params = ["project", "location", "credentials"]
+        allowed_params = ["project", "location", "credentials", "module"]
         params = {k: v for k, v in values.items() if k in allowed_params}
         init_vertexai(**params)
         return None
@@ -229,6 +229,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         tuned_model_name = values.get("tuned_model_name")
         model_name = values["model_name"]
         is_gemini = is_gemini_model(values["model_name"])
+        values["module"] = f"vertexai-llm-{model_name}"
         cls._try_init_vertexai(values)
         try:
             from vertexai.language_models import (

@@ -42,6 +42,7 @@ from langchain_google_vertexai._utils import (
     create_retry_decorator,
     get_client_info,
     get_generation_info,
+    init_vertexai,
     is_codey_model,
     is_gemini_model,
 )
@@ -218,12 +219,12 @@ class _VertexAICommon(_VertexAIBase):
 
     @classmethod
     def _init_vertexai(cls, values: Dict) -> None:
-        vertexai.init(
+        init_vertexai(
             project=values.get("project"),
             location=values.get("location"),
             credentials=values.get("credentials"),
+            module=values.get("module"),
         )
-        return None
 
     def _prepare_params(
         self,
@@ -264,6 +265,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         model_name = values["model_name"]
         safety_settings = values["safety_settings"]
         is_gemini = is_gemini_model(values["model_name"])
+        values["module"] = f"vertexai-llm-{model_name}"
         cls._init_vertexai(values)
 
         if safety_settings and (not is_gemini or tuned_model_name):

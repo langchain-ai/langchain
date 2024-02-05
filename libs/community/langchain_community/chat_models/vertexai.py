@@ -229,6 +229,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         is_gemini = is_gemini_model(values["model_name"])
+        values["module"] = "vertexai-chat"
         cls._try_init_vertexai(values)
         try:
             from vertexai.language_models import ChatModel, CodeChatModel

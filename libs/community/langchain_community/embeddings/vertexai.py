@@ -36,6 +36,7 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
+        values["module"] = "vertexai-embeddings"
         cls._try_init_vertexai(values)
         if values["model_name"] == "textembedding-gecko-default":
             logger.warning(
