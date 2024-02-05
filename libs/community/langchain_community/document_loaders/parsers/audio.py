@@ -73,7 +73,7 @@ class OpenAIWhisperParser(BaseBlobParser):
                             model="whisper-1", file=file_obj
                         )
                     else:
-                        transcript = openai.Audio.transcribe("whisper-1", file_obj)
+                        transcript = openai.Audio.transcribe("whisper-1", file_obj)  # type: ignore
                     break
                 except Exception as e:
                     attempts += 1
