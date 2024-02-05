@@ -161,7 +161,7 @@ class ChatZhipuAI(BaseChatModel):
 
         return attributes
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         super().__init__(*args, **kwargs)
         try:
             import zhipuai
@@ -174,7 +174,7 @@ class ChatZhipuAI(BaseChatModel):
                 "Please install it via 'pip install zhipuai'"
             )
 
-    def invoke(self, prompt):
+    def invoke(self, prompt):  # type: ignore[no-untyped-def]
         if self.model == "chatglm_turbo":
             return self.zhipuai.model_api.invoke(
                 model=self.model,
@@ -195,7 +195,7 @@ class ChatZhipuAI(BaseChatModel):
             )
         return None
 
-    def sse_invoke(self, prompt):
+    def sse_invoke(self, prompt):  # type: ignore[no-untyped-def]
         if self.model == "chatglm_turbo":
             return self.zhipuai.model_api.sse_invoke(
                 model=self.model,
@@ -218,7 +218,7 @@ class ChatZhipuAI(BaseChatModel):
             )
         return None
 
-    async def async_invoke(self, prompt):
+    async def async_invoke(self, prompt):  # type: ignore[no-untyped-def]
         loop = asyncio.get_running_loop()
         partial_func = partial(
             self.zhipuai.model_api.async_invoke, model=self.model, prompt=prompt
@@ -229,7 +229,7 @@ class ChatZhipuAI(BaseChatModel):
         )
         return response
 
-    async def async_invoke_result(self, task_id):
+    async def async_invoke_result(self, task_id):  # type: ignore[no-untyped-def]
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
             None,
@@ -270,11 +270,14 @@ class ChatZhipuAI(BaseChatModel):
 
         else:
             stream_iter = self._stream(
-                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+                prompt=prompt,  # type: ignore[arg-type]
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
             )
             return generate_from_stream(stream_iter)
 
-    async def _agenerate(
+    async def _agenerate(  # type: ignore[override]
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
@@ -307,7 +310,7 @@ class ChatZhipuAI(BaseChatModel):
             generations=[ChatGeneration(message=AIMessage(content=content))]
         )
 
-    def _stream(
+    def _stream(  # type: ignore[override]
         self,
         prompt: List[Dict[str, str]],
         stop: Optional[List[str]] = None,
