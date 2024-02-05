@@ -81,7 +81,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         super().__init__(key_name=key_name, **kwargs)
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
-        results = super().parse_result(result, partial)
+        results = super().parse_result(result, partial=partial)
         results = [res for res in results if res["type"] == self.key_name]
         if not self.return_id:
             results = [res["args"] for res in results]
@@ -96,6 +96,6 @@ class PydanticToolsParser(JsonOutputToolsParser):
     tools: List[Type[BaseModel]]
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
-        results = super().parse_result(result, partial)
+        results = super().parse_result(result, partial=partial)
         name_dict = {tool.__name__: tool for tool in self.tools}
         return [name_dict[res["type"]](**res["args"]) for res in results]
