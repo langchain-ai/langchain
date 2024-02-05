@@ -1,11 +1,14 @@
 import pytest
+from langchain_core.agents import (
+    AgentActionMessageLog,
+    AgentFinish,
+)
+from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import AIMessage, SystemMessage
 
 from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
 )
-from langchain.schema import AgentFinish, OutputParserException
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import AIMessage, SystemMessage
 
 
 def test_not_an_ai() -> None:
@@ -43,6 +46,22 @@ def test_func_call() -> None:
     assert result.log == (
         "\nInvoking: `foo` with `{'param': 42}`\nresponded: LLM thoughts.\n\n"
     )
+    assert result.message_log == [msg]
+
+
+# Test: Model response with a function call for a function taking no arguments
+def test_func_call_no_args() -> None:
+    parser = OpenAIFunctionsAgentOutputParser()
+    msg = AIMessage(
+        content="LLM thoughts.",
+        additional_kwargs={"function_call": {"name": "foo", "arguments": ""}},
+    )
+    result = parser.invoke(msg)
+
+    assert isinstance(result, AgentActionMessageLog)
+    assert result.tool == "foo"
+    assert result.tool_input == {}
+    assert result.log == ("\nInvoking: `foo` with `{}`\nresponded: LLM thoughts.\n\n")
     assert result.message_log == [msg]
 
 

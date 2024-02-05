@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "openai-functions-agent-gmail"
+version = "0.1.0"
+description = "Agent using OpenAI function calling to execute functions, including search"
+authors = [
+    "Lance Martin <lance@langchain.dev>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.349,<0.1.0"
+openai = "<2"
+langchain-core = ">=0.0.13,<0.1.0"
+langchain-community = ">=0.0.1,<0.1.0" 
+google-api-python-client = "^2.110.0"
+google-auth-oauthlib = "^1.1.0"
+google-auth-httplib2 = "^0.1.1"
+bs4 = "^0.0.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
+[tool.langserve]
+export_module = "openai_functions_agent"
+export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["OpenAI", "Tavily"]
+tags = ["search", "agents", "function-calling"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

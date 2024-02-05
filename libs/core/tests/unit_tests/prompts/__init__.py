@@ -1,0 +1,1 @@
+"""Test prompt functionality."""

@@ -1,33 +1,40 @@
 """Base interface that all chains should implement."""
-import asyncio
 import inspect
 import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import yaml
-
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import (
+from langchain_core._api import deprecated
+from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
+    BaseCallbackManager,
     CallbackManager,
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain.load.dump import dumpd
-from langchain.pydantic_v1 import (
+from langchain_core.load.dump import dumpd
+from langchain_core.memory import BaseMemory
+from langchain_core.outputs import RunInfo
+from langchain_core.pydantic_v1 import (
     BaseModel,
     Field,
     create_model,
     root_validator,
     validator,
 )
-from langchain.schema import RUN_KEY, BaseMemory, RunInfo
-from langchain.schema.runnable import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import (
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+    run_in_executor,
+)
+
+from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -61,52 +68,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             chains and cannot return as rich of an output as `__call__`.
     """
 
-    @property
-    def input_schema(self) -> Type[BaseModel]:
-        # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            "ChainInput", **{k: (Any, None) for k in self.input_keys}
-        )
-
-    @property
-    def output_schema(self) -> Type[BaseModel]:
-        # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
-        )
-
-    def invoke(
-        self,
-        input: Dict[str, Any],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        config = config or {}
-        return self(
-            input,
-            callbacks=config.get("callbacks"),
-            tags=config.get("tags"),
-            metadata=config.get("metadata"),
-            run_name=config.get("run_name"),
-            **kwargs,
-        )
-
-    async def ainvoke(
-        self,
-        input: Dict[str, Any],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        config = config or {}
-        return await self.acall(
-            input,
-            callbacks=config.get("callbacks"),
-            tags=config.get("tags"),
-            metadata=config.get("metadata"),
-            run_name=config.get("run_name"),
-            **kwargs,
-        )
-
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.
     Memory is a class that gets called at the start
@@ -120,8 +81,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     starting with on_chain_start, ending with on_chain_end or on_chain_error.
     Each custom chain can optionally call additional callback methods, see Callback docs
     for full details."""
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """Deprecated, use `callbacks` instead."""
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
     will be printed to the console. Defaults to the global `verbose` value,
@@ -138,11 +97,123 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    """[DEPRECATED] Use `callbacks` instead."""
 
     class Config:
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainInput", **{k: (Any, None) for k in self.input_keys}
+        )
+
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        # This is correct, but pydantic typings/mypy don't think so.
+        return create_model(  # type: ignore[call-overload]
+            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
+        )
+
+    def invoke(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        config = ensure_config(config)
+        callbacks = config.get("callbacks")
+        tags = config.get("tags")
+        metadata = config.get("metadata")
+        run_name = config.get("run_name") or self.get_name()
+        include_run_info = kwargs.get("include_run_info", False)
+        return_only_outputs = kwargs.get("return_only_outputs", False)
+
+        inputs = self.prep_inputs(input)
+        callback_manager = CallbackManager.configure(
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
+        )
+        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            inputs,
+            name=run_name,
+        )
+        try:
+            outputs = (
+                self._call(inputs, run_manager=run_manager)
+                if new_arg_supported
+                else self._call(inputs)
+            )
+        except BaseException as e:
+            run_manager.on_chain_error(e)
+            raise e
+        run_manager.on_chain_end(outputs)
+        final_outputs: Dict[str, Any] = self.prep_outputs(
+            inputs, outputs, return_only_outputs
+        )
+        if include_run_info:
+            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
+        return final_outputs
+
+    async def ainvoke(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        config = ensure_config(config)
+        callbacks = config.get("callbacks")
+        tags = config.get("tags")
+        metadata = config.get("metadata")
+        run_name = config.get("run_name") or self.get_name()
+        include_run_info = kwargs.get("include_run_info", False)
+        return_only_outputs = kwargs.get("return_only_outputs", False)
+
+        inputs = self.prep_inputs(input)
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
+        )
+        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self),
+            inputs,
+            name=run_name,
+        )
+        try:
+            outputs = (
+                await self._acall(inputs, run_manager=run_manager)
+                if new_arg_supported
+                else await self._acall(inputs)
+            )
+        except BaseException as e:
+            await run_manager.on_chain_error(e)
+            raise e
+        await run_manager.on_chain_end(outputs)
+        final_outputs: Dict[str, Any] = self.prep_outputs(
+            inputs, outputs, return_only_outputs
+        )
+        if include_run_info:
+            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
+        return final_outputs
 
     @property
     def _chain_type(self) -> str:
@@ -241,10 +312,11 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self._call, inputs, run_manager
+        return await run_in_executor(
+            None, self._call, inputs, run_manager.get_sync() if run_manager else None
         )
 
+    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
     def __call__(
         self,
         inputs: Union[Dict[str, Any], Any],
@@ -281,39 +353,21 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        inputs = self.prep_inputs(inputs)
-        callback_manager = CallbackManager.configure(
-            callbacks,
-            self.callbacks,
-            self.verbose,
-            tags,
-            self.tags,
-            metadata,
-            self.metadata,
-        )
-        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self),
-            inputs,
-            name=run_name,
-        )
-        try:
-            outputs = (
-                self._call(inputs, run_manager=run_manager)
-                if new_arg_supported
-                else self._call(inputs)
-            )
-        except BaseException as e:
-            run_manager.on_chain_error(e)
-            raise e
-        run_manager.on_chain_end(outputs)
-        final_outputs: Dict[str, Any] = self.prep_outputs(
-            inputs, outputs, return_only_outputs
-        )
-        if include_run_info:
-            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
-        return final_outputs
+        config = {
+            "callbacks": callbacks,
+            "tags": tags,
+            "metadata": metadata,
+            "run_name": run_name,
+        }
 
+        return self.invoke(
+            inputs,
+            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None}),
+            return_only_outputs=return_only_outputs,
+            include_run_info=include_run_info,
+        )
+
+    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
     async def acall(
         self,
         inputs: Union[Dict[str, Any], Any],
@@ -350,38 +404,18 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        inputs = self.prep_inputs(inputs)
-        callback_manager = AsyncCallbackManager.configure(
-            callbacks,
-            self.callbacks,
-            self.verbose,
-            tags,
-            self.tags,
-            metadata,
-            self.metadata,
-        )
-        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+        config = {
+            "callbacks": callbacks,
+            "tags": tags,
+            "metadata": metadata,
+            "run_name": run_name,
+        }
+        return await self.ainvoke(
             inputs,
-            name=run_name,
+            cast(RunnableConfig, {k: v for k, v in config.items() if k is not None}),
+            return_only_outputs=return_only_outputs,
+            include_run_info=include_run_info,
         )
-        try:
-            outputs = (
-                await self._acall(inputs, run_manager=run_manager)
-                if new_arg_supported
-                else await self._acall(inputs)
-            )
-        except BaseException as e:
-            await run_manager.on_chain_error(e)
-            raise e
-        await run_manager.on_chain_end(outputs)
-        final_outputs: Dict[str, Any] = self.prep_outputs(
-            inputs, outputs, return_only_outputs
-        )
-        if include_run_info:
-            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
-        return final_outputs
 
     def prep_outputs(
         self,
@@ -450,6 +484,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             )
         return self.output_keys[0]
 
+    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
     def run(
         self,
         *args: Any,
@@ -520,6 +555,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 f" but not both. Got args: {args} and kwargs: {kwargs}."
             )
 
+    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
     async def arun(
         self,
         *args: Any,
@@ -610,8 +646,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}
         """
-        if self.memory is not None:
-            raise ValueError("Saving of memory is not yet supported.")
         _dict = super().dict(**kwargs)
         try:
             _dict["_type"] = self._chain_type
@@ -633,6 +667,14 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
                 chain.save(file_path="path/chain.yaml")
         """
+        if self.memory is not None:
+            raise ValueError("Saving of memory is not yet supported.")
+
+        # Fetch dictionary to save
+        chain_dict = self.dict()
+        if "_type" not in chain_dict:
+            raise NotImplementedError(f"Chain {self} does not support saving.")
+
         # Convert file to Path object.
         if isinstance(file_path, str):
             save_path = Path(file_path)
@@ -641,11 +683,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
-
-        # Fetch dictionary to save
-        chain_dict = self.dict()
-        if "_type" not in chain_dict:
-            raise NotImplementedError(f"Chain {self} does not support saving.")
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
@@ -656,6 +693,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         else:
             raise ValueError(f"{save_path} must be json or yaml")
 
+    @deprecated("0.1.0", alternative="batch", removal="0.2.0")
     def apply(
         self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> List[Dict[str, str]]:

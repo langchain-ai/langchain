@@ -49,7 +49,22 @@ class ElementInViewPort(TypedDict):
 
 
 class Crawler:
-    """A crawler for web pages."""
+    """A crawler for web pages.
+
+    **Security Note**: This is an implementation of a crawler that uses a browser via
+        Playwright.
+
+        This crawler can be used to load arbitrary webpages INCLUDING content
+        from the local file system.
+
+        Control access to who can submit crawling requests and what network access
+        the crawler has.
+
+        Make sure to scope permissions to the minimal permissions necessary for
+        the application.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
 
     def __init__(self) -> None:
         try:

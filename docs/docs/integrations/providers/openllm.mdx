@@ -27,7 +27,7 @@ There is a OpenLLM Wrapper which supports loading LLM in-process or accessing a
 remote OpenLLM server:
 
 ```python
-from langchain.llms import OpenLLM
+from langchain_community.llms import OpenLLM
 ```
 
 ### Wrapper for OpenLLM server
@@ -44,7 +44,7 @@ openllm start flan-t5
 Wrapper usage:
 
 ```python
-from langchain.llms import OpenLLM
+from langchain_community.llms import OpenLLM
 
 llm = OpenLLM(server_url='http://localhost:3000')
 
@@ -57,7 +57,7 @@ You can also use the OpenLLM wrapper to load LLM in current Python process for
 running inference.
 
 ```python
-from langchain.llms import OpenLLM
+from langchain_community.llms import OpenLLM
 
 llm = OpenLLM(model_name="dolly-v2", model_id='databricks/dolly-v2-7b')
 
@@ -67,4 +67,4 @@ llm("What is the difference between a duck and a goose? And why there are so man
 ### Usage
 
 For a more detailed walkthrough of the OpenLLM Wrapper, see the
-[example notebook](/docs/integrations/llms/openllm.html)
+[example notebook](/docs/integrations/llms/openllm)

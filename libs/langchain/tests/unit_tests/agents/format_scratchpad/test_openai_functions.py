@@ -1,8 +1,9 @@
+from langchain_core.agents import AgentActionMessageLog
+from langchain_core.messages import AIMessage, FunctionMessage
+
 from langchain.agents.format_scratchpad.openai_functions import (
-    format_to_openai_functions,
+    format_to_openai_function_messages,
 )
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import AIMessage, FunctionMessage
 
 
 def test_calls_convert_agent_action_to_messages() -> None:
@@ -51,10 +52,10 @@ def test_calls_convert_agent_action_to_messages() -> None:
         message3,
         FunctionMessage(name="tool3", content="observation3"),
     ]
-    output = format_to_openai_functions(intermediate_steps)
+    output = format_to_openai_function_messages(intermediate_steps)
     assert output == expected_messages
 
 
 def test_handles_empty_input_list() -> None:
-    output = format_to_openai_functions([])
+    output = format_to_openai_function_messages([])
     assert output == []

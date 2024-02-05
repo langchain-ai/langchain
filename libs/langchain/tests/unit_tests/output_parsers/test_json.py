@@ -1,15 +1,8 @@
-import json
-from typing import Any, AsyncIterator, Iterator, Tuple
+from typing import Any, AsyncIterator, Iterator
 
-import pytest
+from langchain_core.messages import AIMessageChunk
 
-from langchain.output_parsers.json import (
-    SimpleJsonOutputParser,
-    parse_json_markdown,
-    parse_partial_json,
-)
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.schema.messages import AIMessageChunk
 
 GOOD_JSON = """```json
 {
@@ -152,46 +145,11 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize("json_string", TEST_CASES)
-def test_parse_json(json_string: str) -> None:
-    parsed = parse_json_markdown(json_string)
-    assert parsed == {"foo": "bar"}
-
-
-def test_parse_json_with_code_blocks() -> None:
-    parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK)
-    assert parsed == {"foo": "```bar```"}
-
-    parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)
-
-    assert parsed == {
-        "action": "Final Answer",
-        "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
-    }
-
-
 TEST_CASES_ESCAPED_QUOTES = [
     JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON,
     JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON,
     JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON,
 ]
-
-
-@pytest.mark.parametrize("json_string", TEST_CASES_ESCAPED_QUOTES)
-def test_parse_nested_json_with_escaped_quotes(json_string: str) -> None:
-    parsed = parse_json_markdown(json_string)
-    assert parsed == {
-        "action": "Final Answer",
-        "action_input": '{"foo": "bar", "bar": "foo"}',
-    }
-
-
-def test_parse_json_with_python_dict() -> None:
-    parsed = parse_json_markdown(JSON_WITH_PYTHON_DICT)
-    assert parsed == {
-        "action": "Final Answer",
-        "action_input": {"foo": "bar", "bar": "foo"},
-    }
 
 
 TEST_CASES_PARTIAL = [
@@ -201,13 +159,6 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar": "foo[', '{"foo": "bar", "bar": "foo["}'),
     ('{"foo": "bar", "bar": "foo\\"', '{"foo": "bar", "bar": "foo\\""}'),
 ]
-
-
-@pytest.mark.parametrize("json_strings", TEST_CASES_PARTIAL)
-def test_parse_partial_json(json_strings: Tuple[str, str]) -> None:
-    case, expected = json_strings
-    parsed = parse_partial_json(case)
-    assert parsed == json.loads(expected)
 
 
 STREAMED_TOKENS = """
@@ -450,16 +401,6 @@ EXPECTED_STREAMED_JSON_DIFF = [
 ]
 
 
-def test_partial_text_json_output_parser() -> None:
-    def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
-
-    chain = input_iter | SimpleJsonOutputParser()
-
-    assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
-
-
 def test_partial_functions_json_output_parser() -> None:
     def input_iter(_: Any) -> Iterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
@@ -470,16 +411,6 @@ def test_partial_functions_json_output_parser() -> None:
     chain = input_iter | JsonOutputFunctionsParser()
 
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
-
-
-def test_partial_text_json_output_parser_diff() -> None:
-    def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
-
-    chain = input_iter | SimpleJsonOutputParser(diff=True)
-
-    assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON_DIFF
 
 
 def test_partial_functions_json_output_parser_diff() -> None:
@@ -494,18 +425,6 @@ def test_partial_functions_json_output_parser_diff() -> None:
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON_DIFF
 
 
-@pytest.mark.asyncio
-async def test_partial_text_json_output_parser_async() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
-
-    chain = input_iter | SimpleJsonOutputParser()
-
-    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
-
-
-@pytest.mark.asyncio
 async def test_partial_functions_json_output_parser_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
@@ -518,18 +437,6 @@ async def test_partial_functions_json_output_parser_async() -> None:
     assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
 
 
-@pytest.mark.asyncio
-async def test_partial_text_json_output_parser_diff_async() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
-
-    chain = input_iter | SimpleJsonOutputParser(diff=True)
-
-    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON_DIFF
-
-
-@pytest.mark.asyncio
 async def test_partial_functions_json_output_parser_diff_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:

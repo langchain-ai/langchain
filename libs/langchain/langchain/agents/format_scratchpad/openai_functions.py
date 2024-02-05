@@ -1,8 +1,8 @@
 import json
 from typing import List, Sequence, Tuple
 
-from langchain.schema.agent import AgentAction, AgentActionMessageLog
-from langchain.schema.messages import AIMessage, BaseMessage, FunctionMessage
+from langchain_core.agents import AgentAction, AgentActionMessageLog
+from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 
 
 def _convert_agent_action_to_messages(
@@ -49,14 +49,17 @@ def _create_function_message(
     )
 
 
-def format_to_openai_functions(
+def format_to_openai_function_messages(
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
 ) -> List[BaseMessage]:
-    """Format intermediate steps.
+    """Convert (AgentAction, tool output) tuples into FunctionMessages.
+
     Args:
         intermediate_steps: Steps the LLM has taken to date, along with observations
+
     Returns:
         list of messages to send to the LLM for the next prediction
+
     """
     messages = []
 
@@ -64,3 +67,7 @@ def format_to_openai_functions(
         messages.extend(_convert_agent_action_to_messages(agent_action, observation))
 
     return messages
+
+
+# Backwards compatibility
+format_to_openai_functions = format_to_openai_function_messages

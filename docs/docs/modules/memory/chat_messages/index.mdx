@@ -12,6 +12,26 @@ This is a super lightweight wrapper that provides convenience methods for saving
 
 You may want to use this class directly if you are managing memory outside of a chain.
 
-import GetStarted from "@snippets/modules/memory/chat_messages/get_started.mdx"
+```python
+from langchain.memory import ChatMessageHistory
 
-<GetStarted/>
+history = ChatMessageHistory()
+
+history.add_user_message("hi!")
+
+history.add_ai_message("whats up?")
+```
+
+
+```python
+history.messages
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [HumanMessage(content='hi!', additional_kwargs={}),
+     AIMessage(content='whats up?', additional_kwargs={})]
+```
+
+</CodeOutputBlock>

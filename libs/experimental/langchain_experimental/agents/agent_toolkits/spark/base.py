@@ -5,7 +5,7 @@ from langchain.agents.agent import AgentExecutor
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
+from langchain_core.language_models import BaseLLM
 
 from langchain_experimental.agents.agent_toolkits.spark.prompt import PREFIX, SUFFIX
 from langchain_experimental.tools.python.tool import PythonAstREPLTool
@@ -42,7 +42,7 @@ def create_spark_dataframe_agent(
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    **kwargs: Dict[str, Any],
+    **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Spark agent from an LLM and dataframe."""
 
