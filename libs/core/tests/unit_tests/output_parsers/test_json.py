@@ -540,186 +540,56 @@ def test_raises_error() -> None:
         parser.invoke("hi")
 
 
-# Another test case for streamed tokens.
-STREAMED_TOKENS2 = [
-    " Here",
-    " is",
-    " the",
-    " JSON",
-    " with",
-    " the",
-    " requested",
-    " countries",
-    " and",
-    " their",
-    " populations",
+# A test fixture for an output which contains
+# json within a code block
+TOKENS_WITH_JSON_CODE_BLOCK = [
+    " France",
     ":",
     "\n\n```",
     "json",
     "\n{",
     "\n ",
     ' "',
-    "countries",
-    '":',
-    " [",
-    "\n   ",
-    " {",
-    "\n     ",
-    ' "',
+    "country",
+    "_",
     "name",
     '":',
     ' "',
     "France",
     '",',
-    "\n     ",
+    " \n ",
     ' "',
     "population",
+    "_",
+    "size",
     '":',
     " 67",
     "39",
     "15",
     "82",
-    "\n   ",
-    " },",
-    "\n   ",
-    " {",
-    "\n     ",
-    ' "',
-    "name",
-    '":',
-    ' "',
-    "Sp",
-    "ain",
-    '",',
-    "\n     ",
-    ' "',
-    "population",
-    '":',
-    " 46",
-    "75",
-    "47",
-    "78",
-    "\n   ",
-    " },",
-    "\n   ",
-    " {",
-    "\n     ",
-    ' "',
-    "name",
-    '":',
-    ' "',
-    "Japan",
-    '",',
-    "\n     ",
-    ' "',
-    "population",
-    '":',
-    " 12",
-    "647",
-    "64",
-    "61",
-    "\n   ",
-    " }",
-    "\n ",
-    " ]",
     "\n}",
     "\n```",
-    "",
+    "\n\nI",
+    " looked",
+    " up",
 ]
 
 
-def test_partial_text_json_output_parser() -> None:
+def test_partial_text_json_output_parser_with_json_code_block() -> None:
+    """Test that the json parser works correctly when the response contains a json code-block."""
+
     def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS2:
+        for token in TOKENS_WITH_JSON_CODE_BLOCK:
             yield token
 
     chain = input_iter | SimpleJsonOutputParser()
 
     assert list(chain.stream(None)) == [
         {},
-        {"countries": []},
-        {"countries": [{}]},
-        {"countries": [{"name": ""}]},
-        {"countries": [{"name": "France"}]},
-        {"countries": [{"name": "France", "population": 67}]},
-        {"countries": [{"name": "France", "population": 6739}]},
-        {"countries": [{"name": "France", "population": 673915}]},
-        {"countries": [{"name": "France", "population": 67391582}]},
-        {"countries": [{"name": "France", "population": 67391582}, {}]},
-        {"countries": [{"name": "France", "population": 67391582}, {"name": ""}]},
-        {"countries": [{"name": "France", "population": 67391582}, {"name": "Sp"}]},
-        {"countries": [{"name": "France", "population": 67391582}, {"name": "Spain"}]},
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 4675},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 467547},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46754778},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46754778},
-                {},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46754778},
-                {"name": ""},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46754778},
-                {"name": "Japan"},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46754778},
-                {"name": "Japan", "population": 12},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46754778},
-                {"name": "Japan", "population": 12647},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46754778},
-                {"name": "Japan", "population": 1264764},
-            ]
-        },
-        {
-            "countries": [
-                {"name": "France", "population": 67391582},
-                {"name": "Spain", "population": 46754778},
-                {"name": "Japan", "population": 126476461},
-            ]
-        },
+        {"country_name": ""},
+        {"country_name": "France"},
+        {"country_name": "France", "population_size": 67},
+        {"country_name": "France", "population_size": 6739},
+        {"country_name": "France", "population_size": 673915},
+        {"country_name": "France", "population_size": 67391582},
     ]
