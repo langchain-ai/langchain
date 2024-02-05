@@ -10,6 +10,7 @@ from langchain.tools.render import render_text_description
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.chat_models.fireworks import ChatFireworks
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
+from langchain_core.pydantic_v1 import BaseModel
 
 MODEL_ID = "accounts/fireworks/models/mixtral-8x7b-instruct"
 
@@ -94,10 +95,15 @@ agent = (
     | ReActJsonSingleInputOutputParser()
 )
 
+
+class InputType(BaseModel):
+    input: str
+
+
 # instantiate AgentExecutor
 agent_executor = AgentExecutor(
     agent=agent,
     tools=tools,
     verbose=True,
     handle_parsing_errors=True,
-)
+).with_types(input_type=InputType)
