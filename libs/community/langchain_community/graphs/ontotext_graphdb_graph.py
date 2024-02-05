@@ -95,7 +95,8 @@ class OntotextGraphDBGraph:
 
         if local_file:
             ontology_schema_graph = self._load_ontology_schema_from_file(
-                local_file, local_file_format  # type: ignore[arg-type]
+                local_file,
+                local_file_format,  # type: ignore[arg-type]
             )
         else:
             self._validate_user_query(query_ontology)  # type: ignore[arg-type]

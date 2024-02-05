@@ -426,7 +426,9 @@ class AzureMLBaseEndpoint(BaseModel):
         deployment_name = values.get("deployment_name")
 
         http_client = AzureMLEndpointClient(
-            endpoint_url, endpoint_key.get_secret_value(), deployment_name  # type: ignore[arg-type, union-attr, arg-type]
+            endpoint_url,
+            endpoint_key.get_secret_value(),
+            deployment_name,  # type: ignore[arg-type, union-attr, arg-type]
         )
         return http_client
 
