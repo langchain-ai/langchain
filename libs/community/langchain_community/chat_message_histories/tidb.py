@@ -40,7 +40,7 @@ class TiDBChatMessageHistory(BaseChatMessageHistory):
         self.session_id = session_id
         self.table_name = table_name
         self.earliest_time = earliest_time
-        self.cache = []  # type: ignore[var-annotated]
+        self.cache: List = []
 
         # Set up SQLAlchemy engine and session
         self.engine = create_engine(connection_string)
