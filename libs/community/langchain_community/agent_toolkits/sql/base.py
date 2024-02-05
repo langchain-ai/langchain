@@ -4,9 +4,17 @@ from __future__ import annotations
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
 
-from langchain_core.messages import AIMessage, SystemMessage
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    SystemMessage,
+)
+from langchain_core.prompts import (
+    BasePromptTemplate,
+    PromptTemplate,
+)
 from langchain_core.prompts.chat import (
+    BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
@@ -132,6 +140,7 @@ def create_sql_agent(
     toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)
     agent_type = agent_type or AgentType.ZERO_SHOT_REACT_DESCRIPTION
     tools = toolkit.get_tools() + list(extra_tools)
+    prefix = prefix or ""
     if prompt is None:
         prefix = prefix or SQL_PREFIX
         prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
@@ -151,6 +160,8 @@ def create_sql_agent(
             tools = [
                 tool for tool in tools if not isinstance(tool, ListSQLDatabaseTool)
             ]
+
+    messages: List[Union[BaseMessage, BaseMessagePromptTemplate]] = []
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         if prompt is None:
