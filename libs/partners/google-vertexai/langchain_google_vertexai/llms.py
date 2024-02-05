@@ -3,7 +3,9 @@ from __future__ import annotations
 from concurrent.futures import Executor
 from typing import Any, ClassVar, Dict, Iterator, List, Optional, Union
 
+import vertexai  # type: ignore[import-untyped]
 from google.api_core.client_options import ClientOptions
+from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform.gapic import (
     PredictionServiceAsyncClient,
     PredictionServiceClient,
@@ -41,7 +43,7 @@ from langchain_google_vertexai._utils import (
     create_retry_decorator,
     get_client_info,
     get_generation_info,
-    init_vertexai,
+    get_user_agent,
     is_codey_model,
     is_gemini_model,
 )
@@ -218,12 +220,14 @@ class _VertexAICommon(_VertexAIBase):
 
     @classmethod
     def _init_vertexai(cls, values: Dict) -> None:
-        init_vertexai(
+        vertexai.init(
             project=values.get("project"),
             location=values.get("location"),
             credentials=values.get("credentials"),
-            module=values.get("module"),
         )
+        _, user_agent = get_user_agent(values.get("module"))
+        initializer.global_config.append_user_agent(user_agent)
+        return None
 
     def _prepare_params(
         self,
