@@ -52,6 +52,9 @@ class _AnthropicCommon(BaseLanguageModel):
     default_request_timeout: Optional[float] = None
     """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
+    max_retries: Optional[int] = None
+    """Number of retries allowed for requests sent to the Anthropic Completion API. Default is 2 retries."""
+
     anthropic_api_url: Optional[str] = None
 
     anthropic_api_key: Optional[SecretStr] = None
