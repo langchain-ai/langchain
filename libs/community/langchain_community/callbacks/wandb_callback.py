@@ -92,15 +92,11 @@ def analyze_text(
     if visualize and nlp and output_dir is not None:
         doc = nlp(text)
 
-        dep_out = spacy.displacy.render(  # type: ignore
-            doc, style="dep", jupyter=False, page=True
-        )
+        dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
         dep_output_path = Path(output_dir, hash_string(f"dep-{text}") + ".html")
         dep_output_path.open("w", encoding="utf-8").write(dep_out)
 
-        ent_out = spacy.displacy.render(  # type: ignore
-            doc, style="ent", jupyter=False, page=True
-        )
+        ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
         ent_output_path = Path(output_dir, hash_string(f"ent-{text}") + ".html")
         ent_output_path.open("w", encoding="utf-8").write(ent_out)
 
@@ -193,7 +189,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.stream_logs = stream_logs
 
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.run: wandb.sdk.wandb_run.Run = wandb.init(  # type: ignore
+        self.run = wandb.init(
             job_type=self.job_type,
             project=self.project,
             entity=self.entity,
