@@ -15,6 +15,8 @@ from ai21.models import (
 )
 from pytest_mock import MockerFixture
 
+DUMMY_API_KEY = "test_api_key"
+
 
 BASIC_EXAMPLE_LLM_PARAMETERS = {
     "num_results": 3,

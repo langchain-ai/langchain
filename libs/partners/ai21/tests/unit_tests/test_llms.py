@@ -2,24 +2,36 @@
 from unittest.mock import call
 
 import pytest
+from ai21 import MissingApiKeyError
 from ai21.models import (
     Penalty,
 )
 
 from langchain_ai21 import AI21
-from libs.partners.ai21.tests.unit_tests.conftest import BASIC_EXAMPLE_LLM_PARAMETERS
+from libs.partners.ai21.tests.unit_tests.conftest import (
+    BASIC_EXAMPLE_LLM_PARAMETERS,
+    DUMMY_API_KEY,
+)
+
+
+@pytest.mark.requires("ai21")
+def test_initialization__when_no_api_key__should_raise_exception() -> None:
+    """Test integration initialization."""
+    with pytest.raises(MissingApiKeyError):
+        AI21()
 
 
 @pytest.mark.requires("ai21")
 def test_initialization__when_default_parameters() -> None:
     """Test integration initialization."""
-    AI21()
+    AI21(api_key=DUMMY_API_KEY)
 
 
 @pytest.mark.requires("ai21")
 def test_initialization__when_custom_parameters_to_init() -> None:
     """Test integration initialization."""
     AI21(
+        api_key=DUMMY_API_KEY,
         model="j2-mid",
         num_results=2,
         max_tokens=20,
@@ -48,6 +60,7 @@ def test_generate(mock_client_with_completion):
     epoch = 1
 
     ai21 = AI21(
+        api_key=DUMMY_API_KEY,
         client=mock_client_with_completion,
         custom_model=custom_model,
         epoch=epoch,

@@ -112,24 +112,6 @@ class ChatAI21(BaseChatModel, AI21Base):
         """Return type of chat model."""
         return "chat-ai21"
 
-    def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError
-
-    async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        raise NotImplementedError
-
     def _generate(
         self,
         messages: List[BaseMessage],

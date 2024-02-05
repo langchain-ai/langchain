@@ -3,6 +3,7 @@ from typing import Optional, List
 from unittest.mock import call
 
 import pytest
+from ai21 import MissingApiKeyError
 from ai21.models import Penalty, ChatMessage, RoleType
 
 from langchain_ai21.chat_models import (
@@ -17,13 +18,23 @@ from langchain_core.messages import (
     AIMessage,
     ChatMessage as LangChainChatMessage,
 )
-from libs.partners.ai21.tests.unit_tests.conftest import BASIC_EXAMPLE_LLM_PARAMETERS
+from libs.partners.ai21.tests.unit_tests.conftest import (
+    BASIC_EXAMPLE_LLM_PARAMETERS,
+    DUMMY_API_KEY,
+)
+
+
+@pytest.mark.requires("ai21")
+def test_initialization__when_no_api_key__should_raise_exception() -> None:
+    """Test integration initialization."""
+    with pytest.raises(MissingApiKeyError):
+        ChatAI21()
 
 
 @pytest.mark.requires("ai21")
 def test_initialization__when_default_parameters_in_init() -> None:
     """Test chat model initialization."""
-    ChatAI21(api_key="test_key")
+    ChatAI21(api_key=DUMMY_API_KEY)
 
 
 @pytest.mark.requires("ai21")
@@ -40,7 +51,7 @@ def test_initialization__when_custom_parameters_in_init():
     count_penalty = Penalty(scale=0.2, apply_to_punctuation=True, apply_to_emojis=True)
 
     llm = ChatAI21(
-        api_key="test_key",
+        api_key=DUMMY_API_KEY,
         model=model,
         num_results=num_results,
         max_tokens=max_tokens,
@@ -166,7 +177,7 @@ def test_invoke(mock_client_with_chat):
     chat_input = "I'm Pickle Rick"
 
     llm = ChatAI21(
-        api_key="test_key",
+        api_key=DUMMY_API_KEY,
         client=mock_client_with_chat,
         **BASIC_EXAMPLE_LLM_PARAMETERS,
     )
@@ -222,30 +233,3 @@ def test_generate(mock_client_with_chat):
             ),
         ]
     )
-
-
-@pytest.mark.requires("ai21")
-async def test_agenerate_when_not_implemented__should_raise_error():
-    with pytest.raises(NotImplementedError):
-        await ChatAI21().agenerate("I'm Pickle Rick")
-
-
-@pytest.mark.requires("ai21")
-async def test_abatch_when_not_implemented__should_raise_error():
-    with pytest.raises(NotImplementedError):
-        await ChatAI21().abatch("I'm Pickle Rick")
-
-
-@pytest.mark.requires("ai21")
-def test_stream_when_not_implemented__should_raise_error():
-    llm = ChatAI21()
-    with pytest.raises(NotImplementedError):
-        for _ in llm.stream("I'm Pickle Rick"):
-            ...
-
-
-@pytest.mark.requires("ai21")
-async def test_ainvoke_when_not_implemented__should_raise_error():
-    llm = ChatAI21()
-    with pytest.raises(NotImplementedError):
-        await llm.ainvoke("I'm Pickle Rick")
