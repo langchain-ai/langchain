@@ -1,8 +1,6 @@
-import asyncio
 from typing import TYPE_CHECKING, Optional, Type
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -67,14 +65,3 @@ class MultionCreateSession(BaseTool):
             }
         except Exception as e:
             raise Exception(f"An error occurred: {e}")
-
-    async def _arun(
-        self,
-        query: str,
-        url: Optional[str] = "https://www.google.com/",
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> dict:
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, self._run, query, url)
-
-        return result

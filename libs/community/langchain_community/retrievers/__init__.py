@@ -57,6 +57,9 @@ from langchain_community.retrievers.pinecone_hybrid_search import (
     PineconeHybridSearchRetriever,
 )
 from langchain_community.retrievers.pubmed import PubMedRetriever
+from langchain_community.retrievers.qdrant_sparse_vector_retriever import (
+    QdrantSparseVectorRetriever,
+)
 from langchain_community.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain_community.retrievers.svm import SVMRetriever
 from langchain_community.retrievers.tavily_search_api import TavilySearchAPIRetriever
@@ -93,6 +96,7 @@ __all__ = [
     "OutlineRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
+    "QdrantSparseVectorRetriever",
     "RemoteLangChainRetriever",
     "SVMRetriever",
     "TavilySearchAPIRetriever",

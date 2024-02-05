@@ -1,3 +1,3 @@
-from langchain_community.tools.human.tool import HumanInputRun, _print_func
+from langchain_community.tools.human.tool import HumanInputRun
 
-__all__ = ["_print_func", "HumanInputRun"]
+__all__ = ["HumanInputRun"]

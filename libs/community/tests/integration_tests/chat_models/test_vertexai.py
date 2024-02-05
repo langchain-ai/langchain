@@ -25,19 +25,24 @@ from langchain_community.chat_models.vertexai import (
     _parse_examples,
 )
 
+model_names_to_test = [None, "codechat-bison", "chat-bison", "gemini-pro"]
 
-@pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
+
+@pytest.mark.parametrize("model_name", model_names_to_test)
 def test_vertexai_instantiation(model_name: str) -> None:
     if model_name:
         model = ChatVertexAI(model_name=model_name)
     else:
         model = ChatVertexAI()
     assert model._llm_type == "vertexai"
-    assert model.model_name == model.client._model_id
+    try:
+        assert model.model_name == model.client._model_id
+    except AttributeError:
+        assert model.model_name == model.client._model_name.split("/")[-1]
 
 
 @pytest.mark.scheduled
-@pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
+@pytest.mark.parametrize("model_name", model_names_to_test)
 def test_vertexai_single_call(model_name: str) -> None:
     if model_name:
         model = ChatVertexAI(model_name=model_name)
@@ -63,8 +68,9 @@ def test_candidates() -> None:
 
 
 @pytest.mark.scheduled
-async def test_vertexai_agenerate() -> None:
-    model = ChatVertexAI(temperature=0)
+@pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
+async def test_vertexai_agenerate(model_name: str) -> None:
+    model = ChatVertexAI(temperature=0, model_name=model_name)
     message = HumanMessage(content="Hello")
     response = await model.agenerate([[message]])
     assert isinstance(response, LLMResult)
@@ -75,8 +81,9 @@ async def test_vertexai_agenerate() -> None:
 
 
 @pytest.mark.scheduled
-async def test_vertexai_stream() -> None:
-    model = ChatVertexAI(temperature=0)
+@pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
+def test_vertexai_stream(model_name: str) -> None:
+    model = ChatVertexAI(temperature=0, model_name=model_name)
     message = HumanMessage(content="Hello")
 
     sync_response = model.stream([message])
@@ -101,6 +108,53 @@ def test_vertexai_single_call_with_context() -> None:
     assert isinstance(response.content, str)
 
 
+def test_multimodal() -> None:
+    llm = ChatVertexAI(model_name="gemini-ultra-vision")
+    gcs_url = (
+        "gs://cloud-samples-data/generative-ai/image/"
+        "320px-Felis_catus-cat_on_snow.jpg"
+    )
+    image_message = {
+        "type": "image_url",
+        "image_url": {"url": gcs_url},
+    }
+    text_message = {
+        "type": "text",
+        "text": "What is shown in this image?",
+    }
+    message = HumanMessage(content=[text_message, image_message])
+    output = llm([message])
+    assert isinstance(output.content, str)
+
+
+def test_multimodal_history() -> None:
+    llm = ChatVertexAI(model_name="gemini-ultra-vision")
+    gcs_url = (
+        "gs://cloud-samples-data/generative-ai/image/"
+        "320px-Felis_catus-cat_on_snow.jpg"
+    )
+    image_message = {
+        "type": "image_url",
+        "image_url": {"url": gcs_url},
+    }
+    text_message = {
+        "type": "text",
+        "text": "What is shown in this image?",
+    }
+    message1 = HumanMessage(content=[text_message, image_message])
+    message2 = AIMessage(
+        content=(
+            "This is a picture of a cat in the snow. The cat is a tabby cat, which is "
+            "a type of cat with a striped coat. The cat is standing in the snow, and "
+            "its fur is covered in snow."
+        )
+    )
+    message3 = HumanMessage(content="What time of day is it?")
+    response = llm([message1, message2, message3])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+
 @pytest.mark.scheduled
 def test_vertexai_single_call_with_examples() -> None:
     model = ChatVertexAI()
@@ -117,7 +171,7 @@ def test_vertexai_single_call_with_examples() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.parametrize("model_name", [None, "codechat-bison", "chat-bison"])
+@pytest.mark.parametrize("model_name", model_names_to_test)
 def test_vertexai_single_call_with_history(model_name: str) -> None:
     if model_name:
         model = ChatVertexAI(model_name=model_name)

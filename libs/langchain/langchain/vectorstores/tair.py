@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.tair import Tair, _uuid_key
+from langchain_community.vectorstores.tair import Tair
 
-__all__ = ["_uuid_key", "Tair"]
+__all__ = ["Tair"]

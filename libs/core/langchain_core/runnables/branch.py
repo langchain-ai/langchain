@@ -1,7 +1,9 @@
 from typing import (
     Any,
+    AsyncIterator,
     Awaitable,
     Callable,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -23,6 +25,7 @@ from langchain_core.runnables.base import (
 from langchain_core.runnables.config import (
     RunnableConfig,
     ensure_config,
+    get_async_callback_manager_for_config,
     get_callback_manager_for_config,
     patch_config,
 )
@@ -212,7 +215,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                     ),
                     **kwargs,
                 )
-        except Exception as e:
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise
         run_manager.on_chain_end(dumpd(output))
@@ -223,8 +226,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     ) -> Output:
         """Async version of invoke."""
         config = ensure_config(config)
-        callback_manager = get_callback_manager_for_config(config)
-        run_manager = callback_manager.on_chain_start(
+        callback_manager = get_async_callback_manager_for_config(config)
+        run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             input,
             name=config.get("run_name"),
@@ -259,8 +262,156 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                     ),
                     **kwargs,
                 )
-        except Exception as e:
+        except BaseException as e:
+            await run_manager.on_chain_error(e)
+            raise
+        await run_manager.on_chain_end(dumpd(output))
+        return output
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        """First evaluates the condition,
+        then delegate to true or false branch."""
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+        )
+        final_output: Optional[Output] = None
+        final_output_supported = True
+
+        try:
+            for idx, branch in enumerate(self.branches):
+                condition, runnable = branch
+
+                expression_value = condition.invoke(
+                    input,
+                    config=patch_config(
+                        config,
+                        callbacks=run_manager.get_child(tag=f"condition:{idx + 1}"),
+                    ),
+                )
+
+                if expression_value:
+                    for chunk in runnable.stream(
+                        input,
+                        config=patch_config(
+                            config,
+                            callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
+                        ),
+                        **kwargs,
+                    ):
+                        yield chunk
+                        if final_output_supported:
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                try:
+                                    final_output = final_output + chunk  # type: ignore
+                                except TypeError:
+                                    final_output = None
+                                    final_output_supported = False
+                    break
+            else:
+                for chunk in self.default.stream(
+                    input,
+                    config=patch_config(
+                        config,
+                        callbacks=run_manager.get_child(tag="branch:default"),
+                    ),
+                    **kwargs,
+                ):
+                    yield chunk
+                    if final_output_supported:
+                        if final_output is None:
+                            final_output = chunk
+                        else:
+                            try:
+                                final_output = final_output + chunk  # type: ignore
+                            except TypeError:
+                                final_output = None
+                                final_output_supported = False
+        except BaseException as e:
             run_manager.on_chain_error(e)
             raise
-        run_manager.on_chain_end(dumpd(output))
-        return output
+        run_manager.on_chain_end(final_output)
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        """First evaluates the condition,
+        then delegate to true or false branch."""
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+        )
+        final_output: Optional[Output] = None
+        final_output_supported = True
+
+        try:
+            for idx, branch in enumerate(self.branches):
+                condition, runnable = branch
+
+                expression_value = await condition.ainvoke(
+                    input,
+                    config=patch_config(
+                        config,
+                        callbacks=run_manager.get_child(tag=f"condition:{idx + 1}"),
+                    ),
+                )
+
+                if expression_value:
+                    async for chunk in runnable.astream(
+                        input,
+                        config=patch_config(
+                            config,
+                            callbacks=run_manager.get_child(tag=f"branch:{idx + 1}"),
+                        ),
+                        **kwargs,
+                    ):
+                        yield chunk
+                        if final_output_supported:
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                try:
+                                    final_output = final_output + chunk  # type: ignore
+                                except TypeError:
+                                    final_output = None
+                                    final_output_supported = False
+                    break
+            else:
+                async for chunk in self.default.astream(
+                    input,
+                    config=patch_config(
+                        config,
+                        callbacks=run_manager.get_child(tag="branch:default"),
+                    ),
+                    **kwargs,
+                ):
+                    yield chunk
+                    if final_output_supported:
+                        if final_output is None:
+                            final_output = chunk
+                        else:
+                            try:
+                                final_output = final_output + chunk  # type: ignore
+                            except TypeError:
+                                final_output = None
+                                final_output_supported = False
+        except BaseException as e:
+            await run_manager.on_chain_error(e)
+            raise
+        await run_manager.on_chain_end(final_output)

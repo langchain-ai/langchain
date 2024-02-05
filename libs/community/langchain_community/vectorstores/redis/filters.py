@@ -214,7 +214,7 @@ class RedisNum(RedisFilterField):
 
     def __str__(self) -> str:
         """Return the query syntax for a RedisNum filter expression."""
-        if not self._value:
+        if self._value is None:
             return "*"
 
         if (

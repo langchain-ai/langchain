@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.iugu import IUGU_ENDPOINTS, IuguLoader
+from langchain_community.document_loaders.iugu import IuguLoader
 
-__all__ = ["IUGU_ENDPOINTS", "IuguLoader"]
+__all__ = ["IuguLoader"]

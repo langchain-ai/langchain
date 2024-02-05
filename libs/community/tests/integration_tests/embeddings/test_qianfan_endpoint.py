@@ -25,3 +25,15 @@ def test_model() -> None:
     embedding = QianfanEmbeddingsEndpoint(model="Embedding-V1")
     output = embedding.embed_documents(documents)
     assert len(output) == 2
+
+
+def test_rate_limit() -> None:
+    llm = QianfanEmbeddingsEndpoint(
+        model="Embedding-V1", init_kwargs={"query_per_second": 2}
+    )
+    assert llm.client._client._rate_limiter._sync_limiter._query_per_second == 2
+    documents = ["foo", "bar"]
+    output = llm.embed_documents(documents)
+    assert len(output) == 2
+    assert len(output[0]) == 384
+    assert len(output[1]) == 384

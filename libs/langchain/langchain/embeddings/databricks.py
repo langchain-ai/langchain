@@ -1,3 +1,3 @@
-from langchain_community.embeddings.databricks import DatabricksEmbeddings, _chunk
+from langchain_community.embeddings.databricks import DatabricksEmbeddings
 
-__all__ = ["_chunk", "DatabricksEmbeddings"]
+__all__ = ["DatabricksEmbeddings"]

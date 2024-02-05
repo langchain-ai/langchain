@@ -109,7 +109,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     .. code-block:: python
 
         from langchain.agents import AgentType, initialize_agent
-        from langchain.chat_models import ChatOpenAI
+        from langchain_community.chat_models import ChatOpenAI
         from langchain.evaluation import TrajectoryEvalChain
         from langchain.tools import tool
 
@@ -183,7 +183,7 @@ Description: {tool.description}"""
 
     @staticmethod
     def get_agent_trajectory(
-        steps: Union[str, Sequence[Tuple[AgentAction, str]]]
+        steps: Union[str, Sequence[Tuple[AgentAction, str]]],
     ) -> str:
         """Get the agent trajectory as a formatted string.
 

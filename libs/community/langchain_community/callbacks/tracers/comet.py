@@ -50,10 +50,15 @@ def import_comet_llm_api() -> SimpleNamespace:
 
 
 class CometTracer(BaseTracer):
+    """Comet Tracer."""
+
     def __init__(self, **kwargs: Any) -> None:
+        """Initialize the Comet Tracer."""
         super().__init__(**kwargs)
         self._span_map: Dict["UUID", "Span"] = {}
+        """Map from run id to span."""
         self._chains_map: Dict["UUID", "Chain"] = {}
+        """Map from run id to chain."""
         self._initialize_comet_modules()
 
     def _initialize_comet_modules(self) -> None:

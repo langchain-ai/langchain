@@ -96,7 +96,7 @@ class DatabricksVectorSearch(VectorStore):
             )
 
     For more information on Databricks Vector Search, see `Databricks Vector Search
-    documentation <TODO: pending-link-to-documentation-page>`.
+    documentation: https://docs.databricks.com/en/generative-ai/vector-search.html.
 
     """
 

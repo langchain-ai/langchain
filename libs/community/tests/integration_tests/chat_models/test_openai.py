@@ -261,7 +261,7 @@ def test_chat_openai_extra_kwargs() -> None:
 
     # Test that "model" cannot be specified in kwargs
     with pytest.raises(ValueError):
-        ChatOpenAI(model_kwargs={"model": "text-davinci-003"})
+        ChatOpenAI(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
 
 
 @pytest.mark.scheduled

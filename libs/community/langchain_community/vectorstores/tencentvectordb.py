@@ -64,7 +64,7 @@ class IndexParams:
 
 
 class TencentVectorDB(VectorStore):
-    """Initialize wrapper around the tencent vector database.
+    """Tencent VectorDB as a vector store.
 
     In order to use this you need to have a database instance.
     See the following documentation for details:
@@ -316,7 +316,7 @@ class TencentVectorDB(VectorStore):
             meta = result.get(self.field_metadata)
             if meta is not None:
                 meta = json.loads(meta)
-            doc = Document(page_content=result.get(self.field_text), metadata=meta)
+            doc = Document(page_content=result.get(self.field_text), metadata=meta)  # type: ignore[arg-type]
             pair = (doc, result.get("score", 0.0))
             ret.append(pair)
         return ret
@@ -374,7 +374,7 @@ class TencentVectorDB(VectorStore):
             meta = result.get(self.field_metadata)
             if meta is not None:
                 meta = json.loads(meta)
-            doc = Document(page_content=result.get(self.field_text), metadata=meta)
+            doc = Document(page_content=result.get(self.field_text), metadata=meta)  # type: ignore[arg-type]
             documents.append(doc)
             ordered_result_embeddings.append(result.get(self.field_vector))
         # Get the new order of results.

@@ -31,7 +31,7 @@ class PromptLayerOpenAI(OpenAI):
         .. code-block:: python
 
             from langchain_community.llms import PromptLayerOpenAI
-            openai = PromptLayerOpenAI(model_name="text-davinci-003")
+            openai = PromptLayerOpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
     pl_tags: Optional[List[str]]

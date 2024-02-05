@@ -1,14 +1,14 @@
 # Load
 import uuid
 
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.storage import InMemoryStore
-from langchain.vectorstores import Chroma
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnablePassthrough
 from unstructured.partition.pdf import partition_pdf
@@ -16,7 +16,7 @@ from unstructured.partition.pdf import partition_pdf
 # Path to docs
 path = "docs"
 raw_pdf_elements = partition_pdf(
-    filename=path + "LLaMA2.pdf",
+    filename=path + "/LLaVA.pdf",
     # Unstructured first finds embedded image blocks
     extract_images_in_pdf=False,
     # Use layout model (YOLOX) to get bounding boxes (for tables) and find titles

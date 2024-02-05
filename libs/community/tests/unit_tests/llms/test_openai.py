@@ -34,6 +34,10 @@ def test_openai_invalid_model_kwargs() -> None:
     with pytest.raises(ValueError):
         OpenAI(model_kwargs={"model_name": "foo"})
 
+    # Test that "model" cannot be specified in kwargs
+    with pytest.raises(ValueError):
+        OpenAI(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
+
 
 @pytest.mark.requires("openai")
 def test_openai_incorrect_field() -> None:
@@ -48,7 +52,7 @@ def mock_completion() -> dict:
         "id": "cmpl-3evkmQda5Hu7fcZavknQda3SQ",
         "object": "text_completion",
         "created": 1689989000,
-        "model": "text-davinci-003",
+        "model": "gpt-3.5-turbo-instruct",
         "choices": [
             {"text": "Bar Baz", "index": 0, "logprobs": None, "finish_reason": "length"}
         ],

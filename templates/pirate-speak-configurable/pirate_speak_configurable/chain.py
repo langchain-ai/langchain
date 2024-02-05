@@ -1,5 +1,5 @@
-from langchain.chat_models import ChatAnthropic, ChatCohere, ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatAnthropic, ChatCohere, ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import ConfigurableField
 
 _prompt = ChatPromptTemplate.from_messages(
