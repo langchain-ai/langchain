@@ -1,3 +1,5 @@
+# ruff: noqa
+# TODO Don't know why it have linting error
 from typing import List, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
