@@ -341,7 +341,9 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro", convert_system_message_to_human
     return messages
 
 
-def _parts_to_content(parts: List[genai.types.PartType]) -> Union[List[dict], str]:
+def _parts_to_content(
+    parts: List[genai.types.PartType],
+) -> Union[str, List[Union[Dict[Any, Any], str]]]:
     """Converts a list of Gemini API Part objects into a list of LangChain messages."""
     if len(parts) == 1 and parts[0].text is not None and not parts[0].inline_data:
         # Simple text response. The typical response
@@ -349,7 +351,7 @@ def _parts_to_content(parts: List[genai.types.PartType]) -> Union[List[dict], st
     elif not parts:
         logger.warning("Gemini produced an empty response.")
         return ""
-    messages = []
+    messages: List[Union[Dict[Any, Any], str]] = []
     for part in parts:
         if part.text is not None:
             messages.append(
