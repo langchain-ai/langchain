@@ -33,14 +33,14 @@ class CassandraLoader(BaseLoader):
         page_content_mapper: Callable[[Any], str] = str,
         metadata_mapper: Callable[[Any], dict] = lambda _: {},
         *,
-        query_parameters: Union[dict, Sequence] = None,
-        query_timeout: Optional[float] = _NOT_SET,
+        query_parameters: Union[dict, Sequence] = None,  # type: ignore[assignment]
+        query_timeout: Optional[float] = _NOT_SET,  # type: ignore[assignment]
         query_trace: bool = False,
-        query_custom_payload: dict = None,
+        query_custom_payload: dict = None,  # type: ignore[assignment]
         query_execution_profile: Any = _NOT_SET,
         query_paging_state: Any = None,
         query_host: Host = None,
-        query_execute_as: str = None,
+        query_execute_as: str = None,  # type: ignore[assignment]
     ) -> None:
         """
         Document Loader for Apache Cassandra.
@@ -85,7 +85,7 @@ class CassandraLoader(BaseLoader):
             self.query = f"SELECT * FROM {_keyspace}.{table};"
             self.metadata = {"table": table, "keyspace": _keyspace}
         else:
-            self.query = query
+            self.query = query  # type: ignore[assignment]
             self.metadata = {}
 
         self.session = session or check_resolve_session(session)

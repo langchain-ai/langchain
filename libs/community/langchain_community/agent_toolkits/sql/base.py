@@ -177,12 +177,12 @@ def create_sql_agent(
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
         if prompt is None:
             messages = [
-                SystemMessage(content=prefix),
+                SystemMessage(content=prefix),  # type: ignore[arg-type]
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
-            prompt = ChatPromptTemplate.from_messages(messages)
+            prompt = ChatPromptTemplate.from_messages(messages)  # type: ignore[arg-type]
         agent = RunnableAgent(
             runnable=create_openai_functions_agent(llm, tools, prompt),
             input_keys_arg=["input"],
@@ -191,12 +191,12 @@ def create_sql_agent(
     elif agent_type == "openai-tools":
         if prompt is None:
             messages = [
-                SystemMessage(content=prefix),
+                SystemMessage(content=prefix),  # type: ignore[arg-type]
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
-            prompt = ChatPromptTemplate.from_messages(messages)
+            prompt = ChatPromptTemplate.from_messages(messages)  # type: ignore[arg-type]
         agent = RunnableMultiActionAgent(
             runnable=create_openai_tools_agent(llm, tools, prompt),
             input_keys_arg=["input"],

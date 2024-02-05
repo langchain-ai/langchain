@@ -197,7 +197,7 @@ class ChatTongyi(BaseChatModel):
         return {
             "model": self.model_name,
             "top_p": self.top_p,
-            "api_key": self.dashscope_api_key.get_secret_value(),
+            "api_key": self.dashscope_api_key.get_secret_value(),  # type: ignore[union-attr]
             "result_format": "message",
             **self.model_kwargs,
         }
