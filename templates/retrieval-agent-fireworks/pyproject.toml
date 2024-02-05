@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "oss-tool-retrieval-agent"
+name = "retrieval-agent-fireworks"
 version = "0.0.1"
-description = "Retrieval agent for open source models"
+description = "Retrieval agent for open source models hosted on Fireworks"
 authors = []
 readme = "README.md"
 
@@ -20,7 +20,7 @@ fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
-export_module = "oss_tool_retrieval_agent"
+export_module = "retrieval_agent_fireworks"
 export_attr = "agent_executor"
 
 [tool.templates-hub]
