@@ -34,7 +34,7 @@ gigachain-core = { path = "libs/core/", develop = true }
 gigachain-community = { path = "libs/community/", develop = true }
 gigachain = { path = "libs/langchain/", develop = true }
 gigachain-experimental = { path = "libs/experimental/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
+gigachain-openai = { path = "libs/partners/openai", develop = true }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -45,7 +45,7 @@ gigachain-core = { path = "libs/core/", develop = true }
 gigachain-community = { path = "libs/community/", develop = true }
 gigachain = { path = "libs/langchain/", develop = true }
 gigachain-experimental = { path = "libs/experimental/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
+gigachain-openai = { path = "libs/partners/openai", develop = true }
 
 [tool.poetry.group.test.dependencies]
 

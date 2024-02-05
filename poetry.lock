@@ -1065,6 +1065,25 @@ type = "directory"
 url = "libs/experimental"
 
 [[package]]
+name = "gigachain-openai"
+version = "0.0.5"
+description = "An integration package connecting OpenAI and LangChain"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+gigachain-core = ">=0.1.16,<0.2"
+numpy = "^1"
+openai = "^1.10.0"
+tiktoken = "^0.5.2"
+
+[package.source]
+type = "directory"
+url = "libs/partners/openai"
+
+[[package]]
 name = "gigachat"
 version = "0.1.15"
 description = "GigaChat. Python-library for GigaChain and LangChain"
@@ -1782,25 +1801,6 @@ files = [
     {file = "jupyterlab_widgets-3.0.9-py3-none-any.whl", hash = "sha256:3cf5bdf5b897bf3bccf1c11873aa4afd776d7430200f765e0686bd352487b58d"},
     {file = "jupyterlab_widgets-3.0.9.tar.gz", hash = "sha256:6005a4e974c7beee84060fdfba341a3218495046de8ae3ec64888e5fe19fdb4c"},
 ]
-
-[[package]]
-name = "langchain-openai"
-version = "0.0.5"
-description = "An integration package connecting OpenAI and LangChain"
-optional = false
-python-versions = ">=3.8.1,<4.0"
-files = []
-develop = true
-
-[package.dependencies]
-gigachain-core = ">=0.1.16,<0.2"
-numpy = "^1"
-openai = "^1.10.0"
-tiktoken = "^0.5.2"
-
-[package.source]
-type = "directory"
-url = "libs/partners/openai"
 
 [[package]]
 name = "langsmith"
@@ -4208,4 +4208,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "9335ea786a9d58dd04d8db76e07e1e0322498644578276db3222ed272fe7f853"
+content-hash = "48e1c6d5cce64d8e7a1dd3d0399fd1bb1ec1aa23ff74f7858de8c96f1ea0cc9f"

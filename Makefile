@@ -67,6 +67,13 @@ build_all:
 	make tests
 	cd ../..
 
+	cd libs/langchain
+	poetry lock --no-update
+	make lint
+	make tests
+	make extended_tests
+	cd ../..
+
 ######################
 # HELP
 ######################

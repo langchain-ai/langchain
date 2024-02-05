@@ -1,11 +1,14 @@
 [tool.poetry]
-name = "langchain-openai"
+name = "gigachain-openai"
 version = "0.0.5"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
+packages = [
+    {include = "langchain_openai"}
+]
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai"
