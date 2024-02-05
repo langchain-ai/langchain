@@ -13,7 +13,7 @@ from langchain_core.vectorstores import VectorStore
 from langchain_community.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
-    from google.cloud import storage
+    from google.cloud import storage  # type: ignore
     from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
     from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint import (
         Namespace,
@@ -103,7 +103,7 @@ class MatchingEngine(VectorStore):
     def _validate_google_libraries_installation(self) -> None:
         """Validates that Google libraries that are needed are installed."""
         try:
-            from google.cloud import aiplatform, storage  # noqa: F401
+            from google.cloud import aiplatform, storage  # type: ignore # noqa: F401
             from google.oauth2 import service_account  # noqa: F401
         except ImportError:
             raise ImportError(
@@ -545,7 +545,7 @@ class MatchingEngine(VectorStore):
             A configured GCS client.
         """
 
-        from google.cloud import storage
+        from google.cloud import storage  # type: ignore
 
         return storage.Client(
             credentials=credentials,

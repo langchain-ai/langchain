@@ -51,6 +51,8 @@ class AmadeusClosestAirport(AmadeusBaseTool):
         location: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
+        if not self.llm:
+            raise ValueError("No language model (llm) has been set for this tool.")
         content = (
             f" What is the nearest airport to {location}? Please respond with the "
             " airport's International Air Transport Association (IATA) Location "

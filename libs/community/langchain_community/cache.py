@@ -931,7 +931,7 @@ class CassandraCache(BaseCache):
         self.table_name = table_name
         self.ttl_seconds = ttl_seconds
 
-        self.kv_cache = ElasticCassandraTable(
+        self.kv_cache: Any = ElasticCassandraTable(
             session=self.session,
             keyspace=self.keyspace,
             table=self.table_name,
