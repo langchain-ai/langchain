@@ -6,8 +6,8 @@ from langchain_community.adapters import openai as lcopenai
 def _test_no_stream(**kwargs: Any) -> None:
     import openai
 
-    result = openai.ChatCompletion.create(**kwargs)
-    lc_result = lcopenai.ChatCompletion.create(**kwargs)
+    result = openai.ChatCompletion.create(**kwargs)  # type: ignore
+    lc_result = lcopenai.ChatCompletion.create(**kwargs)  # type: ignore
     if isinstance(lc_result, dict):
         if isinstance(result, dict):
             result_dict = result["choices"][0]["message"].to_dict_recursive()
@@ -20,11 +20,11 @@ def _test_stream(**kwargs: Any) -> None:
     import openai
 
     result = []
-    for c in openai.ChatCompletion.create(**kwargs):
+    for c in openai.ChatCompletion.create(**kwargs):  # type: ignore
         result.append(c["choices"][0]["delta"].to_dict_recursive())
 
     lc_result = []
-    for c in lcopenai.ChatCompletion.create(**kwargs):
+    for c in lcopenai.ChatCompletion.create(**kwargs):  # type: ignore
         lc_result.append(c["choices"][0]["delta"])
     assert result == lc_result
 
@@ -32,8 +32,8 @@ def _test_stream(**kwargs: Any) -> None:
 async def _test_async(**kwargs: Any) -> None:
     import openai
 
-    result = await openai.ChatCompletion.acreate(**kwargs)
-    lc_result = await lcopenai.ChatCompletion.acreate(**kwargs)
+    result = await openai.ChatCompletion.acreate(**kwargs)  # type: ignore
+    lc_result = await lcopenai.ChatCompletion.acreate(**kwargs)  # type: ignore
     if isinstance(lc_result, dict):
         if isinstance(result, dict):
             result_dict = result["choices"][0]["message"].to_dict_recursive()
@@ -46,11 +46,11 @@ async def _test_astream(**kwargs: Any) -> None:
     import openai
 
     result = []
-    async for c in await openai.ChatCompletion.acreate(**kwargs):
+    async for c in await openai.ChatCompletion.acreate(**kwargs):  # type: ignore
         result.append(c["choices"][0]["delta"].to_dict_recursive())
 
     lc_result = []
-    async for c in await lcopenai.ChatCompletion.acreate(**kwargs):
+    async for c in await lcopenai.ChatCompletion.acreate(**kwargs):  # type: ignore
         lc_result.append(c["choices"][0]["delta"])
     assert result == lc_result
 

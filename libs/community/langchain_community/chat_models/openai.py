@@ -327,7 +327,7 @@ class ChatOpenAI(BaseChatModel):
                     **client_params
                 ).chat.completions
         elif not values.get("client"):
-            values["client"] = openai.ChatCompletion
+            values["client"] = openai.ChatCompletion  # type: ignore
         else:
             pass
         return values

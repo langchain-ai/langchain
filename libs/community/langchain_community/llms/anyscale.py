@@ -107,7 +107,7 @@ class Anyscale(BaseOpenAI):
             import openai
 
             ## Always create ChatComplete client, replacing the legacy Complete client
-            values["client"] = openai.ChatCompletion
+            values["client"] = openai.ChatCompletion  # type: ignore
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
