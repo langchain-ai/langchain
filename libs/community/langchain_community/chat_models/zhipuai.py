@@ -270,10 +270,10 @@ class ChatZhipuAI(BaseChatModel):
 
         else:
             stream_iter = self._stream(
-                prompt=prompt,
+                prompt=prompt,  # type: ignore[arg-type]
                 stop=stop,
                 run_manager=run_manager,
-                **kwargs,  # type: ignore[arg-type]
+                **kwargs,
             )
             return generate_from_stream(stream_iter)
 
