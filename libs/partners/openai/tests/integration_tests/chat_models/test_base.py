@@ -23,7 +23,7 @@ def test_chat_openai() -> None:
         temperature=0.7,
         base_url=None,
         organization=None,
-        openai_proxy=None,  # type: ignore
+        openai_proxy=None,
         timeout=10.0,
         max_retries=3,
         http_client=None,

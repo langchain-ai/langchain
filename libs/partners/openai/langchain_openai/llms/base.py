@@ -75,14 +75,14 @@ class BaseOpenAI(BaseLLM):
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
-        if self.openai_api_base:  # type: ignore
-            attributes["openai_api_base"] = self.openai_api_base  # type: ignore
+        if self.openai_api_base:
+            attributes["openai_api_base"] = self.openai_api_base
 
         if self.openai_organization:
             attributes["openai_organization"] = self.openai_organization
 
-        if self.openai_proxy:  # type: ignore
-            attributes["openai_proxy"] = self.openai_proxy  # type: ignore
+        if self.openai_proxy:
+            attributes["openai_proxy"] = self.openai_proxy
 
         return attributes
 
@@ -110,13 +110,13 @@ class BaseOpenAI(BaseLLM):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")  # type: ignore
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None  # type: ignore
+    openai_proxy: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
@@ -182,12 +182,12 @@ class BaseOpenAI(BaseLLM):
         values["openai_api_key"] = (
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(  # type: ignore
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
         )
-        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
+        values["openai_proxy"] = get_from_dict_or_env(
             values,
-            "openai_proxy",  # type: ignore
+            "openai_proxy",
             "OPENAI_PROXY",
             default="",
         )
@@ -202,7 +202,7 @@ class BaseOpenAI(BaseLLM):
             if values["openai_api_key"]
             else None,
             "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],  # type: ignore
+            "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
