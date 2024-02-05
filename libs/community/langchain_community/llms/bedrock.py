@@ -229,9 +229,17 @@ class BedrockBase(BaseModel, ABC):
     config: Optional[Config] = None
     """An optional botocore.config.Config instance to pass to the client."""
 
+    provider: Optional[str] = None
+    """The model provider, e.g., amazon, cohere, ai21, etc. When not supplied, provider
+    is extracted from the first part of the model_id e.g. 'amazon' in 
+    'amazon.titan-text-express-v1'. This value should be provided for model ids that do
+    not have the provider in them, e.g., custom and provisioned models that have an ARN
+    associated with them."""
+
     model_id: str
     """Id of the model to call, e.g., amazon.titan-text-express-v1, this is
-    equivalent to the modelId property in the list-foundation-models api"""
+    equivalent to the modelId property in the list-foundation-models api. For custom and
+    provisioned models, an ARN value is expected."""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model."""
@@ -353,6 +361,14 @@ class BedrockBase(BaseModel, ABC):
         }
 
     def _get_provider(self) -> str:
+        if self.provider:
+            return self.provider
+        if self.model_id.startswith("arn"):
+            raise ValueError(
+                "Model provider should be supplied when passing a model ARN as "
+                "model_id"
+            )
+
         return self.model_id.split(".")[0]
 
     @property
