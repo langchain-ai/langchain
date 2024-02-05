@@ -50,12 +50,6 @@ def _import_anthropic() -> Any:
     return Anthropic
 
 
-def _import_perplexity() -> Any:
-    from langchain_community.llms.perplexity import Perplexity
-
-    return Perplexity
-
-
 def _import_anyscale() -> Any:
     from langchain_community.llms.anyscale import Anyscale
 
@@ -624,7 +618,6 @@ __all__ = [
     "OpenLLM",
     "OpenLM",
     "PaiEasEndpoint",
-    "Perplexity",
     "Petals",
     "PipelineAI",
     "Predibase",
@@ -710,7 +703,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "openai": _import_openai,
         "openlm": _import_openlm,
         "pai_eas_endpoint": _import_pai_eas_endpoint,
-        "perplexity": _import_perplexity,
         "petals": _import_petals,
         "pipelineai": _import_pipelineai,
         "predibase": _import_predibase,
