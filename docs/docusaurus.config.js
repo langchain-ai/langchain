@@ -298,6 +298,11 @@ const config = {
                 label: "Blog",
                 href: "https://blog.langchain.dev",
               },
+              {
+                label: "YouTube",
+                href: "https://www.youtube.com/@LangChain",
+              },
+              }
             ],
           },
         ],
