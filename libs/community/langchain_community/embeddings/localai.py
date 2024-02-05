@@ -120,7 +120,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     """LocalAI embedding models.
 
     Since LocalAI and OpenAI have 1:1 compatibility between APIs, this class
-    uses the ``openai`` Python package's ``openai.Embedding`` as its client.  # type: ignore
+    uses the ``openai`` Python package's ``openai.Embedding`` as its client.
     Thus, you should have the ``openai`` python package installed, and defeat
     the environment variable ``OPENAI_API_KEY`` by setting to a random string.
     You also need to specify ``OPENAI_API_BASE`` to point to your LocalAI
@@ -268,7 +268,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             self,
             input=[text],
             **self._invocation_params,
-        )["data"][0]["embedding"]
+        )["data"][
+            0
+        ]["embedding"]
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""
