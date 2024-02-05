@@ -143,6 +143,14 @@ class Serializable(BaseModel, ABC):
             this = cast(Serializable, self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
+            # Now also add the aliases for the secrets
+            # This ensures known secret aliases are hidden.
+            # Note: this does NOT hide any other extra kwargs
+            # that are not present in the fields.
+            for key in list(secrets):
+                value = secrets[key]
+                if key in this.__fields__:
+                    secrets[this.__fields__[key].alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
