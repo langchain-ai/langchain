@@ -205,7 +205,7 @@ const config = {
               },
               {
                 to: "/docs/additional_resources/youtube",
-                label: "YouTube videos"
+                label: "YouTube"
               },
             ]
           },
