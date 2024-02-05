@@ -418,7 +418,7 @@ class ChatZhipuAI(BaseChatModel):
             async with aconnect_sse(
                 client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
-                for sse in event_source.iter_sse():
+                async for sse in event_source.aiter_sse():
                     chunk = json.loads(sse.data)
                     if len(chunk["choices"]) == 0:
                         continue
