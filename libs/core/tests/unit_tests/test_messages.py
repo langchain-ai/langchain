@@ -14,6 +14,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     ToolMessage,
+    convert_to_messages,
     get_buffer_string,
     message_chunk_to_message,
     messages_from_dict,
@@ -428,3 +429,54 @@ def test_tool_calls_merge() -> None:
             ]
         },
     )
+
+
+def test_convert_to_messages() -> None:
+    # dicts
+    assert convert_to_messages(
+        [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello!"},
+            {"role": "ai", "content": "Hi!"},
+            {"role": "human", "content": "Hello!", "name": "Jane"},
+            {
+                "role": "assistant",
+                "content": "Hi!",
+                "name": "JaneBot",
+                "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'},
+            },
+            {"role": "function", "name": "greet", "content": "Hi!"},
+            {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
+        ]
+    ) == [
+        SystemMessage(content="You are a helpful assistant."),
+        HumanMessage(content="Hello!"),
+        AIMessage(content="Hi!"),
+        HumanMessage(content="Hello!", name="Jane"),
+        AIMessage(
+            content="Hi!",
+            name="JaneBot",
+            additional_kwargs={
+                "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'}
+            },
+        ),
+        FunctionMessage(name="greet", content="Hi!"),
+        ToolMessage(tool_call_id="tool_id", content="Hi!"),
+    ]
+
+    # tuples
+    assert convert_to_messages(
+        [
+            ("system", "You are a helpful assistant."),
+            "hello!",
+            ("ai", "Hi!"),
+            ("human", "Hello!"),
+            ("assistant", "Hi!"),
+        ]
+    ) == [
+        SystemMessage(content="You are a helpful assistant."),
+        HumanMessage(content="hello!"),
+        AIMessage(content="Hi!"),
+        HumanMessage(content="Hello!"),
+        AIMessage(content="Hi!"),
+    ]
