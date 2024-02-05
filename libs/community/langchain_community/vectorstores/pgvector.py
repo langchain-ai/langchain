@@ -508,65 +508,62 @@ class PGVector(VectorStore):
         ]
         return docs
 
-    def _create_filter_clause(self, key, value):
-        IN, NIN, BETWEEN, GT, LT, NE = "in", "nin", "between", "gt", "lt", "ne"
-        EQ, LIKE, CONTAINS, OR, AND = "eq", "like", "contains", "or", "and"
+    def _create_filter_clause(self, filters):
+        from langchain.chains.query_constructor.ir import Comparator, Operator
 
-        value_case_insensitive = {k.lower(): v for k, v in value.items()}
-        if IN in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.in_(
-                value_case_insensitive[IN]
-            )
-        elif NIN in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.not_in(
-                value_case_insensitive[NIN]
-            )
-        elif BETWEEN in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.between(
-                str(value_case_insensitive[BETWEEN][0]),
-                str(value_case_insensitive[BETWEEN][1]),
-            )
-        elif GT in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext > str(
-                value_case_insensitive[GT]
-            )
-        elif LT in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext < str(
-                value_case_insensitive[LT]
-            )
-        elif NE in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext != str(
-                value_case_insensitive[NE]
-            )
-        elif EQ in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext == str(
-                value_case_insensitive[EQ]
-            )
-        elif LIKE in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.like(
-                value_case_insensitive[LIKE]
-            )
-        elif CONTAINS in map(str.lower, value):
-            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.contains(
-                value_case_insensitive[CONTAINS]
-            )
-        elif OR in map(str.lower, value):
-            or_clauses = [
-                self._create_filter_clause(key, sub_value)
-                for sub_value in value_case_insensitive[OR]
-            ]
-            filter_by_metadata = sqlalchemy.or_(*or_clauses)
-        elif AND in map(str.lower, value):
-            and_clauses = [
-                self._create_filter_clause(key, sub_value)
-                for sub_value in value_case_insensitive[AND]
-            ]
-            filter_by_metadata = sqlalchemy.and_(*and_clauses)
+        COMPARISONS = {
+            Comparator.EQ: lambda f, v: f == str(v),
+            Comparator.NE: lambda f, v: f != str(v),
+            Comparator.LT: lambda f, v: f < str(v),
+            Comparator.LTE: lambda f, v: f <= str(v),
+            Comparator.GT: lambda f, v: f > str(v),
+            Comparator.GTE: lambda f, v: f >= str(v),
+            Comparator.LIKE: lambda f, v: f.like(v),
+            Comparator.IN: lambda f, v: f.in_(v),
+            Comparator.NIN: lambda f, v: f.not_in(v),
+            Comparator.CONTAIN: lambda f, v: f.contains(v),
+            "contains": lambda f, v: f.contains(v),
+            "between": lambda f, v: f.between(str(v[0]), str(v[1])),
+        }
 
-        else:
-            filter_by_metadata = None
+        def parse_condition(field, condition):
+            print(field, condition)
+            if isinstance(condition, dict):
+                for op, value in condition.items():
+                    op = op.lower()
+                    if op in [Operator.OR, Operator.AND]:
+                        clauses = [parse_condition(field, cond) for cond in value]
+                        return (
+                            sqlalchemy.or_(*clauses)
+                            if op == Operator.OR
+                            else sqlalchemy.and_(*clauses)
+                        )
+                    elif op == Operator.NOT:
+                        return sqlalchemy.not_(parse_condition(field, value))
+                    else:
+                        return COMPARISONS.get(op, lambda f, a: None)(field, value)
+            else:
+                return field == str(condition)
 
-        return filter_by_metadata
+        filter_clauses = []
+        for key, value in filters.items():
+            key = key.lower()
+            if key in [Operator.AND, Operator.OR]:
+                nested_clauses = [
+                    self._create_filter_clause({k: v})
+                    for cond in value
+                    for k, v in cond.items()
+                ]
+                clause = (
+                    sqlalchemy.or_(*nested_clauses)
+                    if key == Operator.OR.value
+                    else sqlalchemy.and_(*nested_clauses)
+                )
+            else:
+                field = self.EmbeddingStore.cmetadata[key].astext
+                clause = parse_condition(field, value)
+            filter_clauses.append(clause)
+        return sqlalchemy.and_(*filter_clauses)
 
     def __query_collection(
         self,
@@ -580,24 +577,10 @@ class PGVector(VectorStore):
             if not collection:
                 raise ValueError("Collection not found")
 
-            filter_by = self.EmbeddingStore.collection_id == collection.uuid
-
-            if filter is not None:
-                filter_clauses = []
-
-                for key, value in filter.items():
-                    if isinstance(value, dict):
-                        filter_by_metadata = self._create_filter_clause(key, value)
-
-                        if filter_by_metadata is not None:
-                            filter_clauses.append(filter_by_metadata)
-                    else:
-                        filter_by_metadata = self.EmbeddingStore.cmetadata[
-                            key
-                        ].astext == str(value)
-                        filter_clauses.append(filter_by_metadata)
-
-                filter_by = sqlalchemy.and_(filter_by, *filter_clauses)
+            filter_by = [self.EmbeddingStore.collection_id == collection.uuid]
+            if filter:
+                filter_clauses = self._create_filter_clause(filter)
+                filter_by.append(filter_clauses)
 
             _type = self.EmbeddingStore
 
@@ -606,7 +589,7 @@ class PGVector(VectorStore):
                     self.EmbeddingStore,
                     self.distance_strategy(embedding).label("distance"),  # type: ignore
                 )
-                .filter(filter_by)
+                .filter(*filter_by)
                 .order_by(sqlalchemy.asc("distance"))
                 .join(
                     self.CollectionStore,
