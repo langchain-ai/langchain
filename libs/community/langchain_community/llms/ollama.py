@@ -64,6 +64,10 @@ class _OllamaCommon(BaseLanguageModel):
     It is recommended to set this value to the number of physical
     CPU cores your system has (as opposed to the logical number of cores)."""
 
+    num_predict: Optional[int] = None
+    """Maximum number of tokens to predict when generating text. 
+    (Default: 128, -1 = infinite generation, -2 = fill context)"""
+
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
     repetition. (Default: 64, 0 = disabled, -1 = num_ctx)"""
@@ -90,7 +94,7 @@ class _OllamaCommon(BaseLanguageModel):
     will give more diverse answers, while a lower value (e.g. 10)
     will be more conservative. (Default: 40)"""
 
-    top_p: Optional[int] = None
+    top_p: Optional[float] = None
     """Works together with top-k. A higher value (e.g., 0.95) will lead
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
@@ -107,6 +111,12 @@ class _OllamaCommon(BaseLanguageModel):
     timeout: Optional[int] = None
     """Timeout for the request stream"""
 
+    headers: Optional[dict] = None
+    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
+    This is useful when Ollama is hosted on cloud services that require
+    tokens for authentication.
+    """
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -120,6 +130,7 @@ class _OllamaCommon(BaseLanguageModel):
                 "num_ctx": self.num_ctx,
                 "num_gpu": self.num_gpu,
                 "num_thread": self.num_thread,
+                "num_predict": self.num_predict,
                 "repeat_last_n": self.repeat_last_n,
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
@@ -184,8 +195,9 @@ class _OllamaCommon(BaseLanguageModel):
 
         params = self._default_params
 
-        if "model" in kwargs:
-            params["model"] = kwargs["model"]
+        for key in self._default_params:
+            if key in kwargs:
+                params[key] = kwargs[key]
 
         if "options" in kwargs:
             params["options"] = kwargs["options"]
@@ -193,7 +205,7 @@ class _OllamaCommon(BaseLanguageModel):
             params["options"] = {
                 **params["options"],
                 "stop": stop,
-                **kwargs,
+                **{k: v for k, v in kwargs.items() if k not in self._default_params},
             }
 
         if payload.get("messages"):
@@ -207,7 +219,10 @@ class _OllamaCommon(BaseLanguageModel):
 
         response = requests.post(
             url=api_url,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                **(self.headers if isinstance(self.headers, dict) else {}),
+            },
             json=request_payload,
             stream=True,
             timeout=self.timeout,
@@ -244,8 +259,9 @@ class _OllamaCommon(BaseLanguageModel):
 
         params = self._default_params
 
-        if "model" in kwargs:
-            params["model"] = kwargs["model"]
+        for key in self._default_params:
+            if key in kwargs:
+                params[key] = kwargs[key]
 
         if "options" in kwargs:
             params["options"] = kwargs["options"]
@@ -253,7 +269,7 @@ class _OllamaCommon(BaseLanguageModel):
             params["options"] = {
                 **params["options"],
                 "stop": stop,
-                **kwargs,
+                **{k: v for k, v in kwargs.items() if k not in self._default_params},
             }
 
         if payload.get("messages"):
@@ -268,7 +284,10 @@ class _OllamaCommon(BaseLanguageModel):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url=api_url,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    **(self.headers if isinstance(self.headers, dict) else {}),
+                },
                 json=request_payload,
                 timeout=self.timeout,
             ) as response:
@@ -278,7 +297,7 @@ class _OllamaCommon(BaseLanguageModel):
                             "Ollama call failed with status code 404."
                         )
                     else:
-                        optional_detail = await response.json().get("error")
+                        optional_detail = await response.json().get("error")  # type: ignore[attr-defined]
                         raise ValueError(
                             f"Ollama call failed with status code {response.status}."
                             f" Details: {optional_detail}"
@@ -361,7 +380,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         """Return type of llm."""
         return "ollama-llm"
 
-    def _generate(
+    def _generate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -397,7 +416,7 @@ class Ollama(BaseLLM, _OllamaCommon):
             generations.append([final_chunk])
         return LLMResult(generations=generations)
 
-    async def _agenerate(
+    async def _agenerate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -426,7 +445,7 @@ class Ollama(BaseLLM, _OllamaCommon):
                 prompt,
                 stop=stop,
                 images=images,
-                run_manager=run_manager,
+                run_manager=run_manager,  # type: ignore[arg-type]
                 verbose=self.verbose,
                 **kwargs,
             )
@@ -457,7 +476,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        async for stream_resp in self._acreate_stream(prompt, stop, **kwargs):
+        async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
                 yield chunk
