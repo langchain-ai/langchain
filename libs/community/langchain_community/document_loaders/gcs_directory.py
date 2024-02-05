@@ -35,7 +35,7 @@ class GCSDirectoryLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         try:
-            from google.cloud import storage
+            from google.cloud import storage  # type: ignore
         except ImportError:
             raise ImportError(
                 "Could not import google-cloud-storage python package. "
