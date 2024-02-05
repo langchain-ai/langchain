@@ -35,7 +35,11 @@ class UpstashVectorStore(VectorStore):
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             embeddings = OpenAIEmbeddings()
-            vectorstore = UpstashVectorStore(embedding=embeddings, index_url="...", index_token="...")
+            vectorstore = UpstashVectorStore(
+                embedding=embeddings, 
+                index_url="...", 
+                index_token="..."
+            )
     """
 
     def __init__(
@@ -49,8 +53,9 @@ class UpstashVectorStore(VectorStore):
         """
         Constructor for UpstashVectorStore.
 
-        If index or index_url and index_token are not provided, the constructor will attempt to
-        create an index using the environment variables `UPSTASH_VECTOR_URL` and `UPSTASH_VECTOR_TOKEN`.
+        If index or index_url and index_token are not provided, the constructor will
+        attempt to create an index using the environment variables
+        `UPSTASH_VECTOR_URL`and `UPSTASH_VECTOR_TOKEN`.
 
         Args:
             text_key: Key to store the text in metadata.
@@ -66,7 +71,11 @@ class UpstashVectorStore(VectorStore):
                 from langchain_community.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vectorstore = UpstashVectorStore(embedding=embeddings, index_url="...", index_token="...")
+                vectorstore = UpstashVectorStore(
+                    embedding=embeddings,
+                    index_url="...",
+                    index_token="..."
+                )
         """
 
         try:
@@ -80,14 +89,16 @@ class UpstashVectorStore(VectorStore):
         if index:
             if not isinstance(index, AsyncIndex):
                 raise ValueError(
-                    f"Passed index object should be an instance of upstash_vector.AsyncIndex, "
+                    "Passed index object should be an "
+                    "instance of upstash_vector.AsyncIndex, "
                     f"got {type(index)}"
                 )
             self._index = index
             logger.info("Using the index passed as parameter")
         elif index_url and index_token:
             self._index = AsyncIndex(url=index_url, token=index_token)
-            logger.info("Created index from the index_url and index_token parameters")
+            logger.info(
+                "Created index from the index_url and index_token parameters")
         else:
             self._index = AsyncIndex.from_env()
             logger.info("Created index using environment variables")
@@ -120,16 +131,20 @@ class UpstashVectorStore(VectorStore):
         """
         Get the embeddings for the texts and add them to the vectorstore.
 
-        Texts are sent to the embeddings object in batches of size `embedding_chunk_size`.
-        The embeddings are then upserted into the vectorstore in batches of size `batch_size`.
+        Texts are sent to the embeddings object 
+        in batches of size `embedding_chunk_size`.
+        The embeddings are then upserted into the vectorstore
+        in batches of size `batch_size`.
 
-        For OpenAI embeddings use embedding_chunk_size>1000 and batch_size~64 for best performance.
+        For OpenAI embeddings use embedding_chunk_size>1000 
+        and batch_size~64 for best performance.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of ids to associate with the texts.
-            batch_size: Batch size to use when upserting the embeddings. Upstash supports at max 1000 vectors per request.
+            batch_size: Batch size to use when upserting the embeddings.
+            Upstash supports at max 1000 vectors per request.
             embedding_batch_size: Chunk size to use when embedding the texts.
 
         Returns:
@@ -148,9 +163,9 @@ class UpstashVectorStore(VectorStore):
         # The first loop runs the embeddings, it benefits when using OpenAI embeddings
         # The second loops runs the pinecone upsert asynchronously.
         for i in range(0, len(texts), embedding_chunk_size):
-            chunk_texts = texts[i : i + embedding_chunk_size]
-            chunk_ids = ids[i : i + embedding_chunk_size]
-            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
+            chunk_texts = texts[i: i + embedding_chunk_size]
+            chunk_ids = ids[i: i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i: i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
             async_res = [
@@ -175,7 +190,8 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
     ) -> List[Tuple[Document, float]]:
-        """Retrieve texts most similar to query and convert the result to `Document` objects.
+        """Retrieve texts most similar to query and 
+        convert the result to `Document` objects.
 
         Args:
             query: Text to look up documents similar to.
@@ -210,7 +226,8 @@ class UpstashVectorStore(VectorStore):
             if metadata and self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 score = res.score
-                docs.append((Document(page_content=text, metadata=metadata), score))
+                docs.append(
+                    (Document(page_content=text, metadata=metadata), score))
             else:
                 logger.warning(
                     f"Found document with no `{self._text_key}` key. Skipping."
@@ -233,7 +250,8 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k, **kwargs)
+        docs_and_scores = self.similarity_search_with_score(
+            query, k=k, **kwargs)
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
@@ -275,7 +293,9 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
+            # type: ignore since include_metadata=True
+            Document(page_content=metadata.pop(
+                (self._text_key)), metadata=metadata)
             for metadata in selected
         ]
 
@@ -362,14 +382,15 @@ class UpstashVectorStore(VectorStore):
         Args:
             ids: List of ids to delete.
             delete_all: Delete all vectors in the index.
-            batch_size: Batch size to use when deleting the embeddings. Upstash supports at max 1000 deletions per request.
+            batch_size: Batch size to use when deleting the embeddings.
+            Upstash supports at max 1000 deletions per request.
         """
 
         if delete_all:
             self._index.reset()
         elif ids is not None:
             for i in range(0, len(ids), batch_size):
-                chunk = ids[i : i + batch_size]
+                chunk = ids[i: i + batch_size]
                 self._index.delete(ids=chunk)
         else:
             raise ValueError("Either ids or delete_all should be provided")
