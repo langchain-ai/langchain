@@ -95,11 +95,13 @@ class _AnthropicCommon(BaseLanguageModel):
                 base_url=values["anthropic_api_url"],
                 api_key=values["anthropic_api_key"].get_secret_value(),
                 timeout=values["default_request_timeout"],
+                max_retries=values["max_retries"],
             )
             values["async_client"] = anthropic.AsyncAnthropic(
                 base_url=values["anthropic_api_url"],
                 api_key=values["anthropic_api_key"].get_secret_value(),
                 timeout=values["default_request_timeout"],
+                max_retries=values["max_retries"],
             )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT
