@@ -132,7 +132,6 @@ def test_init_from_client() -> None:
     assert store.info() is not None
 
 
-@pytest.skip()
 def test_init_from_credentials() -> None:
     store = UpstashVectorStore(
         index_url=os.environ["UPSTASH_VECTOR_URL"],
