@@ -1,10 +1,7 @@
 from typing import List, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
 
 from gigachat.models import FunctionCall

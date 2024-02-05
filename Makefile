@@ -58,7 +58,14 @@ build_all:
 	cd libs/core
 	poetry lock --no-update
 	make lint
-	make test
+	make tests
+	cd ../..
+
+	cd libs/community
+	poetry lock --no-update
+	make lint
+	make tests
+	cd ../..
 
 ######################
 # HELP
