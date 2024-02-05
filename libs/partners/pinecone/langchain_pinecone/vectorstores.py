@@ -3,100 +3,107 @@ from __future__ import annotations
 import logging
 import os
 import uuid
-import warnings
-from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+)
 
 import numpy as np
-from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
-from packaging import version
+from pinecone import Pinecone as PineconeClient  # type: ignore
 
-from langchain_community.vectorstores.utils import (
-    DistanceStrategy,
-    maximal_marginal_relevance,
-)
+from langchain_pinecone._utilities import DistanceStrategy, maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from pinecone import Index
 
 logger = logging.getLogger(__name__)
 
-
-def _import_pinecone() -> Any:
-    try:
-        import pinecone
-    except ImportError as e:
-        raise ImportError(
-            "Could not import pinecone python package. "
-            "Please install it with `pip install pinecone-client`."
-        ) from e
-    return pinecone
+VST = TypeVar("VST", bound=VectorStore)
 
 
-def _is_pinecone_v3() -> bool:
-    pinecone = _import_pinecone()
-    pinecone_client_version = pinecone.__version__
-    return version.parse(pinecone_client_version) >= version.parse("3.0.0.dev")
-
-
-@deprecated(
-    since="0.0.18", removal="0.2.0", alternative_import="langchain_pinecone.Pinecone"
-)
 class Pinecone(VectorStore):
     """`Pinecone` vector store.
 
-    To use, you should have the ``pinecone-client`` python package installed.
+    Example:
+        .. code-block:: python
 
-    This version of Pinecone is deprecated. Please use `langchain_pinecone.Pinecone`
-    instead.
+            from langchain_pinecone import Pinecone
+            from langchain_openai import OpenAIEmbeddings
+
+            embeddings = OpenAIEmbeddings()
+            index_name = "my-index"
+            namespace = "my-namespace"
+            vectorstore = Pinecone(
+                index_name=index_name,
+                embedding=embedding,
+                namespace=namespace,
+            )
     """
 
     def __init__(
         self,
-        index: Any,
-        embedding: Union[Embeddings, Callable],
-        text_key: str,
+        # setting default params to bypass having to pass in
+        # the index and embedding objects - manually throw
+        # exceptions if they are not passed in or set in environment
+        # (keeping param for backwards compatibility)
+        index: Optional[Any] = None,
+        embedding: Optional[Embeddings] = None,
+        text_key: Optional[str] = "text",
         namespace: Optional[str] = None,
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
+        *,
+        pinecone_api_key: Optional[str] = None,
+        index_name: Optional[str] = None,
     ):
-        """Initialize with Pinecone client."""
-        pinecone = _import_pinecone()
-        if not isinstance(embedding, Embeddings):
-            warnings.warn(
-                "Passing in `embedding` as a Callable is deprecated. Please pass in an"
-                " Embeddings object instead."
-            )
-        if not isinstance(index, pinecone.Index):
-            raise ValueError(
-                f"client should be an instance of pinecone.Index, " f"got {type(index)}"
-            )
-        self._index = index
+        if embedding is None:
+            raise ValueError("Embedding must be provided")
         self._embedding = embedding
+        if text_key is None:
+            raise ValueError("Text key must be provided")
         self._text_key = text_key
+
         self._namespace = namespace
         self.distance_strategy = distance_strategy
+
+        if index:
+            # supports old way of initializing externally
+            self._index = index
+        else:
+            # all internal initialization
+            _pinecone_api_key = (
+                pinecone_api_key or os.environ.get("PINECONE_API_KEY") or ""
+            )
+            if not _pinecone_api_key:
+                raise ValueError(
+                    "Pinecone API key must be provided in either `pinecone_api_key` "
+                    "or `PINECONE_API_KEY` environment variable"
+                )
+
+            _index_name = index_name or os.environ.get("PINECONE_INDEX_NAME") or ""
+            if not _index_name:
+                raise ValueError(
+                    "Pinecone index name must be provided in either `index_name` "
+                    "or `PINECONE_INDEX_NAME` environment variable"
+                )
+
+            # needs
+            client = PineconeClient(api_key=_pinecone_api_key)
+            self._index = client.Index(_index_name)
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
         """Access the query embedding object if available."""
-        if isinstance(self._embedding, Embeddings):
-            return self._embedding
-        return None
-
-    def _embed_documents(self, texts: Iterable[str]) -> List[List[float]]:
-        """Embed search docs."""
-        if isinstance(self._embedding, Embeddings):
-            return self._embedding.embed_documents(list(texts))
-        return [self._embedding(t) for t in texts]
-
-    def _embed_query(self, text: str) -> List[float]:
-        """Embed query text."""
-        if isinstance(self._embedding, Embeddings):
-            return self._embedding.embed_query(text)
-        return self._embedding(text)
+        return self._embedding
 
     def add_texts(
         self,
@@ -106,6 +113,8 @@ class Pinecone(VectorStore):
         namespace: Optional[str] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        *,
+        async_req: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -142,12 +151,12 @@ class Pinecone(VectorStore):
             chunk_texts = texts[i : i + embedding_chunk_size]
             chunk_ids = ids[i : i + embedding_chunk_size]
             chunk_metadatas = metadatas[i : i + embedding_chunk_size]
-            embeddings = self._embed_documents(chunk_texts)
+            embeddings = self._embedding.embed_documents(chunk_texts)
             async_res = [
                 self._index.upsert(
                     vectors=batch,
                     namespace=namespace,
-                    async_req=True,
+                    async_req=async_req,
                     **kwargs,
                 )
                 for batch in batch_iterate(
@@ -177,7 +186,7 @@ class Pinecone(VectorStore):
             List of Documents most similar to the query and score for each
         """
         return self.similarity_search_by_vector_with_score(
-            self._embed_query(query), k=k, filter=filter, namespace=namespace
+            self._embedding.embed_query(query), k=k, filter=filter, namespace=namespace
         )
 
     def similarity_search_by_vector_with_score(
@@ -194,7 +203,7 @@ class Pinecone(VectorStore):
             namespace = self._namespace
         docs = []
         results = self._index.query(
-            vector=[embedding],
+            vector=embedding,
             top_k=k,
             include_metadata=True,
             namespace=namespace,
@@ -337,7 +346,7 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self._embed_query(query)
+        embedding = self._embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding, k, fetch_k, lambda_mult, filter, namespace
         )
@@ -347,6 +356,8 @@ class Pinecone(VectorStore):
         cls,
         index_name: Optional[str],
         pool_threads: int = 4,
+        *,
+        pinecone_api_key: Optional[str] = None,
     ) -> Index:
         """Return a Pinecone Index instance.
 
@@ -355,24 +366,13 @@ class Pinecone(VectorStore):
             pool_threads: Number of threads to use for index upsert.
         Returns:
             Pinecone Index instance."""
-
-        pinecone = _import_pinecone()
-
-        if _is_pinecone_v3():
-            pinecone_instance = pinecone.Pinecone(
-                api_key=os.environ.get("PINECONE_API_KEY"), pool_threads=pool_threads
-            )
-            indexes = pinecone_instance.list_indexes()
-            index_names = [i.name for i in indexes.index_list["indexes"]]
-        else:
-            index_names = pinecone.list_indexes()
+        _pinecone_api_key = pinecone_api_key or os.environ.get("PINECONE_API_KEY") or ""
+        client = PineconeClient(api_key=_pinecone_api_key, pool_threads=pool_threads)
+        indexes = client.list_indexes()
+        index_names = [i.name for i in indexes.index_list["indexes"]]
 
         if index_name in index_names:
-            index = (
-                pinecone_instance.Index(index_name)
-                if _is_pinecone_v3()
-                else pinecone.Index(index_name, pool_threads=pool_threads)
-            )
+            index = client.Index(index_name)
         elif len(index_names) == 0:
             raise ValueError(
                 "No active indexes found in your Pinecone project, "
