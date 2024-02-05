@@ -1,9 +1,13 @@
 """Implement integration tests for AstraDB storage."""
 import os
+from typing import TYPE_CHECKING
 
 import pytest
 
 from langchain_community.storage.astradb import AstraDBByteStore, AstraDBStore
+
+if TYPE_CHECKING:
+    from astrapy.db import AstraDB
 
 
 def _has_env_vars() -> bool:
@@ -16,7 +20,7 @@ def _has_env_vars() -> bool:
 
 
 @pytest.fixture
-def astra_db():
+def astra_db() -> AstraDB:
     from astrapy.db import AstraDB
 
     return AstraDB(
@@ -26,14 +30,14 @@ def astra_db():
     )
 
 
-def init_store(astra_db, collection_name: str):
+def init_store(astra_db: AstraDB, collection_name: str) -> AstraDBStore:
     astra_db.create_collection(collection_name)
     store = AstraDBStore(collection_name=collection_name, astra_db_client=astra_db)
     store.mset([("key1", [0.1, 0.2]), ("key2", "value2")])
     return store
 
 
-def init_bytestore(astra_db, collection_name: str):
+def init_bytestore(astra_db: AstraDB, collection_name: str) -> AstraDBByteStore:
     astra_db.create_collection(collection_name)
     store = AstraDBByteStore(collection_name=collection_name, astra_db_client=astra_db)
     store.mset([("key1", b"value1"), ("key2", b"value2")])
@@ -43,7 +47,7 @@ def init_bytestore(astra_db, collection_name: str):
 @pytest.mark.requires("astrapy")
 @pytest.mark.skipif(not _has_env_vars(), reason="Missing Astra DB env. vars")
 class TestAstraDBStore:
-    def test_mget(self, astra_db) -> None:
+    def test_mget(self, astra_db: AstraDB) -> None:
         """Test AstraDBStore mget method."""
         collection_name = "lc_test_store_mget"
         try:
@@ -52,7 +56,7 @@ class TestAstraDBStore:
         finally:
             astra_db.delete_collection(collection_name)
 
-    def test_mset(self, astra_db) -> None:
+    def test_mset(self, astra_db: AstraDB) -> None:
         """Test that multiple keys can be set with AstraDBStore."""
         collection_name = "lc_test_store_mset"
         try:
@@ -64,7 +68,7 @@ class TestAstraDBStore:
         finally:
             astra_db.delete_collection(collection_name)
 
-    def test_mdelete(self, astra_db) -> None:
+    def test_mdelete(self, astra_db: AstraDB) -> None:
         """Test that deletion works as expected."""
         collection_name = "lc_test_store_mdelete"
         try:
@@ -75,7 +79,7 @@ class TestAstraDBStore:
         finally:
             astra_db.delete_collection(collection_name)
 
-    def test_yield_keys(self, astra_db) -> None:
+    def test_yield_keys(self, astra_db: AstraDB) -> None:
         collection_name = "lc_test_store_yield_keys"
         try:
             store = init_store(astra_db, collection_name)
@@ -85,7 +89,7 @@ class TestAstraDBStore:
         finally:
             astra_db.delete_collection(collection_name)
 
-    def test_bytestore_mget(self, astra_db) -> None:
+    def test_bytestore_mget(self, astra_db: AstraDB) -> None:
         """Test AstraDBByteStore mget method."""
         collection_name = "lc_test_bytestore_mget"
         try:
@@ -94,7 +98,7 @@ class TestAstraDBStore:
         finally:
             astra_db.delete_collection(collection_name)
 
-    def test_bytestore_mset(self, astra_db) -> None:
+    def test_bytestore_mset(self, astra_db: AstraDB) -> None:
         """Test that multiple keys can be set with AstraDBByteStore."""
         collection_name = "lc_test_bytestore_mset"
         try:
