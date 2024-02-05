@@ -14,6 +14,7 @@ EXPECTED_ALL = [
     "GraphCypherQAChain",
     "GraphQAChain",
     "GraphSparqlQAChain",
+    "OntotextGraphDBQAChain",
     "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
@@ -59,6 +60,7 @@ EXPECTED_ALL = [
     "create_sql_query_chain",
     "create_history_aware_retriever",
     "create_retrieval_chain",
+    "load_summarize_chain",
 ]
 
 

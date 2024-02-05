@@ -40,7 +40,7 @@ def test_konko_key_masked_when_passed_via_constructor(
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.konko_secret_key, end="")
+    print(chat.konko_secret_key, end="")  # type: ignore[attr-defined]
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
@@ -49,7 +49,7 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
     chat = ChatKonko(openai_api_key="test-openai-key", konko_api_key="test-konko-key")
     assert cast(SecretStr, chat.konko_api_key).get_secret_value() == "test-openai-key"
-    assert cast(SecretStr, chat.konko_secret_key).get_secret_value() == "test-konko-key"
+    assert cast(SecretStr, chat.konko_secret_key).get_secret_value() == "test-konko-key"  # type: ignore[attr-defined]
 
 
 def test_konko_chat_test() -> None:
@@ -63,7 +63,7 @@ def test_konko_chat_test() -> None:
 
 def test_konko_chat_test_openai() -> None:
     """Evaluate basic ChatKonko functionality."""
-    chat_instance = ChatKonko(max_tokens=10, model="gpt-3.5-turbo")
+    chat_instance = ChatKonko(max_tokens=10, model="meta-llama/llama-2-70b-chat")
     msg = HumanMessage(content="Hi")
     chat_response = chat_instance([msg])
     assert isinstance(chat_response, BaseMessage)
