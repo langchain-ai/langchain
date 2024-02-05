@@ -305,7 +305,7 @@ extended_testing = [
 ]
 
 [tool.ruff]
-select = [
+lint.select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
