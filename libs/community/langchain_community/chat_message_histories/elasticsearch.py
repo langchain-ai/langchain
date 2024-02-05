@@ -47,7 +47,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
     ):
         self.index: str = index
         self.session_id: str = session_id
-        self.ensure_ascii: bool = esnsure_ascii
+        self.ensure_ascii: bool = esnsure_ascii  # type: ignore[assignment]
 
         # Initialize Elasticsearch client from passed client arg or connection info
         if es_connection is not None:

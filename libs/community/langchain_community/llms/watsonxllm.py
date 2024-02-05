@@ -250,7 +250,7 @@ class WatsonxLLM(BaseLLM):
         }
 
     def _get_chat_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
-        params: Dict[str, Any] = {**self.params} if self.params else None
+        params: Dict[str, Any] = {**self.params} if self.params else None  # type: ignore[assignment]
         if stop is not None:
             params = (params or {}) | {"stop_sequences": stop}
         return params

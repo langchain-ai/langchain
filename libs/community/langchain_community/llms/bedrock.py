@@ -395,8 +395,8 @@ class BedrockBase(BaseModel, ABC):
         """
         return {
             "amazon-bedrock-guardrailDetails": {
-                "guardrailId": self.guardrails.get("id"),
-                "guardrailVersion": self.guardrails.get("version"),
+                "guardrailId": self.guardrails.get("id"),  # type: ignore[union-attr]
+                "guardrailVersion": self.guardrails.get("version"),  # type: ignore[union-attr]
             }
         }
 
@@ -427,7 +427,7 @@ class BedrockBase(BaseModel, ABC):
 
         if self._guardrails_enabled:
             request_options["guardrail"] = "ENABLED"
-            if self.guardrails.get("trace"):
+            if self.guardrails.get("trace"):  # type: ignore[union-attr]
                 request_options["trace"] = "ENABLED"
 
         try:
@@ -446,7 +446,7 @@ class BedrockBase(BaseModel, ABC):
         # Verify and raise a callback error if any intervention occurs or a signal is
         # sent from a Bedrock service,
         # such as when guardrails are triggered.
-        services_trace = self._get_bedrock_services_signal(body)
+        services_trace = self._get_bedrock_services_signal(body)  # type: ignore[arg-type]
 
         if services_trace.get("signal") and run_manager is not None:
             run_manager.on_llm_error(
@@ -468,7 +468,7 @@ class BedrockBase(BaseModel, ABC):
 
         if (
             self._guardrails_enabled
-            and self.guardrails.get("trace")
+            and self.guardrails.get("trace")  # type: ignore[union-attr]
             and self._is_guardrails_intervention(body)
         ):
             return {
@@ -526,7 +526,7 @@ class BedrockBase(BaseModel, ABC):
 
         if self._guardrails_enabled:
             request_options["guardrail"] = "ENABLED"
-            if self.guardrails.get("trace"):
+            if self.guardrails.get("trace"):  # type: ignore[union-attr]
                 request_options["trace"] = "ENABLED"
 
         try:
@@ -540,7 +540,7 @@ class BedrockBase(BaseModel, ABC):
         ):
             yield chunk
             # verify and raise callback error if any middleware intervened
-            self._get_bedrock_services_signal(chunk.generation_info)
+            self._get_bedrock_services_signal(chunk.generation_info)  # type: ignore[arg-type]
 
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
@@ -588,7 +588,7 @@ class BedrockBase(BaseModel, ABC):
             ):
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             elif run_manager is not None:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)  # type: ignore[unused-coroutine]
 
 
 class Bedrock(LLM, BedrockBase):
