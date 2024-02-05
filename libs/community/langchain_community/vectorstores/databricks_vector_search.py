@@ -324,26 +324,17 @@ class DatabricksVectorSearch(VectorStore):
         )
         return self._parse_search_response(search_resp)
 
+    @staticmethod
+    def _identity_fn(score: float) -> float:
+        return score
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
-        The 'correct' relevance function
-        may differ depending on a few things, including:
-        - the distance / similarity metric used by the VectorStore
-        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
-        - embedding dimensionality
-        - etc.
+        Databricks Vector search uses a normalized score 1/(1+d) where d
+        is the L2 distance. Hence, we simply return the identity function.
         """
 
-        def _db_relevance_score_fn(distance: float) -> float:
-            """
-            Scores returned by the Databricks Vector Search API are
-            normalized cosine similarity scores on a scale [0, 1] -
-            1 means most similar
-            """
-
-            return distance
-
-        return _db_relevance_score_fn
+        return self._identity_fn
 
     def max_marginal_relevance_search(
         self,
@@ -446,9 +437,8 @@ class DatabricksVectorSearch(VectorStore):
             lambda_mult=lambda_mult,
         )
 
-        candidates = self._parse_search_response(
-            search_resp, ignore_cols=[embedding_column]
-        )
+        ignore_cols = [embedding_column] if embedding_column not in self.columns else []
+        candidates = self._parse_search_response(search_resp, ignore_cols=ignore_cols)
         selected_results = [r[0] for i, r in enumerate(candidates) if i in mmr_selected]
         return selected_results
 
