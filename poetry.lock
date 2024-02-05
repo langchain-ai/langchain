@@ -1694,7 +1694,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.1.3"
+version = "0.1.0"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
