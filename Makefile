@@ -51,6 +51,16 @@ format format_diff:
 	poetry run ruff --select I --fix docs templates cookbook
 
 ######################
+# BUILD ALL
+######################
+
+build_all:
+	cd libs/core
+	poetry lock --no-update
+	make lint
+	make test
+
+######################
 # HELP
 ######################
 

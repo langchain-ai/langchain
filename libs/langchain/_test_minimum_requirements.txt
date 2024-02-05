@@ -1,2 +1,2 @@
-gigachain-core==0.1.9
-gigachain-community==0.0.13
+gigachain-core==0.1.16
+gigachain-community==0.0.14

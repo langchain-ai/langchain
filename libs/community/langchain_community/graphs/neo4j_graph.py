@@ -160,7 +160,7 @@ class Neo4jGraph(GraphStore):
                 data = session.run(Query(text=query, timeout=self.timeout), params)
                 json_data = [r.data() for r in data]
                 if self.sanitize:
-                    json_data = value_sanitize(json_data)
+                    json_data = [value_sanitize(el) for el in json_data]
                 return json_data
             except CypherSyntaxError as e:
                 raise ValueError(f"Generated Cypher Statement is not valid\n{e}")

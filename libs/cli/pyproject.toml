@@ -1,13 +1,14 @@
 [tool.poetry]
 name = "gigachain-cli"
-version = "0.0.20"
+version = "0.0.21"
 description = "CLI for interacting with GigaChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
-license = "MIT"
 readme = "README.md"
-packages = [
-    {include = "langchain_cli"}
-]
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/cli"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

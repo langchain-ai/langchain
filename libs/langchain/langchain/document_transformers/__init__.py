@@ -29,10 +29,10 @@ def __getattr__(name: str) -> Any:
     if not is_interactive_env():
         warnings.warn(
             "Importing document transformers from langchain is deprecated. Importing "
-            "from langchain will no longer be supported as of langchain==0.2.0. "
+            "from langchain will no longer be supported as of gigachain==0.2.0. "
             "Please import from langchain-community instead:\n\n"
             f"`from langchain_community.document_transformers import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
+            "To install gigachain-community run `pip install -U gigachain-community`.",
             category=LangChainDeprecationWarning,
         )
 

@@ -8,10 +8,12 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Mapping,
     Optional,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -30,7 +32,12 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
 
 
-class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
+FormatOutputType = TypeVar("FormatOutputType")
+
+
+class BasePromptTemplate(
+    RunnableSerializable[Dict, PromptValue], Generic[FormatOutputType], ABC
+):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
@@ -142,7 +149,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
         return {**partial_kwargs, **kwargs}
 
     @abstractmethod
-    def format(self, **kwargs: Any) -> str:
+    def format(self, **kwargs: Any) -> FormatOutputType:
         """Format the prompt with the inputs.
 
         Args:
@@ -210,7 +217,7 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
     """Format a document into a string based on a prompt template.
 
     First, this pulls information from the document from two sources:
@@ -236,7 +243,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
     Example:
         .. code-block:: python
 
-            from langchain_core import Document
+            from langchain_core.documents import Document
             from langchain_core.prompts import PromptTemplate
 
             doc = Document(page_content="This is a joke", metadata={"page": "1"})

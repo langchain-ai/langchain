@@ -42,7 +42,7 @@ class DuckDuckGoSearchRun(BaseTool):
 class DuckDuckGoSearchResults(BaseTool):
     """Tool that queries the DuckDuckGo search API and gets back json."""
 
-    name: str = "Результаты DuckDuckGo в формате JSON"
+    name: str = "duckduckgo_results_json"
     description: str = (
         "Обертка вокруг поиска DuckDuckGo. "
         "Полезно, когда вам нужно ответить на вопросы о текущих событиях. "

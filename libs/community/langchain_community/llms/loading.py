@@ -33,10 +33,10 @@ def load_llm(file: Union[str, Path]) -> BaseLLM:
         file_path = file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
-        with open(file_path) as f:
+        with open(file_path, encoding="utf-8") as f:
             config = json.load(f)
     elif file_path.suffix == ".yaml":
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
     else:
         raise ValueError("File type must be json or yaml")
