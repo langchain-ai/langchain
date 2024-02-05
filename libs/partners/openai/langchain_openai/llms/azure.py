@@ -63,7 +63,7 @@ class AzureOpenAI(BaseOpenAI):
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to   # type: ignore
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
 
@@ -101,12 +101,12 @@ class AzureOpenAI(BaseOpenAI):
         values["azure_ad_token"] = (
             convert_to_secret_str(azure_ad_token) if azure_ad_token else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(  # type: ignore
             "OPENAI_API_BASE"
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_proxy",
+            "openai_proxy",  # type: ignore
             "OPENAI_PROXY",
             default="",
         )
@@ -122,23 +122,23 @@ class AzureOpenAI(BaseOpenAI):
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
         # For backwards compatibility. Before openai v1, no distinction was made
-        # between azure_endpoint and base_url (openai_api_base).
-        openai_api_base = values["openai_api_base"]
-        if openai_api_base and values["validate_base_url"]:
-            if "/openai" not in openai_api_base:
-                values["openai_api_base"] = (
-                    values["openai_api_base"].rstrip("/") + "/openai"
+        # between azure_endpoint and base_url (openai_api_base).  # type: ignore
+        openai_api_base = values["openai_api_base"]  # type: ignore
+        if openai_api_base and values["validate_base_url"]:  # type: ignore
+            if "/openai" not in openai_api_base:  # type: ignore
+                values["openai_api_base"] = (  # type: ignore
+                    values["openai_api_base"].rstrip("/") + "/openai"  # type: ignore
                 )
                 raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
-                    "the `azure_endpoint` param not `openai_api_base` "
+                    "the `azure_endpoint` param not `openai_api_base` "  # type: ignore
                     "(or alias `base_url`)."
                 )
             if values["deployment_name"]:
                 raise ValueError(
                     "As of openai>=1.0.0, if `deployment_name` (or alias "
                     "`azure_deployment`) is specified then "
-                    "`openai_api_base` (or alias `base_url`) should not be. "
+                    "`openai_api_base` (or alias `base_url`) should not be. "  # type: ignore
                     "Instead use `deployment_name` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
@@ -155,7 +155,7 @@ class AzureOpenAI(BaseOpenAI):
             else None,
             "azure_ad_token_provider": values["azure_ad_token_provider"],
             "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
+            "base_url": values["openai_api_base"],  # type: ignore
             "timeout": values["request_timeout"],
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],

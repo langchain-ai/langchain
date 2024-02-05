@@ -64,7 +64,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(  # type: ignore
             "OPENAI_API_BASE"
         )
         values["openai_api_version"] = values["openai_api_version"] or os.getenv(
@@ -78,9 +78,9 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_proxy",
+            "openai_proxy",  # type: ignore
             "OPENAI_PROXY",
             default="",
         )
@@ -104,35 +104,35 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             )
         if is_openai_v1():
             # For backwards compatibility. Before openai v1, no distinction was made
-            # between azure_endpoint and base_url (openai_api_base).
-            openai_api_base = values["openai_api_base"]
-            if openai_api_base and values["validate_base_url"]:
-                if "/openai" not in openai_api_base:
-                    values["openai_api_base"] += "/openai"
+            # between azure_endpoint and base_url (openai_api_base).  # type: ignore
+            openai_api_base = values["openai_api_base"]  # type: ignore
+            if openai_api_base and values["validate_base_url"]:  # type: ignore
+                if "/openai" not in openai_api_base:  # type: ignore
+                    values["openai_api_base"] += "/openai"  # type: ignore
                     warnings.warn(
                         "As of openai>=1.0.0, Azure endpoints should be specified via "
-                        f"the `azure_endpoint` param not `openai_api_base` "
-                        f"(or alias `base_url`). Updating `openai_api_base` from "
-                        f"{openai_api_base} to {values['openai_api_base']}."
+                        f"the `azure_endpoint` param not `openai_api_base` "  # type: ignore
+                        f"(or alias `base_url`). Updating `openai_api_base` from "  # type: ignore
+                        f"{openai_api_base} to {values['openai_api_base']}."  # type: ignore
                     )
                 if values["deployment"]:
                     warnings.warn(
                         "As of openai>=1.0.0, if `deployment` (or alias "
                         "`azure_deployment`) is specified then "
-                        "`openai_api_base` (or alias `base_url`) should not be. "
+                        "`openai_api_base` (or alias `base_url`) should not be. "  # type: ignore
                         "Instead use `deployment` (or alias `azure_deployment`) "
                         "and `azure_endpoint`."
                     )
-                    if values["deployment"] not in values["openai_api_base"]:
+                    if values["deployment"] not in values["openai_api_base"]:  # type: ignore
                         warnings.warn(
-                            "As of openai>=1.0.0, if `openai_api_base` "
+                            "As of openai>=1.0.0, if `openai_api_base` "  # type: ignore
                             "(or alias `base_url`) is specified it is expected to be "
                             "of the form "
                             "https://example-resource.azure.openai.com/openai/deployments/example-deployment. "  # noqa: E501
-                            f"Updating {openai_api_base} to "
-                            f"{values['openai_api_base']}."
+                            f"Updating {openai_api_base} to "  # type: ignore
+                            f"{values['openai_api_base']}."  # type: ignore
                         )
-                        values["openai_api_base"] += (
+                        values["openai_api_base"] += (  # type: ignore
                             "/deployments/" + values["deployment"]
                         )
                     values["deployment"] = None
@@ -144,7 +144,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                 "azure_ad_token": values["azure_ad_token"],
                 "azure_ad_token_provider": values["azure_ad_token_provider"],
                 "organization": values["openai_organization"],
-                "base_url": values["openai_api_base"],
+                "base_url": values["openai_api_base"],  # type: ignore
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
                 "default_headers": values["default_headers"],

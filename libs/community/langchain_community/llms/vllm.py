@@ -164,7 +164,7 @@ class VLLMOpenAI(BaseOpenAI):
             params.update(
                 {
                     "api_key": self.openai_api_key,
-                    "api_base": self.openai_api_base,
+                    "api_base": self.openai_api_base,  # type: ignore
                 }
             )
 

@@ -117,13 +117,13 @@ class ChatAnyscale(ChatOpenAI):
                 "ANYSCALE_API_KEY",
             )
         )
-        values["openai_api_base"] = get_from_dict_or_env(
+        values["openai_api_base"] = get_from_dict_or_env(  # type: ignore
             values,
             "anyscale_api_base",
             "ANYSCALE_API_BASE",
             default=DEFAULT_API_BASE,
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
             values,
             "anyscale_proxy",
             "ANYSCALE_PROXY",
@@ -141,7 +141,7 @@ class ChatAnyscale(ChatOpenAI):
             if is_openai_v1():
                 client_params = {
                     "api_key": values["openai_api_key"],
-                    "base_url": values["openai_api_base"],
+                    "base_url": values["openai_api_base"],  # type: ignore
                     # To do: future support
                     # "organization": values["openai_organization"],
                     # "timeout": values["request_timeout"],
@@ -167,7 +167,7 @@ class ChatAnyscale(ChatOpenAI):
 
         available_models = cls.get_available_models(
             values["openai_api_key"],
-            values["openai_api_base"],
+            values["openai_api_base"],  # type: ignore
         )
 
         if model_name not in available_models:

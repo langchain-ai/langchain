@@ -157,14 +157,14 @@ class BaseOpenAI(BaseLLM):
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
-        if self.openai_api_base:
-            attributes["openai_api_base"] = self.openai_api_base
+        if self.openai_api_base:  # type: ignore
+            attributes["openai_api_base"] = self.openai_api_base  # type: ignore
 
         if self.openai_organization:
             attributes["openai_organization"] = self.openai_organization
 
-        if self.openai_proxy:
-            attributes["openai_proxy"] = self.openai_proxy
+        if self.openai_proxy:  # type: ignore
+            attributes["openai_proxy"] = self.openai_proxy  # type: ignore
 
         return attributes
 
@@ -199,13 +199,13 @@ class BaseOpenAI(BaseLLM):
     # may assume openai_api_key is a str)
     openai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")  # type: ignore
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = None  # type: ignore
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
@@ -282,12 +282,12 @@ class BaseOpenAI(BaseLLM):
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(  # type: ignore
             "OPENAI_API_BASE"
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_proxy",
+            "openai_proxy",  # type: ignore
             "OPENAI_PROXY",
             default="",
         )
@@ -308,7 +308,7 @@ class BaseOpenAI(BaseLLM):
             client_params = {
                 "api_key": values["openai_api_key"],
                 "organization": values["openai_organization"],
-                "base_url": values["openai_api_base"],
+                "base_url": values["openai_api_base"],  # type: ignore
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
                 "default_headers": values["default_headers"],
@@ -320,7 +320,7 @@ class BaseOpenAI(BaseLLM):
             if not values.get("async_client"):
                 values["async_client"] = openai.AsyncOpenAI(**client_params).completions
         elif not values.get("client"):
-            values["client"] = openai.Completion
+            values["client"] = openai.Completion  # type: ignore
         else:
             pass
 
@@ -597,11 +597,11 @@ class BaseOpenAI(BaseLLM):
             openai_creds.update(
                 {
                     "api_key": self.openai_api_key,
-                    "api_base": self.openai_api_base,
+                    "api_base": self.openai_api_base,  # type: ignore
                     "organization": self.openai_organization,
                 }
             )
-        if self.openai_proxy:
+        if self.openai_proxy:  # type: ignore
             import openai
 
             openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
@@ -807,7 +807,7 @@ class AzureOpenAI(BaseOpenAI):
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to   # type: ignore
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
 
@@ -841,12 +841,12 @@ class AzureOpenAI(BaseOpenAI):
         values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
             "AZURE_OPENAI_AD_TOKEN"
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(  # type: ignore
             "OPENAI_API_BASE"
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_proxy",
+            "openai_proxy",  # type: ignore
             "OPENAI_PROXY",
             default="",
         )
@@ -870,37 +870,37 @@ class AzureOpenAI(BaseOpenAI):
             )
         if is_openai_v1():
             # For backwards compatibility. Before openai v1, no distinction was made
-            # between azure_endpoint and base_url (openai_api_base).
-            openai_api_base = values["openai_api_base"]
-            if openai_api_base and values["validate_base_url"]:
-                if "/openai" not in openai_api_base:
-                    values["openai_api_base"] = (
-                        values["openai_api_base"].rstrip("/") + "/openai"
+            # between azure_endpoint and base_url (openai_api_base).  # type: ignore
+            openai_api_base = values["openai_api_base"]  # type: ignore
+            if openai_api_base and values["validate_base_url"]:  # type: ignore
+                if "/openai" not in openai_api_base:  # type: ignore
+                    values["openai_api_base"] = (  # type: ignore
+                        values["openai_api_base"].rstrip("/") + "/openai"  # type: ignore
                     )
                     warnings.warn(
                         "As of openai>=1.0.0, Azure endpoints should be specified via "
-                        f"the `azure_endpoint` param not `openai_api_base` "
-                        f"(or alias `base_url`). Updating `openai_api_base` from "
-                        f"{openai_api_base} to {values['openai_api_base']}."
+                        f"the `azure_endpoint` param not `openai_api_base` "  # type: ignore
+                        f"(or alias `base_url`). Updating `openai_api_base` from "  # type: ignore
+                        f"{openai_api_base} to {values['openai_api_base']}."  # type: ignore
                     )
                 if values["deployment_name"]:
                     warnings.warn(
                         "As of openai>=1.0.0, if `deployment_name` (or alias "
                         "`azure_deployment`) is specified then "
-                        "`openai_api_base` (or alias `base_url`) should not be. "
+                        "`openai_api_base` (or alias `base_url`) should not be. "  # type: ignore
                         "Instead use `deployment_name` (or alias `azure_deployment`) "
                         "and `azure_endpoint`."
                     )
-                    if values["deployment_name"] not in values["openai_api_base"]:
+                    if values["deployment_name"] not in values["openai_api_base"]:  # type: ignore
                         warnings.warn(
-                            "As of openai>=1.0.0, if `openai_api_base` "
+                            "As of openai>=1.0.0, if `openai_api_base` "  # type: ignore
                             "(or alias `base_url`) is specified it is expected to be "
                             "of the form "
                             "https://example-resource.azure.openai.com/openai/deployments/example-deployment. "  # noqa: E501
-                            f"Updating {openai_api_base} to "
-                            f"{values['openai_api_base']}."
+                            f"Updating {openai_api_base} to "  # type: ignore
+                            f"{values['openai_api_base']}."  # type: ignore
                         )
-                        values["openai_api_base"] += (
+                        values["openai_api_base"] += (  # type: ignore
                             "/deployments/" + values["deployment_name"]
                         )
                     values["deployment_name"] = None
@@ -912,7 +912,7 @@ class AzureOpenAI(BaseOpenAI):
                 "azure_ad_token": values["azure_ad_token"],
                 "azure_ad_token_provider": values["azure_ad_token_provider"],
                 "organization": values["openai_organization"],
-                "base_url": values["openai_api_base"],
+                "base_url": values["openai_api_base"],  # type: ignore
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
                 "default_headers": values["default_headers"],
@@ -925,7 +925,7 @@ class AzureOpenAI(BaseOpenAI):
             ).completions
 
         else:
-            values["client"] = openai.Completion
+            values["client"] = openai.Completion  # type: ignore
 
         return values
 
@@ -993,11 +993,11 @@ class OpenAIChat(BaseLLM):
     # may assume openai_api_key is a str)
     openai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")  # type: ignore
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = None  # type: ignore
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     prefix_messages: List = Field(default_factory=list)
@@ -1029,15 +1029,15 @@ class OpenAIChat(BaseLLM):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        openai_api_base = get_from_dict_or_env(
+        openai_api_base = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_api_base",
+            "openai_api_base",  # type: ignore
             "OPENAI_API_BASE",
             default="",
         )
-        openai_proxy = get_from_dict_or_env(
+        openai_proxy = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_proxy",
+            "openai_proxy",  # type: ignore
             "OPENAI_PROXY",
             default="",
         )
@@ -1048,11 +1048,11 @@ class OpenAIChat(BaseLLM):
             import openai
 
             openai.api_key = openai_api_key
-            if openai_api_base:
-                openai.api_base = openai_api_base
+            if openai_api_base:  # type: ignore
+                openai.api_base = openai_api_base  # type: ignore
             if openai_organization:
                 openai.organization = openai_organization
-            if openai_proxy:
+            if openai_proxy:  # type: ignore
                 openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # noqa: E501
         except ImportError:
             raise ImportError(

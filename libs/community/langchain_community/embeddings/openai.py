@@ -177,7 +177,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             embeddings = OpenAIEmbeddings(
                 deployment="your-embeddings-deployment-name",
                 model="your-embeddings-model-name",
-                openai_api_base="https://your-endpoint.openai.azure.com/",
+                openai_api_base="https://your-endpoint.openai.azure.com/",  # type: ignore
                 openai_api_type="azure",
             )
             text = "This is a test query."
@@ -194,13 +194,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_version: Optional[str] = Field(default=None, alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # to support Azure OpenAI Service custom endpoints
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")  # type: ignore
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     # to support Azure OpenAI Service custom endpoints
     openai_api_type: Optional[str] = None
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = None  # type: ignore
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
     openai_api_key: Optional[str] = Field(default=None, alias="api_key")
@@ -288,7 +288,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(  # type: ignore
             "OPENAI_API_BASE"
         )
         values["openai_api_type"] = get_from_dict_or_env(
@@ -297,9 +297,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_TYPE",
             default="",
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_proxy",
+            "openai_proxy",  # type: ignore
             "OPENAI_PROXY",
             default="",
         )
@@ -340,7 +340,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 client_params = {
                     "api_key": values["openai_api_key"],
                     "organization": values["openai_organization"],
-                    "base_url": values["openai_api_base"],
+                    "base_url": values["openai_api_base"],  # type: ignore
                     "timeout": values["request_timeout"],
                     "max_retries": values["max_retries"],
                     "default_headers": values["default_headers"],
@@ -370,7 +370,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "headers": self.headers,
                 "api_key": self.openai_api_key,
                 "organization": self.openai_organization,
-                "api_base": self.openai_api_base,
+                "api_base": self.openai_api_base,  # type: ignore
                 "api_type": self.openai_api_type,
                 "api_version": self.openai_api_version,
                 **self.model_kwargs,
@@ -378,7 +378,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             if self.openai_api_type in ("azure", "azure_ad", "azuread"):
                 openai_args["engine"] = self.deployment
             # TODO: Look into proxy with openai v1.
-            if self.openai_proxy:
+            if self.openai_proxy:  # type: ignore
                 try:
                     import openai
                 except ImportError:
@@ -387,9 +387,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Please install it with `pip install openai`."
                     )
 
-                openai.proxy = {
-                    "http": self.openai_proxy,
-                    "https": self.openai_proxy,
+                openai.proxy = {  # type: ignore
+                    "http": self.openai_proxy,  # type: ignore
+                    "https": self.openai_proxy,  # type: ignore
                 }  # type: ignore[assignment]  # noqa: E501
         return openai_args
 

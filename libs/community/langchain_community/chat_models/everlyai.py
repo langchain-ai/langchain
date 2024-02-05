@@ -83,7 +83,7 @@ class ChatEverlyAI(ChatOpenAI):
             "everlyai_api_key",
             "EVERLYAI_API_KEY",
         )
-        values["openai_api_base"] = DEFAULT_API_BASE
+        values["openai_api_base"] = DEFAULT_API_BASE  # type: ignore
 
         try:
             import openai

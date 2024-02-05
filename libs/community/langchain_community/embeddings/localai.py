@@ -132,7 +132,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             from langchain_community.embeddings import LocalAIEmbeddings
             openai = LocalAIEmbeddings(
                 openai_api_key="random-string",
-                openai_api_base="http://localhost:8080"
+                openai_api_base="http://localhost:8080"  # type: ignore
             )
 
     """
@@ -141,9 +141,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     model: str = "text-embedding-ada-002"
     deployment: str = model
     openai_api_version: Optional[str] = None
-    openai_api_base: Optional[str] = None
+    openai_api_base: Optional[str] = None  # type: ignore
     # to support explicit proxy for LocalAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = None  # type: ignore
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
     openai_api_key: Optional[str] = None
@@ -199,15 +199,15 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        values["openai_api_base"] = get_from_dict_or_env(
+        values["openai_api_base"] = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_api_base",
+            "openai_api_base",  # type: ignore
             "OPENAI_API_BASE",
             default="",
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_proxy",
+            "openai_proxy",  # type: ignore
             "OPENAI_PROXY",
             default="",
         )
@@ -244,16 +244,16 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             "headers": self.headers,
             "api_key": self.openai_api_key,
             "organization": self.openai_organization,
-            "api_base": self.openai_api_base,
+            "api_base": self.openai_api_base,  # type: ignore
             "api_version": self.openai_api_version,
             **self.model_kwargs,
         }
-        if self.openai_proxy:
+        if self.openai_proxy:  # type: ignore
             import openai
 
-            openai.proxy = {
-                "http": self.openai_proxy,
-                "https": self.openai_proxy,
+            openai.proxy = {  # type: ignore
+                "http": self.openai_proxy,  # type: ignore
+                "https": self.openai_proxy,  # type: ignore
             }  # type: ignore[assignment]  # noqa: E501
         return openai_args
 
@@ -268,7 +268,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             self,
             input=[text],
             **self._invocation_params,
-        )["data"][0]["embedding"]
+        )["data"][
+            0
+        ]["embedding"]
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""

@@ -31,13 +31,13 @@ class DallEAPIWrapper(BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     openai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: Optional[str] = Field(default=None, alias="base_url")  # type: ignore
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = None  # type: ignore
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -102,12 +102,12 @@ class DallEAPIWrapper(BaseModel):
             or os.getenv("OPENAI_ORGANIZATION")
             or None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(  # type: ignore
             "OPENAI_API_BASE"
         )
-        values["openai_proxy"] = get_from_dict_or_env(
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
             values,
-            "openai_proxy",
+            "openai_proxy",  # type: ignore
             "OPENAI_PROXY",
             default="",
         )
@@ -125,7 +125,7 @@ class DallEAPIWrapper(BaseModel):
             client_params = {
                 "api_key": values["openai_api_key"],
                 "organization": values["openai_organization"],
-                "base_url": values["openai_api_base"],
+                "base_url": values["openai_api_base"],  # type: ignore
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
                 "default_headers": values["default_headers"],

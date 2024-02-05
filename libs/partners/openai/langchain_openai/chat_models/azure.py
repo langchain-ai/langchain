@@ -91,7 +91,7 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to   # type: ignore
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
 
@@ -119,7 +119,7 @@ class AzureChatOpenAI(ChatOpenAI):
         values["openai_api_key"] = (
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values["openai_api_base"] or os.getenv(  # type: ignore
             "OPENAI_API_BASE"
         )
         values["openai_api_version"] = values["openai_api_version"] or os.getenv(
@@ -142,24 +142,24 @@ class AzureChatOpenAI(ChatOpenAI):
         values["openai_api_type"] = get_from_dict_or_env(
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
+        values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
+            values, "openai_proxy", "OPENAI_PROXY", default=""  # type: ignore
         )
         # For backwards compatibility. Before openai v1, no distinction was made
-        # between azure_endpoint and base_url (openai_api_base).
-        openai_api_base = values["openai_api_base"]
-        if openai_api_base and values["validate_base_url"]:
-            if "/openai" not in openai_api_base:
+        # between azure_endpoint and base_url (openai_api_base).  # type: ignore
+        openai_api_base = values["openai_api_base"]  # type: ignore
+        if openai_api_base and values["validate_base_url"]:  # type: ignore
+            if "/openai" not in openai_api_base:  # type: ignore
                 raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
-                    "the `azure_endpoint` param not `openai_api_base` "
+                    "the `azure_endpoint` param not `openai_api_base` "  # type: ignore
                     "(or alias `base_url`)."
                 )
             if values["deployment_name"]:
                 raise ValueError(
                     "As of openai>=1.0.0, if `azure_deployment` (or alias "
                     "`deployment_name`) is specified then "
-                    "`base_url` (or alias `openai_api_base`) should not be. "
+                    "`base_url` (or alias `openai_api_base`) should not be. "  # type: ignore
                     "If specifying `azure_deployment`/`deployment_name` then use "
                     "`azure_endpoint` instead of `base_url`.\n\n"
                     "For example, you could specify:\n\n"
@@ -180,7 +180,7 @@ class AzureChatOpenAI(ChatOpenAI):
             else None,
             "azure_ad_token_provider": values["azure_ad_token_provider"],
             "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
+            "base_url": values["openai_api_base"],  # type: ignore
             "timeout": values["request_timeout"],
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],

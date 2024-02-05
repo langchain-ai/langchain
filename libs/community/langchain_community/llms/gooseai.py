@@ -97,8 +97,8 @@ class GooseAI(LLM):
             import openai
 
             openai.api_key = gooseai_api_key.get_secret_value()
-            openai.api_base = "https://api.goose.ai/v1"
-            values["client"] = openai.Completion
+            openai.api_base = "https://api.goose.ai/v1"  # type: ignore
+            values["client"] = openai.Completion  # type: ignore
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
