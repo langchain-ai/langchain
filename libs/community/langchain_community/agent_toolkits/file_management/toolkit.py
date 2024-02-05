@@ -60,10 +60,10 @@ class FileManagementToolkit(BaseToolkit):
     def validate_tools(cls, values: dict) -> dict:
         selected_tools = values.get("selected_tools") or []
         for tool_name in selected_tools:
-            if tool_name not in _FILE_TOOLS:
+            if tool_name not in _FILE_TOOLS_MAP:
                 raise ValueError(
                     f"File Tool of name {tool_name} not supported."
-                    f" Permitted tools: {list(_FILE_TOOLS)}"
+                    f" Permitted tools: {list(_FILE_TOOLS_MAP)}"
                 )
         return values
 
