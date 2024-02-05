@@ -84,7 +84,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
             raise e
         data_params = data.get("params")
         response = self.requests_wrapper.get(data["url"], params=data_params)
-        response = response[: self.response_length]
+        response = response[: self.response_length]  # type: ignore[index]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
@@ -115,7 +115,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.post(data["url"], data["data"])
-        response = response[: self.response_length]
+        response = response[: self.response_length]  # type: ignore[index]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
@@ -146,7 +146,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.patch(data["url"], data["data"])
-        response = response[: self.response_length]
+        response = response[: self.response_length]  # type: ignore[index]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
@@ -177,7 +177,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.put(data["url"], data["data"])
-        response = response[: self.response_length]
+        response = response[: self.response_length]  # type: ignore[index]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
@@ -209,7 +209,7 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.delete(data["url"])
-        response = response[: self.response_length]
+        response = response[: self.response_length]  # type: ignore[index]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()

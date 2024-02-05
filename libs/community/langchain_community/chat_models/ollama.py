@@ -74,10 +74,10 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"
         elif isinstance(message, HumanMessage):
-            if message.content[0].get("type") == "text":
-                message_text = f"[INST] {message.content[0]['text']} [/INST]"
-            elif message.content[0].get("type") == "image_url":
-                message_text = message.content[0]["image_url"]["url"]
+            if message.content[0].get("type") == "text":  # type: ignore[union-attr]
+                message_text = f"[INST] {message.content[0]['text']} [/INST]"  # type: ignore[index]
+            elif message.content[0].get("type") == "image_url":  # type: ignore[union-attr]
+                message_text = message.content[0]["image_url"]["url"]  # type: ignore[index, index]
         elif isinstance(message, AIMessage):
             message_text = f"{message.content}"
         elif isinstance(message, SystemMessage):
@@ -112,11 +112,11 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 content = message.content
             else:
                 for content_part in message.content:
-                    if content_part.get("type") == "text":
-                        content += f"\n{content_part['text']}"
-                    elif content_part.get("type") == "image_url":
-                        if isinstance(content_part.get("image_url"), str):
-                            image_url_components = content_part["image_url"].split(",")
+                    if content_part.get("type") == "text":  # type: ignore[union-attr]
+                        content += f"\n{content_part['text']}"  # type: ignore[index]
+                    elif content_part.get("type") == "image_url":  # type: ignore[union-attr]
+                        if isinstance(content_part.get("image_url"), str):  # type: ignore[union-attr]
+                            image_url_components = content_part["image_url"].split(",")  # type: ignore[index]
                             # Support data:image/jpeg;base64,<image> format
                             # and base64 strings
                             if len(image_url_components) > 1:
@@ -142,7 +142,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 }
             )
 
-        return ollama_messages
+        return ollama_messages  # type: ignore[return-value]
 
     def _create_chat_stream(
         self,
@@ -337,7 +337,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                             verbose=self.verbose,
                         )
         except OllamaEndpointNotFoundError:
-            async for chunk in self._legacy_astream(messages, stop, **kwargs):
+            async for chunk in self._legacy_astream(messages, stop, **kwargs):  # type: ignore[attr-defined]
                 yield chunk
 
     @deprecated("0.0.3", alternative="_stream")

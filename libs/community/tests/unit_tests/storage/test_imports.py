@@ -6,8 +6,6 @@ EXPECTED_ALL = [
     "RedisStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
-    "SQLDocStore",
-    "SQLStrStore",
 ]
 
 
