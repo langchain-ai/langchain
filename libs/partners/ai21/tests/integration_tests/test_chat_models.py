@@ -29,3 +29,19 @@ def test_generation() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+@pytest.mark.requires("ai21")
+async def test_ageneration() -> None:
+    """Test invoke tokens from AI21."""
+    llm = ChatAI21()
+    message = HumanMessage(content="Hello")
+
+    result = await llm.agenerate([[message], [message]], config=dict(tags=["foo"]))
+
+    for generations in result.generations:
+        assert len(generations) == 1
+        for generation in generations:
+            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation.text, str)
+            assert generation.text == generation.message.content

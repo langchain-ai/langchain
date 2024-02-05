@@ -1,3 +1,5 @@
+import asyncio
+from functools import partial
 from typing import Any, AsyncIterator, Iterator, List, Optional, cast, Tuple
 
 from ai21.models import ChatMessage, RoleType, Penalty
@@ -165,4 +167,6 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        raise NotImplementedError
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._generate, **kwargs), messages, stop, run_manager
+        )
