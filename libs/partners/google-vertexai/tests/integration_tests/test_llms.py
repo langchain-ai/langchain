@@ -95,13 +95,31 @@ def test_stream(model_name: str) -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.parametrize(
+    "model_name",
+    model_names_to_test_with_default,
+)
+async def test_astream(model_name: str) -> None:
+    llm = (
+        VertexAI(temperature=0, model_name=model_name)
+        if model_name
+        else VertexAI(temperature=0)
+    )
+    async for token in llm.astream("I'm Pickle Rick"):
+        assert isinstance(token, str)
+
+
 async def test_vertex_consistency() -> None:
     llm = VertexAI(temperature=0)
     output = llm.generate(["Please say foo:"])
     streaming_output = llm.generate(["Please say foo:"], stream=True)
     async_output = await llm.agenerate(["Please say foo:"])
+    async_streaming_output = await llm.agenerate(["Please say foo:"], stream=True)
     assert output.generations[0][0].text == streaming_output.generations[0][0].text
     assert output.generations[0][0].text == async_output.generations[0][0].text
+    assert (
+        output.generations[0][0].text == async_streaming_output.generations[0][0].text
+    )
 
 
 @pytest.mark.skip("CI testing not set up")
