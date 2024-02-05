@@ -92,6 +92,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return ToolMessageChunk(**message["data"])
     elif _type == "SystemMessageChunk":
         return SystemMessageChunk(**message["data"])
+    elif _type == "ChatMessageChunk":
+        return ChatMessageChunk(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 
