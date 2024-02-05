@@ -159,27 +159,17 @@ class UpstashVectorStore(VectorStore):
         for metadata, text in zip(metadatas, texts):
             metadata[self._text_key] = text
 
-        # For loops to avoid memory issues and optimize when using HTTP based embeddings
-        # The first loop runs the embeddings, it benefits when using OpenAI embeddings
-        # The second loops runs the pinecone upsert asynchronously.
         for i in range(0, len(texts), embedding_chunk_size):
             chunk_texts = texts[i: i + embedding_chunk_size]
             chunk_ids = ids[i: i + embedding_chunk_size]
             chunk_metadatas = metadatas[i: i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
-            async_res = [
-                self._index.upsert(
-                    vectors=batch,
-                    **kwargs,
-                )
+            async def upsert_all():
                 for batch in batch_iterate(
                     batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
-                )
-            ]
-
-            async def upsert_all():
-                return await asyncio.gather(*async_res)
+                ):
+                    await self._index.upsert(vectors=batch)
 
             asyncio.run(upsert_all())
 
@@ -293,9 +283,8 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            # type: ignore since include_metadata=True
             Document(page_content=metadata.pop(
-                (self._text_key)), metadata=metadata)
+                (self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
             for metadata in selected
         ]
 
@@ -389,9 +378,8 @@ class UpstashVectorStore(VectorStore):
         if delete_all:
             self._index.reset()
         elif ids is not None:
-            for i in range(0, len(ids), batch_size):
-                chunk = ids[i: i + batch_size]
-                self._index.delete(ids=chunk)
+            for batch in batch_iterate(batch_size, ids):
+                self._index.delete(ids=batch)
         else:
             raise ValueError("Either ids or delete_all should be provided")
 
