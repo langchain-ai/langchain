@@ -20,7 +20,7 @@ from langchain_community.llms.azureml_endpoint import (
 
 
 class LlamaContentFormatter(ContentFormatterBase):
-    def __init__(self):  # type: ignore[no-untyped-def]
+    def __init__(self) -> None:
         raise TypeError(
             "`LlamaContentFormatter` is deprecated for chat models. Use "
             "`LlamaChatContentFormatter` instead."
@@ -72,12 +72,12 @@ class LlamaChatContentFormatter(ContentFormatterBase):
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
         return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
 
-    def format_request_payload(  # type: ignore[override]
+    def format_messages_request_payload(
         self,
         messages: List[BaseMessage],
         model_kwargs: Dict,
         api_type: AzureMLEndpointApiType,
-    ) -> str:
+    ) -> bytes:
         """Formats the request according to the chosen api"""
         chat_messages = [
             LlamaChatContentFormatter._convert_message_to_dict(message)
@@ -98,17 +98,19 @@ class LlamaChatContentFormatter(ContentFormatterBase):
             raise ValueError(
                 f"`api_type` {api_type} is not supported by this formatter"
             )
-        return str.encode(request_payload)  # type: ignore[return-value]
+        return str.encode(request_payload)
 
-    def format_response_payload(  # type: ignore[override]
-        self, output: bytes, api_type: AzureMLEndpointApiType
+    def format_response_payload(
+        self,
+        output: bytes,
+        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime,
     ) -> ChatGeneration:
         """Formats response"""
         if api_type == AzureMLEndpointApiType.realtime:
             try:
                 choice = json.loads(output)["output"]
             except (KeyError, IndexError, TypeError) as e:
-                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
                 message=BaseMessage(
                     content=choice.strip(),
@@ -125,7 +127,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
                         "model. Expected `dict` but `{type(choice)}` was received."
                     )
             except (KeyError, IndexError, TypeError) as e:
-                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
                 message=BaseMessage(
                     content=choice["message"]["content"].strip(),
@@ -187,7 +189,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         if stop:
             _model_kwargs["stop"] = stop
 
-        request_payload = self.content_formatter.format_request_payload(
+        request_payload = self.content_formatter.format_messages_request_payload(
             messages, _model_kwargs, self.endpoint_api_type
         )
         response_payload = self.http_client.call(

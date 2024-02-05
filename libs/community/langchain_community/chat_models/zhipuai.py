@@ -5,7 +5,7 @@ import asyncio
 import json
 import logging
 from functools import partial
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (
@@ -161,7 +161,7 @@ class ChatZhipuAI(BaseChatModel):
 
         return attributes
 
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         try:
             import zhipuai
@@ -174,7 +174,7 @@ class ChatZhipuAI(BaseChatModel):
                 "Please install it via 'pip install zhipuai'"
             )
 
-    def invoke(self, prompt):  # type: ignore[no-untyped-def]
+    def invoke(self, prompt: Any) -> Any:  # type: ignore[override]
         if self.model == "chatglm_turbo":
             return self.zhipuai.model_api.invoke(
                 model=self.model,
@@ -185,17 +185,17 @@ class ChatZhipuAI(BaseChatModel):
                 return_type=self.return_type,
             )
         elif self.model == "characterglm":
-            meta = self.meta.dict()
+            _meta = cast(meta, self.meta).dict()
             return self.zhipuai.model_api.invoke(
                 model=self.model,
-                meta=meta,
+                meta=_meta,
                 prompt=prompt,
                 request_id=self.request_id,
                 return_type=self.return_type,
             )
         return None
 
-    def sse_invoke(self, prompt):  # type: ignore[no-untyped-def]
+    def sse_invoke(self, prompt: Any) -> Any:
         if self.model == "chatglm_turbo":
             return self.zhipuai.model_api.sse_invoke(
                 model=self.model,
@@ -207,18 +207,18 @@ class ChatZhipuAI(BaseChatModel):
                 incremental=self.incremental,
             )
         elif self.model == "characterglm":
-            meta = self.meta.dict()
+            _meta = cast(meta, self.meta).dict()
             return self.zhipuai.model_api.sse_invoke(
                 model=self.model,
                 prompt=prompt,
-                meta=meta,
+                meta=_meta,
                 request_id=self.request_id,
                 return_type=self.return_type,
                 incremental=self.incremental,
             )
         return None
 
-    async def async_invoke(self, prompt):  # type: ignore[no-untyped-def]
+    async def async_invoke(self, prompt: Any) -> Any:
         loop = asyncio.get_running_loop()
         partial_func = partial(
             self.zhipuai.model_api.async_invoke, model=self.model, prompt=prompt
@@ -229,7 +229,7 @@ class ChatZhipuAI(BaseChatModel):
         )
         return response
 
-    async def async_invoke_result(self, task_id):  # type: ignore[no-untyped-def]
+    async def async_invoke_result(self, task_id: Any) -> Any:
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
             None,
@@ -247,7 +247,7 @@ class ChatZhipuAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """Generate a chat response."""
-        prompt = []
+        prompt: List = []
         for message in messages:
             if isinstance(message, AIMessage):
                 role = "assistant"
@@ -270,7 +270,7 @@ class ChatZhipuAI(BaseChatModel):
 
         else:
             stream_iter = self._stream(
-                prompt=prompt,  # type: ignore[arg-type]
+                prompt=prompt,
                 stop=stop,
                 run_manager=run_manager,
                 **kwargs,
