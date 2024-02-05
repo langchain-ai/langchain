@@ -2,7 +2,17 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
@@ -176,13 +186,13 @@ def create_sql_agent(
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
         if prompt is None:
-            messages = [
-                SystemMessage(content=prefix),  # type: ignore[arg-type]
+            messages: List = [
+                SystemMessage(content=cast(str, prefix)),
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
-            prompt = ChatPromptTemplate.from_messages(messages)  # type: ignore[arg-type]
+            prompt = ChatPromptTemplate.from_messages(messages)
         agent = RunnableAgent(
             runnable=create_openai_functions_agent(llm, tools, prompt),
             input_keys_arg=["input"],
@@ -191,12 +201,12 @@ def create_sql_agent(
     elif agent_type == "openai-tools":
         if prompt is None:
             messages = [
-                SystemMessage(content=prefix),  # type: ignore[arg-type]
+                SystemMessage(content=cast(str, prefix)),
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
-            prompt = ChatPromptTemplate.from_messages(messages)  # type: ignore[arg-type]
+            prompt = ChatPromptTemplate.from_messages(messages)
         agent = RunnableMultiActionAgent(
             runnable=create_openai_tools_agent(llm, tools, prompt),
             input_keys_arg=["input"],
