@@ -384,7 +384,7 @@ class Vectara(VectorStore):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return [], ""
+            return [], ""  # type: ignore[return-value]
 
         result = response.json()
 
@@ -454,7 +454,7 @@ class Vectara(VectorStore):
         docs = self.vectara_query(query, config)
         return docs
 
-    def similarity_search(
+    def similarity_search(  # type: ignore[override]
         self,
         query: str,
         **kwargs: Any,
@@ -474,7 +474,7 @@ class Vectara(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def max_marginal_relevance_search(
+    def max_marginal_relevance_search(  # type: ignore[override]
         self,
         query: str,
         fetch_k: int = 50,

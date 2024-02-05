@@ -167,5 +167,5 @@ class TestAstraDB:
             find_options={"limit": 30},
             extraction_function=lambda x: x["foo"],
         )
-        doc = await anext(loader.alazy_load())
+        doc = await anext(loader.alazy_load())  # type: ignore[name-defined]
         assert doc.page_content == "bar"

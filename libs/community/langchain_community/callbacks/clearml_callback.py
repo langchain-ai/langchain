@@ -83,7 +83,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if clearml.Task.current_task():
             self.task = clearml.Task.current_task()
         else:
-            self.task = clearml.Task.init(  # type: ignore
+            self.task = clearml.Task.init(
                 task_type=self.task_type,
                 project_name=self.project_name,
                 tags=self.tags,
@@ -361,17 +361,13 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if self.visualize and self.nlp and self.temp_dir.name is not None:
             doc = self.nlp(text)
 
-            dep_out = spacy.displacy.render(  # type: ignore
-                doc, style="dep", jupyter=False, page=True
-            )
+            dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
             dep_output_path = Path(
                 self.temp_dir.name, hash_string(f"dep-{text}") + ".html"
             )
             dep_output_path.open("w", encoding="utf-8").write(dep_out)
 
-            ent_out = spacy.displacy.render(  # type: ignore
-                doc, style="ent", jupyter=False, page=True
-            )
+            ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
             ent_output_path = Path(
                 self.temp_dir.name, hash_string(f"ent-{text}") + ".html"
             )
