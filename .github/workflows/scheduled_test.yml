@@ -66,6 +66,8 @@ jobs:
           AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
           AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          UPSTASH_VECTOR_URL: ${{ secrets.UPSTASH_VECTOR_URL }}
+          UPSTASH_VECTOR_TOKEN: ${{ secrets.UPSTASH_VECTOR_TOKEN }}
         run: |
           make scheduled_tests
 
