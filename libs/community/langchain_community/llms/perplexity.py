@@ -1,9 +1,7 @@
 """Wrapper around Perplexity APIs."""
 from __future__ import annotations
 
-import json
 import logging
-import os
 from typing import (
     Any,
     Dict,
@@ -12,31 +10,44 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
-import requests
-from langchain.pydantic_v1 import Field, root_validator
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.language_models.llms import LLM
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
+    ChatMessageChunk,
+    FunctionMessageChunk,
     HumanMessage,
+    HumanMessageChunk,
     SystemMessage,
+    SystemMessageChunk,
+    ToolMessageChunk,
 )
-from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    GenerationChunk,
+)
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
 
-class Perplexity(LLM, BaseLanguageModel):
-    """`Perplexity AI` models API.
+class Perplexity(BaseChatModel):
+    """`Perplexity AI` Chat models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``PPLX_API_KEY`` set to your API key.
@@ -46,9 +57,8 @@ class Perplexity(LLM, BaseLanguageModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import Perplexity
-            model = Perplexity(model="<model_name>", perplexity_api_key="my-api-key")
-            response = model("What are the biggest risks facing humanity?")
+            from langchain.chat_models import PerplexityChat
+            chat = PerplexityChat()
     """
 
     @property
@@ -76,7 +86,7 @@ class Perplexity(LLM, BaseLanguageModel):
     """Whether to stream the results or not."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    model_name: str = Field(default="mistral-7b-instruct", alias="model")
+    model: str = Field(default="pplx-70b-online", alias="model")
 
     class Config:
         """Configuration for this pydantic object."""
@@ -116,14 +126,16 @@ class Perplexity(LLM, BaseLanguageModel):
             values, "pplx_api_key", "PPLX_API_KEY"
         )
         try:
-            import openai
+            import openai  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = OpenAI()
+            values["client"] = OpenAI(
+                api_key=values["pplx_api_key"], base_url="https://api.perplexity.ai"
+            )
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
@@ -143,8 +155,8 @@ class Perplexity(LLM, BaseLanguageModel):
             **self.model_kwargs,
         }
 
-    def _convert_message_to_dict(self, message: BaseMessage) -> dict:
-        message_dict: Dict[str, Any]
+    def _convert_message_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
+        message_dict = {}
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
         elif isinstance(message, SystemMessage):
@@ -155,25 +167,7 @@ class Perplexity(LLM, BaseLanguageModel):
             message_dict = {"role": "assistant", "content": message.content}
         else:
             raise TypeError(f"Got unknown type {message}")
-
         return message_dict
-
-    def completion(self, **kwargs: Any) -> Any:
-        def _completion(**kwargs: Any) -> Any:
-            payload = {"model": kwargs["model"], "messages": kwargs["messages"]}
-            return requests.post(
-                url="https://api.perplexity.ai/chat/completions",
-                timeout=30,
-                headers={
-                    "accept": "application/json",
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {os.getenv('PPLX_API_KEY')}",
-                },
-                stream=True,
-                data=json.dumps(payload),
-            )
-
-        return _completion(**kwargs)
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
@@ -186,44 +180,34 @@ class Perplexity(LLM, BaseLanguageModel):
         message_dicts = [self._convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        r"""Call out to Perplexity's completion endpoint.
+    def _convert_delta_to_message_chunk(
+        self, _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+    ) -> BaseMessageChunk:
+        role = _dict.get("role")
+        content = _dict.get("content") or ""
+        additional_kwargs: Dict = {}
+        if _dict.get("function_call"):
+            function_call = dict(_dict["function_call"])
+            if "name" in function_call and function_call["name"] is None:
+                function_call["name"] = ""
+            additional_kwargs["function_call"] = function_call
+        if _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = _dict["tool_calls"]
 
-        Args:
-            prompt: The prompt to pass into the model.
-            stop: Optional list of stop words to use when generating.
-
-        Returns:
-            The string generated by the model.
-
-        Example:
-            .. code-block:: python
-
-                prompt = "What are the biggest risks facing humanity?"
-                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                response = model(prompt)
-
-        """
-        if self.streaming:
-            completion = ""
-            for chunk in self._stream(
-                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
-            ):
-                completion += chunk.text
-            return completion
-
-        params = {**self._default_params, **kwargs}
-        response = self.client.completions.create(
-            prompt=self._wrap_prompt(prompt),
-            **params,
-        )
-        return response.completion
+        if role == "user" or default_class == HumanMessageChunk:
+            return HumanMessageChunk(content=content)
+        elif role == "assistant" or default_class == AIMessageChunk:
+            return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        elif role == "system" or default_class == SystemMessageChunk:
+            return SystemMessageChunk(content=content)
+        elif role == "function" or default_class == FunctionMessageChunk:
+            return FunctionMessageChunk(content=content, name=_dict["name"])
+        elif role == "tool" or default_class == ToolMessageChunk:
+            return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
+        elif role or default_class == ChatMessageChunk:
+            return ChatMessageChunk(content=content, role=role)
+        else:
+            return default_class(content=content)
 
     def _stream(
         self,
@@ -233,12 +217,53 @@ class Perplexity(LLM, BaseLanguageModel):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-        for token in self.completion(messages=message_dicts, **params):
-            chunk = GenerationChunk(text=token.completion)
-        yield chunk
-        if run_manager:
-            run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+        params = {**params, **kwargs}
+        default_chunk_class = AIMessageChunk
+
+        if stop:
+            params["stop_sequences"] = stop
+        stream_resp = self.client.chat.completions.create(
+            model=params["model"], messages=message_dicts, stream=True
+        )
+        for chunk in stream_resp:
+            if not isinstance(chunk, dict):
+                chunk = chunk.dict()
+            if len(chunk["choices"]) == 0:
+                continue
+            choice = chunk["choices"][0]
+            chunk = self._convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
+            finish_reason = choice.get("finish_reason")
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
+            default_chunk_class = chunk.__class__
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield chunk
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            if stream_iter:
+                return generate_from_stream(stream_iter)
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
+        response = self.client.chat.completions.create(
+            model=params["model"], messages=message_dicts
+        )
+        message = AIMessage(content=response.choices[0].message.content)
+        return ChatResult(generations=[ChatGeneration(message=message)])
 
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
@@ -246,7 +271,7 @@ class Perplexity(LLM, BaseLanguageModel):
         pplx_creds: Dict[str, Any] = {
             "api_key": self.pplx_api_key,
             "api_base": "https://api.perplexity.ai",
-            "model": self.model_name,
+            "model": self.model,
         }
         return {**pplx_creds, **self._default_params}
 
@@ -254,9 +279,3 @@ class Perplexity(LLM, BaseLanguageModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "perplexitychat"
-
-    def __init__(self, model_name, temperature, verbose, **kwargs):
-        super().__init__(**kwargs)
-        self.model_name = model_name
-        self.temperature = temperature
-        self.verbose = verbose
