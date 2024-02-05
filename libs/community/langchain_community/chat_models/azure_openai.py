@@ -144,7 +144,10 @@ class AzureChatOpenAI(ChatOpenAI):
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
         values["openai_proxy"] = get_from_dict_or_env(  # type: ignore
-            values, "openai_proxy", "OPENAI_PROXY", default=""  # type: ignore
+            values,
+            "openai_proxy",
+            "OPENAI_PROXY",
+            default="",  # type: ignore
         )
 
         try:
