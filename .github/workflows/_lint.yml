@@ -85,7 +85,7 @@ jobs:
           SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
         with:
           path: |
-            ${{ env.WORKDIR }}/.mypy_cache
+            ${{ env.WORKDIR }}/.mypy_cache_2
           key: mypy-lint-2.0-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
 
 
@@ -113,7 +113,7 @@ jobs:
           SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
         with:
           path: |
-            ${{ env.WORKDIR }}/.mypy_cache_test
+            ${{ env.WORKDIR }}/.mypy_cache_test_2
           key: mypy-test-2.0-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
 
       - name: Analysing the code with our lint
