@@ -177,7 +177,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             embeddings = OpenAIEmbeddings(
                 deployment="your-embeddings-deployment-name",
                 model="your-embeddings-model-name",
-                openai_api_base="https://your-endpoint.openai.azure.com/",  # type: ignore
+                openai_api_base="https://your-endpoint.openai.azure.com/",
                 openai_api_type="azure",
             )
             text = "This is a test query."

@@ -807,7 +807,7 @@ class AzureOpenAI(BaseOpenAI):
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to   # type: ignore
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to  
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
 
