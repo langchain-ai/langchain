@@ -228,7 +228,7 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
         content_encoded = response.json()["content"]
         return base64.b64decode(content_encoded).decode("utf-8")
 
-    def load(self) -> list[Document]:
+    def load(self) -> List[Document]:
         documents = []
 
         files = self.get_file_paths()
