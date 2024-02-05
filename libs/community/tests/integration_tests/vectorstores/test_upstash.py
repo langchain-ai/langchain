@@ -23,7 +23,8 @@ def is_api_accessible(url: str) -> bool:
 def test_upstash() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = UpstashVectorStore.from_texts(texts=texts, embedding=FakeEmbeddings())
+    docsearch = UpstashVectorStore.from_texts(
+        texts=texts, embedding=FakeEmbeddings())
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
@@ -31,7 +32,8 @@ def test_upstash() -> None:
 async def test_upstash_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = UpstashVectorStore.from_texts(texts=texts, embedding=FakeEmbeddings())
+    docsearch = UpstashVectorStore.from_texts(
+        texts=texts, embedding=FakeEmbeddings())
     output = await docsearch.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
@@ -59,7 +61,8 @@ def test_upstash_with_metadatas_with_scores() -> None:
         metadatas=metadatas,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
 def test_upstash_with_metadatas_with_scores_using_vector() -> None:
@@ -77,13 +80,15 @@ def test_upstash_with_metadatas_with_scores_using_vector() -> None:
     output = docsearch.similarity_search_by_vector_with_score(
         embedding=embedded_query, k=1
     )
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
 def test_upstash_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = UpstashVectorStore.from_texts(texts=texts, embedding=FakeEmbeddings())
+    docsearch = UpstashVectorStore.from_texts(
+        texts=texts, embedding=FakeEmbeddings())
     output = docsearch.max_marginal_relevance_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
@@ -92,9 +97,11 @@ def test_upstash_mmr_by_vector() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     embeddings = FakeEmbeddings()
-    docsearch = UpstashVectorStore.from_texts(texts=texts, embedding=embeddings)
+    docsearch = UpstashVectorStore.from_texts(
+        texts=texts, embedding=embeddings)
     embedded_query = embeddings.embed_query("foo")
-    output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
+    output = docsearch.max_marginal_relevance_search_by_vector(
+        embedded_query, k=1)
     assert output == [Document(page_content="foo")]
 
 
