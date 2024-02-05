@@ -139,7 +139,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
             return super().get_token_ids(text)
 
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        if self._model_is_anthropic and isinstance(input, Sequence):
+        if self._model_is_anthropic and not isinstance(input, str) and isinstance(input, Sequence) :
             return StringPromptValue(text=get_buffer_string(input, ai_prefix="Assistant"))
         else:
             return super()._convert_input(input)

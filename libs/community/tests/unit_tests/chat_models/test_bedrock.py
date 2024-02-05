@@ -57,7 +57,7 @@ def test_different_models_bedrock(model_id: str) -> None:
     model = BedrockChat(model_id=model_id, client=client)
 
     # should not throw an error
-    model.invoke([HumanMessage(content="hello there")])
+    model.invoke("hello there")
 
 def test_bedrock_anthropic_input() -> None:
     model = BedrockChat(model_id="anthropic.claude-v2")
