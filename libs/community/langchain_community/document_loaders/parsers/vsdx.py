@@ -11,7 +11,7 @@ from langchain_community.document_loaders.blob_loaders import Blob
 
 
 class VsdxParser(BaseBlobParser, ABC):
-    def parse(self, blob: Blob) -> Iterator[Document]:
+    def parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[override]
         """Parse a vsdx file."""
         return self.lazy_parse(blob)
 
@@ -21,7 +21,7 @@ class VsdxParser(BaseBlobParser, ABC):
 
         with blob.as_bytes_io() as pdf_file_obj:
             with zipfile.ZipFile(pdf_file_obj, "r") as zfile:
-                pages = self.get_pages_content(zfile, blob.source)
+                pages = self.get_pages_content(zfile, blob.source)  # type: ignore[arg-type]
 
         yield from [
             Document(
@@ -60,13 +60,13 @@ class VsdxParser(BaseBlobParser, ABC):
 
         if "visio/pages/pages.xml" not in zfile.namelist():
             print("WARNING - No pages.xml file found in {}".format(source))
-            return
+            return  # type: ignore[return-value]
         if "visio/pages/_rels/pages.xml.rels" not in zfile.namelist():
             print("WARNING - No pages.xml.rels file found in {}".format(source))
-            return
+            return  # type: ignore[return-value]
         if "docProps/app.xml" not in zfile.namelist():
             print("WARNING - No app.xml file found in {}".format(source))
-            return
+            return  # type: ignore[return-value]
 
         pagesxml_content: dict = xmltodict.parse(zfile.read("visio/pages/pages.xml"))
         appxml_content: dict = xmltodict.parse(zfile.read("docProps/app.xml"))
@@ -79,7 +79,7 @@ class VsdxParser(BaseBlobParser, ABC):
                 rel["@Name"].strip() for rel in pagesxml_content["Pages"]["Page"]
             ]
         else:
-            disordered_names: List[str] = [
+            disordered_names: List[str] = [  # type: ignore[no-redef]
                 pagesxml_content["Pages"]["Page"]["@Name"].strip()
             ]
         if isinstance(pagesxmlrels_content["Relationships"]["Relationship"], list):
@@ -88,7 +88,7 @@ class VsdxParser(BaseBlobParser, ABC):
                 for rel in pagesxmlrels_content["Relationships"]["Relationship"]
             ]
         else:
-            disordered_paths: List[str] = [
+            disordered_paths: List[str] = [  # type: ignore[no-redef]
                 "visio/pages/"
                 + pagesxmlrels_content["Relationships"]["Relationship"]["@Target"]
             ]

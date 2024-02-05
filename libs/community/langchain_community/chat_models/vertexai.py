@@ -121,7 +121,7 @@ def _parse_chat_history_gemini(
             elif path.startswith("data:image/"):
                 # extract base64 component from image uri
                 try:
-                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(
+                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(  # type: ignore[union-attr]
                         1
                     )
                 except AttributeError:
