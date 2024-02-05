@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, cast
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
-from langchain_core.outputs import LLMResult
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 
 def import_infino() -> Any:
@@ -146,7 +146,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         # Track completion token usage (for openai chat models).
         if self.is_chat_openai_model:
             messages = " ".join(
-                generation.message.content  # type: ignore[attr-defined]
+                cast(str, cast(ChatGeneration, generation).message.content)
                 for generation in generations
             )
             completion_tokens = get_num_tokens(
