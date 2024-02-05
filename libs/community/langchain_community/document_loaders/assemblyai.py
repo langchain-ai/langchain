@@ -123,7 +123,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
     """
 
-    def __init__(self, transcript_id, api_key, transcript_format):
+    def __init__(self, transcript_id, api_key, transcript_format):  # type: ignore[no-untyped-def]
         """
         Initializes the AssemblyAI AssemblyAIAudioLoaderById.
 

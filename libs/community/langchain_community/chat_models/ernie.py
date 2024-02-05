@@ -214,7 +214,7 @@ class ErnieBotChat(BaseChatModel):
         generations = [
             ChatGeneration(
                 message=AIMessage(
-                    content=response.get("result"),
+                    content=response.get("result"),  # type: ignore[arg-type]
                     additional_kwargs={**additional_kwargs},
                 )
             )

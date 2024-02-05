@@ -169,7 +169,7 @@ class ChatKonko(ChatOpenAI):
         }
 
         if openai_api_key:
-            headers["X-OpenAI-Api-Key"] = openai_api_key.get_secret_value()
+            headers["X-OpenAI-Api-Key"] = openai_api_key.get_secret_value()  # type: ignore[union-attr]
 
         models_response = requests.get(models_url, headers=headers)
 

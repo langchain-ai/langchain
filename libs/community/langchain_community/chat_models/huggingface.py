@@ -144,7 +144,7 @@ class ChatHuggingFace(BaseChatModel):
 
         elif isinstance(self.llm, HuggingFaceHub):
             # no need to look up model_id for HuggingFaceHub LLM
-            self.model_id = self.llm.repo_id
+            self.model_id = self.llm.repo_id  # type: ignore[assignment]
             return
 
         else:
