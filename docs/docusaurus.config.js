@@ -302,7 +302,6 @@ const config = {
                 label: "YouTube",
                 href: "https://www.youtube.com/@LangChain",
               },
-              }
             ],
           },
         ],
