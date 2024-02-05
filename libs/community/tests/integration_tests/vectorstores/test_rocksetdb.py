@@ -157,7 +157,8 @@ LIMIT 4
         assert q_str == expected
 
     def test_add_documents_and_delete(self) -> None:
-        """"add_documents" and "delete" are requirements to support use with RecordManager"""
+        """ "add_documents" and "delete" are requirements to support use
+        with RecordManager"""
 
         texts = ["foo", "bar", "baz"]
         metadatas = [{"metadata_index": i} for i in range(len(texts))]
