@@ -74,6 +74,7 @@ async def test_vertexai_agenerate(model_name: str) -> None:
     # xfail: content is not same right now
     # assert sync_generation == async_generation
 
+
 @pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
 async def test_vertexai_agenerate_stream_enabled(model_name: str) -> None:
     model = ChatVertexAI(temperature=0, model_name=model_name)
@@ -94,6 +95,7 @@ async def test_vertexai_agenerate_stream_enabled(model_name: str) -> None:
 
     # xfail: content is not same right now
     # assert sync_generation == async_generation
+
 
 @pytest.mark.parametrize("model_name", ["chat-bison@001", "gemini-pro"])
 def test_vertexai_stream(model_name: str) -> None:
