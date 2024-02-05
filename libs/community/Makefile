@@ -6,14 +6,6 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
-# Run unit tests and generate a coverage report.
-coverage:
-	poetry run pytest --cov \
-		--cov-config=.coveragerc \
-		--cov-report xml \
-		--cov-report term-missing:skip-covered \
-		$(TEST_FILE)
-
 test:
 	poetry run pytest $(TEST_FILE)
 
@@ -28,9 +20,6 @@ check_imports: $(shell find langchain_community -name '*.py')
 
 extended_tests:
 	poetry run pytest --only-extended tests/unit_tests
-
-integration_tests:
-	poetry run pytest ${TEST_FILE}
 
 
 ######################
@@ -52,7 +41,7 @@ lint lint_diff lint_package lint_tests:
 	poetry run ruff .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) || poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)
