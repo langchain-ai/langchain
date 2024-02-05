@@ -15,7 +15,6 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Type,
     TypeVar,
 )
 
@@ -33,7 +32,6 @@ if TYPE_CHECKING:
     from astrapy.db import AstraDB as LibAstraDB
     from astrapy.db import AsyncAstraDB
 
-ADBVST = TypeVar("ADBVST", bound="AstraDB")
 T = TypeVar("T")
 U = TypeVar("U")
 DocDict = Dict[str, Any]  # dicts expressing entries to insert
@@ -1142,10 +1140,10 @@ class AstraDB(VectorStore):
 
     @classmethod
     def _from_kwargs(
-        cls: Type[ADBVST],
+        cls,
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> ADBVST:
+    ) -> "AstraDB":
         known_kwargs = {
             "collection_name",
             "token",
@@ -1197,13 +1195,13 @@ class AstraDB(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[ADBVST],
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> ADBVST:
+    ) -> "AstraDB":
         """Create an Astra DB vectorstore from raw texts.
 
         Args:
@@ -1232,13 +1230,13 @@ class AstraDB(VectorStore):
 
     @classmethod
     async def afrom_texts(
-        cls: Type[ADBVST],
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> ADBVST:
+    ) -> "AstraDB":
         """Create an Astra DB vectorstore from raw texts.
 
         Args:
@@ -1267,11 +1265,11 @@ class AstraDB(VectorStore):
 
     @classmethod
     def from_documents(
-        cls: Type[ADBVST],
+        cls,
         documents: List[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> ADBVST:
+    ) -> "AstraDB":
         """Create an Astra DB vectorstore from a document list.
 
         Utility method that defers to 'from_texts' (see that one).

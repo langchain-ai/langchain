@@ -111,7 +111,7 @@ def get_client_info(module: Optional[str] = None) -> "ClientInfo":
 def load_image_from_gcs(path: str, project: Optional[str] = None) -> "Image":
     """Loads im Image from GCS."""
     try:
-        from google.cloud import storage
+        from google.cloud import storage  # type: ignore
     except ImportError:
         raise ImportError("Could not import google-cloud-storage python package.")
     from vertexai.preview.generative_models import Image

@@ -39,7 +39,11 @@ from langchain_community.adapters.openai import (
 from langchain_community.chat_models.openai import _convert_delta_to_message_chunk
 
 if TYPE_CHECKING:
-    from gpt_router.models import ChunkedGenerationResponse, GenerationResponse
+    from gpt_router.models import (
+        ChunkedGenerationResponse,
+        GenerationResponse,
+        ModelGenerationRequest,
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -57,8 +61,8 @@ class GPTRouterModel(BaseModel):
 
 
 def get_ordered_generation_requests(
-    models_priority_list: List[GPTRouterModel], **kwargs
-):
+    models_priority_list: List[GPTRouterModel], **kwargs: Any
+) -> List[ModelGenerationRequest]:
     """
     Return the body for the model router input.
     """
@@ -100,7 +104,7 @@ def completion_with_retry(
     models_priority_list: List[GPTRouterModel],
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
-) -> Union[GenerationResponse, Generator[ChunkedGenerationResponse]]:
+) -> Union[GenerationResponse, Generator[ChunkedGenerationResponse, None, None]]:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
@@ -122,7 +126,7 @@ async def acompletion_with_retry(
     models_priority_list: List[GPTRouterModel],
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
-) -> Union[GenerationResponse, AsyncGenerator[ChunkedGenerationResponse]]:
+) -> Union[GenerationResponse, AsyncGenerator[ChunkedGenerationResponse, None]]:
     """Use tenacity to retry the async completion call."""
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
@@ -283,8 +287,8 @@ class GPTRouter(BaseChatModel):
         return self._create_chat_result(response)
 
     def _create_chat_generation_chunk(
-        self, data: Mapping[str, Any], default_chunk_class
-    ):
+        self, data: Mapping[str, Any], default_chunk_class: Any
+    ) -> Tuple[ChatGenerationChunk, Any]:
         chunk = _convert_delta_to_message_chunk(
             {"content": data.get("text", "")}, default_chunk_class
         )
@@ -293,8 +297,8 @@ class GPTRouter(BaseChatModel):
             dict(finish_reason=finish_reason) if finish_reason is not None else None
         )
         default_chunk_class = chunk.__class__
-        chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
-        return chunk, default_chunk_class
+        chunk_ = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+        return chunk_, default_chunk_class
 
     def _stream(
         self,

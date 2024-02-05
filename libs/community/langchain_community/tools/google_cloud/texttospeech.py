@@ -9,12 +9,12 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
-    from google.cloud import texttospeech
+    from google.cloud import texttospeech  # type: ignore
 
 
 def _import_google_cloud_texttospeech() -> Any:
     try:
-        from google.cloud import texttospeech
+        from google.cloud import texttospeech  # type: ignore
     except ImportError as e:
         raise ImportError(
             "Cannot import google.cloud.texttospeech, please install "

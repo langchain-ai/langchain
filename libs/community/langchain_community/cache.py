@@ -1067,7 +1067,7 @@ class CassandraSemanticCache(BaseCache):
         self._get_embedding = _cache_embedding
         self.embedding_dimension = self._get_embedding_dimension()
 
-        self.table = MetadataVectorCassandraTable(
+        self.table: Any = MetadataVectorCassandraTable(
             session=self.session,
             keyspace=self.keyspace,
             table=self.table_name,
