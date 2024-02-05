@@ -16,8 +16,10 @@ from typing import (
 )
 
 from langchain_core.documents import Document
+from langchain_core.runnables import run_in_executor
 
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.utilities.astradb import AstraDBEnvironment
 
 if TYPE_CHECKING:
     from astrapy.db import AstraDB, AsyncAstraDB
@@ -42,21 +44,15 @@ class AstraDBLoader(BaseLoader):
         nb_prefetched: int = 1000,
         extraction_function: Callable[[Dict], str] = json.dumps,
     ) -> None:
-        try:
-            from astrapy.db import AstraDB
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Could not import a recent astrapy python package. "
-                "Please install it with `pip install --upgrade astrapy`."
-            )
-
-        # Conflicting-arg checks:
-        if astra_db_client is not None or async_astra_db_client is not None:
-            if token is not None or api_endpoint is not None:
-                raise ValueError(
-                    "You cannot pass 'astra_db_client' or 'async_astra_db_client' to "
-                    "AstraDB if passing 'token' and 'api_endpoint'."
-                )
+        astra_env = AstraDBEnvironment(
+            token=token,
+            api_endpoint=api_endpoint,
+            astra_db_client=astra_db_client,
+            async_astra_db_client=async_astra_db_client,
+            namespace=namespace,
+        )
+        self.astra_env = astra_env
+        self.collection = astra_env.astra_db.collection(collection_name)
         self.collection_name = collection_name
         self.filter = filter_criteria
         self.projection = projection
@@ -64,48 +60,12 @@ class AstraDBLoader(BaseLoader):
         self.nb_prefetched = nb_prefetched
         self.extraction_function = extraction_function
 
-        astra_db = astra_db_client
-        async_astra_db = async_astra_db_client
-
-        if token and api_endpoint:
-            astra_db = AstraDB(
-                token=token,
-                api_endpoint=api_endpoint,
-                namespace=namespace,
-            )
-            try:
-                from astrapy.db import AsyncAstraDB
-
-                async_astra_db = AsyncAstraDB(
-                    token=token,
-                    api_endpoint=api_endpoint,
-                    namespace=namespace,
-                )
-            except (ImportError, ModuleNotFoundError):
-                pass
-        if not astra_db and not async_astra_db:
-            raise ValueError(
-                "Must provide 'astra_db_client' or 'async_astra_db_client' or 'token' "
-                "and 'api_endpoint'"
-            )
-        self.collection = astra_db.collection(collection_name) if astra_db else None
-        if async_astra_db:
-            from astrapy.db import AsyncAstraDBCollection
-
-            self.async_collection = AsyncAstraDBCollection(
-                astra_db=async_astra_db, collection_name=collection_name
-            )
-        else:
-            self.async_collection = None
-
     def load(self) -> List[Document]:
         """Eagerly load the content."""
         return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
-        if not self.collection:
-            raise ValueError("Missing AstraDB client")
-        queue = Queue(self.nb_prefetched)
+        queue = Queue(self.nb_prefetched)  # type: ignore[var-annotated]
         t = threading.Thread(target=self.fetch_results, args=(queue,))
         t.start()
         while True:
@@ -120,9 +80,27 @@ class AstraDBLoader(BaseLoader):
         return [doc async for doc in self.alazy_load()]
 
     async def alazy_load(self) -> AsyncIterator[Document]:
-        if not self.async_collection:
-            raise ValueError("Missing AsyncAstraDB client")
-        async for doc in self.async_collection.paginated_find(
+        if not self.astra_env.async_astra_db:
+            iterator = run_in_executor(
+                None,
+                self.collection.paginated_find,
+                filter=self.filter,
+                options=self.find_options,
+                projection=self.projection,
+                sort=None,
+                prefetched=True,
+            )
+            done = object()
+            while True:
+                item = await run_in_executor(None, lambda it: next(it, done), iterator)
+                if item is done:
+                    break
+                yield item  # type: ignore[misc]
+            return
+        async_collection = await self.astra_env.async_astra_db.collection(
+            self.collection_name
+        )
+        async for doc in async_collection.paginated_find(
             filter=self.filter,
             options=self.find_options,
             projection=self.projection,
@@ -132,19 +110,19 @@ class AstraDBLoader(BaseLoader):
             yield Document(
                 page_content=self.extraction_function(doc),
                 metadata={
-                    "namespace": self.async_collection.astra_db.namespace,
-                    "api_endpoint": self.async_collection.astra_db.base_url,
+                    "namespace": async_collection.astra_db.namespace,
+                    "api_endpoint": async_collection.astra_db.base_url,
                     "collection": self.collection_name,
                 },
             )
 
-    def fetch_results(self, queue: Queue):
+    def fetch_results(self, queue: Queue):  # type: ignore[no-untyped-def]
         self.fetch_page_result(queue)
         while self.find_options.get("pageState"):
             self.fetch_page_result(queue)
         queue.put(None)
 
-    def fetch_page_result(self, queue: Queue):
+    def fetch_page_result(self, queue: Queue):  # type: ignore[no-untyped-def]
         res = self.collection.find(
             filter=self.filter,
             options=self.find_options,

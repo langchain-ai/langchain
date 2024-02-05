@@ -115,7 +115,7 @@ class SurrealDBStore(VectorStore):
         for idx, text in enumerate(texts):
             data = {"text": text, "embedding": embeddings[idx]}
             if metadatas is not None and idx < len(metadatas):
-                data["metadata"] = metadatas[idx]
+                data["metadata"] = metadatas[idx]  # type: ignore[assignment]
             record = await self.sdb.create(
                 self.collection,
                 data,

@@ -71,7 +71,8 @@ class MlflowEmbeddings(Embeddings, BaseModel):
         embeddings: List[List[float]] = []
         for txt in _chunk(texts, 20):
             resp = self._client.predict(
-                endpoint=self.endpoint, inputs={"input": txt, **params}
+                endpoint=self.endpoint,
+                inputs={"input": txt, **params},  # type: ignore[arg-type]
             )
             embeddings.extend(r["embedding"] for r in resp["data"])
         return embeddings
