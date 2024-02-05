@@ -61,15 +61,6 @@ class ChatPerplexity(BaseChatModel):
             chat = PerplexityChat()
     """
 
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"pplx_api_key": "PPLX_API_KEY"}
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
-        return True
-
     client: Any  #: :meta private:
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -92,6 +83,10 @@ class ChatPerplexity(BaseChatModel):
         """Configuration for this pydantic object."""
 
         allow_population_by_field_name = True
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"pplx_api_key": "PPLX_API_KEY"}
 
     @root_validator(pre=True, allow_reuse=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -128,7 +123,7 @@ class ChatPerplexity(BaseChatModel):
         try:
             import openai  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -156,7 +151,6 @@ class ChatPerplexity(BaseChatModel):
         }
 
     def _convert_message_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
-        message_dict = {}
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
         elif isinstance(message, SystemMessage):
