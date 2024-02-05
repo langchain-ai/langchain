@@ -20,7 +20,7 @@ from langchain_community.llms.azureml_endpoint import (
 
 
 class LlamaContentFormatter(ContentFormatterBase):
-    def __init__(self):
+    def __init__(self):  # type: ignore[no-untyped-def]
         raise TypeError(
             "`LlamaContentFormatter` is deprecated for chat models. Use "
             "`LlamaChatContentFormatter` instead."
@@ -72,7 +72,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
         return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
 
-    def format_request_payload(
+    def format_request_payload(  # type: ignore[override]
         self,
         messages: List[BaseMessage],
         model_kwargs: Dict,
@@ -98,9 +98,9 @@ class LlamaChatContentFormatter(ContentFormatterBase):
             raise ValueError(
                 f"`api_type` {api_type} is not supported by this formatter"
             )
-        return str.encode(request_payload)
+        return str.encode(request_payload)  # type: ignore[return-value]
 
-    def format_response_payload(
+    def format_response_payload(  # type: ignore[override]
         self, output: bytes, api_type: AzureMLEndpointApiType
     ) -> ChatGeneration:
         """Formats response"""
@@ -108,7 +108,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
             try:
                 choice = json.loads(output)["output"]
             except (KeyError, IndexError, TypeError) as e:
-                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
             return ChatGeneration(
                 message=BaseMessage(
                     content=choice.strip(),
@@ -125,7 +125,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
                         "model. Expected `dict` but `{type(choice)}` was received."
                     )
             except (KeyError, IndexError, TypeError) as e:
-                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
             return ChatGeneration(
                 message=BaseMessage(
                     content=choice["message"]["content"].strip(),

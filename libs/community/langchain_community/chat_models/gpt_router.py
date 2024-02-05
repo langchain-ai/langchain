@@ -56,7 +56,7 @@ class GPTRouterModel(BaseModel):
     provider_name: str
 
 
-def get_ordered_generation_requests(
+def get_ordered_generation_requests(  # type: ignore[no-untyped-def, no-untyped-def]
     models_priority_list: List[GPTRouterModel], **kwargs
 ):
     """
@@ -100,7 +100,7 @@ def completion_with_retry(
     models_priority_list: List[GPTRouterModel],
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
-) -> Union[GenerationResponse, Generator[ChunkedGenerationResponse]]:
+) -> Union[GenerationResponse, Generator[ChunkedGenerationResponse]]:  # type: ignore[type-arg]
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
@@ -122,7 +122,7 @@ async def acompletion_with_retry(
     models_priority_list: List[GPTRouterModel],
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
-) -> Union[GenerationResponse, AsyncGenerator[ChunkedGenerationResponse]]:
+) -> Union[GenerationResponse, AsyncGenerator[ChunkedGenerationResponse]]:  # type: ignore[type-arg]
     """Use tenacity to retry the async completion call."""
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
@@ -282,7 +282,7 @@ class GPTRouter(BaseChatModel):
         )
         return self._create_chat_result(response)
 
-    def _create_chat_generation_chunk(
+    def _create_chat_generation_chunk(  # type: ignore[no-untyped-def, no-untyped-def]
         self, data: Mapping[str, Any], default_chunk_class
     ):
         chunk = _convert_delta_to_message_chunk(
@@ -293,7 +293,7 @@ class GPTRouter(BaseChatModel):
             dict(finish_reason=finish_reason) if finish_reason is not None else None
         )
         default_chunk_class = chunk.__class__
-        chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+        chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)  # type: ignore[assignment]
         return chunk, default_chunk_class
 
     def _stream(

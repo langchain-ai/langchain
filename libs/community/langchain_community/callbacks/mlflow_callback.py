@@ -723,7 +723,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         return session_analysis_df
 
-    def _contain_llm_records(self):
+    def _contain_llm_records(self):  # type: ignore[no-untyped-def]
         return bool(self.records["on_llm_start_records"])
 
     def flush_tracker(self, langchain_asset: Any = None, finish: bool = False) -> None:
