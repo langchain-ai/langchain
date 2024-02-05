@@ -109,13 +109,9 @@ def analyze_text(
         spacy = import_spacy()
         doc = nlp(text)
 
-        dep_out = spacy.displacy.render(  # type: ignore
-            doc, style="dep", jupyter=False, page=True
-        )
+        dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
 
-        ent_out = spacy.displacy.render(  # type: ignore
-            doc, style="ent", jupyter=False, page=True
-        )
+        ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
 
         text_visualizations = {
             "dependency_tree": dep_out,
@@ -233,7 +229,7 @@ class MlflowLogger:
             data, os.path.join(self.dir, f"{filename}.json"), run_id=self.run_id
         )
 
-    def table(self, name: str, dataframe) -> None:  # type: ignore
+    def table(self, name: str, dataframe: Any) -> None:
         """To log the input pandas dataframe as a html table"""
         self.html(dataframe.to_html(), f"table_{name}")
 
@@ -411,7 +407,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 )
                 complexity_metrics: Dict[str, float] = generation_resp.pop(
                     "text_complexity_metrics"
-                )  # type: ignore  # noqa: E501
+                )
                 self.mlflg.metrics(
                     complexity_metrics,
                     step=self.metrics["step"],
@@ -723,7 +719,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         return session_analysis_df
 
-    def _contain_llm_records(self):  # type: ignore[no-untyped-def]
+    def _contain_llm_records(self) -> bool:
         return bool(self.records["on_llm_start_records"])
 
     def flush_tracker(self, langchain_asset: Any = None, finish: bool = False) -> None:
