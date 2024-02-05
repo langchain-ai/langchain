@@ -23,7 +23,7 @@ def test_watsonxllm_invoke() -> None:
     assert len(response) > 0
 
 
-def test_watsoncllm_generate() -> None:
+def test_watsonxllm_generate() -> None:
     watsonxllm = WatsonxLLM(
         model_id="google/flan-ul2",
         url="https://us-south.ml.cloud.ibm.com",
@@ -35,7 +35,33 @@ def test_watsoncllm_generate() -> None:
     assert len(response_text) > 0
 
 
-def test_watsoncllm_stream() -> None:
+def test_watsonxllm_generate_with_multiple_prompts() -> None:
+    watsonxllm = WatsonxLLM(
+        model_id="google/flan-ul2",
+        url="https://us-south.ml.cloud.ibm.com",
+        project_id=PROJECT_ID,
+    )
+    response = watsonxllm.generate(
+        ["What color sunflower is?", "What color turtle is?"]
+    )
+    response_text = response.generations[0][0].text
+    assert isinstance(response, LLMResult)
+    assert len(response_text) > 0
+
+
+def test_watsonxllm_generate_stream() -> None:
+    watsonxllm = WatsonxLLM(
+        model_id="google/flan-ul2",
+        url="https://us-south.ml.cloud.ibm.com",
+        project_id=PROJECT_ID,
+    )
+    response = watsonxllm.generate(["What color sunflower is?"], stream=True)
+    response_text = response.generations[0][0].text
+    assert isinstance(response, LLMResult)
+    assert len(response_text) > 0
+
+
+def test_watsonxllm_stream() -> None:
     watsonxllm = WatsonxLLM(
         model_id="google/flan-ul2",
         url="https://us-south.ml.cloud.ibm.com",
