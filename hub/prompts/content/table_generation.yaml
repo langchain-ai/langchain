@@ -1,0 +1,11 @@
+input_variables: [text]
+output_parser: null
+messages:
+  - role: system
+    prompt:
+      template: 'Создай таблицу в формате markdown с указанными названиями столбцов и строк на основе текста сообщения пользователя. Количество строк и столбцов должно !строго соответствовать заданному в сообщении. Оформление таблицы должно быть консистентным.'
+  - role: user
+    prompt:
+      template: '{text}'
+template_format: f-string
+_type: chat
