@@ -961,6 +961,7 @@ async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
 gigachain-community = ">=0.0.14,<0.1"
 gigachain-core = ">=0.1.17,<0.2"
+gigachat = ">=0.1.15"
 jsonpatch = "^1.33"
 langsmith = ">=0.0.83,<0.1"
 numpy = "^1"
@@ -1062,6 +1063,21 @@ extended-testing = ["faker (>=19.3.1,<20.0.0)", "jinja2 (>=3,<4)", "presidio-ana
 [package.source]
 type = "directory"
 url = "libs/experimental"
+
+[[package]]
+name = "gigachat"
+version = "0.1.15"
+description = "GigaChat. Python-library for GigaChain and LangChain"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "gigachat-0.1.15-py3-none-any.whl", hash = "sha256:5e43145247fa55c4906d4ffc1bff206a8ae9c9ac57f5a69396ff65f73af473ac"},
+    {file = "gigachat-0.1.15.tar.gz", hash = "sha256:aebf615a22e72dec877cd72ea1d434fe5ddfb9d5040a8a222425c35f8886defe"},
+]
+
+[package.dependencies]
+httpx = "<1"
+pydantic = ">=1,<2"
 
 [[package]]
 name = "greenlet"
