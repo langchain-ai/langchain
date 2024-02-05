@@ -85,9 +85,7 @@ class KuzuGraph:
                 row = query_result.get_next()
                 prop_name = row[1]
                 prop_type = row[2]
-                current_table_schema["properties"].append(
-                    (prop_name, prop_type)
-                )
+                current_table_schema["properties"].append((prop_name, prop_type))
             rel_properties.append(current_table_schema)
 
         self.schema = (

@@ -47,7 +47,7 @@ class TestKuzu(unittest.TestCase):
     def test_query_params(self) -> None:
         result = self.kuzu_graph.query(
             query="MATCH (n:Movie) WHERE n.name = $name RETURN n.name",
-            params={"name": "The Godfather"}
+            params={"name": "The Godfather"},
         )
         excepted_result = [
             {"n.name": "The Godfather"},
