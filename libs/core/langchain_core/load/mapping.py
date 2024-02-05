@@ -252,6 +252,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "fireworks",
         "ChatFireworks",
     ),
+    ("langchain_community", "chat_models", "groq", "ChatGroq"): (
+        "langchain_community",
+        "chat_models",
+        "groq",
+        "ChatGroq"
+    ),
     ("langchain", "chat_models", "google_palm", "ChatGooglePalm"): (
         "langchain",
         "chat_models",
