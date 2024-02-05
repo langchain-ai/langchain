@@ -85,8 +85,8 @@ jobs:
           SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
         with:
           path: |
-            ${{ env.WORKDIR }}/.mypy_cache_2
-          key: mypy-lint-2.0-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
+            ${{ env.WORKDIR }}/.mypy_cache
+          key: mypy-lint-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
 
 
       - name: Analysing the code with our lint
@@ -113,8 +113,8 @@ jobs:
           SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
         with:
           path: |
-            ${{ env.WORKDIR }}/.mypy_cache_test_2
-          key: mypy-test-2.0-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', env.WORKDIR)) }}
+            ${{ env.WORKDIR }}/.mypy_cache_test
+          key: mypy-test-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
