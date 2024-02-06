@@ -5,7 +5,7 @@
 autodoc_pydantic==1.8.0
 myst_parser
 nbsphinx==0.8.9
-sphinx>=7
+sphinx==7.2.6
 sphinx-autobuild==2021.3.14
 sphinx_rtd_theme==2.0.0
 sphinx-typlog-theme==0.8.0
