@@ -1,5 +1,6 @@
 """Test OpenAI Chat API wrapper."""
 import json
+import os
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -13,6 +14,8 @@ from langchain_core.messages import (
 
 from langchain_community.adapters.openai import convert_dict_to_message
 from langchain_community.chat_models.openai import ChatOpenAI
+
+os.environ["OPENAI_API_KEY"] = "foo"
 
 
 @pytest.mark.requires("openai")
