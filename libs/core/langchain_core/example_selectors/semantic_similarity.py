@@ -74,6 +74,9 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         vectorstore_cls: Type[VectorStore],
         k: int = 4,
         input_keys: Optional[List[str]] = None,
+        *,
+        example_keys: Optional[List[str]] = None,
+        vectorstore_kwargs: Optional[dict] = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -102,7 +105,13 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         vectorstore = vectorstore_cls.from_texts(
             string_examples, embeddings, metadatas=examples, **vectorstore_cls_kwargs
         )
-        return cls(vectorstore=vectorstore, k=k, input_keys=input_keys)
+        return cls(
+            vectorstore=vectorstore,
+            k=k,
+            input_keys=input_keys,
+            example_keys=example_keys,
+            vectorstore_kwargs=vectorstore_kwargs,
+        )
 
 
 class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector):

@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import base64
+import io
 import logging
 import os
+import sys
 import urllib.parse
 from typing import (
     Any,
@@ -28,6 +30,13 @@ from langchain_core.outputs import ChatGenerationChunk
 
 from langchain_nvidia_ai_endpoints import _common as nvidia_ai_endpoints
 
+try:
+    import PIL.Image
+
+    has_pillow = True
+except ImportError:
+    has_pillow = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,6 +57,27 @@ def _is_b64(s: str) -> bool:
     return s.startswith("data:image")
 
 
+def _resize_image(img_data: bytes, max_dim: int = 1024) -> str:
+    if not has_pillow:
+        print(
+            "Pillow is required to resize images down to reasonable scale."
+            " Please install it using `pip install pillow`."
+            " For now, not resizing; may cause NVIDIA API to fail."
+        )
+        return base64.b64encode(img_data).decode("utf-8")
+    image = PIL.Image.open(io.BytesIO(img_data))
+    max_dim_size = max(image.size)
+    aspect_ratio = max_dim / max_dim_size
+    new_h = int(image.size[1] * aspect_ratio)
+    new_w = int(image.size[0] * aspect_ratio)
+    resized_image = image.resize((new_w, new_h), PIL.Image.Resampling.LANCZOS)
+    output_buffer = io.BytesIO()
+    resized_image.save(output_buffer, format="JPEG")
+    output_buffer.seek(0)
+    resized_b64_string = base64.b64encode(output_buffer.read()).decode("utf-8")
+    return resized_b64_string
+
+
 def _url_to_b64_string(image_source: str) -> str:
     b64_template = "data:image/png;base64,{b64_string}"
     try:
@@ -55,6 +85,9 @@ def _url_to_b64_string(image_source: str) -> str:
             response = requests.get(image_source)
             response.raise_for_status()
             encoded = base64.b64encode(response.content).decode("utf-8")
+            if sys.getsizeof(encoded) > 200000:
+                ## (VK) Temporary fix. NVIDIA API has a limit of 250KB for the input.
+                encoded = _resize_image(response.content)
             return b64_template.format(b64_string=encoded)
         elif _is_b64(image_source):
             return image_source
@@ -148,8 +181,6 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
     def custom_preprocess(
         self, msg_list: Sequence[BaseMessage]
     ) -> List[Dict[str, str]]:
-        # The previous author had a lot of custom preprocessing here
-        # but I'm just going to assume it's a list
         return [self.preprocess_msg(m) for m in msg_list]
 
     def _process_content(self, content: Union[str, List[Union[dict, str]]]) -> str:
@@ -184,9 +215,6 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         return "".join(string_array)
 
     def preprocess_msg(self, msg: BaseMessage) -> Dict[str, str]:
-        ## (WFH): Previous author added a bunch of
-        # custom processing here, but I'm just going to support
-        # the LCEL api.
         if isinstance(msg, BaseMessage):
             role_convert = {"ai": "assistant", "human": "user"}
             if isinstance(msg, ChatMessage):
