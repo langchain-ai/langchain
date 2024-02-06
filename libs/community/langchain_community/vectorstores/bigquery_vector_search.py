@@ -92,9 +92,7 @@ class BigQueryVectorSearch(VectorStore):
             from google.api_core import client_info
             from google.cloud import bigquery
 
-            bq_info = client_info.ClientInfo(
-                user_agent=_APPLICATION_NAME
-            )
+            bq_info = client_info.ClientInfo(user_agent=_APPLICATION_NAME)
             self.bq_client = bigquery.Client(
                 project=project_id,
                 location=location,
