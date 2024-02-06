@@ -18,6 +18,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
 pytest-watch = "^4.2.0"
+langchain-cli = ">=0.0.21"
 
 [tool.poetry.group.test]
 optional = true

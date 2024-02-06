@@ -205,7 +205,7 @@ const config = {
               },
               {
                 to: "/docs/additional_resources/youtube",
-                label: "YouTube videos"
+                label: "YouTube"
               },
             ]
           },
@@ -297,6 +297,10 @@ const config = {
               {
                 label: "Blog",
                 href: "https://blog.langchain.dev",
+              },
+              {
+                label: "YouTube",
+                href: "https://www.youtube.com/@LangChain",
               },
             ],
           },
