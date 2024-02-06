@@ -1018,8 +1018,8 @@ class Milvus(VectorStore):
                 "Failed to get ids: %s error: %s", self.collection_name, exc
             )
             raise exc
-        ids = [item.get(self._primary_field) for item in query_result]
-        return ids
+        pks = [item.get(self._primary_field) for item in query_result]
+        return pks
     
     def upsert(
         self,
@@ -1030,7 +1030,7 @@ class Milvus(VectorStore):
         """Update/Insert documents to the vectorstore.
 
         Args:
-            ids: IDs to update - Let's call get_ids to get ids with expression \n
+            ids: IDs to update - Let's call get_pks to get ids with expression \n
             documents (List[Document]): Documents to add to the vectorstore.
 
         Returns:
