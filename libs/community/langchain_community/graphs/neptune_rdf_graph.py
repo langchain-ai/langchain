@@ -243,4 +243,4 @@ class NeptuneRdfGraph:
 
             self.schema_elements[elem] = reslist
 
-        self.load_from_schema_elements(self.schema_elements)
+        self.load_schema(self.schema_elements)
