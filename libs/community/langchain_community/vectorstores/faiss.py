@@ -305,7 +305,7 @@ class FAISS(VectorStore):
         if filter is not None:
             if isinstance(filter, dict):
 
-                def filter_func(metadata):
+                def filter_func(metadata):  # type: ignore[no-untyped-def]
                     if all(
                         metadata.get(key) in value
                         if isinstance(value, list)
@@ -608,7 +608,7 @@ class FAISS(VectorStore):
             filtered_indices = []
             if isinstance(filter, dict):
 
-                def filter_func(metadata):
+                def filter_func(metadata):  # type: ignore[no-untyped-def]
                     if all(
                         metadata.get(key) in value
                         if isinstance(value, list)
