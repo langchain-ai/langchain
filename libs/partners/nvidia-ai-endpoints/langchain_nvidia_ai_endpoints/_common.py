@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import time
+from functools import partial
 from typing import (
     Any,
     AsyncIterator,
@@ -45,6 +47,7 @@ class NVEModel(BaseModel):
     ## Core defaults. These probably should not be changed
     fetch_url_format: str = Field("https://api.nvcf.nvidia.com/v2/nvcf/pexec/status/")
     call_invoke_base: str = Field("https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions")
+    func_list_format: str = Field("https://api.nvcf.nvidia.com/v2/nvcf/functions")
     get_session_fn: Callable = Field(requests.Session)
     get_asession_fn: Callable = Field(aiohttp.ClientSession)
 
@@ -55,7 +58,10 @@ class NVEModel(BaseModel):
     is_staging: bool = Field(False, description="Whether to use staging API")
 
     ## Generation arguments
-    max_tries: int = Field(5, ge=1)
+    timeout: float = Field(60, ge=0, description="Timeout for waiting on response (s)")
+    interval: float = Field(0.02, ge=0, description="Interval for pulling response")
+    last_inputs: dict = Field({}, description="Last inputs sent over to the server")
+    payload_fn: Callable = Field(lambda d: d, description="Function to process payload")
     headers_tmpl: dict = Field(
         ...,
         description="Headers template for API calls."
@@ -85,34 +91,31 @@ class NVEModel(BaseModel):
         )
         if "nvapi-" not in values.get("nvidia_api_key", ""):
             raise ValueError("Invalid NVAPI key detected. Should start with `nvapi-`")
-        is_staging = "nvapi-stg-" in values["nvidia_api_key"]
-        values["is_staging"] = is_staging
+        values["is_staging"] = "nvapi-stg-" in values["nvidia_api_key"]
         if "headers_tmpl" not in values:
-            values["headers_tmpl"] = {
-                "call": {
-                    "Authorization": "Bearer {nvidia_api_key}",
-                    "Accept": "application/json",
-                },
-                "stream": {
-                    "Authorization": "Bearer {nvidia_api_key}",
-                    "Accept": "text/event-stream",
-                    "content-type": "application/json",
-                },
+            call_kvs = {
+                "Accept": "application/json",
             }
+            stream_kvs = {
+                "Accept": "text/event-stream",
+                "content-type": "application/json",
+            }
+            shared_kvs = {
+                "Authorization": "Bearer {nvidia_api_key}",
+                "User-Agent": "langchain-nvidia-ai-endpoints",
+            }
+            values["headers_tmpl"] = {
+                "call": {**call_kvs, **shared_kvs},
+                "stream": {**stream_kvs, **shared_kvs},
+            }
+        return values
 
-        values["fetch_url_format"] = cls._stagify(
-            is_staging,
-            values.get(
-                "fetch_url_format", "https://api.nvcf.nvidia.com/v2/nvcf/pexec/status/"
-            ),
-        )
-        values["call_invoke_base"] = cls._stagify(
-            is_staging,
-            values.get(
-                "call_invoke_base",
-                "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions",
-            ),
-        )
+    @root_validator(pre=False)
+    def validate_model_post(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Additional validation after default values have been put in"""
+        values["stagify"] = partial(cls._stagify, is_staging=values["is_staging"])
+        values["fetch_url_format"] = values["stagify"](values.get("fetch_url_format"))
+        values["call_invoke_base"] = values["stagify"](values.get("call_invoke_base"))
         return values
 
     @property
@@ -129,9 +132,7 @@ class NVEModel(BaseModel):
         """List the available functions that can be invoked."""
         if self._available_functions is not None:
             return self._available_functions
-        invoke_url = self._stagify(
-            self.is_staging, "https://api.nvcf.nvidia.com/v2/nvcf/functions"
-        )
+        invoke_url = self._stagify(self.func_list_format, self.is_staging)
         query_res = self.query(invoke_url)
         if "functions" not in query_res:
             raise ValueError(
@@ -140,8 +141,8 @@ class NVEModel(BaseModel):
         self._available_functions = query_res["functions"]
         return self._available_functions
 
-    @classmethod
-    def _stagify(cls, is_staging: bool, path: str) -> str:
+    @staticmethod
+    def _stagify(path: str, is_staging: bool) -> str:
         """Helper method to switch between staging and production endpoints"""
         if is_staging and "stg.api" not in path:
             return path.replace("api.", "stg.api.")
@@ -154,56 +155,61 @@ class NVEModel(BaseModel):
 
     def _post(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
         """Method for posting to the AI Foundation Model Function API."""
-        call_inputs = {
+        self.last_inputs = {
             "url": invoke_url,
             "headers": self.headers["call"],
-            "json": payload,
+            "json": self.payload_fn(payload),
             "stream": False,
         }
         session = self.get_session_fn()
-        response = session.post(**call_inputs)
+        response = session.post(**self.last_inputs)
         self._try_raise(response)
         return response, session
 
     def _get(self, invoke_url: str, payload: dict = {}) -> Tuple[Response, Any]:
         """Method for getting from the AI Foundation Model Function API."""
-        last_inputs = {
+        self.last_inputs = {
             "url": invoke_url,
             "headers": self.headers["call"],
-            "json": payload,
+            "json": self.payload_fn(payload),
             "stream": False,
         }
         session = self.get_session_fn()
-        last_response = session.get(**last_inputs)
+        last_response = session.get(**self.last_inputs)
         self._try_raise(last_response)
         return last_response, session
 
     def _wait(self, response: Response, session: Any) -> Response:
-        """Wait for a response from API after an initial response is made."""
-        i = 1
+        """Wait for a response from API after an initial response is made"""
+        start_time = time.time()
         while response.status_code == 202:
+            time.sleep(self.interval)
+            if (time.time() - start_time) > self.timeout:
+                raise TimeoutError(
+                    f"Timeout reached without a successful response."
+                    f"\nLast response: {str(response)}"
+                )
             request_id = response.headers.get("NVCF-REQID", "")
             response = session.get(
                 self.fetch_url_format + request_id,
                 headers=self.headers["call"],
             )
-            if response.status_code == 202:
-                try:
-                    body = response.json()
-                except ValueError:
-                    body = str(response)
-                if i > self.max_tries:
-                    raise ValueError(f"Failed to get response with {i} tries: {body}")
         self._try_raise(response)
         return response
 
     def _try_raise(self, response: Response) -> None:
         """Try to raise an error from a response"""
+        ## (VK) Several systems can throw errors. This tries to coerce all of them
+        ## If we can't predictably pull out request id, then dump response
         try:
             response.raise_for_status()
-        except requests.HTTPError as e:
+        except requests.HTTPError:
             try:
                 rd = response.json()
+                if "detail" in rd and "reqId" in rd.get("detail", ""):
+                    rd_buf = "- " + str(rd["detail"])
+                    rd_buf = rd_buf.replace(": ", ", Error: ").replace(", ", "\n- ")
+                    rd["detail"] = rd_buf
             except json.JSONDecodeError:
                 rd = response.__dict__
                 rd = rd.get("_content", rd)
@@ -213,9 +219,19 @@ class NVEModel(BaseModel):
                     rd = json.loads(rd)
                 except Exception:
                     rd = {"detail": rd}
-            title = f"[{rd.get('status', '###')}] {rd.get('title', 'Unknown Error')}"
-            body = f"{rd.get('detail', rd.get('type', rd))}"
-            raise Exception(f"{title}\n{body}") from e
+            status = rd.get("status", "###")
+            title = rd.get("title", rd.get("error", "Unknown Error"))
+            header = f"[{status}] {title}"
+            body = ""
+            if "requestId" in rd:
+                if "detail" in rd:
+                    body += f"{rd['detail']}\n"
+                body += "RequestID: " + rd["requestId"]
+            else:
+                body = rd.get("detail", rd)
+            if str(status) == "401":
+                body += "\nPlease check or regenerate your API key."
+            raise Exception(f"{header}\n{body}") from None
 
     ####################################################################################
     ## Simple query interface to show the set of model options
@@ -361,18 +377,18 @@ class NVEModel(BaseModel):
         invoke_url = self._get_invoke_url(model, invoke_url)
         if payload.get("stream", True) is False:
             payload = {**payload, "stream": True}
-        last_inputs = {
+        self.last_inputs = {
             "url": invoke_url,
             "headers": self.headers["stream"],
             "json": payload,
             "stream": True,
         }
-        response = self.get_session_fn().post(**last_inputs)
+        response = self.get_session_fn().post(**self.last_inputs)
         self._try_raise(response)
         call = self.copy()
 
         def out_gen() -> Generator[dict, Any, Any]:
-            ## Good for client, since it allows self.last_input
+            ## Good for client, since it allows self.last_inputs
             for line in response.iter_lines():
                 if line and line.strip() != b"data: [DONE]":
                     line = line.decode("utf-8")
@@ -397,13 +413,13 @@ class NVEModel(BaseModel):
         invoke_url = self._get_invoke_url(model, invoke_url)
         if payload.get("stream", True) is False:
             payload = {**payload, "stream": True}
-        last_inputs = {
+        self.last_inputs = {
             "url": invoke_url,
             "headers": self.headers["stream"],
             "json": payload,
         }
         async with self.get_asession_fn() as session:
-            async with session.post(**last_inputs) as response:
+            async with session.post(**self.last_inputs) as response:
                 self._try_raise(response)
                 async for line in response.content.iter_any():
                     if line and line.strip() != b"data: [DONE]":
@@ -450,6 +466,16 @@ class _NVIDIAClient(BaseModel):
     def available_models(self) -> dict:
         """Map the available models that can be invoked."""
         return self.client.available_models
+
+    @staticmethod
+    def get_available_functions(**kwargs: Any) -> List[dict]:
+        """Map the available functions that can be invoked. Callable from class"""
+        return NVEModel(**kwargs).available_functions
+
+    @staticmethod
+    def get_available_models(**kwargs: Any) -> dict:
+        """Map the available models that can be invoked. Callable from class"""
+        return NVEModel(**kwargs).available_models
 
     def get_model_details(self, model: Optional[str] = None) -> dict:
         """Get more meta-details about a model retrieved by a given name"""
