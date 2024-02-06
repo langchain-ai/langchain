@@ -1,5 +1,7 @@
 """Test text splitting functionality."""
+import random
 import re
+import string
 from pathlib import Path
 from typing import List
 
@@ -16,6 +18,7 @@ from langchain.text_splitter import (
     TextSplitter,
     Tokenizer,
     split_text_on_tokens,
+    RecursiveJsonTextSplitter,
 )
 
 FAKE_PYTHON_TEXT = """
@@ -1301,4 +1304,25 @@ def test_split_text_on_tokens() -> None:
     )
     output = split_text_on_tokens(text=text, tokenizer=tokenizer)
     expected_output = ["foo bar", "bar baz", "baz 123"]
+    assert output == expected_output
+
+def test_split_json() -> None:
+    """Test json text splitter"""
+    max_chunk = 800
+    splitter = RecursiveJsonTextSplitter(max_chunk_size=max_chunk)
+
+    def random_val() -> str:
+        return ''.join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
+
+    test_data = {
+        "val0": random_val(),
+        "val1": {f"val1{i}": random_val() for i in range(100)}
+    }
+    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
+
+    texts = splitter.split(json_data=test_data).to_string()
+
+    output = [len(text) < max_chunk * 1.05 for text in texts]
+    expected_output = [True for text in texts]
+
     assert output == expected_output
