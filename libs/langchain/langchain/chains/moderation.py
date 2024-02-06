@@ -1,6 +1,7 @@
 """Pass input through a moderation endpoint."""
 from typing import Any, Dict, List, Optional
 
+from langchain_community.utils.openai import is_openai_v1
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -48,19 +49,18 @@ class OpenAIModerationChain(Chain):
         )
         try:
             import openai
-
-            openai.api_key = openai_api_key
-            if openai_organization:
-                openai.organization = openai_organization
-            try:
-                values["client"] = openai.moderations
-            except ImportError:
-                values["client"] = openai.Moderate
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+        openai.api_key = openai_api_key
+        if openai_organization:
+            openai.organization = openai_organization
+        if is_openai_v1():
+            values["client"] = openai.moderations
+        else:
+            values["client"] = openai.Moderate
         return values
 
     @property
