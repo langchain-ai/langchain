@@ -48,6 +48,7 @@ from langchain_community.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
+    HuggingFaceNomicEmbeddings
 )
 from langchain_community.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain_community.embeddings.infinity import InfinityEmbeddings
