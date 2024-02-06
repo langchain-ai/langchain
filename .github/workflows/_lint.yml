@@ -94,7 +94,7 @@ jobs:
         run: |
           make lint_package
 
-      - name: Install test dependencies
+      - name: Install unit test dependencies
         # Also installs dev/lint/test/typing dependencies, to ensure we have
         # type hints for as many of our libraries as possible.
         # This helps catch errors that require dependencies to be spotted, for example:
@@ -103,9 +103,15 @@ jobs:
         # If you change this configuration, make sure to change the `cache-key`
         # in the `poetry_setup` action above to stop using the old cache.
         # It doesn't matter how you change it, any change will cause a cache-bust.
+        if: ${{ ! startsWith(inputs.working-directory, 'libs/partners/') }}
         working-directory: ${{ inputs.working-directory }}
         run: |
           poetry install --with test
+      - name: Install unit+integration test dependencies
+        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry install --with test,test_integration
 
       - name: Get .mypy_cache_test to speed up mypy
         uses: actions/cache@v3
