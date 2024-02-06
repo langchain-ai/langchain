@@ -29,7 +29,7 @@ DEFAULT_METADATA_COLUMN_NAME = "metadata"  # document metadata
 DEFAULT_CONTENT_COLUMN_NAME = "content"  # text content, do not rename
 DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
 
-_APPLICATION_NAME = f"langchain/{__version__}" # Version of LangChain
+_APPLICATION_NAME = f"langchain/{__version__}"  # Version of LangChain
 _MIN_INDEX_ROWS = 5000  # minimal number of rows for creating an index
 _INDEX_CHECK_PERIOD_SECONDS = 60  # Do not check for index more often that this.
 _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
