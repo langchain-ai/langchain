@@ -11,8 +11,11 @@ The `LangChain` integrations related to the
 > fully managed and serverless platform for data science teams to build, train, and manage
 > machine learning models in the Oracle Cloud Infrastructure.
 
-The model can be deployed on OCI Data Science and expose it as the
-[OCI Model Deployment Endpoint](https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-invoke.htm).
+The model can be deployed on OCI Data Science and exposed as the OCI Model Deployment Endpoint.
+If you deployed LLM on
+[OCI Data Science Model Deployment Service](https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-about.htm)
+with VLLM or TGI framework, you can use the `OCIModelDeploymentVLLM` or `OCIModelDeploymentTGI`
+classes to interact with it.
 
 To use, you should have the latest `oracle-ads` python SDK installed.
 
@@ -24,4 +27,6 @@ See [usage examples](/docs/integrations/llms/oci_model_deployment_endpoint).
 
 ```python
 from langchain_community.llms import OCIModelDeploymentVLLM
+
+from langchain_community.llms import OCIModelDeploymentTGI
 ```
