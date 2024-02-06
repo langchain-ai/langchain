@@ -88,16 +88,20 @@ html_last_updated_fmt = "%b %d, %Y"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autodoc.typehints",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
-    "sphinxcontrib.autodoc_pydantic",
-    "sphinx_copybutton",
-    "sphinx_panels",
-    "IPython.sphinxext.ipython_console_highlighting",
+    "autoapi.extension"
+    # "sphinx.ext.autodoc",
+    # "sphinx.ext.autodoc.typehints",
+    # "sphinx.ext.autosummary",
+    # "sphinx.ext.napoleon",
+    # "sphinx.ext.viewcode",
+    # "sphinxcontrib.autodoc_pydantic",
+    # "sphinx_copybutton",
+    # "sphinx_panels",
+    # "IPython.sphinxext.ipython_console_highlighting",
 ]
+autoapi_dirs = ["/Users/erickfriis/langchain/oss-py/libs/core/langchain_core"]
+autoapi_python_use_implicit_namespaces = True
+
 source_suffix = [".rst"]
 
 # some autodoc pydantic options are repeated in the actual template.
