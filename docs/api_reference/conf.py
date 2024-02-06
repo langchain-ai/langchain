@@ -132,6 +132,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "scikit-learn-modern"
 html_theme_path = ["themes"]
+html_theme_options = {
+    'navigation_depth': 2,
+}
 
 # redirects dictionary maps from old links to new links
 html_additional_pages = {}
