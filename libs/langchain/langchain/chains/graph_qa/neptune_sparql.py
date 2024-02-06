@@ -5,25 +5,23 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from langchain_community.graphs import NeptuneRdfGraph
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import (
-    SPARQL_GENERATION_SELECT_PROMPT,
-    SPARQL_QA_PROMPT,
-)
+from langchain.chains.graph_qa.prompts import SPARQL_QA_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain_community.graphs import NeptuneRdfGraph
-
-from langchain_core.prompts.prompt import PromptTemplate
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
-SPARQL_GENERATION_TEMPLATE = """Task: Generate a SPARQL SELECT statement for querying a graph database.
-For instance, to find all email addresses of John Doe, the following query in backticks would be suitable:
+SPARQL_GENERATION_TEMPLATE = """
+Task: Generate a SPARQL SELECT statement for querying a graph database.
+For instance, to find all email addresses of John Doe, the following 
+query in backticks would be suitable:
 ```
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 SELECT ?email
@@ -43,7 +41,8 @@ Schema:
 {schema}
 Note: Be as concise as possible.
 Do not include any explanations or apologies in your responses.
-Do not respond to any questions that ask for anything else than for you to construct a SPARQL query.
+Do not respond to any questions that ask for anything else than 
+for you to construct a SPARQL query.
 Do not include any text except the SPARQL query generated.
 
 The question is:
@@ -53,17 +52,19 @@ SPARQL_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "prompt"], template=SPARQL_GENERATION_TEMPLATE
 )
 
+
 def extract_sparql(query: str) -> str:
     query = query.strip()
     querytoks = query.split("```")
     if len(querytoks) == 3:
         query = querytoks[1]
-        
+
         if query.startswith("sparql"):
             query = query[6:]
     elif query.startswith("<sparql>") and query.endswith("</sparql>"):
-        query= query[8:-9]
+        query = query[8:-9]
     return query
+
 
 class NeptuneSparqlQAChain(Chain):
     """Chain for question-answering against a Neptune graph
@@ -125,11 +126,13 @@ class NeptuneSparqlQAChain(Chain):
         """Initialize from LLM."""
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
         template_to_use = SPARQL_GENERATION_TEMPLATE
-        if not(examples is None):  
+        if examples:
             template_to_use = template_to_use.replace(
-                "Examples:", "Examples: " + examples)
+                "Examples:", "Examples: " + examples
+            )
             sparql_prompt = PromptTemplate(
-                input_variables=["schema", "prompt"], template=template_to_use)
+                input_variables=["schema", "prompt"], template=template_to_use
+            )
         sparql_generation_chain = LLMChain(llm=llm, prompt=sparql_prompt)
 
         return cls(
@@ -165,7 +168,7 @@ class NeptuneSparqlQAChain(Chain):
         _run_manager.on_text(
             generated_sparql, color="green", end="\n", verbose=self.verbose
         )
-        
+
         intermediate_steps.append({"query": generated_sparql})
 
         context = self.graph.query(generated_sparql)
