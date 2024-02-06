@@ -10,11 +10,16 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    get_buffer_string,
+)
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import run_in_executor
 
@@ -222,3 +227,20 @@ class ConversationBufferMemory(BaseChatMemory):
         """Return key-value pairs given the text input to the chain."""
         buffer = await self.abuffer()
         return {self.memory_key: buffer}
+
+
+def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:
+    """
+    Get the prompt input key.
+    Args:
+        inputs: Dict[str, Any]
+        memory_variables: List[str]
+    Returns:
+        A prompt input key.
+    """
+    # "stop" is a special key that can be passed as input but is not used to
+    # format the prompt.
+    prompt_input_keys = list(set(inputs).difference(memory_variables + ["stop"]))
+    if len(prompt_input_keys) != 1:
+        raise ValueError(f"One input key expected got {prompt_input_keys}")
+    return prompt_input_keys[0]
