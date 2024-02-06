@@ -89,7 +89,7 @@ class NeptuneRdfGraph:
         )
         schema_elem = graph.get_schema_elements()
         ... change schema_elements ...
-        graph.load_from_schema_elements(schema_elem)
+        graph.load_schema(schema_elem)
         schema = graph.get_schema()
 
     *Security note*: Make sure that the database connection uses credentials
@@ -135,14 +135,14 @@ class NeptuneRdfGraph:
     def get_schema_elements(self):
         return self.schema_elements
 
-    """
-    Run Neptune query.
-    """
 
     def query(
         self,
         query: str,
     ):
+        """
+        Run Neptune query.
+        """
         request_data = {"query": query}
         data = request_data
         request_hdr = None
@@ -177,41 +177,40 @@ class NeptuneRdfGraph:
         json_resp = json.loads(queryres.text)
         return json_resp
 
-    def load_from_schema_elements(self, schema_elements):
+    def load_schema(self, schema_elements:dict):
         """
-        Create schema from schema_elements. Helpful in cases where
-        introspected schema needs pruning.
+        Generates and sets schema from schema_elements. Helpful in 
+        cases where introspected schema needs pruning.
         """
 
-        elemstr = {}
+        elem_str = {}
         for elem in ELEM_TYPES:
-            reslist = []
-            for elemrec in self.schema_elements[elem]:
-                uri = elemrec["uri"]
-                local = elemrec["local"]
-                resstr = f"<{uri}> ({local})"
+            res_list = []
+            for elem_rec in self.schema_elements[elem]:
+                uri = elem_rec["uri"]
+                local = elem_rec["local"]
+                res_str = f"<{uri}> ({local})"
                 if self.hide_comments is False:
-                    resstr = resstr + f", {elemrec['comment']}"
-                reslist.append(resstr)
-            elemstr[elem] = ", ".join(reslist)
+                    res_str = res_str + f", {elem_rec['comment']}"
+                res_list.append(res_str)
+            elem_str[elem] = ", ".join(res_list)
 
         self.schema = (
             "In the following, each IRI is followed by the local name and "
             "optionally its description in parentheses. \n"
             "The graph supports the following node types:\n"
-            f"{elemstr['classes']}"
+            f"{elem_str['classes']}"
             "The graph supports the following relationships:\n"
-            f"{elemstr['rels']}"
+            f"{elem_str['rels']}"
             "The graph supports the following OWL object properties, "
-            f"{elemstr['dtprops']}"
+            f"{elem_str['dtprops']}"
             "The graph supports the following OWL data properties, "
-            f"{elemstr['oprops']}"
+            f"{elem_str['oprops']}"
         )
 
-    @staticmethod
-    def _get_local_name(iri: str):
+    def _get_local_name(self, iri: str):
         """
-        Private method split URI into prefix and local
+        Split IRI into prefix and local
         """
         if "#" in iri:
             tokens = iri.split("#")
@@ -222,11 +221,11 @@ class NeptuneRdfGraph:
         else:
             raise ValueError(f"Unexpected IRI '{iri}', contains neither '#' nor '/'.")
 
-    """
-    Query Neptune to introspect schema.
-    """
 
     def _refresh_schema(self) -> None:
+        """
+        Query Neptune to introspect schema.
+        """
         self.schema_elements["distinct_prefixes"] = {}
 
         for elem in ELEM_TYPES:
