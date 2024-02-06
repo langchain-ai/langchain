@@ -603,7 +603,6 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
                 await run_manager.on_llm_new_token(gen.text)
             yield gen
 
-
     def _prepare_chat(
         self,
         messages: List[BaseMessage],
