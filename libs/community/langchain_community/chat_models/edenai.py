@@ -165,6 +165,12 @@ class ChatEdenAI(BaseChatModel):
         """Return type of chat model."""
         return "edenai-chat"
 
+    @property
+    def _api_key(self) -> str:
+        if self.edenai_api_key:
+            return self.edenai_api_key.get_secret_value()
+        return ""
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -175,7 +181,7 @@ class ChatEdenAI(BaseChatModel):
         """Call out to EdenAI's chat endpoint."""
         url = f"{self.edenai_api_url}/text/chat/stream"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self._api_key}",
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)
@@ -216,7 +222,7 @@ class ChatEdenAI(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         url = f"{self.edenai_api_url}/text/chat/stream"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self._api_key}",
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)
@@ -265,7 +271,7 @@ class ChatEdenAI(BaseChatModel):
 
         url = f"{self.edenai_api_url}/text/chat"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self._api_key}",
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)
@@ -323,7 +329,7 @@ class ChatEdenAI(BaseChatModel):
 
         url = f"{self.edenai_api_url}/text/chat"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self._api_key}",
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)
