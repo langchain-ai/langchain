@@ -107,7 +107,7 @@ async def test_openai_apredict(mock_completion: dict) -> None:
     mock_client = MagicMock()
     completed = False
 
-    def mock_create(*args: Any, **kwargs: Any) -> Any:
+    async def mock_create(*args: Any, **kwargs: Any) -> Any:
         nonlocal completed
         completed = True
         return mock_completion
@@ -115,9 +115,9 @@ async def test_openai_apredict(mock_completion: dict) -> None:
     mock_client.create = mock_create
     with patch.object(
         llm,
-        "client",
+        "async_client",
         mock_client,
     ):
-        res = llm.predict("bar")
+        res = await llm.apredict("bar")
         assert res == "Bar Baz"
     assert completed
