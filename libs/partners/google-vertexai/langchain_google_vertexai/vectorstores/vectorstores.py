@@ -23,7 +23,8 @@ if TYPE_CHECKING:
 
 
 class _BaseVertexAIVectorStore(VectorStore):
-    """ """
+    """ Represents a base vector store based on VertexAI. 
+    """
 
     def __init__(
         self,
@@ -34,7 +35,7 @@ class _BaseVertexAIVectorStore(VectorStore):
         """Constructor.
 
         Args:
-            searcher: Object in charge of searching.
+            searcher: Object in charge of searching and storing the index.
             document_storage: Object in charge of storing and retrieving documents.
             embbedings: Object in charge of transforming text to embbeddings.
         """
@@ -218,7 +219,9 @@ class _BaseVertexAIVectorStore(VectorStore):
 
 
 class VectorSearchVectorStore(_BaseVertexAIVectorStore):
-    """ """
+    """ VertexAI VectorStore that handles the search and indexing using Vector Search
+    and stores the documents in Google Cloud Storage. 
+    """
 
     @classmethod
     def from_components(  # Implemented in order to keep the current API
