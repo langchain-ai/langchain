@@ -47,6 +47,6 @@ def test_chat_wasm_service_streaming() -> None:
     output = ""
     for chunk in chat.stream(messages):
         print(chunk.content, end="", flush=True)
-        output += chunk.content
+        output += chunk.content  # type: ignore[operator]
 
     assert "Paris" in output

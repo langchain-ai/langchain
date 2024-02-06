@@ -56,7 +56,7 @@ def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
                         cleaned_list.append(value_sanitize(item))
                     else:
                         cleaned_list.append(item)
-                new_dict[key] = cleaned_list
+                new_dict[key] = cleaned_list  # type: ignore[assignment]
         else:
             new_dict[key] = value
     return new_dict

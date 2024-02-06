@@ -8,7 +8,7 @@ from langchain_community.embeddings import OCIGenAIEmbeddings
 
 
 class MockResponseDict(dict):
-    def __getattr__(self, val):
+    def __getattr__(self, val):  # type: ignore[no-untyped-def]
         return self[val]
 
 
@@ -25,7 +25,7 @@ def test_embedding_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
         client=oci_gen_ai_client,
     )
 
-    def mocked_response(invocation_obj):
+    def mocked_response(invocation_obj):  # type: ignore[no-untyped-def]
         docs = invocation_obj.inputs
 
         embeddings = []
