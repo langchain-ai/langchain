@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 import responses
 from langchain_core.documents import Document
@@ -8,7 +8,7 @@ from langchain_community.utilities.you import YouSearchAPIWrapper
 TEST_ENDPOINT = "https://api.ydc-index.io"
 
 # Mock you.com response for testing
-MOCK_RESPONSE_RAW = {
+MOCK_RESPONSE_RAW: Dict[str, List[Dict[str, Union[str, List[str]]]]] = {
     "hits": [
         {
             "description": "Test description",
@@ -24,14 +24,15 @@ MOCK_RESPONSE_RAW = {
             "title": "Test title 2",
             "url": "https://example.com/article2.html",
         },
-    ],
-    "latency": 0.16670823097229004,
+    ]
 }
 
 
-def generate_parsed_metadata(num=0) -> Dict:
+def generate_parsed_metadata(num: Optional[int] = 0) -> Dict[Any, Any]:
     """generate metadata for testing"""
-    hit = MOCK_RESPONSE_RAW["hits"][num]
+    if num is None:
+        num = 0
+    hit: Dict[str, Union[str, List[str]]] = MOCK_RESPONSE_RAW["hits"][num]
     return {
         "url": hit["url"],
         "thumbnail_url": hit["thumbnail_url"],
@@ -40,9 +41,11 @@ def generate_parsed_metadata(num=0) -> Dict:
     }
 
 
-def generate_parsed_output(num=0) -> List[Dict]:
+def generate_parsed_output(num: Optional[int] = 0) -> List[Document]:
     """generate parsed output for testing"""
-    hit = MOCK_RESPONSE_RAW["hits"][num]
+    if num is None:
+        num = 0
+    hit: Dict[str, Union[str, List[str]]] = MOCK_RESPONSE_RAW["hits"][num]
     output = []
     for snippit in hit["snippets"]:
         doc = Document(page_content=snippit, metadata=generate_parsed_metadata(num))
@@ -84,7 +87,7 @@ NEWS_RESPONSE_RAW = {
 }
 
 NEWS_RESPONSE_PARSED = [
-    Document(page_content=result["description"], metadata=result)
+    Document(page_content=str(result["description"]), metadata=result)
     for result in NEWS_RESPONSE_RAW["news"]["results"]
 ]
 
