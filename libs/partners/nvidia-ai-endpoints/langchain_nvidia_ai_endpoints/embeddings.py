@@ -4,13 +4,13 @@ from typing import Any, List, Literal, Optional
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
-import langchain_nvidia_ai_endpoints._common as nvai_common
+from langchain_nvidia_ai_endpoints._common import NVEModel
 
 
 class NVIDIAEmbeddings(BaseModel, Embeddings):
     """NVIDIA's AI Foundation Retriever Question-Answering Asymmetric Model."""
 
-    client: nvai_common.NVEModel = Field(nvai_common.NVEModel)
+    client: NVEModel = Field(NVEModel)
     model: str = Field(
         ..., description="The embedding model to use. Example: nvolveqa_40k"
     )
@@ -23,13 +23,28 @@ class NVIDIAEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=True)
     def _validate_client(cls, values: Any) -> Any:
         if "client" not in values:
-            values["client"] = nvai_common.NVEModel()
+            values["client"] = NVEModel(**values)
         return values
+
+    @property
+    def available_functions(self) -> List[dict]:
+        """Map the available functions that can be invoked."""
+        return self.client.available_functions
 
     @property
     def available_models(self) -> dict:
         """Map the available models that can be invoked."""
         return self.client.available_models
+
+    @staticmethod
+    def get_available_functions(**kwargs: Any) -> List[dict]:
+        """Map the available functions that can be invoked. Callable from class"""
+        return NVEModel(**kwargs).available_functions
+
+    @staticmethod
+    def get_available_models(**kwargs: Any) -> dict:
+        """Map the available models that can be invoked. Callable from class"""
+        return NVEModel(**kwargs).available_models
 
     def _embed(
         self, texts: List[str], model_type: Literal["passage", "query"]

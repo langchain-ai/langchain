@@ -89,7 +89,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
             print(f"Exception occurred while trying to get embeddings: {str(e)}")
             return None
 
-    def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:
+    def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
         """Public method to get embeddings for a list of documents.
 
         Args:
@@ -100,7 +100,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
         """
         return self._embed(texts)
 
-    def embed_query(self, text: str) -> Optional[List[float]]:
+    def embed_query(self, text: str) -> Optional[List[float]]:  # type: ignore[override]
         """Public method to get embedding for a single query text.
 
         Args:
