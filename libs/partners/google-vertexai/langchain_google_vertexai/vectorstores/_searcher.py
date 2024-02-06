@@ -2,7 +2,7 @@ import json
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
@@ -23,7 +23,7 @@ class Searcher(ABC):
         self,
         embeddings: List[List[float]],
         k: int = 4,
-        filter_: List[Namespace] | None = None,
+        filter_: Union[List[Namespace], None] = None,
     ) -> List[List[Tuple[str, float]]]:
         """Finds the k closes neighbors of each instance of embeddings.
 
@@ -42,7 +42,7 @@ class Searcher(ABC):
         self,
         ids: List[str],
         embeddings: List[List[float]],
-        metadatas: List[dict] | None = None,
+        metadatas: Union[List[dict], None] = None,
         **kwargs: Any,
     ):
         """ """
@@ -73,7 +73,7 @@ class VectorSearchSearcher(Searcher):
         self,
         endpoint: MatchingEngineIndexEndpoint,
         index: MatchingEngineIndex,
-        staging_bucket: Bucket | None = None,
+        staging_bucket: Union[Bucket, None] = None,
     ) -> None:
         """Constructor.
 
@@ -96,7 +96,7 @@ class VectorSearchSearcher(Searcher):
         self,
         ids: List[str],
         embeddings: List[List[float]],
-        metadatas: List[dict] | None = None,
+        metadatas: Union[List[dict], None] = None,
         **kwargs: Any,
     ) -> None:
         """ """
@@ -148,7 +148,7 @@ class PublicEndpointVectorSearchSearcher(VectorSearchSearcher):
         self,
         embeddings: List[List[float]],
         k: int = 4,
-        filter_: List[Namespace] | None = None,
+        filter_: Union[List[Namespace], None] = None,
     ) -> List[List[Tuple[str, float]]]:
         """Finds the k closes neighbors of each instance of embeddings.
 
@@ -178,7 +178,7 @@ class VPCVertexVectorStore(VectorSearchSearcher):
         self,
         embeddings: List[List[float]],
         k: int = 4,
-        filter_: List[Namespace] | None = None,
+        filter_: Union[List[Namespace], None] = None,
     ) -> List[List[Tuple[str, float]]]:
         """Finds the k closes neighbors of each instance of embeddings.
 

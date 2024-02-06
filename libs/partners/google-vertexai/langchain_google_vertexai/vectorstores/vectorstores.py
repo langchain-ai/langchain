@@ -1,5 +1,5 @@
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, Union
 
 from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint import (
     Namespace,
@@ -149,7 +149,10 @@ class _BaseVertexAIVectorStore(VectorStore):
         ]
 
     def add_texts(
-        self, texts: Iterable[str], metadatas: List[dict] | None = None, **kwargs: Any
+        self,
+        texts: Iterable[str],
+        metadatas: Union[List[dict], None] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -178,7 +181,7 @@ class _BaseVertexAIVectorStore(VectorStore):
         cls: Type["_BaseVertexAIVectorStore"],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: List[dict] | None = None,
+        metadatas: Union[List[dict], None] = None,
         **kwargs: Any,
     ) -> "_BaseVertexAIVectorStore":
         """Use from components instead."""

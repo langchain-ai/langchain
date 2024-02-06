@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from google.cloud import aiplatform, storage
 from google.cloud.aiplatform.matching_engine import (
@@ -22,8 +22,8 @@ class VectorSearchSDKManager:
         *,
         project_id: str,
         region: str,
-        credentials: Credentials | None = None,
-        credentials_path: str | None = None,
+        credentials: Union[Credentials, None] = None,
+        credentials_path: Union[str, None] = None,
     ) -> None:
         """Constructor.
 
