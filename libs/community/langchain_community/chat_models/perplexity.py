@@ -56,7 +56,7 @@ class ChatPerplexity(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain.chat_models import ChatPerplexity
+            from langchain_community.chat_models import ChatPerplexity
 
             chat = ChatPerplexity(model="pplx-70b-online", temperature=0.7)
     """
