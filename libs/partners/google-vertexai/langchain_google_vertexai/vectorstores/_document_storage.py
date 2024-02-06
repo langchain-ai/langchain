@@ -182,11 +182,11 @@ class DataStoreDocumentStorage(DocumentStorage):
         """
         keys = [self._client.key(self._kind, id_) for id_ in ids]
 
-        #TODO: Handle when a key is not present
+        # TODO: Handle when a key is not present
         entities = self._client.get_multi(keys)
 
         return [entity[self._text_property_name] for entity in entities]
-    
+
     def batch_store_by_id(self, ids: List[str], texts: List[str]) -> None:
         """Stores a list of ids and documents in batch.
 
@@ -196,7 +196,6 @@ class DataStoreDocumentStorage(DocumentStorage):
         """
 
         with self._client.transaction():
-
             keys = [self._client.key(self._kind, id_) for id_ in ids]
 
             entities = []

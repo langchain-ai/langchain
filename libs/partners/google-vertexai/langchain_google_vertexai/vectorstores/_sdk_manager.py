@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class VectorSearchSDKManager:
     """Class in charge of building all Google Cloud SDK Objects needed to build
-    VectorStores from project_id, credentials or other specifications. Abstracts 
+    VectorStores from project_id, credentials or other specifications. Abstracts
     away the authentication layer.
     """
 
@@ -110,11 +110,11 @@ class VectorSearchSDKManager:
         )
 
     def get_datastore_client(self, **kwargs: Any) -> "datastore.Client":
-        """ Get's a datastore Client.
-        
+        """Gets a datastore Client.
+
         Args:
             **kwargs: Keyword arguments to pass to datatastore.Client constructor.
-        
+
         Returns:
             datastore Client.
         """

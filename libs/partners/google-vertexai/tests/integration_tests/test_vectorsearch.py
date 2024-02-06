@@ -84,7 +84,6 @@ def test_gcs_document_storage(sdk_manager: VectorSearchSDKManager):
 
 
 def test_datastore_document_storage(sdk_manager: VectorSearchSDKManager):
-
     ds_client = sdk_manager.get_datastore_client(namespace="Foo")
 
     storage = DataStoreDocumentStorage(datastore_client=ds_client)
@@ -150,7 +149,6 @@ def test_vector_store():
 
 
 def test_vector_store_update_index():
-    
     embeddings = VertexAIEmbeddings(model_name="textembedding-gecko-default")
 
     vector_store = VectorSearchVectorStore.from_components(

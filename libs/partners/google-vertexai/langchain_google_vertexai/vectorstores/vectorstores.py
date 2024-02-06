@@ -23,8 +23,7 @@ if TYPE_CHECKING:
 
 
 class _BaseVertexAIVectorStore(VectorStore):
-    """ 
-    """
+    """ """
 
     def __init__(
         self,
@@ -46,8 +45,7 @@ class _BaseVertexAIVectorStore(VectorStore):
 
     @property
     def embbedings(self) -> Embeddings:
-        """ Returns the embeddings object.
-        """
+        """Returns the embeddings object."""
         return self._embeddings
 
     def similarity_search_with_score(
@@ -107,7 +105,7 @@ class _BaseVertexAIVectorStore(VectorStore):
             the query text and cosine distance in float for each.
             Lower score represents more similarity.
         """
-       
+
         neighbors_list = self._searcher.find_neighbors(
             embeddings=[embedding], k=k, filter_=filter
         )
@@ -163,10 +161,10 @@ class _BaseVertexAIVectorStore(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        
+
         # Makes sure is a list an can get the length, should we support iterables?
         # metadata is a list so probably not?
-        texts = list(texts) 
+        texts = list(texts)
         ids = self._generate_unique_ids(len(texts))
 
         self._document_storage.batch_store_by_id(ids=ids, texts=texts)
@@ -198,14 +196,14 @@ class _BaseVertexAIVectorStore(VectorStore):
             Default TensorflowHubEmbeddings to use.
         """
 
-        #TODO: Change to vertexai embbedingss
+        # TODO: Change to vertexai embbedingss
 
         from langchain_community.embeddings import TensorflowHubEmbeddings
 
         return TensorflowHubEmbeddings()
-    
+
     def _generate_unique_ids(self, number: int) -> List[str]:
-        """ Generates a list of unique ids of length `number`
+        """Generates a list of unique ids of length `number`
 
         Args:
             number: Number of ids to generate.
@@ -217,11 +215,10 @@ class _BaseVertexAIVectorStore(VectorStore):
 
 
 class VectorSearchVectorStore(_BaseVertexAIVectorStore):
-    """ 
-    """
+    """ """
 
     @classmethod
-    def from_components( # Implemented in order to keep the current API
+    def from_components(  # Implemented in order to keep the current API
         cls: Type["VectorSearchVectorStore"],
         project_id: str,
         region: str,
@@ -263,6 +260,7 @@ class VectorSearchVectorStore(_BaseVertexAIVectorStore):
         return cls(
             document_storage=GCSDocumentStorage(bucket=bucket),
             searcher=PublicEndpointVectorSearchSearcher(
-                endpoint=endpoint, index=index, staging_bucket=bucket),
+                endpoint=endpoint, index=index, staging_bucket=bucket
+            ),
             embbedings=embedding,
         )

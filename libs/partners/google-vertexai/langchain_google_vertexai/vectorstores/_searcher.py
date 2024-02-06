@@ -25,7 +25,7 @@ class Searcher(ABC):
         k: int = 4,
         filter_: List[Namespace] | None = None,
     ) -> List[List[Tuple[str, float]]]:
-        """ Finds the k closes neighbors of each instance of embeddings.
+        """Finds the k closes neighbors of each instance of embeddings.
 
         Args:
             embedding: List of embeddings vectors.
@@ -36,23 +36,22 @@ class Searcher(ABC):
             List of lists of Tuples (id, distance) for each embedding vector.
         """
         raise NotImplementedError()
-    
+
     @abstractmethod
     def add_to_index(
-        self, 
-        ids: List[str], 
-        embeddings: List[List[float]], 
-        metadatas: List[dict] = None, 
-        **kwargs: Any
+        self,
+        ids: List[str],
+        embeddings: List[List[float]],
+        metadatas: List[dict] | None = None,
+        **kwargs: Any,
     ):
-        """
-        """
+        """ """
         raise NotImplementedError()
 
     def _postprocess_response(
         self, response: List[List[MatchNeighbor]]
     ) -> List[List[Tuple[str, float]]]:
-        """  Posproceses an endpoint response and converts it to a list of list of
+        """Posproceses an endpoint response and converts it to a list of list of
         tuples instead of using vertexai objects.
 
         Args:
@@ -65,23 +64,22 @@ class Searcher(ABC):
             [(neighbor.id, neighbor.distance) for neighbor in matching_neighbor_list]
             for matching_neighbor_list in response
         ]
-    
+
 
 class VectorSearchSearcher(Searcher):
-    """
-    """
+    """ """
 
     def __init__(
-        self, 
-        endpoint: MatchingEngineIndexEndpoint, 
+        self,
+        endpoint: MatchingEngineIndexEndpoint,
         index: MatchingEngineIndex,
-        staging_bucket: Bucket | None = None
+        staging_bucket: Bucket | None = None,
     ) -> None:
         """Constructor.
 
         Args:
             endpoint: Endpoint that will be used to make find_neighbors requests.
-            index: Underlaying index deployed in that endpoint.
+            index: Underlying index deployed in that endpoint.
             staging_bucket: Necessary only if updating the index. Bucket where the
                 embeddings and metadata will be staged.
 
@@ -95,21 +93,20 @@ class VectorSearchSearcher(Searcher):
         self._staging_bucket = staging_bucket
 
     def add_to_index(
-        self, 
-        ids: List[str], 
-        embeddings: List[List[float]], 
-        metadatas: List[dict] = None, 
-        **kwargs: Any
+        self,
+        ids: List[str],
+        embeddings: List[List[float]],
+        metadatas: List[dict] | None = None,
+        **kwargs: Any,
     ) -> None:
-        """
-        """
-        
+        """ """
+
         if self._staging_bucket is None:
             raise ValueError(
                 "In order to update a Vector Search index a staging bucket must"
                 " be defined."
             )
-                
+
         record_list = []
         for i, (idx, embedding) in enumerate(zip(ids, embeddings)):
             record = {"id": idx, "embedding": embedding}
@@ -126,7 +123,7 @@ class VectorSearchSearcher(Searcher):
         self.index = self._index.update_embeddings(
             contents_delta_uri=f"gs://{self._staging_bucket.name}/{filename_prefix}/"
         )
-    
+
     def _get_deployed_index_id(self) -> str:
         """Gets the deployed index id that matches with the provided index.
 
@@ -153,7 +150,7 @@ class PublicEndpointVectorSearchSearcher(VectorSearchSearcher):
         k: int = 4,
         filter_: List[Namespace] | None = None,
     ) -> List[List[Tuple[str, float]]]:
-        """ Finds the k closes neighbors of each instance of embeddings.
+        """Finds the k closes neighbors of each instance of embeddings.
 
         Args:
             embedding: List of embeddings vectors.
@@ -183,7 +180,7 @@ class VPCVertexVectorStore(VectorSearchSearcher):
         k: int = 4,
         filter_: List[Namespace] | None = None,
     ) -> List[List[Tuple[str, float]]]:
-        """ Finds the k closes neighbors of each instance of embeddings.
+        """Finds the k closes neighbors of each instance of embeddings.
 
         Args:
             embedding: List of embeddings vectors.
