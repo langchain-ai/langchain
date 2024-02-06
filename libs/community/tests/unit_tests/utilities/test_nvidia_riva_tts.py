@@ -82,7 +82,7 @@ def test_get_service(tts: RivaTTS) -> None:
 )
 def test_invoke(tts: RivaTTS) -> None:
     """Test the invoke method."""
-    encoding = cast(RivaAudioEncoding, CONFIG['encoding']).riva_pb2
+    encoding = cast(RivaAudioEncoding, CONFIG["encoding"]).riva_pb2
     audio_synth_config = (
         f"[{CONFIG['language_code']},"
         f"{encoding},"
@@ -103,7 +103,7 @@ def test_invoke(tts: RivaTTS) -> None:
 )
 def test_transform(tts: RivaTTS) -> None:
     """Test the transform method."""
-    encoding = cast(RivaAudioEncoding, CONFIG['encoding']).riva_pb2
+    encoding = cast(RivaAudioEncoding, CONFIG["encoding"]).riva_pb2
     audio_synth_config = (
         f"[{CONFIG['language_code']},"
         f"{encoding},"
@@ -128,7 +128,7 @@ def test_transform(tts: RivaTTS) -> None:
 )
 async def test_atransform(tts: RivaTTS) -> None:
     """Test the transform method."""
-    encoding = cast(RivaAudioEncoding, CONFIG['encoding']).riva_pb2
+    encoding = cast(RivaAudioEncoding, CONFIG["encoding"]).riva_pb2
     audio_synth_config = (
         f"[{CONFIG['language_code']},"
         f"{encoding},"
