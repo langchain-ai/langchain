@@ -326,12 +326,13 @@ class Tongyi(BaseLLM):
 
     @staticmethod
     def _generation_from_qwen_resp(resp: Any) -> Dict[str, Any]:
+        finish_reason = resp["output"]["finish_reason"]
         return dict(
             text=resp["output"]["text"],
             generation_info=dict(
-                finish_reason=resp["output"]["finish_reason"],
+                finish_reason=finish_reason,
                 request_id=resp["request_id"],
-                token_usage=dict(resp["usage"]),
+                token_usage=dict(resp["usage"]) if finish_reason == "stop" else None,
             ),
         )
 

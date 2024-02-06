@@ -401,13 +401,14 @@ class ChatTongyi(BaseChatModel):
         resp: Any, is_chunk: bool = False
     ) -> Dict[str, Any]:
         choice = resp["output"]["choices"][0]
+        finish_reason = choice["finish_reason"]
         message = convert_dict_to_message(choice["message"], is_chunk=is_chunk)
         return dict(
             message=message,
             generation_info=dict(
-                finish_reason=choice["finish_reason"],
+                finish_reason=finish_reason,
                 request_id=resp["request_id"],
-                token_usage=dict(resp["usage"]),
+                token_usage=dict(resp["usage"]) if finish_reason == "stop" else None,
             ),
         )
 
