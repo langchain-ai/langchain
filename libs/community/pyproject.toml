@@ -92,6 +92,7 @@ hdbcli = {version = "^2.19.21", optional = true}
 oci = {version = "^2.119.1", optional = true}
 rdflib = {version = "7.0.0", optional = true}
 nvidia-riva-client = {version = "^2.14.0", optional = true}
+dria = {version = "0.1.6", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -258,7 +259,8 @@ extended_testing = [
  "elasticsearch",
  "hdbcli",
  "oci",
- "rdflib"
+ "rdflib",
+ "dria"
 ]
 
 [tool.ruff]

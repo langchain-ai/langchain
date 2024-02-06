@@ -68,6 +68,14 @@ def _import_duckduckgo_search() -> Any:
     return DuckDuckGoSearchAPIWrapper
 
 
+def _import_dria_search() -> Any:
+    from langchain_community.utilities.dria_index import (
+        DriaAPIWrapper,
+    )
+
+    return DriaAPIWrapper
+
+
 def _import_golden_query() -> Any:
     from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
 
@@ -396,6 +404,7 @@ __all__ = [
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
     "DuckDuckGoSearchAPIWrapper",
+    "DriaAPIWrapper",
     "GoldenQueryAPIWrapper",
     "GoogleFinanceAPIWrapper",
     "GoogleLensAPIWrapper",

@@ -32,6 +32,7 @@ from langchain_community.retrievers.chatgpt_plugin_retriever import (
 )
 from langchain_community.retrievers.cohere_rag_retriever import CohereRagRetriever
 from langchain_community.retrievers.docarray import DocArrayRetriever
+from langchain_community.retrievers.dria_index import DriaRetriever
 from langchain_community.retrievers.elastic_search_bm25 import (
     ElasticSearchBM25Retriever,
 )
@@ -83,6 +84,7 @@ __all__ = [
     "ChatGPTPluginRetriever",
     "ChaindeskRetriever",
     "CohereRagRetriever",
+    "DriaRetriever",
     "ElasticSearchBM25Retriever",
     "EmbedchainRetriever",
     "GoogleDocumentAIWarehouseRetriever",
