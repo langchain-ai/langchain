@@ -35,7 +35,7 @@ MATCH_EPSILON = 0.0001
 # Ad-hoc embedding classes:
 
 
-class AstraDBCredentials(TypedDict, total=False):
+class AstraDBCredentials(TypedDict):
     token: str
     api_endpoint: str
     namespace: Optional[str]

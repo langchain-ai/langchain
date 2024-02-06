@@ -39,7 +39,7 @@ class BaseMessageConverter(ABC):
         raise NotImplementedError
 
 
-def create_message_model(table_name, DynamicBase):  # type: ignore
+def create_message_model(table_name: str, DynamicBase: Any) -> Any:
     """
     Create a message model for a given table name.
 
@@ -52,8 +52,8 @@ def create_message_model(table_name, DynamicBase):  # type: ignore
 
     """
 
-    # Model decleared inside a function to have a dynamic table name
-    class Message(DynamicBase):
+    # Model declared inside a function to have a dynamic table name.
+    class Message(DynamicBase):  # type: ignore[valid-type, misc]
         __tablename__ = table_name
         id = Column(Integer, primary_key=True)
         session_id = Column(Text)

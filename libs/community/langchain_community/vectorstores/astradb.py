@@ -17,6 +17,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    cast,
 )
 
 import numpy as np
@@ -92,10 +93,10 @@ class AstraDBVectorStore(VectorStore):
           token (Optional[str]): API token for Astra DB usage.
           api_endpoint (Optional[str]): full URL to the API endpoint,
               such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-          astra_db_client (Optional[AstraDBClient]):
+          astra_db_client (Optional[astrapy.db.AstraDB]):
               *alternative to token+api_endpoint*,
               you can pass an already-created 'astrapy.db.AstraDB' instance.
-          async_astra_db_client (Optional[AsyncAstraDBClient]):
+          async_astra_db_client (Optional[astrapy.db.AsyncAstraDB]):
               same as `astra_db_client`, but the basis for the async API
               of the vector store.
           namespace (Optional[str]): namespace (aka keyspace) where the
@@ -154,7 +155,7 @@ class AstraDBVectorStore(VectorStore):
                         ]
                     else:
                         # assume each list item can be fed back to this function
-                        metadata_filter[k] = AstraDBVectorStore._filter_to_metadata(v)  # type: ignore
+                        metadata_filter[k] = AstraDBVectorStore._filter_to_metadata(v)  # type: ignore[assignment]
                 else:
                     metadata_filter[f"metadata.{k}"] = v
 
@@ -227,16 +228,16 @@ class AstraDBVectorStore(VectorStore):
 
         if token and api_endpoint:
             self.astra_db = AstraDBClient(
-                token=self.token,
-                api_endpoint=self.api_endpoint,
+                token=cast(str, self.token),
+                api_endpoint=cast(str, self.api_endpoint),
                 namespace=self.namespace,
             )
             try:
                 from astrapy.db import AsyncAstraDB as AsyncAstraDBClient
 
                 self.async_astra_db = AsyncAstraDBClient(
-                    token=self.token,
-                    api_endpoint=self.api_endpoint,
+                    token=cast(str, self.token),
+                    api_endpoint=cast(str, self.api_endpoint),
                     namespace=self.namespace,
                 )
             except (ImportError, ModuleNotFoundError):
@@ -289,7 +290,7 @@ class AstraDBVectorStore(VectorStore):
         if pre_delete_collection:
             # _setup_db is called from the constructor only, from a place
             # where async_astra_db is not None for sure
-            await self.async_astra_db.delete_collection(  # type: ignore
+            await self.async_astra_db.delete_collection(  # type: ignore[union-attr]
                 collection_name=self.collection_name,
             )
         await self._aprovision_collection()
@@ -314,7 +315,7 @@ class AstraDBVectorStore(VectorStore):
         """
         self._ensure_astra_db_client()
         # self.astra_db is not None (by _ensure_astra_db_client)
-        self.astra_db.create_collection(  # type: ignore
+        self.astra_db.create_collection(  # type: ignore[union-attr]
             dimension=self._get_embedding_dimension(),
             collection_name=self.collection_name,
             metric=self.metric,
@@ -357,7 +358,7 @@ class AstraDBVectorStore(VectorStore):
         """Empty the collection of all its stored entries."""
         self._ensure_astra_db_client()
         # self.collection is not None (by _ensure_astra_db_client)
-        self.collection.delete_many(filter={})  # type: ignore
+        self.collection.delete_many(filter={})  # type: ignore[union-attr]
 
     async def aclear(self) -> None:
         """Empty the collection of all its stored entries."""
@@ -366,7 +367,7 @@ class AstraDBVectorStore(VectorStore):
             return await run_in_executor(None, self.clear)
         else:
             # async_collection not None if so is async_astra_db (constr. flow)
-            await self.async_collection.delete_many({})  # type: ignore
+            await self.async_collection.delete_many({})  # type: ignore[union-attr]
 
     def delete_by_document_id(self, document_id: str) -> bool:
         """
@@ -375,7 +376,7 @@ class AstraDBVectorStore(VectorStore):
         """
         self._ensure_astra_db_client()
         # self.collection is not None (by _ensure_astra_db_client)
-        deletion_response = self.collection.delete_one(document_id)  # type: ignore
+        deletion_response = self.collection.delete_one(document_id)  # type: ignore[union-attr]
         return ((deletion_response or {}).get("status") or {}).get(
             "deletedCount", 0
         ) == 1
@@ -474,7 +475,7 @@ class AstraDBVectorStore(VectorStore):
         """
         self._ensure_astra_db_client()
         # self.astra_db is not None (by _ensure_astra_db_client)
-        self.astra_db.delete_collection(  # type: ignore
+        self.astra_db.delete_collection(  # type: ignore[union-attr]
             collection_name=self.collection_name,
         )
 
@@ -613,7 +614,7 @@ class AstraDBVectorStore(VectorStore):
 
         def _handle_batch(document_batch: List[DocDict]) -> List[str]:
             # self.collection is not None (by _ensure_astra_db_client)
-            im_result = self.collection.insert_many(  # type: ignore
+            im_result = self.collection.insert_many(  # type: ignore[union-attr]
                 documents=document_batch,
                 options={"ordered": False},
                 partial_failures_allowed=True,
@@ -624,7 +625,7 @@ class AstraDBVectorStore(VectorStore):
 
             def _handle_missing_document(missing_document: DocDict) -> str:
                 # self.collection is not None (by _ensure_astra_db_client)
-                replacement_result = self.collection.find_one_and_replace(  # type: ignore
+                replacement_result = self.collection.find_one_and_replace(  # type: ignore[union-attr]
                     filter={"_id": missing_document["_id"]},
                     replacement=missing_document,
                 )
@@ -717,7 +718,7 @@ class AstraDBVectorStore(VectorStore):
 
             async def _handle_batch(document_batch: List[DocDict]) -> List[str]:
                 # self.async_collection is not None here for sure
-                im_result = await self.async_collection.insert_many(  # type: ignore
+                im_result = await self.async_collection.insert_many(  # type: ignore[union-attr]
                     documents=document_batch,
                     options={"ordered": False},
                     partial_failures_allowed=True,
@@ -729,7 +730,7 @@ class AstraDBVectorStore(VectorStore):
                 async def _handle_missing_document(missing_document: DocDict) -> str:
                     # self.async_collection is not None here for sure
                     replacement_result = (
-                        await self.async_collection.find_one_and_replace(  # type: ignore
+                        await self.async_collection.find_one_and_replace(  # type: ignore[union-attr]
                             filter={"_id": missing_document["_id"]},
                             replacement=missing_document,
                         )
@@ -778,7 +779,7 @@ class AstraDBVectorStore(VectorStore):
         #
         hits = list(
             # self.collection is not None (by _ensure_astra_db_client)
-            self.collection.paginated_find(  # type: ignore
+            self.collection.paginated_find(  # type: ignore[union-attr]
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": k, "includeSimilarity": True},
@@ -1060,7 +1061,7 @@ class AstraDBVectorStore(VectorStore):
 
         prefetch_hits = list(
             # self.collection is not None (by _ensure_astra_db_client)
-            self.collection.paginated_find(  # type: ignore
+            self.collection.paginated_find(  # type: ignore[union-attr]
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": fetch_k, "includeSimilarity": True},

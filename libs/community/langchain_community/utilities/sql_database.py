@@ -381,7 +381,7 @@ class SQLDatabase:
 
         If the statement returns no rows, an empty list is returned.
         """
-        with self._engine.begin() as connection:  # type: Connection
+        with self._engine.begin() as connection:  # type: Connection  # type: ignore[name-defined]
             if self._schema is not None:
                 if self.dialect == "snowflake":
                     connection.exec_driver_sql(
@@ -444,7 +444,7 @@ class SQLDatabase:
         ]
 
         if not include_columns:
-            res = [tuple(row.values()) for row in res]
+            res = [tuple(row.values()) for row in res]  # type: ignore[misc]
 
         if not res:
             return ""
