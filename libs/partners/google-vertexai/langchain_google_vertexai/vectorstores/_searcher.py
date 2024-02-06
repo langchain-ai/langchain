@@ -2,7 +2,7 @@ import json
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
@@ -109,7 +109,7 @@ class VectorSearchSearcher(Searcher):
 
         record_list = []
         for i, (idx, embedding) in enumerate(zip(ids, embeddings)):
-            record = {"id": idx, "embedding": embedding}
+            record: Dict[str, Any] = {"id": idx, "embedding": embedding}
             if metadatas is not None:
                 record["metadata"] = metadatas[i]
             record_list.append(record)
