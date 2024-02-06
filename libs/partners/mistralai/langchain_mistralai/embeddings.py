@@ -88,8 +88,12 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         for Mistral API."""
         batch: List[str] = []
         batch_tokens = 0
-        for text in texts:
-            text_tokens = len(self.tokenizer.encode(text))
+
+        text_token_lengths = [
+            len(encoded) for encoded in self.tokenizer.encode_batch(texts)
+        ]
+
+        for text, text_tokens in zip(texts, text_token_lengths):
             if batch_tokens + text_tokens > MAX_TOKENS:
                 yield batch
                 batch = [text]
