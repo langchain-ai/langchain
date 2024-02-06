@@ -22,7 +22,7 @@ from typing import Dict
 import pytest
 
 from langchain_google_vertexai.embeddings import VertexAIEmbeddings
-from langchain_google_vertexai.vectorstores import (
+from langchain_google_vertexai._vectorstores import (
     GCSVertexAIVectorSearchDocumentStorage,
     VertexAIVectorSearch,
 )
