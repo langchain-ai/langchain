@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -54,13 +54,14 @@ class _BaseYandexGPT(Serializable):
     """Maximum number of retries to make when generating."""
     sleep_interval: float = 1.0
     """Delay between API requests"""
+    _grpc_metadata: Sequence
 
     @property
     def _llm_type(self) -> str:
         return "yandex_gpt"
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model_uri": self.model_uri,

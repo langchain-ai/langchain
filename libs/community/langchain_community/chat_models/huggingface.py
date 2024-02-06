@@ -44,7 +44,7 @@ class ChatHuggingFace(BaseChatModel):
     llm: Union[HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub]
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
     tokenizer: Any = None
-    model_id: str = None  # type: ignore
+    model_id: Optional[str] = None
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
@@ -144,7 +144,7 @@ class ChatHuggingFace(BaseChatModel):
 
         elif isinstance(self.llm, HuggingFaceHub):
             # no need to look up model_id for HuggingFaceHub LLM
-            self.model_id = self.llm.repo_id  # type: ignore[assignment]
+            self.model_id = self.llm.repo_id
             return
 
         else:

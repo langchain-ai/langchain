@@ -101,7 +101,7 @@ class ContentFormatterBase:
     accepts: Optional[str] = "application/json"
     """The MIME type of the response data returned from the endpoint"""
 
-    format_error_msg: Optional[str] = (
+    format_error_msg: str = (
         "Error while formatting response payload for chat model of type "
         " `{api_type}`. Are you using the right formatter for the deployed "
         " model and endpoint type?"
@@ -134,17 +134,17 @@ class ContentFormatterBase:
 
         return [AzureMLEndpointApiType.realtime]
 
-    @abstractmethod
     def format_request_payload(
         self,
         prompt: str,
         model_kwargs: Dict,
         api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime,
-    ) -> bytes:
+    ) -> Any:
         """Formats the request body according to the input schema of
         the model. Returns bytes or seekable file like object in the
         format specified in the content_type request header.
         """
+        raise NotImplementedError()
 
     @abstractmethod
     def format_response_payload(
