@@ -17,7 +17,7 @@ from mistralai.constants import (
     ENDPOINT as DEFAULT_MISTRAL_ENDPOINT,
 )
 from mistralai.exceptions import MistralException
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer  # type: ignore
 
 logger = logging.getLogger(__name__)
 
