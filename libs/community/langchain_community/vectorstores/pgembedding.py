@@ -398,7 +398,7 @@ class PGEmbedding(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result.EmbeddingStore.document,
+                    page_content=result.EmbeddingStore.document,  # type: ignore[arg-type]
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
                 result.distance if self.embedding_function is not None else 0.0,

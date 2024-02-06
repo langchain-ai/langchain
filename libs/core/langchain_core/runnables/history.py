@@ -341,7 +341,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         super_schema = super().get_input_schema(config)
-        if super_schema.__custom_root_type__ is not None:
+        if super_schema.__custom_root_type__ or not super_schema.schema().get(
+            "properties"
+        ):
             from langchain_core.messages import BaseMessage
 
             fields: Dict = {}

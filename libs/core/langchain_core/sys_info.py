@@ -13,6 +13,7 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     other_langchain_packages = [
         "langserve",
         "langgraph",
+        "langsmith",
     ]
 
     langchain_pkgs = [
@@ -24,7 +25,7 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     )
 
     # Always surface these packages to the top
-    order_by = ["langchain_core", "langchain", "langchain_community"]
+    order_by = ["langchain_core", "langchain", "langchain_community", "langsmith"]
 
     for pkg in reversed(order_by):
         if pkg in all_packages:

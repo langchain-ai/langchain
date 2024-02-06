@@ -12,7 +12,10 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 from tests.integration_tests.vectorstores.qdrant.async_api.fixtures import (
     qdrant_locations,
 )
-from tests.integration_tests.vectorstores.qdrant.common import qdrant_is_not_running
+from tests.integration_tests.vectorstores.qdrant.common import (
+    assert_documents_equals,
+    qdrant_is_not_running,
+)
 
 
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
@@ -245,4 +248,6 @@ async def test_qdrant_from_texts_stores_metadatas(
         location=qdrant_location,
     )
     output = await docsearch.asimilarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert_documents_equals(
+        output, [Document(page_content="foo", metadata={"page": 0})]
+    )
