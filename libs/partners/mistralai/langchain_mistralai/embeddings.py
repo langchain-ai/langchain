@@ -17,7 +17,7 @@ from mistralai.constants import (
     ENDPOINT as DEFAULT_MISTRAL_ENDPOINT,
 )
 from mistralai.exceptions import MistralException
-from transformers import AutoTokenizer
+from tokenizers import Tokenizer
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
-    tokenizer: AutoTokenizer = Field(default=None)
+    tokenizer: Tokenizer = Field(default=None)
 
     model: str = "mistral-embed"
 
@@ -78,7 +78,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             max_concurrent_requests=values["max_concurrent_requests"],
         )
         if values["tokenizer"] is None:
-            values["tokenizer"] = AutoTokenizer.from_pretrained(
+            values["tokenizer"] = Tokenizer.from_pretrained(
                 "mistralai/Mixtral-8x7B-v0.1"
             )
         return values

@@ -14,7 +14,7 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1"
 mistralai = "^0.0.11"
-transformers = "^4.37.2"
+tokenizers = "^0.15.1"
 
 [tool.poetry.group.test]
 optional = true
@@ -29,11 +29,6 @@ optional = true
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.group.lint]
 optional = true
