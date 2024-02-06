@@ -81,13 +81,13 @@ class MLflowTracer(BaseTracer):
         self.run_dict = {}
         self.run_table = "langchain_runs.json"
 
-    def _recursive_convert_type(self, value: Any) -> Any:
+    def _convert_type(self, value: Any) -> Any:
         """Convert a value to a type that can be json-serialized."""
         if isinstance(value, dict):
             for k, v in value.items():
-                value[k] = self._recursive_convert_type(v)
+                value[k] = self._convert_type(v)
         elif isinstance(value, list):
-            value = [self._recursive_convert_type(v) for v in value]
+            value = [self._convert_type(v) for v in value]
         elif not isinstance(value, (str, int, float, bool, type(None))):
             value = str(value)
         return value
@@ -102,7 +102,7 @@ class MLflowTracer(BaseTracer):
         run_dict["child_runs"] = [str(run.id) for run in run.child_runs]
         if run.serialized:
             run_dict["serialized_object"] = flatten_dict(run.serialized)
-        run_dict = self._recursive_convert_type(run_dict)
+        run_dict = self._convert_type(run_dict)
         return run_dict
 
     def _log_trace_from_run(self, run_dict: Dict[str, Any]):
