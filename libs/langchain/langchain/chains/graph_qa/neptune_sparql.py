@@ -22,7 +22,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
-XSPARQL_GENERATION_SELECT_TEMPLATE = """Task: Generate a SPARQL SELECT statement for querying a graph database.
+SPARQL_GENERATION_TEMPLATE = """Task: Generate a SPARQL SELECT statement for querying a graph database.
 For instance, to find all email addresses of John Doe, the following query in backticks would be suitable:
 ```
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -49,8 +49,8 @@ Do not include any text except the SPARQL query generated.
 The question is:
 {prompt}"""
 
-XSPARQL_GENERATION_SELECT_PROMPT = PromptTemplate(
-    input_variables=["schema", "prompt"], template=XSPARQL_GENERATION_SELECT_TEMPLATE
+SPARQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "prompt"], template=SPARQL_GENERATION_TEMPLATE
 )
 
 def extract_sparql(query: str) -> str:
@@ -91,7 +91,7 @@ class NeptuneSparqlQAChain(Chain):
     """
 
     graph: NeptuneRdfGraph = Field(exclude=True)
-    sparql_generation_select_chain: LLMChain
+    sparql_generation_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
@@ -118,23 +118,23 @@ class NeptuneSparqlQAChain(Chain):
         llm: BaseLanguageModel,
         *,
         qa_prompt: BasePromptTemplate = SPARQL_QA_PROMPT,
-        sparql_select_prompt: BasePromptTemplate = XSPARQL_GENERATION_SELECT_PROMPT,
+        sparql_prompt: BasePromptTemplate = SPARQL_GENERATION_PROMPT,
         examples: Optional[str] = None,
         **kwargs: Any,
     ) -> NeptuneSparqlQAChain:
         """Initialize from LLM."""
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
-        template_to_use = XSPARQL_GENERATION_SELECT_TEMPLATE
+        template_to_use = SPARQL_GENERATION_TEMPLATE
         if not(examples is None):  
             template_to_use = template_to_use.replace(
                 "Examples:", "Examples: " + examples)
-            sparql_select_prompt = PromptTemplate(
+            sparql_prompt = PromptTemplate(
                 input_variables=["schema", "prompt"], template=template_to_use)
-        sparql_generation_select_chain = LLMChain(llm=llm, prompt=sparql_select_prompt)
+        sparql_generation_chain = LLMChain(llm=llm, prompt=sparql_prompt)
 
         return cls(
             qa_chain=qa_chain,
-            sparql_generation_select_chain=sparql_generation_select_chain,
+            sparql_generation_chain=sparql_generation_chain,
             examples=examples,
             **kwargs,
         )
@@ -154,7 +154,7 @@ class NeptuneSparqlQAChain(Chain):
 
         intermediate_steps: List = []
 
-        generated_sparql = self.sparql_generation_select_chain.run(
+        generated_sparql = self.sparql_generation_chain.run(
             {"prompt": prompt, "schema": self.graph.get_schema}, callbacks=callbacks
         )
 
