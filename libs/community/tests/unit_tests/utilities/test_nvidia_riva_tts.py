@@ -1,5 +1,6 @@
 """Unit tests to verify function of the Riva TTS implementation."""
-from typing import TYPE_CHECKING
+
+from typing import TYPE_CHECKING, Generator, Any, AsyncGenerator
 from unittest.mock import patch
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from langchain_community.utilities.nvidia_riva import RivaAudioEncoding, RivaTTS
 
 if TYPE_CHECKING:
+    import riva.client
     import riva.client.proto.riva_tts_pb2 as rtts
 
 AUDIO_TEXT_MOCK = ["This is a test.", "Hello world"]
@@ -25,7 +27,9 @@ CONFIG = {
 }
 
 
-def synthesize_online_mock(request: "rtts.SynthesizeSpeechRequest", **_):
+def synthesize_online_mock(
+    request: "rtts.SynthesizeSpeechRequest", **_: Any
+) -> Generator["rtts.SynthesizeSpeechResponse", None, None]:
     """A mock function to fake a streaming call to Riva."""
     # pylint: disable-next=import-outside-toplevel
     import riva.client.proto.riva_tts_pb2 as rtts
@@ -36,7 +40,9 @@ def synthesize_online_mock(request: "rtts.SynthesizeSpeechRequest", **_):
     yield rtts.SynthesizeSpeechResponse(audio=request.text.strip().encode())
 
 
-def riva_tts_stub_init_patch(self, _):
+def riva_tts_stub_init_patch(
+    self: "riva.client.proto.riva_tts_pb2_grpc.RivaSpeechSynthesisStub", _: Any
+) -> None:
     """Patch for the Riva TTS library."""
     self.SynthesizeOnline = synthesize_online_mock
 
@@ -74,11 +80,13 @@ def test_get_service(tts: RivaTTS) -> None:
     "riva.client.proto.riva_tts_pb2_grpc.RivaSpeechSynthesisStub.__init__",
     riva_tts_stub_init_patch,
 )
-def test_invoke(tts: RivaTTS):
+def test_invoke(tts: RivaTTS) -> None:
     """Test the invoke method."""
     audio_synth_config = (
-        f"[{CONFIG['language_code']},{CONFIG['encoding'].riva_pb2},"
-        f"{CONFIG['sample_rate_hertz']},{CONFIG['voice_name']}]"
+        f"[{CONFIG['language_code']},"
+        f"{CONFIG['encoding'].riva_pb2},"  # type: ignore[union-attr]
+        f"{CONFIG['sample_rate_hertz']},"
+        f"{CONFIG['voice_name']}]"
     )
 
     input = " ".join(AUDIO_TEXT_MOCK).strip()
@@ -92,11 +100,13 @@ def test_invoke(tts: RivaTTS):
     "riva.client.proto.riva_tts_pb2_grpc.RivaSpeechSynthesisStub.__init__",
     riva_tts_stub_init_patch,
 )
-def test_transform(tts: RivaTTS):
+def test_transform(tts: RivaTTS) -> None:
     """Test the transform method."""
     audio_synth_config = (
-        f"[{CONFIG['language_code']},{CONFIG['encoding'].riva_pb2},"
-        f"{CONFIG['sample_rate_hertz']},{CONFIG['voice_name']}]"
+        f"[{CONFIG['language_code']},"
+        f"{CONFIG['encoding'].riva_pb2},"  # type: ignore[union-attr]
+        f"{CONFIG['sample_rate_hertz']},"
+        f"{CONFIG['voice_name']}]"
     )
     expected = (audio_synth_config + audio_synth_config.join(AUDIO_TEXT_MOCK)).encode()
     for idx, response in enumerate(tts.transform(iter(AUDIO_TEXT_MOCK))):
@@ -114,16 +124,18 @@ def test_transform(tts: RivaTTS):
     "riva.client.proto.riva_tts_pb2_grpc.RivaSpeechSynthesisStub.__init__",
     riva_tts_stub_init_patch,
 )
-async def test_atransform(tts: RivaTTS):
+async def test_atransform(tts: RivaTTS) -> None:
     """Test the transform method."""
     audio_synth_config = (
-        f"[{CONFIG['language_code']},{CONFIG['encoding'].riva_pb2},"
-        f"{CONFIG['sample_rate_hertz']},{CONFIG['voice_name']}]"
+        f"[{CONFIG['language_code']},"
+        f"{CONFIG['encoding'].riva_pb2},"  # type: ignore[union-attr]
+        f"{CONFIG['sample_rate_hertz']},"
+        f"{CONFIG['voice_name']}]"
     )
     expected = (audio_synth_config + audio_synth_config.join(AUDIO_TEXT_MOCK)).encode()
     idx = 0
 
-    async def _fake_async_iterable() -> bytes:
+    async def _fake_async_iterable() -> AsyncGenerator[str, None]:
         for val in AUDIO_TEXT_MOCK:
             yield val
 

@@ -1,5 +1,6 @@
 """Unit tests to verify function of the Riva ASR implementation."""
-from typing import TYPE_CHECKING, Generator
+
+from typing import TYPE_CHECKING, Generator, Any
 from unittest.mock import patch
 
 import pytest
@@ -11,6 +12,7 @@ from langchain_community.utilities.nvidia_riva import (
 )
 
 if TYPE_CHECKING:
+    import riva.client
     import riva.client.proto.riva_asr_pb2 as rasr
 
 AUDIO_DATA_MOCK = [
@@ -74,7 +76,7 @@ def response_generator(
 
 
 def streaming_recognize_mock(
-    generator: Generator["rasr.StreamingRecognizeRequest", None, None], **_
+    generator: Generator["rasr.StreamingRecognizeRequest", None, None], **_: Any
 ) -> Generator["rasr.StreamingRecognizeResponse", None, None]:
     """A mock function to fake a streaming call to Riva."""
     yield response_generator(empty=True)
@@ -97,7 +99,9 @@ def streaming_recognize_mock(
     yield response_generator(final=True, transcript=output_transcript)
 
 
-def riva_asr_stub_init_patch(self, _):
+def riva_asr_stub_init_patch(
+    self: "riva.client.proto.riva_asr_pb2_grpc.RivaSpeechRecognitionStub", _: Any
+) -> None:
     """Patch for the Riva asr library."""
     self.StreamingRecognize = streaming_recognize_mock
 
@@ -166,7 +170,7 @@ def test_get_service(asr: RivaASR) -> None:
     "riva.client.proto.riva_asr_pb2_grpc.RivaSpeechRecognitionStub.__init__",
     riva_asr_stub_init_patch,
 )
-def test_invoke(asr, stream) -> None:
+def test_invoke(asr: RivaASR, stream: AudioStream) -> None:
     """Test the invoke method."""
     got = asr.invoke(stream)
     expected = " ".join([s.strip() for s in AUDIO_TEXT_MOCK]).strip()
