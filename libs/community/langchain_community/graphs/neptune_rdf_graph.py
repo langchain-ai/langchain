@@ -2,10 +2,7 @@ import json
 from types import SimpleNamespace
 from typing import Any, Dict, Optional, Sequence
 
-import boto3
 import requests
-from botocore.auth import SigV4Auth
-from botocore.awsrequest import AWSRequest
 
 CLASS_QUERY = """
 SELECT DISTINCT ?elem ?com
@@ -117,7 +114,18 @@ class NeptuneRdfGraph:
         self.hide_comments = hide_comments
         self.query_endpoint = f"https://{host}:{port}/sparql"
 
-        self.session = boto3.Session() if self.use_iam_auth else None
+        if self.use_iam_auth:
+            try:
+                import boto3
+
+                self.session = boto3.Session()
+            except ImportError:
+                raise ImportError(
+                    "Could not import boto3 python package. "
+                    "Please install it with `pip install boto3`."
+                )
+        else:
+            self.session = None
 
         # Set schema
         self.schema = ""
@@ -160,9 +168,13 @@ class NeptuneRdfGraph:
                 token=session_token,
                 region=self.region_name,
             )
+            from botocore.awsrequest import AWSRequest
+
             request = AWSRequest(
                 method="POST", url=self.query_endpoint, data=data, params=params
             )
+            from botocore.auth import SigV4Auth
+
             SigV4Auth(creds, service, self.region_name).add_auth(request)
             request.headers["Content-Type"] = "application/x-www-form-urlencoded"
             request_hdr = request.headers
