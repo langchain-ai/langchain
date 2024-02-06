@@ -1,6 +1,6 @@
 """Unit tests to verify function of the Riva TTS implementation."""
 
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, cast
 from unittest.mock import patch
 
 import pytest
@@ -82,9 +82,10 @@ def test_get_service(tts: RivaTTS) -> None:
 )
 def test_invoke(tts: RivaTTS) -> None:
     """Test the invoke method."""
+    encoding = cast(RivaAudioEncoding, CONFIG['encoding']).riva_pb2
     audio_synth_config = (
         f"[{CONFIG['language_code']},"
-        f"{CONFIG['encoding'].riva_pb2},"  # type: ignore[union-attr]
+        f"{encoding},"
         f"{CONFIG['sample_rate_hertz']},"
         f"{CONFIG['voice_name']}]"
     )
@@ -102,9 +103,10 @@ def test_invoke(tts: RivaTTS) -> None:
 )
 def test_transform(tts: RivaTTS) -> None:
     """Test the transform method."""
+    encoding = cast(RivaAudioEncoding, CONFIG['encoding']).riva_pb2
     audio_synth_config = (
         f"[{CONFIG['language_code']},"
-        f"{CONFIG['encoding'].riva_pb2},"  # type: ignore[union-attr]
+        f"{encoding},"
         f"{CONFIG['sample_rate_hertz']},"
         f"{CONFIG['voice_name']}]"
     )
@@ -126,9 +128,10 @@ def test_transform(tts: RivaTTS) -> None:
 )
 async def test_atransform(tts: RivaTTS) -> None:
     """Test the transform method."""
+    encoding = cast(RivaAudioEncoding, CONFIG['encoding']).riva_pb2
     audio_synth_config = (
         f"[{CONFIG['language_code']},"
-        f"{CONFIG['encoding'].riva_pb2},"  # type: ignore[union-attr]
+        f"{encoding},"
         f"{CONFIG['sample_rate_hertz']},"
         f"{CONFIG['voice_name']}]"
     )
