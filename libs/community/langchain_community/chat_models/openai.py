@@ -49,13 +49,12 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from langchain_core.utils.utils import build_extra_kwargs
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
-from langchain_core.utils.utils import build_extra_kwargs
-
 from langchain_community.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
@@ -258,13 +257,10 @@ class ChatOpenAI(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        extras = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        extras = build_extra_kwargs(extra, values, all_required_field_names)
         if is_openai_v1():
             values["extra_body"] = extras
-        else:
-            values["model_kwargs"] = extras
+        values["model_kwargs"] = extras
         return values
 
     @root_validator()

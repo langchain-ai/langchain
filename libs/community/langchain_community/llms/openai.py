@@ -268,13 +268,10 @@ class BaseOpenAI(BaseLLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        extras = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        extras = build_extra_kwargs(extra, values, all_required_field_names)
         if is_openai_v1():
             values["extra_body"] = extras
-        else:
-            values["model_kwargs"] = extras
+        values["model_kwargs"] = extras
         return values
 
     @root_validator()

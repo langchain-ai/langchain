@@ -302,8 +302,7 @@ class ChatOpenAI(BaseChatModel):
         )
         if is_openai_v1():
             values["extra_body"] = extras
-        else:
-            values["model_kwargs"] = extras
+        values["model_kwargs"] = extras
         return values
 
     @root_validator()
