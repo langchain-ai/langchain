@@ -57,8 +57,9 @@ class Perplexity(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain.chat_models import PerplexityChat
-            chat = PerplexityChat()
+            from langchain_community.llms import Perplexity
+
+            llm = Perplexity(model="pplx-70b-online", temperature=0.7)
     """
 
     @property
@@ -71,6 +72,8 @@ class Perplexity(BaseChatModel):
         return True
 
     client: Any  #: :meta private:
+    model: str
+    """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -86,7 +89,6 @@ class Perplexity(BaseChatModel):
     """Whether to stream the results or not."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    model: str = Field(default="pplx-70b-online", alias="model")
 
     class Config:
         """Configuration for this pydantic object."""

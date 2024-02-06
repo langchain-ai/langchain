@@ -16,7 +16,7 @@ def test_perplexity_model_name_param() -> None:
 
 @pytest.mark.requires("openai")
 def test_perplexity_model_kwargs() -> None:
-    llm = ChatPerplexity(model_kwargs={"foo": "bar"})
+    llm = ChatPerplexity(model="test", model_kwargs={"foo": "bar"})
     assert llm.model_kwargs == {"foo": "bar"}
 
 

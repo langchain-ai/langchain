@@ -40,6 +40,7 @@ def test_perplexity_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = Perplexity(
+        model="pplx-70b-online",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
