@@ -93,7 +93,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
-    # "sphinxcontrib.autodoc_pydantic",
+    "sphinxcontrib.autodoc_pydantic",
     "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",

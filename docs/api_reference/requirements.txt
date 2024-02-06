@@ -2,7 +2,8 @@
 -e libs/langchain
 -e libs/core
 -e libs/community
-autodoc_pydantic==1.8.0
+autodoc_pydantic==1.9.0
+pydantic<2
 myst_parser
 nbsphinx==0.8.9
 sphinx==7.2.6
