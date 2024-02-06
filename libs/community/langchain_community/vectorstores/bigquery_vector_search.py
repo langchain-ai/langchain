@@ -12,10 +12,10 @@ from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
+from langchain_core import __version__
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-import langchain
 
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
@@ -29,7 +29,7 @@ DEFAULT_METADATA_COLUMN_NAME = "metadata"  # document metadata
 DEFAULT_CONTENT_COLUMN_NAME = "content"  # text content, do not rename
 DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
 
-_APPLICATION_NAME = f"langchain/{langchain.__version__}" # Version of LangChain
+_APPLICATION_NAME = f"langchain/{__version__}" # Version of LangChain
 _MIN_INDEX_ROWS = 5000  # minimal number of rows for creating an index
 _INDEX_CHECK_PERIOD_SECONDS = 60  # Do not check for index more often that this.
 _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
@@ -96,7 +96,10 @@ class BigQueryVectorSearch(VectorStore):
                 user_agent=_APPLICATION_NAME
             )
             self.bq_client = bigquery.Client(
-                project=project_id, location=location, credentials=credentials, client_info=bq_info
+                project=project_id,
+                location=location,
+                credentials=credentials,
+                client_info=bq_info,
             )
         except ModuleNotFoundError:
             raise ImportError(
