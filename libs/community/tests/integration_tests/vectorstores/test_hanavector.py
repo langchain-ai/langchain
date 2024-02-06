@@ -38,7 +38,7 @@ embedding = NormalizedFakeEmbeddings()
 
 
 class ConfigData:
-    def __init__(self):
+    def __init__(self):  # type: ignore[no-untyped-def]
         self.conn = None
         self.schema_name = ""
 
@@ -46,7 +46,7 @@ class ConfigData:
 test_setup = ConfigData()
 
 
-def generateSchemaName(cursor):
+def generateSchemaName(cursor):  # type: ignore[no-untyped-def]
     cursor.execute(
         "SELECT REPLACE(CURRENT_UTCDATE, '-', '') || '_' || BINTOHEX(SYSUUID) FROM "
         "DUMMY;"
@@ -59,7 +59,7 @@ def generateSchemaName(cursor):
     return f"VEC_{uid}"
 
 
-def setup_module(module):
+def setup_module(module):  # type: ignore[no-untyped-def]
     test_setup.conn = dbapi.connect(
         address=os.environ.get("HANA_DB_ADDRESS"),
         port=os.environ.get("HANA_DB_PORT"),
@@ -81,7 +81,7 @@ def setup_module(module):
         cur.close()
 
 
-def teardown_module(module):
+def teardown_module(module):  # type: ignore[no-untyped-def]
     try:
         cur = test_setup.conn.cursor()
         sql_str = f"DROP SCHEMA {test_setup.schema_name} CASCADE"
@@ -100,13 +100,13 @@ def texts() -> List[str]:
 @pytest.fixture
 def metadatas() -> List[str]:
     return [
-        {"start": 0, "end": 100, "quality": "good", "ready": True},
-        {"start": 100, "end": 200, "quality": "bad", "ready": False},
-        {"start": 200, "end": 300, "quality": "ugly", "ready": True},
+        {"start": 0, "end": 100, "quality": "good", "ready": True},  # type: ignore[list-item]
+        {"start": 100, "end": 200, "quality": "bad", "ready": False},  # type: ignore[list-item]
+        {"start": 200, "end": 300, "quality": "ugly", "ready": True},  # type: ignore[list-item]
     ]
 
 
-def drop_table(connection, table_name):
+def drop_table(connection, table_name):  # type: ignore[no-untyped-def]
     try:
         cur = connection.cursor()
         sql_str = f"DROP TABLE {table_name}"
@@ -825,7 +825,7 @@ def test_hanavector_filter_prepared_statement_params(
     rows = cur.fetchall()
     assert len(rows) == 1
 
-    query_value = "good"
+    query_value = "good"  # type: ignore[assignment]
     sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.quality') = ?"
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
@@ -839,14 +839,14 @@ def test_hanavector_filter_prepared_statement_params(
     assert len(rows) == 1
 
     # query_value = True
-    query_value = "true"
+    query_value = "true"  # type: ignore[assignment]
     sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
     assert len(rows) == 2
 
     # query_value = False
-    query_value = "false"
+    query_value = "false"  # type: ignore[assignment]
     sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
