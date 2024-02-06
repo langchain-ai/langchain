@@ -1,5 +1,6 @@
 from functools import partial
 from typing import Optional
+
 from langchain_core.callbacks.manager import (
     Callbacks,
 )
@@ -21,7 +22,7 @@ def _get_relevant_documents(
     retriever: BaseRetriever,
     document_prompt: BasePromptTemplate,
     document_separator: str,
-    callbacks: Callbacks = None
+    callbacks: Callbacks = None,
 ) -> str:
     docs = retriever.get_relevant_documents(query, callbacks=callbacks)
     return document_separator.join(
@@ -34,7 +35,7 @@ async def _aget_relevant_documents(
     retriever: BaseRetriever,
     document_prompt: BasePromptTemplate,
     document_separator: str,
-    callbacks: Callbacks = None
+    callbacks: Callbacks = None,
 ) -> str:
     docs = await retriever.aget_relevant_documents(query, callbacks=callbacks)
     return document_separator.join(
@@ -62,8 +63,7 @@ def create_retriever_tool(
     Returns:
         Tool class to pass to an agent
     """
-    document_prompt = document_prompt or PromptTemplate.from_template(
-        "{page_content}")
+    document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     func = partial(
         _get_relevant_documents,
         retriever=retriever,
