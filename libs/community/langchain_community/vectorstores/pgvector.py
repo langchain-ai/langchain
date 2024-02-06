@@ -508,7 +508,7 @@ class PGVector(VectorStore):
         ]
         return docs
 
-    def _create_filter_clause(self, filters):
+    def _create_filter_clause(self, filters):  # type: ignore[no-untyped-def]
         from langchain.chains.query_constructor.ir import Comparator, Operator
 
         COMPARISONS = {
@@ -526,7 +526,7 @@ class PGVector(VectorStore):
             "between": lambda f, v: f.between(str(v[0]), str(v[1])),
         }
 
-        def parse_condition(field, condition):
+        def parse_condition(field, condition):  # type: ignore[no-untyped-def]
             print(field, condition)
             if isinstance(condition, dict):
                 for op, value in condition.items():
