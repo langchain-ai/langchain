@@ -552,6 +552,7 @@ def test_mmr_parameters(index_details: dict) -> None:
     limit = 1
     fetch_k = 3
     lambda_mult = 0.25
+    filters = {"some filter": True}
 
     with patch(
         "langchain_community.vectorstores.databricks_vector_search.maximal_marginal_relevance"
@@ -559,13 +560,19 @@ def test_mmr_parameters(index_details: dict) -> None:
         mock_mmr.return_value = [2]
         retriever = default_databricks_vector_search(index).as_retriever(
             search_type="mmr",
-            search_kwargs={"k": limit, "fetch_k": fetch_k, "lambda_mult": lambda_mult},
+            search_kwargs={
+                "k": limit,
+                "fetch_k": fetch_k,
+                "lambda_mult": lambda_mult,
+                "filters": filters,
+            },
         )
         search_result = retriever.get_relevant_documents(query)
 
     mock_mmr.assert_called_once()
     assert mock_mmr.call_args[1]["lambda_mult"] == lambda_mult
     assert index.similarity_search.call_args[1]["num_results"] == fetch_k
+    assert index.similarity_search.call_args[1]["filters"] == filters
     assert len(search_result) == limit
 
 

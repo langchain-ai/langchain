@@ -376,7 +376,7 @@ class DatabricksVectorSearch(VectorStore):
             k,
             fetch_k,
             lambda_mult=lambda_mult,
-            filter=filter,
+            filters=filters,
         )
         return docs
 
