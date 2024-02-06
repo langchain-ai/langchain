@@ -1,6 +1,6 @@
 """Unit tests to verify function of the Riva ASR implementation."""
 
-from typing import TYPE_CHECKING, Generator, Any
+from typing import TYPE_CHECKING, Any, Generator
 from unittest.mock import patch
 
 import pytest

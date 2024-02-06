@@ -1,6 +1,6 @@
 """Unit tests to verify function of the Riva TTS implementation."""
 
-from typing import TYPE_CHECKING, Generator, Any, AsyncGenerator
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator
 from unittest.mock import patch
 
 import pytest
