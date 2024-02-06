@@ -1,6 +1,15 @@
 import re
 import warnings
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
