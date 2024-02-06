@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_community.docstore.base import Docstore
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.faiss import FAISS
+from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 _PAGE_CONTENT = """This is a page about LangChain.
@@ -306,6 +307,9 @@ def test_faiss_mmr_with_metadatas_and_filter() -> None:
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
     assert output[0][1] == 0.0
+    assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] == 1
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -320,6 +324,12 @@ async def test_faiss_async_mmr_with_metadatas_and_filter() -> None:
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
     assert output[0][1] == 0.0
+    assert (
+        output
+        == await docsearch.amax_marginal_relevance_search_with_score_by_vector(
+            query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] == 1
+        )
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -335,6 +345,9 @@ def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+    assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] in [0, 1, 2]
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -350,6 +363,11 @@ async def test_faiss_async_mmr_with_metadatas_and_list_filter() -> None:
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+    assert output == (
+        await docsearch.amax_marginal_relevance_search_with_score_by_vector(
+            query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] in [0, 1, 2]
+        )
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -420,7 +438,11 @@ def test_faiss_with_metadatas_and_filter() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
-    assert output == [Document(page_content="bar", metadata={"page": 1})]
+    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert output != [Document(page_content="bar", metadata={"page": 1})]
+    assert output == docsearch.similarity_search(
+        "foo", k=1, filter=lambda di: di["page"] == 1
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -443,7 +465,11 @@ async def test_faiss_async_with_metadatas_and_filter() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foo", k=1, filter={"page": 1})
-    assert output == [Document(page_content="bar", metadata={"page": 1})]
+    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert output != [Document(page_content="bar", metadata={"page": 1})]
+    assert output == await docsearch.asimilarity_search(
+        "foo", k=1, filter=lambda di: di["page"] == 1
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -473,6 +499,9 @@ def test_faiss_with_metadatas_and_list_filter() -> None:
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foor", k=1, filter={"page": [0, 1, 2]})
     assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert output == docsearch.similarity_search(
+        "foor", k=1, filter=lambda di: di["page"] in [0, 1, 2]
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -502,6 +531,9 @@ async def test_faiss_async_with_metadatas_and_list_filter() -> None:
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foor", k=1, filter={"page": [0, 1, 2]})
     assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert output == await docsearch.asimilarity_search(
+        "foor", k=1, filter=lambda di: di["page"] in [0, 1, 2]
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -685,6 +717,26 @@ def test_missing_normalize_score_fn() -> None:
     faiss_instance = FAISS.from_texts(texts, FakeEmbeddings(), distance_strategy="fake")
     with pytest.raises(ValueError):
         faiss_instance.similarity_search_with_relevance_scores("foo", k=2)
+
+
+@pytest.mark.skip(reason="old relevance score feature")
+@pytest.mark.requires("faiss")
+def test_ip_score() -> None:
+    embedding = FakeEmbeddings()
+    vector = embedding.embed_query("hi")
+    assert vector == [1] * 9 + [0], f"FakeEmbeddings() has changed, produced {vector}"
+
+    db = FAISS.from_texts(
+        ["sundays coming so i drive my car"],
+        embedding=FakeEmbeddings(),
+        distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
+    )
+    scores = db.similarity_search_with_relevance_scores("sundays", k=1)
+    assert len(scores) == 1, "only one vector should be in db"
+    _, score = scores[0]
+    assert (
+        score == 1
+    ), f"expected inner product of equivalent vectors to be 1, not {score}"
 
 
 @pytest.mark.requires("faiss")

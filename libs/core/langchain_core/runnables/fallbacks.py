@@ -2,6 +2,9 @@ import asyncio
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
+    Awaitable,
+    Dict,
     Iterator,
     List,
     Optional,
@@ -9,6 +12,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from langchain_core.load.dump import dumpd
@@ -28,6 +32,7 @@ from langchain_core.runnables.utils import (
     Output,
     get_unique_config_specs,
 )
+from langchain_core.utils.aiter import py_anext
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
@@ -89,6 +94,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
+    exception_key: Optional[str] = None
+    """If string is specified then handled exceptions will be passed to fallbacks as 
+        part of the input under the specified key. If None, exceptions
+        will not be passed to fallbacks. If used, the base runnable and its fallbacks 
+        must accept a dictionary as input."""
 
     class Config:
         arbitrary_types_allowed = True
@@ -136,6 +146,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
+        if self.exception_key is not None and not isinstance(input, dict):
+            raise ValueError(
+                "If 'exception_key' is specified then input must be a dictionary."
+                f"However found a type of {type(input)} for input"
+            )
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -144,8 +159,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             dumpd(self), input, name=config.get("run_name")
         )
         first_error = None
+        last_error = None
         for runnable in self.runnables:
             try:
+                if self.exception_key and last_error is not None:
+                    input[self.exception_key] = last_error
                 output = runnable.invoke(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
@@ -154,6 +172,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             except self.exceptions_to_handle as e:
                 if first_error is None:
                     first_error = e
+                last_error = e
             except BaseException as e:
                 run_manager.on_chain_error(e)
                 raise e
@@ -171,6 +190,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
+        if self.exception_key is not None and not isinstance(input, dict):
+            raise ValueError(
+                "If 'exception_key' is specified then input must be a dictionary."
+                f"However found a type of {type(input)} for input"
+            )
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -180,8 +204,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
 
         first_error = None
+        last_error = None
         for runnable in self.runnables:
             try:
+                if self.exception_key and last_error is not None:
+                    input[self.exception_key] = last_error
                 output = await runnable.ainvoke(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
@@ -190,6 +217,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             except self.exceptions_to_handle as e:
                 if first_error is None:
                     first_error = e
+                last_error = e
             except BaseException as e:
                 await run_manager.on_chain_error(e)
                 raise e
@@ -211,8 +239,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     ) -> List[Output]:
         from langchain_core.callbacks.manager import CallbackManager
 
-        if return_exceptions:
-            raise NotImplementedError()
+        if self.exception_key is not None and not all(
+            isinstance(input, dict) for input in inputs
+        ):
+            raise ValueError(
+                "If 'exception_key' is specified then inputs must be dictionaries."
+                f"However found a type of {type(inputs[0])} for input"
+            )
 
         if not inputs:
             return []
@@ -241,35 +274,51 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
 
-        first_error = None
+        to_return: Dict[int, Any] = {}
+        run_again = {i: input for i, input in enumerate(inputs)}
+        handled_exceptions: Dict[int, BaseException] = {}
+        first_to_raise = None
         for runnable in self.runnables:
-            try:
-                outputs = runnable.batch(
-                    inputs,
-                    [
-                        # each step a child run of the corresponding root run
-                        patch_config(config, callbacks=rm.get_child())
-                        for rm, config in zip(run_managers, configs)
-                    ],
-                    return_exceptions=return_exceptions,
-                    **kwargs,
-                )
-            except self.exceptions_to_handle as e:
-                if first_error is None:
-                    first_error = e
-            except BaseException as e:
-                for rm in run_managers:
-                    rm.on_chain_error(e)
-                raise e
-            else:
-                for rm, output in zip(run_managers, outputs):
-                    rm.on_chain_end(output)
-                return outputs
-        if first_error is None:
-            raise ValueError("No error stored at end of fallbacks.")
-        for rm in run_managers:
-            rm.on_chain_error(first_error)
-        raise first_error
+            outputs = runnable.batch(
+                [input for _, input in sorted(run_again.items())],
+                [
+                    # each step a child run of the corresponding root run
+                    patch_config(configs[i], callbacks=run_managers[i].get_child())
+                    for i in sorted(run_again)
+                ],
+                return_exceptions=True,
+                **kwargs,
+            )
+            for (i, input), output in zip(sorted(run_again.copy().items()), outputs):
+                if isinstance(output, BaseException) and not isinstance(
+                    output, self.exceptions_to_handle
+                ):
+                    if not return_exceptions:
+                        first_to_raise = first_to_raise or output
+                    else:
+                        handled_exceptions[i] = cast(BaseException, output)
+                    run_again.pop(i)
+                elif isinstance(output, self.exceptions_to_handle):
+                    if self.exception_key:
+                        input[self.exception_key] = output  # type: ignore
+                    handled_exceptions[i] = cast(BaseException, output)
+                else:
+                    run_managers[i].on_chain_end(output)
+                    to_return[i] = output
+                    run_again.pop(i)
+                    handled_exceptions.pop(i, None)
+            if first_to_raise:
+                raise first_to_raise
+            if not run_again:
+                break
+
+        sorted_handled_exceptions = sorted(handled_exceptions.items())
+        for i, error in sorted_handled_exceptions:
+            run_managers[i].on_chain_error(error)
+        if not return_exceptions and sorted_handled_exceptions:
+            raise sorted_handled_exceptions[0][1]
+        to_return.update(handled_exceptions)
+        return [output for _, output in sorted(to_return.items())]
 
     async def abatch(
         self,
@@ -281,8 +330,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     ) -> List[Output]:
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
-        if return_exceptions:
-            raise NotImplementedError()
+        if self.exception_key is not None and not all(
+            isinstance(input, dict) for input in inputs
+        ):
+            raise ValueError(
+                "If 'exception_key' is specified then inputs must be dictionaries."
+                f"However found a type of {type(inputs[0])} for input"
+            )
 
         if not inputs:
             return []
@@ -313,33 +367,169 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             )
         )
 
+        to_return = {}
+        run_again = {i: input for i, input in enumerate(inputs)}
+        handled_exceptions: Dict[int, BaseException] = {}
+        first_to_raise = None
+        for runnable in self.runnables:
+            outputs = await runnable.abatch(
+                [input for _, input in sorted(run_again.items())],
+                [
+                    # each step a child run of the corresponding root run
+                    patch_config(configs[i], callbacks=run_managers[i].get_child())
+                    for i in sorted(run_again)
+                ],
+                return_exceptions=True,
+                **kwargs,
+            )
+
+            for (i, input), output in zip(sorted(run_again.copy().items()), outputs):
+                if isinstance(output, BaseException) and not isinstance(
+                    output, self.exceptions_to_handle
+                ):
+                    if not return_exceptions:
+                        first_to_raise = first_to_raise or output
+                    else:
+                        handled_exceptions[i] = cast(BaseException, output)
+                    run_again.pop(i)
+                elif isinstance(output, self.exceptions_to_handle):
+                    if self.exception_key:
+                        input[self.exception_key] = output  # type: ignore
+                    handled_exceptions[i] = cast(BaseException, output)
+                else:
+                    to_return[i] = output
+                    await run_managers[i].on_chain_end(output)
+                    run_again.pop(i)
+                    handled_exceptions.pop(i, None)
+
+            if first_to_raise:
+                raise first_to_raise
+            if not run_again:
+                break
+
+        sorted_handled_exceptions = sorted(handled_exceptions.items())
+        await asyncio.gather(
+            *(
+                run_managers[i].on_chain_error(error)
+                for i, error in sorted_handled_exceptions
+            )
+        )
+        if not return_exceptions and sorted_handled_exceptions:
+            raise sorted_handled_exceptions[0][1]
+        to_return.update(handled_exceptions)
+        return [output for _, output in sorted(to_return.items())]  # type: ignore
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        """"""
+        if self.exception_key is not None and not isinstance(input, dict):
+            raise ValueError(
+                "If 'exception_key' is specified then input must be a dictionary."
+                f"However found a type of {type(input)} for input"
+            )
+        # setup callbacks
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
+        # start the root run
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self), input, name=config.get("run_name")
+        )
         first_error = None
+        last_error = None
         for runnable in self.runnables:
             try:
-                outputs = await runnable.abatch(
-                    inputs,
-                    [
-                        # each step a child run of the corresponding root run
-                        patch_config(config, callbacks=rm.get_child())
-                        for rm, config in zip(run_managers, configs)
-                    ],
-                    return_exceptions=return_exceptions,
+                if self.exception_key and last_error is not None:
+                    input[self.exception_key] = last_error
+                stream = runnable.stream(
+                    input,
+                    patch_config(config, callbacks=run_manager.get_child()),
                     **kwargs,
                 )
+                chunk = next(stream)
             except self.exceptions_to_handle as e:
-                if first_error is None:
-                    first_error = e
+                first_error = e if first_error is None else first_error
+                last_error = e
             except BaseException as e:
-                await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
+                run_manager.on_chain_error(e)
+                raise e
             else:
-                await asyncio.gather(
-                    *(
-                        rm.on_chain_end(output)
-                        for rm, output in zip(run_managers, outputs)
-                    )
+                first_error = None
+                break
+        if first_error:
+            run_manager.on_chain_error(first_error)
+            raise first_error
+
+        yield chunk
+        output: Optional[Output] = chunk
+        try:
+            for chunk in stream:
+                yield chunk
+                try:
+                    output = output + chunk  # type: ignore
+                except TypeError:
+                    output = None
+        except BaseException as e:
+            run_manager.on_chain_error(e)
+            raise e
+        run_manager.on_chain_end(output)
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        if self.exception_key is not None and not isinstance(input, dict):
+            raise ValueError(
+                "If 'exception_key' is specified then input must be a dictionary."
+                f"However found a type of {type(input)} for input"
+            )
+        # setup callbacks
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
+        # start the root run
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self), input, name=config.get("run_name")
+        )
+        first_error = None
+        last_error = None
+        for runnable in self.runnables:
+            try:
+                if self.exception_key and last_error is not None:
+                    input[self.exception_key] = last_error
+                stream = runnable.astream(
+                    input,
+                    patch_config(config, callbacks=run_manager.get_child()),
+                    **kwargs,
                 )
-                return outputs
-        if first_error is None:
-            raise ValueError("No error stored at end of fallbacks.")
-        await asyncio.gather(*(rm.on_chain_error(first_error) for rm in run_managers))
-        raise first_error
+                chunk = await cast(Awaitable[Output], py_anext(stream))
+            except self.exceptions_to_handle as e:
+                first_error = e if first_error is None else first_error
+                last_error = e
+            except BaseException as e:
+                await run_manager.on_chain_error(e)
+                raise e
+            else:
+                first_error = None
+                break
+        if first_error:
+            await run_manager.on_chain_error(first_error)
+            raise first_error
+
+        yield chunk
+        output: Optional[Output] = chunk
+        try:
+            async for chunk in stream:
+                yield chunk
+                try:
+                    output = output + chunk  # type: ignore
+                except TypeError:
+                    output = None
+        except BaseException as e:
+            await run_manager.on_chain_error(e)
+            raise e
+        await run_manager.on_chain_end(output)

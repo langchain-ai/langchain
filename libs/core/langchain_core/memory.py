@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 from langchain_core.load.serializable import Serializable
+from langchain_core.runnables import run_in_executor
 
 
 class BaseMemory(Serializable, ABC):
@@ -50,10 +51,24 @@ class BaseMemory(Serializable, ABC):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return key-value pairs given the text input to the chain."""
 
+    async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """Return key-value pairs given the text input to the chain."""
+        return await run_in_executor(None, self.load_memory_variables, inputs)
+
     @abstractmethod
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save the context of this chain run to memory."""
 
+    async def asave_context(
+        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+    ) -> None:
+        """Save the context of this chain run to memory."""
+        await run_in_executor(None, self.save_context, inputs, outputs)
+
     @abstractmethod
     def clear(self) -> None:
         """Clear memory contents."""
+
+    async def aclear(self) -> None:
+        """Clear memory contents."""
+        await run_in_executor(None, self.clear)

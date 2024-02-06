@@ -28,6 +28,23 @@ def test_unstructured_loader_with_post_processor() -> None:
     assert docs[0].page_content.endswith("THE END!")
 
 
+def test_unstructured_file_loader_multiple_files() -> None:
+    """Test unstructured loader."""
+    file_paths = [
+        os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
+        os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
+    ]
+
+    loader = UnstructuredFileLoader(
+        file_path=file_paths,
+        strategy="fast",
+        mode="elements",
+    )
+    docs = loader.load()
+
+    assert len(docs) > 1
+
+
 def test_unstructured_api_file_loader() -> None:
     """Test unstructured loader."""
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
