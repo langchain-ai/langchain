@@ -20,6 +20,7 @@ INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 SQL_QUERY = "SQLQuery:"
 SQL_RESULT = "SQLResult:"
 
+
 class SQLDatabaseChain(Chain):
     """Chain for interacting with SQL Database.
 
