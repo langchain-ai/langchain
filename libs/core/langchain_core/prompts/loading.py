@@ -7,6 +7,7 @@ from typing import Callable, Dict, Union
 import yaml
 
 import langchain_core.output_parsers
+from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
@@ -72,7 +73,7 @@ def _load_examples(config: dict) -> dict:
     return config
 
 
-def _get_output_parsers_map() -> Dict[str, langchain_core.output_parsers.BaseOutputParser]:
+def _get_output_parsers_map() -> Dict[str, BaseOutputParser]:
     parsers_map = {}
     for parser in langchain_core.output_parsers.__all__:
         parser_class = getattr(langchain_core.output_parsers, parser)
