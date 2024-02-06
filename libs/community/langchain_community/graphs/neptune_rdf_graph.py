@@ -115,7 +115,7 @@ class NeptuneRdfGraph:
         self.use_iam_auth = use_iam_auth
         self.region_name = region_name
         self.hide_comments = hide_comments
-        self.query_endpoint=f"https://{host}:{port}/sparql"
+        self.query_endpoint = f"https://{host}:{port}/sparql"
 
         self.session = boto3.Session() if self.use_iam_auth else None
 
@@ -134,7 +134,6 @@ class NeptuneRdfGraph:
     @property
     def get_schema_elements(self):
         return self.schema_elements
-
 
     def query(
         self,
@@ -177,9 +176,9 @@ class NeptuneRdfGraph:
         json_resp = json.loads(queryres.text)
         return json_resp
 
-    def load_schema(self, schema_elements:dict):
+    def load_schema(self, schema_elements: dict):
         """
-        Generates and sets schema from schema_elements. Helpful in 
+        Generates and sets schema from schema_elements. Helpful in
         cases where introspected schema needs pruning.
         """
 
@@ -220,7 +219,6 @@ class NeptuneRdfGraph:
             return [f"{'/'.join(tokens[0:len(tokens)-1])}/", tokens[-1]]
         else:
             raise ValueError(f"Unexpected IRI '{iri}', contains neither '#' nor '/'.")
-
 
     def _refresh_schema(self) -> None:
         """
