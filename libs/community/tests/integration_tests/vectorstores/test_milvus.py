@@ -26,7 +26,7 @@ def _milvus_from_texts(
 
 
 def _get_pks(expr: str, docsearch: Milvus) -> List[Any]:
-    return docsearch.get_ids(expr)
+    return docsearch.get_pks(expr)
 
 
 def test_milvus() -> None:
