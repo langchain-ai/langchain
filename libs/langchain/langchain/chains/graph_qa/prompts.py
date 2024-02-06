@@ -197,6 +197,68 @@ SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
 )
 
+GRAPHDB_SPARQL_GENERATION_TEMPLATE = """
+Write a SPARQL SELECT query for querying a graph database.
+The ontology schema delimited by triple backticks in Turtle format is:
+```
+{schema}
+```
+Use only the classes and properties provided in the schema to construct the SPARQL query.
+Do not use any classes or properties that are not explicitly provided in the SPARQL query.
+Include all necessary prefixes.
+Do not include any explanations or apologies in your responses.
+Do not wrap the query in backticks.
+Do not include any text except the SPARQL query generated.
+The question delimited by triple backticks is:
+```
+{prompt}
+```
+"""
+GRAPHDB_SPARQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "prompt"],
+    template=GRAPHDB_SPARQL_GENERATION_TEMPLATE,
+)
+
+GRAPHDB_SPARQL_FIX_TEMPLATE = """
+This following SPARQL query delimited by triple backticks
+```
+{generated_sparql}
+```
+is not valid.
+The error delimited by triple backticks is
+```
+{error_message}
+```
+Give me a correct version of the SPARQL query.
+Do not change the logic of the query.
+Do not include any explanations or apologies in your responses.
+Do not wrap the query in backticks.
+Do not include any text except the SPARQL query generated.
+The ontology schema delimited by triple backticks in Turtle format is:
+```
+{schema}
+```
+"""
+
+GRAPHDB_SPARQL_FIX_PROMPT = PromptTemplate(
+    input_variables=["error_message", "generated_sparql", "schema"],
+    template=GRAPHDB_SPARQL_FIX_TEMPLATE,
+)
+
+GRAPHDB_QA_TEMPLATE = """Task: Generate a natural language response from the results of a SPARQL query.
+You are an assistant that creates well-written and human understandable answers.
+The information part contains the information provided, which you can use to construct an answer.
+The information provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
+Make your response sound like the information is coming from an AI assistant, but don't add any information.
+Don't use internal knowledge to answer the question, just say you don't know if no information is available.
+Information:
+{context}
+
+Question: {prompt}
+Helpful Answer:"""
+GRAPHDB_QA_PROMPT = PromptTemplate(
+    input_variables=["context", "prompt"], template=GRAPHDB_QA_TEMPLATE
+)
 
 AQL_GENERATION_TEMPLATE = """Task: Generate an ArangoDB Query Language (AQL) query from a User Input.
 
