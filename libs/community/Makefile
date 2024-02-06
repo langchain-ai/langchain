@@ -5,6 +5,7 @@ all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+integration_tests: TEST_FILE = tests/integration_tests/
 
 # Run unit tests and generate a coverage report.
 coverage:
@@ -14,10 +15,7 @@ coverage:
 		--cov-report term-missing:skip-covered \
 		$(TEST_FILE)
 
-test:
-	poetry run pytest $(TEST_FILE)
-
-tests:
+test tests integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
@@ -28,9 +26,6 @@ check_imports: $(shell find langchain_community -name '*.py')
 
 extended_tests:
 	poetry run pytest --only-extended tests/unit_tests
-
-integration_tests:
-	poetry run pytest ${TEST_FILE}
 
 
 ######################
