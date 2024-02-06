@@ -17,6 +17,7 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import BaseLLM
+from langchain_core.messages import BaseMessage
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from vertexai.language_models import (  # type: ignore[import-untyped]
@@ -238,6 +239,29 @@ class _VertexAICommon(_VertexAIBase):
         if stream or self.streaming:
             params.pop("candidate_count")
         return params
+
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Get the number of tokens in the messages.
+        Useful for checking if an input will fit in a model's context window.
+        Args:
+            messages: The message inputs to tokenize.
+        Returns:
+            The sum of the number of tokens across the messages."""
+
+        if self._is_gemini_model:
+            conversation_text = ""
+            for message in messages:
+                conversation_text += f"\n{message.content}"
+
+            tokens = self.client.count_tokens(conversation_text)
+
+        else:
+            raise NotImplementedError(
+                """get_num_tokens_from_messages() is presently 
+                implemented only for gemini models"""
+            )
+
+        return tokens.total_tokens
 
 
 class VertexAI(_VertexAICommon, BaseLLM):
