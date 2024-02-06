@@ -12,7 +12,6 @@ from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
-
 from langchain_core import __version__
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -90,8 +89,8 @@ class BigQueryVectorSearch(VectorStore):
                 to use. Defaults to None.
         """
         try:
-            from google.cloud import bigquery
             from google.api_core import client_info
+            from google.cloud import bigquery
 
             bq_info = client_info.ClientInfo(
                 user_agent=_APPLICATION_NAME
