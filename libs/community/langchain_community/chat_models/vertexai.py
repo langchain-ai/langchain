@@ -120,11 +120,10 @@ def _parse_chat_history_gemini(
                 image = load_image_from_gcs(path=path, project=project)
             elif path.startswith("data:image/"):
                 # extract base64 component from image uri
-                try:
-                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(
-                        1
-                    )
-                except AttributeError:
+                encoded: Any = re.search(r"data:image/\w{2,4};base64,(.*)", path)
+                if encoded:
+                    encoded = encoded.group(1)
+                else:
                     raise ValueError(
                         "Invalid image uri. It should be in the format "
                         "data:image/<image_type>;base64,<base64_encoded_image>."
