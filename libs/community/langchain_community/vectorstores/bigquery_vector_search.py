@@ -12,10 +12,10 @@ from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
-from langchain_core import __version__
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from langchain_core import __version__
 
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
