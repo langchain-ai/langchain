@@ -44,7 +44,7 @@ def _custom_parser(multiline_string: str) -> str:
     return multiline_string
 
 
-# Adapted from https://github.com/KillianLucas/open-interpreter/blob/main/interpreter/utils/parse_partial_json.py
+# Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
 # MIT License
 def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     """Parse a JSON string that may be missing closing braces.
