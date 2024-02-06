@@ -49,7 +49,7 @@ def test_embed_query(mock_client_with_embeddings: Mock) -> None:
     assert response == _EXAMPLE_EMBEDDING_0
     mock_client_with_embeddings.embed.create.assert_called_once_with(
         texts=[text],
-        type=EmbedType.QUERY,
+        type=EmbedType.SEGMENT,
     )
 
 
@@ -66,5 +66,5 @@ def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
     ]
     mock_client_with_embeddings.embed.create.assert_called_once_with(
         texts=texts,
-        type=EmbedType.QUERY,
+        type=EmbedType.SEGMENT,
     )
