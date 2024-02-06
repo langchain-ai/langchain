@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 from ai21 import AI21Client, MissingApiKeyError
-from ai21.models import EmbedResult, EmbedResponse, EmbedType
+from ai21.models import EmbedResponse, EmbedResult, EmbedType
 from pytest_mock import MockerFixture
 
 from langchain_ai21.embeddings import AI21Embeddings

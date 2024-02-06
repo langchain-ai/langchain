@@ -1,9 +1,8 @@
 import os
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from ai21 import AI21Client
-
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, SecretStr
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 
 
@@ -25,16 +24,16 @@ class AI21Base(BaseModel):
         values["api_key"] = api_key
 
         api_host = (
-                values.get("api_host")
-                or os.getenv("AI21_API_URL")
-                or "https://api.ai21.com"
+            values.get("api_host")
+            or os.getenv("AI21_API_URL")
+            or "https://api.ai21.com"
         )
         values["api_host"] = api_host
 
         timeout_sec = values.get("timeout_sec") or os.getenv("AI21_TIMEOUT_SEC")
         values["timeout_sec"] = timeout_sec
 
-        if values.get('client') is None:
+        if values.get("client") is None:
             values["client"] = AI21Client(
                 api_key=api_key.get_secret_value(),
                 api_host=api_host,

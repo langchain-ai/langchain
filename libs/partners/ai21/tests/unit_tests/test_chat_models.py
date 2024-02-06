@@ -1,24 +1,26 @@
 """Test chat model integration."""
-from typing import Optional, List
+from typing import List, Optional
 from unittest.mock import call
 
 import pytest
 from ai21 import MissingApiKeyError
-from ai21.models import Penalty, ChatMessage, RoleType
+from ai21.models import ChatMessage, Penalty, RoleType
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.messages import (
+    ChatMessage as LangChainChatMessage,
+)
 
 from langchain_ai21.chat_models import (
     ChatAI21,
     _convert_message_to_ai21_message,
     _convert_messages_to_ai21_messages,
 )
-from langchain_core.messages import (
-    SystemMessage,
-    HumanMessage,
-    BaseMessage,
-    AIMessage,
-    ChatMessage as LangChainChatMessage,
-)
-from libs.partners.ai21.tests.unit_tests.conftest import (
+from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
     DUMMY_API_KEY,
 )
@@ -154,7 +156,7 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
         ),
     ],
 )
-def test_convert_messages_to_ai21_messages(
+def test_convert_messages(
     messages, expected_system: Optional[str], expected_messages: List[ChatMessage]
 ):
     system, ai21_messages = _convert_messages_to_ai21_messages(messages)
@@ -163,7 +165,7 @@ def test_convert_messages_to_ai21_messages(
 
 
 @pytest.mark.requires("ai21")
-def test_convert_messages_to_ai21_messages_when_system_is_not_first__should_raise_value_error():
+def test_convert_messages_when_system_is_not_first__should_raise_value_error():
     messages = [
         HumanMessage(content="Human Message Content 1"),
         SystemMessage(content="System Message Content 1"),

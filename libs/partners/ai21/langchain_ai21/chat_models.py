@@ -1,10 +1,8 @@
 import asyncio
 from functools import partial
-from typing import Any, AsyncIterator, Iterator, List, Optional, cast, Tuple
+from typing import Any, List, Optional, Tuple, cast
 
-from ai21.models import ChatMessage, RoleType, Penalty
-
-from langchain_ai21.ai21_base import AI21Base
+from ai21.models import ChatMessage, Penalty, RoleType
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -16,7 +14,9 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult
+
+from langchain_ai21.ai21_base import AI21Base
 
 
 def _convert_messages_to_ai21_messages(
@@ -105,7 +105,8 @@ class ChatAI21(BaseChatModel, AI21Base):
     """ A penalty applied to tokens that are already present in the prompt."""
 
     count_penalty: Optional[Penalty] = None
-    """A penalty applied to tokens based on their frequency in the generated responses."""
+    """A penalty applied to tokens based on their frequency 
+    in the generated responses."""
 
     @property
     def _llm_type(self) -> str:

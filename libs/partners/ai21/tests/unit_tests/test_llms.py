@@ -8,7 +8,7 @@ from ai21.models import (
 )
 
 from langchain_ai21 import AI21
-from libs.partners.ai21.tests.unit_tests.conftest import (
+from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
     DUMMY_API_KEY,
 )

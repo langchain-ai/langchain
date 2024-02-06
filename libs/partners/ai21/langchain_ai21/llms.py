@@ -9,14 +9,14 @@ from typing import (
 )
 
 from ai21.models import CompletionsResponse, Penalty
-
-from langchain_ai21.ai21_base import AI21Base
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseLLM
-from langchain_core.outputs import GenerationChunk, LLMResult, Generation, RunInfo
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+
+from langchain_ai21.ai21_base import AI21Base
 
 
 class AI21(BaseLLM, AI21Base):
@@ -58,7 +58,8 @@ class AI21(BaseLLM, AI21Base):
     """ A penalty applied to tokens that are already present in the prompt."""
 
     count_penalty: Optional[Penalty] = None
-    """A penalty applied to tokens based on their frequency in the generated responses."""
+    """A penalty applied to tokens based on their frequency 
+    in the generated responses."""
 
     custom_model: Optional[str] = None
     epoch: Optional[int] = None

@@ -3,15 +3,15 @@ from unittest.mock import Mock
 import pytest
 from ai21 import AI21Client
 from ai21.models import (
-    CompletionsResponse,
+    ChatOutput,
+    ChatResponse,
     Completion,
     CompletionData,
     CompletionFinishReason,
-    ChatResponse,
-    Penalty,
-    ChatOutput,
-    RoleType,
+    CompletionsResponse,
     FinishReason,
+    Penalty,
+    RoleType,
 )
 from pytest_mock import MockerFixture
 
