@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from google.cloud import storage
 
@@ -11,7 +11,7 @@ class DocumentStorage(ABC):
     """Abstract interface of a key, text storage for retrieving documents."""
 
     @abstractmethod
-    def get_by_id(self, document_id: str) -> str | None:
+    def get_by_id(self, document_id: str) -> Union[str, None]:
         """Gets the text of a document by its id. If not found, returns None.
 
         Args:
@@ -46,7 +46,7 @@ class DocumentStorage(ABC):
         for id_, text in zip(ids, texts):
             self.store_by_id(id_, text)
 
-    def batch_get_by_id(self, ids: List[str]) -> List[str | None]:
+    def batch_get_by_id(self, ids: List[str]) -> List[Union[str, None]]:
         """Gets a batch of documents by id.
 
         The default implementation only loops `get_by_id`.
@@ -83,7 +83,7 @@ class GCSDocumentStorage(DocumentStorage):
         self._bucket = bucket
         self._prefix = prefix
 
-    def get_by_id(self, document_id: str) -> str | None:
+    def get_by_id(self, document_id: str) -> Union[str, None]:
         """Gets the text of a document by its id. If not found, returns None.
 
         Args:
@@ -144,7 +144,7 @@ class DataStoreDocumentStorage(DocumentStorage):
         self._text_property_name = text_property_name
         self._kind = kind
 
-    def get_by_id(self, document_id: str) -> str | None:
+    def get_by_id(self, document_id: str) -> Union[str, None]:
         """Gets the text of a document by its id. If not found, returns None.
 
         Args:
@@ -170,7 +170,7 @@ class DataStoreDocumentStorage(DocumentStorage):
             entity[self._text_property_name] = text
             self._client.put(entity)
 
-    def batch_get_by_id(self, ids: List[str]) -> List[str | None]:
+    def batch_get_by_id(self, ids: List[str]) -> List[Union[str, None]]:
         """Gets a batch of documents by id.
 
         Args:
