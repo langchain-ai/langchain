@@ -13,7 +13,7 @@ from langchain.output_parsers.json import parse_json_markdown
 # Define a class that parses output for conversational agents
 class ConvoOutputParser(AgentOutputParser):
     """Output parser for the conversational agent."""
-    
+
     format_instructions: str = FORMAT_INSTRUCTIONS
 
     def get_format_instructions(self) -> str:
