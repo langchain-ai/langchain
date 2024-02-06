@@ -56,7 +56,7 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
-            "authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",  # type: ignore[union-attr]
             "User-Agent": self.get_user_agent(),
         }
 

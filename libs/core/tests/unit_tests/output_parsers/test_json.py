@@ -137,6 +137,43 @@ TEXT_BEFORE_AND_AFTER = """Action: Testing
 ```
 This should do the trick"""
 
+WITHOUT_END_BRACKET = """Here is a response formatted as schema:
+
+```json
+{
+  "foo": "bar"
+  
+
+"""
+
+WITH_END_BRACKET = """Here is a response formatted as schema:
+
+```json
+{
+  "foo": "bar"
+}
+  
+"""
+
+WITH_END_TICK = """Here is a response formatted as schema:
+
+```json
+{
+  "foo": "bar"
+}
+``` 
+"""
+
+WITH_END_TEXT = """Here is a response formatted as schema:
+
+```
+{
+  "foo": "bar"
+
+``` 
+This should do the trick 
+"""
+
 TEST_CASES = [
     GOOD_JSON,
     JSON_WITH_NEW_LINES,
@@ -148,6 +185,10 @@ TEST_CASES = [
     TEXT_BEFORE,
     TEXT_AFTER,
     TEXT_BEFORE_AND_AFTER,
+    WITHOUT_END_BRACKET,
+    WITH_END_BRACKET,
+    WITH_END_TICK,
+    WITH_END_TEXT,
 ]
 
 
