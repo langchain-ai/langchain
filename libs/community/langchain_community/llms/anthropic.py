@@ -1,15 +1,6 @@
 import re
 import warnings
-from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-)
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -53,7 +44,7 @@ class _AnthropicCommon(BaseLanguageModel):
     """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
     max_retries: Optional[int] = 2
-    """Number of retries allowed for requests sent to the Anthropic Completion API. Default is 2 retries."""
+    """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
     anthropic_api_url: Optional[str] = None
 
