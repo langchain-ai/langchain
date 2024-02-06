@@ -80,7 +80,7 @@ jobs:
           poetry run pip install -e "$LANGCHAIN_LOCATION"
 
       - name: Get .mypy_cache to speed up mypy
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
         with:
@@ -114,7 +114,7 @@ jobs:
           poetry install --with test,test_integration
 
       - name: Get .mypy_cache_test to speed up mypy
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
         with:
