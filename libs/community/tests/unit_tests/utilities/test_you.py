@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 import responses
 from langchain_core.documents import Document
 
@@ -27,7 +29,7 @@ MOCK_RESPONSE_RAW = {
 }
 
 
-def generate_parsed_metadata(num=0):
+def generate_parsed_metadata(num=0) -> Dict:
     """generate metadata for testing"""
     hit = MOCK_RESPONSE_RAW["hits"][num]
     return {
@@ -38,12 +40,7 @@ def generate_parsed_metadata(num=0):
     }
 
 
-# Mocks of parsed metadata
-MOCK_PARSED_METADATA_0 = generate_parsed_metadata()
-MOCK_PARSED_METADATA_1 = generate_parsed_metadata(1)
-
-
-def generate_parsed_output(num=0):
+def generate_parsed_output(num=0) -> List[Dict]:
     """generate parsed output for testing"""
     hit = MOCK_RESPONSE_RAW["hits"][num]
     output = []
