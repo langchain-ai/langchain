@@ -1,6 +1,6 @@
 import json
 from types import SimpleNamespace
-from typing import Optional
+from typing import Any, Dict, Optional, Sequence
 
 import boto3
 import requests
@@ -121,7 +121,7 @@ class NeptuneRdfGraph:
 
         # Set schema
         self.schema = ""
-        self.schema_elements = {}
+        self.schema_elements: Dict[str, Any] = {}
         self._refresh_schema()
 
     @property
@@ -132,13 +132,13 @@ class NeptuneRdfGraph:
         return self.schema
 
     @property
-    def get_schema_elements(self):
+    def get_schema_elements(self) -> Dict[str, Any]:
         return self.schema_elements
 
     def query(
         self,
         query: str,
-    ):
+    ) -> Dict[str, Any]:
         """
         Run Neptune query.
         """
@@ -176,7 +176,7 @@ class NeptuneRdfGraph:
         json_resp = json.loads(queryres.text)
         return json_resp
 
-    def load_schema(self, schema_elements: dict):
+    def load_schema(self, schema_elements: Dict[str, Any]) -> None:
         """
         Generates and sets schema from schema_elements. Helpful in
         cases where introspected schema needs pruning.
@@ -207,7 +207,7 @@ class NeptuneRdfGraph:
             f"{elem_str['oprops']}"
         )
 
-    def _get_local_name(self, iri: str):
+    def _get_local_name(self, iri: str) -> Sequence[str]:
         """
         Split IRI into prefix and local
         """
