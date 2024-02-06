@@ -1,9 +1,9 @@
 """Test ChatAI21 chat model."""
 import pytest
-
-from langchain_ai21.chat_models import ChatAI21
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import ChatGeneration
+
+from langchain_ai21.chat_models import ChatAI21
 
 
 @pytest.mark.requires("ai21")

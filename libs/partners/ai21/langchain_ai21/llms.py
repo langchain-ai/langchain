@@ -2,21 +2,19 @@ import asyncio
 from functools import partial
 from typing import (
     Any,
-    AsyncIterator,
-    Iterator,
     List,
     Optional,
 )
 
 from ai21.models import CompletionsResponse, Penalty
-
-from langchain_ai21.ai21_base import AI21Base
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseLLM
-from langchain_core.outputs import GenerationChunk, LLMResult, Generation, RunInfo
+from langchain_core.outputs import Generation, LLMResult
+
+from langchain_ai21.ai21_base import AI21Base
 
 
 class AI21(BaseLLM, AI21Base):
@@ -58,10 +56,16 @@ class AI21(BaseLLM, AI21Base):
     """ A penalty applied to tokens that are already present in the prompt."""
 
     count_penalty: Optional[Penalty] = None
-    """A penalty applied to tokens based on their frequency in the generated responses."""
+    """A penalty applied to tokens based on their frequency 
+    in the generated responses."""
 
     custom_model: Optional[str] = None
     epoch: Optional[int] = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @property
     def _llm_type(self) -> str:
@@ -101,30 +105,12 @@ class AI21(BaseLLM, AI21Base):
             None, partial(self._generate, **kwargs), prompts, stop, run_manager
         )
 
-    def _stream(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[GenerationChunk]:
-        raise NotImplementedError
-
-    async def _astream(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[GenerationChunk]:
-        raise NotImplementedError
-
     def _invoke_completion(
         self,
         prompt: str,
         model: str,
         stop_sequences: Optional[List[str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> CompletionsResponse:
         return self.client.completion.create(
             prompt=prompt,

@@ -1,9 +1,9 @@
-from typing import List, Any
+from typing import Any, List
 
 from ai21.models import EmbedType
+from langchain_core.embeddings import Embeddings
 
 from langchain_ai21.ai21_base import AI21Base
-from langchain_core.embeddings import Embeddings
 
 
 class AI21Embeddings(Embeddings, AI21Base):
@@ -19,6 +19,7 @@ class AI21Embeddings(Embeddings, AI21Base):
             embeddings = AI21Embeddings()
             query_result = embeddings.embed_query("Hello embeddings world!")
     """
+
     def embed_documents(self, texts: List[str], **kwargs: Any) -> List[List[float]]:
         """Embed search docs."""
         response = self.client.embed.create(

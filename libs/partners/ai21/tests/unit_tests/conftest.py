@@ -3,15 +3,15 @@ from unittest.mock import Mock
 import pytest
 from ai21 import AI21Client
 from ai21.models import (
-    CompletionsResponse,
+    ChatOutput,
+    ChatResponse,
     Completion,
     CompletionData,
     CompletionFinishReason,
-    ChatResponse,
-    Penalty,
-    ChatOutput,
-    RoleType,
+    CompletionsResponse,
     FinishReason,
+    Penalty,
+    RoleType,
 )
 from pytest_mock import MockerFixture
 
@@ -34,7 +34,7 @@ BASIC_EXAMPLE_LLM_PARAMETERS = {
 
 
 @pytest.fixture
-def mocked_completion_response(mocker: MockerFixture):
+def mocked_completion_response(mocker: MockerFixture) -> Mock:
     mocked_response = mocker.MagicMock(spec=CompletionsResponse)
     mocked_response.prompt = "this is a test prompt"
     mocked_response.completions = [
@@ -48,7 +48,7 @@ def mocked_completion_response(mocker: MockerFixture):
 
 @pytest.fixture
 def mock_client_with_completion(
-    mocker: MockerFixture, mocked_completion_response
+    mocker: MockerFixture, mocked_completion_response: Mock
 ) -> Mock:
     mock_client = mocker.MagicMock(spec=AI21Client)
     mock_client.completion = mocker.MagicMock()
