@@ -58,6 +58,7 @@ jobs:
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
           PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_ENVIRONMENT: ${{ secrets.PINECONE_ENVIRONMENT }}
         run: |
           make integration_tests
 
