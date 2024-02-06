@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.0.351", removal="0.2", alternative_import="langchain_ibm.WatsonxLLM"
+    since="0.0.18", removal="0.2", alternative_import="langchain_ibm.WatsonxLLM"
 )
 class WatsonxLLM(BaseLLM):
     """
@@ -170,24 +170,30 @@ class WatsonxLLM(BaseLLM):
 
             credentials = {
                 "url": values["url"].get_secret_value() if values["url"] else None,
-                "apikey": values["apikey"].get_secret_value()
-                if values["apikey"]
-                else None,
-                "token": values["token"].get_secret_value()
-                if values["token"]
-                else None,
-                "password": values["password"].get_secret_value()
-                if values["password"]
-                else None,
-                "username": values["username"].get_secret_value()
-                if values["username"]
-                else None,
-                "instance_id": values["instance_id"].get_secret_value()
-                if values["instance_id"]
-                else None,
-                "version": values["version"].get_secret_value()
-                if values["version"]
-                else None,
+                "apikey": (
+                    values["apikey"].get_secret_value() if values["apikey"] else None
+                ),
+                "token": (
+                    values["token"].get_secret_value() if values["token"] else None
+                ),
+                "password": (
+                    values["password"].get_secret_value()
+                    if values["password"]
+                    else None
+                ),
+                "username": (
+                    values["username"].get_secret_value()
+                    if values["username"]
+                    else None
+                ),
+                "instance_id": (
+                    values["instance_id"].get_secret_value()
+                    if values["instance_id"]
+                    else None
+                ),
+                "version": (
+                    values["version"].get_secret_value() if values["version"] else None
+                ),
             }
             credentials_without_none_value = {
                 key: value for key, value in credentials.items() if value is not None
