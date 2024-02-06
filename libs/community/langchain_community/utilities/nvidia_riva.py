@@ -273,7 +273,7 @@ class AudioStream:
         self.user_talking = _Event()
         self._worker = None
 
-    def __iter__(self) -> None:
+    def __iter__(self) -> Generator[bytes, None, None]:
         """Return an error."""
         while True:
             # get next item
@@ -471,7 +471,6 @@ class RivaASR(
         self,
         input: ASRInputType,
         _: Optional[RunnableConfig] = None,
-        **__: Optional[Any],
     ) -> ASROutputType:
         """Transcribe the audio bytes into a string with Riva."""
         # create an output text generator with Riva
@@ -575,9 +574,9 @@ class RivaTTS(
     def transform(
         self,
         input: Iterator[TTSInputType],
-        _: Optional[RunnableConfig] = None,
-        **__: Optional[Any],
-    ) -> Generator[TTSOutputType, None, None]:
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[TTSOutputType]:
         """Perform TTS by taking a stream of characters and streaming output bytes."""
         service = self._get_service()
 
@@ -614,7 +613,8 @@ class RivaTTS(
     async def atransform(
         self,
         input: AsyncIterator[TTSInputType],
-        _: Optional[RunnableConfig] = None,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> AsyncGenerator[TTSOutputType, None]:
         """Intercept async transforms and route them to the synchronous transform."""
         loop = asyncio.get_running_loop()
