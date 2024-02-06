@@ -19,7 +19,7 @@ class TestYouRetriever:
             responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
-        you_wrapper = YouRetriever()
+        you_wrapper = YouRetriever(ydc_api_key="test")
         results = you_wrapper.get_relevant_documents(query)
         expected_result = MOCK_PARSED_OUTPUT
         assert results == expected_result
@@ -30,7 +30,7 @@ class TestYouRetriever:
             responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
-        you_wrapper = YouRetriever()
+        you_wrapper = YouRetriever(ydc_api_key="test")
         results = you_wrapper.invoke(query)
         expected_result = MOCK_PARSED_OUTPUT
         assert results == expected_result
@@ -41,7 +41,7 @@ class TestYouRetriever:
             responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
-        you_wrapper = YouRetriever(k=2)
+        you_wrapper = YouRetriever(k=2, ydc_api_key="test")
         results = you_wrapper.invoke(query)
         expected_result = [MOCK_PARSED_OUTPUT[0], MOCK_PARSED_OUTPUT[1]]
         assert results == expected_result
@@ -53,7 +53,7 @@ class TestYouRetriever:
         )
 
         query = "Test query text"
-        you_wrapper = YouRetriever(n_snippets_per_hit=1)
+        you_wrapper = YouRetriever(n_snippets_per_hit=1, ydc_api_key="test")
         results = you_wrapper.results(query)
         expected_result = LIMITED_PARSED_OUTPUT
         assert results == expected_result
@@ -66,7 +66,7 @@ class TestYouRetriever:
 
         query = "Test news text"
         # ensure limit on number of docs returned
-        you_wrapper = YouRetriever(endpoint_type="news")
+        you_wrapper = YouRetriever(endpoint_type="news", ydc_api_key="test")
         results = you_wrapper.results(query)
         expected_result = NEWS_RESPONSE_PARSED
         assert results == expected_result

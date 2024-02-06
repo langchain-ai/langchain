@@ -32,7 +32,9 @@ class YouHit(YouHitMetadata):
 class YouAPIOutput(BaseModel):
     """The output from you.com api"""
 
-    hits: List[YouHit] = "A list of dictionaries containing the results"
+    hits: List[YouHit] = Field(
+        description="A list of dictionaries containing the results"
+    )
 
 
 class YouDocument(BaseModel):
@@ -93,7 +95,7 @@ class YouSearchAPIWrapper(BaseModel):
 
         return values
 
-    def _parse_results(self, raw_search_results: YouAPIOutput) -> List[YouDocument]:
+    def _parse_results(self, raw_search_results: Dict) -> List[Document]:
         """
         Extracts snippets from each hit and puts them in a Document
         Parameters:
@@ -132,7 +134,7 @@ class YouSearchAPIWrapper(BaseModel):
         self,
         query: str,
         **kwargs: Any,
-    ) -> YouAPIOutput:
+    ) -> Dict:
         """Run query through you.com Search and return hits.
 
         Args:
@@ -143,7 +145,7 @@ class YouSearchAPIWrapper(BaseModel):
             country: Country code
         Returns: YouAPIOutput
         """
-        headers = {"X-API-Key": self.ydc_api_key}
+        headers = {"X-API-Key": self.ydc_api_key or ""}
         params = {
             "query": query,
             "num_web_results": self.num_web_results,
@@ -174,7 +176,7 @@ class YouSearchAPIWrapper(BaseModel):
         self,
         query: str,
         **kwargs: Any,
-    ) -> List[YouDocument]:
+    ) -> List[Document]:
         """Run query through you.com Search and parses results into Documents."""
 
         raw_search_results = self.raw_results(
@@ -217,7 +219,7 @@ class YouSearchAPIWrapper(BaseModel):
         num_web_results: Optional[int] = 5,
         safesearch: Optional[str] = "moderate",
         country: Optional[str] = "US",
-    ) -> List[Dict]:
+    ) -> List[Document]:
         results_json = await self.raw_results_async(
             query=query,
             num_web_results=num_web_results,

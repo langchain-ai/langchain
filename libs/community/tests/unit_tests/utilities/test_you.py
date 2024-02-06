@@ -100,7 +100,7 @@ def test_raw_results() -> None:
 
     query = "Test query text"
     # ensure default endpoint_type
-    you_wrapper = YouSearchAPIWrapper(endpoint_type="snippet")
+    you_wrapper = YouSearchAPIWrapper(endpoint_type="snippet", ydc_api_key="test")
     raw_results = you_wrapper.raw_results(query)
     expected_result = MOCK_RESPONSE_RAW
     assert raw_results == expected_result
@@ -114,7 +114,7 @@ def test_raw_results_defaults() -> None:
 
     query = "Test query text"
     # ensure limit on number of docs returned
-    you_wrapper = YouSearchAPIWrapper()
+    you_wrapper = YouSearchAPIWrapper(ydc_api_key="test")
     raw_results = you_wrapper.raw_results(query)
     expected_result = MOCK_RESPONSE_RAW
     assert raw_results == expected_result
@@ -128,7 +128,7 @@ def test_raw_results_news() -> None:
 
     query = "Test news text"
     # ensure limit on number of docs returned
-    you_wrapper = YouSearchAPIWrapper(endpoint_type="news")
+    you_wrapper = YouSearchAPIWrapper(endpoint_type="news", ydc_api_key="test")
     raw_results = you_wrapper.raw_results(query)
     expected_result = NEWS_RESPONSE_RAW
     assert raw_results == expected_result
@@ -141,7 +141,7 @@ def test_results() -> None:
     )
 
     query = "Test query text"
-    you_wrapper = YouSearchAPIWrapper()
+    you_wrapper = YouSearchAPIWrapper(ydc_api_key="test")
     results = you_wrapper.results(query)
     expected_result = MOCK_PARSED_OUTPUT
     assert results == expected_result
@@ -154,7 +154,7 @@ def test_results_max_docs() -> None:
     )
 
     query = "Test query text"
-    you_wrapper = YouSearchAPIWrapper(k=2)
+    you_wrapper = YouSearchAPIWrapper(k=2, ydc_api_key="test")
     results = you_wrapper.results(query)
     expected_result = generate_parsed_output()
     assert results == expected_result
@@ -167,7 +167,7 @@ def test_results_limit_snippets() -> None:
     )
 
     query = "Test query text"
-    you_wrapper = YouSearchAPIWrapper(n_snippets_per_hit=1)
+    you_wrapper = YouSearchAPIWrapper(n_snippets_per_hit=1, ydc_api_key="test")
     results = you_wrapper.results(query)
     expected_result = LIMITED_PARSED_OUTPUT
     assert results == expected_result
@@ -181,7 +181,7 @@ def test_results_news() -> None:
 
     query = "Test news text"
     # ensure limit on number of docs returned
-    you_wrapper = YouSearchAPIWrapper(endpoint_type="news")
+    you_wrapper = YouSearchAPIWrapper(endpoint_type="news", ydc_api_key="test")
     raw_results = you_wrapper.results(query)
     expected_result = NEWS_RESPONSE_PARSED
     assert raw_results == expected_result
