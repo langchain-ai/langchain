@@ -1,5 +1,5 @@
 """Test AI21 Chat API wrapper."""
-from unittest.mock import call
+from unittest.mock import Mock, call
 
 import pytest
 from ai21 import MissingApiKeyError
@@ -51,7 +51,7 @@ def test_initialization__when_custom_parameters_to_init() -> None:
 
 
 @pytest.mark.requires("ai21")
-def test_generate(mock_client_with_completion):
+def test_generate(mock_client_with_completion: Mock) -> None:
     # Setup test
     prompt0 = "Hi, my name is what?"
     prompt1 = "My name is who?"

@@ -1,6 +1,6 @@
 """Test chat model integration."""
 from typing import List, Optional
-from unittest.mock import call
+from unittest.mock import Mock, call
 
 import pytest
 from ai21 import MissingApiKeyError
@@ -40,7 +40,7 @@ def test_initialization__when_default_parameters_in_init() -> None:
 
 
 @pytest.mark.requires("ai21")
-def test_initialization__when_custom_parameters_in_init():
+def test_initialization__when_custom_parameters_in_init() -> None:
     model = "j2-mid"
     num_results = 1
     max_tokens = 10
@@ -97,7 +97,7 @@ def test_initialization__when_custom_parameters_in_init():
 )
 def test_convert_message_to_ai21_message(
     message: BaseMessage, expected_ai21_message: ChatMessage
-):
+) -> None:
     ai21_message = _convert_message_to_ai21_message(message)
     assert ai21_message == expected_ai21_message
 
@@ -115,8 +115,8 @@ def test_convert_message_to_ai21_message(
     ],
 )
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
-    message,
-):
+    message: BaseMessage,
+) -> None:
     with pytest.raises(ValueError) as e:
         _convert_message_to_ai21_message(message)
     assert e.value.args[0] == (
@@ -157,15 +157,17 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
     ],
 )
 def test_convert_messages(
-    messages, expected_system: Optional[str], expected_messages: List[ChatMessage]
-):
+    messages: List[BaseMessage],
+    expected_system: Optional[str],
+    expected_messages: List[ChatMessage],
+) -> None:
     system, ai21_messages = _convert_messages_to_ai21_messages(messages)
     assert ai21_messages == expected_messages
     assert system == expected_system
 
 
 @pytest.mark.requires("ai21")
-def test_convert_messages_when_system_is_not_first__should_raise_value_error():
+def test_convert_messages_when_system_is_not_first__should_raise_value_error() -> None:
     messages = [
         HumanMessage(content="Human Message Content 1"),
         SystemMessage(content="System Message Content 1"),
@@ -175,7 +177,7 @@ def test_convert_messages_when_system_is_not_first__should_raise_value_error():
 
 
 @pytest.mark.requires("ai21")
-def test_invoke(mock_client_with_chat):
+def test_invoke(mock_client_with_chat: Mock) -> None:
     chat_input = "I'm Pickle Rick"
 
     llm = ChatAI21(
@@ -195,7 +197,7 @@ def test_invoke(mock_client_with_chat):
 
 
 @pytest.mark.requires("ai21")
-def test_generate(mock_client_with_chat):
+def test_generate(mock_client_with_chat: Mock) -> None:
     messages0 = [
         HumanMessage(content="I'm Pickle Rick"),
         AIMessage(content="Hello Pickle Rick! I am your AI Assistant"),
@@ -216,9 +218,14 @@ def test_generate(mock_client_with_chat):
             call(
                 model="j2-ultra",
                 messages=[
-                    ChatMessage(role=RoleType.USER, text=messages0[0].content),
-                    ChatMessage(role=RoleType.ASSISTANT, text=messages0[1].content),
-                    ChatMessage(role=RoleType.USER, text=messages0[2].content),
+                    ChatMessage(
+                        role=RoleType.USER,
+                        text=str(messages0[0].content),
+                    ),
+                    ChatMessage(
+                        role=RoleType.ASSISTANT, text=str(messages0[1].content)
+                    ),
+                    ChatMessage(role=RoleType.USER, text=str(messages0[2].content)),
                 ],
                 system="",
                 stop_sequences=None,
@@ -227,7 +234,7 @@ def test_generate(mock_client_with_chat):
             call(
                 model="j2-ultra",
                 messages=[
-                    ChatMessage(role=RoleType.USER, text=messages1[1].content),
+                    ChatMessage(role=RoleType.USER, text=str(messages1[1].content)),
                 ],
                 system="system message",
                 stop_sequences=None,

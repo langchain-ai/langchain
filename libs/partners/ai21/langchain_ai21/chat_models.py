@@ -19,6 +19,15 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_ai21.ai21_base import AI21Base
 
 
+def _get_system_message_from_message(message: BaseMessage) -> str:
+    if not isinstance(message.content, str):
+        raise ValueError(
+            f"System Message must be of type str. Got {type(message.content)}"
+        )
+
+    return message.content
+
+
 def _convert_messages_to_ai21_messages(
     messages: List[BaseMessage],
 ) -> Tuple[Optional[str], List[ChatMessage]]:
@@ -30,7 +39,7 @@ def _convert_messages_to_ai21_messages(
             if i != 0:
                 raise ValueError("System message must be at beginning of message list.")
             else:
-                system_message = message.content
+                system_message = _get_system_message_from_message(message)
         else:
             converted_message = _convert_message_to_ai21_message(message)
             converted_messages.append(converted_message)
@@ -107,6 +116,11 @@ class ChatAI21(BaseChatModel, AI21Base):
     count_penalty: Optional[Penalty] = None
     """A penalty applied to tokens based on their frequency 
     in the generated responses."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     @property
     def _llm_type(self) -> str:

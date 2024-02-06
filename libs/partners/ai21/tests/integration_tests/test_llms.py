@@ -1,4 +1,5 @@
 """Test AI21LLM llm."""
+
 import pytest
 from ai21.models import Penalty
 
@@ -45,9 +46,8 @@ def test_stream() -> None:
     """Test streaming tokens from AI21."""
     llm = AI21()
 
-    with pytest.raises(NotImplementedError):
-        for token in llm.stream("I'm Pickle Rick"):
-            assert isinstance(token, str)
+    for token in llm.stream("I'm Pickle Rick"):
+        assert isinstance(token, str)
 
 
 @pytest.mark.requires("ai21")
@@ -109,7 +109,7 @@ def test__generate() -> None:
     )
 
     assert len(llm_result.generations) > 0
-    assert llm_result.llm_output["token_count"] != 0
+    assert llm_result.llm_output["token_count"] != 0  # type: ignore
 
 
 @pytest.mark.requires("ai21")
@@ -121,4 +121,4 @@ async def test__agenerate() -> None:
     )
 
     assert len(llm_result.generations) > 0
-    assert llm_result.llm_output["token_count"] != 0
+    assert llm_result.llm_output["token_count"] != 0  # type: ignore
