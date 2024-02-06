@@ -37,7 +37,7 @@ scheduled_tests:
 	poetry run pytest -m scheduled tests/integration_tests
 
 docker_tests:
-	docker build -t my-langchain-image:test .
+	docker build -t my-langchain-image:test .. -f Dockerfile
 	docker run --rm my-langchain-image:test
 
 check_imports: $(shell find langchain -name '*.py')

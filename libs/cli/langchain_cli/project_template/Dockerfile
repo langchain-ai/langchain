@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine3.19
 
 RUN pip install poetry==1.6.1
 
