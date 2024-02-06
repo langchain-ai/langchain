@@ -35,6 +35,8 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.utils import build_extra_kwargs
 
+from langchain_community.utils.openai import is_openai_v1
+
 logger = logging.getLogger(__name__)
 
 
@@ -134,6 +136,10 @@ class BaseOpenAI(BaseLLM):
     """Set of special tokens that are allowed。"""
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
+    extra_headers: Optional[Mapping[str, str]] = None
+    extra_query: Optional[Mapping[str, object]] = None
+    extra_body: Optional[Mapping[str, object]] = None
+    """Extra headers, query parameters, and body to pass to the OpenAI API."""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
     Tiktoken is used to count the number of tokens in documents to constrain 
@@ -161,9 +167,13 @@ class BaseOpenAI(BaseLLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
+        extras = build_extra_kwargs(
             extra, values, all_required_field_names
         )
+        if is_openai_v1():
+            values["extra_body"] = extras
+        else:
+            values["model_kwargs"] = extras
         return values
 
     @root_validator()
@@ -219,6 +229,14 @@ class BaseOpenAI(BaseLLM):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
+        if is_openai_v1():
+            extra_params = {
+                "extra_query": self.extra_query,
+                "extra_headers": self.extra_headers,
+                "extra_body": self.extra_body,
+            }
+        else:
+            extra_params = self.model_kwargs
         normal_params: Dict[str, Any] = {
             "temperature": self.temperature,
             "top_p": self.top_p,
@@ -236,7 +254,7 @@ class BaseOpenAI(BaseLLM):
         if self.best_of > 1:
             normal_params["best_of"] = self.best_of
 
-        return {**normal_params, **self.model_kwargs}
+        return {**normal_params, **extra_params}
 
     def _stream(
         self,
