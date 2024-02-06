@@ -1,6 +1,6 @@
 """Module that contains tests for runnable.astream_events API."""
 from itertools import cycle
-from typing import Any, AsyncIterator, List, Sequence, cast
+from typing import Any, AsyncIterator, Dict, List, Sequence, cast
 
 import pytest
 
@@ -16,10 +16,11 @@ from langchain_core.messages import (
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     ConfigurableField,
+    Runnable,
     RunnableLambda,
 )
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -1153,7 +1154,9 @@ async def test_runnable_with_message_history() -> None:
         # Attention: for the tests use an Any type to work-around a pydantic issue
         # where it re-instantiates a list, so mutating the list doesn't end up mutating
         # the content in the store!
-        messages: Any  # Using Any type here rather than List[BaseMessage] due to pydantic issue!
+
+        # Using Any type here rather than List[BaseMessage] due to pydantic issue!
+        messages: Any
 
         def add_message(self, message: BaseMessage) -> None:
             """Add a self-created message to the store."""
@@ -1164,7 +1167,7 @@ async def test_runnable_with_message_history() -> None:
 
     # Here we use a global variable to store the chat message history.
     # This will make it easier to inspect it to see the underlying results.
-    store = {}
+    store: Dict = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
         """Get a chat message history"""
@@ -1183,7 +1186,7 @@ async def test_runnable_with_message_history() -> None:
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
 
-    chain = prompt | model
+    chain: Runnable = prompt | model
     with_message_history = RunnableWithMessageHistory(
         chain,
         get_session_history=get_by_session_id,
