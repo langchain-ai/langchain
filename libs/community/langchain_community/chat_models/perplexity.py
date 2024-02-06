@@ -41,7 +41,6 @@ from langchain_core.outputs import (
 )
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
-from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +56,9 @@ class ChatPerplexity(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain.chat_models import PerplexityChat
-            chat = PerplexityChat()
+            from langchain.chat_models import ChatPerplexity
+
+            chat = ChatPerplexity()
     """
 
     client: Any  #: :meta private:
@@ -128,7 +128,7 @@ class ChatPerplexity(BaseChatModel):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = OpenAI(
+            values["client"] = openai.OpenAI(
                 api_key=values["pplx_api_key"], base_url="https://api.perplexity.ai"
             )
         except AttributeError:
