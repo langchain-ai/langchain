@@ -33,6 +33,7 @@ EXPECTED_ALL = [
     "NatBotChain",
     "NebulaGraphQAChain",
     "NeptuneOpenCypherQAChain",
+    "NeptuneSparqlQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
     "QAGenerationChain",
