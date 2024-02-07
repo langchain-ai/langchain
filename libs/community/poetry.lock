@@ -702,17 +702,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.34.36"
+version = "1.34.37"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">= 3.8"
 files = [
-    {file = "boto3-1.34.36-py3-none-any.whl", hash = "sha256:1e38a4ea4bb8bc66fbb858abb411820709fda5d6c5604c2da0f696653d49c684"},
-    {file = "boto3-1.34.36.tar.gz", hash = "sha256:7ec36deb7ccc9c4943510692303cf93883ef61dc2c79f8bd4d75ee42209559d3"},
+    {file = "boto3-1.34.37-py3-none-any.whl", hash = "sha256:65acfe7f1cf2a9b7df3d4edb87c8022e02685825bd1957e7bb678cc0d09f5e5f"},
+    {file = "boto3-1.34.37.tar.gz", hash = "sha256:73f5ec89cb3ddb3ed577317889fd2f2df783f66b6502a9a4239979607e33bf74"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.36,<1.35.0"
+botocore = ">=1.34.37,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -721,13 +721,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.36"
+version = "1.34.37"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.8"
 files = [
-    {file = "botocore-1.34.36-py3-none-any.whl", hash = "sha256:3f39ae0165f1a27f621fc91a46fb59f87e819671fad106c230dadcc724892f70"},
-    {file = "botocore-1.34.36.tar.gz", hash = "sha256:89c3dc15b6ffae146029df636d51b9952740051204c444ec765286b081c917bc"},
+    {file = "botocore-1.34.37-py3-none-any.whl", hash = "sha256:2a5bf33aacd2d970afd3d492e179e06ea98a5469030d5cfe7a2ad9995f7bb2ef"},
+    {file = "botocore-1.34.37.tar.gz", hash = "sha256:3c46ddb1679e6ef45ca78b48665398636bda532a07cd476e4b500697d13d9a99"},
 ]
 
 [package.dependencies]
@@ -2478,33 +2478,35 @@ grpc = ["grpcio (>=1.38.0,<2.0dev)", "grpcio-status (>=1.38.0,<2.0.dev0)"]
 
 [[package]]
 name = "google-cloud-documentai"
-version = "2.22.0"
+version = "2.23.0"
 description = "Google Cloud Documentai API client library"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "google-cloud-documentai-2.22.0.tar.gz", hash = "sha256:e033457a95634aac250452600f4e4464f39073b5c00f5a1f8636f1fa83a93e73"},
-    {file = "google_cloud_documentai-2.22.0-py2.py3-none-any.whl", hash = "sha256:68b0c7962e4880879dfe23723de8c3beed9604342b4617913ca32437105d7e33"},
+    {file = "google-cloud-documentai-2.23.0.tar.gz", hash = "sha256:2ce954dae90024662d39258060b753992d5564d64a08badda635c7d25f7079b1"},
+    {file = "google_cloud_documentai-2.23.0-py2.py3-none-any.whl", hash = "sha256:560b00c18e6a3b5c603052ccc9987afdc6886d6c71f883a7a2aa97a8f739f1fa"},
 ]
 
 [package.dependencies]
 google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+google-auth = ">=2.14.1,<3.0.0dev"
 proto-plus = ">=1.22.3,<2.0.0dev"
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 
 [[package]]
 name = "google-cloud-resource-manager"
-version = "1.12.0"
+version = "1.12.1"
 description = "Google Cloud Resource Manager API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-cloud-resource-manager-1.12.0.tar.gz", hash = "sha256:c2c4ae53e5f9ff612e4cf961f1bac3f9100ae54a5122c1b1cd4236e884d112c5"},
-    {file = "google_cloud_resource_manager-1.12.0-py2.py3-none-any.whl", hash = "sha256:a7128e5ed4ff35d42669a833c0841cda065123ece58ca468c3ea656983de13dc"},
+    {file = "google-cloud-resource-manager-1.12.1.tar.gz", hash = "sha256:25b3112c984ef6a2569ca7047160b2341c528c70e1d2e72deb99686aa2e167dd"},
+    {file = "google_cloud_resource_manager-1.12.1-py2.py3-none-any.whl", hash = "sha256:6a0b97886998fb076a71a7e9679a1187f6bed97519e0dff13352e7946513d458"},
 ]
 
 [package.dependencies]
 google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+google-auth = ">=2.14.1,<3.0.0dev"
 grpc-google-iam-v1 = ">=0.12.4,<1.0.0dev"
 proto-plus = ">=1.22.3,<2.0.0dev"
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
@@ -3174,13 +3176,13 @@ files = [
 
 [[package]]
 name = "ipykernel"
-version = "6.29.1"
+version = "6.29.2"
 description = "IPython Kernel for Jupyter"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "ipykernel-6.29.1-py3-none-any.whl", hash = "sha256:e5dfba210fc9da74a5dae8fa6c41f816e11bd18d10381b2517d9a0d57cc987c4"},
-    {file = "ipykernel-6.29.1.tar.gz", hash = "sha256:1547352b32da95a2761011a8dac2af930c26a0703dfa07690d16b7d74dac0ba1"},
+    {file = "ipykernel-6.29.2-py3-none-any.whl", hash = "sha256:50384f5c577a260a1d53f1f59a828c7266d321c9b7d00d345693783f66616055"},
+    {file = "ipykernel-6.29.2.tar.gz", hash = "sha256:3bade28004e3ff624ed57974948116670604ac5f676d12339693f3142176d3f0"},
 ]
 
 [package.dependencies]
@@ -3932,7 +3934,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.19"
+version = "0.1.21"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3942,7 +3944,7 @@ develop = true
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
-langsmith = ">=0.0.83,<0.1"
+langsmith = "^0.0.87"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -3958,13 +3960,13 @@ url = "../core"
 
 [[package]]
 name = "langsmith"
-version = "0.0.86"
+version = "0.0.87"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.86-py3-none-any.whl", hash = "sha256:7af15c36edb8c9fd9ae5c6d4fb940eb1da668b630a703d63c90c91e9be53aefb"},
-    {file = "langsmith-0.0.86.tar.gz", hash = "sha256:c1572824664810c4425b17f2d1e9a59d53992e6898df22a37236c62d3c80f59e"},
+    {file = "langsmith-0.0.87-py3-none-any.whl", hash = "sha256:8903d3811b9fc89eb18f5961c8e6935fbd2d0f119884fbf30dc70b8f8f4121fc"},
+    {file = "langsmith-0.0.87.tar.gz", hash = "sha256:36c4cc47e5b54be57d038036a30fb19ce6e4c73048cd7a464b8f25b459694d34"},
 ]
 
 [package.dependencies]
@@ -4749,13 +4751,13 @@ test = ["flaky", "ipykernel (>=6.19.3)", "ipython", "ipywidgets", "nbconvert (>=
 
 [[package]]
 name = "nbconvert"
-version = "7.15.0"
+version = "7.16.0"
 description = "Converting Jupyter Notebooks"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "nbconvert-7.15.0-py3-none-any.whl", hash = "sha256:0efd3ca74fd1525560e0312cec235e57dfbf3c5c775c7e61e04c532b28f8da6f"},
-    {file = "nbconvert-7.15.0.tar.gz", hash = "sha256:ff3f54a1a5e1e024beb9fde8946d05b6d0bf68cd14b5f2f9dc5b545c8bc71055"},
+    {file = "nbconvert-7.16.0-py3-none-any.whl", hash = "sha256:ad3dc865ea6e2768d31b7eb6c7ab3be014927216a5ece3ef276748dd809054c7"},
+    {file = "nbconvert-7.16.0.tar.gz", hash = "sha256:813e6553796362489ae572e39ba1bff978536192fb518e10826b0e8cadf03ec8"},
 ]
 
 [package.dependencies]
@@ -5159,13 +5161,13 @@ numpy = [
 
 [[package]]
 name = "oracle-ads"
-version = "2.10.0"
+version = "2.10.1"
 description = "Oracle Accelerated Data Science SDK"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "oracle_ads-2.10.0-py3-none-any.whl", hash = "sha256:df2572d8470915ca2c1d9fe4154930e23080c96695316a0caaff56e2d78d46cd"},
-    {file = "oracle_ads-2.10.0.tar.gz", hash = "sha256:90d63250928867fe0a3b4730dc20ea5eed6587d6e069f5fe9f6414eae9df6a1b"},
+    {file = "oracle_ads-2.10.1-py3-none-any.whl", hash = "sha256:b3379df8ab8e9c7c1040fa4ea3cb52c6898f9c32b2412c76d8827da76708708f"},
+    {file = "oracle_ads-2.10.1.tar.gz", hash = "sha256:8084004c94e6eb5ae56bc7f1b8d95fbdbd1ba43ceb87878c199cfc164529e7ac"},
 ]
 
 [package.dependencies]
@@ -5189,11 +5191,12 @@ tabulate = ">=0.8.9"
 tqdm = ">=4.59.0"
 
 [package.extras]
+anomaly = ["autots", "datapane", "oracle-automlx[anomaly] (==23.2.3)", "oracle_ads[opctl]", "oracledb"]
 bds = ["hdfs[kerberos]", "ibis-framework[impala]", "sqlalchemy"]
 boosted = ["lightgbm (<4.0.0)", "xgboost"]
 data = ["datefinder (>=0.7.1)", "fastavro (>=0.24.2)", "htmllistparse (>=0.6.0)", "openpyxl (>=3.0.7)", "oracledb (>=1.0)", "pandavro (>=1.6.0)", "sqlalchemy (>=1.4.1,<=1.4.46)"]
 feature-store-marketplace = ["kubernetes", "oracle-ads[opctl]"]
-forecast = ["autots[additional]", "conda-pack", "datapane", "holidays (==0.21.13)", "inflection", "nbconvert", "nbformat", "neuralprophet", "numpy", "oci-cli", "oci-cli", "optuna (==2.9.0)", "oracle-ads", "oracle-automlx[forecasting] (==23.2.3)", "plotly", "pmdarima", "prophet", "py-cpuinfo", "rich", "shap", "sktime", "statsmodels"]
+forecast = ["autots[additional]", "conda-pack", "datapane", "holidays (==0.21.13)", "inflection", "nbconvert", "nbformat", "neuralprophet", "numpy", "oci-cli", "oci-cli", "optuna (==2.9.0)", "oracle-ads", "oracle-automlx[forecasting] (==23.2.3)", "oracledb", "plotly", "pmdarima", "prophet", "py-cpuinfo", "rich", "shap", "sktime", "statsmodels"]
 geo = ["geopandas", "oracle_ads[viz]"]
 huggingface = ["transformers"]
 llm = ["evaluate (>=0.4.0)", "langchain (>=0.0.295)"]
@@ -5206,7 +5209,7 @@ spark = ["pyspark (>=3.0.0)"]
 tensorflow = ["oracle_ads[viz]", "tensorflow"]
 text = ["spacy", "wordcloud (>=1.8.1)"]
 torch = ["oracle_ads[viz]", "torch", "torchvision"]
-viz = ["bokeh (>=2.3.0,<=2.4.3)", "folium (>=0.12.1)", "graphviz (<0.17)", "scipy (>=1.5.4)", "seaborn (>=0.11.0)"]
+viz = ["bokeh (>=3.0.0,<3.2.0)", "folium (>=0.12.1)", "graphviz (<0.17)", "scipy (>=1.5.4)", "seaborn (>=0.11.0)"]
 
 [[package]]
 name = "orjson"
@@ -7998,17 +8001,17 @@ mpmath = ">=0.19"
 
 [[package]]
 name = "syrupy"
-version = "4.6.0"
+version = "4.6.1"
 description = "Pytest Snapshot Test Utility"
 optional = false
 python-versions = ">=3.8.1,<4"
 files = [
-    {file = "syrupy-4.6.0-py3-none-any.whl", hash = "sha256:747aae1bcf3cb3249e33b1e6d81097874d23615982d5686ebe637875b0775a1b"},
-    {file = "syrupy-4.6.0.tar.gz", hash = "sha256:231b1f5d00f1f85048ba81676c79448076189c4aef4d33f21ae32f3b4c565a54"},
+    {file = "syrupy-4.6.1-py3-none-any.whl", hash = "sha256:203e52f9cb9fa749cf683f29bd68f02c16c3bc7e7e5fe8f2fc59bdfe488ce133"},
+    {file = "syrupy-4.6.1.tar.gz", hash = "sha256:37a835c9ce7857eeef86d62145885e10b3cb9615bc6abeb4ce404b3f18e1bb36"},
 ]
 
 [package.dependencies]
-pytest = ">=7.0.0,<8.0.0"
+pytest = ">=7.0.0,<9.0.0"
 
 [[package]]
 name = "tabulate"
@@ -8776,38 +8779,40 @@ tests = ["Werkzeug (==2.0.3)", "aiohttp", "boto3", "httplib2", "httpx", "pytest"
 
 [[package]]
 name = "watchdog"
-version = "3.0.0"
+version = "4.0.0"
 description = "Filesystem events monitoring"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "watchdog-3.0.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:336adfc6f5cc4e037d52db31194f7581ff744b67382eb6021c868322e32eef41"},
-    {file = "watchdog-3.0.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a70a8dcde91be523c35b2bf96196edc5730edb347e374c7de7cd20c43ed95397"},
-    {file = "watchdog-3.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:adfdeab2da79ea2f76f87eb42a3ab1966a5313e5a69a0213a3cc06ef692b0e96"},
-    {file = "watchdog-3.0.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:2b57a1e730af3156d13b7fdddfc23dea6487fceca29fc75c5a868beed29177ae"},
-    {file = "watchdog-3.0.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:7ade88d0d778b1b222adebcc0927428f883db07017618a5e684fd03b83342bd9"},
-    {file = "watchdog-3.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:7e447d172af52ad204d19982739aa2346245cc5ba6f579d16dac4bfec226d2e7"},
-    {file = "watchdog-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:9fac43a7466eb73e64a9940ac9ed6369baa39b3bf221ae23493a9ec4d0022674"},
-    {file = "watchdog-3.0.0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:8ae9cda41fa114e28faf86cb137d751a17ffd0316d1c34ccf2235e8a84365c7f"},
-    {file = "watchdog-3.0.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:25f70b4aa53bd743729c7475d7ec41093a580528b100e9a8c5b5efe8899592fc"},
-    {file = "watchdog-3.0.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:4f94069eb16657d2c6faada4624c39464f65c05606af50bb7902e036e3219be3"},
-    {file = "watchdog-3.0.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:7c5f84b5194c24dd573fa6472685b2a27cc5a17fe5f7b6fd40345378ca6812e3"},
-    {file = "watchdog-3.0.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:3aa7f6a12e831ddfe78cdd4f8996af9cf334fd6346531b16cec61c3b3c0d8da0"},
-    {file = "watchdog-3.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:233b5817932685d39a7896b1090353fc8efc1ef99c9c054e46c8002561252fb8"},
-    {file = "watchdog-3.0.0-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:13bbbb462ee42ec3c5723e1205be8ced776f05b100e4737518c67c8325cf6100"},
-    {file = "watchdog-3.0.0-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:8f3ceecd20d71067c7fd4c9e832d4e22584318983cabc013dbf3f70ea95de346"},
-    {file = "watchdog-3.0.0-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:c9d8c8ec7efb887333cf71e328e39cffbf771d8f8f95d308ea4125bf5f90ba64"},
-    {file = "watchdog-3.0.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:0e06ab8858a76e1219e68c7573dfeba9dd1c0219476c5a44d5333b01d7e1743a"},
-    {file = "watchdog-3.0.0-py3-none-manylinux2014_armv7l.whl", hash = "sha256:d00e6be486affb5781468457b21a6cbe848c33ef43f9ea4a73b4882e5f188a44"},
-    {file = "watchdog-3.0.0-py3-none-manylinux2014_i686.whl", hash = "sha256:c07253088265c363d1ddf4b3cdb808d59a0468ecd017770ed716991620b8f77a"},
-    {file = "watchdog-3.0.0-py3-none-manylinux2014_ppc64.whl", hash = "sha256:5113334cf8cf0ac8cd45e1f8309a603291b614191c9add34d33075727a967709"},
-    {file = "watchdog-3.0.0-py3-none-manylinux2014_ppc64le.whl", hash = "sha256:51f90f73b4697bac9c9a78394c3acbbd331ccd3655c11be1a15ae6fe289a8c83"},
-    {file = "watchdog-3.0.0-py3-none-manylinux2014_s390x.whl", hash = "sha256:ba07e92756c97e3aca0912b5cbc4e5ad802f4557212788e72a72a47ff376950d"},
-    {file = "watchdog-3.0.0-py3-none-manylinux2014_x86_64.whl", hash = "sha256:d429c2430c93b7903914e4db9a966c7f2b068dd2ebdd2fa9b9ce094c7d459f33"},
-    {file = "watchdog-3.0.0-py3-none-win32.whl", hash = "sha256:3ed7c71a9dccfe838c2f0b6314ed0d9b22e77d268c67e015450a29036a81f60f"},
-    {file = "watchdog-3.0.0-py3-none-win_amd64.whl", hash = "sha256:4c9956d27be0bb08fc5f30d9d0179a855436e655f046d288e2bcc11adfae893c"},
-    {file = "watchdog-3.0.0-py3-none-win_ia64.whl", hash = "sha256:5d9f3a10e02d7371cd929b5d8f11e87d4bad890212ed3901f9b4d68767bee759"},
-    {file = "watchdog-3.0.0.tar.gz", hash = "sha256:4d98a320595da7a7c5a18fc48cb633c2e73cda78f93cac2ef42d42bf609a33f9"},
+    {file = "watchdog-4.0.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:39cb34b1f1afbf23e9562501673e7146777efe95da24fab5707b88f7fb11649b"},
+    {file = "watchdog-4.0.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c522392acc5e962bcac3b22b9592493ffd06d1fc5d755954e6be9f4990de932b"},
+    {file = "watchdog-4.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:6c47bdd680009b11c9ac382163e05ca43baf4127954c5f6d0250e7d772d2b80c"},
+    {file = "watchdog-4.0.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:8350d4055505412a426b6ad8c521bc7d367d1637a762c70fdd93a3a0d595990b"},
+    {file = "watchdog-4.0.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:c17d98799f32e3f55f181f19dd2021d762eb38fdd381b4a748b9f5a36738e935"},
+    {file = "watchdog-4.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4986db5e8880b0e6b7cd52ba36255d4793bf5cdc95bd6264806c233173b1ec0b"},
+    {file = "watchdog-4.0.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:11e12fafb13372e18ca1bbf12d50f593e7280646687463dd47730fd4f4d5d257"},
+    {file = "watchdog-4.0.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:5369136a6474678e02426bd984466343924d1df8e2fd94a9b443cb7e3aa20d19"},
+    {file = "watchdog-4.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:76ad8484379695f3fe46228962017a7e1337e9acadafed67eb20aabb175df98b"},
+    {file = "watchdog-4.0.0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:45cc09cc4c3b43fb10b59ef4d07318d9a3ecdbff03abd2e36e77b6dd9f9a5c85"},
+    {file = "watchdog-4.0.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:eed82cdf79cd7f0232e2fdc1ad05b06a5e102a43e331f7d041e5f0e0a34a51c4"},
+    {file = "watchdog-4.0.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:ba30a896166f0fee83183cec913298151b73164160d965af2e93a20bbd2ab605"},
+    {file = "watchdog-4.0.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:d18d7f18a47de6863cd480734613502904611730f8def45fc52a5d97503e5101"},
+    {file = "watchdog-4.0.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:2895bf0518361a9728773083908801a376743bcc37dfa252b801af8fd281b1ca"},
+    {file = "watchdog-4.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:87e9df830022488e235dd601478c15ad73a0389628588ba0b028cb74eb72fed8"},
+    {file = "watchdog-4.0.0-pp310-pypy310_pp73-macosx_10_9_x86_64.whl", hash = "sha256:6e949a8a94186bced05b6508faa61b7adacc911115664ccb1923b9ad1f1ccf7b"},
+    {file = "watchdog-4.0.0-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:6a4db54edea37d1058b08947c789a2354ee02972ed5d1e0dca9b0b820f4c7f92"},
+    {file = "watchdog-4.0.0-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:d31481ccf4694a8416b681544c23bd271f5a123162ab603c7d7d2dd7dd901a07"},
+    {file = "watchdog-4.0.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:8fec441f5adcf81dd240a5fe78e3d83767999771630b5ddfc5867827a34fa3d3"},
+    {file = "watchdog-4.0.0-py3-none-manylinux2014_armv7l.whl", hash = "sha256:6a9c71a0b02985b4b0b6d14b875a6c86ddea2fdbebd0c9a720a806a8bbffc69f"},
+    {file = "watchdog-4.0.0-py3-none-manylinux2014_i686.whl", hash = "sha256:557ba04c816d23ce98a06e70af6abaa0485f6d94994ec78a42b05d1c03dcbd50"},
+    {file = "watchdog-4.0.0-py3-none-manylinux2014_ppc64.whl", hash = "sha256:d0f9bd1fd919134d459d8abf954f63886745f4660ef66480b9d753a7c9d40927"},
+    {file = "watchdog-4.0.0-py3-none-manylinux2014_ppc64le.whl", hash = "sha256:f9b2fdca47dc855516b2d66eef3c39f2672cbf7e7a42e7e67ad2cbfcd6ba107d"},
+    {file = "watchdog-4.0.0-py3-none-manylinux2014_s390x.whl", hash = "sha256:73c7a935e62033bd5e8f0da33a4dcb763da2361921a69a5a95aaf6c93aa03a87"},
+    {file = "watchdog-4.0.0-py3-none-manylinux2014_x86_64.whl", hash = "sha256:6a80d5cae8c265842c7419c560b9961561556c4361b297b4c431903f8c33b269"},
+    {file = "watchdog-4.0.0-py3-none-win32.whl", hash = "sha256:8f9a542c979df62098ae9c58b19e03ad3df1c9d8c6895d96c0d51da17b243b1c"},
+    {file = "watchdog-4.0.0-py3-none-win_amd64.whl", hash = "sha256:f970663fa4f7e80401a7b0cbeec00fa801bf0287d93d48368fc3e6fa32716245"},
+    {file = "watchdog-4.0.0-py3-none-win_ia64.whl", hash = "sha256:9a03e16e55465177d416699331b0f3564138f1807ecc5f2de9d55d8f188d08c7"},
+    {file = "watchdog-4.0.0.tar.gz", hash = "sha256:e3e7065cbdabe6183ab82199d7a4f6b3ba0a438c5a512a68559846ccb76a78ec"},
 ]
 
 [package.extras]
@@ -9324,4 +9329,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d9be7110a6f92c4ba724d671b82d89f3776b096ba4c9b2ad97c9765f35bdba05"
+content-hash = "9e795e7b2f95e3bd1daa3d92129172e21c6c0c1b5dc82e4791872f39a33472aa"
