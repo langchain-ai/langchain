@@ -37,7 +37,8 @@ The way you use the tools is by specifying a json blob.
 Specifically, this json should have a `action` key (with the name of the tool to use)
 and a `action_input` key (with the input to the tool going here).
 The only values that should be in the "action" field are: {[t.name for t in tools]}
-The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions.
+The $JSON_BLOB should only contain a SINGLE action, 
+do NOT return a list of multiple actions.
 Here is an example of a valid $JSON_BLOB:
 ```
 {{{{
