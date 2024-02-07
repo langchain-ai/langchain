@@ -3,14 +3,6 @@
 from importlib import metadata
 from typing import Any, Callable, Optional, Union
 
-from google.api_core.exceptions import (
-    Aborted,
-    DeadlineExceeded,
-    GoogleAPIError,
-    ResourceExhausted,
-    ServiceUnavailable,
-)
-from google.api_core.gapic_v1.client_info import ClientInfo
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -26,6 +18,13 @@ def create_retry_decorator(
     ] = None,
 ) -> Callable[[Any], Any]:
     """Creates a retry decorator for Vertex / Palm LLMs."""
+    from google.api_core.exceptions import (
+    Aborted,
+    DeadlineExceeded,
+    GoogleAPIError,
+    ResourceExhausted,
+    ServiceUnavailable,
+    )
 
     errors = [
         ResourceExhausted,
@@ -40,7 +39,7 @@ def create_retry_decorator(
     return decorator
 
 
-def get_client_info(module: Optional[str] = None) -> "ClientInfo":
+def get_client_info(module: Optional[str] = None):
     r"""Returns a custom user agent header.
 
     Args:
@@ -49,6 +48,8 @@ def get_client_info(module: Optional[str] = None) -> "ClientInfo":
     Returns:
         google.api_core.gapic_v1.client_info.ClientInfo
     """
+    from google.api_core.gapic_v1.client_info import ClientInfo
+
     langchain_version = metadata.version("langchain")
     client_library_version = (
         f"{langchain_version}-{module}" if module else langchain_version
