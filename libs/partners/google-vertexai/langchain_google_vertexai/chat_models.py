@@ -30,9 +30,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
-from langchain_google_vertexai.llms import (
-    _VertexAICommon,
-)
 from vertexai.preview.generative_models import (  # type: ignore
     Candidate,
     Content,
@@ -57,6 +54,9 @@ from langchain_google_vertexai._utils import (
 )
 from langchain_google_vertexai.functions_utils import (
     _format_tools_to_vertex_tool,
+)
+from langchain_google_vertexai.llms import (
+    _VertexAICommon,
 )
 
 logger = logging.getLogger(__name__)
