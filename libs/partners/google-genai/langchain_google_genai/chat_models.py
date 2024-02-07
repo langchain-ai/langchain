@@ -43,8 +43,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
-from langchain_core.tools import BaseTool
+from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
@@ -358,18 +357,19 @@ def _retrieve_function_call_response(
     return None
 
 
-def _convert_function_call_req(
-    function_calls: List[Union[BaseTool, Type[BaseModel]]]
-) -> Dict:
+def _convert_function_call_req(function_calls: Union[Dict, List[Dict]]) -> Dict:
     function_declarations = []
-    for fc in function_calls:
-        function_declarations.append(_convert_fc_type(fc))
+    if isinstance(function_calls, dict):
+        function_declarations.append(_convert_fc_type(function_calls))
+    else:
+        for fc in function_calls:
+            function_declarations.append(_convert_fc_type(fc))
     return {
         "function_declarations": function_declarations,
     }
 
 
-def _convert_fc_type(fc: Union[BaseTool, Type[BaseModel]]) -> Dict:
+def _convert_fc_type(fc: Dict) -> Dict:
     # type_: "Type"
     # format_: str
     # description: str
