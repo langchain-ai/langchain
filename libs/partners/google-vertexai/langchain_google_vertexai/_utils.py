@@ -115,7 +115,11 @@ def get_generation_info(
                 }
                 for rating in candidate.safety_ratings
             ],
-            "citation_metadata": proto.Message.to_dict(candidate.citation_metadata),
+            "citation_metadata": (
+                proto.Message.to_dict(candidate.citation_metadata)
+                if candidate.citation_metadata
+                else None
+            ),
         }
     # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/text-chat#response_body
     else:
