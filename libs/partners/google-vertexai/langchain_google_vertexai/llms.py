@@ -17,7 +17,6 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import BaseLLM
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from vertexai.language_models import (  # type: ignore[import-untyped]
@@ -240,28 +239,23 @@ class _VertexAICommon(_VertexAIBase):
             params.pop("candidate_count")
         return params
 
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Get the number of tokens in the messages.
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
         Useful for checking if an input will fit in a model's context window.
+
         Args:
-            messages: The message inputs to tokenize.
+            text: The string input to tokenize.
+
         Returns:
-            The sum of the number of tokens across the messages."""
+            The integer number of tokens in the text.
+        """
+        try:
+            result = self.client_preview.count_tokens([text])
+        except AttributeError:
+            raise NotImplementedError(f"Not yet implemented for {self.model_name}")
 
-        if self._is_gemini_model:
-            conversation_text = ""
-            for message in messages:
-                conversation_text += f"\n{message.content}"
-
-            tokens = self.client.count_tokens(conversation_text)
-
-        else:
-            raise NotImplementedError(
-                """get_num_tokens_from_messages() is presently 
-                implemented only for gemini models"""
-            )
-
-        return tokens.total_tokens
+        return result.total_tokens
 
 
 class VertexAI(_VertexAICommon, BaseLLM):
@@ -323,20 +317,6 @@ class VertexAI(_VertexAICommon, BaseLLM):
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Only one candidate can be generated with streaming!")
         return values
-
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text.
-
-        Useful for checking if an input will fit in a model's context window.
-
-        Args:
-            text: The string input to tokenize.
-
-        Returns:
-            The integer number of tokens in the text.
-        """
-        result = self.client_preview.count_tokens([text])
-        return result.total_tokens
 
     def _response_to_generation(
         self, response: TextGenerationResponse, *, stream: bool = False

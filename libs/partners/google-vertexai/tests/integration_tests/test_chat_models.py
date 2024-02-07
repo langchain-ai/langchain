@@ -227,4 +227,11 @@ def test_get_num_tokens_from_messages() -> None:
     message = HumanMessage(content="Hello")
     token = model.get_num_tokens_from_messages(messages=[message])
     assert isinstance(token, int)
-    assert token == 2
+    assert token == 3
+
+    #test for exception with chat-bison
+    model = ChatVertexAI(model_name="chat-bison", temperature=0.0)
+    with pytest.raises(Exception):
+        token = model.get_num_tokens_from_messages(messages=[message])
+        assert isinstance(token, int)
+        assert token == 3
