@@ -104,6 +104,10 @@ def get_generation_info(
 ) -> Dict[str, Any]:
     if is_gemini:
         # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini#response_body
+        import pdb
+
+        pdb.set_trace()
+
         info = {
             "is_blocked": any([rating.blocked for rating in candidate.safety_ratings]),
             "safety_ratings": [
@@ -114,7 +118,22 @@ def get_generation_info(
                 }
                 for rating in candidate.safety_ratings
             ],
-            "citation_metadata": candidate.citation_metadata,
+            "citation_metadata": (
+                {
+                    "citations": [
+                        {
+                            "start_index": citation.start_index,
+                            "end_index": citation.end_index,
+                            "publication_date": citation.publication_date,
+                            "title": citation.title,
+                            "uri": citation.uri,
+                        }
+                        for citation in candidate.citation_metadata.citations
+                    ]
+                }
+                if candidate.citation_metadata
+                else None
+            ),
         }
     # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/text-chat#response_body
     else:
