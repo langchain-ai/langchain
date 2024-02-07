@@ -554,10 +554,10 @@ class Milvus(VectorStore):
         }
 
         if not self.auto_id:
-            insert_dict[self._primary_field] = ids
+            insert_dict[self._primary_field] = ids  # type: ignore[assignment]
 
         if self._metadata_field is not None:
-            for d in metadatas:
+            for d in metadatas:  # type: ignore[union-attr]
                 insert_dict.setdefault(self._metadata_field, []).append(d)
         else:
             # Collect the metadata into the insert dict.
@@ -901,7 +901,7 @@ class Milvus(VectorStore):
                 ret.append(documents[x])
         return ret
 
-    def delete(
+    def delete(  # type: ignore[no-untyped-def]
         self, ids: Optional[List[str]] = None, expr: Optional[str] = None, **kwargs: str
     ):
         """Delete by vector ID or boolean expression.
@@ -923,7 +923,7 @@ class Milvus(VectorStore):
             assert isinstance(
                 expr, str
             ), "Either ids list or expr string must be provided."
-        return self.col.delete(expr=expr, **kwargs)
+        return self.col.delete(expr=expr, **kwargs)  # type: ignore[union-attr]
 
     @classmethod
     def from_texts(
