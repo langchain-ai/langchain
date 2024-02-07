@@ -27,7 +27,7 @@ class UnstructuredCHMLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.html import partition_html
 
-        with CHMParser(self.file_path) as f:
+        with CHMParser(self.file_path) as f:  # type: ignore[arg-type]
             return [
                 partition_html(text=item["content"], **self.unstructured_kwargs)
                 for item in f.load_all()
@@ -45,10 +45,10 @@ class CHMParser(object):
         self.file = chm.CHMFile()
         self.file.LoadCHM(path)
 
-    def __enter__(self):
+    def __enter__(self):  # type: ignore[no-untyped-def]
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):  # type: ignore[no-untyped-def]
         if self.file:
             self.file.CloseCHM()
 

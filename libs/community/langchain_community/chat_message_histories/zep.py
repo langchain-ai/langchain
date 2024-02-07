@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -15,6 +16,24 @@ if TYPE_CHECKING:
     from zep_python import Memory, MemorySearchResult, Message, NotFoundError
 
 logger = logging.getLogger(__name__)
+
+
+class SearchScope(str, Enum):
+    """Which documents to search. Messages or Summaries?"""
+
+    messages = "messages"
+    """Search chat history messages."""
+    summary = "summary"
+    """Search chat history summaries."""
+
+
+class SearchType(str, Enum):
+    """Enumerator of the types of search to perform."""
+
+    similarity = "similarity"
+    """Similarity search."""
+    mmr = "mmr"
+    """Maximal Marginal Relevance reranking of similarity search."""
 
 
 class ZepChatMessageHistory(BaseChatMessageHistory):
@@ -130,7 +149,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             return None
         return zep_memory
 
-    def add_user_message(
+    def add_user_message(  # type: ignore[override]
         self, message: str, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Convenience method for adding a human message string to the store.
@@ -141,7 +160,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         """
         self.add_message(HumanMessage(content=message), metadata=metadata)
 
-    def add_ai_message(
+    def add_ai_message(  # type: ignore[override]
         self, message: str, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Convenience method for adding an AI message string to the store.
@@ -166,13 +185,23 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         self.zep_client.memory.add_memory(self.session_id, zep_memory)
 
     def search(
-        self, query: str, metadata: Optional[Dict] = None, limit: Optional[int] = None
+        self,
+        query: str,
+        metadata: Optional[Dict] = None,
+        search_scope: SearchScope = SearchScope.messages,
+        search_type: SearchType = SearchType.similarity,
+        mmr_lambda: Optional[float] = None,
+        limit: Optional[int] = None,
     ) -> List[MemorySearchResult]:
         """Search Zep memory for messages matching the query"""
         from zep_python import MemorySearchPayload
 
-        payload: MemorySearchPayload = MemorySearchPayload(
-            text=query, metadata=metadata
+        payload = MemorySearchPayload(
+            text=query,
+            metadata=metadata,
+            search_scope=search_scope,
+            search_type=search_type,
+            mmr_lambda=mmr_lambda,
         )
 
         return self.zep_client.memory.search_memory(

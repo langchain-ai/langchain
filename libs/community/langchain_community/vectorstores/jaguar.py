@@ -135,7 +135,7 @@ class Jaguar(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         return self._embedding
 
-    def add_texts(
+    def add_texts(  # type: ignore[override]
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
@@ -351,7 +351,7 @@ class Jaguar(VectorStore):
         return False
 
     @classmethod
-    def from_texts(
+    def from_texts(  # type: ignore[override]
         cls,
         texts: List[str],
         embedding: Embeddings,
@@ -383,7 +383,7 @@ class Jaguar(VectorStore):
         q = "truncate store " + podstore
         self.run(q)
 
-    def delete(self, zids: List[str], **kwargs: Any) -> None:
+    def delete(self, zids: List[str], **kwargs: Any) -> None:  # type: ignore[override]
         """
         Delete records in jaguardb by a list of zero-ids
         Args:
