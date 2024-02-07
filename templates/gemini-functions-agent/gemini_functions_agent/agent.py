@@ -4,11 +4,11 @@ from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.utilities.tavily_search import TavilySearchAPIWrapper
-from langchain_google_vertexai import ChatVertexAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_google_vertexai import ChatVertexAI
 
 # Create the tool
 search = TavilySearchAPIWrapper()
