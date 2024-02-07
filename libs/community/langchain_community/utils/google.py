@@ -39,7 +39,7 @@ def create_retry_decorator(
     return decorator
 
 
-def get_client_info(module: Optional[str] = None):
+def get_client_info(module: Optional[str] = None) -> Any:
     r"""Returns a custom user agent header.
 
     Args:
