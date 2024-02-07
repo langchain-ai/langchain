@@ -1492,11 +1492,6 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(separators=separators, **kwargs)
 
 
-def calculate_serialized_size(data: Dict) -> int:
-    """Calculate the size of the serialized JSON object."""
-    return len(json.dumps(data))
-
-
 class RecursiveJsonSplitter:
     def __init__(
         self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
@@ -1508,6 +1503,18 @@ class RecursiveJsonSplitter:
             if min_chunk_size is not None
             else max(max_chunk_size - 200, 50)
         )
+
+    @staticmethod
+    def _json_size(data: Dict) -> int:
+        """Calculate the size of the serialized JSON object."""
+        return len(json.dumps(data))
+
+    @staticmethod
+    def _set_nested_dict(d: Dict, path: List[str], value: Any) -> None:
+        """Set a value in a nested dictionary based on the given path."""
+        for key in path[:-1]:
+            d = d.setdefault(key, {})
+        d[path[-1]] = value
 
     def _list_to_dict_preprocessing(self, data: Any) -> Any:
         if isinstance(data, dict):
@@ -1535,8 +1542,8 @@ class RecursiveJsonSplitter:
         if isinstance(data, dict):
             for key, value in data.items():
                 new_path = current_path + [key]
-                chunk_size = calculate_serialized_size(chunks[-1])
-                size = calculate_serialized_size({key: value})
+                chunk_size = self._json_size(chunks[-1])
+                size = self._json_size({key: value})
                 remaining = self.max_chunk_size - chunk_size
 
                 if size < remaining:
@@ -1553,13 +1560,6 @@ class RecursiveJsonSplitter:
             # handle single item
             self._set_nested_dict(chunks[-1], current_path, data)
         return chunks
-
-    @staticmethod
-    def _set_nested_dict(d: Dict, path: List[str], value: Any) -> None:
-        """Set a value in a nested dictionary based on the given path."""
-        for key in path[:-1]:
-            d = d.setdefault(key, {})
-        d[path[-1]] = value
 
     def split_json(
         self,
