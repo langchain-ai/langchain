@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field
 
 from langchain_community.agent_toolkits.base import BaseToolkit
@@ -18,6 +19,7 @@ class AmadeusToolkit(BaseToolkit):
     """Toolkit for interacting with Amadeus which offers APIs for travel."""
 
     client: Client = Field(default_factory=authenticate)
+    llm: Optional[BaseLanguageModel] = Field(default=None)
 
     class Config:
         """Pydantic config."""
@@ -27,6 +29,6 @@ class AmadeusToolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         return [
-            AmadeusClosestAirport(),
+            AmadeusClosestAirport(llm=self.llm),
             AmadeusFlightSearch(),
         ]

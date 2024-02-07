@@ -8,10 +8,10 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser, BasePromptTemplate
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools.sql_database.prompt import QUERY_CHECKER
-from langchain.utilities.sql_database import SQLDatabase
+from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
+from langchain_community.utilities.sql_database import SQLDatabase
+from langchain_core.embeddings import Embeddings
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.sql.base import INTERMEDIATE_STEPS_KEY, SQLDatabaseChain
 
@@ -88,7 +88,7 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
         .. code-block:: python
 
             from langchain_experimental.sql import SQLDatabaseChain
-            from langchain.llms import OpenAI, SQLDatabase, OpenAIEmbeddings
+            from langchain_community.llms import OpenAI, SQLDatabase, OpenAIEmbeddings
             db = SQLDatabase(...)
             db_chain = VectorSQLDatabaseChain.from_llm(OpenAI(), db, OpenAIEmbeddings())
 

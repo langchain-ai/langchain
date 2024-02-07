@@ -225,7 +225,7 @@ class Chroma(VectorStore):
                     if "Expected metadata value to be" in str(e):
                         msg = (
                             "Try filtering complex metadata using "
-                            "langchain.vectorstores.utils.filter_complex_metadata."
+                            "langchain_community.vectorstores.utils.filter_complex_metadata."
                         )
                         raise ValueError(e.args[0] + "\n\n" + msg)
                     else:
@@ -304,7 +304,7 @@ class Chroma(VectorStore):
                     if "Expected metadata value to be" in str(e):
                         msg = (
                             "Try filtering complex metadata from the document using "
-                            "langchain.vectorstores.utils.filter_complex_metadata."
+                            "langchain_community.vectorstores.utils.filter_complex_metadata."
                         )
                         raise ValueError(e.args[0] + "\n\n" + msg)
                     else:
@@ -345,7 +345,9 @@ class Chroma(VectorStore):
         Returns:
             List[Document]: List of documents most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
+        docs_and_scores = self.similarity_search_with_score(
+            query, k, filter=filter, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
@@ -369,6 +371,7 @@ class Chroma(VectorStore):
             n_results=k,
             where=filter,
             where_document=where_document,
+            **kwargs,
         )
         return _results_to_docs(results)
 
@@ -398,6 +401,7 @@ class Chroma(VectorStore):
             n_results=k,
             where=filter,
             where_document=where_document,
+            **kwargs,
         )
         return _results_to_docs_and_scores(results)
 
@@ -427,6 +431,7 @@ class Chroma(VectorStore):
                 n_results=k,
                 where=filter,
                 where_document=where_document,
+                **kwargs,
             )
         else:
             query_embedding = self._embedding_function.embed_query(query)
@@ -435,6 +440,7 @@ class Chroma(VectorStore):
                 n_results=k,
                 where=filter,
                 where_document=where_document,
+                **kwargs,
             )
 
         return _results_to_docs_and_scores(results)
@@ -505,6 +511,7 @@ class Chroma(VectorStore):
             where=filter,
             where_document=where_document,
             include=["metadatas", "documents", "distances", "embeddings"],
+            **kwargs,
         )
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),

@@ -1,6 +1,7 @@
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LanguageModelInput,
+    LanguageModelLike,
     LanguageModelOutput,
     get_tokenizer,
 )
@@ -16,4 +17,5 @@ __all__ = [
     "LanguageModelInput",
     "get_tokenizer",
     "LanguageModelOutput",
+    "LanguageModelLike",
 ]

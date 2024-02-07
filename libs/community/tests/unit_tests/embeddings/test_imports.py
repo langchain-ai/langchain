@@ -3,6 +3,7 @@ from langchain_community.embeddings import __all__
 EXPECTED_ALL = [
     "OpenAIEmbeddings",
     "AzureOpenAIEmbeddings",
+    "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
@@ -14,9 +15,11 @@ EXPECTED_ALL = [
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
+    "LLMRailsEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowAIGatewayEmbeddings",
     "MlflowEmbeddings",
+    "MlflowCohereEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
@@ -53,6 +56,8 @@ EXPECTED_ALL = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
+    "VolcanoEmbeddings",
+    "OCIGenAIEmbeddings",
 ]
 
 

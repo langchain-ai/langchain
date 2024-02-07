@@ -186,3 +186,9 @@ def test_chat_google_genai_system_message() -> None:
     response = model([system_message, message1, message2, message3])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
+
+def test_generativeai_get_num_tokens_gemini() -> None:
+    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-pro")
+    output = llm.get_num_tokens("How are you?")
+    assert output == 4

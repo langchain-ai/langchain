@@ -2,6 +2,7 @@
 from enum import Enum
 from typing import Optional
 
+import pytest
 from langchain_core.exceptions import OutputParserException
 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -39,6 +40,15 @@ for_new_lines: |
    escape_newline: 
 
 ```"""
+DEF_RESULT_NO_BACKTICKS = """
+action: Update
+action_input: The yamlOutputParser class is powerful
+additional_fields: null
+for_new_lines: |
+  not_escape_newline:
+   escape_newline: 
+
+"""
 
 # action 'update' with a lowercase 'u' to test schema validation failure.
 DEF_RESULT_FAIL = """```yaml
@@ -55,16 +65,17 @@ DEF_EXPECTED_RESULT = TestModel(
 )
 
 
-def test_yaml_output_parser() -> None:
+@pytest.mark.parametrize("result", [DEF_RESULT, DEF_RESULT_NO_BACKTICKS])
+def test_yaml_output_parser(result: str) -> None:
     """Test yamlOutputParser."""
 
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
         pydantic_object=TestModel
     )
 
-    result = yaml_parser.parse(DEF_RESULT)
+    model = yaml_parser.parse(result)
     print("parse_result:", result)
-    assert DEF_EXPECTED_RESULT == result
+    assert DEF_EXPECTED_RESULT == model
 
 
 def test_yaml_output_parser_fail() -> None:

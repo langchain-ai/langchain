@@ -17,10 +17,10 @@ The base Embeddings class in LangChain provides two methods: one for embedding d
 
 ### Setup
 
-To start we'll need to install the OpenAI Python package:
+To start we'll need to install the OpenAI partner package:
 
 ```bash
-pip install openai
+pip install langchain-openai
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -32,14 +32,14 @@ export OPENAI_API_KEY="..."
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
 embeddings_model = OpenAIEmbeddings(openai_api_key="...")
 ```
 
 Otherwise you can initialize without any params:
 ```python
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
 embeddings_model = OpenAIEmbeddings()
 ```

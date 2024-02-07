@@ -33,12 +33,12 @@ class DoctranQATransformer(BaseDocumentTransformer):
             "openai_api_model", "OPENAI_API_MODEL"
         )
 
-    def transform_documents(
+    async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         raise NotImplementedError
 
-    async def atransform_documents(
+    def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         """Extracts QA from text documents using doctran."""
@@ -53,9 +53,7 @@ class DoctranQATransformer(BaseDocumentTransformer):
                 "Install doctran to use this parser. (pip install doctran)"
             )
         for d in documents:
-            doctran_doc = (
-                await doctran.parse(content=d.page_content).interrogate().execute()
-            )
+            doctran_doc = doctran.parse(content=d.page_content).interrogate().execute()
             questions_and_answers = doctran_doc.extracted_properties.get(
                 "questions_and_answers"
             )
