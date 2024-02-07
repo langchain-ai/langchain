@@ -199,10 +199,13 @@ class TritonTensorRTLLM(BaseLLM):
         result_queue = self._invoke_triton(self.model_name, inputs, outputs, stop)
 
         result_str = ""
-        for token in result_queue:
-            result_str += token
-
-        self.client.stop_stream()
+        try:
+            for token in result_queue:
+                if isinstance(token, Exception):
+                    raise token
+                result_str += token
+        finally:
+            self.client.stop_stream()
 
         return result_str
 
