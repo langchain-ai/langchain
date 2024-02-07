@@ -47,9 +47,9 @@ async def get_async_redis(
     *, ttl: Optional[int] = 1
 ) -> AsyncGenerator[RedisCache, None]:
     """Get an async RedisCache instance."""
-    import redis.asyncio
+    from redis.asyncio import Redis
 
-    cache = RedisCache(redis_=redis.asyncio.Redis.from_url(REDIS_TEST_URL), ttl=ttl)
+    cache = RedisCache(redis_=Redis.from_url(REDIS_TEST_URL), ttl=ttl)
     try:
         yield cache
     finally:
@@ -57,20 +57,25 @@ async def get_async_redis(
 
 
 def test_redis_cache_ttl() -> None:
-    with get_sync_redis() as redis_cache:
-        set_llm_cache(redis_cache)
-        llm_cache = cast(RedisCache, get_llm_cache())
+    from redis import Redis
+
+    with get_sync_redis() as llm_cache:
+        set_llm_cache(llm_cache)
         llm_cache.update("foo", "bar", [Generation(text="fizz")])
         key = llm_cache._key("foo", "bar")
+        assert isinstance(llm_cache.redis, Redis)
         assert llm_cache.redis.pttl(key) > 0
 
 
 async def test_async_redis_cache_ttl() -> None:
+    from redis.asyncio import Redis as AsyncRedis
+
     async with get_async_redis() as redis_cache:
         set_llm_cache(redis_cache)
         llm_cache = cast(RedisCache, get_llm_cache())
         await llm_cache.aupdate("foo", "bar", [Generation(text="fizz")])
         key = llm_cache._key("foo", "bar")
+        assert isinstance(llm_cache.redis, AsyncRedis)
         assert await llm_cache.redis.pttl(key) > 0
 
 
