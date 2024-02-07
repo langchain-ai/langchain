@@ -384,6 +384,7 @@ class SQLDatabase:
         self,
         command: Union[str, Executable],
         fetch: Literal["all", "one", "cursor"] = "all",
+        *,
         parameters: Optional[Dict[str, Any]] = None,
         execution_options: Optional[Dict[str, Any]] = None,
     ) -> Union[Sequence[Dict[str, Any]], Result]:
@@ -472,9 +473,10 @@ class SQLDatabase:
         self,
         command: Union[str, Executable],
         fetch: Literal["all", "one", "cursor"] = "all",
+        include_columns: bool = False,
+        *,
         parameters: Optional[Dict[str, Any]] = None,
         execution_options: Optional[Dict[str, Any]] = None,
-        include_columns: bool = False,
     ) -> Union[str, Sequence[Dict[str, Any]], Result[Any]]:
         """Execute a SQL command and return a string representing the results.
 
@@ -482,7 +484,7 @@ class SQLDatabase:
         If the statement returns no rows, an empty string is returned.
         """
         result = self._execute(
-            command, fetch, parameters, execution_options=execution_options
+            command, fetch, parameters=parameters, execution_options=execution_options
         )
 
         if fetch == "cursor":
@@ -524,9 +526,10 @@ class SQLDatabase:
         self,
         command: str,
         fetch: Literal["all", "one"] = "all",
+        include_columns: bool = False,
+        *,
         parameters: Optional[Dict[str, Any]] = None,
         execution_options: Optional[Dict[str, Any]] = None,
-        include_columns: bool = False,
     ) -> Union[str, Sequence[Dict[str, Any]], Result[Any]]:
         """Execute a SQL command and return a string representing the results.
 
