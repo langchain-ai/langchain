@@ -247,29 +247,35 @@ def test_visit_structured_query_with_date_range() -> None:
     expected = (
         query,
         {
-            "filter": {
-                "bool": {
-                    "must": [
-                        {"term": {"metadata.foo.keyword": "20"}},
-                        {
-                            "bool": {
-                                "must": [
-                                    {
-                                        "range": {
-                                            "metadata.timestamp": {"gte": "1995-01-01"}
-                                        }
-                                    },
-                                    {
-                                        "range": {
-                                            "metadata.timestamp": {"lt": "1996-01-01"}
-                                        }
-                                    },
-                                ]
-                            }
-                        },
-                    ]
+            "filter": [
+                {
+                    "bool": {
+                        "must": [
+                            {"term": {"metadata.foo.keyword": "20"}},
+                            {
+                                "bool": {
+                                    "must": [
+                                        {
+                                            "range": {
+                                                "metadata.timestamp": {
+                                                    "gte": "1995-01-01"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "range": {
+                                                "metadata.timestamp": {
+                                                    "lt": "1996-01-01"
+                                                }
+                                            }
+                                        },
+                                    ]
+                                }
+                            },
+                        ]
+                    }
                 }
-            }
+            ]
         },
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
@@ -293,14 +299,16 @@ def test_visit_structured_query_with_date() -> None:
     expected = (
         query,
         {
-            "filter": {
-                "bool": {
-                    "must": [
-                        {"term": {"metadata.foo.keyword": "20"}},
-                        {"term": {"metadata.timestamp": "1995-01-01"}},
-                    ]
+            "filter": [
+                {
+                    "bool": {
+                        "must": [
+                            {"term": {"metadata.foo.keyword": "20"}},
+                            {"term": {"metadata.timestamp": "1995-01-01"}},
+                        ]
+                    }
                 }
-            }
+            ]
         },
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
