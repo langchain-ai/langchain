@@ -20,7 +20,7 @@ RUN_DETAILS_ORDER = [
     "session_id",
     "trace_id",
     "id",
-    "parent_id",
+    "parent_run_id",
     "execution_order",
     "child_runs",
     "child_execution_order",
