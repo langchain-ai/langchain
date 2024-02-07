@@ -104,10 +104,6 @@ def get_generation_info(
 ) -> Dict[str, Any]:
     if is_gemini:
         # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini#response_body
-        import pdb
-
-        pdb.set_trace()
-
         info = {
             "is_blocked": any([rating.blocked for rating in candidate.safety_ratings]),
             "safety_ratings": [
