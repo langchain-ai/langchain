@@ -8,7 +8,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_google_vertexai import ChatVertexAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Create the tool
 search = TavilySearchAPIWrapper()
@@ -22,7 +22,7 @@ tavily_tool = TavilySearchResults(api_wrapper=search, description=description)
 
 tools = [tavily_tool]
 
-llm = ChatVertexAI(temperature=0, model_name="gemini-pro")
+llm = ChatGoogleGenerativeAI(temperature=0, model_name="gemini-pro")
 
 prompt = ChatPromptTemplate.from_messages(
     [

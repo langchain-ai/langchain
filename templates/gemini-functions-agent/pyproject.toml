@@ -8,10 +8,10 @@ authors = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 langchain = "^0.1"
-langchain-google-vertexai = "^0.0.3"
 tavily-python = "^0.1.9"
+langchain-google-genai = "^0.0.6"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
