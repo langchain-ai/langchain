@@ -27,7 +27,6 @@ import json
 import logging
 import uuid
 import warnings
-from abc import ABC
 from datetime import timedelta
 from functools import lru_cache
 from typing import (
@@ -43,6 +42,7 @@ from typing import (
     cast,
 )
 
+from langchain_core.runnables import run_in_executor
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
@@ -352,7 +352,128 @@ class UpstashRedisCache(BaseCache):
         self.redis.flushdb(flush_type=asynchronous)
 
 
-class _RedisCacheBase(BaseCache, ABC):
+class RedisCache(BaseCache):
+    """Cache that uses Redis as a backend.
+
+    Allows to use either sync `redis.Redis` client or async `redis.asyncio.Redis` client.
+
+    If using the sync client, RedisCache will still support async operations
+    by running them in a separate thread.
+
+    If you're working with an async codebase, pass in an
+    async `redis.asyncio.Redis` client instead.
+    """
+
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None) -> None:
+        """Initialize an instance of RedisCache.
+
+        This method initializes an object with Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of a Redis
+        client class (`redis.Redis`) or `redis.asyncio.Redis`, allowing the object
+        to interact with a Redis server for caching operations.
+
+        Parameters:
+            redis_: An instance of a Redis client class (`redis.Redis`)
+                or `redis.asyncio.Redis` to be used.
+                This allows the object to communicate with a Redis server
+                for caching operations.
+                Use an async client if you're working with an async codebase so
+                you benefit from a native async implementation.
+                Async will work even with the sync client, but it will run
+                async operations in a separate thread, and will suffer from
+                an overhead.
+            ttl: Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
+        """
+        try:
+            from redis import Redis
+            from redis.asyncio import Redis as AsyncRedis
+        except ImportError:
+            raise ValueError(
+                "Could not import `redis` python package. "
+                "Please install it with `pip install redis`."
+            )
+
+        if not isinstance(redis_, (Redis, AsyncRedis)):
+            raise ValueError(
+                "Please pass a valid `redis.Redis` or `redis.asyncio.Redis` client."
+            )
+
+        self.redis = redis_
+        # Set to true if the redis client is the native async client.
+        self._is_sync_client = isinstance(redis_, Redis)
+        self.ttl = ttl
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        # Read from a Redis HASH
+        if self._is_sync_client:
+            results = self.redis.hgetall(self._key(prompt, llm_string))
+            return self._get_generations(results)
+        raise NotImplementedError(
+            "This async Redis cache does not implement `lookup()` method. "
+            "Consider using the async `alookup()` version."
+        )
+
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string. Async version."""
+        if self._is_sync_client:
+            return await run_in_executor(None, self.lookup, prompt, llm_string)
+        results = await self.redis.hgetall(self._key(prompt, llm_string))
+        return self._get_generations(results)
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        if self._is_sync_client:
+            self._ensure_generation_type(return_val)
+            key = self._key(prompt, llm_string)
+
+            with self.redis.pipeline() as pipe:
+                self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
+                pipe.execute()
+        else:
+            raise NotImplementedError(
+                "This async Redis cache does not implement `update()` method. "
+                "Consider using the async `aupdate()` version."
+            )
+
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
+        """Update cache based on prompt and llm_string. Async version."""
+        if self._is_sync_client:
+            # Fall back to default implementation if the client is not natively async
+            return await run_in_executor(
+                None, self.update, prompt, llm_string, return_val
+            )
+        self._ensure_generation_type(return_val)
+        key = self._key(prompt, llm_string)
+
+        async with self.redis.pipeline() as pipe:
+            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
+            await pipe.execute()
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache. If `asynchronous` is True, flush asynchronously."""
+        if self._is_sync_client:
+            asynchronous = kwargs.get("asynchronous", False)
+            self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        else:
+            raise NotImplementedError(
+                "This async Redis cache does not implement `clear()` method. "
+                "Consider using the async `aclear()` version."
+            )
+
+    async def aclear(self, **kwargs: Any) -> None:
+        """Clear cache. If `asynchronous` is True, flush asynchronously."""
+        if self._is_sync_client:
+            return await run_in_executor(None, self.clear, **kwargs)
+        else:
+            asynchronous = kwargs.get("asynchronous", False)
+            await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+
     @staticmethod
     def _key(prompt: str, llm_string: str) -> str:
         """Compute key from prompt and llm_string"""
@@ -387,7 +508,10 @@ class _RedisCacheBase(BaseCache, ABC):
         return generations if generations else None
 
     @staticmethod
-    def _configure_pipeline_for_update(key, pipe, return_val, ttl=None):
+    def _configure_pipeline_for_update(
+        key: str, pipe, return_val, ttl: Optional[int] = None
+    ) -> None:
+        """Configure the pipeline for updating the cache."""
         pipe.hset(
             key,
             mapping={
@@ -396,146 +520,6 @@ class _RedisCacheBase(BaseCache, ABC):
         )
         if ttl is not None:
             pipe.expire(key, ttl)
-
-
-class RedisCache(_RedisCacheBase):
-    """
-    Cache that uses Redis as a backend. Allows to use a sync `redis.Redis` client.
-    """
-
-    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
-        """
-        Initialize an instance of RedisCache.
-
-        This method initializes an object with Redis caching capabilities.
-        It takes a `redis_` parameter, which should be an instance of a Redis
-        client class (`redis.Redis`), allowing the object
-        to interact with a Redis server for caching purposes.
-
-        Parameters:
-            redis_ (Any): An instance of a Redis client class
-                (`redis.Redis`) to be used for caching.
-                This allows the object to communicate with a
-                Redis server for caching operations.
-            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
-                If provided, it sets the time duration for how long cached
-                items will remain valid. If not provided, cached items will not
-                have an automatic expiration.
-        """
-        try:
-            from redis import Redis
-        except ImportError:
-            raise ValueError(
-                "Could not import `redis` python package. "
-                "Please install it with `pip install redis`."
-            )
-        if not isinstance(redis_, Redis):
-            raise ValueError("Please pass a valid `redis.Redis` client.")
-        self.redis = redis_
-        self.ttl = ttl
-
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
-        # Read from a Redis HASH
-        results = self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)
-
-    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
-        self._ensure_generation_type(return_val)
-        key = self._key(prompt, llm_string)
-
-        with self.redis.pipeline() as pipe:
-            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-            pipe.execute()
-
-    def clear(self, **kwargs: Any) -> None:
-        """Clear cache. If `asynchronous` is True, flush asynchronously."""
-        asynchronous = kwargs.get("asynchronous", False)
-        self.redis.flushdb(asynchronous=asynchronous, **kwargs)
-
-
-class AsyncRedisCache(_RedisCacheBase):
-    """
-    Cache that uses Redis as a backend. Allows to use an
-    async `redis.asyncio.Redis` client.
-    """
-
-    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
-        """
-        Initialize an instance of AsyncRedisCache.
-
-        This method initializes an object with Redis caching capabilities.
-        It takes a `redis_` parameter, which should be an instance of a Redis
-        client class (`redis.asyncio.Redis`), allowing the object
-        to interact with a Redis server for caching purposes.
-
-        Parameters:
-            redis_ (Any): An instance of a Redis client class
-                (`redis.asyncio.Redis`) to be used for caching.
-                This allows the object to communicate with a
-                Redis server for caching operations.
-            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
-                If provided, it sets the time duration for how long cached
-                items will remain valid. If not provided, cached items will not
-                have an automatic expiration.
-        """
-        try:
-            from redis.asyncio import Redis
-        except ImportError:
-            raise ValueError(
-                "Could not import `redis.asyncio` python package. "
-                "Please install it with `pip install redis`."
-            )
-        if not isinstance(redis_, Redis):
-            raise ValueError("Please pass a valid `redis.asyncio.Redis` client.")
-        self.redis = redis_
-        self.ttl = ttl
-
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
-        raise NotImplementedError(
-            "This async Redis cache does not implement `lookup()` method. "
-            "Consider using the async `alookup()` version."
-        )
-
-    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string. Async version."""
-        results = await self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)
-
-    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
-        raise NotImplementedError(
-            "This async Redis cache does not implement `update()` method. "
-            "Consider using the async `aupdate()` version."
-        )
-
-    async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
-    ) -> None:
-        """Update cache based on prompt and llm_string. Async version."""
-        self._ensure_generation_type(return_val)
-        key = self._key(prompt, llm_string)
-
-        async with self.redis.pipeline() as pipe:
-            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-            await pipe.execute()
-
-    def clear(self, **kwargs: Any) -> None:
-        """Clear cache. If `asynchronous` is True, flush asynchronously."""
-        raise NotImplementedError(
-            "This async Redis cache does not implement `clear()` method. "
-            "Consider using the async `aclear()` version."
-        )
-
-    async def aclear(self, **kwargs: Any) -> None:
-        """
-        Clear cache. If `asynchronous` is True, flush asynchronously.
-        Async version.
-        """
-        asynchronous = kwargs.get("asynchronous", False)
-        await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
 
 class RedisSemanticCache(BaseCache):
