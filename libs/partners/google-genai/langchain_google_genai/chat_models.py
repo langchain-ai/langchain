@@ -476,12 +476,12 @@ def _response_to_result(
             msg = chat_msg_t(
                 content=parts_content,
                 role=content.role,
-                additional_kwargs=additional_kwargs,
+                additional_kwargs=additional_kwargs or {},
             )
         else:
             msg = role_map[content.role](
                 content=parts_content,
-                additional_kwargs=additional_kwargs,
+                additional_kwargs=additional_kwargs or {},
             )
         generation_info = {}
         if candidate.finish_reason:
