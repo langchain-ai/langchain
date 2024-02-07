@@ -9,7 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
-loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
+loader = WebBaseLoader("https://clickhouse.com/blog/powering-featurestores-with-clickhouse")
 data = loader.load()
 
 # Split
@@ -18,7 +18,7 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
 
 # Add to vectorDB
-settings = ClickhouseSettings(table="clickhouse_vector_search_example", index_type="annoy_indx")
+settings = ClickhouseSettings(table="clickhouse_vector_search_example")
 vectorstore = Clickhouse.from_documents(
     documents=all_splits,
     embedding=GPT4AllEmbeddings(),

@@ -37,6 +37,10 @@ Once you've done that, connect to the server:
 And then create the following table:
 
 ```sql
+SET allow_experimental_object_type=1;
+```
+
+```sql
 CREATE TABLE IF NOT EXISTS default.clickhouse_vector_search_example
 (
     `id` Nullable(String),
@@ -47,7 +51,7 @@ CREATE TABLE IF NOT EXISTS default.clickhouse_vector_search_example
     CONSTRAINT cons_vec_len CHECK length(embedding) = 384
 )
 ENGINE = MergeTree
-ORDER BY uuid
+ORDER BY uuid;
 ```
 
 ## Usage
