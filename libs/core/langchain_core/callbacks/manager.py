@@ -17,7 +17,6 @@ from typing import (
     Dict,
     Generator,
     List,
-    Mapping,
     Optional,
     Sequence,
     Type,
