@@ -22,7 +22,7 @@ tavily_tool = TavilySearchResults(api_wrapper=search, description=description)
 
 tools = [tavily_tool]
 
-llm = ChatGoogleGenerativeAI(temperature=0, model_name="gemini-pro")
+llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-pro")
 
 prompt = ChatPromptTemplate.from_messages(
     [
