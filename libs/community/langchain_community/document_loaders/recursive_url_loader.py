@@ -191,7 +191,7 @@ class RecursiveUrlLoader(BaseLoader):
             pattern=self.link_regex,
             prevent_outside=self.prevent_outside,
             exclude_prefixes=self.exclude_dirs,
-            continue_on_failure=self.continue_on_failure
+            continue_on_failure=self.continue_on_failure,
         )
         for link in sub_links:
             # Check all unvisited links
@@ -272,7 +272,7 @@ class RecursiveUrlLoader(BaseLoader):
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
                 exclude_prefixes=self.exclude_dirs,
-                continue_on_failure=self.continue_on_failure
+                continue_on_failure=self.continue_on_failure,
             )
 
             # Recursively call the function to get the children of the children
