@@ -182,7 +182,6 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Get minimum versions
-        if: ${{ !startsWith(inputs.working-directory, 'libs/core') }}
         working-directory: ${{ inputs.working-directory }}
         id: min-version
         run: |
@@ -192,7 +191,7 @@ jobs:
           echo "min-versions=$min_versions"
 
       - name: Run unit tests with minimum dependency versions
-        if: ${{ !startsWith(inputs.working-directory, 'libs/core') }}
+        if: ${{ steps.min-version.outputs.min-versions != '' }}
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
