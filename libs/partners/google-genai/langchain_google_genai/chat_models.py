@@ -416,7 +416,7 @@ def _convert_fc_type(fc: Dict) -> Dict:
 
 def _parts_to_content(
     parts: List[genai.types.PartType],
-) -> Union[str, List[Union[Dict[Any, Any], str]]]:
+) -> Tuple[Union[str, List[Union[Dict[Any, Any], str]]], Optional[Dict]]:
     """Converts a list of Gemini API Part objects into a list of LangChain messages."""
     function_call_resp = _retrieve_function_call_response(parts)
 
