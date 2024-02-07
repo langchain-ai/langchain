@@ -1498,18 +1498,26 @@ def calculate_serialized_size(data: Dict) -> int:
 
 
 class JsonChunks(list):
-    def to_string(self):
+    def to_string(self) -> List[str]:
         """Convert chunks to a list of strings."""
         return [json.dumps(chunk) for chunk in self]
 
-    def to_documents(self, **metadata):
-        return [Document(page_content=chunk_str, metadata=metadata) for chunk_str in self.to_string()]
+    def to_documents(self, **metadata: Any) -> List[Document]:
+        return [
+            Document(page_content=chunk_str, metadata=metadata)
+            for chunk_str in self.to_string()
+        ]
 
-    def __repr__(self):
-        return json.dumps({"JSON Chunks": {
-            "chunks": len(self),
-            "sizes": [calculate_serialized_size(chunk) for chunk in self]}
-        }, indent=4)
+    def __repr__(self) -> str:
+        return json.dumps(
+            {
+                "JSON Chunks": {
+                    "chunks": len(self),
+                    "sizes": [calculate_serialized_size(chunk) for chunk in self],
+                }
+            },
+            indent=4,
+        )
 
 
 class RecursiveJsonTextSplitter:
@@ -1520,37 +1528,54 @@ class RecursiveJsonTextSplitter:
      the key:value relationships are preserved
 
     """
-    def __init__(self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None):
+
+    def __init__(
+        self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
+    ):
         self.max_chunk_size = max_chunk_size
-        self.min_chunk_size = min_chunk_size if min_chunk_size is not None else max(max_chunk_size - 200, 50)
+        self.min_chunk_size = (
+            min_chunk_size
+            if min_chunk_size is not None
+            else max(max_chunk_size - 200, 50)
+        )
         self._chunks = JsonChunks()
 
-    def __repr__(self):
-        return json.dumps({"JSON Splitter": {
-            "Max size": self.max_chunk_size,
-            "Min size": self.min_chunk_size,
-            "Output": [calculate_serialized_size(chunk) for chunk in self._chunks]
-        }}, indent=4)
+    def __repr__(self) -> str:
+        return json.dumps(
+            {
+                "JSON Splitter": {
+                    "Max size": self.max_chunk_size,
+                    "Min size": self.min_chunk_size,
+                    "Output": [
+                        calculate_serialized_size(chunk) for chunk in self._chunks
+                    ],
+                }
+            },
+            indent=4,
+        )
 
     @property
-    def chunks(self):
-        """ Public getter for the chunks """
+    def chunks(self) -> JsonChunks:
+        """Public getter for the chunks"""
         return self._chunks
 
-    def _list_to_dict_preprocessing(self, data):
+    def _list_to_dict_preprocessing(self, data: Any) -> Any:
         if isinstance(data, dict):
             # Process each key-value pair in the dictionary
             return {k: self._list_to_dict_preprocessing(v) for k, v in data.items()}
         elif isinstance(data, list):
             # Convert the list to a dictionary with index-based keys
-            return {str(i): self._list_to_dict_preprocessing(item) for i, item in enumerate(data)}
+            return {
+                str(i): self._list_to_dict_preprocessing(item)
+                for i, item in enumerate(data)
+            }
         else:
             # Base case: the item is neither a dict nor a list, so return it unchanged
             return data
 
-    def _json_split(self, data: Dict[str, Any], current_path: List[str] = []):
+    def _json_split(self, data: Dict[str, Any], current_path: List[str] = []) -> None:
         """
-        Split json (python dictionary) into maximum size dictionaries while preserving structure.
+        Split json (python dictionary) into max size dicts while preserving structure.
         """
 
         if isinstance(data, dict):
@@ -1575,13 +1600,15 @@ class RecursiveJsonTextSplitter:
             self._set_nested_dict(self._chunks[-1], current_path, data)
 
     @staticmethod
-    def _set_nested_dict(d: Dict, path: List[str], value: Any):
+    def _set_nested_dict(d: Dict, path: List[str], value: Any) -> None:
         """Set a value in a nested dictionary based on the given path."""
         for key in path[:-1]:
             d = d.setdefault(key, {})
         d[path[-1]] = value
 
-    def split(self, json_data: Dict[str, Any], convert_lists: bool = False):
+    def split(
+        self, json_data: Dict[str, Any], convert_lists: bool = False
+    ) -> JsonChunks:
         """
         Initialize the splitting process.
 
