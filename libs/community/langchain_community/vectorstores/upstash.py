@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -16,7 +15,7 @@ from langchain_community.vectorstores.utils import (
 )
 
 if TYPE_CHECKING:
-    from upstash_vector import AsyncIndex
+    from upstash_vector import AsyncIndex, Index
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +44,8 @@ class UpstashVectorStore(VectorStore):
     def __init__(
         self,
         text_key: Optional[str] = "text",
-        index: Optional[AsyncIndex] = None,
+        index: Optional[Index] = None,
+        async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
         embedding: Optional[Embeddings] = None,
@@ -59,7 +59,9 @@ class UpstashVectorStore(VectorStore):
 
         Args:
             text_key: Key to store the text in metadata.
-            index: UpstashVector AsyncIndex object.
+            index: UpstashVector Index object.
+            async_index: UpstashVector AsyncIndex object, provide only if async
+            functions are needed
             index_url: URL of the UpstashVector index.
             index_token: Token of the UpstashVector index.
             embedding: Embeddings object.
@@ -76,10 +78,19 @@ class UpstashVectorStore(VectorStore):
                     index_url="...",
                     index_token="..."
                 )
+
+                # With an existing index
+                from upstash_vector import Index
+
+                index = Index(url="...", token="...")
+                vectorstore = UpstashVectorStore(
+                    embedding=embeddings,
+                    index=index
+                )
         """
 
         try:
-            from upstash_vector import AsyncIndex
+            from upstash_vector import AsyncIndex, Index
         except ImportError:
             raise ImportError(
                 "Could not import upstash_vector python package. "
@@ -87,20 +98,32 @@ class UpstashVectorStore(VectorStore):
             )
 
         if index:
-            if not isinstance(index, AsyncIndex):
+            if not isinstance(index, Index):
                 raise ValueError(
                     "Passed index object should be an "
-                    "instance of upstash_vector.AsyncIndex, "
+                    "instance of upstash_vector.Index, "
                     f"got {type(index)}"
                 )
             self._index = index
             logger.info("Using the index passed as parameter")
-        elif index_url and index_token:
-            self._index = AsyncIndex(url=index_url, token=index_token)
+        if async_index:
+            if not isinstance(async_index, Index):
+                raise ValueError(
+                    "Passed index object should be an "
+                    "instance of upstash_vector.AsyncIndex, "
+                    f"got {type(async_index)}"
+                )
+            self._async_index = async_index
+            logger.info("Using the async index passed as parameter")
+
+        if index_url and index_token:
+            self._index = Index(url=index_url, token=index_token)
+            self._async_index = AsyncIndex(url=index_url, token=index_token)
             logger.info(
                 "Created index from the index_url and index_token parameters")
-        else:
-            self._index = AsyncIndex.from_env()
+        elif not index and not async_index:
+            self._index = Index.from_env()
+            self._async_index = AsyncIndex.from_env()
             logger.info("Created index using environment variables")
 
         self._embeddings = embedding
@@ -126,7 +149,6 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
-        **kwargs: Any,
     ) -> List[str]:
         """
         Get the embeddings for the texts and add them to the vectorstore.
@@ -165,13 +187,10 @@ class UpstashVectorStore(VectorStore):
             chunk_metadatas = metadatas[i: i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
-            async def upsert_all():
-                for batch in batch_iterate(
-                    batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
-                ):
-                    await self._index.upsert(vectors=batch)
-
-            asyncio.run(upsert_all())
+            for batch in batch_iterate(
+                batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
+            ):
+                self._index.upsert(vectors=batch)
 
         return ids
 
@@ -186,7 +205,6 @@ class UpstashVectorStore(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Dictionary of argument(s) to filter on metadata
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -195,22 +213,66 @@ class UpstashVectorStore(VectorStore):
             self._embed_query(query), k=k
         )
 
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+    ) -> List[Tuple[Document, float]]:
+        """Retrieve texts most similar to query and 
+        convert the result to `Document` objects.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
+        return await self.asimilarity_search_by_vector_with_score(
+            self._embed_query(query), k=k
+        )
+
     def similarity_search_by_vector_with_score(
         self,
         embedding: List[float],
-        *,
         k: int = 4,
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
         docs = []
-        results = asyncio.run(
-            self._index.query(
-                vector=embedding,
-                top_k=k,
-                include_metadata=True,
-            )
+        results = self._index.query(
+            vector=embedding,
+            top_k=k,
+            include_metadata=True,
         )
+
+        for res in results:
+            metadata = res.metadata
+            if metadata and self._text_key in metadata:
+                text = metadata.pop(self._text_key)
+                score = res.score
+                docs.append(
+                    (Document(page_content=text, metadata=metadata), score))
+            else:
+                logger.warning(
+                    f"Found document with no `{self._text_key}` key. Skipping."
+                )
+        return docs
+
+    async def asimilarity_search_by_vector_with_score(
+        self,
+        embedding: List[float],
+        k: int = 4,
+    ) -> List[Tuple[Document, float]]:
+        """Return texts whose embedding is closest to the given embedding"""
+
+        docs = []
+        results = await self._async_index.query(
+            vector=embedding,
+            top_k=k,
+            include_metadata=True,
+        )
+
         for res in results:
             metadata = res.metadata
             if metadata and self._text_key in metadata:
@@ -228,20 +290,66 @@ class UpstashVectorStore(VectorStore):
         self,
         query: str,
         k: int = 4,
-        **kwargs: Any,
     ) -> List[Document]:
         """Return documents most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Dictionary of argument(s) to filter on metadata
 
         Returns:
             List of Documents most similar to the query and score for each
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, k=k, **kwargs)
+            query, k=k)
+        return [doc for doc, _ in docs_and_scores]
+
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+    ) -> List[Document]:
+        """Return documents most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query
+        """
+        docs_and_scores = await self.asimilarity_search_with_score(
+            query, k=k)
+        return [doc for doc, _ in docs_and_scores]
+
+    def similarity_search_by_vector(
+            self, embedding: List[float], k: int = 4) -> List[Document]:
+        """Return documents closest to the given embedding.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query
+        """
+        docs_and_scores = self.similarity_search_by_vector_with_score(
+            embedding, k=k)
+        return [doc for doc, _ in docs_and_scores]
+
+    async def asimilarity_search_by_vector(
+            self, embedding: List[float], k: int = 4) -> List[Document]:
+        """Return documents closest to the given embedding.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query
+        """
+        docs_and_scores = await self.asimilarity_search_by_vector_with_score(
+            embedding, k=k)
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
@@ -267,13 +375,53 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        results = asyncio.run(
-            self._index.query(
-                vector=embedding,
-                top_k=fetch_k,
-                include_vectors=True,
-                include_metadata=True,
-            )
+        results = self._index.query(
+            vector=embedding,
+            top_k=fetch_k,
+            include_vectors=True,
+            include_metadata=True,
+        )
+        mmr_selected = maximal_marginal_relevance(
+            np.array([embedding], dtype=np.float32),
+            [item.vector for item in results],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        selected = [results[i].metadata for i in mmr_selected]
+        return [
+            Document(page_content=metadata.pop(
+                (self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
+            for metadata in selected
+        ]
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        results = await self._async_index.query(
+            vector=embedding,
+            top_k=fetch_k,
+            include_vectors=True,
+            include_metadata=True,
         )
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
@@ -316,6 +464,34 @@ class UpstashVectorStore(VectorStore):
             embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult
         )
 
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = self._embed_query(query)
+        return await self.amax_marginal_relevance_search_by_vector(
+            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult
+        )
+
     @classmethod
     def from_texts(
         cls,
@@ -326,7 +502,8 @@ class UpstashVectorStore(VectorStore):
         embedding_chunk_size: int = 1000,
         batch_size: int = 32,
         text_key: str = "text",
-        index: Optional[AsyncIndex] = None,
+        index: Optional[Index] = None,
+        async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
     ) -> UpstashVectorStore:
@@ -347,6 +524,7 @@ class UpstashVectorStore(VectorStore):
             embedding=embedding,
             text_key=text_key,
             index=index,
+            async_index=async_index,
             index_url=index_url,
             index_token=index_token,
         )
@@ -380,6 +558,31 @@ class UpstashVectorStore(VectorStore):
         elif ids is not None:
             for batch in batch_iterate(batch_size, ids):
                 self._index.delete(ids=batch)
+        else:
+            raise ValueError("Either ids or delete_all should be provided")
+
+        return None
+
+    async def adelete(
+        self,
+        ids: Optional[List[str]] = None,
+        delete_all: Optional[bool] = None,
+        batch_size=1000,
+    ) -> None:
+        """Delete by vector IDs
+
+        Args:
+            ids: List of ids to delete.
+            delete_all: Delete all vectors in the index.
+            batch_size: Batch size to use when deleting the embeddings.
+            Upstash supports at max 1000 deletions per request.
+        """
+
+        if delete_all:
+            await self._async_index.reset()
+        elif ids is not None:
+            for batch in batch_iterate(batch_size, ids):
+                await self._async_index.delete(ids=batch)
         else:
             raise ValueError("Either ids or delete_all should be provided")
 
