@@ -35,6 +35,7 @@ langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
+langchain-pinecone = { path = "libs/partners/pinecone", develop = true }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -46,6 +47,7 @@ langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
+langchain-pinecone = { path = "libs/partners/pinecone", develop = true }
 
 [tool.poetry.group.test.dependencies]
 
