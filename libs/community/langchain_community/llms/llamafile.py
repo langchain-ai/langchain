@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from io import StringIO
-from typing import Any, Dict, List, Optional, Iterator
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
@@ -85,8 +85,7 @@ class Llamafile(LLM):
             "verbose",
         ]
         attrs = [
-            k for k in get_pydantic_field_names(self.__class__)
-            if k not in ignore_keys
+            k for k in get_pydantic_field_names(self.__class__) if k not in ignore_keys
         ]
         return attrs
 
@@ -98,11 +97,8 @@ class Llamafile(LLM):
         return params
 
     def _get_parameters(
-            self,
-            stop: Optional[List[str]] = None,
-            **kwargs
+        self, stop: Optional[List[str]] = None, **kwargs
     ) -> Dict[str, Any]:
-
         params = self._default_params
 
         # Only update keys that are already present in the default config.
@@ -121,11 +117,11 @@ class Llamafile(LLM):
         return params
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Request prompt completion from the llamafile server and return the
         output.
@@ -143,13 +139,9 @@ class Llamafile(LLM):
         """
 
         if self.stream:
-
             with StringIO() as buff:
                 for chunk in self._stream(
-                        prompt,
-                        stop=stop,
-                        run_manager=run_manager,
-                        **kwargs
+                    prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
                     buff.write(chunk.text)
 
@@ -159,10 +151,7 @@ class Llamafile(LLM):
 
         else:
             params = self._get_parameters(stop=stop, **kwargs)
-            payload = {
-                "prompt": prompt,
-                **params
-            }
+            payload = {"prompt": prompt, **params}
 
             try:
                 response = requests.post(
@@ -187,11 +176,11 @@ class Llamafile(LLM):
             return text
 
     def _stream(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         """Yields results objects as they are generated in real time.
 
@@ -228,10 +217,7 @@ class Llamafile(LLM):
         if "stream" not in params:
             params["stream"] = True
 
-        payload = {
-            "prompt": prompt,
-            **params
-        }
+        payload = {"prompt": prompt, **params}
 
         try:
             response = requests.post(
@@ -241,7 +227,7 @@ class Llamafile(LLM):
                 },
                 json=payload,
                 stream=True,
-                timeout=self.response_timeout
+                timeout=self.response_timeout,
             )
         except requests.exceptions.ConnectionError:
             raise requests.exceptions.ConnectionError(
