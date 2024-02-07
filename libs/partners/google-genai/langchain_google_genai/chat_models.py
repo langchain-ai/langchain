@@ -709,10 +709,8 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         **kwargs: Any,
     ) -> Tuple[Dict[str, Any], genai.ChatSession, genai.types.ContentDict]:
         cli = self.client
-        if "functions" in kwargs:
-            functions = kwargs["functions"]
-            del kwargs["functions"]
-
+        functions = kwargs.pop("functions", None)
+        if functions:
             tools = _convert_function_call_req(functions)
             cli = genai.GenerativeModel(model_name=self.model, tools=tools)
 
