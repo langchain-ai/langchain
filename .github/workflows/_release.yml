@@ -20,8 +20,8 @@ env:
 
 jobs:
   build:
-#    if: github.ref == 'refs/heads/master'
-#    environment: Scheduled testing
+    if: github.ref == 'refs/heads/master'
+    environment: Scheduled testing
     runs-on: ubuntu-latest
 
     outputs:
