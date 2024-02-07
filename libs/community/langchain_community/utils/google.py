@@ -19,11 +19,11 @@ def create_retry_decorator(
 ) -> Callable[[Any], Any]:
     """Creates a retry decorator for Vertex / Palm LLMs."""
     from google.api_core.exceptions import (
-    Aborted,
-    DeadlineExceeded,
-    GoogleAPIError,
-    ResourceExhausted,
-    ServiceUnavailable,
+        Aborted,
+        DeadlineExceeded,
+        GoogleAPIError,
+        ResourceExhausted,
+        ServiceUnavailable,
     )
 
     errors = [
