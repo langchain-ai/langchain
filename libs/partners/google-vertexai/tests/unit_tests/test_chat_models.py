@@ -187,7 +187,7 @@ def test_default_params_gemini() -> None:
             StubGeminiResponse(
                 text="Goodbye",
                 content=Mock(parts=[Mock(function_call=None)]),
-                citation_metadata=Mock(),
+                citation_metadata=None,
             )
         ]
         mock_chat = MagicMock()
