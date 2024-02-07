@@ -4,15 +4,9 @@ import os
 import random
 import string
 import uuid
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from langchain_core.env import get_runtime_environment
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    GenerationChunk,
-    LLMResult,
-)
 from langchain_community.callbacks.utils import (
     flatten_dict,
 )
