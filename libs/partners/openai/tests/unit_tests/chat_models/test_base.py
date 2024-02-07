@@ -118,3 +118,19 @@ async def test_openai_apredict(mock_completion: dict) -> None:
         res = llm.predict("bar")
         assert res == "Bar Baz"
     assert completed
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "gpt-3.5-turbo",
+        "gpt-4",
+        "gpt-3.5-0125",
+        "gpt-4-0125-preview",
+        "gpt-4-turbo-preview",
+        "gpt-4-vision-preview",
+    ],
+)
+def test__get_encoding_model(model: str) -> None:
+    ChatOpenAI(model=model)._get_encoding_model()
+    return

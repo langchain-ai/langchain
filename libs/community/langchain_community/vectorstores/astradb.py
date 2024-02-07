@@ -140,7 +140,7 @@ class AstraDB(VectorStore):
                     if isinstance(v, list):
                         metadata_filter[k] = [AstraDB._filter_to_metadata(f) for f in v]
                     else:
-                        metadata_filter[k] = AstraDB._filter_to_metadata(v)
+                        metadata_filter[k] = AstraDB._filter_to_metadata(v)  # type: ignore[assignment]
                 else:
                     metadata_filter[f"metadata.{k}"] = v
 
@@ -253,13 +253,13 @@ class AstraDB(VectorStore):
             else:
                 self.clear()
 
-    def _ensure_astra_db_client(self):
+    def _ensure_astra_db_client(self):  # type: ignore[no-untyped-def]
         if not self.astra_db:
             raise ValueError("Missing AstraDB client")
 
     async def _setup_db(self, pre_delete_collection: bool) -> None:
         if pre_delete_collection:
-            await self.async_astra_db.delete_collection(
+            await self.async_astra_db.delete_collection(  # type: ignore[union-attr]
                 collection_name=self.collection_name,
             )
         await self._aprovision_collection()
@@ -282,7 +282,7 @@ class AstraDB(VectorStore):
         Internal-usage method, no object members are set,
         other than working on the underlying actual storage.
         """
-        self.astra_db.create_collection(
+        self.astra_db.create_collection(  # type: ignore[union-attr]
             dimension=self._get_embedding_dimension(),
             collection_name=self.collection_name,
             metric=self.metric,
@@ -295,7 +295,7 @@ class AstraDB(VectorStore):
         Internal-usage method, no object members are set,
         other than working on the underlying actual storage.
         """
-        await self.async_astra_db.create_collection(
+        await self.async_astra_db.create_collection(  # type: ignore[union-attr]
             dimension=self._get_embedding_dimension(),
             collection_name=self.collection_name,
             metric=self.metric,
@@ -328,7 +328,7 @@ class AstraDB(VectorStore):
         await self._ensure_db_setup()
         if not self.async_astra_db:
             await run_in_executor(None, self.clear)
-        await self.async_collection.delete_many({})
+        await self.async_collection.delete_many({})  # type: ignore[union-attr]
 
     def delete_by_document_id(self, document_id: str) -> bool:
         """
@@ -336,7 +336,7 @@ class AstraDB(VectorStore):
         Return True if a document has indeed been deleted, False if ID not found.
         """
         self._ensure_astra_db_client()
-        deletion_response = self.collection.delete_one(document_id)
+        deletion_response = self.collection.delete_one(document_id)  # type: ignore[union-attr]
         return ((deletion_response or {}).get("status") or {}).get(
             "deletedCount", 0
         ) == 1
@@ -434,7 +434,7 @@ class AstraDB(VectorStore):
         Use with caution.
         """
         self._ensure_astra_db_client()
-        self.astra_db.delete_collection(
+        self.astra_db.delete_collection(  # type: ignore[union-attr]
             collection_name=self.collection_name,
         )
 
@@ -448,7 +448,7 @@ class AstraDB(VectorStore):
         await self._ensure_db_setup()
         if not self.async_astra_db:
             await run_in_executor(None, self.delete_collection)
-        await self.async_astra_db.delete_collection(
+        await self.async_astra_db.delete_collection(  # type: ignore[union-attr]
             collection_name=self.collection_name,
         )
 
@@ -571,7 +571,7 @@ class AstraDB(VectorStore):
         )
 
         def _handle_batch(document_batch: List[DocDict]) -> List[str]:
-            im_result = self.collection.insert_many(
+            im_result = self.collection.insert_many(  # type: ignore[union-attr]
                 documents=document_batch,
                 options={"ordered": False},
                 partial_failures_allowed=True,
@@ -581,7 +581,7 @@ class AstraDB(VectorStore):
             )
 
             def _handle_missing_document(missing_document: DocDict) -> str:
-                replacement_result = self.collection.find_one_and_replace(
+                replacement_result = self.collection.find_one_and_replace(  # type: ignore[union-attr]
                     filter={"_id": missing_document["_id"]},
                     replacement=missing_document,
                 )
@@ -672,7 +672,7 @@ class AstraDB(VectorStore):
         )
 
         async def _handle_batch(document_batch: List[DocDict]) -> List[str]:
-            im_result = await self.async_collection.insert_many(
+            im_result = await self.async_collection.insert_many(  # type: ignore[union-attr]
                 documents=document_batch,
                 options={"ordered": False},
                 partial_failures_allowed=True,
@@ -682,7 +682,7 @@ class AstraDB(VectorStore):
             )
 
             async def _handle_missing_document(missing_document: DocDict) -> str:
-                replacement_result = await self.async_collection.find_one_and_replace(
+                replacement_result = await self.async_collection.find_one_and_replace(  # type: ignore[union-attr]
                     filter={"_id": missing_document["_id"]},
                     replacement=missing_document,
                 )
@@ -729,7 +729,7 @@ class AstraDB(VectorStore):
         metadata_parameter = self._filter_to_metadata(filter)
         #
         hits = list(
-            self.collection.paginated_find(
+            self.collection.paginated_find(  # type: ignore[union-attr]
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": k, "includeSimilarity": True},
@@ -771,7 +771,7 @@ class AstraDB(VectorStore):
         if not self.async_collection:
             return await run_in_executor(
                 None,
-                self.asimilarity_search_with_score_id_by_vector,
+                self.asimilarity_search_with_score_id_by_vector,  # type: ignore[arg-type]
                 embedding,
                 k,
                 filter,
@@ -962,7 +962,7 @@ class AstraDB(VectorStore):
         )
 
     @staticmethod
-    def _get_mmr_hits(embedding, k, lambda_mult, prefetch_hits):
+    def _get_mmr_hits(embedding, k, lambda_mult, prefetch_hits):  # type: ignore[no-untyped-def]
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
             [prefetch_hit["$vector"] for prefetch_hit in prefetch_hits],
@@ -1008,7 +1008,7 @@ class AstraDB(VectorStore):
         metadata_parameter = self._filter_to_metadata(filter)
 
         prefetch_hits = list(
-            self.collection.paginated_find(
+            self.collection.paginated_find(  # type: ignore[union-attr]
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": fetch_k, "includeSimilarity": True},
@@ -1228,7 +1228,7 @@ class AstraDB(VectorStore):
             batch_concurrency=kwargs.get("batch_concurrency"),
             overwrite_concurrency=kwargs.get("overwrite_concurrency"),
         )
-        return astra_db_store
+        return astra_db_store  # type: ignore[return-value]
 
     @classmethod
     async def afrom_texts(
@@ -1263,7 +1263,7 @@ class AstraDB(VectorStore):
             batch_concurrency=kwargs.get("batch_concurrency"),
             overwrite_concurrency=kwargs.get("overwrite_concurrency"),
         )
-        return astra_db_store
+        return astra_db_store  # type: ignore[return-value]
 
     @classmethod
     def from_documents(

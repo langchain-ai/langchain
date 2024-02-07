@@ -272,6 +272,24 @@ def _import_nasa() -> Any:
     return NasaAPIWrapper
 
 
+def _import_nvidia_riva_asr() -> Any:
+    from langchain_community.utilities.nvidia_riva import RivaASR
+
+    return RivaASR
+
+
+def _import_nvidia_riva_tts() -> Any:
+    from langchain_community.utilities.nvidia_riva import RivaTTS
+
+    return RivaTTS
+
+
+def _import_nvidia_riva_stream() -> Any:
+    from langchain_community.utilities.nvidia_riva import AudioStream
+
+    return AudioStream
+
+
 def __getattr__(name: str) -> Any:
     if name == "AlphaVantageAPIWrapper":
         return _import_alpha_vantage()
@@ -321,6 +339,12 @@ def __getattr__(name: str) -> Any:
         return _import_metaphor_search()
     elif name == "NasaAPIWrapper":
         return _import_nasa()
+    elif name == "NVIDIARivaASR":
+        return _import_nvidia_riva_asr()
+    elif name == "NVIDIARivaStream":
+        return _import_nvidia_riva_stream()
+    elif name == "NVIDIARivaTTS":
+        return _import_nvidia_riva_tts()
     elif name == "OpenWeatherMapAPIWrapper":
         return _import_openweathermap()
     elif name == "OutlineAPIWrapper":
@@ -388,6 +412,9 @@ __all__ = [
     "MerriamWebsterAPIWrapper",
     "MetaphorSearchAPIWrapper",
     "NasaAPIWrapper",
+    "NVIDIARivaASR",
+    "NVIDIARivaStream",
+    "NVIDIARivaTTS",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",
     "Portkey",
