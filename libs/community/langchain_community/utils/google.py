@@ -3,7 +3,13 @@
 from importlib import metadata
 from typing import Any, Callable, Optional, Union
 
-import google.api_core
+from google.api_core.exceptions import (
+    Aborted,
+    DeadlineExceeded,
+    GoogleAPIError,
+    ResourceExhausted,
+    ServiceUnavailable,
+)
 from google.api_core.gapic_v1.client_info import ClientInfo
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -22,11 +28,11 @@ def create_retry_decorator(
     """Creates a retry decorator for Vertex / Palm LLMs."""
 
     errors = [
-        google.api_core.exceptions.ResourceExhausted,
-        google.api_core.exceptions.ServiceUnavailable,
-        google.api_core.exceptions.Aborted,
-        google.api_core.exceptions.DeadlineExceeded,
-        google.api_core.exceptions.GoogleAPIError,
+        ResourceExhausted,
+        ServiceUnavailable,
+        Aborted,
+        DeadlineExceeded,
+        GoogleAPIError,
     ]
     decorator = create_base_retry_decorator(
         error_types=errors, max_retries=max_retries, run_manager=run_manager
