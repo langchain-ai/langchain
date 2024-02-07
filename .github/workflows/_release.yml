@@ -182,14 +182,16 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Get minimum versions
-        id: check-version
+        id: min-version
         run: |
           poetry run pip install packaging
-          echo "min-versions=$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml)" >> $GITHUB_OUTPUT
+          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml)"
+          echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
+          echo "min-versions=$min_versions"
 
       - name: Run unit tests with minimum dependency versions
         env:
-          MIN_VERSIONS: ${{ steps.check-version.outputs.min-versions }}
+          MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
           poetry run pip install $MIN_VERSIONS
           make tests
