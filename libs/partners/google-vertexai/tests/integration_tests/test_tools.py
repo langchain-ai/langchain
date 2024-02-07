@@ -44,11 +44,11 @@ class _TestOutputParser(BaseOutputParser):
 
 
 def test_tools() -> None:
-    from langchain.agents import AgentExecutor  # type: ignore[import-not-found]
-    from langchain.agents.format_scratchpad import (  # type: ignore[import-not-found]
+    from langchain.agents import AgentExecutor
+    from langchain.agents.format_scratchpad import (
         format_to_openai_function_messages,
     )
-    from langchain.chains import LLMMathChain  # type: ignore[import-not-found]
+    from langchain.chains import LLMMathChain
 
     llm = ChatVertexAI(model_name="gemini-pro")
     math_chain = LLMMathChain.from_llm(llm=llm)
@@ -78,10 +78,9 @@ def test_tools() -> None:
         | llm_with_tools
         | _TestOutputParser()
     )
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)  # type: ignore
 
     response = agent_executor.invoke({"input": "What is 6 raised to the 0.43 power?"})
-    print(response)
     assert isinstance(response, dict)
     assert response["input"] == "What is 6 raised to the 0.43 power?"
 
@@ -106,7 +105,6 @@ def test_stream() -> None:
     ]
     response = list(llm.stream("What is 6 raised to the 0.43 power?", functions=tools))
     assert len(response) == 1
-    # for chunk in response:
     assert isinstance(response[0], AIMessageChunk)
     assert "function_call" in response[0].additional_kwargs
 
@@ -115,7 +113,7 @@ def test_multiple_tools() -> None:
     from langchain.agents import AgentExecutor
     from langchain.agents.format_scratchpad import format_to_openai_function_messages
     from langchain.chains import LLMMathChain
-    from langchain.utilities import (  # type: ignore[import-not-found]
+    from langchain.utilities import (
         GoogleSearchAPIWrapper,
     )
 
@@ -160,7 +158,7 @@ def test_multiple_tools() -> None:
         | llm_with_tools
         | _TestOutputParser()
     )
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)  # type: ignore
 
     question = (
         "Who is Leo DiCaprio's girlfriend? What is her "

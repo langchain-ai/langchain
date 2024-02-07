@@ -31,6 +31,12 @@ from vertexai.preview.generative_models import (  # type: ignore[import-untyped]
     Image,
 )
 from vertexai.preview.language_models import (  # type: ignore[import-untyped]
+    ChatModel as PreviewChatModel,
+)
+from vertexai.preview.language_models import (
+    CodeChatModel as PreviewCodeChatModel,
+)
+from vertexai.preview.language_models import (
     CodeGenerationModel as PreviewCodeGenerationModel,
 )
 from vertexai.preview.language_models import (
@@ -250,10 +256,13 @@ class _VertexAICommon(_VertexAIBase):
         Returns:
             The integer number of tokens in the text.
         """
-        try:
+        is_palm_chat_model = isinstance(
+            self.client_preview, PreviewChatModel
+        ) or isinstance(self.client_preview, PreviewCodeChatModel)
+        if is_palm_chat_model:
+            result = self.client_preview.start_chat().count_tokens(text)
+        else:
             result = self.client_preview.count_tokens([text])
-        except AttributeError:
-            raise NotImplementedError(f"Not yet implemented for {self.model_name}")
 
         return result.total_tokens
 

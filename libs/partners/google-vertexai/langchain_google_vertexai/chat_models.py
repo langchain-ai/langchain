@@ -30,6 +30,14 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
+from vertexai.language_models import (  # type: ignore
+    ChatMessage,
+    ChatModel,
+    ChatSession,
+    CodeChatModel,
+    CodeChatSession,
+    InputOutputTextPair,
+)
 from vertexai.preview.generative_models import (  # type: ignore
     Candidate,
     Content,
@@ -38,12 +46,10 @@ from vertexai.preview.generative_models import (  # type: ignore
     Part,
 )
 from vertexai.preview.language_models import (  # type: ignore
-    ChatMessage,
-    ChatModel,
-    ChatSession,
-    CodeChatModel,
-    CodeChatSession,
-    InputOutputTextPair,
+    ChatModel as PreviewChatModel,
+)
+from vertexai.preview.language_models import (
+    CodeChatModel as PreviewCodeChatModel,
 )
 
 from langchain_google_vertexai._utils import (
@@ -322,10 +328,14 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         else:
             if is_codey_model(values["model_name"]):
                 model_cls = CodeChatModel
+                model_cls_preview = PreviewCodeChatModel
             else:
                 model_cls = ChatModel
+                model_cls_preview = PreviewChatModel
             values["client"] = model_cls.from_pretrained(values["model_name"])
-            values["client_preview"] = model_cls.from_pretrained(values["model_name"])
+            values["client_preview"] = model_cls_preview.from_pretrained(
+                values["model_name"]
+            )
         return values
 
     def _generate(
