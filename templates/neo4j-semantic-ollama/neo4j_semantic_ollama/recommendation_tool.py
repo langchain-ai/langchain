@@ -19,9 +19,10 @@ recommendation_query_db_history = """
   // rank and limit recommendations
   WITH u, recommendation, count(*) AS count
   ORDER BY count DESC LIMIT 3
-RETURN 'title:' + recommendation.title 
-      + '\nactors:' + apoc.text.join([(recommendation)<-[:ACTED_IN]-(a) | a.name], ',') +
-     '\ngenre:' + apoc.text.join([(recommendation)-[:IN_GENRE]->(a) | a.name], ',') AS movie
+RETURN 'title:' + recommendation.title + '\nactors:' +
+apoc.text.join([(recommendation)<-[:ACTED_IN]-(a) | a.name], ',') +
+'\ngenre:' + apoc.text.join([(recommendation)-[:IN_GENRE]->(a) | a.name], ',')
+AS movie
 """
 
 recommendation_query_genre = """
@@ -33,9 +34,10 @@ WHERE NOT EXISTS {
 // rank and limit recommendations
 WITH m AS recommendation
 ORDER BY recommendation.imdbRating DESC LIMIT 3
-RETURN 'title:' + recommendation.title 
-      + '\nactors:' + apoc.text.join([(recommendation)<-[:ACTED_IN]-(a) | a.name], ',') +
-     '\ngenre:' + apoc.text.join([(recommendation)-[:IN_GENRE]->(a) | a.name], ',') AS movie
+RETURN 'title:' + recommendation.title + '\nactors:' +
+apoc.text.join([(recommendation)<-[:ACTED_IN]-(a) | a.name], ',') +
+'\ngenre:' + apoc.text.join([(recommendation)-[:IN_GENRE]->(a) | a.name], ',')
+AS movie
 """
 
 
@@ -51,9 +53,10 @@ AND NOT EXISTS {{
 // rank and limit recommendations
 WITH m2 AS recommendation, count(*) AS count
 ORDER BY count DESC LIMIT 3
-RETURN 'title:' + recommendation.title 
-      + '\nactors:' + apoc.text.join([(recommendation)<-[:ACTED_IN]-(a) | a.name], ',') +
-     '\ngenre:' + apoc.text.join([(recommendation)-[:IN_GENRE]->(a) | a.name], ',') AS movie
+RETURN 'title:' + recommendation.title + '\nactors:' +
+apoc.text.join([(recommendation)<-[:ACTED_IN]-(a) | a.name], ',') +
+'\ngenre:' + apoc.text.join([(recommendation)-[:IN_GENRE]->(a) | a.name], ',')
+AS movie
 """
 
 
@@ -73,14 +76,20 @@ def recommend_movie(movie: Optional[str] = None, genre: Optional[str] = None) ->
         # Try to recommend a movie based on the information in the db
         response = graph.query(recommendation_query_db_history, params)
         try:
-            return f'Recommended movies are: {f"###Movie {nl}".join([el["movie"] for el in response])}'
+            return (
+                'Recommended movies are: '
+                f'{f"###Movie {nl}".join([el["movie"] for el in response])}'
+            )
         except Exception:
             return "Can you tell us about some of the movies you liked?"
     if not movie and genre:
         # Recommend top voted movies in the genre the user haven't seen before
         response = graph.query(recommendation_query_genre, params)
         try:
-            return f'Recommended movies are: {f"###Movie {nl}".join([el["movie"] for el in response])}'
+            return (
+                'Recommended movies are: '
+                f'{f"###Movie {nl}".join([el["movie"] for el in response])}'
+            )
         except Exception:
             return "Something went wrong"
 
@@ -91,7 +100,10 @@ def recommend_movie(movie: Optional[str] = None, genre: Optional[str] = None) ->
     query = recommendation_query_movie(bool(genre))
     response = graph.query(query, params)
     try:
-        return f'Recommended movies are: {f"###Movie {nl}".join([el["movie"] for el in response])}'
+        return (
+            'Recommended movies are: '
+            f'{f"###Movie {nl}".join([el["movie"] for el in response])}'
+        )
     except Exception:
         return "Something went wrong"
 

@@ -7,6 +7,11 @@ from langchain.callbacks.manager import (
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools import BaseTool
 
+response = (
+    "Create a final answer that says if they "
+    "have any questions about movies or actors"
+)
+
 
 class SmalltalkInput(BaseModel):
     query: Optional[str] = Field(description="user query")
@@ -23,7 +28,7 @@ class SmalltalkTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return "Create a final answer that says if they have any questions about movies or actors"
+        return response
 
     async def _arun(
         self,
@@ -31,4 +36,4 @@ class SmalltalkTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        return "Create a final answer that says if they have any questions about movies or actors"
+        return response
