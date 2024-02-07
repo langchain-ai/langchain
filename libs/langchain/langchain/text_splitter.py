@@ -1497,67 +1497,17 @@ def calculate_serialized_size(data: Dict) -> int:
     return len(json.dumps(data))
 
 
-class JsonChunks(list):
-    def to_string(self) -> List[str]:
-        """Convert chunks to a list of strings."""
-        return [json.dumps(chunk) for chunk in self]
-
-    def to_documents(self, **metadata: Any) -> List[Document]:
-        return [
-            Document(page_content=chunk_str, metadata=metadata)
-            for chunk_str in self.to_string()
-        ]
-
-    def __repr__(self) -> str:
-        return json.dumps(
-            {
-                "JSON Chunks": {
-                    "chunks": len(self),
-                    "sizes": [calculate_serialized_size(chunk) for chunk in self],
-                }
-            },
-            indent=4,
-        )
-
-
-class RecursiveJsonTextSplitter:
-    """
-    This text splitter splits a json object into smaller json objects
-
-    This is necessary when splitting a nested json object to ensure that
-     the key:value relationships are preserved
-
-    """
-
+class RecursiveJsonSplitter:
     def __init__(
         self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
     ):
+        super().__init__()
         self.max_chunk_size = max_chunk_size
         self.min_chunk_size = (
             min_chunk_size
             if min_chunk_size is not None
             else max(max_chunk_size - 200, 50)
         )
-        self._chunks = JsonChunks()
-
-    def __repr__(self) -> str:
-        return json.dumps(
-            {
-                "JSON Splitter": {
-                    "Max size": self.max_chunk_size,
-                    "Min size": self.min_chunk_size,
-                    "Output": [
-                        calculate_serialized_size(chunk) for chunk in self._chunks
-                    ],
-                }
-            },
-            indent=4,
-        )
-
-    @property
-    def chunks(self) -> JsonChunks:
-        """Public getter for the chunks"""
-        return self._chunks
 
     def _list_to_dict_preprocessing(self, data: Any) -> Any:
         if isinstance(data, dict):
@@ -1573,31 +1523,36 @@ class RecursiveJsonTextSplitter:
             # Base case: the item is neither a dict nor a list, so return it unchanged
             return data
 
-    def _json_split(self, data: Dict[str, Any], current_path: List[str] = []) -> None:
+    def _json_split(
+        self,
+        data: Dict[str, Any],
+        current_path: List[str] = [],
+        chunks: List[Dict] = [{}],
+    ) -> List[Dict]:
         """
-        Split json (python dictionary) into max size dicts while preserving structure.
+        Split json into maximum size dictionaries while preserving structure.
         """
-
         if isinstance(data, dict):
             for key, value in data.items():
                 new_path = current_path + [key]
-                chunk_size = calculate_serialized_size(self._chunks[-1])
+                chunk_size = calculate_serialized_size(chunks[-1])
                 size = calculate_serialized_size({key: value})
                 remaining = self.max_chunk_size - chunk_size
 
                 if size < remaining:
                     # Add item to current chunk
-                    self._set_nested_dict(self._chunks[-1], new_path, value)
+                    self._set_nested_dict(chunks[-1], new_path, value)
                 else:
                     if chunk_size >= self.min_chunk_size:
                         # Chunk is big enough, start a new chunk
-                        self._chunks.append({})
+                        chunks.append({})
 
                     # Iterate
-                    self._json_split(value, new_path)
+                    self._json_split(value, new_path, chunks)
         else:
             # handle single item
-            self._set_nested_dict(self._chunks[-1], current_path, data)
+            self._set_nested_dict(chunks[-1], current_path, data)
+        return chunks
 
     @staticmethod
     def _set_nested_dict(d: Dict, path: List[str], value: Any) -> None:
@@ -1606,24 +1561,45 @@ class RecursiveJsonTextSplitter:
             d = d.setdefault(key, {})
         d[path[-1]] = value
 
-    def split(
-        self, json_data: Dict[str, Any], convert_lists: bool = False
-    ) -> JsonChunks:
-        """
-        Initialize the splitting process.
+    def split_json(
+        self,
+        json_data: Dict[str, Any],
+        convert_lists: bool = False,
+    ) -> List[Dict]:
+        """Splits JSON into a list of JSON chunks"""
 
-        set convert_lists=True to first convert lists to dictionaries
-         with index:item as the key:value pairs
-
-        """
-        self._chunks.clear()  # Clear any existing chunks
-        self._chunks.append({})  # Start with an empty chunk
         if convert_lists:
-            self._json_split(self._list_to_dict_preprocessing(json_data))
+            chunks = self._json_split(self._list_to_dict_preprocessing(json_data))
         else:
-            self._json_split(json_data)
+            chunks = self._json_split(json_data)
 
         # Remove the last chunk if it's empty
-        if not self._chunks[-1]:
-            self._chunks.pop()
-        return self._chunks
+        if not chunks[-1]:
+            chunks.pop()
+        return chunks
+
+    def split_text(
+        self, json_data: Dict[str, Any], convert_lists: bool = False
+    ) -> List[str]:
+        """Splits JSON into a list of JSON formatted strings"""
+
+        chunks = self.split_json(json_data=json_data, convert_lists=convert_lists)
+
+        # Convert to string
+        return [json.dumps(chunk) for chunk in chunks]
+
+    def create_documents(
+        self,
+        texts: List[Dict],
+        convert_lists: bool = False,
+        metadatas: Optional[List[dict]] = None,
+    ) -> List[Document]:
+        """Create documents from a list of json objects (Dict)."""
+        _metadatas = metadatas or [{}] * len(texts)
+        documents = []
+        for i, text in enumerate(texts):
+            for chunk in self.split_text(json_data=text, convert_lists=convert_lists):
+                metadata = copy.deepcopy(_metadatas[i])
+                new_doc = Document(page_content=chunk, metadata=metadata)
+                documents.append(new_doc)
+        return documents

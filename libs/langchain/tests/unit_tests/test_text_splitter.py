@@ -15,7 +15,7 @@ from langchain.text_splitter import (
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
-    RecursiveJsonTextSplitter,
+    RecursiveJsonSplitter,
     TextSplitter,
     Tokenizer,
     split_text_on_tokens,
@@ -1310,7 +1310,7 @@ def test_split_text_on_tokens() -> None:
 def test_split_json() -> None:
     """Test json text splitter"""
     max_chunk = 800
-    splitter = RecursiveJsonTextSplitter(max_chunk_size=max_chunk)
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
 
     def random_val() -> str:
         return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
@@ -1321,9 +1321,32 @@ def test_split_json() -> None:
     }
     test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
 
-    texts = splitter.split(json_data=test_data).to_string()
+    # uses create_docs and split_text
+    docs = splitter.create_documents(texts=[test_data])
 
-    output = [len(text) < max_chunk * 1.05 for text in texts]
-    expected_output = [True for text in texts]
-
+    output = [len(doc.page_content) < max_chunk * 1.05 for doc in docs]
+    expected_output = [True for doc in docs]
     assert output == expected_output
+
+
+def test_split_json_with_lists() -> None:
+    """Test json text splitter with list conversion"""
+    max_chunk = 800
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
+
+    def random_val() -> str:
+        return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
+
+    test_data: Any = {
+        "val0": random_val(),
+        "val1": {f"val1{i}": random_val() for i in range(100)},
+    }
+    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
+
+    test_data_list: Any = {"testPreprocessing": [test_data]}
+
+    # test text splitter
+    texts = splitter.split_text(json_data=test_data)
+    texts_list = splitter.split_text(json_data=test_data_list, convert_lists=True)
+
+    assert len(texts_list) >= len(texts)
