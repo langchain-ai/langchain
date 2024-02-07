@@ -27,6 +27,7 @@ from langchain_core.prompt_values import (
 )
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables.config import ensure_config
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -48,6 +49,14 @@ class BasePromptTemplate(
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
+    """A dictionary of the partial variables the prompt template carries.
+    
+    Partial variables populate the template so that you don't need to
+    pass them in every time you call the prompt."""
+    metadata: Optional[Dict[str, Any]] = None
+    """Metadata to be used for tracing."""
+    tags: Optional[List[str]] = None
+    """Tags to be used for tracing."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -95,6 +104,11 @@ class BasePromptTemplate(
     def invoke(
         self, input: Dict, config: Optional[RunnableConfig] = None
     ) -> PromptValue:
+        config = ensure_config(config)
+        if self.metadata:
+            config["metadata"].update(self.metadata)
+        if self.tags:
+            config["tags"].extend(self.tags)
         return self._call_with_config(
             self._format_prompt_with_error_handling,
             input,
