@@ -370,6 +370,9 @@ def _convert_function_call_req(
 
 
 def _convert_fc_type(fc: Union[BaseTool, Type[BaseModel]]) -> Dict:
+    if isinstance(fc, BaseTool):
+        func = 
+
     # type_: "Type"
     # format_: str
     # description: str
