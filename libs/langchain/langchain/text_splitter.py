@@ -1616,6 +1616,7 @@ class RecursiveJsonTextSplitter:
          with index:item as the key:value pairs
 
         """
+        self._chunks.clear()  # Clear any existing chunks
         self._chunks.append({})  # Start with an empty chunk
         if convert_lists:
             self._json_split(self._list_to_dict_preprocessing(json_data))
