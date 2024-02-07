@@ -4,6 +4,7 @@ import os
 import random
 import string
 import uuid
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from langchain_core.env import get_runtime_environment
@@ -14,6 +15,28 @@ from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
+
+RUN_DETAILS_ORDER = [
+    "session_id",
+    "trace_id",
+    "id",
+    "parent_id",
+    "execution_order",
+    "child_runs",
+    "child_execution_order",
+    "name",
+    "run_type",
+    "start_time",
+    "end_time",
+    "inputs",
+    "outputs",
+    "serialized_object",
+    "events",
+    "extra",
+    "tags",
+    "dotted_order",
+    "error",
+]
 
 
 def import_mlflow() -> Any:
@@ -71,9 +94,9 @@ class MLflowTracer(BaseTracer):
             self.run_id = run.info.run_id
         else:
             self.run_id = run_id
-        self.session_id = uuid.uuid4().hex
+        self.session_id = kwargs.get("session_id", uuid.uuid4().hex)
+        self.run_table = kwargs.get("run_table_name", "langchain_runs.json")
         self.run_dict = {}
-        self.run_table = "langchain_runs.json"
 
     def _convert_type(self, value: Any) -> Any:
         """Convert a value to a type that can be json-serialized."""
@@ -82,9 +105,15 @@ class MLflowTracer(BaseTracer):
                 value[k] = self._convert_type(v)
         elif isinstance(value, list):
             value = [self._convert_type(v) for v in value]
+        elif isinstance(value, datetime):
+            value = value.isoformat()
         elif not isinstance(value, (str, int, float, bool, type(None))):
             value = str(value)
         return value
+
+    def _order_dict_by_list(self, d: Dict, order: list) -> Dict:
+        """Order a dictionary by a list."""
+        return {k: d[k] for k in order if k in d}
 
     def _convert_run_to_dict(self, run: Run) -> dict:
         """Convert a Run object to a dictionary."""
@@ -97,6 +126,8 @@ class MLflowTracer(BaseTracer):
         if run.serialized:
             run_dict["serialized_object"] = flatten_dict(run.serialized)
         run_dict = self._convert_type(run_dict)
+        # order the run dict
+        run_dict = self._order_dict_by_list(run_dict, RUN_DETAILS_ORDER)
         return run_dict
 
     def _log_trace_from_run(self, run_dict: Dict[str, Any]):
@@ -123,6 +154,11 @@ class MLflowTracer(BaseTracer):
         if run.parent_run_id:
             self.run_dict[str(run.id)] = self._convert_run_to_dict(run)
 
+    def _reset(self) -> None:
+        """Reset the tracer."""
+        self.run_dict = {}
+
     def end_run(self):
         """End the run."""
+        self._reset()
         self.mlflow.MlflowClient().set_terminated(self.run_id)
