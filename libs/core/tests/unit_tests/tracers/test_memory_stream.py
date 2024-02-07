@@ -84,8 +84,7 @@ async def test_queue_for_streaming_via_sync_call() -> None:
 
     def sync_call() -> None:
         """Blocking sync call."""
-        with asyncio.Runner() as runner:
-            runner.run(producer())
+        asyncio.run(producer())
 
     async def consumer() -> AsyncIterator[dict]:
         tic = time.time()
