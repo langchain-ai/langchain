@@ -68,7 +68,7 @@ def test_tools() -> None:
     llm_with_tools = llm.bind(functions=tools)
 
     agent: Any = (
-        {  # type: ignore[var-annotated]
+        {
             "input": lambda x: x["input"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]
@@ -115,7 +115,7 @@ def test_multiple_tools() -> None:
     from langchain.agents import AgentExecutor
     from langchain.agents.format_scratchpad import format_to_openai_function_messages
     from langchain.chains import LLMMathChain
-    from langchain.utilities import (  # type: ignore[import-not-found]
+    from langchain.utilities import (
         GoogleSearchAPIWrapper,
     )
 
@@ -149,8 +149,8 @@ def test_multiple_tools() -> None:
     )
     llm_with_tools = llm.bind(functions=tools)
 
-    agent = (
-        {  # type: ignore[var-annotated]
+    agent: Any = (
+        {
             "input": lambda x: x["input"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]

@@ -5,6 +5,7 @@ from importlib import metadata
 from typing import Any, Callable, Dict, Optional, Union
 
 import google.api_core
+import proto  # type: ignore[import-untyped]
 from google.api_core.gapic_v1.client_info import ClientInfo
 from google.cloud import storage
 from langchain_core.callbacks import (
@@ -114,22 +115,7 @@ def get_generation_info(
                 }
                 for rating in candidate.safety_ratings
             ],
-            "citation_metadata": (
-                {
-                    "citations": [
-                        {
-                            "start_index": citation.start_index,
-                            "end_index": citation.end_index,
-                            "publication_date": citation.publication_date,
-                            "title": citation.title,
-                            "uri": citation.uri,
-                        }
-                        for citation in candidate.citation_metadata.citations
-                    ]
-                }
-                if candidate.citation_metadata
-                else None
-            ),
+            "citation_metadata": proto.Message.to_dict(candidate.citation_metadata),
         }
     # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/text-chat#response_body
     else:
