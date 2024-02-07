@@ -13,19 +13,22 @@ from typing import (
     cast,
 )
 
-from langchain_core.output_parsers import BaseGenerationOutputParser, BaseOutputParser
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import (
+    BaseGenerationOutputParser,
+    BaseLLMOutputParser,
+    BaseOutputParser,
+)
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
 from langchain.output_parsers.ernie_functions import (
     JsonOutputFunctionsParser,
     PydanticAttrOutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
-from langchain.prompts import BasePromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseLLMOutputParser
 from langchain.utils.ernie_functions import convert_pydantic_to_ernie_function
 
 PYTHON_TO_JSON_TYPES = {

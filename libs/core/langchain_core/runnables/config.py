@@ -125,6 +125,9 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         empty.update(
             cast(RunnableConfig, {k: v for k, v in config.items() if v is not None})
         )
+    for key, value in empty.get("configurable", {}).items():
+        if isinstance(value, (str, int, float, bool)) and key not in empty["metadata"]:
+            empty["metadata"][key] = value
     return empty
 
 

@@ -13,6 +13,7 @@ from typing import (
     Mapping,
     Optional,
     Union,
+    cast,
 )
 
 from langchain_core.callbacks import (
@@ -197,7 +198,7 @@ class ChatTongyi(BaseChatModel):
         return {
             "model": self.model_name,
             "top_p": self.top_p,
-            "api_key": self.dashscope_api_key.get_secret_value(),
+            "api_key": cast(SecretStr, self.dashscope_api_key).get_secret_value(),
             "result_format": "message",
             **self.model_kwargs,
         }
@@ -315,9 +316,7 @@ class ChatTongyi(BaseChatModel):
             )
             resp = await asyncio.get_running_loop().run_in_executor(
                 None,
-                functools.partial(
-                    self.completion_with_retry, **{"run_manager": run_manager, **params}
-                ),
+                functools.partial(self.completion_with_retry, **params),
             )
             generations.append(
                 ChatGeneration(**self._chat_generation_from_qwen_resp(resp))
