@@ -56,7 +56,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         )
         return chain.invoke(
             {chain.input_key: query},
-            callbacks=run_manager.get_child() if run_manager else None,
+            config={"callbacks": [run_manager.get_child() if run_manager else None]},
         )[chain.output_key]
 
     async def _arun(
@@ -71,9 +71,11 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
             self.llm, retriever=self.vectorstore.as_retriever()
         )
         return (
-            await chain.arun(
+            await chain.ainvoke(
                 {chain.input_key: query},
-                callbacks=run_manager.get_child() if run_manager else None,
+                config={
+                    "callbacks": [run_manager.get_child() if run_manager else None]
+                },
             )
         )[chain.output_key]
 
