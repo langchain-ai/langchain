@@ -183,7 +183,7 @@ jobs:
 
       - name: Get minimum versions
         id: check-version
-        run: echo "min-versions=$(python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml)" >> $GITHUB_OUTPUT
+        run: echo "min-versions=$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml)" >> $GITHUB_OUTPUT
 
       - name: Run unit tests with minimum dependency versions
         env:
