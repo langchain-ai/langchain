@@ -1,6 +1,5 @@
 """Test OpenAI Chat API wrapper."""
 import json
-import os
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -15,14 +14,12 @@ from langchain_core.messages import (
 from langchain_community.adapters.openai import convert_dict_to_message
 from langchain_community.chat_models.openai import ChatOpenAI
 
-os.environ["OPENAI_API_KEY"] = "foo"
-
 
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
-    llm = ChatOpenAI(model="foo")
+    llm = ChatOpenAI(model="foo", openai_api_key="foo")
     assert llm.model_name == "foo"
-    llm = ChatOpenAI(model_name="foo")
+    llm = ChatOpenAI(model_name="foo", openai_api_key="foo")
     assert llm.model_name == "foo"
 
 
@@ -84,7 +81,7 @@ def mock_completion() -> dict:
 
 @pytest.mark.requires("openai")
 def test_openai_predict(mock_completion: dict) -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(openai_api_key="foo")
     mock_client = MagicMock()
     completed = False
 
@@ -106,7 +103,7 @@ def test_openai_predict(mock_completion: dict) -> None:
 
 @pytest.mark.requires("openai")
 async def test_openai_apredict(mock_completion: dict) -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(openai_api_key="foo")
     mock_client = MagicMock()
     completed = False
 
