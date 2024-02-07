@@ -355,7 +355,8 @@ class UpstashRedisCache(BaseCache):
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend.
 
-    Allows to use either sync `redis.Redis` client or async `redis.asyncio.Redis` client.
+    Allows to use either sync `redis.Redis` client or async `redis.asyncio.Redis`
+    client.
 
     If using the sync client, RedisCache will still support async operations
     by running them in a separate thread.
