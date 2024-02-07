@@ -339,7 +339,7 @@ class AzureSearch(VectorStore):
         # batching support if embedding function is an Embeddings object
         if isinstance(self.embedding_function, Embeddings):
             try:
-                embeddings = self.embedding_function.embed_documents(texts)
+                embeddings = self.embedding_function.embed_documents(texts)  # type: ignore[arg-type]
             except NotImplementedError:
                 embeddings = [self.embedding_function.embed_query(x) for x in texts]
         else:
