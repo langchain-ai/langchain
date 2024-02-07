@@ -15,7 +15,7 @@ on:
         default: 'libs/langchain'
 
 env:
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: "3.11"
   POETRY_VERSION: "1.7.1"
 
 jobs:
@@ -181,10 +181,15 @@ jobs:
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Get minimum versions
+        id: check-version
+        run: echo "min-versions=$(python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml)"" >> $GITHUB_OUTPUT
+
       - name: Run unit tests with minimum dependency versions
-        if: ${{ (inputs.working-directory == 'libs/langchain') || (inputs.working-directory == 'libs/community') || (inputs.working-directory == 'libs/experimental') }}
+        env:
+          MIN_VERSIONS: ${{ steps.check-version.outputs.min-versions }}
         run: |
-          poetry run pip install -r _test_minimum_requirements.txt
+          poetry run pip install $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
