@@ -25,6 +25,7 @@ class NeuralDBVectorStore(VectorStore):
             db = ndb.NeuralDB()
             vectorstore = NeuralDBVectorStore(db=db)
     """
+
     def __init__(self, db):
         self.db = db
 
