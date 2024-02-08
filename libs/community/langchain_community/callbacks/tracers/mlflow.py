@@ -8,11 +8,12 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from langchain_core.env import get_runtime_environment
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import Run
+
 from langchain_community.callbacks.utils import (
     flatten_dict,
 )
-from langchain_core.tracers.base import BaseTracer
-from langchain_core.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ RUN_DETAILS_ORDER = [
     "end_time",
     "inputs",
     "outputs",
+    "serialized",
     "serialized_object",
     "events",
     "extra",
