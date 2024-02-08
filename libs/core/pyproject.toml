@@ -18,6 +18,7 @@ anyio = ">=3,<5"
 PyYAML = ">=5.3"
 requests = "^2"
 packaging = "^23.2"
+defusedxml = "^0.7.1"
 jinja2 = {version = "^3", optional = true}
 
 [tool.poetry.group.lint]

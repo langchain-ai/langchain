@@ -2766,4 +2766,4 @@ extended-testing = ["jinja2"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "fec5bca68972fa7f7eea00a3cf3e158424bafdf028573611c575c3859ab289c5"
+content-hash = "424c163d37559bb5da590fb5dddab440f59192e5fd5a99414c2e18b978b128ef"

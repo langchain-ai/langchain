@@ -1,6 +1,7 @@
-import defusedxml.ElementTree as ET
 import re
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+
+import defusedxml.ElementTree as ET
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
@@ -133,7 +134,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         # close parser
         parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> Dict[str, List[Any]]:
+    def _root_to_dict(self, root: Any) -> Dict[str, List[Any]]:
         """Converts xml tree to python dictionary."""
         result: Dict[str, List[Any]] = {root.tag: []}
         for child in root:
@@ -148,7 +149,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         return "xml"
 
 
-def nested_element(path: List[str], elem: ET.Element) -> Any:
+def nested_element(path: List[str], elem: Any) -> Any:
     """Get nested element from path."""
     if len(path) == 0:
         return AddableDict({elem.tag: elem.text})
