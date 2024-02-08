@@ -62,7 +62,7 @@ class DuckDuckGoSearchResults(BaseTool):
     ) -> str:
         """Use the tool."""
         res = self.api_wrapper.results(query, self.max_results, source=self.backend)
-        res_strs = [", ".join([f"{k}: {v}" for k, v in d.items()]) for d in res]
+        res_strs = [", ".join({f"{k}: {v}" for k, v in d.items()}) for d in res]
         return ", ".join([f"[{rs}]" for rs in res_strs])
 
 
