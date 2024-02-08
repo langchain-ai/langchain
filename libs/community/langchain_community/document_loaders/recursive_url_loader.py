@@ -93,6 +93,7 @@ class RecursiveUrlLoader(BaseLoader):
         link_regex: Union[str, re.Pattern, None] = None,
         headers: Optional[dict] = None,
         check_response_status: bool = False,
+        continue_on_failure: bool = True,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
@@ -117,6 +118,8 @@ class RecursiveUrlLoader(BaseLoader):
             link_regex: Regex for extracting sub-links from the raw html of a web page.
             check_response_status: If True, check HTTP response status and skip
                 URLs with error responses (400-599).
+            continue_on_failure: If True, continue if getting or parsing a link raises
+                an exception. Otherwise, raise the exception.
         """
 
         self.url = url
@@ -142,6 +145,7 @@ class RecursiveUrlLoader(BaseLoader):
         self._lock = asyncio.Lock() if self.use_async else None
         self.headers = headers
         self.check_response_status = check_response_status
+        self.continue_on_failure = continue_on_failure
 
     def _get_child_links_recursive(
         self, url: str, visited: Set[str], *, depth: int = 0
@@ -164,11 +168,14 @@ class RecursiveUrlLoader(BaseLoader):
             if self.check_response_status and 400 <= response.status_code <= 599:
                 raise ValueError(f"Received HTTP status {response.status_code}")
         except Exception as e:
-            logger.warning(
-                f"Unable to load from {url}. Received error {e} of type "
-                f"{e.__class__.__name__}"
-            )
-            return
+            if self.continue_on_failure:
+                logger.warning(
+                    f"Unable to load from {url}. Received error {e} of type "
+                    f"{e.__class__.__name__}"
+                )
+                return
+            else:
+                raise e
         content = self.extractor(response.text)
         if content:
             yield Document(
@@ -184,6 +191,7 @@ class RecursiveUrlLoader(BaseLoader):
             pattern=self.link_regex,
             prevent_outside=self.prevent_outside,
             exclude_prefixes=self.exclude_dirs,
+            continue_on_failure=self.continue_on_failure,
         )
         for link in sub_links:
             # Check all unvisited links
@@ -237,13 +245,16 @@ class RecursiveUrlLoader(BaseLoader):
                 if self.check_response_status and 400 <= response.status <= 599:
                     raise ValueError(f"Received HTTP status {response.status}")
         except (aiohttp.client_exceptions.InvalidURL, Exception) as e:
-            logger.warning(
-                f"Unable to load {url}. Received error {e} of type "
-                f"{e.__class__.__name__}"
-            )
             if close_session:
                 await session.close()
-            return []
+            if self.continue_on_failure:
+                logger.warning(
+                    f"Unable to load {url}. Received error {e} of type "
+                    f"{e.__class__.__name__}"
+                )
+                return []
+            else:
+                raise e
         results = []
         content = self.extractor(text)
         if content:
@@ -261,6 +272,7 @@ class RecursiveUrlLoader(BaseLoader):
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
                 exclude_prefixes=self.exclude_dirs,
+                continue_on_failure=self.continue_on_failure,
             )
 
             # Recursively call the function to get the children of the children
