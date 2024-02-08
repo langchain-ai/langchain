@@ -105,6 +105,16 @@ class AthenaLoader(BaseLoader):
         result_set = self._get_result_set(query_execution_id)
         return json.loads(result_set.to_json(orient="records"))
 
+    def _remove_suffix(self, input_string, suffix):
+        if suffix and input_string.endswith(suffix):
+            return input_string[: -len(suffix)]
+        return input_string
+
+    def _remove_prefix(self, input_string, suffix):
+        if suffix and input_string.startswith(suffix):
+            return input_string[len(suffix) :]
+        return input_string
+
     def _get_result_set(self, query_execution_id: str):
         try:
             import pandas as pd
@@ -114,7 +124,10 @@ class AthenaLoader(BaseLoader):
                 "Please install it with `pip install pandas`."
             )
 
-        tokens = self.s3_output_uri.removeprefix("s3://").removesuffix("/").split("/")
+        output_uri = self.s3_output_uri
+        tokens = self._remove_prefix(
+            self._remove_suffix(output_uri, "/"), "s3://"
+        ).split("/")
         bucket = tokens[0]
         key = "/".join(tokens[1:]) + "/" + query_execution_id + ".csv"
 
