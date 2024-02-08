@@ -415,7 +415,8 @@ Now that we have the tools, we can create an agent to use them. We will go over 
 
 Install langchain hub first
 ```bash
-pip install langchainhub```
+pip install langchainhub
+```
 
 Now we can use it to get a predefined prompt
 
@@ -426,6 +427,7 @@ from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
 
 # Get the prompt to use - you can modify this!
+prompt = hub.pull("hwchase17/openai-functions-agent")
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 agent = create_openai_functions_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
