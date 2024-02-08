@@ -18,7 +18,7 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
 
 # Add to vectorDB
-settings = ClickhouseSettings(table="clickhouse_vector_search_example")
+settings = ClickhouseSettings(table="clickhouse_vector_search_example", index_type=None)
 vectorstore = Clickhouse.from_documents(
     documents=all_splits,
     embedding=GPT4AllEmbeddings(),
