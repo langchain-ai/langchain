@@ -49,6 +49,7 @@ langchain-openai = { path = "libs/partners/openai", develop = true }
 
 [tool.poetry.group.test.dependencies]
 
+[tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.group.typing.dependencies]
 

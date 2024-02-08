@@ -3730,11 +3730,12 @@ class RunnableLambda(Runnable[Input, Output]):
 
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
-    """
-    A runnable that delegates calls to another runnable
+    """A runnable that delegates calls to another runnable
     with each element of the input sequence.
 
     Use only if creating a new RunnableEach subclass with different __init__ args.
+
+    See documentation for RunnableEach for more details.
     """
 
     bound: Runnable[Input, Output]
@@ -3837,9 +3838,31 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):
-    """
-    A runnable that delegates calls to another runnable
+    """A runnable that delegates calls to another runnable
     with each element of the input sequence.
+
+    It allows you to call multiple inputs with the bounded Runnable.
+
+    RunnableEach makes it easy to run multiple inputs for the runnable.
+    In the below example, we associate and run three three inputs
+    with a Runnable:
+
+        .. code-block:: python
+
+            from langchain_core.runnables.base import RunnableEach
+            from langchain_openai import ChatOpenAI
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.output_parsers import StrOutputParser
+            prompt = ChatPromptTemplate.from_template("Tell me a short joke about
+            {topic}")
+            model = ChatOpenAI()
+            output_parser = StrOutputParser()
+            runnable = prompt | model | output_parser
+            runnable_each = RunnableEach(bound=runnable)
+            output = runnable_each.invoke([{'topic':'Computer Science'},
+                                        {'topic':'Art'},
+                                        {'topic':'Biology'}])
+            print(output)
     """
 
     @classmethod
