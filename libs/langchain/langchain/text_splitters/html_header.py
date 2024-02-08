@@ -106,10 +106,7 @@ class HTMLHeaderTextSplitter(BaseTextToDocumentsSplitter):
 
         # document transformation for "structure-aware" chunking is handled with xsl.
         # see comments in html_chunks_with_headers.xslt for more detailed information.
-        xslt_path = (
-            pathlib.Path(__file__).parent
-            / "xsl/html_chunks_with_headers.xslt"
-        )
+        xslt_path = pathlib.Path(__file__).parent / "xsl/html_chunks_with_headers.xslt"
         xslt_tree = etree.parse(xslt_path)
         transform = etree.XSLT(xslt_tree)
         result = transform(tree)
