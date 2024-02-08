@@ -27,6 +27,7 @@ import json
 import logging
 import uuid
 import warnings
+from abc import ABC
 from datetime import timedelta
 from functools import lru_cache
 from typing import (
@@ -60,12 +61,14 @@ from langchain_core.load.load import loads
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
 
+from langchain_community.utilities.astradb import AstraDBEnvironment
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
 
 if TYPE_CHECKING:
     import momento
+    from astrapy.db import AstraDB
     from cassandra.cluster import Session as CassandraSession
 
 
@@ -349,49 +352,26 @@ class UpstashRedisCache(BaseCache):
         self.redis.flushdb(flush_type=asynchronous)
 
 
-class RedisCache(BaseCache):
-    """Cache that uses Redis as a backend."""
-
-    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
-        """
-        Initialize an instance of RedisCache.
-
-        This method initializes an object with Redis caching capabilities.
-        It takes a `redis_` parameter, which should be an instance of a Redis
-        client class, allowing the object to interact with a Redis
-        server for caching purposes.
-
-        Parameters:
-            redis_ (Any): An instance of a Redis client class
-                (e.g., redis.Redis) used for caching.
-                This allows the object to communicate with a
-                Redis server for caching operations.
-            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
-                If provided, it sets the time duration for how long cached
-                items will remain valid. If not provided, cached items will not
-                have an automatic expiration.
-        """
-        try:
-            from redis import Redis
-        except ImportError:
-            raise ValueError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-        if not isinstance(redis_, Redis):
-            raise ValueError("Please pass in Redis object.")
-        self.redis = redis_
-        self.ttl = ttl
-
-    def _key(self, prompt: str, llm_string: str) -> str:
+class _RedisCacheBase(BaseCache, ABC):
+    @staticmethod
+    def _key(prompt: str, llm_string: str) -> str:
         """Compute key from prompt and llm_string"""
         return _hash(prompt + llm_string)
 
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
+    @staticmethod
+    def _ensure_generation_type(return_val: RETURN_VAL_TYPE) -> None:
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "RedisCache only supports caching of normal LLM generations, "
+                    f"got {type(gen)}"
+                )
+
+    @staticmethod
+    def _get_generations(
+        results: dict[str | bytes, str | bytes],
+    ) -> Optional[List[Generation]]:
         generations = []
-        # Read from a Redis HASH
-        results = self.redis.hgetall(self._key(prompt, llm_string))
         if results:
             for _, text in results.items():
                 try:
@@ -408,34 +388,158 @@ class RedisCache(BaseCache):
                     generations.append(Generation(text=text))
         return generations if generations else None
 
+    @staticmethod
+    def _configure_pipeline_for_update(
+        key: str, pipe: Any, return_val: RETURN_VAL_TYPE, ttl: Optional[int] = None
+    ) -> None:
+        pipe.hset(
+            key,
+            mapping={
+                str(idx): dumps(generation) for idx, generation in enumerate(return_val)
+            },
+        )
+        if ttl is not None:
+            pipe.expire(key, ttl)
+
+
+class RedisCache(_RedisCacheBase):
+    """
+    Cache that uses Redis as a backend. Allows to use a sync `redis.Redis` client.
+    """
+
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
+        """
+        Initialize an instance of RedisCache.
+
+        This method initializes an object with Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of a Redis
+        client class (`redis.Redis`), allowing the object
+        to interact with a Redis server for caching purposes.
+
+        Parameters:
+            redis_ (Any): An instance of a Redis client class
+                (`redis.Redis`) to be used for caching.
+                This allows the object to communicate with a
+                Redis server for caching operations.
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
+        """
+        try:
+            from redis import Redis
+        except ImportError:
+            raise ValueError(
+                "Could not import `redis` python package. "
+                "Please install it with `pip install redis`."
+            )
+        if not isinstance(redis_, Redis):
+            raise ValueError("Please pass a valid `redis.Redis` client.")
+        self.redis = redis_
+        self.ttl = ttl
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        # Read from a Redis HASH
+        results = self.redis.hgetall(self._key(prompt, llm_string))
+        return self._get_generations(results)  # type: ignore[arg-type]
+
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        for gen in return_val:
-            if not isinstance(gen, Generation):
-                raise ValueError(
-                    "RedisCache only supports caching of normal LLM generations, "
-                    f"got {type(gen)}"
-                )
-        # Write to a Redis HASH
+        self._ensure_generation_type(return_val)
         key = self._key(prompt, llm_string)
 
         with self.redis.pipeline() as pipe:
-            pipe.hset(
-                key,
-                mapping={
-                    str(idx): dumps(generation)
-                    for idx, generation in enumerate(return_val)
-                },
-            )
-            if self.ttl is not None:
-                pipe.expire(key, self.ttl)
-
+            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
             pipe.execute()
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
         asynchronous = kwargs.get("asynchronous", False)
         self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+
+
+class AsyncRedisCache(_RedisCacheBase):
+    """
+    Cache that uses Redis as a backend. Allows to use an
+    async `redis.asyncio.Redis` client.
+    """
+
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
+        """
+        Initialize an instance of AsyncRedisCache.
+
+        This method initializes an object with Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of a Redis
+        client class (`redis.asyncio.Redis`), allowing the object
+        to interact with a Redis server for caching purposes.
+
+        Parameters:
+            redis_ (Any): An instance of a Redis client class
+                (`redis.asyncio.Redis`) to be used for caching.
+                This allows the object to communicate with a
+                Redis server for caching operations.
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
+        """
+        try:
+            from redis.asyncio import Redis
+        except ImportError:
+            raise ValueError(
+                "Could not import `redis.asyncio` python package. "
+                "Please install it with `pip install redis`."
+            )
+        if not isinstance(redis_, Redis):
+            raise ValueError("Please pass a valid `redis.asyncio.Redis` client.")
+        self.redis = redis_
+        self.ttl = ttl
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        raise NotImplementedError(
+            "This async Redis cache does not implement `lookup()` method. "
+            "Consider using the async `alookup()` version."
+        )
+
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string. Async version."""
+        results = await self.redis.hgetall(self._key(prompt, llm_string))
+        return self._get_generations(results)  # type: ignore[arg-type]
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        raise NotImplementedError(
+            "This async Redis cache does not implement `update()` method. "
+            "Consider using the async `aupdate()` version."
+        )
+
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
+        """Update cache based on prompt and llm_string. Async version."""
+        self._ensure_generation_type(return_val)
+        key = self._key(prompt, llm_string)
+
+        async with self.redis.pipeline() as pipe:
+            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
+            await pipe.execute()  # type: ignore[attr-defined]
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache. If `asynchronous` is True, flush asynchronously."""
+        raise NotImplementedError(
+            "This async Redis cache does not implement `clear()` method. "
+            "Consider using the async `aclear()` version."
+        )
+
+    async def aclear(self, **kwargs: Any) -> None:
+        """
+        Clear cache. If `asynchronous` is True, flush asynchronously.
+        Async version.
+        """
+        asynchronous = kwargs.get("asynchronous", False)
+        await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
 
 class RedisSemanticCache(BaseCache):
@@ -1262,7 +1366,7 @@ class AstraDBCache(BaseCache):
         collection_name: str = ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME,
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[Any] = None,  # 'astrapy.db.AstraDB' if passed
+        astra_db_client: Optional[AstraDB] = None,
         namespace: Optional[str] = None,
     ):
         """
@@ -1278,39 +1382,17 @@ class AstraDBCache(BaseCache):
             namespace (Optional[str]): namespace (aka keyspace) where the
                 collection is created. Defaults to the database's "default namespace".
         """
-        try:
-            from astrapy.db import (
-                AstraDB as LibAstraDB,
-            )
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Could not import a recent astrapy python package. "
-                "Please install it with `pip install --upgrade astrapy`."
-            )
-        # Conflicting-arg checks:
-        if astra_db_client is not None:
-            if token is not None or api_endpoint is not None:
-                raise ValueError(
-                    "You cannot pass 'astra_db_client' to AstraDB if passing "
-                    "'token' and 'api_endpoint'."
-                )
-
-        self.collection_name = collection_name
-        self.token = token
-        self.api_endpoint = api_endpoint
-        self.namespace = namespace
-
-        if astra_db_client is not None:
-            self.astra_db = astra_db_client
-        else:
-            self.astra_db = LibAstraDB(
-                token=self.token,
-                api_endpoint=self.api_endpoint,
-                namespace=self.namespace,
-            )
-        self.collection = self.astra_db.create_collection(
-            collection_name=self.collection_name,
+        astra_env = AstraDBEnvironment(
+            token=token,
+            api_endpoint=api_endpoint,
+            astra_db_client=astra_db_client,
+            namespace=namespace,
         )
+        self.astra_db = astra_env.astra_db
+        self.collection = self.astra_db.create_collection(
+            collection_name=collection_name,
+        )
+        self.collection_name = collection_name
 
     @staticmethod
     def _make_id(prompt: str, llm_string: str) -> str:
@@ -1364,7 +1446,7 @@ class AstraDBCache(BaseCache):
     def delete(self, prompt: str, llm_string: str) -> None:
         """Evict from cache if there's an entry."""
         doc_id = self._make_id(prompt, llm_string)
-        return self.collection.delete_one(doc_id)
+        self.collection.delete_one(doc_id)
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. This is for all LLMs at once."""
@@ -1395,7 +1477,7 @@ class AstraDBSemanticCache(BaseCache):
         collection_name: str = ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME,
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[Any] = None,  # 'astrapy.db.AstraDB' if passed
+        astra_db_client: Optional[AstraDB] = None,
         namespace: Optional[str] = None,
         embedding: Embeddings,
         metric: Optional[str] = None,
@@ -1423,22 +1505,13 @@ class AstraDBSemanticCache(BaseCache):
         The default score threshold is tuned to the default metric.
         Tune it carefully yourself if switching to another distance metric.
         """
-        try:
-            from astrapy.db import (
-                AstraDB as LibAstraDB,
-            )
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Could not import a recent astrapy python package. "
-                "Please install it with `pip install --upgrade astrapy`."
-            )
-        # Conflicting-arg checks:
-        if astra_db_client is not None:
-            if token is not None or api_endpoint is not None:
-                raise ValueError(
-                    "You cannot pass 'astra_db_client' to AstraDB if passing "
-                    "'token' and 'api_endpoint'."
-                )
+        astra_env = AstraDBEnvironment(
+            token=token,
+            api_endpoint=api_endpoint,
+            astra_db_client=astra_db_client,
+            namespace=namespace,
+        )
+        self.astra_db = astra_env.astra_db
 
         self.embedding = embedding
         self.metric = metric
@@ -1457,18 +1530,7 @@ class AstraDBSemanticCache(BaseCache):
         self.embedding_dimension = self._get_embedding_dimension()
 
         self.collection_name = collection_name
-        self.token = token
-        self.api_endpoint = api_endpoint
-        self.namespace = namespace
 
-        if astra_db_client is not None:
-            self.astra_db = astra_db_client
-        else:
-            self.astra_db = LibAstraDB(
-                token=self.token,
-                api_endpoint=self.api_endpoint,
-                namespace=self.namespace,
-            )
         self.collection = self.astra_db.create_collection(
             collection_name=self.collection_name,
             dimension=self.embedding_dimension,

@@ -15,7 +15,7 @@ beautifulsoup4 = "^4.12.2"
 bs4 = "^0.0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 

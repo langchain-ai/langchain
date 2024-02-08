@@ -56,7 +56,7 @@ def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
                         cleaned_list.append(value_sanitize(item))
                     else:
                         cleaned_list.append(item)
-                new_dict[key] = cleaned_list
+                new_dict[key] = cleaned_list  # type: ignore[assignment]
         else:
             new_dict[key] = value
     return new_dict
@@ -133,12 +133,14 @@ class Neo4jGraph(GraphStore):
         # Set schema
         try:
             self.refresh_schema()
-        except neo4j.exceptions.ClientError:
-            raise ValueError(
-                "Could not use APOC procedures. "
-                "Please ensure the APOC plugin is installed in Neo4j and that "
-                "'apoc.meta.data()' is allowed in Neo4j configuration "
-            )
+        except neo4j.exceptions.ClientError as e:
+            if e.code == "Neo.ClientError.Procedure.ProcedureNotFound":
+                raise ValueError(
+                    "Could not use APOC procedures. "
+                    "Please ensure the APOC plugin is installed in Neo4j and that "
+                    "'apoc.meta.data()' is allowed in Neo4j configuration "
+                )
+            raise e
 
     @property
     def get_schema(self) -> str:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-mistralai"
-version = "0.0.3"
+version = "0.0.4"
 description = "An integration package connecting Mistral and LangChain"
 authors = []
 readme = "README.md"
@@ -14,6 +14,7 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1"
 mistralai = "^0.0.11"
+tokenizers = "^0.15.1"
 
 [tool.poetry.group.test]
 optional = true
