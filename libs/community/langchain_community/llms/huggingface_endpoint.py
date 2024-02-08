@@ -1,15 +1,14 @@
-from typing import Any, Dict, List, Mapping, Optional, AsyncIterator, Iterator
-
 import json
 import logging
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra, root_validator, Field
-
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -26,9 +25,9 @@ class HuggingFaceEndpoint(LLM):
     """
     HuggingFace Endpoint.
 
-    To use this class, you should have the ``huggingface_hub`` python package installed, and the
-    environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
-    it as a named parameter to the constructor.
+    To use this class, you should have installed the ``huggingface_hub`` package, and
+    the environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token,
+    or given as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
@@ -157,7 +156,7 @@ class HuggingFaceEndpoint(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that python package exists in environment, and that the API token is valid."""
+        """Validate that package is installed and that the API token is valid."""
         try:
             from huggingface_hub import login
 
@@ -177,7 +176,7 @@ class HuggingFaceEndpoint(LLM):
                 "Please check your API token."
             ) from e
 
-        from huggingface_hub import InferenceClient, AsyncInferenceClient
+        from huggingface_hub import AsyncInferenceClient, InferenceClient
 
         values["client"] = InferenceClient(
             values["endpoint_url"],
@@ -259,8 +258,8 @@ class HuggingFaceEndpoint(LLM):
             )
             response_text = json.loads(response.decode())[0]["generated_text"]
 
-            # maybe the generation has stopped at one of the stop sequences
-            # then we still want to remove this stop sequence from the end of the generated text
+            # Maybe the generation has stopped at one of the stop sequences:
+            # then we remove this stop sequence from the end of the generated text
             for stop_seq in invocation_params["stop_sequences"]:
                 if response_text[-len(stop_seq) :] == stop_seq:
                     response_text = response_text[: -len(stop_seq)]
@@ -290,8 +289,8 @@ class HuggingFaceEndpoint(LLM):
             )
             response_text = json.loads(response.decode())[0]["generated_text"]
 
-            # maybe the generation has stopped at one of the stop sequences
-            # then we still want to remove this stop sequence from the end of the generated text
+            # Maybe the generation has stopped at one of the stop sequences:
+            # then remove this stop sequence from the end of the generated text
             for stop_seq in invocation_params["stop_sequences"]:
                 if response_text[-len(stop_seq) :] == stop_seq:
                     response_text = response_text[: -len(stop_seq)]
