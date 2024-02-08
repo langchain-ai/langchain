@@ -78,7 +78,7 @@ def test_tools() -> None:
         | llm_with_tools
         | _TestOutputParser()
     )
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)  # type: ignore
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
     response = agent_executor.invoke({"input": "What is 6 raised to the 0.43 power?"})
     assert isinstance(response, dict)
@@ -158,7 +158,7 @@ def test_multiple_tools() -> None:
         | llm_with_tools
         | _TestOutputParser()
     )
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)  # type: ignore
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
     question = (
         "Who is Leo DiCaprio's girlfriend? What is her "
