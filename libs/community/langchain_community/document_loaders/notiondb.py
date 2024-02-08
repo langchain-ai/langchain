@@ -20,6 +20,9 @@ class NotionDBLoader(BaseLoader):
         database_id (str): Notion database id.
         request_timeout_sec (int): Timeout for Notion requests in seconds.
             Defaults to 10.
+        filter_object (Dict[str, Any]): Filter object used to limit returned
+            entries based on specified criteria.
+            Defaults to empty dict, which will return ALL entries.
     """
 
     def __init__(
@@ -27,6 +30,7 @@ class NotionDBLoader(BaseLoader):
         integration_token: str,
         database_id: str,
         request_timeout_sec: Optional[int] = 10,
+        filter_object: Optional[Dict[str, Any]] = {}
     ) -> None:
         """Initialize with parameters."""
         if not integration_token:
@@ -42,6 +46,7 @@ class NotionDBLoader(BaseLoader):
             "Notion-Version": "2022-06-28",
         }
         self.request_timeout_sec = request_timeout_sec
+        self.filter_object = filter_object
 
     def load(self) -> List[Document]:
         """Load documents from the Notion database.
@@ -55,7 +60,10 @@ class NotionDBLoader(BaseLoader):
     def _retrieve_page_summaries(
         self, query_dict: Dict[str, Any] = {"page_size": 100}
     ) -> List[Dict[str, Any]]:
-        """Get all the pages from a Notion database."""
+        """
+        Get all the pages from a Notion database
+        OR filter based on specified criteria.
+        """
         pages: List[Dict[str, Any]] = []
 
         while True:
@@ -63,6 +71,7 @@ class NotionDBLoader(BaseLoader):
                 DATABASE_URL.format(database_id=self.database_id),
                 method="POST",
                 query_dict=query_dict,
+                filter_object=self.filter_object
             )
 
             pages.extend(data.get("results"))
@@ -182,7 +191,10 @@ class NotionDBLoader(BaseLoader):
         return "\n".join(result_lines_arr)
 
     def _request(
-        self, url: str, method: str = "GET", query_dict: Dict[str, Any] = {}
+        self, url: str,
+        method: str = "GET",
+        query_dict: Dict[str, Any] = {},
+        filter_object: Dict[str, Any] = {}
     ) -> Any:
         res = requests.request(
             method,
@@ -190,6 +202,7 @@ class NotionDBLoader(BaseLoader):
             headers=self.headers,
             json=query_dict,
             timeout=self.request_timeout_sec,
+            filter=filter_object
         )
         res.raise_for_status()
         return res.json()
