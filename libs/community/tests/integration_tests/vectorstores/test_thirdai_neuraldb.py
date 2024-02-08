@@ -7,7 +7,7 @@ from langchain_community.vectorstores import NeuralDBVectorStore
 
 
 @pytest.fixture(scope="session")
-def test_csv():
+def test_csv():  # type: ignore[no-untyped-def]
     csv = "thirdai-test.csv"
     with open(csv, "w") as o:
         o.write("column_1,column_2\n")
@@ -16,13 +16,13 @@ def test_csv():
     os.remove(csv)
 
 
-def assert_result_correctness(documents):
+def assert_result_correctness(documents):  # type: ignore[no-untyped-def]
     assert len(documents) == 1
     assert documents[0].page_content == "column_1: column one\n\ncolumn_2: column two"
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_scratch(test_csv):
+def test_neuraldb_retriever_from_scratch(test_csv):  # type: ignore[no-untyped-def]
     retriever = NeuralDBVectorStore.from_scratch()
     retriever.insert([test_csv])
     documents = retriever.similarity_search("column")
@@ -30,7 +30,7 @@ def test_neuraldb_retriever_from_scratch(test_csv):
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_checkpoint(test_csv):
+def test_neuraldb_retriever_from_checkpoint(test_csv):  # type: ignore[no-untyped-def]
     checkpoint = "thirdai-test-save.ndb"
     if os.path.exists(checkpoint):
         shutil.rmtree(checkpoint)
@@ -47,7 +47,7 @@ def test_neuraldb_retriever_from_checkpoint(test_csv):
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_bazaar(test_csv):
+def test_neuraldb_retriever_from_bazaar(test_csv):  # type: ignore[no-untyped-def]
     retriever = NeuralDBVectorStore.from_bazaar("General QnA")
     retriever.insert([test_csv])
     documents = retriever.similarity_search("column")
@@ -55,7 +55,7 @@ def test_neuraldb_retriever_from_bazaar(test_csv):
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_other_methods(test_csv):
+def test_neuraldb_retriever_other_methods(test_csv):  # type: ignore[no-untyped-def]
     retriever = NeuralDBVectorStore.from_scratch()
     retriever.insert([test_csv])
     # Make sure they don't throw an error.
