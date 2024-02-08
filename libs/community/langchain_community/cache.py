@@ -359,7 +359,7 @@ class _RedisCacheBase(BaseCache, ABC):
         return _hash(prompt + llm_string)
 
     @staticmethod
-    def _ensure_generation_type(return_val: RETURN_VAL_TYPE):
+    def _ensure_generation_type(return_val: RETURN_VAL_TYPE) -> None:
         for gen in return_val:
             if not isinstance(gen, Generation):
                 raise ValueError(
@@ -368,7 +368,9 @@ class _RedisCacheBase(BaseCache, ABC):
                 )
 
     @staticmethod
-    def _get_generations(results: dict[str | bytes, str | bytes]) -> list[Generation]:
+    def _get_generations(
+        results: dict[str | bytes, str | bytes],
+    ) -> Optional[List[Generation]]:
         generations = []
         if results:
             for _, text in results.items():
@@ -387,7 +389,9 @@ class _RedisCacheBase(BaseCache, ABC):
         return generations if generations else None
 
     @staticmethod
-    def _configure_pipeline_for_update(key, pipe, return_val, ttl=None):
+    def _configure_pipeline_for_update(
+        key: bytes, pipe: Any, return_val: RETURN_VAL_TYPE, ttl: Optional[int] = None
+    ) -> None:
         pipe.hset(
             key,
             mapping={
@@ -520,7 +524,7 @@ class AsyncRedisCache(_RedisCacheBase):
 
         async with self.redis.pipeline() as pipe:
             self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-            await pipe.execute()
+            await pipe.execute()  # type: ignore[attr-defined]
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
