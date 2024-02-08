@@ -146,9 +146,13 @@ class HuggingFaceEndpoint(LLM):
 
         values["model_kwargs"] = extra
         if "endpoint_url" not in values and "repo_id" not in values:
-            raise ValueError("Please specify an `endpoint_url` or `repo_id` for the model.")
+            raise ValueError(
+                "Please specify an `endpoint_url` or `repo_id` for the model."
+            )
         if "endpoint_url" in values and "repo_id" in values:
-            raise ValueError("Please specify either an `endpoint_url` OR a `repo_id`, not both.")
+            raise ValueError(
+                "Please specify either an `endpoint_url` OR a `repo_id`, not both."
+            )
         return values
 
     @root_validator()
@@ -249,7 +253,9 @@ class HuggingFaceEndpoint(LLM):
                 "stop_sequences"
             ]  # porting 'stop_sequences' into the 'stop' argument
             response = self.client.post(
-                json={"inputs": prompt, "parameters": invocation_params}, stream=False, task=self.task
+                json={"inputs": prompt, "parameters": invocation_params},
+                stream=False,
+                task=self.task,
             )
             response_text = json.loads(response.decode())[0]["generated_text"]
 
@@ -270,13 +276,17 @@ class HuggingFaceEndpoint(LLM):
         invocation_params = self._invocation_params(stop, **kwargs)
         if self.streaming:
             completion = ""
-            async for chunk in self._astream(prompt, stop, run_manager, **invocation_params):
+            async for chunk in self._astream(
+                prompt, stop, run_manager, **invocation_params
+            ):
                 completion += chunk.text
             return completion
         else:
             invocation_params["stop"] = invocation_params["stop_sequences"]
             response = await self.async_client.post(
-                json={"inputs": prompt, "parameters": invocation_params}, stream=False, task=self.task
+                json={"inputs": prompt, "parameters": invocation_params},
+                stream=False,
+                task=self.task,
             )
             response_text = json.loads(response.decode())[0]["generated_text"]
 
@@ -296,7 +306,9 @@ class HuggingFaceEndpoint(LLM):
     ) -> Iterator[GenerationChunk]:
         invocation_params = self._invocation_params(stop, **kwargs)
 
-        for response in self.client.text_generation(prompt, **invocation_params, stream=True):
+        for response in self.client.text_generation(
+            prompt, **invocation_params, stream=True
+        ):
             # identify stop sequence in generated text, if any
             stop_seq_found: Optional[str] = None
             for stop_seq in invocation_params["stop_sequences"]:
