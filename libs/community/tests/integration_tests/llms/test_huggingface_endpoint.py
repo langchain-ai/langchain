@@ -1,47 +1,12 @@
-"""Test HuggingFace API wrapper."""
+"""Test HuggingFace Endpoints."""
 
-import unittest
 from pathlib import Path
 
 import pytest
 
-from tests.integration_tests.llms.utils import assert_llm_equality
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_community.llms.loading import load_llm
 from tests.integration_tests.llms.utils import assert_llm_equality
-
-
-@unittest.skip(
-    "This test requires an inference endpoint. Tested with Hugging Face endpoints"
-)
-def test_huggingface_endpoint_text_generation() -> None:
-    """Test valid call to HuggingFace text generation model."""
-    llm = HuggingFaceEndpoint(
-        endpoint_url="", task="text-generation", model_kwargs={"max_new_tokens": 10}
-    )
-    output = llm("Say foo:")
-    print(output)
-    assert isinstance(output, str)
-
-
-@unittest.skip(
-    "This test requires an inference endpoint. Tested with Hugging Face endpoints"
-)
-def test_huggingface_endpoint_text2text_generation() -> None:
-    """Test valid call to HuggingFace text2text model."""
-    llm = HuggingFaceEndpoint(endpoint_url="", task="text2text-generation")
-    output = llm("The capital of New York is")
-    assert output == "Albany"
-
-
-@unittest.skip(
-    "This test requires an inference endpoint. Tested with Hugging Face endpoints"
-)
-def test_huggingface_endpoint_summarization() -> None:
-    """Test valid call to HuggingFace summarization model."""
-    llm = HuggingFaceEndpoint(endpoint_url="", task="summarization")
-    output = llm("Say foo:")
-    assert isinstance(output, str)
 
 
 def test_huggingface_endpoint_call_error() -> None:
