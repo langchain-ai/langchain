@@ -98,7 +98,7 @@ class MLflowTracer(BaseTracer):
             self.run_id = run_id
         self.session_id = kwargs.get("session_id", uuid.uuid4().hex)
         self.run_table = kwargs.get("run_table_name", "langchain_runs.json")
-        self.run_dict = {}
+        self.run_dict: Dict[str, Any] = {}
 
     def _convert_type(self, value: Any) -> Any:
         """Convert a value to a type that can be json-serialized."""
@@ -117,7 +117,7 @@ class MLflowTracer(BaseTracer):
         """Order a dictionary by a list."""
         return {k: d[k] for k in order if k in d}
 
-    def _convert_run_to_dict(self, run: Run) -> dict:
+    def _convert_run_to_dict(self, run: Run) -> Dict:
         """Convert a Run object to a dictionary."""
         run_dict = run.dict(exclude={"child_runs"})
         extra = run_dict.get("extra", {})
@@ -132,7 +132,7 @@ class MLflowTracer(BaseTracer):
         run_dict = self._order_dict_by_list(run_dict, RUN_DETAILS_ORDER)
         return run_dict
 
-    def _log_trace_from_run(self, run_dict: Dict[str, Any]):
+    def _log_trace_from_run(self, run_dict: Dict[str, Any]) -> None:
         """Log the trace of a run dictionary into MLflow."""
         self.mlflow.log_table(run_dict, self.run_table, self.run_id)
         for child_run_id in run_dict.get("child_runs", []):
@@ -160,7 +160,7 @@ class MLflowTracer(BaseTracer):
         """Reset the tracer."""
         self.run_dict = {}
 
-    def end_run(self):
+    def end_run(self) -> None:
         """End the run."""
         self._reset()
         self.mlflow.MlflowClient().set_terminated(self.run_id)
