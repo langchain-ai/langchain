@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import logging
 import os
 from io import BytesIO
@@ -54,6 +55,9 @@ from tenacity import (
 )
 
 from langchain_google_genai._common import GoogleGenerativeAIError
+from langchain_google_genai._function_utils import (
+    convert_to_genai_function_declarations,
+)
 from langchain_google_genai.llms import GoogleModelFamily, _BaseGoogleGenerativeAI
 
 IMAGE_TYPES: Tuple = ()
@@ -351,67 +355,12 @@ def _retrieve_function_call_response(
             return {
                 "function_call": {
                     "name": fc.name,
-                    "arguments": dict(fc.args.items()),
+                    "arguments": json.dumps(
+                        dict(fc.args.items())
+                    ),  # dump to match other function calling llms for now
                 }
             }
     return None
-
-
-def _convert_function_call_req(function_calls: Union[Dict, List[Dict]]) -> Dict:
-    function_declarations = []
-    if isinstance(function_calls, dict):
-        function_declarations.append(_convert_fc_type(function_calls))
-    else:
-        for fc in function_calls:
-            function_declarations.append(_convert_fc_type(fc))
-    return {
-        "function_declarations": function_declarations,
-    }
-
-
-def _convert_fc_type(fc: Dict) -> Dict:
-    # type_: "Type"
-    # format_: str
-    # description: str
-    # nullable: bool
-    # enum: MutableSequence[str]
-    # items: "Schema"
-    # properties: MutableMapping[str, "Schema"]
-    # required: MutableSequence[str]
-    if "parameters" in fc:
-        fc["parameters"] = _convert_fc_type(fc["parameters"])
-    if "properties" in fc:
-        for k, v in fc["properties"].items():
-            fc["properties"][k] = _convert_fc_type(v)
-    if "type" in fc:
-        # STRING = 1
-        # NUMBER = 2
-        # INTEGER = 3
-        # BOOLEAN = 4
-        # ARRAY = 5
-        # OBJECT = 6
-        if fc["type"] == "string":
-            fc["type_"] = 1
-        elif fc["type"] == "number":
-            fc["type_"] = 2
-        elif fc["type"] == "integer":
-            fc["type_"] = 3
-        elif fc["type"] == "boolean":
-            fc["type_"] = 4
-        elif fc["type"] == "array":
-            fc["type_"] = 5
-        elif fc["type"] == "object":
-            fc["type_"] = 6
-        del fc["type"]
-    if "format" in fc:
-        fc["format_"] = fc["format"]
-        del fc["format"]
-
-    for k, v in fc.items():
-        if isinstance(v, dict):
-            fc[k] = _convert_fc_type(v)
-
-    return fc
 
 
 def _parts_to_content(
@@ -708,11 +657,11 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Tuple[Dict[str, Any], genai.ChatSession, genai.types.ContentDict]:
-        cli = self.client
+        client = self.client
         functions = kwargs.pop("functions", None)
         if functions:
-            tools = _convert_function_call_req(functions)
-            cli = genai.GenerativeModel(model_name=self.model, tools=tools)
+            tools = convert_to_genai_function_declarations(functions)
+            client = genai.GenerativeModel(model_name=self.model, tools=tools)
 
         params = self._prepare_params(stop, **kwargs)
         history = _parse_chat_history(
@@ -720,7 +669,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
             convert_system_message_to_human=self.convert_system_message_to_human,
         )
         message = history.pop()
-        chat = cli.start_chat(history=history)
+        chat = client.start_chat(history=history)
         return params, chat, message
 
     def get_num_tokens(self, text: str) -> int:
