@@ -67,7 +67,6 @@ class MyModel(BaseModel):
 
 
 def test_pydantic_call() -> None:
-
     llm = ChatGoogleGenerativeAI(model="gemini-pro").bind(functions=[MyModel])
     response = llm.invoke("my name is Erick and I am 27 years old")
     assert isinstance(response, AIMessage)

@@ -61,7 +61,6 @@ def _convert_to_genai_function(fc: FunctionCallType) -> Dict:
     elif isinstance(fc, type) and issubclass(fc, BaseModel):
         return _convert_pydantic_to_genai_function(fc)
     elif isinstance(fc, dict):
-
         return {
             **fc,
             "parameters": {
