@@ -346,8 +346,8 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             # The `with_config` method brings in the desired Prompt Runnable in your
             # Runnable Sequence.
 
-    Equivalently, you can initiated RunnableConfigurableAlternatives directly and use in 
-    LCEL in the same way
+    Equivalently, you can initiated RunnableConfigurableAlternatives directly 
+    and use in LCEL in the same way
         .. code-block:: python
             from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
