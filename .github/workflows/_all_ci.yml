@@ -36,30 +36,35 @@ env:
 
 jobs:
   lint:
+    name: "-"
     uses: ./.github/workflows/_lint.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   test:
+    name: "-"
     uses: ./.github/workflows/_test.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   compile-integration-tests:
+    name: "-"
     uses: ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   dependencies:
+    name: "-"
     uses: ./.github/workflows/_dependencies.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
 
   extended-tests:
+    name: "make extended_tests #${{ matrix.python-version }}"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -68,7 +73,6 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    name: Python ${{ matrix.python-version }} extended tests
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}

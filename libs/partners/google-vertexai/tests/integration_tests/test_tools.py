@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Union
+from typing import Any, List, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.messages import AIMessageChunk
@@ -67,8 +67,8 @@ def test_tools() -> None:
     )
     llm_with_tools = llm.bind(functions=tools)
 
-    agent = (
-        {  # type: ignore[var-annotated]
+    agent: Any = (
+        {
             "input": lambda x: x["input"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]
@@ -147,8 +147,8 @@ def test_multiple_tools() -> None:
     )
     llm_with_tools = llm.bind(functions=tools)
 
-    agent = (
-        {  # type: ignore[var-annotated]
+    agent: Any = (
+        {
             "input": lambda x: x["input"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]

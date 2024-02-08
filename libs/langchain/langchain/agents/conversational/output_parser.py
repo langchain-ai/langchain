@@ -14,8 +14,12 @@ class ConvoOutputParser(AgentOutputParser):
     ai_prefix: str = "AI"
     """Prefix to use before AI output."""
 
+    format_instructions: str = FORMAT_INSTRUCTIONS
+    """Default formatting instructions"""
+
     def get_format_instructions(self) -> str:
-        return FORMAT_INSTRUCTIONS
+        """Returns formatting instructions for the given output parser."""
+        return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         if f"{self.ai_prefix}:" in text:
