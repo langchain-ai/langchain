@@ -16,7 +16,12 @@ from typing import (
 from typing_extensions import TypeAlias
 
 from langchain_core._api import deprecated
-from langchain_core.messages import AnyMessage, BaseMessage, get_buffer_string
+from langchain_core.messages import (
+    AnyMessage,
+    BaseMessage,
+    MessageLikeRepresentation,
+    get_buffer_string,
+)
 from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
@@ -49,7 +54,7 @@ def _get_token_ids_default_method(text: str) -> List[int]:
     return tokenizer.encode(text)
 
 
-LanguageModelInput = Union[PromptValue, str, Sequence[BaseMessage]]
+LanguageModelInput = Union[PromptValue, str, Sequence[MessageLikeRepresentation]]
 LanguageModelOutput = Union[BaseMessage, str]
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)

@@ -14,7 +14,7 @@ pypdf = "^3.17.0"
 tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.4"
+langchain-cli = ">=0.0.21"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 

@@ -141,9 +141,9 @@ class GenericRequestsWrapper(BaseModel):
         self, response: aiohttp.ClientResponse
     ) -> Union[str, Dict[str, Any]]:
         if self.response_content_type == "text":
-            return response.text()
+            return response.text()  # type: ignore[return-value]
         elif self.response_content_type == "json":
-            return response.json()
+            return response.json()  # type: ignore[return-value]
         else:
             raise ValueError(f"Invalid return type: {self.response_content_type}")
 
@@ -176,33 +176,33 @@ class GenericRequestsWrapper(BaseModel):
     async def aget(self, url: str, **kwargs: Any) -> Union[str, Dict[str, Any]]:
         """GET the URL and return the text asynchronously."""
         async with self.requests.aget(url, **kwargs) as response:
-            return await self._aget_resp_content(response)
+            return await self._aget_resp_content(response)  # type: ignore[misc]
 
     async def apost(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, Dict[str, Any]]:
         """POST to the URL and return the text asynchronously."""
         async with self.requests.apost(url, data, **kwargs) as response:
-            return await self._aget_resp_content(response)
+            return await self._aget_resp_content(response)  # type: ignore[misc]
 
     async def apatch(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, Dict[str, Any]]:
         """PATCH the URL and return the text asynchronously."""
         async with self.requests.apatch(url, data, **kwargs) as response:
-            return await self._aget_resp_content(response)
+            return await self._aget_resp_content(response)  # type: ignore[misc]
 
     async def aput(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, Dict[str, Any]]:
         """PUT the URL and return the text asynchronously."""
         async with self.requests.aput(url, data, **kwargs) as response:
-            return await self._aget_resp_content(response)
+            return await self._aget_resp_content(response)  # type: ignore[misc]
 
     async def adelete(self, url: str, **kwargs: Any) -> Union[str, Dict[str, Any]]:
         """DELETE the URL and return the text asynchronously."""
         async with self.requests.adelete(url, **kwargs) as response:
-            return await self._aget_resp_content(response)
+            return await self._aget_resp_content(response)  # type: ignore[misc]
 
 
 class JsonRequestsWrapper(GenericRequestsWrapper):
