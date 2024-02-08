@@ -1,64 +1,41 @@
 from __future__ import annotations
 
-import base64
-import logging
-import os
-from io import BytesIO
 from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
     Dict,
-    Iterator,
     List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
     Type,
     Union,
-    cast,
 )
-from urllib.parse import urlparse
-
-import google.api_core
 
 # TODO: remove ignore once the google package is published with types
-import google.generativeai as genai  # type: ignore[import]
-import requests
-from google.ai.generativelanguage_v1beta import FunctionCall
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    ChatMessage,
-    ChatMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    SystemMessage,
-)
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import BaseTool
-from langchain_core.utils import get_from_dict_or_env
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+from langchain_core.utils.json_schema import dereference_refs
 
-from langchain_google_genai._common import GoogleGenerativeAIError
-from langchain_google_genai.llms import GoogleModelFamily, _BaseGoogleGenerativeAI
+FunctionCallType = Union[BaseTool, Type[BaseModel]]
+
+TYPE_ENUM = {
+    "string": 1,
+    "number": 2,
+    "integer": 3,
+    "boolean": 4,
+    "array": 5,
+    "object": 6,
+}
 
 
-def _convert_fc_type(fc: Union[BaseTool, Type[BaseModel]]) -> Dict:
+def convert_to_genai_function_declarations(
+    function_calls: List[FunctionCallType],
+) -> Dict:
+    function_declarations = []
+    for fc in function_calls:
+        function_declarations.append(_convert_to_genai_function(fc))
+    return {
+        "function_declarations": function_declarations,
+    }
+
+
+def _convert_to_genai_function(fc: FunctionCallType) -> Dict:
     """
         Produce
 
@@ -80,47 +57,81 @@ def _convert_fc_type(fc: Union[BaseTool, Type[BaseModel]]) -> Dict:
 
     """
     if isinstance(fc, BaseTool):
-        
+        return _convert_tool_to_genai_function(fc)
+    elif isinstance(fc, type) and issubclass(fc, BaseModel):
+        return _convert_pydantic_to_genai_function(fc)
+    elif isinstance(fc, dict):
 
-    # type_: "Type"
-    # format_: str
-    # description: str
-    # nullable: bool
-    # enum: MutableSequence[str]
-    # items: "Schema"
-    # properties: MutableMapping[str, "Schema"]
-    # required: MutableSequence[str]
-    if "parameters" in fc:
-        fc["parameters"] = _convert_fc_type(fc["parameters"])
-    if "properties" in fc:
-        for k, v in fc["properties"].items():
-            fc["properties"][k] = _convert_fc_type(v)
-    if "type" in fc:
-        # STRING = 1
-        # NUMBER = 2
-        # INTEGER = 3
-        # BOOLEAN = 4
-        # ARRAY = 5
-        # OBJECT = 6
-        if fc["type"] == "string":
-            fc["type_"] = 1
-        elif fc["type"] == "number":
-            fc["type_"] = 2
-        elif fc["type"] == "integer":
-            fc["type_"] = 3
-        elif fc["type"] == "boolean":
-            fc["type_"] = 4
-        elif fc["type"] == "array":
-            fc["type_"] = 5
-        elif fc["type"] == "object":
-            fc["type_"] = 6
-        del fc["type"]
-    if "format" in fc:
-        fc["format_"] = fc["format"]
-        del fc["format"]
+        return {
+            **fc,
+            "parameters": {
+                "properties": {
+                    k: {
+                        "type_": TYPE_ENUM[v["type"]],
+                        "description": v.get("description"),
+                    }
+                    for k, v in fc["parameters"]["properties"].items()
+                },
+                "required": fc["parameters"].get("required", []),
+                "type_": TYPE_ENUM[fc["parameters"]["type"]],
+            },
+        }
+    else:
+        raise ValueError(f"Unsupported function call type {fc}")
 
-    for k, v in fc.items():
-        if isinstance(v, dict):
-            fc[k] = _convert_fc_type(v)
 
-    return fc
+def _convert_tool_to_genai_function(tool: BaseTool) -> Dict:
+    if tool.args_schema:
+        schema = dereference_refs(tool.args_schema.schema())
+        schema.pop("definitions", None)
+
+        return {
+            "name": tool.name or schema["title"],
+            "description": tool.description or schema["description"],
+            "parameters": {
+                "properties": {
+                    k: {
+                        "type_": TYPE_ENUM[v["type"]],
+                        "description": v.get("description"),
+                    }
+                    for k, v in schema["properties"].items()
+                },
+                "required": schema["required"],
+                "type_": TYPE_ENUM[schema["type"]],
+            },
+        }
+    else:
+        return {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": {
+                "properties": {
+                    "__arg1": {"type": "string"},
+                },
+                "required": ["__arg1"],
+                "type_": TYPE_ENUM["object"],
+            },
+        }
+
+
+def _convert_pydantic_to_genai_function(
+    pydantic_model: Type[BaseModel],
+) -> Dict:
+    schema = dereference_refs(pydantic_model.schema())
+    schema.pop("definitions", None)
+
+    return {
+        "name": schema["title"],
+        "description": schema.get("description", ""),
+        "parameters": {
+            "properties": {
+                k: {
+                    "type_": TYPE_ENUM[v["type"]],
+                    "description": v.get("description"),
+                }
+                for k, v in schema["properties"].items()
+            },
+            "required": schema["required"],
+            "type_": TYPE_ENUM[schema["type"]],
+        },
+    }

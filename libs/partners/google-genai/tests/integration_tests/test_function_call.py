@@ -35,8 +35,9 @@ def test_function_call() -> None:
     assert res.additional_kwargs
     assert "function_call" in res.additional_kwargs
     assert "get_weather" == res.additional_kwargs["function_call"]["name"]
-    arguments = res.additional_kwargs["function_call"]["arguments"]
-    assert isinstance(arguments, dict)
+    arguments_str = res.additional_kwargs["function_call"]["arguments"]
+    assert isinstance(arguments_str, str)
+    arguments = json.loads(arguments_str)
     assert "location" in arguments
 
 
@@ -60,10 +61,12 @@ def test_tool_call() -> None:
     assert "query" in arguments
 
 
+class MyModel(BaseModel):
+    name: str
+    age: int
+
+
 def test_pydantic_call() -> None:
-    class MyModel(BaseModel):
-        name: str
-        age: int
 
     llm = ChatGoogleGenerativeAI(model="gemini-pro").bind(functions=[MyModel])
     response = llm.invoke("my name is Erick and I am 27 years old")
