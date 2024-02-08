@@ -7,7 +7,6 @@ from typing import (
     Union,
 )
 
-# TODO: remove ignore once the google package is published with types
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import BaseTool
 from langchain_core.utils.json_schema import dereference_refs
