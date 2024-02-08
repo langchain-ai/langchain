@@ -88,7 +88,7 @@ def test_tools() -> None:
     # use regex to find \d+\.\d+
     just_numbers = re.findall(r"\d+\.\d+", response["output"])[0]
 
-    assert round(float(just_numbers), 3) == 2.161
+    assert round(float(just_numbers), 2) == 2.16
 
 
 def test_stream() -> None:

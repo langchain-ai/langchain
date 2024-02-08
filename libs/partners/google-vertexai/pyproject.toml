@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-google-vertexai"
-version = "0.0.4"
+version = "0.0.5"
 description = "An integration package connecting GoogleVertexAI and LangChain"
 authors = []
 readme = "README.md"
@@ -43,6 +43,7 @@ optional = true
 
 [tool.poetry.group.test_integration.dependencies]
 langchain = {path = "../../langchain"}
+langchain-community = {path = "../../community"}
 numexpr = {version = "^2.8.8", python = ">=3.9,<4.0"}
 google-api-python-client = "^2.114.0"
 
