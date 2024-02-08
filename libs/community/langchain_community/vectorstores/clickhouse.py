@@ -72,7 +72,7 @@ class ClickhouseSettings(BaseSettings):
     username: Optional[str] = None
     password: Optional[str] = None
 
-    index_type: str = "annoy"
+    index_type: Optional[str] = "annoy"
     # Annoy supports L2Distance and cosineDistance.
     index_param: Optional[Union[List, Dict]] = ["'L2Distance'", 100]
     index_query_params: Dict[str, str] = {}
