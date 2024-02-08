@@ -775,6 +775,7 @@ async def test_async_delete() -> None:
     assert sorted([d.page_content for d in result]) == ["baz", "foo"]
     assert docsearch.index_to_docstore_id == {0: ids[0], 1: ids[2]}
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_with_duplicate_ids() -> None:
     """Test whether FAISS raises an exception for duplicate ids."""
