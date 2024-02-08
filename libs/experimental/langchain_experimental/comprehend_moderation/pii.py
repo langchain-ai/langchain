@@ -67,7 +67,7 @@ class ComprehendPII:
         if self.callback and self.callback.pii_callback:
             if pii_found:
                 self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
-            asyncio.create_task(
+            asyncio.run(
                 self.callback.on_after_pii(self.moderation_beacon, self.unique_id)
             )
         if pii_found:
@@ -109,7 +109,7 @@ class ComprehendPII:
 
         if (pii_identified["Entities"]) == []:
             if self.callback and self.callback.pii_callback:
-                asyncio.create_task(
+                asyncio.run(
                     self.callback.on_after_pii(self.moderation_beacon, self.unique_id)
                 )
             return prompt_value
@@ -124,7 +124,7 @@ class ComprehendPII:
             if self.callback and self.callback.pii_callback:
                 if pii_found:
                     self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
-                asyncio.create_task(
+                asyncio.run(
                     self.callback.on_after_pii(self.moderation_beacon, self.unique_id)
                 )
             if pii_found:
@@ -157,7 +157,7 @@ class ComprehendPII:
             if self.callback and self.callback.pii_callback:
                 if pii_found:
                     self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
-                asyncio.create_task(
+                asyncio.run(
                     self.callback.on_after_pii(self.moderation_beacon, self.unique_id)
                 )
 
