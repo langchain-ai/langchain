@@ -53,7 +53,7 @@ DEF_EXPECTED_RESULT = TestModel(
 def test_pydantic_output_parser() -> None:
     """Test PydanticOutputParser."""
 
-    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
@@ -65,7 +65,7 @@ def test_pydantic_output_parser() -> None:
 def test_pydantic_output_parser_fail() -> None:
     """Test PydanticOutputParser where completion result fails schema validation."""
 
-    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 

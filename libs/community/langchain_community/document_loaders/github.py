@@ -1,6 +1,7 @@
+import base64
 from abc import ABC
 from datetime import datetime
-from typing import Dict, Iterator, List, Literal, Optional, Union
+from typing import Callable, Dict, Iterator, List, Literal, Optional, Union
 
 import requests
 from langchain_core.documents import Document
@@ -20,7 +21,7 @@ class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
     github_api_url: str = "https://api.github.com"
     """URL of GitHub API"""
 
-    @root_validator(pre=True)
+    @root_validator(pre=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that access token exists in environment."""
         values["access_token"] = get_from_dict_or_env(
@@ -65,7 +66,7 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     """Only show notifications updated after the given time.
         This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ."""
 
-    @validator("since")
+    @validator("since", allow_reuse=True)
     def validate_since(cls, v: Optional[str]) -> Optional[str]:
         if v:
             try:
@@ -186,3 +187,59 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     def url(self) -> str:
         """Create URL for GitHub API."""
         return f"{self.github_api_url}/repos/{self.repo}/issues?{self.query_params}"
+
+
+class GithubFileLoader(BaseGitHubLoader, ABC):
+    """Load GitHub File"""
+
+    file_extension: str = ".md"
+    branch: str = "main"
+
+    file_filter: Optional[Callable[[str], bool]]
+
+    def get_file_paths(self) -> List[Dict]:
+        base_url = (
+            f"{self.github_api_url}/api/v3/repos/{self.repo}/git/trees/"
+            f"{self.branch}?recursive=1"
+        )
+        response = requests.get(base_url, headers=self.headers)
+        response.raise_for_status()
+        all_files = response.json()["tree"]
+        """ one element in all_files
+        {
+            'path': '.github', 
+            'mode': '040000', 
+            'type': 'tree', 
+            'sha': '89a2ae046e8b59eb96531f123c0c6d4913885df1', 
+            'url': 'https://github.com/api/v3/repos/shufanhao/langchain/git/trees/89a2ae046e8b59eb96531f123c0c6d4913885dxxx'
+        }
+        """
+        return [
+            f
+            for f in all_files
+            if not (self.file_filter and not self.file_filter(f["path"]))
+        ]
+
+    def get_file_content_by_path(self, path: str) -> str:
+        base_url = f"{self.github_api_url}/api/v3/repos/{self.repo}/contents/{path}"
+        response = requests.get(base_url, headers=self.headers)
+        response.raise_for_status()
+
+        content_encoded = response.json()["content"]
+        return base64.b64decode(content_encoded).decode("utf-8")
+
+    def load(self) -> List[Document]:
+        documents = []
+
+        files = self.get_file_paths()
+        for file in files:
+            content = self.get_file_content_by_path(file["path"])
+            metadata = {
+                "path": file["path"],
+                "sha": file["sha"],
+                "source": f"{self.github_api_url}/{self.repo}/{file['type']}/"
+                f"{self.branch}/{file['path']}",
+            }
+            documents.append(Document(page_content=content, metadata=metadata))
+
+        return documents

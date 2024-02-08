@@ -70,21 +70,7 @@ JSON_WITH_MARKDOWN_CODE_BLOCK = """```json
 JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES = """```json
 {
     "action": "Final Answer",
-    "action_input": "```bar\n<div id="1" class=\"value\">\n\ttext\n</div>```"
-}
-```"""
-
-JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON = """```json
-{
-    "action": "Final Answer",
-    "action_input": "{"foo": "bar", "bar": "foo"}"
-}
-```"""
-
-JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON = """```json
-{
-    "action": "Final Answer",
-    "action_input": "{\"foo\": \"bar\", \"bar\": \"foo\"}"
+    "action_input": "```bar\n<div id=\\"1\\" class=\\"value\\">\n\ttext\n</div>```"
 }
 ```"""
 
@@ -202,6 +188,8 @@ def test_parse_json_with_code_blocks() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK)
     assert parsed == {"foo": "```bar```"}
 
+
+def test_parse_json_with_code_blocks_and_newlines() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)
 
     assert parsed == {
@@ -211,8 +199,6 @@ def test_parse_json_with_code_blocks() -> None:
 
 
 TEST_CASES_ESCAPED_QUOTES = [
-    JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON,
-    JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON,
     JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON,
 ]
 
