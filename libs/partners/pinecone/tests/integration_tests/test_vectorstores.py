@@ -100,15 +100,17 @@ class TestPinecone:
         texts = [needs] + texts
 
         metadatas = [{"page": i} for i in range(len(texts))]
+
+        namespace = f"{NAMESPACE_NAME}-md"
         docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
             index_name=INDEX_NAME,
             metadatas=metadatas,
-            namespace=NAMESPACE_NAME,
+            namespace=namespace,
         )
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
-        output = docsearch.similarity_search(needs, k=1, namespace=NAMESPACE_NAME)
+        output = docsearch.similarity_search(needs, k=1, namespace=namespace)
 
         # TODO: why metadata={"page": 0.0}) instead of {"page": 0}?
         assert output == [Document(page_content=needs, metadata={"page": 0.0})]
