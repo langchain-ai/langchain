@@ -1,8 +1,10 @@
 """test Databricks LLM"""
-from pytest import MonkeyPatch
 import pickle
 
+from pytest import MonkeyPatch
+
 from langchain_community.llms.databricks import Databricks
+
 
 class MockDatabricksServingEndpointClient:
     def __init__(self, host, api_token, endpoint_name, databricks_uri, task):
@@ -30,7 +32,10 @@ def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("DATABRICKS_HOST", "my-default-host")
     monkeypatch.setenv("DATABRICKS_TOKEN", "my-default-token")
 
-    llm = Databricks(endpoint_name="databricks-mixtral-8x7b-instruct", transform_input_fn=transform_input)
+    llm = Databricks(
+        endpoint_name="databricks-mixtral-8x7b-instruct",
+        transform_input_fn=transform_input
+    )
     params = llm._default_params
     pickled_string = pickle.dumps(transform_input).hex()
     assert params["transform_input_fn"] == pickled_string
