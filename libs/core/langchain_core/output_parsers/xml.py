@@ -2,7 +2,7 @@ import re
 import xml.etree.ElementTree as ET
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
-import defusedxml.ElementTree as DET
+import defusedxml.ElementTree as DET  # type: ignore[import]
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
