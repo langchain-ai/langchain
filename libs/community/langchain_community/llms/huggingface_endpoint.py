@@ -237,6 +237,7 @@ class HuggingFaceEndpoint(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
+        """Call out to HuggingFace Hub's inference endpoint."""
         invocation_params = self._invocation_params(stop, **kwargs)
         if self.streaming:
             completion = ""
@@ -248,16 +249,14 @@ class HuggingFaceEndpoint(LLM):
                 "stop_sequences"
             ]  # porting 'stop_sequences' into the 'stop' argument
             response = self.client.post(
-                json={"inputs": prompt, "parameters": invocation_params}, stream=False
+                json={"inputs": prompt, "parameters": invocation_params}, stream=False, task=self.task
             )
-            # TODO: check if different tasks are supported
             response_text = json.loads(response.decode())[0]["generated_text"]
 
             # maybe the generation has stopped at one of the stop sequences
             # then we still want to remove this stop sequence from the end of the generated text
             for stop_seq in invocation_params["stop_sequences"]:
                 if response_text[-len(stop_seq) :] == stop_seq:
-                    print("Cutting text;", response_text)
                     response_text = response_text[: -len(stop_seq)]
             return response_text
 
@@ -277,16 +276,14 @@ class HuggingFaceEndpoint(LLM):
         else:
             invocation_params["stop"] = invocation_params["stop_sequences"]
             response = await self.async_client.post(
-                json={"inputs": prompt, "parameters": invocation_params}, stream=False
+                json={"inputs": prompt, "parameters": invocation_params}, stream=False, task=self.task
             )
-            # TODO: check if different tasks are supported
             response_text = json.loads(response.decode())[0]["generated_text"]
 
             # maybe the generation has stopped at one of the stop sequences
             # then we still want to remove this stop sequence from the end of the generated text
             for stop_seq in invocation_params["stop_sequences"]:
                 if response_text[-len(stop_seq) :] == stop_seq:
-                    print("Cutting text;", response_text)
                     response_text = response_text[: -len(stop_seq)]
             return response_text
 
