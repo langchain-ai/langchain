@@ -572,19 +572,9 @@ class ChatOpenAI(BaseChatModel):
             model = self.tiktoken_model_name
         else:
             model = self.model_name
-            if model == "gpt-3.5-turbo":
-                # gpt-3.5-turbo may change over time.
-                # Returning num tokens assuming gpt-3.5-turbo-0301.
-                model = "gpt-3.5-turbo-0301"
-            elif model == "gpt-4":
-                # gpt-4 may change over time.
-                # Returning num tokens assuming gpt-4-0314.
-                model = "gpt-4-0314"
-        # Returns the number of tokens used by a list of messages.
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
-            logger.warning("Warning: model not found. Using cl100k_base encoding.")
             model = "cl100k_base"
             encoding = tiktoken.get_encoding(model)
         return model, encoding
