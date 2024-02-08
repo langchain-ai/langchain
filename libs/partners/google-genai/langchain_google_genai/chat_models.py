@@ -39,6 +39,7 @@ from langchain_core.messages import (
     BaseMessage,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessage,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
@@ -326,14 +327,20 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro", convert_system_message_to_human
             continue
         elif isinstance(message, AIMessage):
             role = "model"
+            # TODO: Handle AImessage with function call
+            parts = _convert_to_parts(message.content)
         elif isinstance(message, HumanMessage):
             role = "user"
+            parts = _convert_to_parts(message.content)
+        elif isinstance(message, FunctionMessage):
+            role = "user"
+            # TODO: Handle FunctionMessage
+            parts = _convert_to_parts(message.content)
         else:
             raise ValueError(
                 f"Unexpected message with type {type(message)} at the position {i}."
             )
 
-        parts = _convert_to_parts(message.content)
         if raw_system_message:
             if role == "model":
                 raise ValueError(
