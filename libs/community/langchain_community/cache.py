@@ -390,7 +390,7 @@ class _RedisCacheBase(BaseCache, ABC):
 
     @staticmethod
     def _configure_pipeline_for_update(
-        key: bytes, pipe: Any, return_val: RETURN_VAL_TYPE, ttl: Optional[int] = None
+        key: str, pipe: Any, return_val: RETURN_VAL_TYPE, ttl: Optional[int] = None
     ) -> None:
         pipe.hset(
             key,
@@ -442,7 +442,7 @@ class RedisCache(_RedisCacheBase):
         """Look up based on prompt and llm_string."""
         # Read from a Redis HASH
         results = self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)
+        return self._get_generations(results)  # type: ignore[arg-type]
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
@@ -506,7 +506,7 @@ class AsyncRedisCache(_RedisCacheBase):
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string. Async version."""
         results = await self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)
+        return self._get_generations(results)  # type: ignore[arg-type]
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
