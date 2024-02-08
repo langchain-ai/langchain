@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -10,9 +10,6 @@ from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import build_extra_kwargs
-
-if TYPE_CHECKING:
-    from llama_cpp import LlamaGrammar
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +123,7 @@ class LlamaCpp(LLM):
     to force the model to generate valid JSON or to speak exclusively in emojis. At most
     one of grammar_path and grammar should be passed in.
     """
-    grammar: Optional[Union[str, LlamaGrammar]] = None
+    grammar: Optional[Union[str, Any]] = None
     """
     grammar: formal grammar for constraining model outputs. For instance, the grammar 
     can be used to force the model to generate valid JSON or to speak exclusively in 

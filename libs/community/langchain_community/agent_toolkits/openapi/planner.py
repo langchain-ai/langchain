@@ -2,7 +2,7 @@
 import json
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import yaml
 from langchain_core.callbacks import BaseCallbackManager
@@ -68,7 +68,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool name."""
     description = REQUESTS_GET_TOOL_DESCRIPTION
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
     llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_GET_PROMPT)
@@ -83,8 +83,10 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         data_params = data.get("params")
-        response = self.requests_wrapper.get(data["url"], params=data_params)
-        response = response[: self.response_length]  # type: ignore[index]
+        response: str = cast(
+            str, self.requests_wrapper.get(data["url"], params=data_params)
+        )
+        response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
@@ -100,7 +102,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool name."""
     description = REQUESTS_POST_TOOL_DESCRIPTION
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
     llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_POST_PROMPT)
@@ -114,8 +116,8 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.post(data["url"], data["data"])
-        response = response[: self.response_length]  # type: ignore[index]
+        response: str = cast(str, self.requests_wrapper.post(data["url"], data["data"]))
+        response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
@@ -131,7 +133,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool name."""
     description = REQUESTS_PATCH_TOOL_DESCRIPTION
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
     llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_PATCH_PROMPT)
@@ -145,8 +147,10 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.patch(data["url"], data["data"])
-        response = response[: self.response_length]  # type: ignore[index]
+        response: str = cast(
+            str, self.requests_wrapper.patch(data["url"], data["data"])
+        )
+        response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
@@ -162,7 +166,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool name."""
     description = REQUESTS_PUT_TOOL_DESCRIPTION
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
     llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_PUT_PROMPT)
@@ -176,8 +180,8 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.put(data["url"], data["data"])
-        response = response[: self.response_length]  # type: ignore[index]
+        response: str = cast(str, self.requests_wrapper.put(data["url"], data["data"]))
+        response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
@@ -208,8 +212,8 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.delete(data["url"])
-        response = response[: self.response_length]  # type: ignore[index]
+        response: str = cast(str, self.requests_wrapper.delete(data["url"]))
+        response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
