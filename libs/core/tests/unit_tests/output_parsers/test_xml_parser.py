@@ -1,5 +1,5 @@
 """Test XMLOutputParser"""
-import defusedxml
+import defusedxml  # type: ignore[import]
 import pytest
 
 from langchain_core.output_parsers.xml import XMLOutputParser
