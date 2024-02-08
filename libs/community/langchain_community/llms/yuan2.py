@@ -1,8 +1,8 @@
+import json
 import logging
-from typing import Any, List, Mapping, Optional, Set, Dict
+from typing import Any, Dict, List, Mapping, Optional, Set
 
 import requests
-import json
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Field
 
@@ -21,6 +21,7 @@ class Yuan2(LLM):
             print(yuan_llm)
             print(yuan_llm("你是谁？"))
     """
+
     infer_api: str = "http://127.0.0.1:8000/yuan"
     """Yuan2.0 inference api"""
 
@@ -82,7 +83,7 @@ class Yuan2(LLM):
             "top_k": self.top_k,
             "top_p": self.top_p,
             "do_sample": self.do_sample,
-            "use_history": self.use_history
+            "use_history": self.use_history,
         }
 
     @property
@@ -118,22 +119,17 @@ class Yuan2(LLM):
         else:
             input = prompt
 
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        data = json.dumps({
-            "ques_list":[
-                {
-                    "id": "000",
-                    "ques": input
-                }
-            ],
-            "tokens_to_generate": self.max_tokens,
-            "temperature": self.temp,
-            "top_p": self.top_p,
-            "top_k": self.top_k,
-            "do_sample": self.do_sample,
-        })
+        headers = {"Content-Type": "application/json"}
+        data = json.dumps(
+            {
+                "ques_list": [{"id": "000", "ques": input}],
+                "tokens_to_generate": self.max_tokens,
+                "temperature": self.temp,
+                "top_p": self.top_p,
+                "top_k": self.top_k,
+                "do_sample": self.do_sample,
+            }
+        )
 
         logger.debug("Yuan2.0 prompt:", input)
 
@@ -151,7 +147,9 @@ class Yuan2(LLM):
             resp = response.json()
 
             if resp["errCode"] != "0":
-                raise ValueError(f"Failed with error code [{resp['errCode']}], error message: [{resp['errMessage']}]")
+                raise ValueError(
+                    f"Failed with error code [{resp['errCode']}], error message: [{resp['errMessage']}]"
+                )
 
             if "resData" in resp:
                 if len(resp["resData"]["output"]) >= 0:
@@ -176,4 +174,3 @@ class Yuan2(LLM):
 
         logger.debug(f"history: {self.history}")
         return generate_text
-
