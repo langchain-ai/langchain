@@ -26,8 +26,9 @@ class HuggingFaceEndpoint(LLM):
     """
     HuggingFace Endpoint.
 
-    To use, you should have the `text-generation` python package installed and
-    a text-generation server running.
+    To use this class, you should have the ``huggingface_hub`` python package installed, and the
+    environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
+    it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
@@ -41,6 +42,7 @@ class HuggingFaceEndpoint(LLM):
                 typical_p=0.95,
                 temperature=0.01,
                 repetition_penalty=1.03,
+                huggingfacehub_api_token="my-api-key"
             )
             print(llm("What is Deep Learning?"))
 
@@ -57,12 +59,18 @@ class HuggingFaceEndpoint(LLM):
                 temperature=0.01,
                 repetition_penalty=1.03,
                 callbacks=callbacks,
-                streaming=True
+                streaming=True,
+                huggingfacehub_api_token="my-api-key"
             )
             print(llm("What is Deep Learning?"))
 
     """
 
+    endpoint_url: Optional[str] = None
+    """Endpoint URL to use."""
+    repo_id: Optional[str] = None
+    """Repo to use."""
+    huggingfacehub_api_token: Optional[str] = None
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
     top_k: Optional[int] = None
@@ -107,11 +115,6 @@ class HuggingFaceEndpoint(LLM):
     task: Optional[str] = None
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
-    endpoint_url: Optional[str] = None
-    """Endpoint URL to use."""
-    repo_id: Optional[str] = None
-    """Repo to use."""
-    huggingfacehub_api_token: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -150,38 +153,42 @@ class HuggingFaceEndpoint(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that python package exists in environment."""
-        huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
-        )
-
+        """Validate that python package exists in environment, and that the API token is valid."""
         try:
-            from huggingface_hub import InferenceClient, AsyncInferenceClient
-
-            values["client"] = InferenceClient(
-                values["endpoint_url"],
-                timeout=values["timeout"],
-                token=huggingfacehub_api_token,
-                **values["server_kwargs"],
-            )
-            values["async_client"] = AsyncInferenceClient(
-                values["endpoint_url"],
-                timeout=values["timeout"],
-                token=huggingfacehub_api_token,
-                **values["server_kwargs"],
-            )
+            from huggingface_hub import login
 
         except ImportError:
             raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        return values
+        try:
+            huggingfacehub_api_token = get_from_dict_or_env(
+                values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
+            )
+            login(token=huggingfacehub_api_token)
+        except Exception as e:
+            raise ValueError(
+                "Could not authenticate with huggingface_hub. "
+                "Please check your API token."
+            ) from e
 
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "huggingface_endpoint"
+        from huggingface_hub import InferenceClient, AsyncInferenceClient
+
+        values["client"] = InferenceClient(
+            values["endpoint_url"],
+            timeout=values["timeout"],
+            token=huggingfacehub_api_token,
+            **values["server_kwargs"],
+        )
+        values["async_client"] = AsyncInferenceClient(
+            values["endpoint_url"],
+            timeout=values["timeout"],
+            token=huggingfacehub_api_token,
+            **values["server_kwargs"],
+        )
+
+        return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -210,6 +217,11 @@ class HuggingFaceEndpoint(LLM):
             **{"endpoint_url": self.endpoint_url, "task": self.task},
             **{"model_kwargs": _model_kwargs},
         }
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "huggingface_endpoint"
 
     def _invocation_params(
         self, runtime_stop: Optional[List[str]], **kwargs: Any
