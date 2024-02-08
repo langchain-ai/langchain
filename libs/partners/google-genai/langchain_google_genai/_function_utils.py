@@ -11,7 +11,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import BaseTool
 from langchain_core.utils.json_schema import dereference_refs
 
-FunctionCallType = Union[BaseTool, Type[BaseModel]]
+FunctionCallType = Union[BaseTool, Type[BaseModel], Dict]
 
 TYPE_ENUM = {
     "string": 1,
