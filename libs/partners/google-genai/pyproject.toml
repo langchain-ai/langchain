@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-google-genai"
-version = "0.0.6.post1"
+version = "0.0.7"
 description = "An integration package connecting Google's genai package and LangChain"
 authors = []
 readme = "README.md"
