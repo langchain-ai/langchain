@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union, cast
 from urllib.parse import urlparse
 
+import proto  # type: ignore[import-untyped]
 import requests
 from google.cloud.aiplatform_v1beta1.types.content import Part as GapicPart
 from google.cloud.aiplatform_v1beta1.types.tool import FunctionCall
@@ -278,10 +279,12 @@ def _parse_response_candidate(response_candidate: "Candidate") -> AIMessage:
     first_part = response_candidate.content.parts[0]
     if first_part.function_call:
         function_call = {"name": first_part.function_call.name}
-
         # dump to match other function calling llm for now
+        function_call_args_dict = proto.Message.to_dict(first_part.function_call)[
+            "args"
+        ]
         function_call["arguments"] = json.dumps(
-            {k: first_part.function_call.args[k] for k in first_part.function_call.args}
+            {k: function_call_args_dict[k] for k in function_call_args_dict}
         )
         additional_kwargs["function_call"] = function_call
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
