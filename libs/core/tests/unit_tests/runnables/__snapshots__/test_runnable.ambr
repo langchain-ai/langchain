@@ -1544,7 +1544,8 @@
                           }
                         }
                       }
-                    ]
+                    ],
+                    "partial_variables": {}
                   }
                 },
                 "middle": [],
@@ -1617,7 +1618,8 @@
                           }
                         }
                       }
-                    ]
+                    ],
+                    "partial_variables": {}
                   }
                 },
                 "middle": [],

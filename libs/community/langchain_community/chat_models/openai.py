@@ -554,7 +554,7 @@ class ChatOpenAI(BaseChatModel):
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}
         return {**self._default_params, **openai_creds}
 
     def _get_invocation_params(

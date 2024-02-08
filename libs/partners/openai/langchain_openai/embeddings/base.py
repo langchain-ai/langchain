@@ -289,9 +289,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 encoding = tiktoken.encoding_for_model(model_name)
             except KeyError:
-                logger.warning("Warning: model not found. Using cl100k_base encoding.")
-                model = "cl100k_base"
-                encoding = tiktoken.get_encoding(model)
+                encoding = tiktoken.get_encoding("cl100k_base")
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
                     # See: https://github.com/openai/openai-python/
