@@ -346,7 +346,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             # The `with_config` method brings in the desired Prompt Runnable in your
             # Runnable Sequence.
 
-    Equivalently, you can intiated RunnableConfigurableAlternatives directly and use in 
+    Equivalently, you can initiated RunnableConfigurableAlternatives directly and use in 
     LCEL in the same way
         .. code-block:: python
             from langchain_core.runnables.configurable import (
@@ -363,7 +363,6 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             chain = prompt | ChatOpenAI(temperature=0)
             chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": 
             "bears"})
-
 
     """
 
