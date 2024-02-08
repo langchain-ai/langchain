@@ -562,7 +562,7 @@ TOKENS_WITH_JSON_CODE_BLOCK = [
 
 
 def test_partial_text_json_output_parser_with_json_code_block() -> None:
-    """Test that the json parser works correctly when the response contains a json code-block."""
+    """Test json parser works correctly when the response contains a json code-block."""
 
     def input_iter(_: Any) -> Iterator[str]:
         for token in TOKENS_WITH_JSON_CODE_BLOCK:
