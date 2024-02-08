@@ -527,7 +527,6 @@ class PGVector(VectorStore):
         }
 
         def parse_condition(field, condition):  # type: ignore[no-untyped-def]
-            print(field, condition)
             if isinstance(condition, dict):
                 for op, value in condition.items():
                     op = op.lower()
