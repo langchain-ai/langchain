@@ -907,19 +907,19 @@ uvicorn = ">=0.23.2,<0.24.0"
 
 [[package]]
 name = "langchain-community"
-version = "0.0.18"
+version = "0.0.19"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_community-0.0.18-py3-none-any.whl", hash = "sha256:b87e20c1fa3f37e9608d7ccc08b4d8ed86f875b8c1e735d0464ae986e41c5a71"},
-    {file = "langchain_community-0.0.18.tar.gz", hash = "sha256:f044f331b418f16148b76929f27cc2107fce2d190ea3fae0cdaf155ceda9892f"},
+    {file = "langchain_community-0.0.19-py3-none-any.whl", hash = "sha256:ebff8daa0110d53555f4963f1f739b85f9ca63ef82598ece5f5c3f73fe0aa82e"},
+    {file = "langchain_community-0.0.19.tar.gz", hash = "sha256:5d18ad9e188b10aaba6361fb2a747cf29b64b21ffb8061933fec090187ca39c2"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
 dataclasses-json = ">=0.5.7,<0.7"
-langchain-core = ">=0.1.19,<0.2"
+langchain-core = ">=0.1.21,<0.2"
 langsmith = ">=0.0.83,<0.1"
 numpy = ">=1,<2"
 PyYAML = ">=5.3"
@@ -933,19 +933,19 @@ extended-testing = ["aiosqlite (>=0.19.0,<0.20.0)", "aleph-alpha-client (>=2.15.
 
 [[package]]
 name = "langchain-core"
-version = "0.1.19"
+version = "0.1.21"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain_core-0.1.19-py3-none-any.whl", hash = "sha256:46b5fd54181df5aa6d3041d61beb2b91e5437b6742274e7924a97734ed62cf43"},
-    {file = "langchain_core-0.1.19.tar.gz", hash = "sha256:30539190a63dff53e995f10aefb943b4f7e01aba4bf28fd1e13016b040c0e9da"},
+    {file = "langchain_core-0.1.21-py3-none-any.whl", hash = "sha256:9dd1cedc5a3a6081136352e9403d1a87befbab4d36d6ee1877b2e639e85f15ed"},
+    {file = "langchain_core-0.1.21.tar.gz", hash = "sha256:b5625901d38121aa449ef73446605032ddd31ac2787be1428c52e9c793ef8229"},
 ]
 
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = ">=1.33,<2.0"
-langsmith = ">=0.0.83,<0.1"
+langsmith = ">=0.0.87,<0.0.88"
 packaging = ">=23.2,<24.0"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -957,13 +957,13 @@ extended-testing = ["jinja2 (>=3,<4)"]
 
 [[package]]
 name = "langchain-google-genai"
-version = "0.0.6"
+version = "0.0.7"
 description = "An integration package connecting Google's genai package and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "langchain_google_genai-0.0.6-py3-none-any.whl", hash = "sha256:2e347ad4d18f8f761ed8d3997f9ea52b41f97b7fd81f698612ad718da5d9c13b"},
-    {file = "langchain_google_genai-0.0.6.tar.gz", hash = "sha256:93156a523306031d4bbfa7c759778a1123779902512f8ef329516da558069d70"},
+    {file = "langchain_google_genai-0.0.7-py3-none-any.whl", hash = "sha256:6469d11a1497964fae10cc7c779412cb3383f0c82c5b7a2adb0891b0181e2e19"},
+    {file = "langchain_google_genai-0.0.7.tar.gz", hash = "sha256:031946ba396571ac8e14ed9106bf1090663db2196b68675e52326539cddac890"},
 ]
 
 [package.dependencies]
@@ -1000,13 +1000,13 @@ server = ["fastapi (>=0.90.1,<1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.0.86"
+version = "0.0.87"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.86-py3-none-any.whl", hash = "sha256:7af15c36edb8c9fd9ae5c6d4fb940eb1da668b630a703d63c90c91e9be53aefb"},
-    {file = "langsmith-0.0.86.tar.gz", hash = "sha256:c1572824664810c4425b17f2d1e9a59d53992e6898df22a37236c62d3c80f59e"},
+    {file = "langsmith-0.0.87-py3-none-any.whl", hash = "sha256:8903d3811b9fc89eb18f5961c8e6935fbd2d0f119884fbf30dc70b8f8f4121fc"},
+    {file = "langsmith-0.0.87.tar.gz", hash = "sha256:36c4cc47e5b54be57d038036a30fb19ce6e4c73048cd7a464b8f25b459694d34"},
 ]
 
 [package.dependencies]
@@ -1999,4 +1999,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "028ee479814dade310ec4e2010c64611524a9efb0cd64607e43c71ce7d20d4f8"
+content-hash = "1a14257d1bca209fddbbc39a4378a4b737120e39505cd4a194e8bb49759530e1"
