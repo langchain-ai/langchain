@@ -9,7 +9,7 @@ from langchain_core.load.dump import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
-from langchain.cache import RedisCache, RedisSemanticCache
+from langchain.cache import AsyncRedisCache, RedisCache, RedisSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
 from tests.integration_tests.cache.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -45,11 +45,11 @@ def get_sync_redis(*, ttl: Optional[int] = 1) -> Generator[RedisCache, None, Non
 @asynccontextmanager
 async def get_async_redis(
     *, ttl: Optional[int] = 1
-) -> AsyncGenerator[RedisCache, None]:
+) -> AsyncGenerator[AsyncRedisCache, None]:
     """Get an async RedisCache instance."""
     from redis.asyncio import Redis
 
-    cache = RedisCache(redis_=Redis.from_url(REDIS_TEST_URL), ttl=ttl)
+    cache = AsyncRedisCache(redis_=Redis.from_url(REDIS_TEST_URL), ttl=ttl)
     try:
         yield cache
     finally:
