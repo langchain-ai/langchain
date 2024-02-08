@@ -214,7 +214,7 @@ def get_default_api_token() -> str:
     return api_token
 
 
-def _is_hex_string(data):
+def _is_hex_string(data: str) -> bool:
     """Checks if a data is a valid hexadecimal string using a regular expression."""
     if not isinstance(data, str):
         return False
