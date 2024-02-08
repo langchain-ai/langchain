@@ -138,7 +138,7 @@ def parse_json_markdown(
         The parsed JSON object as a Python dictionary.
     """
     # Try to find JSON string within triple backticks
-    match = re.search(r"```(json)?(.*)(```)?", json_string, re.DOTALL)
+    match = re.search(r"```(json)?(.*)", json_string, re.DOTALL)
 
     # If no match found, assume the entire string is a JSON string
     if match is None:
@@ -148,7 +148,7 @@ def parse_json_markdown(
         json_str = match.group(2)
 
     # Strip whitespace and newlines from the start and end
-    json_str = json_str.strip()
+    json_str = json_str.strip().strip("`")
 
     # handle newlines and other special characters inside the returned value
     json_str = _custom_parser(json_str)
