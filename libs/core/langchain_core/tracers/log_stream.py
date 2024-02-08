@@ -572,6 +572,7 @@ async def _astream_log_implementation(
                     try:
                         final_output = final_output + chunk  # type: ignore
                     except TypeError:
+                        prev_final_output = None
                         final_output = chunk
                 patches: List[Dict[str, Any]] = []
                 if with_streamed_output_list:
