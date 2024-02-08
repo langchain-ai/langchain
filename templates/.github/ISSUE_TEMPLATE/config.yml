@@ -1,0 +1,15 @@
+blank_issues_enabled: false
+version: 2.1
+contact_links:
+  - name: 🤔 Question or Problem
+    about: Ask a question or ask about a problem in GitHub Discussions.
+    url: https://www.github.com/langchain-ai/langchain/discussions/categories/q-a
+  - name: Discord
+    url: https://discord.gg/6adMQxSpJS
+    about: General community discussions
+  - name: Feature Request
+    url: https://www.github.com/langchain-ai/langchain/discussions/categories/ideas
+    about: Suggest a feature or an idea
+  - name: Show and tell
+    about: Show what you built with LangChain
+    url: https://www.github.com/langchain-ai/langchain/discussions/categories/show-and-tell

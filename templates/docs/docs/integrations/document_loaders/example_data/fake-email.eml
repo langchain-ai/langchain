@@ -1,0 +1,20 @@
+MIME-Version: 1.0
+Date: Fri, 16 Dec 2022 17:04:16 -0500
+Message-ID: <CADc-_xaLB2FeVQ7mNsoX+NJb_7hAJhBKa_zet-rtgPGenj0uVw@mail.gmail.com>
+Subject: Test Email
+From: Matthew Robinson <mrobinson@unstructured.io>
+To: Matthew Robinson <mrobinson@unstructured.io>
+Content-Type: multipart/alternative; boundary="00000000000095c9b205eff92630"
+
+--00000000000095c9b205eff92630
+Content-Type: text/plain; charset="UTF-8"
+This is a test email to use for unit tests.
+Important points:
+   - Roses are red
+   - Violets are blue
+--00000000000095c9b205eff92630
+Content-Type: text/html; charset="UTF-8"
+
+<div dir="ltr"><div>This is a test email to use for unit tests.</div><div><br></div><div>Important points:</div><div><ul><li>Roses are red</li><li>Violets are blue</li></ul></div></div>
+
+--00000000000095c9b205eff92630--
