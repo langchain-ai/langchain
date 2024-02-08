@@ -1,5 +1,6 @@
 """test Databricks LLM"""
 import pickle
+from typing import Any, Dict
 
 from pytest import MonkeyPatch
 
@@ -7,7 +8,14 @@ from langchain_community.llms.databricks import Databricks
 
 
 class MockDatabricksServingEndpointClient:
-    def __init__(self, host, api_token, endpoint_name, databricks_uri, task):
+    def __init__(
+        self,
+        host: str,
+        api_token: str,
+        endpoint_name: str,
+        databricks_uri: str,
+        task: str,
+    ):
         self.host = host
         self.api_token = api_token
         self.endpoint_name = endpoint_name
@@ -15,7 +23,7 @@ class MockDatabricksServingEndpointClient:
         self.task = task
 
 
-def transform_input(**request):
+def transform_input(**request: Any) -> Dict[str, Any]:
     request["messages"] = [{"role": "user", "content": request["prompt"]}]
     del request["prompt"]
     return request
