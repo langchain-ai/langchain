@@ -33,6 +33,7 @@ from langchain.text_splitters.recursive_character import (
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
 )
+from langchain.text_splitters.recursive_json import RecursiveJsonSplitter
 from langchain.text_splitters.spacy import SpacyTextSplitter
 from langchain.text_splitters.token import (
     SentenceTransformersTokenTextSplitter,
@@ -55,6 +56,7 @@ __all__ = [
     "NLTKTextSplitter",
     "PythonCodeTextSplitter",
     "RecursiveCharacterTextSplitter",
+    "RecursiveJsonSplitter",
     "SentenceTransformersTokenTextSplitter",
     "SpacyTextSplitter",
     "TS",
