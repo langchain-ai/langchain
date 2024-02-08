@@ -191,7 +191,8 @@ class NotionDBLoader(BaseLoader):
         return "\n".join(result_lines_arr)
 
     def _request(
-        self, url: str,
+        self,
+        url: str,
         method: str = "GET",
         query_dict: Dict[str, Any] = {},
         filter_object: Dict[str, Any] = {}
