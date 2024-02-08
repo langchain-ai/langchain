@@ -22,7 +22,15 @@ class NotionDBLoader(BaseLoader):
             Defaults to 10.
         filter_object (Dict[str, Any]): Filter object used to limit returned
             entries based on specified criteria.
-            Defaults to empty dict, which will return ALL entries.
+            E.g.: {
+                "timestamp": "last_edited_time",
+                "last_edited_time": {
+                    "on_or_after": "2024-02-07"
+                }
+            } -> will only return entries that were last edited
+                on or after 2024-02-07
+            Notion docs: https://developers.notion.com/reference/post-database-query-filter
+            Defaults to None, which will return ALL entries.
     """
 
     def __init__(
@@ -30,7 +38,8 @@ class NotionDBLoader(BaseLoader):
         integration_token: str,
         database_id: str,
         request_timeout_sec: Optional[int] = 10,
-        filter_object: Optional[Dict[str, Any]] = {}
+        *,
+        filter_object: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize with parameters."""
         if not integration_token:
@@ -71,7 +80,7 @@ class NotionDBLoader(BaseLoader):
                 DATABASE_URL.format(database_id=self.database_id),
                 method="POST",
                 query_dict=query_dict,
-                filter_object=self.filter_object
+                filter_object=self.filter_object,
             )
 
             pages.extend(data.get("results"))
@@ -195,7 +204,8 @@ class NotionDBLoader(BaseLoader):
         url: str,
         method: str = "GET",
         query_dict: Dict[str, Any] = {},
-        filter_object: Dict[str, Any] = {}
+        *,
+        filter_object: Dict[str, Any] = None,
     ) -> Any:
         res = requests.request(
             method,
@@ -203,7 +213,7 @@ class NotionDBLoader(BaseLoader):
             headers=self.headers,
             json=query_dict,
             timeout=self.request_timeout_sec,
-            filter=filter_object
+            filter=filter_object,
         )
         res.raise_for_status()
         return res.json()
