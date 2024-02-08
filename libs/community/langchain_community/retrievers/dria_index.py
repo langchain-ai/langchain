@@ -2,17 +2,17 @@
 
 from typing import List, Optional
 
-# Assuming DriaAPIWrapper is defined in langchain_community.utilities.dria
-from langchain.utilities import DriaAPIWrapper
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+
+from langchain_community.utilities import DriaAPIWrapper
 
 
 class DriaRetriever(BaseRetriever):
     """`Dria` retriever using the DriaAPIWrapper."""
 
-    api_wrapper: Optional[DriaAPIWrapper]
+    api_wrapper: DriaAPIWrapper
 
     def __init__(self, api_key: str, contract_id: Optional[str] = None):
         """
@@ -52,7 +52,7 @@ class DriaRetriever(BaseRetriever):
     def add_texts(
         self,
         texts: List,
-    ):
+    ) -> None:
         """Add texts to the Dria knowledge base.
 
         Args:
