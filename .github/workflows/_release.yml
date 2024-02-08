@@ -15,7 +15,7 @@ on:
         default: 'libs/langchain'
 
 env:
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: "3.11"
   POETRY_VERSION: "1.7.1"
 
 jobs:
@@ -176,13 +176,26 @@ jobs:
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_ENVIRONMENT: ${{ secrets.PINECONE_ENVIRONMENT }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: Run unit tests with minimum dependency versions
-        if: ${{ (inputs.working-directory == 'libs/langchain') || (inputs.working-directory == 'libs/community') || (inputs.working-directory == 'libs/experimental') }}
+      - name: Get minimum versions
+        working-directory: ${{ inputs.working-directory }}
+        id: min-version
         run: |
-          poetry run pip install -r _test_minimum_requirements.txt
+          poetry run pip install packaging
+          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml)"
+          echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
+          echo "min-versions=$min_versions"
+
+      - name: Run unit tests with minimum dependency versions
+        if: ${{ steps.min-version.outputs.min-versions != '' }}
+        env:
+          MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
+        run: |
+          poetry run pip install $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 

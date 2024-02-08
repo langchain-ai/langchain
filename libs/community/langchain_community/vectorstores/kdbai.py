@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class KDBAI(VectorStore):
-    """`KDB.AI` vector store [https://kdb.ai](https://kdb.ai)
+    """`KDB.AI` vector store.
 
     To use, you should have the `kdbai_client` python package installed.
 
@@ -25,7 +25,7 @@ class KDBAI(VectorStore):
         distance_strategy: One option from DistanceStrategy.EUCLIDEAN_DISTANCE,
             DistanceStrategy.DOT_PRODUCT or DistanceStrategy.COSINE.
 
-    See the example [notebook](https://github.com/KxSystems/langchain/blob/KDB.AI/docs/docs/integrations/vectorstores/kdbai.ipynb).
+    See the example https://github.com/KxSystems/langchain/blob/KDB.AI/docs/docs/integrations/vectorstores/kdbai.ipynb.
     """
 
     def __init__(
