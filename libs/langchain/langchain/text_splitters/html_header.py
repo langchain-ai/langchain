@@ -108,7 +108,7 @@ class HTMLHeaderTextSplitter(BaseTextToDocumentsSplitter):
         # see comments in html_chunks_with_headers.xslt for more detailed information.
         xslt_path = (
             pathlib.Path(__file__).parent
-            / "document_transformers/xsl/html_chunks_with_headers.xslt"
+            / "xsl/html_chunks_with_headers.xslt"
         )
         xslt_tree = etree.parse(xslt_path)
         transform = etree.XSLT(xslt_tree)
