@@ -28,32 +28,6 @@ curl https://clickhouse.com/ | sh
 ./clickhouse server
 ```
 
-Once you've done that, connect to the server:
-
-```bash
-./clickhouse client -m
-```
-
-And then create the following table:
-
-```sql
-SET allow_experimental_object_type=1;
-```
-
-```sql
-CREATE TABLE IF NOT EXISTS default.clickhouse_vector_search_example
-(
-    `id` Nullable(String),
-    `document` Nullable(String),
-    `embedding` Array(Float32),
-    `metadata` JSON,
-    `uuid` UUID DEFAULT generateUUIDv4(),
-    CONSTRAINT cons_vec_len CHECK length(embedding) = 384
-)
-ENGINE = MergeTree
-ORDER BY uuid;
-```
-
 ## Usage
 
 To use this package, you should first have the LangChain CLI installed:
