@@ -364,14 +364,15 @@ def _convert_function_call_req(
     function_declarations = []
     for fc in function_calls:
         function_declarations.append(_convert_fc_type(fc))
+    import pdb
+
+    pdb.set_trace()
     return {
         "function_declarations": function_declarations,
     }
 
 
 def _convert_fc_type(fc: Union[BaseTool, Type[BaseModel]]) -> Dict:
-    if isinstance(fc, BaseTool):
-        func = 
 
     # type_: "Type"
     # format_: str
