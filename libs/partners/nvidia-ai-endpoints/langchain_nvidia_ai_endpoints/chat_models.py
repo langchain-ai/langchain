@@ -116,6 +116,10 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
             response = model.invoke("Hello")
     """
 
+    model_kws: List[str] = [
+        'temperature', 'max_tokens', 'top_p', 'seed', 'bad', 'stop', 'labels'
+    ]
+
     @property
     def _llm_type(self) -> str:
         """Return type of NVIDIA AI Foundation Model Interface."""
@@ -126,13 +130,12 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[Sequence[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        labels: Optional[dict] = None,
         **kwargs: Any,
     ) -> str:
         """Invoke on a single list of chat messages."""
         inputs = self.custom_preprocess(messages)
         responses = self.get_generation(
-            inputs=inputs, stop=stop, labels=labels, **kwargs
+            inputs=inputs, stop=stop, **kwargs
         )
         outputs = self.custom_postprocess(responses)
         return outputs
@@ -148,13 +151,12 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[Sequence[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        labels: Optional[dict] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Allows streaming to model!"""
         inputs = self.custom_preprocess(messages)
         for response in self.get_stream(
-            inputs=inputs, stop=stop, labels=labels, **kwargs
+            inputs=inputs, stop=stop, **kwargs
         ):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
@@ -166,12 +168,11 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[Sequence[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        labels: Optional[dict] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         inputs = self.custom_preprocess(messages)
         async for response in self.get_astream(
-            inputs=inputs, stop=stop, labels=labels, **kwargs
+            inputs=inputs, stop=stop, **kwargs
         ):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
@@ -233,3 +234,65 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
             f"Got ambiguous message in postprocessing; returning as-is: msg = {msg}"
         )
         return str(msg)
+    
+    ######################################################################################
+    ## Core client-side interfaces
+
+    def get_generation(
+        self,
+        inputs: Sequence[Dict],
+        **kwargs: Any,
+    ) -> dict:
+        """Call to client generate method with call scope"""
+        stop = kwargs.get("stop", None)
+        payload = self.get_payload(inputs=inputs, stream=False, **kwargs)
+        out = self.client.get_req_generation(self.model, stop=stop, payload=payload)
+        return out
+
+    def get_stream(
+        self,
+        inputs: Sequence[Dict],
+        **kwargs: Any,
+    ) -> Iterator:
+        """Call to client stream method with call scope"""
+        stop = kwargs.get("stop", None)
+        payload = self.get_payload(inputs=inputs, stream=True, **kwargs)
+        return self.client.get_req_stream(self.model, stop=stop, payload=payload)
+
+    def get_astream(
+        self,
+        inputs: Sequence[Dict],
+        **kwargs: Any,
+    ) -> AsyncIterator:
+        """Call to client astream methods with call scope"""
+        stop = kwargs.get("stop", None)
+        payload = self.get_payload(inputs=inputs, stream=True, **kwargs)
+        return self.client.get_req_astream(self.model, stop=stop, payload=payload)
+    
+    def get_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
+        """Generates payload for the _NVIDIAClient API to send to service."""
+        new_kwargs = {**kwargs, **self.model_kwargs}
+        return self.prep_payload(inputs=inputs, **new_kwargs)
+
+    def prep_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
+        """Prepares a message or list of messages for the payload"""
+        messages = [self.prep_msg(m) for m in inputs]
+        if kwargs.get('labels'):
+            # (WFH) Labels are currently (?) always passed as an assistant
+            # suffix message, but this API seems less stable.
+            messages += [{"labels": kwargs.pop('labels'), "role": "assistant"}]
+        if kwargs.get('stop') is None:
+            kwargs.pop('stop')
+        return {"messages": messages, **kwargs}
+
+    def prep_msg(self, msg: Union[str, dict, BaseMessage]) -> dict:
+        """Helper Method: Ensures a message is a dictionary with a role and content."""
+        if isinstance(msg, str):
+            # (WFH) this shouldn't ever be reached but leaving this here bcs
+            # it's a Chesterton's fence I'm unwilling to touch
+            return dict(role="user", content=msg)
+        if isinstance(msg, dict):
+            if msg.get("content", None) is None:
+                raise ValueError(f"Message {msg} has no content")
+            return msg
+        raise ValueError(f"Unknown message received: {msg} of type {type(msg)}")
