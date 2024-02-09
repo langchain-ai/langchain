@@ -455,7 +455,9 @@ class _NVIDIAClient(BaseModel):
     @root_validator(pre=False)
     def validate_arguments(cls, values: Any) -> Any:
         """Validate and update model keyword arguments"""
-        values['model_kwargs'] = {k: v for k, v in values['model_kwargs'].items() if k in values['model_kws']}
+        values['model_kwargs'] = {
+            k: v for k, v in values['model_kwargs'].items() if k in values['model_kws']
+        }
         return values
 
     @classmethod
