@@ -196,7 +196,7 @@ class InMemoryCache(BaseCache):
 Base = declarative_base()
 
 
-class FullLLMCache(Base):  # type: ignore
+class FullLLMCache(Base):
     """SQLite table for full LLM Cache (all generations)."""
 
     __tablename__ = "full_llm_cache"
@@ -219,7 +219,7 @@ class SQLAlchemyCache(BaseCache):
         """Look up based on prompt and llm_string."""
         stmt = (
             select(self.cache_schema.response)
-            .where(self.cache_schema.prompt == prompt)  # type: ignore
+            .where(self.cache_schema.prompt == prompt)
             .where(self.cache_schema.llm == llm_string)
             .order_by(self.cache_schema.idx)
         )
@@ -442,7 +442,7 @@ class RedisCache(_RedisCacheBase):
         """Look up based on prompt and llm_string."""
         # Read from a Redis HASH
         results = self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)  # type: ignore[arg-type]
+        return self._get_generations(results)
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
@@ -506,7 +506,7 @@ class AsyncRedisCache(_RedisCacheBase):
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string. Async version."""
         results = await self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)  # type: ignore[arg-type]
+        return self._get_generations(results)
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
@@ -524,7 +524,7 @@ class AsyncRedisCache(_RedisCacheBase):
 
         async with self.redis.pipeline() as pipe:
             self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-            await pipe.execute()  # type: ignore[attr-defined]
+            await pipe.execute()
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
@@ -734,9 +734,9 @@ class GPTCache(BaseCache):
         if self.init_gptcache_func is not None:
             sig = inspect.signature(self.init_gptcache_func)
             if len(sig.parameters) == 2:
-                self.init_gptcache_func(_gptcache, llm_string)  # type: ignore[call-arg]
+                self.init_gptcache_func(_gptcache, llm_string)
             else:
-                self.init_gptcache_func(_gptcache)  # type: ignore[call-arg]
+                self.init_gptcache_func(_gptcache)
         else:
             _gptcache.init(
                 pre_embedding_func=get_prompt,
@@ -1262,7 +1262,7 @@ class CassandraSemanticCache(BaseCache):
         self.table.clear()
 
 
-class FullMd5LLMCache(Base):  # type: ignore
+class FullMd5LLMCache(Base):
     """SQLite table for full LLM Cache (all generations)."""
 
     __tablename__ = "full_md5_llm_cache"
@@ -1314,7 +1314,7 @@ class SQLAlchemyMd5Cache(BaseCache):
     def _delete_previous(self, prompt: str, llm_string: str) -> None:
         stmt = (
             select(self.cache_schema.response)
-            .where(self.cache_schema.prompt_md5 == self.get_md5(prompt))  # type: ignore
+            .where(self.cache_schema.prompt_md5 == self.get_md5(prompt))
             .where(self.cache_schema.llm == llm_string)
             .where(self.cache_schema.prompt == prompt)
             .order_by(self.cache_schema.idx)
@@ -1328,7 +1328,7 @@ class SQLAlchemyMd5Cache(BaseCache):
         prompt_pd5 = self.get_md5(prompt)
         stmt = (
             select(self.cache_schema.response)
-            .where(self.cache_schema.prompt_md5 == prompt_pd5)  # type: ignore
+            .where(self.cache_schema.prompt_md5 == prompt_pd5)
             .where(self.cache_schema.llm == llm_string)
             .where(self.cache_schema.prompt == prompt)
             .order_by(self.cache_schema.idx)
