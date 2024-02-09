@@ -428,9 +428,7 @@ class GitHubAPIWrapper(BaseModel):
                             "download_url"
                         ]
                     else:
-                        print(
-                            f"Failed to download file: {file.contents_url}, skipping"
-                        )  # noqa: T201
+                        print(f"Failed to download file: {file.contents_url}, skipping")  # noqa: T201
                         continue
 
                     file_content_response = requests.get(download_url)
@@ -460,9 +458,7 @@ class GitHubAPIWrapper(BaseModel):
                         )
                         total_tokens += file_tokens
                 except Exception as e:
-                    print(
-                        f"Error when reading files from a PR on github. {e}"
-                    )  # noqa: T201
+                    print(f"Error when reading files from a PR on github. {e}")  # noqa: T201
             page += 1
         return pr_files
 

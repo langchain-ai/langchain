@@ -74,9 +74,7 @@ class ParserEmbeddings(Embeddings):
             assert len(vals) == self.dimension
             return vals
         except Exception:
-            print(
-                f'[ParserEmbeddings] Returning a moot vector for "{text}"'
-            )  # noqa: T201
+            print(f'[ParserEmbeddings] Returning a moot vector for "{text}"')  # noqa: T201
             return [0.0] * self.dimension
 
     async def aembed_query(self, text: str) -> List[float]:

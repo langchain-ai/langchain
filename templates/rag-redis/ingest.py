@@ -25,9 +25,7 @@ def ingest_documents():
     loader = UnstructuredFileLoader(doc, mode="single", strategy="fast")
     chunks = loader.load_and_split(text_splitter)
 
-    print(
-        "Done preprocessing. Created", len(chunks), "chunks of the original pdf"
-    )  # noqa: T201
+    print("Done preprocessing. Created", len(chunks), "chunks of the original pdf")  # noqa: T201
     # Create vectorstore
     embedder = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 

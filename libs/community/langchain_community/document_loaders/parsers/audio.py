@@ -77,9 +77,7 @@ class OpenAIWhisperParser(BaseBlobParser):
                     break
                 except Exception as e:
                     attempts += 1
-                    print(
-                        f"Attempt {attempts} failed. Exception: {str(e)}"
-                    )  # noqa: T201
+                    print(f"Attempt {attempts} failed. Exception: {str(e)}")  # noqa: T201
                     time.sleep(5)
             else:
                 print("Failed to transcribe after 3 attempts.")  # noqa: T201

@@ -29,7 +29,7 @@ class FakeListLLM(LLM):
         """Increment counter, and then return response in that index."""
         self.i += 1
         print(f"=== Mock Response #{self.i} ===")
-        print(self.responses[self.i])
+        print(self.responses[self.i])  # noqa: T201
         return self.responses[self.i]
 
     def get_num_tokens(self, text: str) -> int:

@@ -86,9 +86,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
                 return None
         except Exception as e:
             # Log the exception or handle it as needed
-            print(
-                f"Exception occurred while trying to get embeddings: {str(e)}"
-            )  # noqa: T201
+            print(f"Exception occurred while trying to get embeddings: {str(e)}")  # noqa: T201
             return None
 
     def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
