@@ -61,9 +61,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         """Append the message to the record in PostgreSQL"""
         from psycopg import sql
 
-        query = sql.SQL("INSERT INTO {} (session_id, message) VALUES (%s, %s);").format(
-            sql.Identifier(self.table_name)
-        )
+        query = f"INSERT INTO {self.table_name} (session_id, message) VALUES (%s, %s);"
         self.cursor.execute(
             query, (self.session_id, json.dumps(message_to_dict(message)))
         )
