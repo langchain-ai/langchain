@@ -9,13 +9,9 @@ This example creates an agent that can optionally look up information on the int
 
 The following environment variables need to be set:
 
-Set the `TAVILY_API_KEY` environment variable to access Tavily.
+Set the `TAVILY_API_KEY` environment variable to access Tavily
 
-You will also need to authenticate with Google:
-
-```shell
-gcloud auth application-default login
-```
+Set the `GOOGLE_API_KEY` environment variable to access the Google Gemini APIs.
 
 ## Usage
 
