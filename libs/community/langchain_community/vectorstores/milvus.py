@@ -569,7 +569,7 @@ class Milvus(VectorStore):
                             if self.auto_id
                             else [x for x in self.fields]
                         )
-                        for key in keys:
+                        if key in keys:
                             insert_dict.setdefault(key, []).append(value)
 
         # Total insert count
