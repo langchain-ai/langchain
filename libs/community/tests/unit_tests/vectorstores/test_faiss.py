@@ -138,7 +138,9 @@ async def test_faiss_vector_async_sim_with_score_threshold() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     query_vec = await FakeEmbeddings().aembed_query(text="foo")
-    output = await docsearch.asimilarity_search_by_vector(query_vec, k=2, score_threshold=0.2)
+    output = await docsearch.asimilarity_search_by_vector(
+        query_vec, k=2, score_threshold=0.2
+    )
     assert output == [Document(page_content="foo")]
 
 
@@ -238,7 +240,9 @@ def test_faiss_mmr() -> None:
     docsearch = FAISS.from_texts(texts, FakeEmbeddings())
     query_vec = FakeEmbeddings().embed_query(text="foo")
     # make sure we can have k > docstore size
-    output = docsearch.max_marginal_relevance_search_with_score_by_vector(query_vec, k=10, lambda_mult=0.1)
+    output = docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1
+    )
     assert len(output) == len(texts)
     assert output[0][0] == Document(page_content="foo")
     assert output[0][1] == 0.0
@@ -251,7 +255,9 @@ async def test_faiss_async_mmr() -> None:
     docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings())
     query_vec = await FakeEmbeddings().aembed_query(text="foo")
     # make sure we can have k > docstore size
-    output = await docsearch.amax_marginal_relevance_search_with_score_by_vector(query_vec, k=10, lambda_mult=0.1)
+    output = await docsearch.amax_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1
+    )
     assert len(output) == len(texts)
     assert output[0][0] == Document(page_content="foo")
     assert output[0][1] == 0.0
@@ -264,7 +270,9 @@ def test_faiss_mmr_with_metadatas() -> None:
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     query_vec = FakeEmbeddings().embed_query(text="foo")
-    output = docsearch.max_marginal_relevance_search_with_score_by_vector(query_vec, k=10, lambda_mult=0.1)
+    output = docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1
+    )
     assert len(output) == len(texts)
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
@@ -277,7 +285,9 @@ async def test_faiss_async_mmr_with_metadatas() -> None:
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     query_vec = await FakeEmbeddings().aembed_query(text="foo")
-    output = await docsearch.amax_marginal_relevance_search_with_score_by_vector(query_vec, k=10, lambda_mult=0.1)
+    output = await docsearch.amax_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1
+    )
     assert len(output) == len(texts)
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
@@ -313,8 +323,11 @@ async def test_faiss_async_mmr_with_metadatas_and_filter() -> None:
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
     assert output[0][1] == 0.0
-    assert output == await docsearch.amax_marginal_relevance_search_with_score_by_vector(
-        query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] == 1
+    assert (
+        output
+        == await docsearch.amax_marginal_relevance_search_with_score_by_vector(
+            query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] == 1
+        )
     )
 
 
@@ -364,9 +377,15 @@ def test_faiss_with_metadatas() -> None:
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     expected_docstore = InMemoryDocstore(
         {
-            docsearch.index_to_docstore_id[0]: Document(page_content="foo", metadata={"page": 0}),
-            docsearch.index_to_docstore_id[1]: Document(page_content="bar", metadata={"page": 1}),
-            docsearch.index_to_docstore_id[2]: Document(page_content="baz", metadata={"page": 2}),
+            docsearch.index_to_docstore_id[0]: Document(
+                page_content="foo", metadata={"page": 0}
+            ),
+            docsearch.index_to_docstore_id[1]: Document(
+                page_content="bar", metadata={"page": 1}
+            ),
+            docsearch.index_to_docstore_id[2]: Document(
+                page_content="baz", metadata={"page": 2}
+            ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
@@ -382,9 +401,15 @@ async def test_faiss_async_with_metadatas() -> None:
     docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     expected_docstore = InMemoryDocstore(
         {
-            docsearch.index_to_docstore_id[0]: Document(page_content="foo", metadata={"page": 0}),
-            docsearch.index_to_docstore_id[1]: Document(page_content="bar", metadata={"page": 1}),
-            docsearch.index_to_docstore_id[2]: Document(page_content="baz", metadata={"page": 2}),
+            docsearch.index_to_docstore_id[0]: Document(
+                page_content="foo", metadata={"page": 0}
+            ),
+            docsearch.index_to_docstore_id[1]: Document(
+                page_content="bar", metadata={"page": 1}
+            ),
+            docsearch.index_to_docstore_id[2]: Document(
+                page_content="baz", metadata={"page": 2}
+            ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
@@ -399,16 +424,24 @@ def test_faiss_with_metadatas_and_filter() -> None:
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     expected_docstore = InMemoryDocstore(
         {
-            docsearch.index_to_docstore_id[0]: Document(page_content="foo", metadata={"page": 0}),
-            docsearch.index_to_docstore_id[1]: Document(page_content="bar", metadata={"page": 1}),
-            docsearch.index_to_docstore_id[2]: Document(page_content="baz", metadata={"page": 2}),
+            docsearch.index_to_docstore_id[0]: Document(
+                page_content="foo", metadata={"page": 0}
+            ),
+            docsearch.index_to_docstore_id[1]: Document(
+                page_content="bar", metadata={"page": 1}
+            ),
+            docsearch.index_to_docstore_id[2]: Document(
+                page_content="baz", metadata={"page": 2}
+            ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
     # make sure it returns the result that matches the filter. Not the one who's text matches better.
     assert output == [Document(page_content="bar", metadata={"page": 1})]
-    assert output == docsearch.similarity_search("foo", k=1, filter=lambda di: di["page"] == 1)
+    assert output == docsearch.similarity_search(
+        "foo", k=1, filter=lambda di: di["page"] == 1
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -418,16 +451,24 @@ async def test_faiss_async_with_metadatas_and_filter() -> None:
     docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     expected_docstore = InMemoryDocstore(
         {
-            docsearch.index_to_docstore_id[0]: Document(page_content="foo", metadata={"page": 0}),
-            docsearch.index_to_docstore_id[1]: Document(page_content="bar", metadata={"page": 1}),
-            docsearch.index_to_docstore_id[2]: Document(page_content="baz", metadata={"page": 2}),
+            docsearch.index_to_docstore_id[0]: Document(
+                page_content="foo", metadata={"page": 0}
+            ),
+            docsearch.index_to_docstore_id[1]: Document(
+                page_content="bar", metadata={"page": 1}
+            ),
+            docsearch.index_to_docstore_id[2]: Document(
+                page_content="baz", metadata={"page": 2}
+            ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foo", k=1, filter={"page": 1})
     # make sure it returns the result that matches the filter. Not the one who's text matches better.
     assert output == [Document(page_content="bar", metadata={"page": 1})]
-    assert output == await docsearch.asimilarity_search("foo", k=1, filter=lambda di: di["page"] == 1)
+    assert output == await docsearch.asimilarity_search(
+        "foo", k=1, filter=lambda di: di["page"] == 1
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -437,17 +478,29 @@ def test_faiss_with_metadatas_and_list_filter() -> None:
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     expected_docstore = InMemoryDocstore(
         {
-            docsearch.index_to_docstore_id[0]: Document(page_content="foo", metadata={"page": 0}),
-            docsearch.index_to_docstore_id[1]: Document(page_content="bar", metadata={"page": 1}),
-            docsearch.index_to_docstore_id[2]: Document(page_content="baz", metadata={"page": 2}),
-            docsearch.index_to_docstore_id[3]: Document(page_content="foo", metadata={"page": 3}),
-            docsearch.index_to_docstore_id[4]: Document(page_content="qux", metadata={"page": 3}),
+            docsearch.index_to_docstore_id[0]: Document(
+                page_content="foo", metadata={"page": 0}
+            ),
+            docsearch.index_to_docstore_id[1]: Document(
+                page_content="bar", metadata={"page": 1}
+            ),
+            docsearch.index_to_docstore_id[2]: Document(
+                page_content="baz", metadata={"page": 2}
+            ),
+            docsearch.index_to_docstore_id[3]: Document(
+                page_content="foo", metadata={"page": 3}
+            ),
+            docsearch.index_to_docstore_id[4]: Document(
+                page_content="qux", metadata={"page": 3}
+            ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foor", k=1, filter={"page": [0, 1, 2]})
     assert output == [Document(page_content="foo", metadata={"page": 0})]
-    assert output == docsearch.similarity_search("foor", k=1, filter=lambda di: di["page"] in [0, 1, 2])
+    assert output == docsearch.similarity_search(
+        "foor", k=1, filter=lambda di: di["page"] in [0, 1, 2]
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -457,17 +510,29 @@ async def test_faiss_async_with_metadatas_and_list_filter() -> None:
     docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     expected_docstore = InMemoryDocstore(
         {
-            docsearch.index_to_docstore_id[0]: Document(page_content="foo", metadata={"page": 0}),
-            docsearch.index_to_docstore_id[1]: Document(page_content="bar", metadata={"page": 1}),
-            docsearch.index_to_docstore_id[2]: Document(page_content="baz", metadata={"page": 2}),
-            docsearch.index_to_docstore_id[3]: Document(page_content="foo", metadata={"page": 3}),
-            docsearch.index_to_docstore_id[4]: Document(page_content="qux", metadata={"page": 3}),
+            docsearch.index_to_docstore_id[0]: Document(
+                page_content="foo", metadata={"page": 0}
+            ),
+            docsearch.index_to_docstore_id[1]: Document(
+                page_content="bar", metadata={"page": 1}
+            ),
+            docsearch.index_to_docstore_id[2]: Document(
+                page_content="baz", metadata={"page": 2}
+            ),
+            docsearch.index_to_docstore_id[3]: Document(
+                page_content="foo", metadata={"page": 3}
+            ),
+            docsearch.index_to_docstore_id[4]: Document(
+                page_content="qux", metadata={"page": 3}
+            ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foor", k=1, filter={"page": [0, 1, 2]})
     assert output == [Document(page_content="foo", metadata={"page": 0})]
-    assert output == await docsearch.asimilarity_search("foor", k=1, filter=lambda di: di["page"] in [0, 1, 2])
+    assert output == await docsearch.asimilarity_search(
+        "foor", k=1, filter=lambda di: di["page"] in [0, 1, 2]
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -595,7 +660,9 @@ def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
         FakeEmbeddings(),
         relevance_score_fn=lambda score: 1.0 - score / math.sqrt(2),
     )
-    outputs = docsearch.similarity_search_with_relevance_scores("foo", k=2, score_threshold=0.5)
+    outputs = docsearch.similarity_search_with_relevance_scores(
+        "foo", k=2, score_threshold=0.5
+    )
     assert len(outputs) == 1
     output, score = outputs[0]
     assert output == Document(page_content="foo")
@@ -611,7 +678,9 @@ async def test_faiss_asimilarity_search_with_relevance_scores_with_threshold() -
         FakeEmbeddings(),
         relevance_score_fn=lambda score: 1.0 - score / math.sqrt(2),
     )
-    outputs = await docsearch.asimilarity_search_with_relevance_scores("foo", k=2, score_threshold=0.5)
+    outputs = await docsearch.asimilarity_search_with_relevance_scores(
+        "foo", k=2, score_threshold=0.5
+    )
     assert len(outputs) == 1
     output, score = outputs[0]
     assert output == Document(page_content="foo")
@@ -622,7 +691,9 @@ async def test_faiss_asimilarity_search_with_relevance_scores_with_threshold() -
 def test_faiss_invalid_normalize_fn() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
-    docsearch = FAISS.from_texts(texts, FakeEmbeddings(), relevance_score_fn=lambda _: 2.0)
+    docsearch = FAISS.from_texts(
+        texts, FakeEmbeddings(), relevance_score_fn=lambda _: 2.0
+    )
     with pytest.warns(Warning, match="scores must be between"):
         docsearch.similarity_search_with_relevance_scores("foo", k=1)
 
@@ -631,7 +702,9 @@ def test_faiss_invalid_normalize_fn() -> None:
 async def test_faiss_async_invalid_normalize_fn() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
-    docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings(), relevance_score_fn=lambda _: 2.0)
+    docsearch = await FAISS.afrom_texts(
+        texts, FakeEmbeddings(), relevance_score_fn=lambda _: 2.0
+    )
     with pytest.warns(Warning, match="scores must be between"):
         await docsearch.asimilarity_search_with_relevance_scores("foo", k=1)
 
@@ -660,14 +733,18 @@ def test_ip_score() -> None:
     scores = db.similarity_search_with_relevance_scores("sundays", k=1)
     assert len(scores) == 1, "only one vector should be in db"
     _, score = scores[0]
-    assert score == 1, f"expected inner product of equivalent vectors to be 1, not {score}"
+    assert (
+        score == 1
+    ), f"expected inner product of equivalent vectors to be 1, not {score}"
 
 
 @pytest.mark.requires("faiss")
 async def test_async_missing_normalize_score_fn() -> None:
     """Test doesn't perform similarity search without a valid distance strategy."""
     texts = ["foo", "bar", "baz"]
-    faiss_instance = await FAISS.afrom_texts(texts, FakeEmbeddings(), distance_strategy="fake")
+    faiss_instance = await FAISS.afrom_texts(
+        texts, FakeEmbeddings(), distance_strategy="fake"
+    )
     with pytest.raises(ValueError):
         await faiss_instance.asimilarity_search_with_relevance_scores("foo", k=2)
 
@@ -688,7 +765,9 @@ def test_delete() -> None:
 async def test_async_delete() -> None:
     """Test the similarity search with normalized similarities."""
     ids = ["a", "b", "c"]
-    docsearch = await FAISS.afrom_texts(["foo", "bar", "baz"], FakeEmbeddings(), ids=ids)
+    docsearch = await FAISS.afrom_texts(
+        ["foo", "bar", "baz"], FakeEmbeddings(), ids=ids
+    )
     docsearch.delete(ids[1:2])
 
     result = await docsearch.asimilarity_search("bar", k=2)
