@@ -81,7 +81,7 @@ extended_testing = [
  "jinja2",
 ]
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes

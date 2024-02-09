@@ -55,7 +55,7 @@ optional = true
 [tool.poetry.group.test_integration.dependencies]
 
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
