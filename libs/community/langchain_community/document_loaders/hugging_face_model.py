@@ -5,13 +5,38 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 class HuggingFaceModelLoader(BaseLoader):
-    """Load model information from `Hugging Face Hub`, including README content."""
+    """
+    Load model information from `Hugging Face Hub`, including README content.
+
+    This loader interfaces with the Hugging Face Models API to fetch and load model metadata and README files. 
+    The API allows you to search and filter models based on specific criteria such as model tags, authors, and more.
+
+    API URL: https://huggingface.co/api/models
+    DOC URL: https://huggingface.co/docs/hub/en/api
+
+    Usage Example:
+    ```python
+    from langchain_community.document_loaders import HuggingFaceModelLoader
+
+    # Initialize the loader with search criteria
+    loader = HuggingFaceModelLoader(search="bert", limit=10)
+
+    # Load models
+    documents = loader.load()
+
+    # Iterate through the fetched documents
+    for doc in documents:
+        print(doc.page_content)  # README content of the model
+        print(doc.metadata)      # Metadata of the model
+    ```
+    """
 
     BASE_URL = "https://huggingface.co/api/models"
     README_BASE_URL = "https://huggingface.co/{model_id}/raw/main/README.md"
 
     def __init__(
         self,
+        *,
         search: Optional[str] = None,
         author: Optional[str] = None,
         filter: Optional[str] = None,
@@ -80,12 +105,3 @@ class HuggingFaceModelLoader(BaseLoader):
 
 
 
-if __name__ == "__main__":
-    loader = HuggingFaceModelLoader(search="phi-2", sort="downloads", direction=-1 ,limit=10)
-    documents = loader.load()
-    # pretty print the first document with all json fields expanded so that we can see the structure
-    import json
-    print(len(documents))
-    print(json.dumps(documents[0].metadata, indent=4))
-    print(documents[0].page_content)
-    #print(documents)
