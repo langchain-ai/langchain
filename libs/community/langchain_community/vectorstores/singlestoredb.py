@@ -92,19 +92,26 @@ class SingleStoreDB(VectorStore):
             vector_field (str, optional): Specifies the field to store the vector.
                 Defaults to "vector".
 
-            use_vector_index (bool, optional): Toggles the use of a vector index. Works only with SingleStoreDB 8.5 or later.
-                Defaults to False. If set to True, vector_size parameter is required to be set to a proper value.
+            use_vector_index (bool, optional): Toggles the use of a vector index.
+                Works only with SingleStoreDB 8.5 or later. Defaults to False.
+                If set to True, vector_size parameter is required to be set to
+                a proper value.
 
-            vector_index_name (str, optional): Specifies the name of the vector index. Defaults to empty.
-                Will be ignored if use_vector_index is set to False.
+            vector_index_name (str, optional): Specifies the name of the vector index.
+                Defaults to empty. Will be ignored if use_vector_index is set to False.
 
-            vector_index_options (dict, optional): Specifies the options for the vector index. Defaults to {}.
+            vector_index_options (dict, optional): Specifies the options for
+                the vector index. Defaults to {}.
                 Will be ignored if use_vector_index is set to False. The options are:
-                index_type (str, optional): Specifies the type of the index. Defaults to IVF_PQFS.
-                For more options, please refer to the SingleStoreDB documentation: https://docs.singlestore.com/cloud/reference/sql-reference/vector-functions/vector-indexing/
+                index_type (str, optional): Specifies the type of the index.
+                    Defaults to IVF_PQFS.
+                For more options, please refer to the SingleStoreDB documentation:
+                https://docs.singlestore.com/cloud/reference/sql-reference/vector-functions/vector-indexing/
 
-            vector_size (int, optional): Specifies the size of the vector. Defaults to 1536. Required if use_vector_index is set to True.
-                Should be set to the same value as the size of the vectors stored in the vector_field.
+            vector_size (int, optional): Specifies the size of the vector.
+                Defaults to 1536. Required if use_vector_index is set to True.
+                Should be set to the same value as the size of the vectors
+                stored in the vector_field.
 
             Following arguments pertain to the connection pool:
 
@@ -258,14 +265,17 @@ class SingleStoreDB(VectorStore):
         try:
             cur = conn.cursor()
             try:
-                if self.use_vector_index == True:
+                if self.use_vector_index is True:
                     index_options = ""
                     if self.vector_index_options and len(self.vector_index_options) > 0:
-                        index_options = "INDEX_OPTIONS '{}'".format(json.dumps(self.vector_index_options))
+                        index_options = "INDEX_OPTIONS '{}'".format(
+                            json.dumps(self.vector_index_options)
+                        )
                     cur.execute(
                         """CREATE TABLE IF NOT EXISTS {}
                         ({} TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-                        {} VECTOR({}, F32) NOT NULL, {} JSON, VECTOR INDEX {} ({}) {});""".format(
+                        {} VECTOR({}, F32) NOT NULL, {} JSON,
+                        VECTOR INDEX {} ({}) {});""".format(
                             self.table_name,
                             self.content_field,
                             self.vector_field,
@@ -334,7 +344,7 @@ class SingleStoreDB(VectorStore):
                             json.dumps(metadata),
                         ),
                     )
-                if self.use_vector_index == True:
+                if self.use_vector_index is True:
                     cur.execute("OPTIMIZE TABLE {} FLUSH;".format(self.table_name))
             finally:
                 cur.close()

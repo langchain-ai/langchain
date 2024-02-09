@@ -141,7 +141,7 @@ def test_singlestoredb_vector_index_2(texts: List[str]) -> None:
         FakeEmbeddings(),
         table_name=table_name,
         use_vector_index=True,
-        vector_index_options={"index_type":"IVF_PQ", "nlist": 256},
+        vector_index_options={"index_type": "IVF_PQ", "nlist": 256},
         vector_size=10,
         host=TEST_SINGLESTOREDB_URL,
     )
@@ -149,6 +149,7 @@ def test_singlestoredb_vector_index_2(texts: List[str]) -> None:
     output = docsearch.similarity_search("foo", k=1)
     output[0].page_content == "foo"
     drop(table_name)
+
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
 def test_singlestoredb_vector_index_large() -> None:
@@ -168,9 +169,10 @@ def test_singlestoredb_vector_index_large() -> None:
     startTime = time.time()
     for i in range(1000):
         output = docsearch.similarity_search("foo", k=1)
-    print("Time to search 300k vectors: ", (time.time() - startTime)/1000)
+    print("Time to search 300k vectors: ", (time.time() - startTime) / 1000)
     output[0].page_content == "foo"
     drop(table_name)
+
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
 def test_singlestoredb_from_existing(texts: List[str]) -> None:
