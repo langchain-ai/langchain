@@ -1,3 +1,3 @@
-from langchain_community.utilities.python import PythonREPL, warn_once
+from langchain_community.utilities.python import PythonREPL
 
-__all__ = ["warn_once", "PythonREPL"]
+__all__ = ["PythonREPL"]

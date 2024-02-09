@@ -118,6 +118,12 @@ def _import_brave_search_tool() -> Any:
     return BraveSearch
 
 
+def _import_connery_tool() -> Any:
+    from langchain_community.tools.connery import ConneryAction
+
+    return ConneryAction
+
+
 def _import_ddg_search_tool_DuckDuckGoSearchResults() -> Any:
     from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchResults
 
@@ -472,6 +478,12 @@ def _import_plugin() -> Any:
     return AIPluginTool
 
 
+def _import_polygon_tool_PolygonLastQuote() -> Any:
+    from langchain_community.tools.polygon.last_quote import PolygonLastQuote
+
+    return PolygonLastQuote
+
+
 def _import_powerbi_tool_InfoPowerBITool() -> Any:
     from langchain_community.tools.powerbi.tool import InfoPowerBITool
 
@@ -525,7 +537,9 @@ def _import_reddit_search_RedditSearchRun() -> Any:
 
 
 def _import_render() -> Any:
-    from langchain_community.tools.render import format_tool_to_openai_function
+    from langchain_community.tools.convert_to_openai import (
+        format_tool_to_openai_function,
+    )
 
     return format_tool_to_openai_function
 
@@ -789,6 +803,8 @@ def __getattr__(name: str) -> Any:
         return _import_bing_search_tool_BingSearchRun()
     elif name == "BraveSearch":
         return _import_brave_search_tool()
+    elif name == "ConneryAction":
+        return _import_connery_tool()
     elif name == "DuckDuckGoSearchResults":
         return _import_ddg_search_tool_DuckDuckGoSearchResults()
     elif name == "DuckDuckGoSearchRun":
@@ -905,6 +921,8 @@ def __getattr__(name: str) -> Any:
         return _import_playwright_NavigateTool()
     elif name == "AIPluginTool":
         return _import_plugin()
+    elif name == "PolygonLastQuote":
+        return _import_polygon_tool_PolygonLastQuote()
     elif name == "InfoPowerBITool":
         return _import_powerbi_tool_InfoPowerBITool()
     elif name == "ListPowerBITool":
@@ -1025,6 +1043,7 @@ __all__ = [
     "BingSearchRun",
     "BraveSearch",
     "ClickTool",
+    "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
     "DeleteFileTool",
@@ -1083,6 +1102,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonLastQuote",
     "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",

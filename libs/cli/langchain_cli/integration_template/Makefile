@@ -7,7 +7,9 @@ all: help
 TEST_FILE ?= tests/unit_tests/
 INTEGRATION_TEST_FILE ?= tests/integration_tests/
 
-test:
+integration_tests: TEST_FILE = tests/integration_tests/
+
+test integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 tests:

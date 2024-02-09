@@ -1,3 +1,3 @@
-from langchain_community.utilities.github import GitHubAPIWrapper, _import_tiktoken
+from langchain_community.utilities.github import GitHubAPIWrapper
 
-__all__ = ["_import_tiktoken", "GitHubAPIWrapper"]
+__all__ = ["GitHubAPIWrapper"]

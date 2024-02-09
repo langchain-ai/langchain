@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 JINA_API_URL: str = "https://api.jina.ai/v1/embeddings"
 
@@ -13,24 +13,26 @@ class JinaEmbeddings(BaseModel, Embeddings):
 
     session: Any  #: :meta private:
     model_name: str = "jina-embeddings-v2-base-en"
-    jina_api_key: Optional[str] = None
+    jina_api_key: Optional[SecretStr] = None
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         try:
-            jina_api_key = get_from_dict_or_env(values, "jina_api_key", "JINA_API_KEY")
+            jina_api_key = convert_to_secret_str(
+                get_from_dict_or_env(values, "jina_api_key", "JINA_API_KEY")
+            )
         except ValueError as original_exc:
             try:
-                jina_api_key = get_from_dict_or_env(
-                    values, "jina_auth_token", "JINA_AUTH_TOKEN"
+                jina_api_key = convert_to_secret_str(
+                    get_from_dict_or_env(values, "jina_auth_token", "JINA_AUTH_TOKEN")
                 )
             except ValueError:
                 raise original_exc
         session = requests.Session()
         session.headers.update(
             {
-                "Authorization": f"Bearer {jina_api_key}",
+                "Authorization": f"Bearer {jina_api_key.get_secret_value()}",
                 "Accept-Encoding": "identity",
                 "Content-type": "application/json",
             }

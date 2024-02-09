@@ -4,13 +4,15 @@ from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.utils import get_bolded_text
+from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
 class BaseMessage(Serializable):
-    """The base abstract Message class.
+    """Base abstract Message class.
 
     Messages are the inputs and outputs of ChatModels.
     """
@@ -25,6 +27,12 @@ class BaseMessage(Serializable):
 
     class Config:
         extra = Extra.allow
+
+    def __init__(
+        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+    ) -> None:
+        """Pass in content as positional arg."""
+        return super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -42,11 +50,28 @@ class BaseMessage(Serializable):
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
+    def pretty_repr(self, html: bool = False) -> str:
+        title = get_msg_title_repr(self.type.title() + " Message", bold=html)
+        # TODO: handle non-string content.
+        return f"{title}\n\n{self.content}"
+
+    def pretty_print(self) -> None:
+        print(self.pretty_repr(html=is_interactive_env()))
+
 
 def merge_content(
     first_content: Union[str, List[Union[str, Dict]]],
     second_content: Union[str, List[Union[str, Dict]]],
 ) -> Union[str, List[Union[str, Dict]]]:
+    """Merge two message contents.
+
+    Args:
+        first_content: The first content.
+        second_content: The second content.
+
+    Returns:
+        The merged content.
+    """
     # If first chunk is a string
     if isinstance(first_content, str):
         # If the second chunk is also a string, then merge them naively
@@ -71,7 +96,7 @@ def merge_content(
 
 
 class BaseMessageChunk(BaseMessage):
-    """A Message chunk, which can be concatenated with other Message chunks."""
+    """Message chunk, which can be concatenated with other Message chunks."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -146,6 +171,14 @@ class BaseMessageChunk(BaseMessage):
 
 
 def message_to_dict(message: BaseMessage) -> dict:
+    """Convert a Message to a dictionary.
+
+    Args:
+        message: Message to convert.
+
+    Returns:
+        Message as a dict.
+    """
     return {"type": message.type, "data": message.dict()}
 
 
@@ -159,3 +192,22 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
         List of messages as dicts.
     """
     return [message_to_dict(m) for m in messages]
+
+
+def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
+    """Get a title representation for a message.
+
+    Args:
+        title: The title.
+        bold: Whether to bold the title.
+
+    Returns:
+        The title representation.
+    """
+    padded = " " + title + " "
+    sep_len = (80 - len(padded)) // 2
+    sep = "=" * sep_len
+    second_sep = sep + "=" if len(padded) % 2 else sep
+    if bold:
+        padded = get_bolded_text(padded)
+    return f"{sep}{padded}{second_sep}"

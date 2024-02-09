@@ -3,12 +3,11 @@ import os
 
 from langchain_community.llms.baseten import Baseten
 
+# This test requires valid BASETEN_MODEL_ID and BASETEN_API_KEY environment variables
+
 
 def test_baseten_call() -> None:
     """Test valid call to Baseten."""
-    import baseten
-
-    baseten.login(os.environ["BASETEN_API_KEY"])
     llm = Baseten(model=os.environ["BASETEN_MODEL_ID"])
-    output = llm("Say foo:")
+    output = llm("Test prompt, please respond.")
     assert isinstance(output, str)

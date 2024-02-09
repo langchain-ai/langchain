@@ -58,7 +58,7 @@ class GCSFileLoader(BaseLoader):
                 "Please install it with `pip install google-cloud-storage`."
             )
 
-        # Initialise a client
+        # initialize a client
         storage_client = storage.Client(
             self.project_name, client_info=get_client_info("google-cloud-storage")
         )

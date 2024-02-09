@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.hippo import DEFAULT_HIPPO_CONNECTION, Hippo
+from langchain_community.vectorstores.hippo import Hippo
 
-__all__ = ["DEFAULT_HIPPO_CONNECTION", "Hippo"]
+__all__ = ["Hippo"]

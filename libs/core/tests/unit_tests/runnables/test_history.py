@@ -19,7 +19,8 @@ def test_interfaces() -> None:
 
 
 def _get_get_session_history(
-    *, store: Optional[Dict[str, Any]] = None
+    *,
+    store: Optional[Dict[str, Any]] = None,
 ) -> Callable[..., ChatMessageHistory]:
     chat_history_store = store if store is not None else {}
 

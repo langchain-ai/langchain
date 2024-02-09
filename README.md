@@ -1,6 +1,6 @@
 # 🦜️🔗 LangChain
 
-⚡ Building applications with LLMs through composability ⚡
+⚡ Build context-aware reasoning applications ⚡
 
 [![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain)](https://github.com/langchain-ai/langchain/releases)
 [![CI](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml)
@@ -43,13 +43,14 @@ This framework consists of several parts.
 - **[LangChain Templates](templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
 - **[LangServe](https://github.com/langchain-ai/langserve)**: A library for deploying LangChain chains as a REST API.
 - **[LangSmith](https://smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
+- **[LangGraph](https://python.langchain.com/docs/langgraph)**: LangGraph is a library for building stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain. It extends the LangChain Expression Language with the ability to coordinate multiple chains (or actors) across multiple steps of computation in a cyclic manner. 
 
 The LangChain libraries themselves are made up of several different packages.
 - **[`langchain-core`](libs/core)**: Base abstractions and LangChain Expression Language.
 - **[`langchain-community`](libs/community)**: Third party integrations.
 - **[`langchain`](libs/langchain)**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
-![LangChain Stack](docs/static/img/langchain_stack.png)
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/img/langchain_stack.png "LangChain Architecture Overview")
 
 ## 🧱 What can you build with LangChain?
 **❓ Retrieval augmented generation**
@@ -95,7 +96,7 @@ Agents involve an LLM making decisions about which Actions to take, taking that 
 Please see [here](https://python.langchain.com) for full documentation, which includes:
 
 - [Getting started](https://python.langchain.com/docs/get_started/introduction): installation, setting up the environment, simple examples
-- Overview of the [interfaces](https://python.langchain.com/docs/expression_language/), [modules](https://python.langchain.com/docs/modules/) and [integrations](https://python.langchain.com/docs/integrations/providers)
+- Overview of the [interfaces](https://python.langchain.com/docs/expression_language/), [modules](https://python.langchain.com/docs/modules/), and [integrations](https://python.langchain.com/docs/integrations/providers)
 - [Use case](https://python.langchain.com/docs/use_cases/qa_structured/sql) walkthroughs and best practice [guides](https://python.langchain.com/docs/guides/adapters/openai)
 - [LangSmith](https://python.langchain.com/docs/langsmith/), [LangServe](https://python.langchain.com/docs/langserve), and [LangChain Template](https://python.langchain.com/docs/templates/) overviews
 - [Reference](https://api.python.langchain.com): full API docs
@@ -105,7 +106,7 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
+For detailed information on how to contribute, see [here](https://python.langchain.com/docs/contributing/).
 
 ## 🌟 Contributors
 

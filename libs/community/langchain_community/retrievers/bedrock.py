@@ -7,15 +7,19 @@ from langchain_core.retrievers import BaseRetriever
 
 
 class VectorSearchConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
+    """Configuration for vector search."""
+
     numberOfResults: int = 4
 
 
 class RetrievalConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
+    """Configuration for retrieval."""
+
     vectorSearchConfiguration: VectorSearchConfig
 
 
 class AmazonKnowledgeBasesRetriever(BaseRetriever):
-    """A retriever class for `Amazon Bedrock Knowledge Bases`.
+    """`Amazon Bedrock Knowledge Bases` retrieval.
 
     See https://aws.amazon.com/bedrock/knowledge-bases for more info.
 

@@ -1,34 +1,45 @@
 
 # rag-gemini-multi-modal
 
-Presentations (slide decks, etc) contain visual content that challenges conventional RAG.
+Multi-modal LLMs enable visual assistants that can perform question-answering about images. 
 
-Multi-modal LLMs unlock new ways to build apps over visual content like presentations.
+This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
+
+It uses OpenCLIP embeddings to embed all of the slide images and stores them in Chroma.
  
-This template performs multi-modal RAG using Chroma with multi-modal OpenCLIP embeddings and [Google Gemini](https://deepmind.google/technologies/gemini/#introduction).
+Given a question, relevat slides are retrieved and passed to [Google Gemini](https://deepmind.google/technologies/gemini/#introduction) for answer synthesis.
+ 
+![Diagram illustrating the process of a visual assistant using multi-modal LLM, from slide deck images to OpenCLIP embedding, retrieval, and synthesis with Google Gemini, resulting in an answer.](https://github.com/langchain-ai/langchain/assets/122662504/b9e69bef-d687-4ecf-a599-937e559d5184 "Workflow Diagram for Visual Assistant Using Multi-modal LLM")
 
 ## Input
 
 Supply a slide deck as pdf in the `/docs` directory. 
 
-Create your vectorstore with: 
+By default, this template has a slide deck about Q3 earnings from DataDog, a public techologyy company.
 
+Example questions to ask can be:
+```
+How many customers does Datadog have?
+What is Datadog platform % Y/Y growth in FY20, FY21, and FY22?
+```
+
+To create an index of the slide deck, run:
 ```
 poetry install
 python ingest.py
 ```
 
-## Embeddings
+## Storage
 
-This template will use [OpenCLIP](https://github.com/mlfoundations/open_clip) multi-modal embeddings.
+This template will use [OpenCLIP](https://github.com/mlfoundations/open_clip) multi-modal embeddings to embed the images.
 
-You can select different options (see results [here](https://github.com/mlfoundations/open_clip/blob/main/docs/openclip_results.csv)).
+You can select different embedding model options (see results [here](https://github.com/mlfoundations/open_clip/blob/main/docs/openclip_results.csv)).
 
 The first time you run the app, it will automatically download the multimodal embedding model.
 
-By default, LangChain will use an embedding model with reasonably strong performance, `ViT-H-14`.
+By default, LangChain will use an embedding model with moderate performance but lower memory requirments, `ViT-H-14`.
 
-You can choose alternative `OpenCLIPEmbeddings` models in `ingest.py`:
+You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_multi_modal/ingest.py`:
 ```
 vectorstore_mmembd = Chroma(
     collection_name="multi-modal-rag",
@@ -45,7 +56,7 @@ The app will retrieve images using multi-modal embeddings, and pass them to Goog
 
 ## Environment Setup
 
-Set the `GOOGLE_API_KEY` environment variable to access Gemini.
+Set your `GOOGLE_API_KEY` environment variable in order to access Gemini.
 
 ## Usage
 

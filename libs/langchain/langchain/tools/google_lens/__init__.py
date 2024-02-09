@@ -1,5 +1,5 @@
 """Google Lens API Toolkit."""
 
-from langchain.tools.google_lens.tool import GoogleLensQueryRun
+from langchain_community.tools.google_lens.tool import GoogleLensQueryRun
 
 __all__ = ["GoogleLensQueryRun"]

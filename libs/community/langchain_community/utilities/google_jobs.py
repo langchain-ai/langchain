@@ -7,6 +7,7 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 class GoogleJobsAPIWrapper(BaseModel):
     """Wrapper for SerpApi's Google Scholar API
+
     You can create SerpApi.com key by signing up at: https://serpapi.com/users/sign_up.
     The wrapper uses the SerpApi.com python package:
     https://serpapi.com/integrations/python

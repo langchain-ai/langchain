@@ -26,12 +26,7 @@
 
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
-from langchain.memory.buffer import (
-    ConversationBufferMemory,
-    ConversationStringBufferMemory,
-)
-from langchain.memory.buffer_window import ConversationBufferWindowMemory
-from langchain.memory.chat_message_histories import (
+from langchain_community.chat_message_histories import (
     AstraDBChatMessageHistory,
     CassandraChatMessageHistory,
     ChatMessageHistory,
@@ -50,6 +45,12 @@ from langchain.memory.chat_message_histories import (
     XataChatMessageHistory,
     ZepChatMessageHistory,
 )
+
+from langchain.memory.buffer import (
+    ConversationBufferMemory,
+    ConversationStringBufferMemory,
+)
+from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (
     ConversationEntityMemory,

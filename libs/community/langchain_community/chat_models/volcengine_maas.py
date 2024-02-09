@@ -32,13 +32,15 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 def convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
+    """Convert a dict to a message."""
+
     content = _dict.get("choice", {}).get("message", {}).get("content", "")
     return AIMessage(content=content)
 
 
 class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
+    """Volc Engine Maas hosts a plethora of models.
 
-    """volc engine maas hosts a plethora of models.
     You can utilize these models through this class.
 
     To use, you should have the ``volcengine`` python package installed.

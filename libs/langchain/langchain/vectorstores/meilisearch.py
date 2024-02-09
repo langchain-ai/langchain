@@ -1,3 +1,3 @@
-from langchain_community.vectorstores.meilisearch import Meilisearch, _create_client
+from langchain_community.vectorstores.meilisearch import Meilisearch
 
-__all__ = ["_create_client", "Meilisearch"]
+__all__ = ["Meilisearch"]

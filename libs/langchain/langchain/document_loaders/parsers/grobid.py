@@ -3,4 +3,4 @@ from langchain_community.document_loaders.parsers.grobid import (
     ServerUnavailableException,
 )
 
-__all__ = ["ServerUnavailableException", "GrobidParser"]
+__all__ = ["GrobidParser", "ServerUnavailableException"]

@@ -6,7 +6,7 @@ on:
     - cron:  '0 13 * * *'
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.7.1"
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
 
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
-        uses: 'google-github-actions/auth@v1'
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
@@ -53,6 +53,11 @@ jobs:
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
           poetry install --with=test_integration,test
+
+      - name: Install deps outside pyproject
+        if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
+        shell: bash
+        run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
 
       - name: Run tests
         shell: bash

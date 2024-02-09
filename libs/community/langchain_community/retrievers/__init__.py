@@ -25,6 +25,7 @@ from langchain_community.retrievers.azure_cognitive_search import (
 )
 from langchain_community.retrievers.bedrock import AmazonKnowledgeBasesRetriever
 from langchain_community.retrievers.bm25 import BM25Retriever
+from langchain_community.retrievers.breebs import BreebsRetriever
 from langchain_community.retrievers.chaindesk import ChaindeskRetriever
 from langchain_community.retrievers.chatgpt_plugin_retriever import (
     ChatGPTPluginRetriever,
@@ -57,6 +58,9 @@ from langchain_community.retrievers.pinecone_hybrid_search import (
     PineconeHybridSearchRetriever,
 )
 from langchain_community.retrievers.pubmed import PubMedRetriever
+from langchain_community.retrievers.qdrant_sparse_vector_retriever import (
+    QdrantSparseVectorRetriever,
+)
 from langchain_community.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain_community.retrievers.svm import SVMRetriever
 from langchain_community.retrievers.tavily_search_api import TavilySearchAPIRetriever
@@ -66,6 +70,7 @@ from langchain_community.retrievers.weaviate_hybrid_search import (
     WeaviateHybridSearchRetriever,
 )
 from langchain_community.retrievers.wikipedia import WikipediaRetriever
+from langchain_community.retrievers.you import YouRetriever
 from langchain_community.retrievers.zep import ZepRetriever
 from langchain_community.retrievers.zilliz import ZillizRetriever
 
@@ -75,6 +80,8 @@ __all__ = [
     "ArceeRetriever",
     "ArxivRetriever",
     "AzureCognitiveSearchRetriever",
+    "BM25Retriever",
+    "BreebsRetriever",
     "ChatGPTPluginRetriever",
     "ChaindeskRetriever",
     "CohereRagRetriever",
@@ -93,14 +100,15 @@ __all__ = [
     "OutlineRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
+    "QdrantSparseVectorRetriever",
     "RemoteLangChainRetriever",
     "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
-    "BM25Retriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
     "WikipediaRetriever",
+    "YouRetriever",
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",

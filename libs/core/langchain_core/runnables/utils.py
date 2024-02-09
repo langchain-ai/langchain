@@ -1,3 +1,4 @@
+"""Utility code for runnables."""
 from __future__ import annotations
 
 import ast
@@ -24,6 +25,8 @@ from typing import (
     Union,
 )
 
+from langchain_core.runnables.schema import StreamEvent
+
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
 Output = TypeVar("Output", covariant=True)
@@ -43,7 +46,15 @@ async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
 
 
 async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> list:
-    """Gather coroutines with a limit on the number of concurrent coroutines."""
+    """Gather coroutines with a limit on the number of concurrent coroutines.
+
+    Args:
+        n: The number of coroutines to run concurrently.
+        coros: The coroutines to run.
+
+    Returns:
+        The results of the coroutines.
+    """
     if n is None:
         return await asyncio.gather(*coros)
 
@@ -64,6 +75,14 @@ def accepts_config(callable: Callable[..., Any]) -> bool:
     """Check if a callable accepts a config argument."""
     try:
         return signature(callable).parameters.get("config") is not None
+    except ValueError:
+        return False
+
+
+def accepts_context(callable: Callable[..., Any]) -> bool:
+    """Check if a callable accepts a context argument."""
+    try:
+        return signature(callable).parameters.get("context") is not None
     except ValueError:
         return False
 
@@ -107,16 +126,69 @@ class IsFunctionArgDict(ast.NodeVisitor):
         self.keys: Set[str] = set()
 
     def visit_Lambda(self, node: ast.Lambda) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node.body)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        if not node.args.args:
+            return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
+
+
+class NonLocals(ast.NodeVisitor):
+    """Get nonlocal variables accessed."""
+
+    def __init__(self) -> None:
+        self.loads: Set[str] = set()
+        self.stores: Set[str] = set()
+
+    def visit_Name(self, node: ast.Name) -> Any:
+        if isinstance(node.ctx, ast.Load):
+            self.loads.add(node.id)
+        elif isinstance(node.ctx, ast.Store):
+            self.stores.add(node.id)
+
+    def visit_Attribute(self, node: ast.Attribute) -> Any:
+        if isinstance(node.ctx, ast.Load):
+            parent = node.value
+            attr_expr = node.attr
+            while isinstance(parent, ast.Attribute):
+                attr_expr = parent.attr + "." + attr_expr
+                parent = parent.value
+            if isinstance(parent, ast.Name):
+                self.loads.add(parent.id + "." + attr_expr)
+                self.loads.discard(parent.id)
+
+
+class FunctionNonLocals(ast.NodeVisitor):
+    """Get the nonlocal variables accessed of a function."""
+
+    def __init__(self) -> None:
+        self.nonlocals: Set[str] = set()
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        visitor = NonLocals()
+        visitor.visit(node)
+        self.nonlocals.update(visitor.loads - visitor.stores)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        visitor = NonLocals()
+        visitor.visit(node)
+        self.nonlocals.update(visitor.loads - visitor.stores)
+
+    def visit_Lambda(self, node: ast.Lambda) -> Any:
+        visitor = NonLocals()
+        visitor.visit(node)
+        self.nonlocals.update(visitor.loads - visitor.stores)
 
 
 class GetLambdaSource(ast.NodeVisitor):
@@ -156,13 +228,43 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         str: the source code of the lambda function
     """
     try:
+        name = func.__name__ if func.__name__ != "<lambda>" else None
+    except AttributeError:
+        name = None
+    try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
-        return visitor.source if visitor.count == 1 else None
+        return visitor.source if visitor.count == 1 else name
     except (SyntaxError, TypeError, OSError):
-        return None
+        return name
+
+
+def get_function_nonlocals(func: Callable) -> List[Any]:
+    """Get the nonlocal variables accessed by a function."""
+    try:
+        code = inspect.getsource(func)
+        tree = ast.parse(textwrap.dedent(code))
+        visitor = FunctionNonLocals()
+        visitor.visit(tree)
+        values: List[Any] = []
+        for k, v in inspect.getclosurevars(func).nonlocals.items():
+            if k in visitor.nonlocals:
+                values.append(v)
+            for kk in visitor.nonlocals:
+                if "." in kk and kk.startswith(k):
+                    vv = v
+                    for part in kk.split(".")[1:]:
+                        if vv is None:
+                            break
+                        else:
+                            vv = getattr(vv, part)
+                    else:
+                        values.append(vv)
+        return values
+    except (SyntaxError, TypeError, OSError):
+        return []
 
 
 def indent_lines_after_first(text: str, prefix: str) -> str:
@@ -250,7 +352,7 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
 
 
 class ConfigurableField(NamedTuple):
-    """A field that can be configured by the user."""
+    """Field that can be configured by the user."""
 
     id: str
 
@@ -264,7 +366,7 @@ class ConfigurableField(NamedTuple):
 
 
 class ConfigurableFieldSingleOption(NamedTuple):
-    """A field that can be configured by the user with a default value."""
+    """Field that can be configured by the user with a default value."""
 
     id: str
     options: Mapping[str, Any]
@@ -279,7 +381,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
 
 class ConfigurableFieldMultiOption(NamedTuple):
-    """A field that can be configured by the user with multiple default values."""
+    """Field that can be configured by the user with multiple default values."""
 
     id: str
     options: Mapping[str, Any]
@@ -299,7 +401,7 @@ AnyConfigurableField = Union[
 
 
 class ConfigurableFieldSpec(NamedTuple):
-    """A field that can be configured by the user. It is a specification of a field."""
+    """Field that can be configured by the user. It is a specification of a field."""
 
     id: str
     annotation: Any
@@ -332,3 +434,58 @@ def get_unique_config_specs(
                 f"for {id}: {[first] + others}"
             )
     return unique
+
+
+class _RootEventFilter:
+    def __init__(
+        self,
+        *,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+    ) -> None:
+        """Utility to filter the root event in the astream_events implementation.
+
+        This is simply binding the arguments to the namespace to make save on
+        a bit of typing in the astream_events implementation.
+        """
+        self.include_names = include_names
+        self.include_types = include_types
+        self.include_tags = include_tags
+        self.exclude_names = exclude_names
+        self.exclude_types = exclude_types
+        self.exclude_tags = exclude_tags
+
+    def include_event(self, event: StreamEvent, root_type: str) -> bool:
+        """Determine whether to include an event."""
+        if (
+            self.include_names is None
+            and self.include_types is None
+            and self.include_tags is None
+        ):
+            include = True
+        else:
+            include = False
+
+        event_tags = event.get("tags") or []
+
+        if self.include_names is not None:
+            include = include or event["name"] in self.include_names
+        if self.include_types is not None:
+            include = include or root_type in self.include_types
+        if self.include_tags is not None:
+            include = include or any(tag in self.include_tags for tag in event_tags)
+
+        if self.exclude_names is not None:
+            include = include and event["name"] not in self.exclude_names
+        if self.exclude_types is not None:
+            include = include and root_type not in self.exclude_types
+        if self.exclude_tags is not None:
+            include = include and all(
+                tag not in self.exclude_tags for tag in event_tags
+            )
+
+        return include

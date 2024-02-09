@@ -1,10 +1,10 @@
 import os
 
-from langchain.embeddings import BedrockEmbeddings
-from langchain.llms.bedrock import Bedrock
-from langchain.prompts import ChatPromptTemplate
-from langchain.vectorstores import FAISS
+from langchain_community.embeddings import BedrockEmbeddings
+from langchain_community.llms.bedrock import Bedrock
+from langchain_community.vectorstores import FAISS
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 

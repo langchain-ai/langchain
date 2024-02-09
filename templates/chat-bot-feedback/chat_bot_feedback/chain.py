@@ -5,9 +5,7 @@ from typing import List, Optional
 from langchain import hub
 from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
 from langchain.callbacks.tracers.schemas import Run
-from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -15,6 +13,8 @@ from langchain.schema import (
     StrOutputParser,
     get_buffer_string,
 )
+from langchain_community.chat_models import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable
 from langsmith.evaluation import EvaluationResult, RunEvaluator

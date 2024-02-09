@@ -209,6 +209,16 @@ class Fireworks(BaseLLM):
 def conditional_decorator(
     condition: bool, decorator: Callable[[Any], Any]
 ) -> Callable[[Any], Any]:
+    """Conditionally apply a decorator.
+
+    Args:
+        condition: A boolean indicating whether to apply the decorator.
+        decorator: A decorator function.
+
+    Returns:
+        A decorator function.
+    """
+
     def actual_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         if condition:
             return decorator(func)

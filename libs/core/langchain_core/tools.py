@@ -1,11 +1,9 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
-import asyncio
 import inspect
 import warnings
 from abc import abstractmethod
-from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -22,11 +20,18 @@ from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
+    ValidationError,
     create_model,
     root_validator,
     validate_arguments,
 )
-from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+)
+from langchain_core.runnables.config import run_in_executor
 
 
 class SchemaAnnotationError(TypeError):
@@ -34,14 +39,21 @@ class SchemaAnnotationError(TypeError):
 
 
 def _create_subset_model(
-    name: str, model: BaseModel, field_names: list
+    name: str, model: Type[BaseModel], field_names: list
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
     for field_name in field_names:
         field = model.__fields__[field_name]
-        fields[field_name] = (field.outer_type_, field.field_info)
-    return create_model(name, **fields)  # type: ignore
+        t = (
+            # this isn't perfect but should work for most functions
+            field.outer_type_
+            if field.required and not field.allow_none
+            else Optional[field.outer_type_]
+        )
+        fields[field_name] = (t, field.field_info)
+    rtn = create_model(name, **fields)  # type: ignore
+    return rtn
 
 
 def _get_filtered_args(
@@ -87,10 +99,10 @@ def create_schema_from_function(
 
 
 class ToolException(Exception):
-    """An optional exception that tool throws when execution error occurs.
+    """Optional exception that tool throws when execution error occurs.
 
     When this exception is thrown, the agent will not stop working,
-    but will handle the exception according to the handle_tool_error
+    but it will handle the exception according to the handle_tool_error
     variable of the tool, and the processing result will be returned
     to the agent as observation, and printed in red on the console.
     """
@@ -107,25 +119,24 @@ class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
 
         args_schema_type = cls.__annotations__.get("args_schema", None)
 
-        if args_schema_type is not None:
-            if args_schema_type is None or args_schema_type == BaseModel:
-                # Throw errors for common mis-annotations.
-                # TODO: Use get_args / get_origin and fully
-                # specify valid annotations.
-                typehint_mandate = """
+        if args_schema_type is not None and args_schema_type == BaseModel:
+            # Throw errors for common mis-annotations.
+            # TODO: Use get_args / get_origin and fully
+            # specify valid annotations.
+            typehint_mandate = """
 class ChildTool(BaseTool):
     ...
     args_schema: Type[BaseModel] = SchemaClass
     ..."""
-                name = cls.__name__
-                raise SchemaAnnotationError(
-                    f"Tool definition for {name} must include valid type annotations"
-                    f" for argument 'args_schema' to behave as expected.\n"
-                    f"Expected annotation of 'Type[BaseModel]'"
-                    f" but got '{args_schema_type}'.\n"
-                    f"Expected class looks like:\n"
-                    f"{typehint_mandate}"
-                )
+            name = cls.__name__
+            raise SchemaAnnotationError(
+                f"Tool definition for {name} must include valid type annotations"
+                f" for argument 'args_schema' to behave as expected.\n"
+                f"Expected annotation of 'Type[BaseModel]'"
+                f" but got '{args_schema_type}'.\n"
+                f"Expected class looks like:\n"
+                f"{typehint_mandate}"
+            )
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
@@ -166,6 +177,11 @@ class ChildTool(BaseTool):
     ] = False
     """Handle the content of the ToolException thrown."""
 
+    handle_validation_error: Optional[
+        Union[bool, str, Callable[[ValidationError], str]]
+    ] = False
+    """Handle the content of the ValidationError thrown."""
+
     class Config(Serializable.Config):
         """Configuration for this pydantic object."""
 
@@ -202,7 +218,7 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         return self.run(
             input,
             callbacks=config.get("callbacks"),
@@ -218,7 +234,7 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         return await self.arun(
             input,
             callbacks=config.get("callbacks"),
@@ -244,7 +260,11 @@ class ChildTool(BaseTool):
         else:
             if input_args is not None:
                 result = input_args.parse_obj(tool_input)
-                return {k: v for k, v in result.dict().items() if k in tool_input}
+                return {
+                    k: getattr(result, k)
+                    for k, v in result.dict().items()
+                    if k in tool_input
+                }
         return tool_input
 
     @root_validator()
@@ -280,11 +300,7 @@ class ChildTool(BaseTool):
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None,
-            partial(self._run, **kwargs),
-            *args,
-        )
+        return await run_in_executor(None, self._run, *args, **kwargs)
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
@@ -296,7 +312,7 @@ class ChildTool(BaseTool):
 
     def run(
         self,
-        tool_input: Union[str, Dict],
+        tool_input: Union[str, Dict[str, Any]],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -308,7 +324,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
-        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -329,15 +344,36 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            # Inputs by definition should always be dicts.
+            # For now, it's unclear whether this assumption is ever violated,
+            # but if it is we will send a `None` value to the callback instead
+            # And will need to address issue via a patch.
+            inputs=None if isinstance(tool_input, str) else tool_input,
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
                 self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
                 if new_arg_supported
                 else self._run(*tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 run_manager.on_tool_error(e)
@@ -383,7 +419,6 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
-        parsed_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -403,9 +438,11 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            inputs=tool_input,
             **kwargs,
         )
         try:
+            parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
@@ -413,6 +450,21 @@ class ChildTool(BaseTool):
                 if new_arg_supported
                 else await self._arun(*tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 await run_manager.on_tool_error(e)
@@ -468,9 +520,7 @@ class Tool(BaseTool):
     ) -> Any:
         if not self.coroutine:
             # If the tool does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
+            return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
         return await super().ainvoke(input, config, **kwargs)
 
@@ -538,8 +588,12 @@ class Tool(BaseTool):
                 else await self.coroutine(*args, **kwargs)
             )
         else:
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self._run, run_manager=run_manager, **kwargs), *args
+            return await run_in_executor(
+                None,
+                self._run,
+                run_manager=run_manager.get_sync() if run_manager else None,
+                *args,
+                **kwargs,
             )
 
     # TODO: this is for backwards compatibility, remove in future
@@ -599,9 +653,7 @@ class StructuredTool(BaseTool):
     ) -> Any:
         if not self.coroutine:
             # If the tool does not implement async, fall back to default implementation
-            return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, **kwargs)
-            )
+            return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
         return await super().ainvoke(input, config, **kwargs)
 
@@ -652,10 +704,12 @@ class StructuredTool(BaseTool):
                 if new_argument_supported
                 else await self.coroutine(*args, **kwargs)
             )
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(self._run, run_manager=run_manager, **kwargs),
+            self._run,
+            run_manager=run_manager.get_sync() if run_manager else None,
             *args,
+            **kwargs,
         )
 
     @classmethod
@@ -717,7 +771,8 @@ class StructuredTool(BaseTool):
         description = f"{name}{sig} - {description.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
-            _args_schema = create_schema_from_function(f"{name}Schema", source_function)
+            # schema name is appended within function
+            _args_schema = create_schema_from_function(name, source_function)
         return cls(
             name=name,
             func=func,

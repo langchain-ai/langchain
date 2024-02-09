@@ -10,7 +10,7 @@ export function ColumnContainer({children}) {
 
 export function Column({children}) {
     return (
-        <div style={{ flex: "1 0 300px", padding: "10px", overflowX: "clip" }}>
+        <div style={{ flex: "1 0 300px", padding: "10px", overflowX: "clip", zoom: '80%' }}>
             {children}
         </div>
     )

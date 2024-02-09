@@ -44,7 +44,9 @@ class BingSearchAPIWrapper(BaseModel):
         )
         response.raise_for_status()
         search_results = response.json()
-        return search_results["webPages"]["value"]
+        if "webPages" in search_results:
+            return search_results["webPages"]["value"]
+        return []
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

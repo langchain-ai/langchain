@@ -7,6 +7,7 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, cast
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.output_parsers.json import parse_and_check_json_markdown
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.runnables import Runnable
@@ -34,7 +35,6 @@ from langchain.chains.query_constructor.prompt import (
     USER_SPECIFIED_EXAMPLE_PROMPT,
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.output_parsers.json import parse_and_check_json_markdown
 
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
@@ -48,7 +48,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             expected_keys = ["query", "filter"]
             allowed_keys = ["query", "filter", "limit"]
             parsed = parse_and_check_json_markdown(text, expected_keys)
-            if len(parsed["query"]) == 0:
+            if parsed["query"] is None or len(parsed["query"]) == 0:
                 parsed["query"] = " "
             if parsed["filter"] == "NO_FILTER" or not parsed["filter"]:
                 parsed["filter"] = None
@@ -323,7 +323,8 @@ def load_query_constructor_runnable(
 
     Args:
         llm: BaseLanguageModel to use for the chain.
-        document_contents: The contents of the document to be queried.
+        document_contents: Description of the page contents of the document to be
+            queried.
         attribute_info: Sequence of attributes in the document.
         examples: Optional list of examples to use for the chain.
         allowed_comparators: Sequence of allowed comparators. Defaults to all
