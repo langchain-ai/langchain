@@ -1,7 +1,5 @@
 """Test AI21LLM llm."""
 
-import pytest
-from ai21.models import Penalty
 
 from langchain_ai21.llms import AI21LLM
 
