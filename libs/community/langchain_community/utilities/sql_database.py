@@ -437,8 +437,7 @@ class SQLDatabase:
                     pass
                 elif self.dialect == "postgresql":  # postgresql
                     connection.exec_driver_sql(
-                        "SET search_path TO %s",
-                        (self._schema,),
+                        f"SET search_path TO {self._schema}",
                         execution_options=execution_options,
                     )
 
