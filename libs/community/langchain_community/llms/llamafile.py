@@ -138,7 +138,7 @@ class Llamafile(LLM):
 
         """
 
-        if self.stream:
+        if self.streaming:
             with StringIO() as buff:
                 for chunk in self._stream(
                     prompt, stop=stop, run_manager=run_manager, **kwargs
@@ -160,6 +160,7 @@ class Llamafile(LLM):
                         "Content-Type": "application/json",
                     },
                     json=payload,
+                    stream=False,
                     timeout=self.response_timeout,
                 )
             except requests.exceptions.ConnectionError:
