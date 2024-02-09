@@ -7,6 +7,7 @@ from typing import (
     Union,
 )
 
+import google.ai.generativelanguage as glm
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import BaseTool
 from langchain_core.utils.json_schema import dereference_refs
@@ -14,55 +15,36 @@ from langchain_core.utils.json_schema import dereference_refs
 FunctionCallType = Union[BaseTool, Type[BaseModel], Dict]
 
 TYPE_ENUM = {
-    "string": 1,
-    "number": 2,
-    "integer": 3,
-    "boolean": 4,
-    "array": 5,
-    "object": 6,
+    "string": glm.Type.STRING,
+    "number": glm.Type.NUMBER,
+    "integer": glm.Type.INTEGER,
+    "boolean": glm.Type.BOOLEAN,
+    "array": glm.Type.ARRAY,
+    "object": glm.Type.OBJECT,
 }
 
 
 def convert_to_genai_function_declarations(
     function_calls: List[FunctionCallType],
-) -> Dict:
-    function_declarations = []
-    for fc in function_calls:
-        function_declarations.append(_convert_to_genai_function(fc))
-    return {
-        "function_declarations": function_declarations,
-    }
+) -> List[glm.Tool]:
+    return [
+        glm.Tool(
+            function_declarations=[_convert_to_genai_function(fc)],
+        )
+        for fc in function_calls
+    ]
 
 
-def _convert_to_genai_function(fc: FunctionCallType) -> Dict:
-    """
-        Produce
-
-        {
-      "name": "get_weather",
-      "description": "Determine weather in my location",
-      "parameters": {
-        "properties": {
-          "location": {
-            "description": "The city and state e.g. San Francisco, CA",
-            "type_": 1
-          },
-          "unit": { "enum": ["c", "f"], "type_": 1 }
-        },
-        "required": ["location"],
-        "type_": 6
-      }
-    }
-
-    """
+def _convert_to_genai_function(fc: FunctionCallType) -> glm.FunctionDeclaration:
     if isinstance(fc, BaseTool):
         return _convert_tool_to_genai_function(fc)
     elif isinstance(fc, type) and issubclass(fc, BaseModel):
         return _convert_pydantic_to_genai_function(fc)
     elif isinstance(fc, dict):
-        return {
-            **fc,
-            "parameters": {
+        return glm.FunctionDeclaration(
+            name=fc["name"],
+            description=fc.get("description"),
+            parameters={
                 "properties": {
                     k: {
                         "type_": TYPE_ENUM[v["type"]],
@@ -73,20 +55,20 @@ def _convert_to_genai_function(fc: FunctionCallType) -> Dict:
                 "required": fc["parameters"].get("required", []),
                 "type_": TYPE_ENUM[fc["parameters"]["type"]],
             },
-        }
+        )
     else:
         raise ValueError(f"Unsupported function call type {fc}")
 
 
-def _convert_tool_to_genai_function(tool: BaseTool) -> Dict:
+def _convert_tool_to_genai_function(tool: BaseTool) -> glm.FunctionDeclaration:
     if tool.args_schema:
         schema = dereference_refs(tool.args_schema.schema())
         schema.pop("definitions", None)
 
-        return {
-            "name": tool.name or schema["title"],
-            "description": tool.description or schema["description"],
-            "parameters": {
+        return glm.FunctionDeclaration(
+            name=tool.name or schema["title"],
+            description=tool.description or schema["description"],
+            parameters={
                 "properties": {
                     k: {
                         "type_": TYPE_ENUM[v["type"]],
@@ -97,31 +79,30 @@ def _convert_tool_to_genai_function(tool: BaseTool) -> Dict:
                 "required": schema["required"],
                 "type_": TYPE_ENUM[schema["type"]],
             },
-        }
+        )
     else:
-        return {
-            "name": tool.name,
-            "description": tool.description,
-            "parameters": {
+        return glm.FunctionDeclaration(
+            name=tool.name,
+            description=tool.description,
+            parameters={
                 "properties": {
-                    "__arg1": {"type": "string"},
+                    "__arg1": {"type_": TYPE_ENUM["string"]},
                 },
                 "required": ["__arg1"],
                 "type_": TYPE_ENUM["object"],
             },
-        }
+        )
 
 
 def _convert_pydantic_to_genai_function(
     pydantic_model: Type[BaseModel],
-) -> Dict:
+) -> glm.FunctionDeclaration:
     schema = dereference_refs(pydantic_model.schema())
     schema.pop("definitions", None)
-
-    return {
-        "name": schema["title"],
-        "description": schema.get("description", ""),
-        "parameters": {
+    return glm.FunctionDeclaration(
+        name=schema["title"],
+        description=schema.get("description", ""),
+        parameters={
             "properties": {
                 k: {
                     "type_": TYPE_ENUM[v["type"]],
@@ -132,4 +113,4 @@ def _convert_pydantic_to_genai_function(
             "required": schema["required"],
             "type_": TYPE_ENUM[schema["type"]],
         },
-    }
+    )
