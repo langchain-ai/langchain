@@ -18,7 +18,9 @@ from tests.unit_tests.conftest import (
 def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
     with pytest.raises(MissingApiKeyError):
-        AI21LLM()
+        AI21LLM(
+            model="j2-ultra",
+        )
 
 
 @pytest.mark.requires("ai21")
@@ -60,6 +62,7 @@ def test_generate(mock_client_with_completion: Mock) -> None:
     epoch = 1
 
     ai21 = AI21LLM(
+        model="j2-ultra",
         api_key=DUMMY_API_KEY,
         client=mock_client_with_completion,
         custom_model=custom_model,

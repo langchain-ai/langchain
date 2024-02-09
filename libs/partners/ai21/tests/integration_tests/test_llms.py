@@ -8,6 +8,7 @@ from langchain_ai21.llms import AI21LLM
 
 def _generate_llm_client_parameters() -> AI21LLM:
     return AI21LLM(
+        model="j2-ultra",
         max_tokens=2,
         temperature=0,
         top_p=1,
@@ -44,7 +45,9 @@ def _generate_llm_client_parameters() -> AI21LLM:
 @pytest.mark.requires("ai21")
 def test_stream() -> None:
     """Test streaming tokens from AI21."""
-    llm = AI21LLM()
+    llm = AI21LLM(
+        model="j2-ultra",
+    )
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token, str)
@@ -53,7 +56,9 @@ def test_stream() -> None:
 @pytest.mark.requires("ai21")
 async def test_abatch() -> None:
     """Test streaming tokens from AI21LLM."""
-    llm = AI21LLM()
+    llm = AI21LLM(
+        model="j2-ultra",
+    )
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -63,7 +68,9 @@ async def test_abatch() -> None:
 @pytest.mark.requires("ai21")
 async def test_abatch_tags() -> None:
     """Test batch tokens from AI21LLM."""
-    llm = AI21LLM()
+    llm = AI21LLM(
+        model="j2-ultra",
+    )
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -75,7 +82,9 @@ async def test_abatch_tags() -> None:
 @pytest.mark.requires("ai21")
 def test_batch() -> None:
     """Test batch tokens from AI21LLM."""
-    llm = AI21LLM()
+    llm = AI21LLM(
+        model="j2-ultra",
+    )
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -85,7 +94,9 @@ def test_batch() -> None:
 @pytest.mark.requires("ai21")
 async def test_ainvoke() -> None:
     """Test invoke tokens from AI21LLM."""
-    llm = AI21LLM()
+    llm = AI21LLM(
+        model="j2-ultra",
+    )
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)
@@ -94,7 +105,9 @@ async def test_ainvoke() -> None:
 @pytest.mark.requires("ai21")
 def test_invoke() -> None:
     """Test invoke tokens from AI21LLM."""
-    llm = AI21LLM()
+    llm = AI21LLM(
+        model="j2-ultra",
+    )
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result, str)
