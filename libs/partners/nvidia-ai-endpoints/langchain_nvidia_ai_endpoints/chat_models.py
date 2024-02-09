@@ -270,7 +270,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
 
     def get_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
         """Generates payload for the _NVIDIAClient API to send to service."""
-        new_kwargs = {**kwargs, **self.model_kwargs}
+        new_kwargs = {**self.model_kwargs, **kwargs}
         return self.prep_payload(inputs=inputs, **new_kwargs)
 
     def prep_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
