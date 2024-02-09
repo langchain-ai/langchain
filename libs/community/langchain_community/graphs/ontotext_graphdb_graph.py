@@ -204,11 +204,7 @@ class OntotextGraphDBGraph:
         """
         Query the graph.
         """
-        from rdflib.exceptions import ParserError
         from rdflib.query import ResultRow
 
-        try:
-            res = self.graph.query(query)
-        except ParserError as e:
-            raise ValueError(f"Generated SPARQL statement is invalid\n{e}")
+        res = self.graph.query(query)
         return [r for r in res if isinstance(r, ResultRow)]

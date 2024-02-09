@@ -43,6 +43,7 @@ This framework consists of several parts.
 - **[LangChain Templates](templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
 - **[LangServe](https://github.com/langchain-ai/langserve)**: A library for deploying LangChain chains as a REST API.
 - **[LangSmith](https://smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
+- **[LangGraph](https://python.langchain.com/docs/langgraph)**: LangGraph is a library for building stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain. It extends the LangChain Expression Language with the ability to coordinate multiple chains (or actors) across multiple steps of computation in a cyclic manner. 
 
 The LangChain libraries themselves are made up of several different packages.
 - **[`langchain-core`](libs/core)**: Base abstractions and LangChain Expression Language.

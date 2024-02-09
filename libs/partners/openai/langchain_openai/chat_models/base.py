@@ -649,7 +649,7 @@ class ChatOpenAI(BaseChatModel):
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call
                 (if any).
-            kwargs: Any additional parameters to pass to the
+            **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
@@ -701,22 +701,21 @@ class ChatOpenAI(BaseChatModel):
                 "auto" to automatically determine which function to call
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
-            kwargs: Any additional parameters to pass to the
+            **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None:
-            if isinstance(tool_choice, str) and tool_choice not in ("auto", "none"):
+            if isinstance(tool_choice, str) and (tool_choice not in ("auto", "none")):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            if isinstance(tool_choice, dict) and len(formatted_tools) != 1:
+            if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
                     f"tool. Received {len(formatted_tools)} tools."
                 )
-            if (
-                isinstance(tool_choice, dict)
-                and formatted_tools[0]["function"]["name"]
+            if isinstance(tool_choice, dict) and (
+                formatted_tools[0]["function"]["name"]
                 != tool_choice["function"]["name"]
             ):
                 raise ValueError(
@@ -724,7 +723,4 @@ class ChatOpenAI(BaseChatModel):
                     f"provided tool was {formatted_tools[0]['function']['name']}."
                 )
             kwargs["tool_choice"] = tool_choice
-        return super().bind(
-            tools=formatted_tools,
-            **kwargs,
-        )
+        return super().bind(tools=formatted_tools, **kwargs)
