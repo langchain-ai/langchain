@@ -512,7 +512,11 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
             safety_settings = params.pop("safety_settings", None)
             responses = chat.send_message(
-                message, stream=True, generation_config=params, safety_settings=safety_settings, tools=tools
+                message,
+                stream=True,
+                generation_config=params,
+                safety_settings=safety_settings,
+                tools=tools,
             )
             for response in responses:
                 message = _parse_response_candidate(response.candidates[0])
