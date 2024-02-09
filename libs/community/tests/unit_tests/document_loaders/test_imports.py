@@ -76,6 +76,7 @@ EXPECTED_ALL = [
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
+    "HuggingFaceModelLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
