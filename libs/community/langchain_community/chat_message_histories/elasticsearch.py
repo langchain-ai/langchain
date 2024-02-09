@@ -141,7 +141,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         return es_client
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Elasticsearch"""
         try:
             from elasticsearch import ApiError

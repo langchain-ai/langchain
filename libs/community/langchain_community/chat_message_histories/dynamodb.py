@@ -103,7 +103,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             )
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from DynamoDB"""
         try:
             from botocore.exceptions import ClientError

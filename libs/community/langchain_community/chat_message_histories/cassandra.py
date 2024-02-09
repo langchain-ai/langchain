@@ -52,7 +52,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         self.blob_history = StoredBlobHistory(session, keyspace, table_name)
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve all session messages from DB"""
         message_blobs = self.blob_history.retrieve(
             self.session_id,

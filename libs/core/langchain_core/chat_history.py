@@ -85,13 +85,15 @@ class BaseChatMessageHistory(ABC):
                        f.write("[]")
     """
 
-    messages: List[BaseMessage]
-    """A property or attribute that returns a list of messages.
+    @property
+    @abstractmethod
+    def messages(self) -> List[BaseMessage]:
+        """A property or attribute that returns a list of messages.
 
-    In general, getting the messages may involve IO to the underlying
-    persistence layer, so this operation is expected to incur some
-    latency.
-    """
+        In general, getting the messages may involve IO to the underlying
+        persistence layer, so this operation is expected to incur some
+        latency.
+        """
 
     async def aget_messages(self) -> List[BaseMessage]:
         """Async version of getting messages.

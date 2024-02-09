@@ -25,7 +25,7 @@ class StreamlitChatMessageHistory(BaseChatMessageHistory):
         self._messages = st.session_state[key]
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the current list of messages"""
         return self._messages
 

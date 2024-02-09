@@ -124,7 +124,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         return cls(session_id, cache_client, cache_name, ttl=ttl, **kwargs)
 
     @property
-    def messages(self) -> list[BaseMessage]:  # type: ignore[override]
+    def messages(self) -> list[BaseMessage]:
         """Retrieve the messages from Momento.
 
         Raises:

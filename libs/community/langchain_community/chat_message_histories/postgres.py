@@ -47,7 +47,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         self.connection.commit()
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from PostgreSQL"""
         query = (
             f"SELECT message FROM {self.table_name} WHERE session_id = %s ORDER BY id;"

@@ -107,7 +107,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         self.sql_model_class.metadata.create_all(self.engine)
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve all messages from db"""
         with self.Session() as session:
             result = (

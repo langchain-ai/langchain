@@ -102,7 +102,7 @@ class TiDBChatMessageHistory(BaseChatMessageHistory):
             logger.error(f"Error loading messages to cache: {e}")
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
+    def messages(self) -> List[BaseMessage]:
         """returns all messages"""
         if len(self.cache) == 0:
             self.reload_cache()
