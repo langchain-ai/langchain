@@ -1,5 +1,4 @@
 """Test text splitting functionality."""
-
 import random
 import re
 import string
@@ -347,7 +346,7 @@ def test_python_code_splitter() -> None:
     )
     code = """
 def hello_world():
-    print("Hello, World!")  # noqa: T201
+    print("Hello, World!")
 
 # Call the function
 hello_world()
@@ -800,7 +799,7 @@ def test_swift_code_splitter() -> None:
     )
     code = """
 func helloWorld() {
-    print("Hello, World!")  # noqa: T201
+    print("Hello, World!")
 }
 
 helloWorld()
