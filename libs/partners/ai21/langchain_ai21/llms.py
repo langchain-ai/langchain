@@ -17,7 +17,7 @@ from langchain_core.outputs import Generation, LLMResult
 from langchain_ai21.ai21_base import AI21Base
 
 
-class AI21(BaseLLM, AI21Base):
+class AI21LLM(BaseLLM, AI21Base):
     """AI21LLM large language models.
 
     Example:
