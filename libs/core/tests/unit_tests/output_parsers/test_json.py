@@ -293,6 +293,7 @@ So
 }
 """.splitlines()
 
+
 EXPECTED_STREAMED_JSON = [
     {},
     {"setup": ""},
@@ -523,3 +524,58 @@ def test_raises_error() -> None:
     parser = SimpleJsonOutputParser()
     with pytest.raises(Exception):
         parser.invoke("hi")
+
+
+# A test fixture for an output which contains
+# json within a code block
+TOKENS_WITH_JSON_CODE_BLOCK = [
+    " France",
+    ":",
+    "\n\n```",
+    "json",
+    "\n{",
+    "\n ",
+    ' "',
+    "country",
+    "_",
+    "name",
+    '":',
+    ' "',
+    "France",
+    '",',
+    " \n ",
+    ' "',
+    "population",
+    "_",
+    "size",
+    '":',
+    " 67",
+    "39",
+    "15",
+    "82",
+    "\n}",
+    "\n```",
+    "\n\nI",
+    " looked",
+    " up",
+]
+
+
+def test_partial_text_json_output_parser_with_json_code_block() -> None:
+    """Test json parser works correctly when the response contains a json code-block."""
+
+    def input_iter(_: Any) -> Iterator[str]:
+        for token in TOKENS_WITH_JSON_CODE_BLOCK:
+            yield token
+
+    chain = input_iter | SimpleJsonOutputParser()
+
+    assert list(chain.stream(None)) == [
+        {},
+        {"country_name": ""},
+        {"country_name": "France"},
+        {"country_name": "France", "population_size": 67},
+        {"country_name": "France", "population_size": 6739},
+        {"country_name": "France", "population_size": 673915},
+        {"country_name": "France", "population_size": 67391582},
+    ]
