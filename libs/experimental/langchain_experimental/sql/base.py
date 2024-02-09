@@ -173,7 +173,7 @@ class SQLDatabaseChain(Chain):
                 sql_cmd = checked_sql_command
 
             _run_manager.on_text("\nSQLResult: ", verbose=self.verbose)
-            _run_manager.on_text(result, color="yellow", verbose=self.verbose)
+            _run_manager.on_text(str(result), color="yellow", verbose=self.verbose)
             # If return direct, we just set the final result equal to
             # the result of the sql query result, otherwise try to get a human readable
             # final answer
