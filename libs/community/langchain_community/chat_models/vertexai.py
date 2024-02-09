@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, ca
 from urllib.parse import urlparse
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -119,11 +120,10 @@ def _parse_chat_history_gemini(
                 image = load_image_from_gcs(path=path, project=project)
             elif path.startswith("data:image/"):
                 # extract base64 component from image uri
-                try:
-                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(
-                        1
-                    )
-                except AttributeError:
+                encoded: Any = re.search(r"data:image/\w{2,4};base64,(.*)", path)
+                if encoded:
+                    encoded = encoded.group(1)
+                else:
                     raise ValueError(
                         "Invalid image uri. It should be in the format "
                         "data:image/<image_type>;base64,<base64_encoded_image>."
@@ -203,6 +203,11 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
     return question
 
 
+@deprecated(
+    since="0.0.12",
+    removal="0.2.0",
+    alternative_import="langchain_google_vertexai.ChatVertexAI",
+)
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """`Vertex AI` Chat large language models API."""
 

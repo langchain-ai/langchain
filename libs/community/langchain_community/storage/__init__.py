@@ -6,6 +6,10 @@ to a simple key-value interface.
 The primary goal of these storages is to support implementation of caching.
 """
 
+from langchain_community.storage.astradb import (
+    AstraDBByteStore,
+    AstraDBStore,
+)
 from langchain_community.storage.redis import RedisStore
 from langchain_community.storage.upstash_redis import (
     UpstashRedisByteStore,
@@ -13,6 +17,8 @@ from langchain_community.storage.upstash_redis import (
 )
 
 __all__ = [
+    "AstraDBStore",
+    "AstraDBByteStore",
     "RedisStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",

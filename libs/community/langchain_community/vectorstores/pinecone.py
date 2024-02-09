@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import logging
+import os
 import uuid
 import warnings
 from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
+from packaging import version
 
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
@@ -22,24 +25,33 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _import_pinecone() -> Any:
+    try:
+        import pinecone
+    except ImportError as e:
+        raise ImportError(
+            "Could not import pinecone python package. "
+            "Please install it with `pip install pinecone-client`."
+        ) from e
+    return pinecone
+
+
+def _is_pinecone_v3() -> bool:
+    pinecone = _import_pinecone()
+    pinecone_client_version = pinecone.__version__
+    return version.parse(pinecone_client_version) >= version.parse("3.0.0.dev")
+
+
+@deprecated(
+    since="0.0.18", removal="0.2.0", alternative_import="langchain_pinecone.Pinecone"
+)
 class Pinecone(VectorStore):
     """`Pinecone` vector store.
 
     To use, you should have the ``pinecone-client`` python package installed.
 
-    Example:
-        .. code-block:: python
-
-            from langchain_community.vectorstores import Pinecone
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
-            import pinecone
-
-            # The environment should be the one specified next to the API key
-            # in your Pinecone console
-            pinecone.init(api_key="***", environment="...")
-            index = pinecone.Index("langchain-demo")
-            embeddings = OpenAIEmbeddings()
-            vectorstore = Pinecone(index, embeddings.embed_query, "text")
+    This version of Pinecone is deprecated. Please use `langchain_pinecone.Pinecone`
+    instead.
     """
 
     def __init__(
@@ -51,22 +63,15 @@ class Pinecone(VectorStore):
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
     ):
         """Initialize with Pinecone client."""
-        try:
-            import pinecone
-        except ImportError:
-            raise ImportError(
-                "Could not import pinecone python package. "
-                "Please install it with `pip install pinecone-client`."
-            )
+        pinecone = _import_pinecone()
         if not isinstance(embedding, Embeddings):
             warnings.warn(
                 "Passing in `embedding` as a Callable is deprecated. Please pass in an"
                 " Embeddings object instead."
             )
-        if not isinstance(index, pinecone.index.Index):
+        if not isinstance(index, pinecone.Index):
             raise ValueError(
-                f"client should be an instance of pinecone.index.Index, "
-                f"got {type(index)}"
+                f"client should be an instance of pinecone.Index, " f"got {type(index)}"
             )
         self._index = index
         self._embedding = embedding
@@ -189,7 +194,7 @@ class Pinecone(VectorStore):
             namespace = self._namespace
         docs = []
         results = self._index.query(
-            [embedding],
+            vector=[embedding],
             top_k=k,
             include_metadata=True,
             namespace=namespace,
@@ -287,7 +292,7 @@ class Pinecone(VectorStore):
         if namespace is None:
             namespace = self._namespace
         results = self._index.query(
-            [embedding],
+            vector=[embedding],
             top_k=fetch_k,
             include_values=True,
             include_metadata=True,
@@ -351,19 +356,24 @@ class Pinecone(VectorStore):
         Returns:
             Pinecone Index instance."""
 
-        try:
-            import pinecone
-        except ImportError:
-            raise ValueError(
-                "Could not import pinecone python package. "
-                "Please install it with `pip install pinecone-client`."
+        pinecone = _import_pinecone()
+
+        if _is_pinecone_v3():
+            pinecone_instance = pinecone.Pinecone(
+                api_key=os.environ.get("PINECONE_API_KEY"), pool_threads=pool_threads
             )
+            indexes = pinecone_instance.list_indexes()
+            index_names = [i.name for i in indexes.index_list["indexes"]]
+        else:
+            index_names = pinecone.list_indexes()
 
-        indexes = pinecone.list_indexes()  # checks if provided index exists
-
-        if index_name in indexes:
-            index = pinecone.Index(index_name, pool_threads=pool_threads)
-        elif len(indexes) == 0:
+        if index_name in index_names:
+            index = (
+                pinecone_instance.Index(index_name)
+                if _is_pinecone_v3()
+                else pinecone.Index(index_name, pool_threads=pool_threads)
+            )
+        elif len(index_names) == 0:
             raise ValueError(
                 "No active indexes found in your Pinecone project, "
                 "are you sure you're using the right Pinecone API key and Environment? "
@@ -372,7 +382,7 @@ class Pinecone(VectorStore):
         else:
             raise ValueError(
                 f"Index '{index_name}' not found in your Pinecone project. "
-                f"Did you mean one of the following indexes: {', '.join(indexes)}"
+                f"Did you mean one of the following indexes: {', '.join(index_names)}"
             )
         return index
 

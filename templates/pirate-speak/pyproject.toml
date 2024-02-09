@@ -19,14 +19,13 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = {path = "../../libs/core", develop = true}
+langchain-core = { path = "../../libs/core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = {path = "../../libs/cli", develop = true}
-langchain-core = {path = "../../libs/core", develop = true}
+langchain-cli = ">=0.0.21"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
@@ -37,9 +36,9 @@ optional = true
 
 [tool.ruff]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
 ]
 
 [tool.mypy]
@@ -56,7 +55,5 @@ integrations = ["OpenAI"]
 tags = ["getting-started"]
 
 [build-system]
-requires = [
-    "poetry-core",
-]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

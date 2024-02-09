@@ -16,7 +16,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 
-_message_type_lookups = {"human": "user", "assistant": "ai"}
+_message_type_lookups = {"human": "user", "ai": "assistant"}
 
 
 def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[Dict]]:
@@ -87,6 +87,11 @@ class ChatAnthropicMessages(BaseChatModel):
     anthropic_api_key: Optional[SecretStr] = None
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @property
     def _llm_type(self) -> str:

@@ -16,6 +16,7 @@ from typing import (
     cast,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -33,6 +34,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    convert_to_messages,
     message_chunk_to_message,
 )
 from langchain_core.outputs import (
@@ -108,7 +110,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """Callback manager to add to the run trace."""
+    """[DEPRECATED] Callback manager to add to the run trace."""
     tags: Optional[List[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
@@ -143,7 +145,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         elif isinstance(input, str):
             return StringPromptValue(text=input)
         elif isinstance(input, Sequence):
-            return ChatPromptValue(messages=input)
+            return ChatPromptValue(messages=convert_to_messages(input))
         else:
             raise ValueError(
                 f"Invalid input type {type(input)}. "
@@ -345,7 +347,30 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Top Level call"""
+        """Pass a sequence of prompts to the model and return model generations.
+
+        This method should make use of batched calls for models that expose a batched
+        API.
+
+        Use this method when you want to:
+            1. take advantage of batched calls,
+            2. need more output from the model than just the top generated value,
+            3. are building chains that are agnostic to the underlying language model
+                type (e.g., pure text completion models vs chat models).
+
+        Args:
+            messages: List of list of messages.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An LLMResult, which contains a list of candidate Generations for each input
+                prompt and additional model provider-specific output.
+        """
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
 
@@ -407,7 +432,30 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_name: Optional[str] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Top Level call"""
+        """Asynchronously pass a sequence of prompts to a model and return generations.
+
+        This method should make use of batched calls for models that expose a batched
+        API.
+
+        Use this method when you want to:
+            1. take advantage of batched calls,
+            2. need more output from the model than just the top generated value,
+            3. are building chains that are agnostic to the underlying language model
+                type (e.g., pure text completion models vs chat models).
+
+        Args:
+            messages: List of list of messages.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An LLMResult, which contains a list of candidate Generations for each input
+                prompt and additional model provider-specific output.
+        """
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
 
@@ -574,7 +622,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
-            cache_val = llm_cache.lookup(prompt, llm_string)
+            cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
             else:
@@ -584,7 +632,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 else:
                     result = await self._agenerate(messages, stop=stop, **kwargs)
-                llm_cache.update(prompt, llm_string, result.generations)
+                await llm_cache.aupdate(prompt, llm_string, result.generations)
                 return result
 
     @abstractmethod
@@ -632,6 +680,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> AsyncIterator[ChatGenerationChunk]:
         raise NotImplementedError()
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def __call__(
         self,
         messages: List[BaseMessage],
@@ -663,11 +712,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Unexpected generation type")
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def call_as_llm(
         self, message: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
         return self.predict(message, stop=stop, **kwargs)
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -681,6 +732,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
+    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -694,6 +746,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _stop = list(stop)
         return self(messages, stop=_stop, **kwargs)
 
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -709,6 +762,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],
