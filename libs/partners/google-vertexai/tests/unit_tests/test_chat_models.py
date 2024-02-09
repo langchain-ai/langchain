@@ -1,20 +1,35 @@
 """Test chat model integration."""
-from typing import Optional
+
+import json
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from google.cloud.aiplatform_v1beta1.types import (
+    Content,
+    FunctionCall,
+    Part,
+)
+from google.cloud.aiplatform_v1beta1.types import (
+    content as gapic_content_types,
+)
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
 from vertexai.language_models import ChatMessage, InputOutputTextPair  # type: ignore
+from vertexai.preview.generative_models import (  # type: ignore
+    Candidate,
+)
 
 from langchain_google_vertexai.chat_models import (
     ChatVertexAI,
     _parse_chat_history,
     _parse_chat_history_gemini,
     _parse_examples,
+    _parse_response_candidate,
 )
 
 
@@ -45,11 +60,18 @@ def test_parse_examples_failes_wrong_sequence() -> None:
     )
 
 
+@dataclass
+class StubTextChatResponse:
+    """Stub text-chat response from VertexAI for testing."""
+
+    text: str
+
+
 @pytest.mark.parametrize("stop", [None, "stop1"])
 def test_vertexai_args_passed(stop: Optional[str]) -> None:
     response_text = "Goodbye"
     user_prompt = "Hello"
-    prompt_params = {
+    prompt_params: Dict[str, Any] = {
         "max_output_tokens": 1,
         "temperature": 10000.0,
         "top_k": 10,
@@ -59,7 +81,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
     # Mock the library to ensure the args are passed correctly
     with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
         mock_response = MagicMock()
-        mock_response.candidates = [Mock(text=response_text)]
+        mock_response.candidates = [StubTextChatResponse(text=response_text)]
         mock_chat = MagicMock()
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
@@ -69,7 +91,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         mock_model.start_chat = mock_start_chat
         mg.return_value = mock_model
 
-        model = ChatVertexAI(**prompt_params)  # type: ignore
+        model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
         if stop:
             response = model([message], stop=[stop])
@@ -136,7 +158,7 @@ def test_default_params_palm() -> None:
 
     with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
         mock_response = MagicMock()
-        mock_response.candidates = [Mock(text="Goodbye")]
+        mock_response.candidates = [StubTextChatResponse(text="Goodbye")]
         mock_chat = MagicMock()
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
@@ -159,13 +181,28 @@ def test_default_params_palm() -> None:
         )
 
 
+@dataclass
+class StubGeminiResponse:
+    """Stub gemini response from VertexAI for testing."""
+
+    text: str
+    content: Any
+    citation_metadata: Any
+    safety_ratings: List[Any] = field(default_factory=list)
+
+
 def test_default_params_gemini() -> None:
     user_prompt = "Hello"
 
     with patch("langchain_google_vertexai.chat_models.GenerativeModel") as gm:
         mock_response = MagicMock()
-        content = Mock(parts=[Mock(function_call=None)])
-        mock_response.candidates = [Mock(text="Goodbye", content=content)]
+        mock_response.candidates = [
+            StubGeminiResponse(
+                text="Goodbye",
+                content=Mock(parts=[Mock(function_call=None)]),
+                citation_metadata=None,
+            )
+        ]
         mock_chat = MagicMock()
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
@@ -178,3 +215,104 @@ def test_default_params_gemini() -> None:
         message = HumanMessage(content=user_prompt)
         _ = model([message])
         mock_start_chat.assert_called_once_with(history=[])
+
+
+@pytest.mark.parametrize(
+    "raw_candidate, expected",
+    [
+        (
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"name": "Ben"},
+                            ),
+                        )
+                    ],
+                )
+            ),
+            {
+                "name": "Information",
+                "arguments": {"name": "Ben"},
+            },
+        ),
+        (
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"info": ["A", "B", "C"]},
+                            ),
+                        )
+                    ],
+                )
+            ),
+            {
+                "name": "Information",
+                "arguments": {"info": ["A", "B", "C"]},
+            },
+        ),
+        (
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={
+                                    "people": [
+                                        {"name": "Joe", "age": 30},
+                                        {"name": "Martha"},
+                                    ]
+                                },
+                            ),
+                        )
+                    ],
+                )
+            ),
+            {
+                "name": "Information",
+                "arguments": {
+                    "people": [
+                        {"name": "Joe", "age": 30},
+                        {"name": "Martha"},
+                    ]
+                },
+            },
+        ),
+        (
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"info": [[1, 2, 3], [4, 5, 6]]},
+                            ),
+                        )
+                    ],
+                )
+            ),
+            {
+                "name": "Information",
+                "arguments": {"info": [[1, 2, 3], [4, 5, 6]]},
+            },
+        ),
+    ],
+)
+def test_parse_response_candidate(raw_candidate, expected) -> None:
+    response_candidate = Candidate._from_gapic(raw_candidate)
+    result = _parse_response_candidate(response_candidate)
+    result_arguments = json.loads(
+        result.additional_kwargs["function_call"]["arguments"]
+    )
+
+    assert result_arguments == expected["arguments"]

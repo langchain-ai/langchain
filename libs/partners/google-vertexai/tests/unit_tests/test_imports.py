@@ -7,6 +7,8 @@ EXPECTED_ALL = [
     "VertexAIModelGarden",
     "HarmBlockThreshold",
     "HarmCategory",
+    "PydanticFunctionsOutputParser",
+    "create_structured_runnable",
 ]
 
 

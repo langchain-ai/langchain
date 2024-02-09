@@ -320,7 +320,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "AIMessage": {
                 "title": "AIMessage",
-                "description": "A Message from an AI.",
+                "description": "Message from an AI.",
                 "type": "object",
                 "properties": {
                     "content": {
@@ -355,7 +355,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "HumanMessage": {
                 "title": "HumanMessage",
-                "description": "A Message from a human.",
+                "description": "Message from a human.",
                 "type": "object",
                 "properties": {
                     "content": {
@@ -390,7 +390,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ChatMessage": {
                 "title": "ChatMessage",
-                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa
+                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -421,7 +421,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa
+                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -451,7 +451,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "A Message for passing the result of executing a function back to a model.",  # noqa
+                "description": "Message for passing the result of executing a function back to a model.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -482,7 +482,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ToolMessage": {
                 "title": "ToolMessage",
-                "description": "A Message for passing the result of executing a tool back to a model.",  # noqa
+                "description": "Message for passing the result of executing a tool back to a model.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -1647,6 +1647,8 @@ async def test_prompt() -> None:
                     ]
                 )
             ],
+            "type": "prompt",
+            "name": "ChatPromptTemplate",
         },
     )
 
@@ -2095,6 +2097,8 @@ async def test_prompt_with_llm(
                     "logs": {},
                     "final_output": None,
                     "streamed_output": [],
+                    "name": "RunnableSequence",
+                    "type": "chain",
                 },
             }
         ),
@@ -2297,6 +2301,8 @@ async def test_prompt_with_llm_parser(
                     "logs": {},
                     "final_output": None,
                     "streamed_output": [],
+                    "name": "RunnableSequence",
+                    "type": "chain",
                 },
             }
         ),
@@ -2508,7 +2514,13 @@ async def test_stream_log_lists() -> None:
             {
                 "op": "replace",
                 "path": "",
-                "value": {"final_output": None, "logs": {}, "streamed_output": []},
+                "value": {
+                    "final_output": None,
+                    "logs": {},
+                    "streamed_output": [],
+                    "name": "list_producer",
+                    "type": "chain",
+                },
             }
         ),
         RunLogPatch(
@@ -2536,12 +2548,14 @@ async def test_stream_log_lists() -> None:
     assert state.state == {
         "final_output": {"alist": ["0", "1", "2", "3"]},
         "logs": {},
+        "name": "list_producer",
         "streamed_output": [
             {"alist": ["0"]},
             {"alist": ["1"]},
             {"alist": ["2"]},
             {"alist": ["3"]},
         ],
+        "type": "chain",
     }
 
 
@@ -5139,4 +5153,6 @@ async def test_astream_log_deep_copies() -> None:
         "final_output": 2,
         "logs": {},
         "streamed_output": [2],
+        "name": "add_one",
+        "type": "chain",
     }

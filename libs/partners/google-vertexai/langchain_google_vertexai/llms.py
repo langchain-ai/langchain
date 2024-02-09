@@ -3,7 +3,7 @@ from __future__ import annotations
 from concurrent.futures import Executor
 from typing import Any, ClassVar, Dict, Iterator, List, Optional, Union
 
-import vertexai  # type: ignore
+import vertexai  # type: ignore[import-untyped]
 from google.api_core.client_options import ClientOptions
 from google.cloud.aiplatform.gapic import (
     PredictionServiceAsyncClient,
@@ -19,18 +19,24 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from vertexai.language_models import (  # type: ignore
+from vertexai.language_models import (  # type: ignore[import-untyped]
     CodeGenerationModel,
     TextGenerationModel,
 )
-from vertexai.language_models._language_models import (  # type: ignore
+from vertexai.language_models._language_models import (  # type: ignore[import-untyped]
     TextGenerationResponse,
 )
-from vertexai.preview.generative_models import (  # type: ignore
+from vertexai.preview.generative_models import (  # type: ignore[import-untyped]
     GenerativeModel,
     Image,
 )
-from vertexai.preview.language_models import (  # type: ignore
+from vertexai.preview.language_models import (  # type: ignore[import-untyped]
+    ChatModel as PreviewChatModel,
+)
+from vertexai.preview.language_models import (
+    CodeChatModel as PreviewCodeChatModel,
+)
+from vertexai.preview.language_models import (
     CodeGenerationModel as PreviewCodeGenerationModel,
 )
 from vertexai.preview.language_models import (
@@ -239,6 +245,27 @@ class _VertexAICommon(_VertexAIBase):
             params.pop("candidate_count")
         return params
 
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        is_palm_chat_model = isinstance(
+            self.client_preview, PreviewChatModel
+        ) or isinstance(self.client_preview, PreviewCodeChatModel)
+        if is_palm_chat_model:
+            result = self.client_preview.start_chat().count_tokens(text)
+        else:
+            result = self.client_preview.count_tokens([text])
+
+        return result.total_tokens
+
 
 class VertexAI(_VertexAICommon, BaseLLM):
     """Google Vertex AI large language models."""
@@ -300,30 +327,21 @@ class VertexAI(_VertexAICommon, BaseLLM):
             raise ValueError("Only one candidate can be generated with streaming!")
         return values
 
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text.
-
-        Useful for checking if an input will fit in a model's context window.
-
-        Args:
-            text: The string input to tokenize.
-
-        Returns:
-            The integer number of tokens in the text.
-        """
-        result = self.client_preview.count_tokens([text])
-        return result.total_tokens
-
     def _response_to_generation(
-        self, response: TextGenerationResponse
+        self, response: TextGenerationResponse, *, stream: bool = False
     ) -> GenerationChunk:
         """Converts a stream response to a generation chunk."""
-        generation_info = get_generation_info(response, self._is_gemini_model)
-
+        generation_info = get_generation_info(
+            response, self._is_gemini_model, stream=stream
+        )
+        try:
+            text = response.text
+        except AttributeError:
+            text = ""
+        except ValueError:
+            text = ""
         return GenerationChunk(
-            text=response.text
-            if hasattr(response, "text")
-            else "",  # might not exist if blocked
+            text=text,
             generation_info=generation_info,
         )
 
@@ -398,7 +416,14 @@ class VertexAI(_VertexAICommon, BaseLLM):
             run_manager=run_manager,
             **params,
         ):
-            chunk = self._response_to_generation(stream_resp)
+            # Gemini models return GenerationResponse even when streaming, which has a
+            # candidates field.
+            stream_resp = (
+                stream_resp
+                if isinstance(stream_resp, TextGenerationResponse)
+                else stream_resp.candidates[0]
+            )
+            chunk = self._response_to_generation(stream_resp, stream=True)
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
@@ -446,9 +471,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     @property
     def endpoint_path(self) -> str:
         return self.client.endpoint_path(
-            project=self.project,  # type: ignore
-            location=self.location,
-            endpoint=self.endpoint_id,
+            project=self.project, location=self.location, endpoint=self.endpoint_id
         )
 
     @property
