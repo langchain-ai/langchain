@@ -5,6 +5,8 @@ This template creates an agent that uses Google Gemini function calling to commu
 
 This example creates an agent that can optionally look up information on the internet using Tavily's search engine.
 
+[See an example LangSmith trace here](https://smith.langchain.com/public/0ebf1bd6-b048-4019-b4de-25efe8d3d18c/r)
+
 ## Environment Setup
 
 The following environment variables need to be set:
