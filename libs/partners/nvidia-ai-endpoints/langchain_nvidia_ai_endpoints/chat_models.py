@@ -117,15 +117,6 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
             response = model.invoke("Hello")
     """
 
-    model_kws: List[str] = [
-        "temperature",
-        "max_tokens",
-        "top_p",
-        "seed",
-        "bad",
-        "stop",
-        "labels",
-    ]
     temperature: Optional[float] = Field(description="Sampling temperature in [0, 1]")
     max_tokens: Optional[int] = Field(description="Maximum # of tokens to generate")
     top_p: Optional[float] = Field(description="Top-p for distribution sampling")
@@ -278,9 +269,17 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
 
     def get_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
         """Generates payload for the _NVIDIAClient API to send to service."""
-        const_kwargs = {k: getattr(self, k) for k in self.model_kws}
-        const_kwargs = {k: v for k, v in const_kwargs.items() if v is not None}
-        new_kwargs = {**const_kwargs, **kwargs}
+        attr_kwargs = {
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+            "seed": self.seed,
+            "bad": self.bad,
+            "stop": self.stop,
+            "labels": self.labels,
+        }
+        attr_kwargs = {k: v for k, v in attr_kwargs.items() if v is not None}
+        new_kwargs = {**attr_kwargs, **kwargs}
         return self.prep_payload(inputs=inputs, **new_kwargs)
 
     def prep_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:

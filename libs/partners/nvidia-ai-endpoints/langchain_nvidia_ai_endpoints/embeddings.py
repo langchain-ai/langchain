@@ -10,8 +10,6 @@ from langchain_nvidia_ai_endpoints._common import _NVIDIAClient
 class NVIDIAEmbeddings(_NVIDIAClient, Embeddings):
     """NVIDIA's AI Foundation Retriever Question-Answering Asymmetric Model."""
 
-    model_kws: List[str] = ["max_length", "max_batch_size", "model_type"]
-
     max_length: int = Field(2048, ge=1, le=2048)
     max_batch_size: int = Field(default=50)
     model_type: Optional[Literal["passage", "query"]] = Field(
