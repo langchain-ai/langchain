@@ -230,9 +230,8 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
     def custom_postprocess(self, msg: dict) -> str:
         if "content" in msg:
             return msg["content"]
-        logger.warning(
-            f"Got ambiguous message in postprocessing; returning as-is: msg = {msg}"
-        )
+        elif "b64_json" in msg:
+            return msg["b64_json"]
         return str(msg)
 
     ######################################################################################
