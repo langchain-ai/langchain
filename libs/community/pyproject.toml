@@ -260,14 +260,16 @@ extended_testing = [
 ]
 
 [tool.ruff]
+exclude = [
+  "tests/examples/non-utf8-encoding.py",
+  "tests/integration_tests/examples/non-utf8-encoding.py",
+]
+
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
-]
-exclude = [
-  "tests/examples/non-utf8-encoding.py",
-  "tests/integration_tests/examples/non-utf8-encoding.py",
 ]
 
 [tool.mypy]
