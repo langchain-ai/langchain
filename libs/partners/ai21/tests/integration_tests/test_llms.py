@@ -6,39 +6,15 @@ from ai21.models import Penalty
 from langchain_ai21.llms import AI21LLM
 
 
-def _generate_llm_client_parameters() -> AI21LLM:
+def _generate_llm() -> AI21LLM:
+    """
+    Testing AI21LLm using non default parameters with the following parameters
+    """
     return AI21LLM(
         model="j2-ultra",
-        max_tokens=2,
-        temperature=0,
-        top_p=1,
-        top_k_return=0,
-        num_results=1,
+        max_tokens=2,  # Use less tokens for a faster response
+        temperature=0,  # for a consistent response
         epoch=1,
-        count_penalty=Penalty(
-            scale=0,
-            apply_to_emojis=False,
-            apply_to_numbers=False,
-            apply_to_stopwords=False,
-            apply_to_punctuation=False,
-            apply_to_whitespaces=False,
-        ),
-        frequency_penalty=Penalty(
-            scale=0,
-            apply_to_emojis=False,
-            apply_to_numbers=False,
-            apply_to_stopwords=False,
-            apply_to_punctuation=False,
-            apply_to_whitespaces=False,
-        ),
-        presence_penalty=Penalty(
-            scale=0,
-            apply_to_emojis=False,
-            apply_to_numbers=False,
-            apply_to_stopwords=False,
-            apply_to_punctuation=False,
-            apply_to_whitespaces=False,
-        ),
     )
 
 
@@ -108,7 +84,7 @@ def test_invoke() -> None:
 
 
 def test__generate() -> None:
-    llm = _generate_llm_client_parameters()
+    llm = _generate_llm()
     llm_result = llm.generate(
         prompts=["Hey there, my name is Pickle Rick. What is your name?"],
         stop=["##"],
@@ -119,7 +95,7 @@ def test__generate() -> None:
 
 
 async def test__agenerate() -> None:
-    llm = _generate_llm_client_parameters()
+    llm = _generate_llm()
     llm_result = await llm.agenerate(
         prompts=["Hey there, my name is Pickle Rick. What is your name?"],
         stop=["##"],
