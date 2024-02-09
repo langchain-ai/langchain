@@ -63,7 +63,7 @@ def _get_executor() -> ThreadPoolExecutor:
 
 
 class LangChainTracer(BaseTracer):
-    """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
+    """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
 
     def __init__(
         self,
