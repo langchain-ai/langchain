@@ -440,7 +440,7 @@ class _NVIDIAClient(BaseModel):
 
     model: str = Field(..., description="Name of the model to invoke")
 
-    temperature: float = Field(0.2, le=1.0, gt=0.0)
+    temperature: float = Field(0.2, le=1.0, ge=0.0)
     top_p: float = Field(0.7, le=1.0, ge=0.0)
     max_tokens: int = Field(1024, le=1024, ge=32)
 
