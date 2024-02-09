@@ -70,6 +70,6 @@ def test_parse_history() -> None:
 
 
 @pytest.mark.parametrize("content", ['["a"]', '{"a":"b"}', "function output"])
-def test_parse_function_history(content: Union[str, List[str | Dict]]) -> None:
+def test_parse_function_history(content: Union[str, List[Union[str, Dict]]]) -> None:
     function_message = FunctionMessage(name="search_tool", content=content)
     _parse_chat_history([function_message], convert_system_message_to_human=True)
