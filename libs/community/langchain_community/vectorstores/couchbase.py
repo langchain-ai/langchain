@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import uuid
-from datetime import timedelta
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
-import httpx
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 # Default batch size
 DEFAULT_BATCH_SIZE = 100
+
+if TYPE_CHECKING:
+    from couchbase.cluster import Cluster
 
 
 class CouchbaseVectorStore(VectorStore):
@@ -25,12 +26,23 @@ class CouchbaseVectorStore(VectorStore):
             from langchain_community.vectorstores import CouchbaseVectorStore
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
+            from couchbase import Cluster
+            from couchbase.auth import PasswordAuthenticator
+            from couchbase.options import ClusterOptions
+            from datetime import timedelta
+
+            auth = PasswordAuthenticator(username, password)
+            options = ClusterOptions(auth)
+            connect_string = "couchbases://localhost"
+            cluster = Cluster(connect_string, options)
+
+            # Wait until the cluster is ready for use.
+            cluster.wait_until_ready(timedelta(seconds=5))
+
             embeddings = OpenAIEmbeddings()
 
             vectorstore = CouchbaseVectorStore(
-                connection_string="couchbase://",
-                db_username="",
-                db_password="",
+                client=cluster,
                 bucket_name="",
                 scope_name="",
                 collection_name="",
@@ -42,9 +54,7 @@ class CouchbaseVectorStore(VectorStore):
             results = vectorstore.similarity_search("ola", k=1)
 
     Constructor Args:
-        connection_string (str): connection string for couchbase cluster.
-        db_username (str): database user with read/write access to bucket.
-        db_password (str): database password with read/write access to bucket.
+        cluster (Cluster): couchbase cluster object with active connection.
         bucket_name (str): name of bucket to store documents in.
         scope_name (str): name of scope to store documents in.
         collection_name (str): name of collection to store documents in.
@@ -56,36 +66,23 @@ class CouchbaseVectorStore(VectorStore):
 
     def __init__(
         self,
-        connection_string: str,
-        db_username: str,
-        db_password: str,
+        cluster: Cluster,
         bucket_name: str,
         scope_name: str,
         collection_name: str,
         embedding: Embeddings,
         index_name: str,
-        text_key: Optional[str] = "text",
         *,
+        text_key: Optional[str] = "text",
         embedding_key: Optional[str] = None,
     ) -> None:
         try:
-            from couchbase.auth import PasswordAuthenticator
             from couchbase.cluster import Cluster
-            from couchbase.options import ClusterOptions
         except ImportError as e:
             raise ImportError(
                 "Could not import couchbase python package. "
                 "Please install couchbase SDK  with `pip install couchbase`."
             ) from e
-
-        if not connection_string:
-            raise ValueError("connection_string must be provided.")
-
-        if not db_username:
-            raise ValueError("db_username must be provided.")
-
-        if not db_password:
-            raise ValueError("db_password must be provided.")
 
         if not bucket_name:
             raise ValueError("bucket_name must be provided.")
@@ -102,9 +99,6 @@ class CouchbaseVectorStore(VectorStore):
         if not embedding_key:
             self._embedding_key = text_key + "_embedding"
 
-        self._connection_string = connection_string
-        self._db_username = db_username
-        self._db_password = db_password
         self._bucket_name = bucket_name
         self._scope_name = scope_name
         self._collection_name = collection_name
@@ -112,13 +106,16 @@ class CouchbaseVectorStore(VectorStore):
         self._text_key = text_key
         self._index_name = index_name
 
-        auth = PasswordAuthenticator(
-            self._db_username,
-            self._db_password,
-        )
-        self._cluster: Cluster = Cluster(self._connection_string, ClusterOptions(auth))
+        if not isinstance(cluster, Cluster):
+            raise ValueError(
+                f"cluster should be an instance of couchbase.Cluster, "
+                f"got {type(cluster)}"
+            )
+
+        self._cluster = cluster
+
         # Wait until the cluster is ready for use.
-        self._cluster.wait_until_ready(timedelta(seconds=5))
+        # self._cluster.wait_until_ready(timedelta(seconds=5))
 
         self._bucket = self._cluster.bucket(self._bucket_name)
         self._scope = self._bucket.scope(self._scope_name)
@@ -219,9 +216,6 @@ class CouchbaseVectorStore(VectorStore):
         """Return the query embedding object."""
         return self._embedding_function
 
-    # def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
-    #     """Add documents to the vector store."""
-    #     return super().add_documents(documents, **kwargs)
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -236,37 +230,68 @@ class CouchbaseVectorStore(VectorStore):
         Returns:
             List of (Document, score) that are the most similar to the query vector.
         """
-        db_host = self._connection_string.split("//")[-1].strip("/")
+        import couchbase.search as search
+        from couchbase.options import SearchOptions
+        from couchbase.vector_search import VectorQuery, VectorSearch
 
-        search_query = {
-            "fields": [self._text_key, "metadata"],
-            "sort": ["-_score"],
-            "limit": k,
-            "query": {"match_none": {}},
-            "knn": [{"k": k * 10, "field": self._embedding_key, "vector": embedding}],
-        }
-
-        search_result = httpx.post(
-            f"http://{db_host}:8094/api/bucket/{self._bucket_name}/scope/{self._scope_name}/index/{self._index_name}/query",
-            json=search_query,
-            auth=(self._db_username, self._db_password),
-            headers={"Content-Type": "application/json"},
+        search_req = search.SearchRequest.create(
+            search.MatchAllQuery()
+        ).with_vector_search(
+            VectorSearch.from_vector_query(
+                VectorQuery(
+                    field_name=self._embedding_key,
+                    vector=embedding,
+                    num_candidates=k * 10,
+                )
+            )
         )
 
-        if search_result.status_code == 200:
-            response_json = search_result.json()
-            results = response_json["hits"]
-            docs_with_score = []
-            for result in results:
-                text = result["fields"].pop(self._text_key)
-                score = result["score"]
-                doc = Document(page_content=text, metadata=result["fields"])
-                docs_with_score.append((doc, score))
-        else:
-            raise ValueError(
-                f"Request failed with status code {search_result.status_code}"
-                " and error message: {search_result.text}"
-            )
+        search_iter = self._scope.search(
+            self._index_name,
+            search_req,
+            SearchOptions(limit=k, fields=[self._text_key, "metadata"]),
+        )
+
+        docs_with_score = []
+
+        for row in search_iter.rows():
+            text = row.fields.pop(self._text_key)
+            metadata = row.fields
+            score = row.score
+            doc = Document(page_content=text, metadata=metadata)
+            docs_with_score.append((doc, score))
+            print(f"row: {row}")
+        # db_host = self._connection_string.split("//")[-1].strip("/")
+
+        # search_query = {
+        #     "fields": [self._text_key, "metadata"],
+        #     "sort": ["-_score"],
+        #     "limit": k,
+        #     "query": {"match_none": {}},
+        #     "knn": [{"k": k * 10, "field": self._embedding_key, "vector": embedding}],
+        # }
+
+        # search_result = httpx.post(
+        #     f"http://{db_host}:8094/api/bucket/{self._bucket_name}/scope/{self._scope_name}/index/{self._index_name}/query",
+        #     json=search_query,
+        #     auth=(self._db_username, self._db_password),
+        #     headers={"Content-Type": "application/json"},
+        # )
+
+        # if search_result.status_code == 200:
+        #     response_json = search_result.json()
+        #     results = response_json["hits"]
+
+        #     for result in results:
+        #         text = result["fields"].pop(self._text_key)
+        #         score = result["score"]
+        #         doc = Document(page_content=text, metadata=result["fields"])
+        #         docs_with_score.append((doc, score))
+        # else:
+        #     raise ValueError(
+        #         f"Request failed with status code {search_result.status_code}"
+        #         " and error message: {search_result.text}"
+        #     )
 
         return docs_with_score
 
@@ -324,9 +349,7 @@ class CouchbaseVectorStore(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        connection_string: str,
-        db_username: str,
-        db_password: str,
+        cluster: Cluster,
         bucket_name: str,
         scope_name: str,
         collection_name: str,
@@ -344,6 +367,19 @@ class CouchbaseVectorStore(VectorStore):
             from langchain_community.vectorstores import CouchbaseVectorStore
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
+            from couchbase import Cluster
+            from couchbase.auth import PasswordAuthenticator
+            from couchbase.options import ClusterOptions
+            from datetime import timedelta
+
+            auth = PasswordAuthenticator(username, password)
+            options = ClusterOptions(auth)
+            connect_string = "couchbases://localhost"
+            cluster = Cluster(connect_string, options)
+
+            # Wait until the cluster is ready for use.
+            cluster.wait_until_ready(timedelta(seconds=5))
+
             embeddings = OpenAIEmbeddings()
 
             texts = ["hello", "world"]
@@ -351,9 +387,7 @@ class CouchbaseVectorStore(VectorStore):
             vectorstore = CouchbaseVectorStore.from_texts(
                 texts,
                 embedding=embeddings,
-                connection_string="couchbase://",
-                db_username="",
-                db_password="",
+                cluster=cluster,
                 bucket_name="",
                 scope_name="",
                 collection_name="",
@@ -363,9 +397,7 @@ class CouchbaseVectorStore(VectorStore):
         Args:
             texts (List[str]): list of texts to add to the vector store.
             embedding (Embeddings): embedding function to use.
-            connection_string (str): connection string for Couchbase cluster.
-            db_username (str): database user with read/write access to bucket.
-            db_password (str): database password with read/write access to bucket.
+            cluster (Cluster): couchbase cluster object with active connection.
             bucket_name (str): name of bucket to store documents in.
             scope_name (str): name of scope to store documents in.
             collection_name (str): name of collection to store documents in.
@@ -379,15 +411,6 @@ class CouchbaseVectorStore(VectorStore):
             A Couchbase vector store.
 
         """
-        if not connection_string:
-            raise ValueError("connection_string must be provided.")
-
-        if not db_username:
-            raise ValueError("db_username must be provided.")
-
-        if not db_password:
-            raise ValueError("db_password must be provided.")
-
         if not bucket_name:
             raise ValueError("bucket_name must be provided.")
 
@@ -401,9 +424,7 @@ class CouchbaseVectorStore(VectorStore):
             raise ValueError("index_name must be provided.")
 
         vector_store = cls(
-            connection_string,
-            db_username,
-            db_password,
+            cluster,
             bucket_name,
             scope_name,
             collection_name,
