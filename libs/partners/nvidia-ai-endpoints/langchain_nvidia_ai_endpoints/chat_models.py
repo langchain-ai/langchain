@@ -27,6 +27,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import BaseMessage, ChatMessage, ChatMessageChunk
 from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.pydantic_v1 import Field
 
 from langchain_nvidia_ai_endpoints import _common as nvidia_ai_endpoints
 
@@ -125,6 +126,13 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         "stop",
         "labels",
     ]
+    temperature: Optional[float] = Field(description="Sampling temperature in [0, 1]")
+    max_tokens: Optional[int] = Field(description="Maximum # of tokens to generate")
+    top_p: Optional[float] = Field(description="Top-p for distribution sampling")
+    seed: Optional[int] = Field(description="The seed for deterministic results")
+    bad: Optional[Sequence[str]] = Field(description="Bad words to avoid (cased)")
+    stop: Optional[Sequence[str]] = Field(description="Stop words (cased)")
+    labels: Optional[Dict[str, float]] = Field(description="Steering parameters")
 
     @property
     def _llm_type(self) -> str:
@@ -270,7 +278,9 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
 
     def get_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
         """Generates payload for the _NVIDIAClient API to send to service."""
-        new_kwargs = {**kwargs, **self.model_kwargs}
+        const_kwargs = {k: getattr(self, k) for k in self.model_kws}
+        const_kwargs = {k: v for k, v in const_kwargs.items() if v is not None}
+        new_kwargs = {**const_kwargs, **kwargs}
         return self.prep_payload(inputs=inputs, **new_kwargs)
 
     def prep_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
