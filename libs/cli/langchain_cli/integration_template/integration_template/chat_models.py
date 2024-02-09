@@ -15,7 +15,7 @@ class Chat__ModuleName__(BaseChatModel):
 
     Example:
         .. code-block:: python
-            
+
             from langchain_core.messages import HumanMessage
 
             from __module_name__ import Chat__ModuleName__
@@ -40,22 +40,22 @@ class Chat__ModuleName__(BaseChatModel):
 
     # TODO: Implement if __model_name__ supports streaming. Otherwise delete method.
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         raise NotImplementedError
 
     # TODO: Implement if __model_name__ supports async streaming. Otherwise delete
     # method.
     async def _astream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         raise NotImplementedError
 
@@ -69,4 +69,3 @@ class Chat__ModuleName__(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         raise NotImplementedError
-
