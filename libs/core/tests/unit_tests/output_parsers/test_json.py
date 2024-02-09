@@ -8,6 +8,8 @@ from langchain_core.output_parsers.json import (
     parse_json_markdown,
     parse_partial_json,
 )
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 GOOD_JSON = """```json
 {
@@ -537,3 +539,16 @@ def test_raises_error() -> None:
     parser = SimpleJsonOutputParser()
     with pytest.raises(Exception):
         parser.invoke("hi")
+def test_base_model_schema_consistency() -> None:
+    class Joke(BaseModel):
+        setup: str
+        punchline: str
+
+    initial_joke_schema = Joke.schema()
+    SimpleJsonOutputParser(pydantic_object=Joke)
+    openai_func = convert_to_openai_function(Joke)
+    retrieved_joke_schema = Joke.schema()
+
+    assert initial_joke_schema == retrieved_joke_schema
+    assert openai_func.get("name", None) != None
+
