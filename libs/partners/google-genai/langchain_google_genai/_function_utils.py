@@ -15,12 +15,12 @@ from langchain_core.utils.json_schema import dereference_refs
 FunctionCallType = Union[BaseTool, Type[BaseModel], Dict]
 
 TYPE_ENUM = {
-    "string": 1,
-    "number": 2,
-    "integer": 3,
-    "boolean": 4,
-    "array": 5,
-    "object": 6,
+    "string": glm.Type.STRING,
+    "number": glm.Type.NUMBER,
+    "integer": glm.Type.INTEGER,
+    "boolean": glm.Type.BOOLEAN,
+    "array": glm.Type.ARRAY,
+    "object": glm.Type.OBJECT,
 }
 
 
