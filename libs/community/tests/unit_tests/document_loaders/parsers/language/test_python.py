@@ -8,7 +8,7 @@ class TestPythonSegmenter(unittest.TestCase):
         self.example_code = """import os
 
 def hello(text):
-    print(text)
+    print(text)  # noqa: T201
 
 class Simple:
     def __init__(self):
