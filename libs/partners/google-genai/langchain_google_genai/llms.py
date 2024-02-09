@@ -151,6 +151,18 @@ Supported examples:
     def _model_family(self) -> str:
         return GoogleModelFamily(self.model)
 
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "max_output_tokens": self.max_output_tokens,
+            "candidate_count": self.n,
+        }
+
 
 class GoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseLLM):
     """Google GenerativeAI models.

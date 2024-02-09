@@ -4,12 +4,12 @@ from contextlib import asynccontextmanager, contextmanager
 from typing import AsyncGenerator, Generator, List, Optional, cast
 
 import pytest
+from langchain_community.cache import AsyncRedisCache, RedisCache, RedisSemanticCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.load.dump import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
-from langchain.cache import AsyncRedisCache, RedisCache, RedisSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
 from tests.integration_tests.cache.fake_embeddings import (
     ConsistentFakeEmbeddings,
