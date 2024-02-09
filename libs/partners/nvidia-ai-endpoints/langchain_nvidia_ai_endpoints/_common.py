@@ -20,7 +20,6 @@ from typing import (
 
 import aiohttp
 import requests
-from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Field,
