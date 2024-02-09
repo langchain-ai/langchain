@@ -336,6 +336,8 @@ LIMIT {str(k)}
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         try:
+            if ids is None:
+                ids = []
             self.delete_texts(ids)
         except Exception as e:
             logger.error("Exception when deleting docs from Rockset: %s\n", e)
