@@ -1,0 +1,62 @@
+define user express greeting
+  "hi"
+  "hello"
+  "hey"
+
+define user ask name
+  "What is your name?"
+
+define user ask capabilities
+  "What can you do?"
+  "help"
+
+define bot inform capabilities
+  "I am an example bot that illustrates the fact checking and hallucination detection capabilities. Ask me about the documents in my knowledge base to test my fact checking abilities, or about other topics to test my hallucination detection."
+
+define flow capabilities
+    user ask capabilities
+    bot inform capabilities
+
+define user ask knowledge base
+    "What is in your knowledge base?"
+    "What do you know?"
+    "What can I ask you about?"
+
+define bot inform knowledge base
+    "You can ask me about anything! My knowledge base includes information about the March 2023 US jobs report, which I can use for fact checking."
+
+define flow knowledge base
+    user ask knowledge base
+    bot inform knowledge base
+
+define user request repeat
+  "Please repeat that"
+  "repeat"
+  "What was that?"
+
+define flow
+  user express greeting
+  bot express greeting
+
+define bot offer additional help
+  "If you have any more questions or if there's anything else I can help you with, please don't hesitate to ask."
+
+define user ask general question
+  "What stocks should I buy?"
+  "Can you recommend the best stocks to buy?"
+  "Can you recommend a place to eat?"
+  "Do you know any restaurants?"
+  "Can you tell me your name?"
+  "What's your name?"
+  "Can you paint?"
+  "Can you tell me a joke?"
+  "What is the biggest city in the world"
+  "Can you write an email?"
+  "I need you to write an email for me."
+  "Who is the president?"
+  "What party will win the elections?"
+  "Who should I vote with?"
+
+define flow
+  user ask general question
+  bot provide response

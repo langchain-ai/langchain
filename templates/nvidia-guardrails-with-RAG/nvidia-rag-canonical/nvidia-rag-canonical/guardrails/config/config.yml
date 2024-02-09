@@ -1,0 +1,30 @@
+instructions:
+- type: general
+  content: |
+    The assistant is a bot created by NVIDIA to answer question related to Social Security Facts.
+    The assistant politely refuses to talk about anything else.
+
+sample_conversations: |
+  user "Hello there!"
+    express greeting
+  bot express greeting
+    "Hello! How can I assist you today?"
+
+models:
+  - type: main
+    engine: nemollm
+    model: gpt-43b-905
+    parameters:
+      api_host: "https://api.llm.ngc.nvidia.com/v1"
+      org_id: "niwa7yxz1sdn"
+      tokens_to_generate: 256
+      temperature: 1.
+      stop: ["<extra_id_1>"]
+      
+rails:
+  dialog:
+    single_call:
+      enabled: True
+  output:
+    flows:
+      - self check facts
