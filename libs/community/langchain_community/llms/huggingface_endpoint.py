@@ -109,6 +109,7 @@ class HuggingFaceEndpoint(LLM):
     """Holds any text-generation-inference server parameters not explicitly specified"""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `call` not explicitly specified"""
+    model: str
     client: Any
     async_client: Any
     task: Optional[str] = None
@@ -152,6 +153,7 @@ class HuggingFaceEndpoint(LLM):
             raise ValueError(
                 "Please specify either an `endpoint_url` OR a `repo_id`, not both."
             )
+        values["model"] = values.get("endpoint_url") or values.get("repo_id")
         return values
 
     @root_validator()
@@ -179,13 +181,13 @@ class HuggingFaceEndpoint(LLM):
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
         values["client"] = InferenceClient(
-            values["endpoint_url"],
+            model=values["model"],
             timeout=values["timeout"],
             token=huggingfacehub_api_token,
             **values["server_kwargs"],
         )
         values["async_client"] = AsyncInferenceClient(
-            values["endpoint_url"],
+            model=values["model"],
             timeout=values["timeout"],
             token=huggingfacehub_api_token,
             **values["server_kwargs"],

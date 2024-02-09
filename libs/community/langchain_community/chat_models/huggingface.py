@@ -1,6 +1,6 @@
 """Hugging Face Chat Wrapper."""
 
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -87,10 +87,10 @@ class ChatHuggingFace(BaseChatModel):
     ) -> str:
         """Convert a list of messages into a prompt format expected by wrapped LLM."""
         if not messages:
-            raise ValueError("at least one HumanMessage must be provided")
+            raise ValueError("At least one HumanMessage must be provided!")
 
         if not isinstance(messages[-1], HumanMessage):
-            raise ValueError("last message must be a HumanMessage")
+            raise ValueError("Last message must be a HumanMessage!")
 
         messages_dicts = [self._to_chatml_format(m) for m in messages]
 
@@ -145,7 +145,7 @@ class ChatHuggingFace(BaseChatModel):
 
             if not self.model_id:
                 raise ValueError(
-                    "Failed to resolve model_id"
+                    "Failed to resolve model_id:"
                     f"Could not find model id for inference server provided: {endpoint_url}"
                     "Make sure that your Hugging Face token has access to the endpoint."
                 )
