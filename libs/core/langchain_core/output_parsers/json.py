@@ -35,7 +35,7 @@ def _custom_parser(multiline_string: str) -> str:
         multiline_string = multiline_string.decode()
 
     multiline_string = re.sub(
-        r'("action_input"\:\s*")(.*)(")',
+        r'("action_input"\:\s*")(.*?)(")',
         _replace_new_line,
         multiline_string,
         flags=re.DOTALL,
@@ -44,7 +44,7 @@ def _custom_parser(multiline_string: str) -> str:
     return multiline_string
 
 
-# Adapted from https://github.com/KillianLucas/open-interpreter/blob/main/interpreter/utils/parse_partial_json.py
+# Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
 # MIT License
 def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     """Parse a JSON string that may be missing closing braces.
@@ -138,7 +138,7 @@ def parse_json_markdown(
         The parsed JSON object as a Python dictionary.
     """
     # Try to find JSON string within triple backticks
-    match = re.search(r"```(json)?(.*)(```)?", json_string, re.DOTALL)
+    match = re.search(r"```(json)?(.*)", json_string, re.DOTALL)
 
     # If no match found, assume the entire string is a JSON string
     if match is None:
@@ -148,7 +148,7 @@ def parse_json_markdown(
         json_str = match.group(2)
 
     # Strip whitespace and newlines from the start and end
-    json_str = json_str.strip()
+    json_str = json_str.strip().strip("`")
 
     # handle newlines and other special characters inside the returned value
     json_str = _custom_parser(json_str)
@@ -211,7 +211,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             try:
                 return parse_json_markdown(text)
             except JSONDecodeError as e:
-                raise OutputParserException(f"Invalid json output: {text}") from e
+                msg = f"Invalid json output: {text}"
+                raise OutputParserException(msg, llm_output=text) from e
 
     def parse(self, text: str) -> Any:
         return self.parse_result([Generation(text=text)])

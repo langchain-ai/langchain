@@ -20,7 +20,7 @@ from langchain_community.llms.azureml_endpoint import (
 
 
 class LlamaContentFormatter(ContentFormatterBase):
-    def __init__(self):
+    def __init__(self) -> None:
         raise TypeError(
             "`LlamaContentFormatter` is deprecated for chat models. Use "
             "`LlamaChatContentFormatter` instead."
@@ -72,12 +72,12 @@ class LlamaChatContentFormatter(ContentFormatterBase):
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
         return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
 
-    def format_request_payload(
+    def format_messages_request_payload(
         self,
         messages: List[BaseMessage],
         model_kwargs: Dict,
         api_type: AzureMLEndpointApiType,
-    ) -> str:
+    ) -> bytes:
         """Formats the request according to the chosen api"""
         chat_messages = [
             LlamaChatContentFormatter._convert_message_to_dict(message)
@@ -101,7 +101,9 @@ class LlamaChatContentFormatter(ContentFormatterBase):
         return str.encode(request_payload)
 
     def format_response_payload(
-        self, output: bytes, api_type: AzureMLEndpointApiType
+        self,
+        output: bytes,
+        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime,
     ) -> ChatGeneration:
         """Formats response"""
         if api_type == AzureMLEndpointApiType.realtime:
@@ -187,7 +189,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         if stop:
             _model_kwargs["stop"] = stop
 
-        request_payload = self.content_formatter.format_request_payload(
+        request_payload = self.content_formatter.format_messages_request_payload(
             messages, _model_kwargs, self.endpoint_api_type
         )
         response_payload = self.http_client.call(
