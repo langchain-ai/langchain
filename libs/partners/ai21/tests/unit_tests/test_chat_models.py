@@ -23,13 +23,15 @@ from langchain_ai21.chat_models import (
 from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
     DUMMY_API_KEY,
+    temporarily_unset_api_key,
 )
 
 
 def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
-    with pytest.raises(MissingApiKeyError):
-        ChatAI21()
+    with temporarily_unset_api_key():
+        with pytest.raises(MissingApiKeyError):
+            ChatAI21()
 
 
 def test_initialization__when_default_parameters_in_init() -> None:

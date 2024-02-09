@@ -11,15 +11,17 @@ from langchain_ai21 import AI21LLM
 from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
     DUMMY_API_KEY,
+    temporarily_unset_api_key,
 )
 
 
 def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
-    with pytest.raises(MissingApiKeyError):
-        AI21LLM(
-            model="j2-ultra",
-        )
+    with temporarily_unset_api_key():
+        with pytest.raises(MissingApiKeyError):
+            AI21LLM(
+                model="j2-ultra",
+            )
 
 
 def test_initialization__when_default_parameters() -> None:
