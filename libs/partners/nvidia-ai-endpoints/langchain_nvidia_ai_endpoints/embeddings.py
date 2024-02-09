@@ -1,5 +1,5 @@
 """Embeddings Components Derived from NVEModel/Embeddings"""
-from typing import Any, List, Literal, Optional
+from typing import List, Literal, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field
@@ -10,9 +10,7 @@ from langchain_nvidia_ai_endpoints._common import _NVIDIAClient
 class NVIDIAEmbeddings(_NVIDIAClient, Embeddings):
     """NVIDIA's AI Foundation Retriever Question-Answering Asymmetric Model."""
 
-    model_kws: List[str] = [
-        'max_length', 'max_batch_size', 'model_type'
-    ]
+    model_kws: List[str] = ["max_length", "max_batch_size", "model_type"]
 
     max_length: int = Field(2048, ge=1, le=2048)
     max_batch_size: int = Field(default=50)

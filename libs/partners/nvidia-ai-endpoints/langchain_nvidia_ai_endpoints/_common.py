@@ -448,14 +448,14 @@ class _NVIDIAClient(BaseModel):
         """Validate and update client arguments, including API key and formatting"""
         if not values.get("client"):
             values["client"] = NVEModel(**values)
-        values['model_kwargs'] = {k: v for k, v in values.items()}
+        values["model_kwargs"] = {k: v for k, v in values.items()}
         return values
-    
+
     @root_validator(pre=False)
     def validate_arguments(cls, values: Any) -> Any:
         """Validate and update model keyword arguments"""
-        values['model_kwargs'] = {
-            k: v for k, v in values['model_kwargs'].items() if k in values['model_kws']
+        values["model_kwargs"] = {
+            k: v for k, v in values["model_kwargs"].items() if k in values["model_kws"]
         }
         return values
 

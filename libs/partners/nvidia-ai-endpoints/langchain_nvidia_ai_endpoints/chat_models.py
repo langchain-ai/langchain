@@ -117,7 +117,13 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
     """
 
     model_kws: List[str] = [
-        'temperature', 'max_tokens', 'top_p', 'seed', 'bad', 'stop', 'labels'
+        "temperature",
+        "max_tokens",
+        "top_p",
+        "seed",
+        "bad",
+        "stop",
+        "labels",
     ]
 
     @property
@@ -134,9 +140,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
     ) -> str:
         """Invoke on a single list of chat messages."""
         inputs = self.custom_preprocess(messages)
-        responses = self.get_generation(
-            inputs=inputs, stop=stop, **kwargs
-        )
+        responses = self.get_generation(inputs=inputs, stop=stop, **kwargs)
         outputs = self.custom_postprocess(responses)
         return outputs
 
@@ -155,9 +159,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         """Allows streaming to model!"""
         inputs = self.custom_preprocess(messages)
-        for response in self.get_stream(
-            inputs=inputs, stop=stop, **kwargs
-        ):
+        for response in self.get_stream(inputs=inputs, stop=stop, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
@@ -171,9 +173,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         inputs = self.custom_preprocess(messages)
-        async for response in self.get_astream(
-            inputs=inputs, stop=stop, **kwargs
-        ):
+        async for response in self.get_astream(inputs=inputs, stop=stop, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
@@ -234,7 +234,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
             f"Got ambiguous message in postprocessing; returning as-is: msg = {msg}"
         )
         return str(msg)
-    
+
     ######################################################################################
     ## Core client-side interfaces
 
@@ -268,7 +268,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         stop = kwargs.get("stop", None)
         payload = self.get_payload(inputs=inputs, stream=True, **kwargs)
         return self.client.get_req_astream(self.model, stop=stop, payload=payload)
-    
+
     def get_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
         """Generates payload for the _NVIDIAClient API to send to service."""
         new_kwargs = {**kwargs, **self.model_kwargs}
@@ -277,12 +277,12 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
     def prep_payload(self, inputs: Sequence[Dict], **kwargs: Any) -> dict:
         """Prepares a message or list of messages for the payload"""
         messages = [self.prep_msg(m) for m in inputs]
-        if kwargs.get('labels'):
+        if kwargs.get("labels"):
             # (WFH) Labels are currently (?) always passed as an assistant
             # suffix message, but this API seems less stable.
-            messages += [{"labels": kwargs.pop('labels'), "role": "assistant"}]
-        if kwargs.get('stop') is None:
-            kwargs.pop('stop')
+            messages += [{"labels": kwargs.pop("labels"), "role": "assistant"}]
+        if kwargs.get("stop") is None:
+            kwargs.pop("stop")
         return {"messages": messages, **kwargs}
 
     def prep_msg(self, msg: Union[str, dict, BaseMessage]) -> dict:
