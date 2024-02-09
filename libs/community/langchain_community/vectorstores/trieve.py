@@ -44,7 +44,7 @@ try:
 except ImportError:
     raise ImportError(
         "Could not import trieve_client python package. "
-        "Please install it with `pip install trieve_client` "
+        "Please install it with `pip install trieve_client_py` "
     )
 
 logger = logging.getLogger(__name__)
