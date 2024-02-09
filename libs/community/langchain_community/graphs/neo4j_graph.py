@@ -133,12 +133,14 @@ class Neo4jGraph(GraphStore):
         # Set schema
         try:
             self.refresh_schema()
-        except neo4j.exceptions.ClientError:
-            raise ValueError(
-                "Could not use APOC procedures. "
-                "Please ensure the APOC plugin is installed in Neo4j and that "
-                "'apoc.meta.data()' is allowed in Neo4j configuration "
-            )
+        except neo4j.exceptions.ClientError as e:
+            if e.code == "Neo.ClientError.Procedure.ProcedureNotFound":
+                raise ValueError(
+                    "Could not use APOC procedures. "
+                    "Please ensure the APOC plugin is installed in Neo4j and that "
+                    "'apoc.meta.data()' is allowed in Neo4j configuration "
+                )
+            raise e
 
     @property
     def get_schema(self) -> str:

@@ -313,7 +313,60 @@ _enums_for_spec_lock = threading.Lock()
 
 
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
-    """A Runnable that can be dynamically configured."""
+    """A Runnable that can be dynamically configured.
+
+    A RunnableConfigurableAlternatives should be initiated using the
+    `configurable_alternatives` method of a runnable or can be
+    initiated directly as well.
+
+    Here is an example of using a RunnableConfigurableAlternatives that uses
+    alternative prompts to illustrate its functionality:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            # This creates a RunnableConfigurableAlternatives for Prompt Runnable
+            # with two alternatives.
+            prompt = PromptTemplate.from_template(
+                "Tell me a joke about {topic}"
+            ).configurable_alternatives(
+                ConfigurableField(id="prompt"),
+                default_key="joke",
+                poem=PromptTemplate.from_template("Write a short poem about {topic}")
+            )
+
+            # When invoking the created RunnableSequence, you can pass in the
+            # value for your ConfigurableField's id which in this case will either be
+            # `joke` or `poem`.
+            chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+
+            # The `with_config` method brings in the desired Prompt Runnable in your
+            # Runnable Sequence.
+            chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
+
+
+    Equivalently, you can initialize RunnableConfigurableAlternatives directly
+    and use in LCEL in the same way:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import ConfigurableField
+            from langchain_core.runnables.configurable import RunnableConfigurableAlternatives
+            from langchain_openai import ChatOpenAI
+
+            prompt = RunnableConfigurableAlternatives(
+                which=ConfigurableField(id='prompt'),
+                default=PromptTemplate.from_template("Tell me a joke about {topic}"),
+                default_key='joke',
+                prefix_keys=False,
+                alternatives={"poem":PromptTemplate.from_template("Write a short poem about {topic}")}
+            )
+            chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+            chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
+
+    """  # noqa: E501
 
     which: ConfigurableField
 
