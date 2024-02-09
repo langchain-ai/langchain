@@ -73,7 +73,7 @@ class CohereRerank(BaseDocumentCompressor):
             doc.page_content if isinstance(doc, Document) else doc for doc in documents
         ]
         model = model or self.model
-        top_n = top_n if (top_n and top_n > 0) else self.top_n
+        top_n = top_n if (top_n is None or top_n > 0) else self.top_n
         results = self.client.rerank(
             query, docs, model, top_n=top_n, max_chunks_per_doc=max_chunks_per_doc
         )
