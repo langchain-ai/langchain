@@ -49,10 +49,10 @@ class RandomEmbeddings(Embeddings):
     """Fake embeddings with random vectors. For testing purposes."""
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [np.random.rand(100) for _ in texts]
+        return [np.random.rand(100).tolist() for _ in texts]
 
     def embed_query(self, text: str) -> List[float]:
-        return np.random.rand(100)
+        return np.random.rand(100).tolist()
 
 
 @pytest.fixture
