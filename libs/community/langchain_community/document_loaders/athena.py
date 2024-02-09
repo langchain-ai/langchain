@@ -105,17 +105,17 @@ class AthenaLoader(BaseLoader):
         result_set = self._get_result_set(query_execution_id)
         return json.loads(result_set.to_json(orient="records"))
 
-    def _remove_suffix(self, input_string, suffix):
+    def _remove_suffix(self, input_string: str, suffix: str) -> str:
         if suffix and input_string.endswith(suffix):
             return input_string[: -len(suffix)]
         return input_string
 
-    def _remove_prefix(self, input_string, suffix):
+    def _remove_prefix(self, input_string: str, suffix: str) -> str:
         if suffix and input_string.startswith(suffix):
             return input_string[len(suffix) :]
         return input_string
 
-    def _get_result_set(self, query_execution_id: str):
+    def _get_result_set(self, query_execution_id: str) -> Any:
         try:
             import pandas as pd
         except ImportError:
