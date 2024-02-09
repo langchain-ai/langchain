@@ -1,4 +1,4 @@
-"""Module implements an agent that uses OpenAI's APIs function enabled API."""
+"""Module implements an agent that uses GigaChat's APIs function enabled API."""
 from typing import Sequence
 
 from langchain_community.tools.render import format_tool_to_gigachat_function
