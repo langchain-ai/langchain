@@ -19,12 +19,15 @@ from typing import (
     Tuple,
     Type,
     TypedDict,
+    TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import openai
 import tiktoken
+from langchain.output_parsers import PydanticOutputParser
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -51,6 +54,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
+from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable
@@ -66,6 +70,8 @@ from langchain_core.utils.function_calling import (
 )
 
 logger = logging.getLogger(__name__)
+
+_BM = TypeVar("_BM", bound=BaseModel)
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -684,7 +690,7 @@ class ChatOpenAI(BaseChatModel):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none"]]] = None,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -706,21 +712,99 @@ class ChatOpenAI(BaseChatModel):
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if tool_choice is not None:
-            if isinstance(tool_choice, str) and (tool_choice not in ("auto", "none")):
-                tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
+        if tool_choice is not None and tool_choice:
+            if len(formatted_tools) != 1:
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
                     f"tool. Received {len(formatted_tools)} tools."
                 )
-            if isinstance(tool_choice, dict) and (
-                formatted_tools[0]["function"]["name"]
-                != tool_choice["function"]["name"]
-            ):
+            if isinstance(tool_choice, str):
+                if tool_choice not in ("auto", "none"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+            elif isinstance(tool_choice, bool):
+                tool_choice = formatted_tools[0]
+            elif isinstance(tool_choice, dict):
+                if (
+                    formatted_tools[0]["function"]["name"]
+                    != tool_choice["function"]["name"]
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tool was {formatted_tools[0]['function']['name']}."
+                    )
+            else:
                 raise ValueError(
-                    f"Tool choice {tool_choice} was specified, but the only "
-                    f"provided tool was {formatted_tools[0]['function']['name']}."
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
                 )
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
+
+    @overload
+    def with_output_format(
+        self,
+        output_schema: Dict[str, Any],
+        *,
+        mode: Literal["tools", "json"] = "tools",
+        enforce_schema: bool = True,
+        return_single: bool = True,
+    ) -> Runnable[LanguageModelInput, Dict]:
+        ...
+
+    @overload
+    def with_output_format(
+        self,
+        output_schema: Type[_BM],
+        *,
+        mode: Literal["tools", "json"] = "tools",
+        enforce_schema: bool = True,
+        return_single: bool = True,
+    ) -> Runnable[LanguageModelInput, _BM]:
+        ...
+
+    def with_output_format(
+        self,
+        output_schema: Union[Dict[str, Any], Type[_BM]],
+        *,
+        mode: Literal["tools", "json"] = "tools",
+        enforce_schema: bool = True,
+        return_single: bool = True,
+    ) -> Runnable[LanguageModelInput, Union[Dict, _BM]]:
+        if mode == "tools":
+            oai_tool = convert_to_openai_tool(output_schema)
+            if enforce_schema:
+                llm = self.bind_tools([output_schema], tool_choice=oai_tool)
+            else:
+                llm = self.bind_tools([output_schema])
+            if _is_pydantic_class(output_schema):
+                output_parser = PydanticToolsParser(
+                    tools=[output_schema], return_single=return_single
+                )
+            else:
+                key_name = convert_to_openai_tool(output_schema)
+                output_parser = JsonOutputKeyToolsParser(
+                    return_single=return_single, key_name=key_name
+                )
+            return llm | output_parser
+        elif mode == "json":
+            if _is_pydantic_class(output_schema):
+                output_parser = PydanticOutputParser(
+                    pydantic_object=output_schema,
+                )
+            else:
+                output_parser = JsonOutputParser()
+
+            llm = self.bind(response_format={"type": "json_object"})
+            return llm | output_parser
+        else:
+            raise ValueError(
+                f"Unrecognized mode argument. Expected one of 'tools' or 'json'. "
+                f"Received: {mode}"
+            )
+
+
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and issubclass(obj, BaseModel)
