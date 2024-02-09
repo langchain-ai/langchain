@@ -6,6 +6,9 @@ from typing import Any, Optional
 
 from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
 
+# Check that we have gigachain_core package instead of langchain_core
+from langchain_core import __gigachain_core
+
 try:
     __version__ = metadata.version(__package__)
 except metadata.PackageNotFoundError:
@@ -67,10 +70,10 @@ def __getattr__(name: str) -> Any:
         return ConversationChain
     elif name == "LLMBashChain":
         raise ImportError(
-            "This module has been moved to langchain-experimental. "
+            "This module has been moved to gigachain-experimental. "
             "For more details: "
             "https://github.com/langchain-ai/langchain/discussions/11352."
-            "To access this code, install it with `pip install langchain-experimental`."
+            "To access this code, install it with `pip install gigachain-experimental`."
             "`from langchain_experimental.llm_bash.base "
             "import LLMBashChain`"
         )

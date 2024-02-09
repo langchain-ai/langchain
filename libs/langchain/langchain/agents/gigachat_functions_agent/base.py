@@ -48,7 +48,8 @@ def create_gigachat_functions_agent(
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
 
-    Example:
+    TODO: Support gigachat
+    Example (old version from openAI):
 
         Creating an agent with no memory
 
