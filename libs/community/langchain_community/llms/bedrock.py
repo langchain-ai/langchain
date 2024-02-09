@@ -339,9 +339,9 @@ class BedrockBase(BaseModel, ABC):
             raise ValueError(f"Error raised by bedrock service: {e}")
         except Exception as e:
             raise ValueError(
-                f"Could not load credentials to authenticate with AWS client. "
+                "Could not load credentials to authenticate with AWS client. "
                 "Please check that credentials in the specified "
-                "profile name are valid. {e}"
+                f"profile name are valid. {e}"
             ) from e
 
         return values
