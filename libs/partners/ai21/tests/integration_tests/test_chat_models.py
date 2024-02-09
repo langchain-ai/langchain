@@ -6,7 +6,6 @@ from langchain_core.outputs import ChatGeneration
 from langchain_ai21.chat_models import ChatAI21
 
 
-@pytest.mark.requires("ai21")
 def test_invoke() -> None:
     """Test invoke tokens from AI21."""
     llm = ChatAI21()
@@ -15,7 +14,6 @@ def test_invoke() -> None:
     assert isinstance(result.content, str)
 
 
-@pytest.mark.requires("ai21")
 def test_generation() -> None:
     """Test invoke tokens from AI21."""
     llm = ChatAI21()
@@ -31,7 +29,6 @@ def test_generation() -> None:
             assert generation.text == generation.message.content
 
 
-@pytest.mark.requires("ai21")
 async def test_ageneration() -> None:
     """Test invoke tokens from AI21."""
     llm = ChatAI21()

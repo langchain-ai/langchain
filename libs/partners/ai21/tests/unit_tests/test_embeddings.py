@@ -23,14 +23,12 @@ _EXAMPLE_EMBEDDING_RESPONSE = EmbedResponse(
 )
 
 
-@pytest.mark.requires("ai21")
 def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
     with pytest.raises(MissingApiKeyError):
         AI21Embeddings()
 
 
-@pytest.mark.requires("ai21")
 @pytest.fixture
 def mock_client_with_embeddings(mocker: MockerFixture) -> Mock:
     mock_client = mocker.MagicMock(spec=AI21Client)
@@ -40,7 +38,6 @@ def mock_client_with_embeddings(mocker: MockerFixture) -> Mock:
     return mock_client
 
 
-@pytest.mark.requires("ai21")
 def test_embed_query(mock_client_with_embeddings: Mock) -> None:
     llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)
 
@@ -53,7 +50,6 @@ def test_embed_query(mock_client_with_embeddings: Mock) -> None:
     )
 
 
-@pytest.mark.requires("ai21")
 def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
     llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)
 

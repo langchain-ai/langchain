@@ -42,7 +42,6 @@ def _generate_llm_client_parameters() -> AI21LLM:
     )
 
 
-@pytest.mark.requires("ai21")
 def test_stream() -> None:
     """Test streaming tokens from AI21."""
     llm = AI21LLM(
@@ -53,7 +52,6 @@ def test_stream() -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.requires("ai21")
 async def test_abatch() -> None:
     """Test streaming tokens from AI21LLM."""
     llm = AI21LLM(
@@ -65,7 +63,6 @@ async def test_abatch() -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.requires("ai21")
 async def test_abatch_tags() -> None:
     """Test batch tokens from AI21LLM."""
     llm = AI21LLM(
@@ -79,7 +76,6 @@ async def test_abatch_tags() -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.requires("ai21")
 def test_batch() -> None:
     """Test batch tokens from AI21LLM."""
     llm = AI21LLM(
@@ -91,7 +87,6 @@ def test_batch() -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.requires("ai21")
 async def test_ainvoke() -> None:
     """Test invoke tokens from AI21LLM."""
     llm = AI21LLM(
@@ -102,7 +97,6 @@ async def test_ainvoke() -> None:
     assert isinstance(result, str)
 
 
-@pytest.mark.requires("ai21")
 def test_invoke() -> None:
     """Test invoke tokens from AI21LLM."""
     llm = AI21LLM(
@@ -113,7 +107,6 @@ def test_invoke() -> None:
     assert isinstance(result, str)
 
 
-@pytest.mark.requires("ai21")
 def test__generate() -> None:
     llm = _generate_llm_client_parameters()
     llm_result = llm.generate(
@@ -125,7 +118,6 @@ def test__generate() -> None:
     assert llm_result.llm_output["token_count"] != 0  # type: ignore
 
 
-@pytest.mark.requires("ai21")
 async def test__agenerate() -> None:
     llm = _generate_llm_client_parameters()
     llm_result = await llm.agenerate(
