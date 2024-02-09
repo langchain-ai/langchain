@@ -58,6 +58,8 @@ logger = logging.getLogger(__name__)
 
 
 class ChatDeepInfraException(Exception):
+    """Exception raised when the DeepInfra API returns an error."""
+
     pass
 
 
@@ -67,7 +69,7 @@ def _create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions"""
+    """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions."""
     return create_base_retry_decorator(
         error_types=[requests.exceptions.ConnectTimeout, ChatDeepInfraException],
         max_retries=llm.max_retries,

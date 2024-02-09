@@ -11,6 +11,8 @@ from langchain_community.document_loaders.blob_loaders import Blob
 
 
 class VsdxParser(BaseBlobParser, ABC):
+    """Parser for vsdx files."""
+
     def parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[override]
         """Parse a vsdx file."""
         return self.lazy_parse(blob)

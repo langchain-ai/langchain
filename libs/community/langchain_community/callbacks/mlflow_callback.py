@@ -39,6 +39,7 @@ def import_mlflow() -> Any:
 
 
 def mlflow_callback_metrics() -> List[str]:
+    """Get the metrics to log to MLFlow."""
     return [
         "step",
         "starts",
@@ -59,6 +60,7 @@ def mlflow_callback_metrics() -> List[str]:
 
 
 def get_text_complexity_metrics() -> List[str]:
+    """Get the text complexity metrics from textstat."""
     return [
         "flesch_reading_ease",
         "flesch_kincaid_grade",
