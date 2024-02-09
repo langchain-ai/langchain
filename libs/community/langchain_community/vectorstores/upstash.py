@@ -107,7 +107,7 @@ class UpstashVectorStore(VectorStore):
             self._index = index
             logger.info("Using the index passed as parameter")
         if async_index:
-            if not isinstance(async_index, Index):
+            if not isinstance(async_index, AsyncIndex):
                 raise ValueError(
                     "Passed index object should be an "
                     "instance of upstash_vector.AsyncIndex, "
@@ -136,10 +136,18 @@ class UpstashVectorStore(VectorStore):
 
     def _embed_documents(self, texts: Iterable[str]) -> List[List[float]]:
         """Embed strings using the embeddings object"""
+        if not self._embeddings:
+            raise ValueError(
+                "No embeddings object provided. "
+                "Pass an embeddings object to the constructor.")
         return self._embeddings.embed_documents(list(texts))
 
     def _embed_query(self, text: str) -> List[float]:
         """Embed query text using the embeddings object."""
+        if not self._embeddings:
+            raise ValueError(
+                "No embeddings object provided. "
+                "Pass an embeddings object to the constructor.")
         return self._embeddings.embed_query(text)
 
     def add_texts(
@@ -175,7 +183,12 @@ class UpstashVectorStore(VectorStore):
         """
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        metadatas = metadatas or [{} for _ in texts]
+
+        # Copy metadatas to avoid modifying the original documents
+        if metadatas:
+            metadatas = [m.copy() for m in metadatas]
+        else:
+            metadatas = [{} for _ in texts]
 
         # Add text to metadata
         for metadata, text in zip(metadatas, texts):
@@ -246,11 +259,14 @@ class UpstashVectorStore(VectorStore):
             include_metadata=True,
         )
 
+        print(f"results from querying for {embedding}:", results)
+
         for res in results:
             metadata = res.metadata
             if metadata and self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 score = res.score
+                print("metadata:", metadata)
                 docs.append(
                     (Document(page_content=text, metadata=metadata), score))
             else:
@@ -599,3 +615,15 @@ class UpstashVectorStore(VectorStore):
             - similarity function selected for the index
         """
         return self._index.info()
+
+    async def ainfo(self):
+        """Get statistics about the index.
+
+        Returns:
+            - total number of vectors
+            - total number of vectors waiting to be indexed
+            - total size of the index on disk in bytes
+            - dimension count for the index
+            - similarity function selected for the index
+        """
+        return await self._async_index.info()
