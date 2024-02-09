@@ -32,7 +32,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-llm_with_tools = llm.bind(functions=[tavily_tool])
+llm_with_tools = llm.bind(functions=tools)
 
 
 def _format_chat_history(chat_history: List[Tuple[str, str]]):
