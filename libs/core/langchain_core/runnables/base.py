@@ -23,6 +23,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Protocol,
     Sequence,
     Set,
     Tuple,
@@ -4373,6 +4374,11 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
         )
 
 
+class _CallableWithKwargs(Protocol, Generic[Input, Output]):
+    def __call__(self, input: Input, **kwargs: Any) -> Output:
+        ...
+
+
 @overload
 def chain(
     func: Callable[[Input], Coroutine[Any, Any, Output]],
@@ -4407,6 +4413,10 @@ def chain(
         Callable[[Input], Iterator[Output]],
         Callable[[Input], Coroutine[Any, Any, Output]],
         Callable[[Input], AsyncIterator[Output]],
+        _CallableWithKwargs[Input, Output],
+        _CallableWithKwargs[Input, Iterator[Output]],
+        _CallableWithKwargs[Input, Coroutine[Any, Any, Output]],
+        _CallableWithKwargs[Input, AsyncIterator[Output]],
     ],
 ) -> Runnable[Input, Output]:
     """Decorate a function to make it a Runnable.
