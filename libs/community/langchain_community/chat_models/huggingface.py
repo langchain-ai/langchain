@@ -146,7 +146,7 @@ class ChatHuggingFace(BaseChatModel):
             if not self.model_id:
                 raise ValueError(
                     "Failed to resolve model_id:"
-                    f"Could not find model id for inference server provided: {endpoint_url}"
+                    f"Could not find model id for inference server: {endpoint_url}"
                     "Make sure that your Hugging Face token has access to the endpoint."
                 )
 
