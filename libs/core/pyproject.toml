@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.1.18"
+version = "0.1.22"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -11,7 +11,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pydantic = ">=1,<3"
-langsmith = ">=0.0.83,<0.1"
+langsmith = "^0.0.87"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 anyio = ">=3,<5"

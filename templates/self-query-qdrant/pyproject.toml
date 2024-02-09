@@ -16,7 +16,7 @@ lark = "^1.1.8"
 tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 [tool.poetry.group.dev.dependencies.python-dotenv]
 extras = [
     "cli",
