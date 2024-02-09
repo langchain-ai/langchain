@@ -46,11 +46,14 @@ from langchain_community.agent_toolkits.sql.base import create_sql_agent
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.agent_toolkits.steam.toolkit import SteamToolkit
 from langchain_community.agent_toolkits.zapier.toolkit import ZapierToolkit
+from langchain_community.agent_toolkits.cogniswitch.toolkit import CogniswitchToolkit
+
 
 __all__ = [
     "AINetworkToolkit",
     "AmadeusToolkit",
     "AzureCognitiveServicesToolkit",
+    "CogniswitchToolkit",
     "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
