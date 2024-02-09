@@ -1145,7 +1145,6 @@ class _DatasetRunContainer:
                     LangChainTracer(
                         project_name=project.name,
                         client=client,
-                        use_threading=False,
                         example_id=example.id,
                     ),
                     EvaluatorCallbackHandler(
