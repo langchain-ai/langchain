@@ -80,14 +80,38 @@ To use the NVIDIA models, install the langchain NVIDIA AI Endpoints package:
 pip install -U langchain_nvidia_aiplay
 ```
 
-To run the app, move into the directory - `my-app/packages/nvidia-rag-canonical/nvidia-rag-canonical`and then simply run the `chain_with_guardrails.py` 
+To create a new LangChain project and install this as the only package, you can do:
 ```
-python chain_with_guardrails.py
+langchain app new my-app --package nvidia-guardrails-with-RAG
 ```
 
-or setup the langServe server using `langchain serve`
-
+If you want to add this to an existing project, you can just run:
 ```
+langchain app add nvidia-guardrails-with-RAG
+```
+
+And add the following code to your `server.py` file:
+```python
+from nvidia_guardrails_with_RAG import chain_with_guardrails as nvidia_guardrails_with_RAG_chain
+
+add_routes(app, nvidia_guardrails_with_RAG_chain, path="/nvidia-guardrails-with-RAG")
+```
+
+If you want to set up an ingestion pipeline, you can add the following code to your `server.py` file:
+```python
+from nvidia_guardrails_with_RAG import ingest as nvidia_guardrails_ingest
+
+add_routes(app, nvidia_guardrails_ingest, path="/nvidia-rag-ingest")
+```
+Note that for files ingested by the ingestion API, the server will need to be restarted for the newly ingested files to be accessible by the retriever.
+
+If you DO NOT already have a Milvus Vector Store you want to connect to, see `Milvus Setup` section below before proceeding.
+
+If you DO have a Milvus Vector Store you want to connect to, edit the connection details in `nvidia_rag_canonical/chain.py`
+
+If you are inside this directory, then you can spin up a LangServe instance directly by:
+
+```shell
 langchain serve
 ```
 

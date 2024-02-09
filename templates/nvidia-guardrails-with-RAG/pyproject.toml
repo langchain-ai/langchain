@@ -1,23 +1,29 @@
 [tool.poetry]
-name = "my-app"
+name = "nvidia-guardrails-with-RAG"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "NeMo Guradrails Integration"
+authors = ["Aditi Bodhankar <abodhankar@nvidia.com>"]
 readme = "README.md"
-packages = [
-    { include = "app" },
-]
 
 [tool.poetry.dependencies]
-python = "^3.11"
-uvicorn = "^0.23.2"
-langserve = {extras = ["server"], version = ">=0.0.30"}
-pydantic = "<2"
-nvidia-rag-canonical = {path = "packages/nvidia-rag-canonical", develop = true}
-
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+pymilvus = ">=2.3.0"
+langchain-nvidia-aiplay = "^0.0.2"
+pypdf = ">=3.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.20"
+
+[tool.langserve]
+export_module = "nvidia_guardrails_with_RAG"
+export_attr = "chain_with_guardrails"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["Milvus", "NVIDIA", "NeMo Guardrails"]
+tags = ["vectordbs"]
 
 [build-system]
 requires = ["poetry-core"]
