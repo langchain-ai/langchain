@@ -990,9 +990,7 @@ class Milvus(VectorStore):
             metadata=data.pop(self._metadata_field) if self._metadata_field else data,
         )
 
-    def get_pks(
-        self, expr: str = None, **kwargs: Any
-    ) -> List[int] | None:
+    def get_pks(self, expr: str = None, **kwargs: Any) -> List[int] | None:
         """Get primary keys with expression
 
         Args:
@@ -1010,22 +1008,19 @@ class Milvus(VectorStore):
 
         try:
             query_result = self.col.query(
-                    expr=expr,
-                    output_fields=[self._primary_field]
-                )
-        except MilvusException as exc:
-            logger.error(
-                "Failed to get ids: %s error: %s", self.collection_name, exc
+                expr=expr, output_fields=[self._primary_field]
             )
+        except MilvusException as exc:
+            logger.error("Failed to get ids: %s error: %s", self.collection_name, exc)
             raise exc
         pks = [item.get(self._primary_field) for item in query_result]
         return pks
-    
+
     def upsert(
         self,
         ids: Optional[List[str]] = None,
         documents: List[Document] | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[str] | None:
         """Update/Insert documents to the vectorstore.
 
