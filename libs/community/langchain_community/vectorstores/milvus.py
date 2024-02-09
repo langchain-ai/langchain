@@ -990,7 +990,7 @@ class Milvus(VectorStore):
             metadata=data.pop(self._metadata_field) if self._metadata_field else data,
         )
 
-    def get_pks(self, expr: str = None, **kwargs: Any) -> List[int] | None:
+    def get_pks(self, expr: str, **kwargs: Any) -> List[int] | None:
         """Get primary keys with expression
 
         Args:
@@ -1004,7 +1004,7 @@ class Milvus(VectorStore):
 
         if self.col is None:
             logger.debug("No existing collection to get pk.")
-            return False
+            return None
 
         try:
             query_result = self.col.query(
@@ -1034,11 +1034,11 @@ class Milvus(VectorStore):
 
         from pymilvus import MilvusException
 
-        if len(documents) == 0:
+        if documents is None or len(documents) == 0:
             logger.debug("No documents to upsert.")
             return None
 
-        if len(ids):
+        if ids is not None and len(ids):
             try:
                 self.delete(ids=ids)
             except MilvusException:
