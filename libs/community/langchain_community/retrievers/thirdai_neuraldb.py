@@ -5,13 +5,16 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class NeuralDBRetriever(BaseRetriever):
     """Document retriever that uses ThirdAI's NeuralDB."""
+
+    thirdai_key: SecretStr
+    """ThirdAI API Key"""
 
     db: Any = None  #: :meta private:
     """NeuralDB instance"""
@@ -68,7 +71,7 @@ class NeuralDBRetriever(BaseRetriever):
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(db=ndb.NeuralDB(**model_kwargs))
+        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB(**model_kwargs))
 
     @classmethod
     def from_bazaar(
@@ -110,7 +113,7 @@ class NeuralDBRetriever(BaseRetriever):
             os.mkdir(cache)
         model_bazaar = ndb.Bazaar(cache)
         model_bazaar.fetch()
-        return cls(db=model_bazaar.get_model(base))
+        return cls(thirdai_key=thirdai_key, db=model_bazaar.get_model(base))
 
     @classmethod
     def from_checkpoint(
@@ -145,7 +148,7 @@ class NeuralDBRetriever(BaseRetriever):
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(db=ndb.NeuralDB.from_checkpoint(checkpoint))
+        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB.from_checkpoint(checkpoint))
 
     @root_validator()
     def validate_environments(cls, values: Dict) -> Dict:
@@ -267,8 +270,10 @@ class NeuralDBRetriever(BaseRetriever):
             top_k: The max number of context results to retrieve. Defaults to 10.
         """
         try:
+            if "top_k" not in kwargs:
+                kwargs["top_k"] = 10
             references = self.db.search(
-                query=query, top_k=kwargs.get("top_k", 10), **kwargs
+                query=query, **kwargs
             )
             return [
                 Document(
