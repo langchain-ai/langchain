@@ -4,7 +4,7 @@ from typing import Generator
 
 from langchain_core.callbacks import CallbackManager
 
-from langchain_community.llms.perplexity import Perplexity
+from langchain_community.llms.perplexity import PerplexityLLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

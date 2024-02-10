@@ -58,7 +58,7 @@ class PerplexityLLM(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import Perplexity
+            from langchain_community.llms import PerplexityLLM
 
             llm = PerplexityLLM(model="pplx-70b-online", temperature=0.7)
     """
