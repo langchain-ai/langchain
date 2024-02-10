@@ -26,7 +26,6 @@ from typing import (
 
 import openai
 import tiktoken
-from langchain_community.utils.openai import is_openai_v1
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -297,8 +296,9 @@ class ChatOpenAI(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        extras = build_extra_kwargs(extra, values, all_required_field_names)
-        values["model_kwargs"] = extras
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
         return values
 
     @root_validator()

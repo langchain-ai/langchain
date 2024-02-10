@@ -21,7 +21,6 @@ from typing import (
 
 import openai
 import tiktoken
-from langchain_community.utils.openai import is_openai_v1
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -107,7 +106,7 @@ class BaseOpenAI(BaseLLM):
     """How many completions to generate for each prompt."""
     best_of: int = 1
     """Generates best_of completions server-side and returns the "best"."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict, alias="extra_body")
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
@@ -136,9 +135,9 @@ class BaseOpenAI(BaseLLM):
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
     extra_headers: Optional[Mapping[str, str]] = None
-    extra_query: Optional[Mapping[str, object]] = None
-    extra_body: Optional[Mapping[str, object]] = None
-    """Extra headers, query parameters, and body to pass to the OpenAI API."""
+    """Extra headers to pass to the OpenAI API."""
+    extra_query: Optional[Mapping[str, Any]] = None
+    """Extra query parameters to pass to the OpenAI API."""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
     Tiktoken is used to count the number of tokens in documents to constrain 
@@ -166,10 +165,9 @@ class BaseOpenAI(BaseLLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        extras = build_extra_kwargs(extra, values, all_required_field_names)
-        if is_openai_v1():
-            values["extra_body"] = extras
-        values["model_kwargs"] = extras
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
         return values
 
     @root_validator()
@@ -204,9 +202,11 @@ class BaseOpenAI(BaseLLM):
         )
 
         client_params = {
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
-            else None,
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
@@ -225,14 +225,11 @@ class BaseOpenAI(BaseLLM):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        if is_openai_v1():
-            extra_params = {
-                "extra_query": self.extra_query,
-                "extra_headers": self.extra_headers,
-                "extra_body": self.extra_body,
-            }
-        else:
-            extra_params = self.model_kwargs
+        extra_params = {
+            "extra_query": self.extra_query,
+            "extra_headers": self.extra_headers,
+            "extra_body": self.model_kwargs,
+        }
         normal_params: Dict[str, Any] = {
             "temperature": self.temperature,
             "top_p": self.top_p,
@@ -271,9 +268,11 @@ class BaseOpenAI(BaseLLM):
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
-                    logprobs=chunk.generation_info["logprobs"]
-                    if chunk.generation_info
-                    else None,
+                    logprobs=(
+                        chunk.generation_info["logprobs"]
+                        if chunk.generation_info
+                        else None
+                    ),
                 )
 
     async def _astream(
@@ -297,9 +296,11 @@ class BaseOpenAI(BaseLLM):
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
-                    logprobs=chunk.generation_info["logprobs"]
-                    if chunk.generation_info
-                    else None,
+                    logprobs=(
+                        chunk.generation_info["logprobs"]
+                        if chunk.generation_info
+                        else None
+                    ),
                 )
 
     def _generate(
@@ -348,12 +349,16 @@ class BaseOpenAI(BaseLLM):
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:
@@ -409,12 +414,16 @@ class BaseOpenAI(BaseLLM):
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:
