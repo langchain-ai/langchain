@@ -69,7 +69,7 @@ def init_vertexai(
     credentials: Optional["Credentials"] = None,
     module: Optional[str] = None,
 ) -> None:
-    """Init vertexai.
+    """Init Vertex AI.
 
     Args:
         project: The default GCP project to use when making Vertex API calls.
