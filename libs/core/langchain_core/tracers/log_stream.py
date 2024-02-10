@@ -27,7 +27,7 @@ from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tracers.base import BaseTracer
-from langchain_core.tracers.memory_stream import ClosedResourceError, _MemoryStream
+from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.tracers.schemas import Run
 
 
@@ -223,11 +223,12 @@ class LogStreamCallbackHandler(BaseTracer):
 
     def send(self, *ops: Dict[str, Any]) -> bool:
         """Send a patch to the stream, return False if the stream is closed."""
-        try:
-            self.send_stream.send_nowait(RunLogPatch(*ops))
-            return True
-        except ClosedResourceError:
-            return False
+        # We will likely want to wrap this in try / except at some point
+        # to handle exceptions that might arise at run time.
+        # For now we'll let the exception bubble up, and always return
+        # True on the happy path.
+        self.send_stream.send_nowait(RunLogPatch(*ops))
+        return True
 
     async def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]

@@ -12,11 +12,6 @@ import asyncio
 from asyncio import AbstractEventLoop, Queue
 from typing import AsyncIterator, Generic, TypeVar
 
-
-class ClosedResourceError(Exception):
-    """Raised when trying to use a resource that has been closed."""
-
-
 T = TypeVar("T")
 
 
@@ -66,8 +61,6 @@ class _ReceiveStream(Generic[T]):
 
     async def __aiter__(self) -> AsyncIterator[T]:
         while True:
-            if self._is_closed:
-                raise ClosedResourceError("Reader is closed. Cannot read from it.")
             item = await self._queue.get()
             if item is self._done:
                 self._is_closed = True

@@ -4,9 +4,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import AsyncIterator
 
-import pytest
-
-from langchain_core.tracers.memory_stream import ClosedResourceError, _MemoryStream
+from langchain_core.tracers.memory_stream import _MemoryStream
 
 
 async def test_same_event_loop() -> None:
@@ -114,19 +112,11 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         ), f"delta_time: {delta_time}"
 
 
-async def test_closed_resource_exception() -> None:
+async def test_closed_stream() -> None:
     reader_loop = asyncio.get_event_loop()
     channel = _MemoryStream[str](reader_loop)
     writer = channel.get_send_stream()
     reader = channel.get_receive_stream()
     await writer.aclose()
-    # OK to use once since resource is available at this point
-    # once we start iterating over the reader, we will get the `done` item
-    # and mark the stream as closed
-    async for _ in reader:
-        pass
 
-    # Now stream is closed, so the second time should raise an exception
-    with pytest.raises(ClosedResourceError):
-        async for _ in reader:
-            pass
+    assert [chunk async for chunk in reader] == []
