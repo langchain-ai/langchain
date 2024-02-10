@@ -527,6 +527,7 @@ def test_raises_error() -> None:
     with pytest.raises(Exception):
         parser.invoke("hi")
 
+
 # A test fixture for an output which contains
 # json within a code block
 TOKENS_WITH_JSON_CODE_BLOCK = [
@@ -580,6 +581,7 @@ def test_partial_text_json_output_parser_with_json_code_block() -> None:
         {"country_name": "France", "population_size": 673915},
         {"country_name": "France", "population_size": 67391582},
     ]
+
 
 def test_base_model_schema_consistency() -> None:
     class Joke(BaseModel):
