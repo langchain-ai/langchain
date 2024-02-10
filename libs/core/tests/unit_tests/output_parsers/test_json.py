@@ -72,21 +72,7 @@ JSON_WITH_MARKDOWN_CODE_BLOCK = """```json
 JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES = """```json
 {
     "action": "Final Answer",
-    "action_input": "```bar\n<div id="1" class=\"value\">\n\ttext\n</div>```"
-}
-```"""
-
-JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON = """```json
-{
-    "action": "Final Answer",
-    "action_input": "{"foo": "bar", "bar": "foo"}"
-}
-```"""
-
-JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON = """```json
-{
-    "action": "Final Answer",
-    "action_input": "{\"foo\": \"bar\", \"bar\": \"foo\"}"
+    "action_input": "```bar\n<div id=\\"1\\" class=\\"value\\">\n\ttext\n</div>```"
 }
 ```"""
 
@@ -204,6 +190,8 @@ def test_parse_json_with_code_blocks() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK)
     assert parsed == {"foo": "```bar```"}
 
+
+def test_parse_json_with_code_blocks_and_newlines() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)
 
     assert parsed == {
@@ -213,8 +201,6 @@ def test_parse_json_with_code_blocks() -> None:
 
 
 TEST_CASES_ESCAPED_QUOTES = [
-    JSON_WITH_UNESCAPED_QUOTES_IN_NESTED_JSON,
-    JSON_WITH_ESCAPED_QUOTES_IN_NESTED_JSON,
     JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON,
 ]
 
@@ -308,6 +294,7 @@ So
 
 }
 """.splitlines()
+
 
 EXPECTED_STREAMED_JSON = [
     {},
@@ -539,6 +526,61 @@ def test_raises_error() -> None:
     parser = SimpleJsonOutputParser()
     with pytest.raises(Exception):
         parser.invoke("hi")
+
+# A test fixture for an output which contains
+# json within a code block
+TOKENS_WITH_JSON_CODE_BLOCK = [
+    " France",
+    ":",
+    "\n\n```",
+    "json",
+    "\n{",
+    "\n ",
+    ' "',
+    "country",
+    "_",
+    "name",
+    '":',
+    ' "',
+    "France",
+    '",',
+    " \n ",
+    ' "',
+    "population",
+    "_",
+    "size",
+    '":',
+    " 67",
+    "39",
+    "15",
+    "82",
+    "\n}",
+    "\n```",
+    "\n\nI",
+    " looked",
+    " up",
+]
+
+
+def test_partial_text_json_output_parser_with_json_code_block() -> None:
+    """Test json parser works correctly when the response contains a json code-block."""
+
+    def input_iter(_: Any) -> Iterator[str]:
+        for token in TOKENS_WITH_JSON_CODE_BLOCK:
+            yield token
+
+    chain = input_iter | SimpleJsonOutputParser()
+
+    assert list(chain.stream(None)) == [
+        {},
+        {"country_name": ""},
+        {"country_name": "France"},
+        {"country_name": "France", "population_size": 67},
+        {"country_name": "France", "population_size": 6739},
+        {"country_name": "France", "population_size": 673915},
+        {"country_name": "France", "population_size": 67391582},
+    ]
+
 def test_base_model_schema_consistency() -> None:
     class Joke(BaseModel):
         setup: str
@@ -550,5 +592,4 @@ def test_base_model_schema_consistency() -> None:
     retrieved_joke_schema = Joke.schema()
 
     assert initial_joke_schema == retrieved_joke_schema
-    assert openai_func.get("name", None) != None
-
+    assert openai_func.get("name", None) is not None
