@@ -64,6 +64,6 @@ class JavaScriptSegmenter(CodeSegmenter):
                 simplified_lines[start] = f"// Code for: {simplified_lines[start]}"
 
                 for line_num in range(start + 1, node.loc.end.line):
-                    simplified_lines[line_num] = None  # type: ignore
+                    del simplified_lines[line_num]
 
-        return "\n".join(line for line in simplified_lines if line is not None)
+        return "\n".join(line for line in simplified_lines)
