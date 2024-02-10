@@ -1,6 +1,18 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/llms/watsonxllm",
+      "destination": "/docs/integrations/llms/ibm_watsonx"
+    },
+    {
+      "source": "/docs/integrations/llms/pai_eas_endpoint",
+      "destination": "/docs/integrations/llms/alibabacloud_pai_eas_endpoint"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/hanavector",
+      "destination": "/docs/integrations/vectorstores/sap_hanavector"
+    },
+    {
       "source": "/docs/use_cases/qa_structured/sql",
       "destination": "/docs/use_cases/sql/"
     },
