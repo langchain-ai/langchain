@@ -115,7 +115,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         history = get_by_session_id("1")
         history.add_message(AIMessage(content="hello"))
-        print(store)
+        print(store)  # noqa: T201
 
 
     Example where the wrapped Runnable takes a dictionary input:
@@ -146,20 +146,20 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 history_messages_key="history",
             )
 
-            print(chain_with_history.invoke(
+            print(chain_with_history.invoke(  # noqa: T201
                 {"ability": "math", "question": "What does cosine mean?"},
                 config={"configurable": {"session_id": "foo"}}
             ))
 
             # Uses the store defined in the example above.
-            print(store)
+            print(store)  # noqa: T201
 
-            print(chain_with_history.invoke(
+            print(chain_with_history.invoke(  # noqa: T201
                 {"ability": "math", "question": "What's its inverse"},
                 config={"configurable": {"session_id": "foo"}}
             ))
 
-            print(store)
+            print(store)  # noqa: T201
 
 
     Example where the session factory takes two keys, user_id and conversation id):

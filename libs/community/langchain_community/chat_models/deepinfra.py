@@ -1,4 +1,5 @@
 """deepinfra.com chat models wrapper"""
+
 from __future__ import annotations
 
 import json
@@ -207,7 +208,7 @@ class ChatDeepInfra(BaseChatModel):
                 return response
             except Exception as e:
                 # import pdb; pdb.set_trace()
-                print("EX", e)
+                print("EX", e)  # noqa: T201
                 raise
 
         return _completion_with_retry(**kwargs)
@@ -231,7 +232,7 @@ class ChatDeepInfra(BaseChatModel):
                     self._handle_status(response.status, response.text)
                     return await response.json()
             except Exception as e:
-                print("EX", e)
+                print("EX", e)  # noqa: T201
                 raise
 
         return await _completion_with_retry(**kwargs)

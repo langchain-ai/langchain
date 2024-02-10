@@ -18,7 +18,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
         return [res]
 
     def add_documents(self, documents: Sequence[Document], **kwargs: Any) -> List[str]:
-        print(documents)
+        print(documents)  # noqa: T201
         return super().add_documents(
             documents, ids=[f"{i}" for i in range(len(documents))]
         )

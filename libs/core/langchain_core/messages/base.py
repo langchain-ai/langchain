@@ -56,7 +56,7 @@ class BaseMessage(Serializable):
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
 def merge_content(

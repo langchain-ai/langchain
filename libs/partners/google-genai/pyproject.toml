@@ -70,9 +70,10 @@ types-google-cloud-ndb = "^2.2.0.1"
 
 [tool.ruff.lint]
 select = [
-  "E", # pycodestyle
-  "F", # pyflakes
-  "I", # isort
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+  "T201", # print
 ]
 
 [tool.mypy]
