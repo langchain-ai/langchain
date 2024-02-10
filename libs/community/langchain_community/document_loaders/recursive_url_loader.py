@@ -217,7 +217,7 @@ class RecursiveUrlLoader(BaseLoader):
         """
         if not self.use_async or not self._lock:
             raise ValueError(
-                "Async functions forbidden when not initalized with `use_async`"
+                "Async functions forbidden when not initialized with `use_async`"
             )
 
         try:
