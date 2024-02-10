@@ -105,6 +105,6 @@ class GitLoader(BaseLoader):
                     doc = Document(page_content=text_content, metadata=metadata)
                     docs.append(doc)
             except Exception as e:
-                print(f"Error reading file {file_path}: {e}")
+                print(f"Error reading file {file_path}: {e}")  # noqa: T201
 
         return docs

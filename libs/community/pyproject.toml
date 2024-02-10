@@ -270,6 +270,7 @@ select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "T201", # print
 ]
 
 [tool.mypy]

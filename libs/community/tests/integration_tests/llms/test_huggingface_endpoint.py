@@ -19,7 +19,7 @@ def test_huggingface_endpoint_text_generation() -> None:
         endpoint_url="", task="text-generation", model_kwargs={"max_new_tokens": 10}
     )
     output = llm("Say foo:")
-    print(output)
+    print(output)  # noqa: T201
     assert isinstance(output, str)
 
 

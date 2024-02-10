@@ -1,4 +1,5 @@
 """Util that calls Google Lens Search."""
+
 from typing import Any, Dict, Optional, cast
 
 import requests
@@ -77,7 +78,7 @@ class GoogleLensAPIWrapper(BaseModel):
             "Reverse Image Search"
             + f"Link: {responseValue['reverse_image_search']['link']}\n"
         )
-        print(xs)
+        print(xs)  # noqa: T201
 
         docs = [xs]
 

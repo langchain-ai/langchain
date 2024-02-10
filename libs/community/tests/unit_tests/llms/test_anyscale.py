@@ -1,4 +1,5 @@
 """Test Anyscale llm"""
+
 import pytest
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
@@ -19,7 +20,7 @@ def test_api_key_masked_when_passed_from_env(
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("ANYSCALE_API_KEY", "secret-api-key")
     llm = Anyscale(anyscale_api_base="test")
-    print(llm.anyscale_api_key, end="")
+    print(llm.anyscale_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -31,7 +32,7 @@ def test_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = Anyscale(anyscale_api_key="secret-api-key", anyscale_api_base="test")
-    print(llm.anyscale_api_key, end="")
+    print(llm.anyscale_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

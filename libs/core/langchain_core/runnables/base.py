@@ -186,7 +186,7 @@ class Runnable(Generic[Input, Output], ABC):
         def buggy_double(y: int) -> int:
             '''Buggy code that will fail 70% of the time'''
             if random.random() > 0.3:
-                print('This code failed, and will probably be retried!')
+                print('This code failed, and will probably be retried!')  # noqa: T201
                 raise ValueError('Triggered buggy code')
             return y * 2
 
@@ -1826,8 +1826,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             chain = prompt | model | SimpleJsonOutputParser()
 
             async for chunk in chain.astream({'topic': 'colors'}):
-                print('-')
-                print(chunk, sep='', flush=True)
+                print('-')  # noqa: T201
+                print(chunk, sep='', flush=True)  # noqa: T201
     """
 
     # The steps are broken into first, middle and last, solely for type checking
@@ -2527,7 +2527,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             for chunk in runnable.stream({"topic": "bear"}):
                 for key in chunk:
                     output[key] = output[key] + chunk[key].content
-                print(output)
+                print(output)  # noqa: T201
     """
 
     steps: Mapping[str, Runnable[Input, Any]]
@@ -3862,7 +3862,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
             output = runnable_each.invoke([{'topic':'Computer Science'},
                                         {'topic':'Art'},
                                         {'topic':'Biology'}])
-            print(output)
+            print(output)  # noqa: T201
     """
 
     @classmethod
@@ -4323,12 +4323,12 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             bound=self.bound,
             kwargs=self.kwargs,
             config=self.config,
-            custom_input_type=input_type
-            if input_type is not None
-            else self.custom_input_type,
-            custom_output_type=output_type
-            if output_type is not None
-            else self.custom_output_type,
+            custom_input_type=(
+                input_type if input_type is not None else self.custom_input_type
+            ),
+            custom_output_type=(
+                output_type if output_type is not None else self.custom_output_type
+            ),
         )
 
     def with_retry(self, **kwargs: Any) -> Runnable[Input, Output]:

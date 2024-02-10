@@ -143,4 +143,4 @@ class Graph:
         )
 
     def print_ascii(self) -> None:
-        print(self.draw_ascii())
+        print(self.draw_ascii())  # noqa: T201
