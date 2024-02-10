@@ -581,7 +581,10 @@ Using this, we can interact with the served chain as if it were running client-s
 from langserve import RemoteRunnable
 
 remote_chain = RemoteRunnable("http://localhost:8000/agent/")
-remote_chain.invoke({"input": "how can langsmith help with testing?"})
+remote_chain.invoke({
+    "input": "how can langsmith help with testing?",
+    "chat_history": []  # Providing an empty list as this is the first call
+})
 ```
 
 To learn more about the many other features of LangServe [head here](/docs/langserve).

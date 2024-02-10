@@ -190,6 +190,9 @@ class FAISS(VectorStore):
         _len_check_if_sized(documents, embeddings, "documents", "embeddings")
         _len_check_if_sized(documents, ids, "documents", "ids")
 
+        if ids and len(ids) != len(set(ids)):
+            raise ValueError("Duplicate ids found in the ids list.")
+
         # Add to the index.
         vector = np.array(embeddings, dtype=np.float32)
         if self._normalize_L2:
@@ -305,7 +308,7 @@ class FAISS(VectorStore):
         if filter is not None:
             if isinstance(filter, dict):
 
-                def filter_func(metadata):
+                def filter_func(metadata):  # type: ignore[no-untyped-def]
                     if all(
                         metadata.get(key) in value
                         if isinstance(value, list)
@@ -607,7 +610,7 @@ class FAISS(VectorStore):
             filtered_indices = []
             if isinstance(filter, dict):
 
-                def filter_func(metadata):
+                def filter_func(metadata):  # type: ignore[no-untyped-def]
                     if all(
                         metadata.get(key) in value
                         if isinstance(value, list)
