@@ -598,10 +598,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         for chunk in response:
             _chat_result = _response_to_result(chunk, stream=True)
             gen = cast(ChatGenerationChunk, _chat_result.generations[0])
-<<<<<<< HEAD
 
-=======
->>>>>>> master
             if run_manager:
                 run_manager.on_llm_new_token(gen.text)
             yield gen
@@ -626,7 +623,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         ):
             _chat_result = _response_to_result(chunk, stream=True)
             gen = cast(ChatGenerationChunk, _chat_result.generations[0])
-            
+
             if run_manager:
                 await run_manager.on_llm_new_token(gen.text)
             yield gen
