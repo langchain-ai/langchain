@@ -127,7 +127,7 @@ class HuggingFaceHub(LLM):
                 response = hf("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
-        parameters = {**_model_kwargs, **kwargs}
+        parameters = {**_model_kwargs, **kwargs, "return_full_text":False}
 
         response = self.client.post(
             json={"inputs": prompt, "parameters": parameters}, task=self.task
