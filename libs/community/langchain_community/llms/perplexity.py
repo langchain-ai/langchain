@@ -1,4 +1,5 @@
 """Wrapper around Perplexity APIs."""
+
 from __future__ import annotations
 
 import logging
@@ -46,7 +47,7 @@ from openai import OpenAI
 logger = logging.getLogger(__name__)
 
 
-class Perplexity(BaseChatModel):
+class PerplexityLLM(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -59,7 +60,7 @@ class Perplexity(BaseChatModel):
 
             from langchain_community.llms import Perplexity
 
-            llm = Perplexity(model="pplx-70b-online", temperature=0.7)
+            llm = PerplexityLLM(model="pplx-70b-online", temperature=0.7)
     """
 
     @property
