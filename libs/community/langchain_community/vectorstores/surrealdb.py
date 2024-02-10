@@ -12,6 +12,16 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 
+try:
+    from surrealdb import Surreal
+    from surrealdb.ws import SurrealException
+except ImportError as e:
+    raise ImportError(
+        """Cannot import from surrealdb.
+        please install with `pip install surrealdb`."""
+    ) from e
+
+
 class SurrealDBStore(VectorStore):
     """
     SurrealDB as Vector Store.
@@ -55,14 +65,6 @@ class SurrealDBStore(VectorStore):
         embedding_function: Embeddings,
         **kwargs: Any,
     ) -> None:
-        try:
-            from surrealdb import Surreal
-        except ImportError as e:
-            raise ImportError(
-                """Cannot import from surrealdb.
-                please install with `pip install surrealdb`."""
-            ) from e
-
         self.dburl = kwargs.pop("dburl", "ws://localhost:8000/rpc")
 
         if self.dburl[0:2] == "ws":
@@ -218,26 +220,36 @@ class SurrealDBStore(VectorStore):
             "k": k,
             "score_threshold": kwargs.get("score_threshold", 0),
         }
-        query = """select id, text, metadata,
-        vector::similarity::cosine(embedding,{embedding}) as similarity
-        from {collection}
-        where vector::similarity::cosine(embedding,{embedding}) >= {score_threshold}
-        order by similarity desc LIMIT {k}
-        """.format(**args)
-        results = await self.sdb.query(query)
+        query = f"""
+        select
+            id,
+            text,
+            metadata,
+            vector::similarity::cosine(embedding, $embedding) as similarity
+        from ⟨{args["collection"]}⟩
+        where vector::similarity::cosine(embedding, $embedding) >= $score_threshold
+        order by similarity desc LIMIT $k;
+        """
+        results = await self.sdb.query(query, args)
 
         if len(results) == 0:
             return []
+        
+        result = results[0]
+
+        if result["status"] != "OK":
+            err = result.get("result", "Unknown Error")
+            raise SurrealException(err)
 
         return [
             (
                 Document(
-                    page_content=result["text"],
-                    metadata={"id": result["id"], **result["metadata"]},
+                    page_content=doc["text"],
+                    metadata={"id": doc["id"], **(doc.get("metadata", None) or {})},
                 ),
-                result["similarity"],
+                doc["similarity"],
             )
-            for result in results[0]["result"]
+            for doc in result["result"]
         ]
 
     async def asimilarity_search_with_relevance_scores(
