@@ -1,4 +1,5 @@
 """OpenAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -25,6 +26,7 @@ from typing import (
 
 import openai
 import tiktoken
+from langchain_community.utils.openai import is_openai_v1
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -65,8 +67,6 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.utils import build_extra_kwargs
-
-from langchain_community.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +242,7 @@ class ChatOpenAI(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict, alias="extra_body")
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
@@ -267,9 +267,9 @@ class ChatOpenAI(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
     extra_headers: Optional[Mapping[str, str]] = None
-    extra_query: Optional[Mapping[str, object]] = None
-    extra_body: Optional[Mapping[str, object]] = None
-    """Extra headers, query parameters, and body to pass to the OpenAI API."""
+    """Extra headers to pass to the OpenAI API."""
+    extra_query: Optional[Mapping[str, Any]] = None
+    """Extra query parameters to pass to the OpenAI API."""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
     Tiktoken is used to count the number of tokens in documents to constrain 
@@ -297,11 +297,7 @@ class ChatOpenAI(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        extras = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
-        if is_openai_v1():
-            values["extra_body"] = extras
+        extras = build_extra_kwargs(extra, values, all_required_field_names)
         values["model_kwargs"] = extras
         return values
 
@@ -333,9 +329,11 @@ class ChatOpenAI(BaseChatModel):
         )
 
         client_params = {
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
-            else None,
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
@@ -356,14 +354,11 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        if is_openai_v1():
-            extra_params = {
-                "extra_query": self.extra_query,
-                "extra_headers": self.extra_headers,
-                "extra_body": self.extra_body,
-            }
-        else:
-            extra_params = self.model_kwargs
+        extra_params = {
+            "extra_query": self.extra_query,
+            "extra_headers": self.extra_headers,
+            "extra_body": self.model_kwargs,
+        }
         params = {
             "model": self.model_name,
             "stream": self.streaming,

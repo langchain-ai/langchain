@@ -21,6 +21,7 @@ from typing import (
 
 import openai
 import tiktoken
+from langchain_community.utils.openai import is_openai_v1
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -34,8 +35,6 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.utils import build_extra_kwargs
-
-from langchain_community.utils.openai import is_openai_v1
 
 logger = logging.getLogger(__name__)
 
@@ -167,9 +166,7 @@ class BaseOpenAI(BaseLLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        extras = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        extras = build_extra_kwargs(extra, values, all_required_field_names)
         if is_openai_v1():
             values["extra_body"] = extras
         values["model_kwargs"] = extras
