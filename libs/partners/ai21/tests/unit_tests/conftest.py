@@ -1,5 +1,6 @@
 import os
 from contextlib import contextmanager
+from typing import Generator
 from unittest.mock import Mock
 
 import pytest
@@ -79,7 +80,7 @@ def mock_client_with_chat(mocker: MockerFixture) -> Mock:
 
 
 @contextmanager
-def temporarily_unset_api_key() -> None:
+def temporarily_unset_api_key() -> Generator:
     """
     Unset and set environment key for testing purpose for when an API KEY is not set
     """
