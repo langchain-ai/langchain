@@ -7,6 +7,7 @@ pip install google-cloud-aiplatform>=1.35.0
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
 """
+
 from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
@@ -288,7 +289,7 @@ def test_parse_examples_correct() -> None:
 def test_parse_examples_failes_wrong_sequence() -> None:
     with pytest.raises(ValueError) as exc_info:
         _ = _parse_examples([AIMessage(content="a")])
-    print(str(exc_info.value))
+    print(str(exc_info.value))  # noqa: T201
     assert (
         str(exc_info.value)
         == "Expect examples to have an even amount of messages, got 1."

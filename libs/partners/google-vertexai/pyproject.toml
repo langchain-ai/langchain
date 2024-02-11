@@ -15,8 +15,6 @@ python = ">=3.8.1,<4.0"
 langchain-core = ">=0.1.7,<0.2"
 google-cloud-aiplatform = "^1.39.0"
 google-cloud-storage = "^2.14.0"
-types-requests = "^2.31.0"
-types-protobuf = "^4.24.0.4"
 
 [tool.poetry.group.test]
 optional = true
@@ -29,8 +27,6 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
-types-requests = "^2.31.0.20231231"
-types-protobuf = "^4.24.0.4"
 
 [tool.poetry.group.codespell]
 optional = true
@@ -57,6 +53,8 @@ ruff = "^0.1.5"
 mypy = "^1"
 langchain-core = { path = "../../core", develop = true }
 types-google-cloud-ndb = "^2.2.0.20240106"
+types-requests = "^2.31.0.20231231"
+types-protobuf = "^4.24.0.4"
 
 [tool.poetry.group.dev]
 optional = true
@@ -64,11 +62,12 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 langchain-core = { path = "../../core", develop = true }
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
-  "E", # pycodestyle
-  "F", # pyflakes
-  "I", # isort
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
+  "T201", # print
 ]
 
 [tool.mypy]
