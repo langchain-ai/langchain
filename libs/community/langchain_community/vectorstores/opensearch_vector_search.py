@@ -39,7 +39,7 @@ def _import_async_opensearch() -> Any:
     try:
         from opensearchpy import AsyncOpenSearch
     except ImportError:
-        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
+        raise ImportError(IMPORT_ASYNC_OPENSEARCH_PY_ERROR)
     return AsyncOpenSearch
 
 
@@ -57,7 +57,7 @@ def _import_async_bulk() -> Any:
     try:
         from opensearchpy.helpers import async_bulk
     except ImportError:
-        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
+        raise ImportError(IMPORT_ASYNC_OPENSEARCH_PY_ERROR)
     return async_bulk
 
 
