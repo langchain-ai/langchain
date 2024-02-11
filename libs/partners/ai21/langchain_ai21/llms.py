@@ -17,7 +17,7 @@ from langchain_core.outputs import Generation, LLMResult
 from langchain_ai21.ai21_base import AI21Base
 
 
-class AI21(BaseLLM, AI21Base):
+class AI21LLM(BaseLLM, AI21Base):
     """AI21LLM large language models.
 
     Example:
@@ -28,8 +28,9 @@ class AI21(BaseLLM, AI21Base):
             model = AI21LLM()
     """
 
-    model: str = "j2-ultra"
-    """Model type you wish to interact with."""
+    model: str
+    """Model type you wish to interact with. 
+    You can view the options at https://github.com/AI21Labs/ai21-python?tab=readme-ov-file#model-types"""
 
     num_results: int = 1
     """The number of responses to generate for a given prompt."""

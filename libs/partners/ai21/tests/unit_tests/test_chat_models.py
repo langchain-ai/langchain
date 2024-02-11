@@ -23,23 +23,22 @@ from langchain_ai21.chat_models import (
 from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
     DUMMY_API_KEY,
+    temporarily_unset_api_key,
 )
 
 
-@pytest.mark.requires("ai21")
 def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
-    with pytest.raises(MissingApiKeyError):
-        ChatAI21()
+    with temporarily_unset_api_key():
+        with pytest.raises(MissingApiKeyError):
+            ChatAI21(model="j2-ultra")
 
 
-@pytest.mark.requires("ai21")
 def test_initialization__when_default_parameters_in_init() -> None:
     """Test chat model initialization."""
-    ChatAI21(api_key=DUMMY_API_KEY)
+    ChatAI21(api_key=DUMMY_API_KEY, model="j2-ultra")
 
 
-@pytest.mark.requires("ai21")
 def test_initialization__when_custom_parameters_in_init() -> None:
     model = "j2-mid"
     num_results = 1
@@ -77,7 +76,6 @@ def test_initialization__when_custom_parameters_in_init() -> None:
     assert count_penalty == count_penalty
 
 
-@pytest.mark.requires("ai21")
 @pytest.mark.parametrize(
     ids=[
         "when_human_message",
@@ -102,7 +100,6 @@ def test_convert_message_to_ai21_message(
     assert ai21_message == expected_ai21_message
 
 
-@pytest.mark.requires("ai21")
 @pytest.mark.parametrize(
     ids=[
         "when_system_message",
@@ -125,7 +122,6 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
     )
 
 
-@pytest.mark.requires("ai21")
 @pytest.mark.parametrize(
     ids=[
         "when_all_messages_are_human_messages__should_return_system_none",
@@ -166,7 +162,6 @@ def test_convert_messages(
     assert system == expected_system
 
 
-@pytest.mark.requires("ai21")
 def test_convert_messages_when_system_is_not_first__should_raise_value_error() -> None:
     messages = [
         HumanMessage(content="Human Message Content 1"),
@@ -176,11 +171,11 @@ def test_convert_messages_when_system_is_not_first__should_raise_value_error() -
         _convert_messages_to_ai21_messages(messages)
 
 
-@pytest.mark.requires("ai21")
 def test_invoke(mock_client_with_chat: Mock) -> None:
     chat_input = "I'm Pickle Rick"
 
     llm = ChatAI21(
+        model="j2-ultra",
         api_key=DUMMY_API_KEY,
         client=mock_client_with_chat,
         **BASIC_EXAMPLE_LLM_PARAMETERS,
@@ -196,7 +191,6 @@ def test_invoke(mock_client_with_chat: Mock) -> None:
     )
 
 
-@pytest.mark.requires("ai21")
 def test_generate(mock_client_with_chat: Mock) -> None:
     messages0 = [
         HumanMessage(content="I'm Pickle Rick"),
@@ -208,6 +202,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
         HumanMessage(content="What is 1 + 1"),
     ]
     llm = ChatAI21(
+        model="j2-ultra",
         client=mock_client_with_chat,
         **BASIC_EXAMPLE_LLM_PARAMETERS,
     )

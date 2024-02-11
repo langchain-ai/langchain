@@ -1,3 +1,6 @@
+import os
+from contextlib import contextmanager
+from typing import Generator
 from unittest.mock import Mock
 
 import pytest
@@ -74,3 +77,15 @@ def mock_client_with_chat(mocker: MockerFixture) -> Mock:
     mock_client.chat.create.return_value = ChatResponse(outputs=[output])
 
     return mock_client
+
+
+@contextmanager
+def temporarily_unset_api_key() -> Generator:
+    """
+    Unset and set environment key for testing purpose for when an API KEY is not set
+    """
+    api_key = os.environ.pop("API_KEY", None)
+    yield
+
+    if api_key is not None:
+        os.environ["API_KEY"] = api_key

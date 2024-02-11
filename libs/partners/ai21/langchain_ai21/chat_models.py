@@ -88,7 +88,9 @@ class ChatAI21(BaseChatModel, AI21Base):
             model = ChatAI21()
     """
 
-    model: str = "j2-ultra"
+    model: str
+    """Model type you wish to interact with. 
+        You can view the options at https://github.com/AI21Labs/ai21-python?tab=readme-ov-file#model-types"""
     num_results: int = 1
     """The number of responses to generate for a given prompt."""
 
