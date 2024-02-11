@@ -7,7 +7,7 @@ from langchain_ai21.chat_models import ChatAI21
 
 def test_invoke() -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21()
+    llm = ChatAI21(model="j2-ultra")
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -15,7 +15,7 @@ def test_invoke() -> None:
 
 def test_generation() -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21()
+    llm = ChatAI21(model="j2-ultra")
     message = HumanMessage(content="Hello")
 
     result = llm.generate([[message], [message]], config=dict(tags=["foo"]))
@@ -30,7 +30,7 @@ def test_generation() -> None:
 
 async def test_ageneration() -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21()
+    llm = ChatAI21(model="j2-ultra")
     message = HumanMessage(content="Hello")
 
     result = await llm.agenerate([[message], [message]], config=dict(tags=["foo"]))

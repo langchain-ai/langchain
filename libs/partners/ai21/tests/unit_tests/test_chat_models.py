@@ -31,12 +31,12 @@ def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
     with temporarily_unset_api_key():
         with pytest.raises(MissingApiKeyError):
-            ChatAI21()
+            ChatAI21(model="j2-ultra")
 
 
 def test_initialization__when_default_parameters_in_init() -> None:
     """Test chat model initialization."""
-    ChatAI21(api_key=DUMMY_API_KEY)
+    ChatAI21(api_key=DUMMY_API_KEY, model="j2-ultra")
 
 
 def test_initialization__when_custom_parameters_in_init() -> None:
@@ -175,6 +175,7 @@ def test_invoke(mock_client_with_chat: Mock) -> None:
     chat_input = "I'm Pickle Rick"
 
     llm = ChatAI21(
+        model="j2-ultra",
         api_key=DUMMY_API_KEY,
         client=mock_client_with_chat,
         **BASIC_EXAMPLE_LLM_PARAMETERS,
@@ -201,6 +202,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
         HumanMessage(content="What is 1 + 1"),
     ]
     llm = ChatAI21(
+        model="j2-ultra",
         client=mock_client_with_chat,
         **BASIC_EXAMPLE_LLM_PARAMETERS,
     )
