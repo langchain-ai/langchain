@@ -147,7 +147,7 @@ def get_full_path(path: str) -> str:
     return str(full_path)
 
 
-def get_loader_type(loader: str):
+def get_loader_type(loader: str) -> str:
     """Return loader type among, file, dir or in-memory.
 
     Args:
@@ -162,7 +162,7 @@ def get_loader_type(loader: str):
     return "unknown"
 
 
-def get_loader_full_path(loader: BaseLoader):
+def get_loader_full_path(loader: BaseLoader) -> str:
     """Return absolute source path of source of loader based on the
     keys present in Document object from loader.
 
@@ -181,21 +181,24 @@ def get_loader_full_path(loader: BaseLoader):
             "loader is not derived from BaseLoader, source location will be unknown!"
         )
         return location
-    loader_keys = loader.__dict__.keys()
-    if "bucket" in loader_keys:
-        if isinstance(loader, GCSFileLoader):
-            location = f"gc://{loader.bucket}/{loader.blob}"
-        elif isinstance(loader, S3FileLoader):
-            location = f"s3://{loader.bucket}/{loader.key}"
-    elif "path" in loader_keys:
-        location = loader.path
-    elif "file_path" in loader_keys:
-        location = loader.file_path
-    elif "web_paths" in loader_keys:
-        location = loader.web_paths[0]
-    # For in-memory types:
-    elif isinstance(loader, DataFrameLoader):
-        location = "in-memory"
+    loader_dict = loader.__dict__
+    try:
+        if "bucket" in loader_dict:
+            if isinstance(loader, GCSFileLoader):
+                location = f"gc://{loader.bucket}/{loader.blob}"
+            elif isinstance(loader, S3FileLoader):
+                location = f"s3://{loader.bucket}/{loader.key}"
+        elif "path" in loader_dict:
+            location = loader_dict["path"]
+        elif "file_path" in loader_dict:
+            location = loader_dict["file_path"]
+        elif "web_paths" in loader_dict:
+            location = loader_dict["web_paths"][0]
+        # For in-memory types:
+        elif isinstance(loader, DataFrameLoader):
+            location = "in-memory"
+    except Exception:
+        pass
     return get_full_path(str(location))
 
 
@@ -230,7 +233,7 @@ def get_runtime() -> Tuple[Framework, Runtime]:
     return framework, runtime
 
 
-def get_ip():
+def get_ip() -> str:
     """Fetch local runtime ip address
 
     Returns:

@@ -87,7 +87,7 @@ def test_csv_loader_load_valid_data(mocker: MockerFixture) -> None:
 
 
 @pytest.mark.requires("pypdf")
-def test_pdf_lazy_load(mocker: MockerFixture):
+def test_pdf_lazy_load(mocker: MockerFixture) -> None:
     # Setup
     from langchain_community.document_loaders import PebbloSafeLoader
 

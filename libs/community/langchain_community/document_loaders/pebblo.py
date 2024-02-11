@@ -5,8 +5,10 @@ import os
 import pwd
 import uuid
 from http import HTTPStatus
+from typing import Any, Iterator, List
 
 import requests
+from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.utilities.pebblo import (
@@ -28,6 +30,9 @@ class PebbloSafeLoader(BaseLoader):
     to be scrutinized.
     """
 
+    _discover_sent: bool = False
+    _loader_sent: bool = False
+
     def __init__(
         self,
         langchain_loader: BaseLoader,
@@ -44,7 +49,7 @@ class PebbloSafeLoader(BaseLoader):
         self.description = description
         self.source_path = get_loader_full_path(self.loader)
         self.source_owner = PebbloSafeLoader.get_file_owner_from_path(self.source_path)
-        self.docs = []
+        self.docs: List[Document] = []
         loader_name = str(type(self.loader)).split(".")[-1].split("'")[0]
         self.source_type = get_loader_type(loader_name)
         self.source_path_size = self.get_source_size(self.source_path)
@@ -54,8 +59,8 @@ class PebbloSafeLoader(BaseLoader):
             "source_path": self.source_path,
             "source_type": self.source_type,
             **(
-                {"source_path_size": self.source_path_size}
-                if self.source_path_size is not None
+                {"source_path_size": str(self.source_path_size)}
+                if self.source_path_size > 0
                 else {}
             ),
         }
@@ -63,7 +68,7 @@ class PebbloSafeLoader(BaseLoader):
         self.app = self._get_app_details()
         self._send_discover()
 
-    def load(self):
+    def load(self) -> List[Document]:
         """Load Documents.
 
         Returns:
@@ -73,7 +78,7 @@ class PebbloSafeLoader(BaseLoader):
         self._send_loader_doc(loading_end=True)
         return self.docs
 
-    def lazy_load(self):
+    def lazy_load(self) -> Iterator[Document]:
         """Load documents in lazy fashion.
 
         Raises:
@@ -100,17 +105,17 @@ class PebbloSafeLoader(BaseLoader):
                 doc,
             ]
             self._send_loader_doc()
-            yield self.docs
+            yield doc
 
     @classmethod
-    def set_discover_sent(cls):
+    def set_discover_sent(cls) -> None:
         cls._discover_sent = True
 
     @classmethod
-    def set_loader_sent(cls):
+    def set_loader_sent(cls) -> None:
         cls._loader_sent = True
 
-    def _send_loader_doc(self, loading_end=False):
+    def _send_loader_doc(self, loading_end: bool = False) -> None:
         """Send documents fetched from loader to pebblo-server. Internal method.
 
         Args:
@@ -126,7 +131,7 @@ class PebbloSafeLoader(BaseLoader):
                 doc_source_path
             )
             doc_source_size = self.get_source_size(doc_source_path)
-            page_content = doc.get("page_content")
+            page_content = str(doc.get("page_content"))
             page_content_size = self.calculate_content_size(page_content)
             self.source_aggr_size += page_content_size
             docs.append(
@@ -142,7 +147,7 @@ class PebbloSafeLoader(BaseLoader):
                     ),
                 }
             )
-        payload = {
+        payload: dict[str, Any] = {
             "name": self.app_name,
             "owner": self.owner,
             "docs": docs,
@@ -154,11 +159,9 @@ class PebbloSafeLoader(BaseLoader):
         }
         if loading_end is True:
             payload["loading_end"] = "true"
-            payload["loader_details"]["source_aggr_size"] = self.source_aggr_size
-        try:
-            payload = Doc.model_validate(payload).model_dump(exclude_unset=True)
-        except AttributeError:
-            payload = Doc(**payload).dict(exclude_unset=True)
+            if "loader_details" in payload:
+                payload["loader_details"]["source_aggr_size"] = self.source_aggr_size
+        payload = Doc(**payload).dict(exclude_unset=True)
         load_doc_url = f"{CLASSIFIER_URL}/v1/loader/doc"
         try:
             resp = requests.post(
@@ -169,9 +172,11 @@ class PebbloSafeLoader(BaseLoader):
                     f"Received unexpected HTTP response code: {resp.status_code}"
                 )
             logger.debug(
-                f"===> send_loader_doc: request, url {resp.request.url},\
-                body {resp.request.body[:999]} with a len: {len(resp.request.body)},\
-                response status {resp.status_code}, body {resp.json()}\n"
+                f"send_loader_doc: request \
+                    url {resp.request.url}, \
+                    body {str(resp.request.body)[:999]} \
+                    len {len(resp.request.body if resp.request.body  else [])} \
+                    response status{resp.status_code} body {resp.json()}"
             )
         except requests.exceptions.RequestException:
             logger.warning("Unable to reach pebblo server.")
@@ -198,23 +203,22 @@ class PebbloSafeLoader(BaseLoader):
         size = len(encoded_content)
         return size
 
-    def _send_discover(self):
+    def _send_discover(self) -> None:
         """Send app discovery payload to pebblo-server. Internal method."""
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
-        try:
-            payload = self.app.model_dump(exclude_unset=True)
-        except AttributeError:
-            payload = self.app.dict(exclude_unset=True)
+        payload = self.app.dict(exclude_unset=True)
         app_discover_url = f"{CLASSIFIER_URL}/v1/app/discover"
         try:
             resp = requests.post(
                 app_discover_url, headers=headers, json=payload, timeout=20
             )
             logger.debug(
-                f"===> send_discover: request, url {resp.request.url},\
-                headers {resp.request.headers}, body {resp.request.body}\
-                response status {resp.status_code},\
-                body {resp.json()}\n"
+                f"send_discover: request \
+                    url {resp.request.url}, \
+                    headers {resp.request.headers}, \
+                    body {str(resp.request.body)[:999]} \
+                    len {len(resp.request.body if resp.request.body  else [])} \
+                    response status{resp.status_code} body {resp.json()}"
             )
             if resp.status_code in [HTTPStatus.OK, HTTPStatus.BAD_GATEWAY]:
                 PebbloSafeLoader.set_discover_sent()
@@ -227,7 +231,7 @@ class PebbloSafeLoader(BaseLoader):
         except Exception:
             logger.warning("An Exception caught in _send_discover.")
 
-    def _get_app_details(self):
+    def _get_app_details(self) -> App:
         """Fetch app details. Internal method.
 
         Returns:
@@ -272,8 +276,8 @@ class PebbloSafeLoader(BaseLoader):
             int: Source size in bytes.
         """
         if not source_path:
-            return None
-        size = None
+            return 0
+        size = 0
         if os.path.isfile(source_path):
             size = os.path.getsize(source_path)
         elif os.path.isdir(source_path):
