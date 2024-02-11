@@ -30,7 +30,7 @@ class AI21LLM(BaseLLM, AI21Base):
 
     model: str
     """Model type you wish to interact with. 
-    You can view the options at https://github.com/AI21Labs/ai21-python/blob/main/README.md"""
+    You can view the options at https://github.com/AI21Labs/ai21-python?tab=readme-ov-file#model-types"""
 
     num_results: int = 1
     """The number of responses to generate for a given prompt."""
