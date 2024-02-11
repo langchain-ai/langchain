@@ -501,12 +501,12 @@ class Neo4jVector(VectorStore):
         import_query = (
             "UNWIND $data AS row "
             "CALL { WITH row "
-            f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
+            f"MERGE (c:`{self.node_label}` {{{self.text_node_property}: row.text}}) "
             "WITH c, row "
             f"CALL db.create.setVectorProperty(c, "
             f"'{self.embedding_node_property}', row.embedding) "
             "YIELD node "
-            f"SET c.`{self.text_node_property}` = row.text "
+            "SET c.id = row.id "
             "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
         )
 
