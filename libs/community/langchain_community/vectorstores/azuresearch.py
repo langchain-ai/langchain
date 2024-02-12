@@ -173,12 +173,11 @@ def _get_search_client(
             )
 
         # Create the semantic settings with the configuration
+        semantic_search = None
         if semantic_configurations is None and semantic_configuration_name is not None:
             semantic_configuration = SemanticConfiguration(
                 name=semantic_configuration_name,
                 prioritized_fields=SemanticPrioritizedFields(
-                    # title_field=SemanticField(field_name="title"),
-                    # keywords_fields=[SemanticField(field_name="category")],
                     content_fields=[SemanticField(field_name=FIELDS_CONTENT)],
                 ),
             )
