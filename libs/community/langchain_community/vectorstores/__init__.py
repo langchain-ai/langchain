@@ -186,12 +186,6 @@ def _import_docarray_inmemory() -> Any:
     return DocArrayInMemorySearch
 
 
-def _import_elasticsearch() -> Any:
-    from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
-
-    return ElasticsearchStore
-
-
 def _import_epsilla() -> Any:
     from langchain_community.vectorstores.epsilla import Epsilla
 
@@ -533,8 +527,6 @@ def __getattr__(name: str) -> Any:
         return _import_docarray_inmemory()
     elif name == "DocArrayHnswSearch":
         return _import_docarray_hnsw()
-    elif name == "ElasticsearchStore":
-        return _import_elasticsearch()
     elif name == "Epsilla":
         return _import_epsilla()
     elif name == "FAISS":

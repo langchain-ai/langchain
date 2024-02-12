@@ -10,7 +10,6 @@ from different APIs and services.
     Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
 """
 
-
 import logging
 from typing import Any
 
@@ -32,7 +31,6 @@ from langchain_community.embeddings.dashscope import DashScopeEmbeddings
 from langchain_community.embeddings.databricks import DatabricksEmbeddings
 from langchain_community.embeddings.deepinfra import DeepInfraEmbeddings
 from langchain_community.embeddings.edenai import EdenAiEmbeddings
-from langchain_community.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain_community.embeddings.embaas import EmbaasEmbeddings
 from langchain_community.embeddings.ernie import ErnieEmbeddings
 from langchain_community.embeddings.fake import (
@@ -97,7 +95,6 @@ __all__ = [
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
-    "ElasticsearchEmbeddings",
     "FastEmbedEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",

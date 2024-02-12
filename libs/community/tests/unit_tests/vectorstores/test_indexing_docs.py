@@ -57,7 +57,6 @@ def test_compatible_vectorstore_documentation() -> None:
         "DatabricksVectorSearch",
         "DeepLake",
         "Dingo",
-        "ElasticVectorSearch",
         "ElasticsearchStore",
         "FAISS",
         "HanaDB",

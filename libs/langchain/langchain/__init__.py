@@ -332,14 +332,6 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain_community.vectorstores.FAISS")
 
         return FAISS
-    elif name == "ElasticVectorSearch":
-        from langchain_community.vectorstores import ElasticVectorSearch
-
-        _warn_on_import(
-            name, replacement="langchain_community.vectorstores.ElasticVectorSearch"
-        )
-
-        return ElasticVectorSearch
     # For backwards compatibility
     elif name == "SerpAPIChain" or name == "SerpAPIWrapper":
         from langchain_community.utilities import SerpAPIWrapper
@@ -426,7 +418,6 @@ __all__ = [
     "FAISS",
     "MRKLChain",
     "VectorDBQA",
-    "ElasticVectorSearch",
     "InMemoryDocstore",
     "ConversationChain",
     "VectorDBQAWithSourcesChain",

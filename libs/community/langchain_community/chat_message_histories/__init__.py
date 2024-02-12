@@ -10,9 +10,6 @@ from langchain_community.chat_message_histories.cosmos_db import (
 from langchain_community.chat_message_histories.dynamodb import (
     DynamoDBChatMessageHistory,
 )
-from langchain_community.chat_message_histories.elasticsearch import (
-    ElasticsearchChatMessageHistory,
-)
 from langchain_community.chat_message_histories.file import FileChatMessageHistory
 from langchain_community.chat_message_histories.firestore import (
     FirestoreChatMessageHistory,
@@ -48,7 +45,6 @@ __all__ = [
     "CassandraChatMessageHistory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
-    "ElasticsearchChatMessageHistory",
     "FileChatMessageHistory",
     "FirestoreChatMessageHistory",
     "MomentoChatMessageHistory",
