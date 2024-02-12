@@ -32,21 +32,40 @@ logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
 
 
-def _results_to_docs(results: Any) -> List[Document]:
-    return [doc for doc, _ in _results_to_docs_and_scores(results)]
+def _results_to_docs(results: Any) -> List[Document] | List[List[Document]]:
+    docs_and_scores = _results_to_docs_and_scores(results)
+    if len(results["documents"]) == 1:  # Flat structure
+        return [doc for doc, _ in docs_and_scores]
+    else:  # Nested structure
+        return [
+            [doc for doc, _ in grouped_results] for grouped_results in docs_and_scores
+        ]
 
 
-def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
-    return [
-        # TODO: Chroma can do batch querying,
-        # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
-        for result in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
+def _results_to_docs_and_scores(
+    results: Any,
+) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
+    def process_group(
+        page_contents, metadatas, distances
+    ) -> List[Tuple[Document, float]]:
+        return [
+            (Document(page_content=content, metadata=metadata or {}), distance)
+            for content, metadata, distance in zip(page_contents, metadatas, distances)
+        ]
+
+    if len(results["documents"]) == 1:
+        # Handling a single group of documents
+        return process_group(
+            results["documents"][0], results["metadatas"][0], results["distances"][0]
         )
-    ]
+    else:
+        # Handling multiple groups of documents
+        grouped_results = []
+        for page_contents, metadatas, distances in zip(
+            results["documents"], results["metadatas"], results["distances"]
+        ):
+            grouped_results.append(process_group(page_contents, metadatas, distances))
+        return grouped_results
 
 
 class Chroma(VectorStore):
@@ -328,13 +347,14 @@ class Chroma(VectorStore):
             )
         return ids
 
+    # change doc
     def similarity_search(
         self,
-        query: str,
+        query: str | List[str],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[Document] | List[List[Document]]:
         """Run similarity search with Chroma.
 
         Args:
@@ -348,11 +368,18 @@ class Chroma(VectorStore):
         docs_and_scores = self.similarity_search_with_score(
             query, k, filter=filter, **kwargs
         )
-        return [doc for doc, _ in docs_and_scores]
+        if isinstance(query, list):
+            return [
+                [doc for doc, _ in grouped_results]
+                for grouped_results in docs_and_scores
+            ]
+        else:
+            return [doc for doc, _ in docs_and_scores]
 
+    # Change doc
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: List[float] | List[List[float]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
@@ -375,14 +402,15 @@ class Chroma(VectorStore):
         )
         return _results_to_docs(results)
 
+    # TODO update doc
     def similarity_search_by_vector_with_relevance_scores(
         self,
-        embedding: List[float],
+        embedding: List[float] | List[List[float]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
         """
         Return docs most similar to embedding vector and similarity score.
 
@@ -405,18 +433,19 @@ class Chroma(VectorStore):
         )
         return _results_to_docs_and_scores(results)
 
+    # TODO update doc
     def similarity_search_with_score(
         self,
-        query: str,
+        query: str | list[str],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
         """Run similarity search with Chroma with distance.
 
         Args:
-            query (str): Query text to search for.
+            query (str or List[str]): Query text or list of texts to search for.
             k (int): Number of results to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
@@ -424,19 +453,25 @@ class Chroma(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to
             the query text and cosine distance in float for each.
             Lower score represents more similarity.
+            or
+            List[List[Tuple[Document, float]]]: List of list of documents most similar
+            to the queries texts and cosine distance in float for each.
+            Lower score represents more similarity.
         """
+        queries = [query] if isinstance(query, str) else query
+
         if self._embedding_function is None:
             results = self.__query_collection(
-                query_texts=[query],
+                query_texts=queries,
                 n_results=k,
                 where=filter,
                 where_document=where_document,
                 **kwargs,
             )
         else:
-            query_embedding = self._embedding_function.embed_query(query)
+            queries_embeddings = self._embedding_function.embed_documents(queries)
             results = self.__query_collection(
-                query_embeddings=[query_embedding],
+                query_embeddings=queries_embeddings,
                 n_results=k,
                 where=filter,
                 where_document=where_document,
@@ -477,16 +512,17 @@ class Chroma(VectorStore):
                 "Consider providing relevance_score_fn to Chroma constructor."
             )
 
+    # TODO change doc
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: List[float] | List[List[float]],
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[Document] | List[List[Document]]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -513,28 +549,40 @@ class Chroma(VectorStore):
             include=["metadatas", "documents", "distances", "embeddings"],
             **kwargs,
         )
-        mmr_selected = maximal_marginal_relevance(
-            np.array(embedding, dtype=np.float32),
-            results["embeddings"][0],
-            k=k,
-            lambda_mult=lambda_mult,
+
+        list_of_selected_results = []
+        for embeddings in results["embeddings"]:
+            mmr_selected = maximal_marginal_relevance(
+                np.array(embedding, dtype=np.float32),
+                embeddings,
+                k=k,
+                lambda_mult=lambda_mult,
+            )
+
+            candidates = _results_to_docs(results)
+
+            selected_results = [
+                r for i, r in enumerate(candidates) if i in mmr_selected
+            ]
+            list_of_selected_results.append(selected_results)
+
+        return (
+            list_of_selected_results[0]
+            if len(list_of_selected_results) == 1
+            else list_of_selected_results
         )
 
-        candidates = _results_to_docs(results)
-
-        selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
-        return selected_results
-
+    # Todo change doc
     def max_marginal_relevance_search(
         self,
-        query: str,
+        query: str | List[str],
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[Document] | List[List[Document]]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -557,9 +605,11 @@ class Chroma(VectorStore):
                 "For MMR search, you must specify an embedding function on" "creation."
             )
 
-        embedding = self._embedding_function.embed_query(query)
+        queries = [query] if isinstance(query, str) else query
+
+        embeddings = self._embedding_function.embed_documents(queries)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding,
+            embeddings,
             k,
             fetch_k,
             lambda_mult=lambda_mult,

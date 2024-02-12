@@ -225,12 +225,13 @@ class VectorStore(ABC):
             None, self.similarity_search_with_score, *args, **kwargs
         )
 
+    # change doc
     def _similarity_search_with_relevance_scores(
         self,
-        query: str,
+        query: str | List[str],
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
         """
         Default similarity search with relevance scores. Modify if necessary
         in subclass.
@@ -250,7 +251,14 @@ class VectorStore(ABC):
         """
         relevance_score_fn = self._select_relevance_score_fn()
         docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
-        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
+
+        if isinstance(query, str):  # Flat structure
+            return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
+        else:  # Nested structure
+            return [
+                [(doc, relevance_score_fn(score)) for doc, score in grouped_results]
+                for grouped_results in docs_and_scores
+            ]
 
     async def _asimilarity_search_with_relevance_scores(
         self,
@@ -279,12 +287,13 @@ class VectorStore(ABC):
         docs_and_scores = await self.asimilarity_search_with_score(query, k, **kwargs)
         return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
+    # change doc
     def similarity_search_with_relevance_scores(
         self,
-        query: str,
+        query: str | List[str],
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
         """Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -299,32 +308,48 @@ class VectorStore(ABC):
         Returns:
             List of Tuples of (doc, similarity_score)
         """
+
+        # Process score threshold filtering and warnings for single or multiple queries
+        def filter_scores(
+            docs_and_similarities: List[Tuple[Document, float]]
+        ) -> List[Tuple[Document, float]]:
+            if any(
+                similarity < 0.0 or similarity > 1.0
+                for _, similarity in docs_and_similarities
+            ):
+                warnings.warn(
+                    "Relevance scores must be between"
+                    f" 0 and 1, got {docs_and_similarities}"
+                )
+
+            if score_threshold is not None:
+                docs_and_similarities = [
+                    (doc, similarity)
+                    for doc, similarity in docs_and_similarities
+                    if similarity >= score_threshold
+                ]
+                if len(docs_and_similarities) == 0:
+                    warnings.warn(
+                        "No relevant docs were retrieved using the relevance score"
+                        f" threshold {score_threshold}"
+                    )
+            return docs_and_similarities
+
         score_threshold = kwargs.pop("score_threshold", None)
 
+        # docs_and_similarities could be a flat list or a list of lists
         docs_and_similarities = self._similarity_search_with_relevance_scores(
             query, k=k, **kwargs
         )
-        if any(
-            similarity < 0.0 or similarity > 1.0
-            for _, similarity in docs_and_similarities
-        ):
-            warnings.warn(
-                "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
-            )
 
-        if score_threshold is not None:
-            docs_and_similarities = [
-                (doc, similarity)
-                for doc, similarity in docs_and_similarities
-                if similarity >= score_threshold
+        if isinstance(query, list):
+            # Multiple queries, expect docs_and_similarities to be a list of lists
+            return [
+                filter_scores(docs_and_sim) for docs_and_sim in docs_and_similarities
             ]
-            if len(docs_and_similarities) == 0:
-                warnings.warn(
-                    "No relevant docs were retrieved using the relevance score"
-                    f" threshold {score_threshold}"
-                )
-        return docs_and_similarities
+        else:
+            # Single query, docs_and_similarities should be a flat list
+            return filter_scores(docs_and_similarities)
 
     async def asimilarity_search_with_relevance_scores(
         self,
