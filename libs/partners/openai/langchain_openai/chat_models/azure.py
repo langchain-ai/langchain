@@ -211,7 +211,11 @@ class AzureChatOpenAI(ChatOpenAI):
 
     def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         if not isinstance(response, dict):
-            response = response.dict()
+            response = (
+                getattr(response, "model_dump")()
+                if hasattr(response, "model_dump")
+                else response.dict()
+            )
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 raise ValueError(

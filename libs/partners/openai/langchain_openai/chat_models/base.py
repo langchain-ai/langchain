@@ -407,11 +407,7 @@ class ChatOpenAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
-                chunk = (
-                    getattr(chunk, "model_dump")()
-                    if hasattr(chunk, "model_dump")
-                    else chunk.dict()
-                )
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -507,11 +503,7 @@ class ChatOpenAI(BaseChatModel):
             messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
-                chunk = (
-                    getattr(chunk, "model_dump")()
-                    if hasattr(chunk, "model_dump")
-                    else chunk.dict()
-                )
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
