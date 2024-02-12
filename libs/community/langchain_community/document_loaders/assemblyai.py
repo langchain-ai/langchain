@@ -150,7 +150,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
                 )
                 transcript_response.raise_for_status()
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred: {e}")  # noqa: T201
                 raise
 
             transcript = transcript_response.json()["text"]
@@ -166,7 +166,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
                 )
                 paragraphs_response.raise_for_status()
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred: {e}")  # noqa: T201
                 raise
 
             paragraphs = paragraphs_response.json()["paragraphs"]
@@ -181,7 +181,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
                 )
                 sentences_response.raise_for_status()
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred: {e}")  # noqa: T201
                 raise
 
             sentences = sentences_response.json()["sentences"]
@@ -196,7 +196,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
                 )
                 srt_response.raise_for_status()
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred: {e}")  # noqa: T201
                 raise
 
             srt = srt_response.text
@@ -211,7 +211,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
                 )
                 vtt_response.raise_for_status()
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred: {e}")  # noqa: T201
                 raise
 
             vtt = vtt_response.text

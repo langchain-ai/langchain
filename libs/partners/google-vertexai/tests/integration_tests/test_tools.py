@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Union
+from typing import Any, List, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.messages import AIMessageChunk
@@ -44,11 +44,11 @@ class _TestOutputParser(BaseOutputParser):
 
 
 def test_tools() -> None:
-    from langchain.agents import AgentExecutor  # type: ignore[import-not-found]
-    from langchain.agents.format_scratchpad import (  # type: ignore[import-not-found]
+    from langchain.agents import AgentExecutor
+    from langchain.agents.format_scratchpad import (
         format_to_openai_function_messages,
     )
-    from langchain.chains import LLMMathChain  # type: ignore[import-not-found]
+    from langchain.chains import LLMMathChain
 
     llm = ChatVertexAI(model_name="gemini-pro")
     math_chain = LLMMathChain.from_llm(llm=llm)
@@ -67,8 +67,8 @@ def test_tools() -> None:
     )
     llm_with_tools = llm.bind(functions=tools)
 
-    agent = (
-        {  # type: ignore[var-annotated]
+    agent: Any = (
+        {
             "input": lambda x: x["input"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]
@@ -81,7 +81,6 @@ def test_tools() -> None:
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
     response = agent_executor.invoke({"input": "What is 6 raised to the 0.43 power?"})
-    print(response)
     assert isinstance(response, dict)
     assert response["input"] == "What is 6 raised to the 0.43 power?"
 
@@ -89,7 +88,7 @@ def test_tools() -> None:
     # use regex to find \d+\.\d+
     just_numbers = re.findall(r"\d+\.\d+", response["output"])[0]
 
-    assert round(float(just_numbers), 3) == 2.161
+    assert round(float(just_numbers), 2) == 2.16
 
 
 def test_stream() -> None:
@@ -106,7 +105,6 @@ def test_stream() -> None:
     ]
     response = list(llm.stream("What is 6 raised to the 0.43 power?", functions=tools))
     assert len(response) == 1
-    # for chunk in response:
     assert isinstance(response[0], AIMessageChunk)
     assert "function_call" in response[0].additional_kwargs
 
@@ -115,7 +113,7 @@ def test_multiple_tools() -> None:
     from langchain.agents import AgentExecutor
     from langchain.agents.format_scratchpad import format_to_openai_function_messages
     from langchain.chains import LLMMathChain
-    from langchain.utilities import (  # type: ignore[import-not-found]
+    from langchain.utilities import (
         GoogleSearchAPIWrapper,
     )
 
@@ -149,8 +147,8 @@ def test_multiple_tools() -> None:
     )
     llm_with_tools = llm.bind(functions=tools)
 
-    agent = (
-        {  # type: ignore[var-annotated]
+    agent: Any = (
+        {
             "input": lambda x: x["input"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]

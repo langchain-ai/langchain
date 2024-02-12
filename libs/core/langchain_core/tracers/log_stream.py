@@ -88,7 +88,7 @@ class RunState(TypedDict):
 
 
 class RunLogPatch:
-    """A patch to the run log."""
+    """Patch to the run log."""
 
     ops: List[Dict[str, Any]]
     """List of jsonpatch operations, which describe how to create the run state
@@ -121,7 +121,7 @@ class RunLogPatch:
 
 
 class RunLog(RunLogPatch):
-    """A run log."""
+    """Run log."""
 
     state: RunState
     """Current state of the log, obtained from applying all ops in sequence."""
@@ -159,7 +159,7 @@ T = TypeVar("T")
 
 
 class LogStreamCallbackHandler(BaseTracer):
-    """A tracer that streams run logs to a stream."""
+    """Tracer that streams run logs to a stream."""
 
     def __init__(
         self,
@@ -572,6 +572,7 @@ async def _astream_log_implementation(
                     try:
                         final_output = final_output + chunk  # type: ignore
                     except TypeError:
+                        prev_final_output = None
                         final_output = chunk
                 patches: List[Dict[str, Any]] = []
                 if with_streamed_output_list:
