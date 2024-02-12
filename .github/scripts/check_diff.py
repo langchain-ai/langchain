@@ -47,4 +47,4 @@ if __name__ == "__main__":
         else:
             pass
     json_output = json.dumps(list(dirs_to_run))
-    print(f"dirs-to-run={json_output}")
+    print(f"dirs-to-run={json_output}")  # noqa: T201

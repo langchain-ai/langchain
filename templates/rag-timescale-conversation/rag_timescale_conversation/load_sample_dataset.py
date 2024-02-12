@@ -47,7 +47,7 @@ def load_ts_git_dataset(
             with open(json_file_path, "w") as json_file:
                 json_file.write(response.text)
         else:
-            print(f"Failed to download JSON file. Status code: {response.status_code}")
+            print(f"Failed to download JSON file. Status code: {response.status_code}")  # noqa: T201
 
     loader = JSONLoader(
         file_path=json_file_path,

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.1.5"
+version = "0.1.6"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,8 +12,8 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.16,<0.2"
-langchain-community = ">=0.0.17,<0.1"
+langchain-core = ">=0.1.22,<0.2"
+langchain-community = ">=0.0.18,<0.1"
 langsmith = ">=0.0.83,<0.1"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
@@ -301,13 +301,16 @@ extended_testing = [
 ]
 
 [tool.ruff]
+exclude = [
+  "tests/integration_tests/examples/non-utf8-encoding.py",
+]
+
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
-]
-exclude = [
-  "tests/integration_tests/examples/non-utf8-encoding.py",
+  "T201", # print
 ]
 
 [tool.mypy]
