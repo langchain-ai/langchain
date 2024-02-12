@@ -18,18 +18,11 @@ class Llamafile(LLM):
 
     To get started, see: https://github.com/Mozilla-Ocho/llamafile
 
-    To use this class, you will need to:
+    To use this class, you will need to first:
 
     1. Download a llamafile.
-    2. Start the llamafile in server mode.
-
-    No other dependencies are required.
-
-    To start the llamafile in server mode:
-
-    .. code-block:: bash
-
-        $ ./path/to/model.llamafile --server --nobrowser --embeddings
+    2. Make the downloaded file executable: `chmod +x path/to/model.llamafile`
+    3. Start the llamafile in server mode: `./path/to/model.llamafile --server --nobrowser`
 
     Example:
         .. code-block:: python
@@ -42,17 +35,18 @@ class Llamafile(LLM):
     base_url: str = "http://localhost:8080"
     """Base url where the llamafile server is listening."""
 
-    response_timeout: Optional[int] = None
+    request_timeout: Optional[int] = None
     """Timeout for server requests"""
 
     streaming: bool = False
     """Allows receiving each predicted token in real-time instead of
     waiting for the completion to finish. To enable this, set to true."""
 
+    # Generation options
+
     seed: int = -1
-    """Random Number Generator (RNG) seed. A random seed is used if this
-     is less than zero. Default: -1
-     """
+    """Random Number Generator (RNG) seed. A random seed is used if this is 
+    less than zero. Default: -1"""
 
     temperature: float = 0.8
     """Temperature. Default: 0.8"""
@@ -71,7 +65,7 @@ class Llamafile(LLM):
         # Return the list of fieldnames that will be passed as configurable
         # generation options to the llamafile server. Exclude 'builtin' fields
         # from the BaseLLM class like 'metadata' as well as fields that should
-        # not be passed in requests (base_url, response_timeout).
+        # not be passed in requests (base_url, request_timeout).
         ignore_keys = [
             "base_url",
             "cache",
@@ -79,7 +73,7 @@ class Llamafile(LLM):
             "callbacks",
             "metadata",
             "name",
-            "response_timeout",
+            "request_timeout",
             "streaming",
             "tags",
             "verbose",
@@ -161,7 +155,7 @@ class Llamafile(LLM):
                     },
                     json=payload,
                     stream=False,
-                    timeout=self.response_timeout,
+                    timeout=self.request_timeout,
                 )
             except requests.exceptions.ConnectionError:
                 raise requests.exceptions.ConnectionError(
@@ -228,7 +222,7 @@ class Llamafile(LLM):
                 },
                 json=payload,
                 stream=True,
-                timeout=self.response_timeout,
+                timeout=self.request_timeout,
             )
         except requests.exceptions.ConnectionError:
             raise requests.exceptions.ConnectionError(
