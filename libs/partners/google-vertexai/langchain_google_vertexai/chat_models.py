@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union, cast
 from urllib.parse import urlparse
 
+import proto  # type: ignore[import-untyped]
 import requests
 from google.cloud.aiplatform_v1beta1.types.content import Part as GapicPart
 from google.cloud.aiplatform_v1beta1.types.tool import FunctionCall
@@ -44,6 +45,12 @@ from vertexai.preview.generative_models import (  # type: ignore
     GenerativeModel,
     Image,
     Part,
+)
+from vertexai.preview.language_models import (  # type: ignore
+    ChatModel as PreviewChatModel,
+)
+from vertexai.preview.language_models import (
+    CodeChatModel as PreviewCodeChatModel,
 )
 
 from langchain_google_vertexai._utils import (
@@ -272,10 +279,12 @@ def _parse_response_candidate(response_candidate: "Candidate") -> AIMessage:
     first_part = response_candidate.content.parts[0]
     if first_part.function_call:
         function_call = {"name": first_part.function_call.name}
-
         # dump to match other function calling llm for now
+        function_call_args_dict = proto.Message.to_dict(first_part.function_call)[
+            "args"
+        ]
         function_call["arguments"] = json.dumps(
-            {k: first_part.function_call.args[k] for k in first_part.function_call.args}
+            {k: function_call_args_dict[k] for k in function_call_args_dict}
         )
         additional_kwargs["function_call"] = function_call
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
@@ -316,12 +325,20 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             values["client"] = GenerativeModel(
                 model_name=values["model_name"], safety_settings=safety_settings
             )
+            values["client_preview"] = GenerativeModel(
+                model_name=values["model_name"], safety_settings=safety_settings
+            )
         else:
             if is_codey_model(values["model_name"]):
                 model_cls = CodeChatModel
+                model_cls_preview = PreviewCodeChatModel
             else:
                 model_cls = ChatModel
+                model_cls_preview = PreviewChatModel
             values["client"] = model_cls.from_pretrained(values["model_name"])
+            values["client_preview"] = model_cls_preview.from_pretrained(
+                values["model_name"]
+            )
         return values
 
     def _generate(
@@ -493,8 +510,13 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             # set param to `functions` until core tool/function calling implemented
             raw_tools = params.pop("functions") if "functions" in params else None
             tools = _format_tools_to_vertex_tool(raw_tools) if raw_tools else None
+            safety_settings = params.pop("safety_settings", None)
             responses = chat.send_message(
-                message, stream=True, generation_config=params, tools=tools
+                message,
+                stream=True,
+                generation_config=params,
+                safety_settings=safety_settings,
+                tools=tools,
             )
             for response in responses:
                 message = _parse_response_candidate(response.candidates[0])
