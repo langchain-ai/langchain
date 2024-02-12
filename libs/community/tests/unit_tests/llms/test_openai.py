@@ -1,11 +1,7 @@
-import os
-
 import pytest
 
 from langchain_community.llms.openai import OpenAI
 from langchain_community.utils.openai import is_openai_v1
-
-os.environ["OPENAI_API_KEY"] = "foo"
 
 
 def _openai_v1_installed() -> bool:
@@ -17,15 +13,15 @@ def _openai_v1_installed() -> bool:
 
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
-    llm = OpenAI(model="foo")
+    llm = OpenAI(model="foo", openai_api_key="foo")
     assert llm.model_name == "foo"
-    llm = OpenAI(model_name="foo")
+    llm = OpenAI(model_name="foo", openai_api_key="foo")
     assert llm.model_name == "foo"
 
 
 @pytest.mark.requires("openai")
 def test_openai_model_kwargs() -> None:
-    llm = OpenAI(model_kwargs={"foo": "bar"})
+    llm = OpenAI(model_kwargs={"foo": "bar"}, openai_api_key="foo")
     assert llm.model_kwargs == {"foo": "bar"}
 
 
@@ -42,7 +38,7 @@ def test_openai_invalid_model_kwargs() -> None:
 @pytest.mark.requires("openai")
 def test_openai_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = OpenAI(foo="bar")
+        llm = OpenAI(foo="bar", openai_api_key="foo")
     assert llm.model_kwargs == {"foo": "bar"}
 
 

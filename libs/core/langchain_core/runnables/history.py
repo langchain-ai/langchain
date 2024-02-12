@@ -35,21 +35,21 @@ GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
-    """A runnable that manages chat message history for another runnable.
+    """Runnable that manages chat message history for another Runnable.
 
     A chat message history is a sequence of messages that represent a conversation.
 
-    RunnableWithMessageHistory wraps another runnable and manages the chat message
+    RunnableWithMessageHistory wraps another Runnable and manages the chat message
     history for it; it is responsible for reading and updating the chat message
     history.
 
-    The formats supports for the inputs and outputs of the wrapped runnable
+    The formats supports for the inputs and outputs of the wrapped Runnable
     are described below.
 
     RunnableWithMessageHistory must always be called with a config that contains
     the appropriate parameters for the chat message history factory.
 
-    By default the runnable is expected to take a single configuration parameter
+    By default the Runnable is expected to take a single configuration parameter
     called `session_id` which is a string. This parameter is used to create a new
     or look up an existing chat message history that matches the given session_id.
 
@@ -115,7 +115,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         history = get_by_session_id("1")
         history.add_message(AIMessage(content="hello"))
-        print(store)
+        print(store)  # noqa: T201
 
 
     Example where the wrapped Runnable takes a dictionary input:
@@ -146,20 +146,20 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 history_messages_key="history",
             )
 
-            print(chain_with_history.invoke(
+            print(chain_with_history.invoke(  # noqa: T201
                 {"ability": "math", "question": "What does cosine mean?"},
                 config={"configurable": {"session_id": "foo"}}
             ))
 
             # Uses the store defined in the example above.
-            print(store)
+            print(store)  # noqa: T201
 
-            print(chain_with_history.invoke(
+            print(chain_with_history.invoke(  # noqa: T201
                 {"ability": "math", "question": "What's its inverse"},
                 config={"configurable": {"session_id": "foo"}}
             ))
 
-            print(store)
+            print(store)  # noqa: T201
 
 
     Example where the session factory takes two keys, user_id and conversation id):

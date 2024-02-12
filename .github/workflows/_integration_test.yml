@@ -38,6 +38,11 @@ jobs:
         shell: bash
         run: poetry install --with test,test_integration
 
+      - name: Install deps outside pyproject
+        if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
+        shell: bash
+        run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
+
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
         uses: google-github-actions/auth@v2

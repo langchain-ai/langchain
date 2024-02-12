@@ -37,7 +37,7 @@ def test_nlpcloud_api_key(monkeypatch: MonkeyPatch, capsys: CaptureFixture) -> N
 
     assert cast(SecretStr, llm.nlpcloud_api_key).get_secret_value() == "secret-api-key"
 
-    print(llm.nlpcloud_api_key, end="")
+    print(llm.nlpcloud_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

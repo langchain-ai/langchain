@@ -391,7 +391,7 @@ class WatsonxLLM(BaseLLM):
 
                 response = watsonx_llm.stream("What is a molecule")
                 for chunk in response:
-                    print(chunk, end='')
+                    print(chunk, end='')  # noqa: T201
         """
         params = self._get_chat_params(stop=stop)
         for stream_resp in self.watsonx_model.generate_text_stream(
