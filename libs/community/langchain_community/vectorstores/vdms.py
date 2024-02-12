@@ -12,6 +12,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sized,
     Tuple,
     Type,
     Union,
@@ -58,14 +59,23 @@ class IndexEngine(str, Enum):
 
 DEFAULT_COLLECTION_NAME = "langchain"
 DEFAULT_DISTANCE_METRIC = DistanceMetric.L2
-DEFAULT_INSERT_BATCH_SIZE = 100
+DEFAULT_INSERT_BATCH_SIZE = 32
 DEFAULT_K = 3  # Number of Documents to return.
-INVALID_DOC_METADATA_KEYS = ["_distance", "content", "blob"]
-INVALID_METADATA_VALUE = ["Missing property", None, {}]
 DEFAULT_PROPERTIES = ["_distance", "id", "content"]
 DEFAULT_SEARCH_ENGINE = IndexEngine.FaissFlat
 DEFAULT_VDMS_CONNECTION = {"host": "localhost", "port": "55555"}
+INVALID_DOC_METADATA_KEYS = ["_distance", "content", "blob"]
+INVALID_METADATA_VALUE = ["Missing property", None, {}]
 logger = logging.getLogger(__name__)
+
+
+def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
+    if isinstance(x, Sized) and isinstance(y, Sized) and len(x) != len(y):
+        raise ValueError(
+            f"{x_name} and {y_name} expected to be equal length but "
+            f"len({x_name})={len(x)} and len({y_name})={len(y)}"
+        )
+    return
 
 
 class VDMS(VectorStore):
@@ -94,7 +104,6 @@ class VDMS(VectorStore):
 
             from langchain_community.vectorstores import VDMS
             from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
-            import vdms
 
             vectorstore = VDMS(
                 collection_name="langchain_store",
@@ -120,18 +129,22 @@ class VDMS(VectorStore):
         # Check required parameters
         self.similarity_search_engine = engine
         self.distance_strategy = distance_strategy
-        self._embedding_function = embedding_function
-        self.check_required_inputs()
+        self.embedding_function = embedding_function
+        self.check_required_inputs(collection_name)
 
         # Update other parameters
         self.override_relevance_score_fn = relevance_score_fn
 
         # Initialize collection
-        self._collection_name = self.add_collection_set(
+        self._collection_name = self.__add_set(
             collection_name,
             engine=self.similarity_search_engine,
             metric=self.distance_strategy,
         )
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self.embedding_function
 
     def _create_connection_alias(self, connection_args: dict) -> Any:
         if connection_args is None:
@@ -143,6 +156,32 @@ class VDMS(VectorStore):
 
         self._client = vdms.vdms()
         self._client.connect(connection_args["host"], int(connection_args["port"]))
+
+    def _embed_documents(self, texts: List[str]) -> List[List[float]]:
+        if isinstance(self.embedding_function, Embeddings):
+            return self.embedding_function.embed_documents(texts)
+        else:
+            raise ValueError(
+                "Must provide `embedding_function` which is expected to be an Embeddings object"
+            )
+
+    def _embed_image(self, uris: List[str]) -> List[List[float]]:
+        if self.embedding_function is not None and hasattr(
+            self.embedding_function, "embed_image"
+        ):
+            return self.embedding_function.embed_image(uris=uris)
+        else:
+            raise ValueError(
+                "Must provide `embedding_function` which has attribute `embed_image`"
+            )
+
+    def _embed_query(self, text: str) -> List[float]:
+        if isinstance(self.embedding_function, Embeddings):
+            return self.embedding_function.embed_query(text)
+        else:
+            raise ValueError(
+                "Must provide `embedding_function` which is expected to be an Embeddings object"
+            )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -207,319 +246,69 @@ class VDMS(VectorStore):
                 )
         return docs_and_rel_scores
 
-    def add_collection(
+    def __add(
         self,
         collection_name: str,
-        metadatas: Optional[List] = None,
-        embeddings: Optional[List] = None,
-        documents: Optional[List] = None,
-        ids: Optional[List] = None,
+        texts: Iterable[str],
+        embeddings: Iterable[List[float]],
+        metadatas: Optional[Iterable[dict]] = None,
+        # metadatas: Optional[List] = None,
+        ids: Optional[List[str]] = None,
     ) -> None:
-        # all_queries = []
-        # all_blobs = []
+        _len_check_if_sized(texts, embeddings, "texts", "embeddings")
 
-        lengths = [
-            len(x)
-            for x in [metadatas, embeddings, documents, ids]
-            if x is not None and len(x) > 0
-        ]
-        min_len = min(lengths)
+        metadatas = metadatas if metadatas is not None else [None for _ in range(texts)]
+        _len_check_if_sized(texts, metadatas, "texts", "metadatas")
 
-        if metadatas is None:
-            metadatas = [None] * min_len
-        if embeddings is None:
-            embeddings = [None] * min_len
-        if documents is None:
-            documents = [None] * min_len
-        if ids is None:
-            # ids = [None] * min_len
-            ids = [str(uuid.uuid1()) for _ in range(min_len)]
+        ids = ids if ids is not None else [str(uuid.uuid1()) for _ in range(texts)]
+        _len_check_if_sized(texts, ids, "texts", "ids")
 
-        for meta, emb, doc, id in zip(metadatas, embeddings, documents, ids):
-            all_queries = []
-            all_blobs = []
-            query, blob = self.get_add_collection_query(
+        orig_props = self.__get_properties(collection_name)
+
+        all_queries = []
+        all_blobs = []
+        inserted_ids = []
+        for meta, emb, doc, id in zip(metadatas, embeddings, texts, ids):
+            # all_queries = []
+            # all_blobs = []
+            query, blob = self.__get_add_query(
                 collection_name, metadata=meta, embedding=emb, document=doc, id=id
             )
 
             if blob is not None:
                 all_queries.append(query)
                 all_blobs.append(blob)
+                inserted_ids.append(id)
 
-                response, response_array = self._client.query(all_queries, all_blobs)
-            # self.print_last_response()
+        response, response_array = self.__run_vdms_query(all_queries, all_blobs)
 
-    def add_collection_set(
+        self.__update_properties(
+                    collection_name, orig_props, self.collection_properties
+                )
+        # return inserted_ids
+
+    def __add_set(
         self,
         collection_name: str,
         engine: Union[IndexEngine, str] = IndexEngine.FaissFlat,
         metric: Union[DistanceMetric, str] = DistanceMetric.L2,
     ) -> str:
-        all_queries = []
         query = add_descriptorset(
             "AddDescriptorSet",
             collection_name,
-            self._embedding_dimension,
-            engine=engine.value if hasattr(engine, "value") else engine,
-            metric=metric.value if hasattr(metric, "value") else metric,
+            self.embedding_dimension,
+            engine=getattr(engine, "value", engine),
+            metric=getattr(metric, "value", metric)
         )
 
-        all_queries.append(query)
-        response, _ = self._client.query(all_queries)
+        response, _ = self.__run_vdms_query([query])
 
         if "FailedCommand" in response[0]:
             raise ValueError(f"Failed to add collection {collection_name}")
 
         return collection_name
 
-    def add_images(
-        self,
-        uris: List[str],
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
-        add_path: Optional[bool] = True,
-        **kwargs: Any,
-    ) -> List[str]:
-        """Run more images through the embeddings and add to the vectorstore.
-
-        Images are added as embeddings (AddDescriptor) instead of separate
-        entity (AddImage) within VDMS to leverage similarity search capability
-
-        Args:
-            uris List[str]: File path to the image.
-            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
-            ids (Optional[List[str]], optional): Optional list of IDs.
-            add_path (Optional[bool]): Add image path as metadata
-
-        Returns:
-            List[str]: List of IDs of the added images.
-        """
-        # Map from uris to blobs to base64
-        b64_texts = [self.encode_image(image_path=uri) for uri in uris]
-        if add_path and metadatas:
-            for midx, uri in enumerate(uris):
-                metadatas[midx]["image_path"] = uri
-        elif add_path:
-            metadatas = []
-            for uri in uris:
-                metadatas.append({"image_path": uri})
-
-        # Populate IDs
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in uris]
-
-        # Set embeddings
-        embeddings = None
-        if self._embedding_function is not None and hasattr(
-            self._embedding_function, "embed_image"
-        ):
-            embeddings = self._embedding_function.embed_image(uris=uris)
-
-        if metadatas:
-            # fill metadatas with empty dicts if somebody
-            # did not specify metadata for all images
-            length_diff = len(uris) - len(metadatas)
-            if length_diff:
-                metadatas = metadatas + [{}] * length_diff
-            empty_ids = []
-            non_empty_ids = []
-            for idx, m in enumerate(metadatas):
-                if m:
-                    non_empty_ids.append(idx)
-                else:
-                    empty_ids.append(idx)
-            if non_empty_ids:
-                metadatas = [metadatas[idx] for idx in non_empty_ids]
-                images_with_metadatas = [b64_texts[idx] for idx in non_empty_ids]
-                embeddings_with_metadatas = (
-                    [embeddings[idx] for idx in non_empty_ids] if embeddings else None
-                )
-                ids_with_metadata = [ids[idx] for idx in non_empty_ids]
-                try:
-                    self.add_collection(
-                        self._collection_name,
-                        metadatas=metadatas,
-                        embeddings=embeddings_with_metadatas,
-                        documents=images_with_metadatas,
-                        ids=ids_with_metadata,
-                    )
-                except ValueError as e:
-                    if "Expected metadata value to be" in str(e):
-                        msg = (
-                            "Try filtering complex metadata using "
-                            "langchain.vectorstores.utils.filter_complex_metadata."
-                        )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
-                    else:
-                        raise e
-            if empty_ids:
-                images_without_metadatas = [b64_texts[j] for j in empty_ids]
-                embeddings_without_metadatas = (
-                    [embeddings[j] for j in empty_ids] if embeddings else None
-                )
-                ids_without_metadatas = [ids[j] for j in empty_ids]
-                self.add_collection(
-                    self._collection_name,
-                    embeddings=embeddings_without_metadatas,
-                    documents=images_without_metadatas,
-                    ids=ids_without_metadatas,
-                )
-        else:
-            self.add_collection(
-                self._collection_name,
-                embeddings=embeddings,
-                documents=b64_texts,
-                ids=ids,
-            )
-        return ids
-
-    def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
-
-        Args:
-            texts (List[str]): Texts to add to the vectorstore.
-            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
-            ids (Optional[List[str]], optional): Optional list of IDs.
-
-        Returns:
-            List[str]: List of IDs of the added texts.
-        """
-
-        ids = kwargs.get("ids", None)
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
-        embeddings = None
-        texts = list(texts)
-        if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(texts)
-        if metadatas:
-            # fill metadatas with empty dicts if somebody
-            # did not specify metadata for all texts
-            length_diff = len(texts) - len(metadatas)
-            if length_diff:
-                metadatas = metadatas + [{}] * length_diff
-            empty_ids = []
-            non_empty_ids = []
-            for idx, m in enumerate(metadatas):
-                if m:
-                    non_empty_ids.append(idx)
-                else:
-                    empty_ids.append(idx)
-            if non_empty_ids:
-                metadatas = [metadatas[idx] for idx in non_empty_ids]
-                texts_with_metadatas = [texts[idx] for idx in non_empty_ids]
-                embeddings_with_metadatas = (
-                    [embeddings[idx] for idx in non_empty_ids]
-                    if embeddings is not None
-                    else None
-                )
-                ids_with_metadata = [ids[idx] for idx in non_empty_ids]
-                try:
-                    self.add_collection(
-                        self._collection_name,
-                        metadatas=metadatas,
-                        embeddings=embeddings_with_metadatas,
-                        documents=texts_with_metadatas,
-                        ids=ids_with_metadata,
-                    )
-                except ValueError as e:
-                    if "Expected metadata value to be" in str(e):
-                        msg = (
-                            "Try filtering complex metadata from the document using "
-                            "langchain.vectorstores.utils.filter_complex_metadata."
-                        )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
-                    else:
-                        raise e
-            if empty_ids:
-                texts_without_metadatas = [texts[j] for j in empty_ids]
-                embeddings_without_metadatas = (
-                    [embeddings[j] for j in empty_ids] if embeddings else None
-                )
-                ids_without_metadatas = [ids[j] for j in empty_ids]
-                self.add_collection(
-                    self._collection_name,
-                    embeddings=embeddings_without_metadatas,
-                    documents=texts_without_metadatas,
-                    ids=ids_without_metadatas,
-                )
-        else:
-            self.add_collection(
-                self._collection_name,
-                embeddings=embeddings,
-                documents=texts,
-                ids=ids,
-            )
-        return ids
-
-    def check_required_inputs(self):
-        # Check Distance Metric
-        if self.distance_strategy not in sorted(DistanceMetric):
-            raise ValueError("distance_strategy must be either 'L2' or 'IP'")
-
-        # Check Engines
-        if self.similarity_search_engine not in sorted(IndexEngine):
-            raise ValueError(
-                "engine must be either 'TileDBDense', 'TileDBSparse', "
-                + "'FaissFlat', 'FaissIVFFlat', or 'Flinng'"
-            )
-
-        # Check Embedding Func is provided and store dimension size
-        if self._embedding_function is None:
-            raise ValueError("Must provide embedding function")
-
-        self._embedding_dimension = len(
-            self._embedding_function.embed_query("This is a sample sentence.")
-        )
-
-    def count(self, collection_name: str) -> int:
-        all_queries: List[Any] = []
-        all_blobs: List[Any] = []
-
-        collection_properties = self.get_collection_properties(collection_name)
-        results = {"count": "", "list": collection_properties}
-        query = add_descriptor(
-            "FindDescriptor",
-            collection_name,
-            label=None,
-            ref=None,
-            props=None,
-            link=None,
-            k_neighbors=None,
-            constraints=None,
-            results=results,
-        )
-
-        all_queries.append(query)
-
-        response, response_array = self._client.query(all_queries, all_blobs)
-        # self.print_last_response()
-        return response[0]["FindDescriptor"]["returned"]
-
-    def decode_image(self, base64_image):
-        return base64.b64decode(base64_image)
-
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        collection_name: Optional[str] = None,
-        constraints: Optional[Dict] = None,
-        **kwargs: Any,
-    ) -> bool:
-        """Delete by vector IDs.
-
-        Args:
-            ids: List of ids to delete.
-        """
-        name = collection_name if collection_name is not None else self._collection_name
-        return self.delete_collection(name, ids=ids, constraints=constraints)
-
-    def delete_collection(
+    def __delete(
         self,
         collection_name: str,
         ids: Union[None, List[str]] = None,
@@ -531,7 +320,7 @@ class VDMS(VectorStore):
         all_queries: List[Any] = []
         all_blobs: List[Any] = []
 
-        collection_properties = self.get_collection_properties(collection_name)
+        collection_properties = self.__get_properties(collection_name)
         results = {"list": collection_properties}
 
         if constraints is None:
@@ -540,7 +329,7 @@ class VDMS(VectorStore):
             constraints["_deletion"] = ["==", 1]
 
         if ids is not None:
-            constraints["id"] = ["==", ids if len(ids) > 1 else ids[0]]
+            constraints["id"] = ["==", ids[0]]  # if len(ids) > 1 else ids[0]]
 
         query = add_descriptor(
             "FindDescriptor",
@@ -555,14 +344,375 @@ class VDMS(VectorStore):
         )
 
         all_queries.append(query)
-
-        response, response_array = self._client.query(all_queries, all_blobs)
+        # print(all_queries)
+        response, response_array = self.__run_vdms_query(all_queries, all_blobs)
         # self.print_last_response()
         return "FindDescriptor" in response[0]
 
-    @property
-    def embeddings(self) -> Optional[Embeddings]:
-        return self._embedding_function
+    def __get_add_query(
+        self,
+        collection_name: str,
+        metadata: Optional[Any] = None,
+        embedding: Optional[Any] = None,
+        document: Optional[Any] = None,
+        id: Optional[str] = None,
+        # collection_properties: Optional[list] = []
+    ) -> Tuple[Dict[str, Dict[str, Any]], Union[bytes, None]]:
+
+        props = {} if id is None else {"id": id}
+        if metadata:
+            # Validate properties (no arrays accepted)
+            # metadata = validate_vdms_properties(metadata)
+            props.update(metadata)
+        if document:
+            props["content"] = document
+
+        for k in props.keys():
+            if k not in self.collection_properties:
+                # collection_properties.append(k)
+                self.collection_properties.append(k)
+
+        # query = add_descriptor("AddDescriptor", collection_name, label=None,
+        #                            ref=None, props=props, link=None, k_neighbors=None,
+        #                            constraints=None, results=None)
+        query = check_vdms_then_adddescriptor(
+            self._client,
+            collection_name,
+            label=None,
+            ref=None,
+            props=props,
+            link=None,
+            k_neighbors=None,
+        )
+
+        # print(f"get query: {time.time()-prop_time_s}")
+        if "FindDescriptor" in list(query.keys()):
+            skipped_value = {
+                prop_key: prop_val[-1]
+                for prop_key, prop_val in query["FindDescriptor"]["constraints"].items()
+            }
+            print(
+                f"[!] Embedding with id ({id}) exists in DB;",
+                "Therefore, skipped and not inserted",
+            )
+            print(f"\tSkipped values are: {skipped_value}")
+            return query, None
+
+        # emb = np.array(embedding, dtype="float32")
+        # blob = emb.tobytes()
+
+        blob = embedding2bytes(embedding)
+
+        return query, blob, #collection_properties
+
+    def __get_properties(
+        self,
+        collection_name: str,
+        unique_entity: Optional[bool] = False,
+        deletion: Optional[bool] = False,
+    ) -> List:
+        find_query = find_property_entity(
+            collection_name, unique_entity=unique_entity, deletion=deletion
+        )
+        response, response_blob = self.__run_vdms_query([find_query])
+        if len(response_blob) > 0:
+            collection_properties = bytes2str(response_blob[0]).split(",")
+        else:
+            collection_properties = deepcopy(DEFAULT_PROPERTIES)
+        return collection_properties
+
+    def __run_vdms_query(
+        self,
+        all_queries: Iterable[str],
+        all_blobs: Optional[Iterable] = [],
+        print_last_response: Optional[bool] = False
+    ):
+        response, response_array =  self._client.query(all_queries, all_blobs)
+
+        if print_last_response:
+            self.print_last_response()
+        return response, response_array
+
+    def __update(
+        self,
+        collection_name: str,
+        ids: List[str],
+        documents: Iterable[str],
+        embeddings: List[float],
+        metadatas: Union[None, List[Any]] = None,
+    ) -> None:
+        # return ValueError("Cannot update Descriptor; Capability not in VDMS")
+        """
+        Updates (find, delete, add) a collection based on id.
+        If more than one collection returned with id, error occuers
+        """
+        _len_check_if_sized(ids, documents, "ids", "documents")
+
+        _len_check_if_sized(ids, embeddings, "ids", "embeddings")
+
+        metadatas = metadatas if metadatas is not None else [None for _ in range(ids)]
+        _len_check_if_sized(ids, metadatas, "ids", "metadatas")
+
+        orig_props = self.__get_properties(collection_name)
+
+        updated_ids = []
+        for meta, emb, doc, id in zip(metadatas, embeddings, documents, ids):
+            results = {"list": self.collection_properties}
+
+            constraints = {"_deletion": ["==", 1]}
+
+            if id is not None:
+                constraints["id"] = ["==", id]
+
+            query = add_descriptor(
+                "FindDescriptor",
+                collection_name,
+                label=None,
+                ref=None,
+                props=None,
+                link=None,
+                k_neighbors=None,
+                constraints=constraints,
+                results=results,
+            )
+
+            response, response_array = self.__run_vdms_query([query])
+
+            query, blob = self.__get_add_query(
+                collection_name, metadata=meta, embedding=emb, document=doc, id=id,
+                # collection_properties=collection_properties
+            )
+            if blob is not None:
+                response, response_array = self.__run_vdms_query([query], [blob])
+                # self.print_last_response()
+                updated_ids.append(id)
+
+        self.__update_properties(
+            collection_name, orig_props, self.collection_properties
+        )
+        # return updated_ids
+
+    def __update_properties(
+        self,
+        collection_name: str,
+        current_collection_properties: List,
+        new_collection_properties: Optional[List],
+    ) -> None:
+        if new_collection_properties is not None:
+            old_collection_properties = deepcopy(current_collection_properties)
+            for prop in new_collection_properties:
+                if prop not in current_collection_properties:
+                    current_collection_properties.append(prop)
+
+            if current_collection_properties != old_collection_properties:
+                all_queries, blob_arr = build_property_query(
+                    collection_name,
+                    command_type="update",
+                    all_properties=current_collection_properties,
+                )
+                response, _ = self.__run_vdms_query(all_queries, [blob_arr])
+                # self._client.print_last_response()
+
+    def add_images(
+        self,
+        uris: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
+        add_path: Optional[bool] = True,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more images through the embeddings and add to the vectorstore.
+
+        Images are added as embeddings (AddDescriptor) instead of separate
+        entity (AddImage) within VDMS to leverage similarity search capability
+
+        Args:
+            uris: Iterable of paths to the images to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
+            batch_size (int): Number of concurrent requests to send to the server.
+            add_path: Bool to add image path as metadata
+
+        Returns:
+            List of ids from adding images into the vectorstore.
+        """
+        # Map from uris to blobs to base64
+        b64_texts = [self.encode_image(image_path=uri) for uri in uris]
+
+        if add_path and metadatas:
+            for midx, uri in enumerate(uris):
+                metadatas[midx]["image_path"] = uri
+        elif add_path:
+            metadatas = []
+            for uri in uris:
+                metadatas.append({"image_path": uri})
+
+        # Populate IDs
+        ids = ids if ids is not None else [str(uuid.uuid1()) for _ in uris]
+
+        # Set embeddings
+        embeddings = self._embed_image(uris=uris)
+
+        metadatas = metadatas if metadatas is not None else [None for _ in uris]
+
+        self.__from(
+            texts=b64_texts,
+            embeddings=embeddings,
+            ids=ids,
+            metadatas=metadatas,
+            batch_size=batch_size)
+        return ids
+
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
+            batch_size (int): Number of concurrent requests to send to the server.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+
+        texts = list(texts)
+        # ids = kwargs.get("ids", None)
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in texts]
+
+        embeddings = self._embed_documents(texts)
+
+        if metadatas is None:
+            metadatas = [None for _ in texts]
+
+        # for start_idx in range(0, len(texts), batch_size):
+        #     end_idx = min(start_idx + batch_size, len(texts))
+
+        #     batch_texts = texts[start_idx : end_idx]
+        #     batch_embedding_vectors = embeddings[start_idx : end_idx]
+        #     batch_ids = ids[start_idx : end_idx]
+        #     batch_metadatas = metadatas[start_idx : end_idx]
+
+        #     self.__add(
+        #         self._collection_name,
+        #         embeddings=batch_embedding_vectors,
+        #         texts=batch_texts,
+        #         metadatas=batch_metadatas,
+        #         ids=batch_ids,
+        #     )
+        self.__from(
+            texts=texts,
+            embeddings=embeddings,
+            ids=ids,
+            metadatas=metadatas,
+            batch_size=batch_size)
+        return ids
+
+    def __from(
+        self,
+        texts: Iterable[str],
+        embeddings: Iterable[List[float]],
+        ids: List[str],
+        metadatas: Iterable[dict],
+        batch_size: int
+    ) -> None:
+        for start_idx in range(0, len(texts), batch_size):
+            end_idx = min(start_idx + batch_size, len(texts))
+
+            batch_texts = texts[start_idx : end_idx]
+            batch_embedding_vectors = embeddings[start_idx : end_idx]
+            batch_ids = ids[start_idx : end_idx]
+            batch_metadatas = metadatas[start_idx : end_idx]
+
+            self.__add(
+                self._collection_name,
+                embeddings=batch_embedding_vectors,
+                texts=batch_texts,
+                metadatas=batch_metadatas,
+                ids=batch_ids,
+            )
+
+    def check_required_inputs(self, collection_name):
+        # Check Distance Metric
+        if self.distance_strategy not in sorted(DistanceMetric):
+            raise ValueError("distance_strategy must be either 'L2' or 'IP'")
+
+        # Check Engines
+        if self.similarity_search_engine not in sorted(IndexEngine):
+            raise ValueError(
+                "engine must be either 'TileDBDense', 'TileDBSparse', "
+                + "'FaissFlat', 'FaissIVFFlat', or 'Flinng'"
+            )
+
+        # Check Embedding Func is provided and store dimension size
+        if self.embedding_function is None:
+            raise ValueError("Must provide embedding function")
+
+        self.embedding_dimension = len(
+            self._embed_query("This is a sample sentence.")
+        )
+
+        # Check for properties
+        current_props = self.__get_properties(collection_name)
+        if hasattr(self, "collection_properties"):
+            self.collection_properties.extend(current_props)
+        else:
+            self.collection_properties = current_props
+
+    def count(self, collection_name: str) -> int:
+        all_queries: List[Any] = []
+        all_blobs: List[Any] = []
+
+        # collection_properties = self.__get_properties(collection_name)
+        results = {"count": "", "list": ["id"]}  #collection_properties}
+        query = add_descriptor(
+            "FindDescriptor",
+            collection_name,
+            label=None,
+            ref=None,
+            props=None,
+            link=None,
+            k_neighbors=None,
+            constraints=None,
+            results=results,
+        )
+
+        all_queries.append(query)
+
+        response, response_array = self.__run_vdms_query(all_queries, all_blobs)
+        # self.print_last_response()
+        return response[0]["FindDescriptor"]["returned"]
+
+    def decode_image(self, base64_image):
+        return base64.b64decode(base64_image)
+
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        collection_name: Optional[str] = None,
+        constraints: Optional[Dict] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """Delete by ID. These are the IDs in the vectorstore.
+
+        Args:
+            ids: List of ids to delete.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        name = collection_name if collection_name is not None else self._collection_name
+        return self.__delete(name, ids=ids, constraints=constraints)
 
     def encode_image(self, image_path: str) -> str:
         with open(image_path, "rb") as f:
@@ -575,6 +725,7 @@ class VDMS(VectorStore):
         documents: List[Document],
         embedding_function: Embeddings,
         ids: Optional[List[str]] = None,
+        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # Add this line
         connection_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
@@ -584,6 +735,7 @@ class VDMS(VectorStore):
         Args:
             collection_name (str): Name of the collection to create.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
+            batch_size (int): Number of concurrent requests to send to the server.
             documents (List[Document]): List of documents to add to vectorstore.
             embedding_function (Embeddings): Embedding function. Defaults to None.
 
@@ -591,13 +743,12 @@ class VDMS(VectorStore):
             VDMS: VDMS vectorstore.
         """
 
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
         return cls.from_texts(
-            texts=texts,
-            metadatas=metadatas,
+            texts=[doc.page_content for doc in documents],
+            metadatas=[validate_vdms_properties(doc.metadata) for doc in documents],
             embedding_function=embedding_function,
             ids=ids,
+            batch_size=batch_size,
             collection_name=collection_name,
             connection_args=connection_args,
             **kwargs,
@@ -610,6 +761,7 @@ class VDMS(VectorStore):
         embedding_function: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         collection_name: str = DEFAULT_COLLECTION_NAME,
         connection_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
@@ -621,6 +773,7 @@ class VDMS(VectorStore):
             embedding_function (Embeddings): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
+            batch_size (int): Number of concurrent requests to send to the server.
             collection_name (str): Name of the collection to create.
 
         Returns:
@@ -634,7 +787,8 @@ class VDMS(VectorStore):
         )
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
-        vdms_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+        vdms_collection.add_texts(texts=texts, metadatas=metadatas,
+                                  ids=ids, batch_size=batch_size)
         return vdms_collection
 
     def get(
@@ -681,7 +835,7 @@ class VDMS(VectorStore):
 
         # Include metadata
         if "metadata" in include:
-            collection_properties = self.get_collection_properties(collection_name)
+            collection_properties = self.__get_properties(collection_name)
             results["list"] = collection_properties
 
         # Include embedding
@@ -702,82 +856,9 @@ class VDMS(VectorStore):
 
         all_queries.append(query)
 
-        response, response_array = self._client.query(all_queries, all_blobs)
+        response, response_array = self.__run_vdms_query(all_queries, all_blobs)
         # self.print_last_response()
         return response, response_array
-
-    def get_add_collection_query(
-        self,
-        collection_name: str,
-        metadata: Optional[Any] = None,
-        embedding: Optional[Any] = None,
-        document: Optional[Any] = None,
-        id: Optional[str] = None,
-    ) -> Tuple[Dict[str, Dict[str, Any]], Union[bytes, None]]:
-        current_props = self.get_collection_properties(collection_name)
-
-        props = {} if id is None else {"id": id}
-        if metadata:
-            # Validate properties (no arrays accepted)
-            metadata = validate_vdms_properties(metadata)
-            props.update(metadata)
-            # for mkey, mval in metadata.items():
-            #     props[mkey] = mval
-            #     # if mkey not in self.collection_properties:
-            #     #     self.collection_properties.append(mkey)
-            self.update_collection_properties(
-                collection_name, current_props, list(metadata.keys())
-            )
-        if document:
-            props["content"] = document
-
-        # query = add_descriptor("AddDescriptor", collection_name, label=None,
-        #                            ref=None, props=props, link=None, k_neighbors=None,
-        #                            constraints=None, results=None)
-        query = check_vdms_then_adddescriptor(
-            self._client,
-            collection_name,
-            label=None,
-            ref=None,
-            props=props,
-            link=None,
-            k_neighbors=None,
-        )
-
-        if "FindDescriptor" in list(query.keys()):
-            skipped_value = {
-                prop_key: prop_val[-1]
-                for prop_key, prop_val in query["FindDescriptor"]["constraints"].items()
-            }
-            print(
-                f"[!] Embedding with id ({id}) exists in DB;",
-                "Therefore, skipped and not inserted",
-            )
-            print(f"\tSkipped values are: {skipped_value}")
-            return query, None
-
-        # emb = np.array(embedding, dtype="float32")
-        # blob = emb.tobytes()
-
-        blob = embedding2bytes(embedding)
-
-        return query, blob
-
-    def get_collection_properties(
-        self,
-        collection_name: str,
-        unique_entity: Optional[bool] = False,
-        deletion: Optional[bool] = False,
-    ) -> List:
-        find_query = find_property_entity(
-            collection_name, unique_entity=unique_entity, deletion=deletion
-        )
-        response, response_blob = self._client.query([find_query])
-        if len(response_blob) > 0:
-            collection_properties = bytes2str(response_blob[0]).split(",")
-        else:
-            collection_properties = deepcopy(DEFAULT_PROPERTIES)
-        return collection_properties
 
     def max_marginal_relevance_search(
         self,
@@ -806,12 +887,12 @@ class VDMS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        if self._embedding_function is None:
+        if self.embedding_function is None:
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
 
-        embedding_vector = self._embedding_function.embed_query(query)
+        embedding_vector = self._embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
             embedding_vector,
             k,
@@ -900,12 +981,12 @@ class VDMS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        if self._embedding_function is None:
+        if self.embedding_function is None:
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
 
-        embedding = self._embedding_function.embed_query(query)
+        embedding = self._embed_query(query)
         docs = self.max_marginal_relevance_search_with_score_by_vector(
             embedding,
             k,
@@ -993,8 +1074,8 @@ class VDMS(VectorStore):
 
         include = kwargs.get("include", ["metadatas"])
         if results is None and "metadatas" in include:
-            collection_properties = self.get_collection_properties(collection_name)
-            results = {"list": collection_properties, "blob": "embeddings" in include}
+            # collection_properties = self.__get_properties(collection_name)
+            results = {"list": self.collection_properties, "blob": "embeddings" in include}
 
         for qemb in query_embeddings:
             all_queries = []
@@ -1036,7 +1117,7 @@ class VDMS(VectorStore):
                 all_queries.append(query)
                 all_blobs.append(blob)
 
-            response, response_array = self._client.query(all_queries, all_blobs)
+            response, response_array = self.__run_vdms_query(all_queries, all_blobs)
             # self.print_last_response()
 
             if normalize_distance and len(response) == 2:
@@ -1060,63 +1141,6 @@ class VDMS(VectorStore):
 
         return all_responses
 
-    def run_update_documents(
-        self,
-        collection_name: str,
-        ids: List[str],
-        metadatas: Union[None, List[Any]] = None,
-        embeddings: Union[None, List[Any]] = None,
-        documents: Union[None, List[Any]] = None,
-    ) -> None:
-        # return ValueError("Cannot update Descriptor; Capability not in VDMS")
-        """
-        Updates (find, delete, add) a collection based on id.
-        If more than one collection returned with id, error occuers
-        """
-        lengths = [
-            len(x)
-            for x in [metadatas, embeddings, documents, ids]
-            if x is not None and len(x) > 0
-        ]
-        min_len = min(lengths)
-
-        if metadatas is None:
-            metadatas = [None] * min_len
-        if embeddings is None:
-            embeddings = [None] * min_len
-        if documents is None:
-            documents = [None] * min_len
-
-        collection_properties = self.get_collection_properties(collection_name)
-        for meta, emb, doc, id in zip(metadatas, embeddings, documents, ids):
-            results = {"list": collection_properties}
-
-            constraints = {"_deletion": ["==", 1]}
-
-            if id is not None:
-                constraints["id"] = ["==", id]
-
-            query = add_descriptor(
-                "FindDescriptor",
-                collection_name,
-                label=None,
-                ref=None,
-                props=None,
-                link=None,
-                k_neighbors=None,
-                constraints=constraints,
-                results=results,
-            )
-
-            response, response_array = self._client.query([query])
-
-            query, blob = self.get_add_collection_query(
-                collection_name, metadata=meta, embedding=emb, document=doc, id=id
-            )
-            if blob is not None:
-                response, response_array = self._client.query([query], [blob])
-                # self.print_last_response()
-
     def similarity_search(
         self,
         query: str,
@@ -1134,7 +1158,9 @@ class VDMS(VectorStore):
         Returns:
             List[Document]: List of documents most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
+        docs_and_scores = self.similarity_search_with_score(
+            query, k, filter=filter, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
@@ -1193,7 +1219,7 @@ class VDMS(VectorStore):
         # if normalize_distance:
         #     kwargs["normalize_distance"] = normalize_distance
 
-        if self._embedding_function is None:
+        if self.embedding_function is None:
             raise ValueError("Must provide embedding function")
             # results = self.query_collection_embeddings(
             #     query_texts=[query],
@@ -1203,7 +1229,7 @@ class VDMS(VectorStore):
             #     **kwargs
             # )
         else:
-            query_embedding = self._embedding_function.embed_query(query)
+            query_embedding = self._embed_query(query)
             results = self.query_collection_embeddings(
                 query_embeddings=query_embedding,
                 n_results=k,
@@ -1248,29 +1274,11 @@ class VDMS(VectorStore):
         )
         return _results_to_docs_and_scores(results)
 
-    def update_collection_properties(
+    def update_document(
         self,
         collection_name: str,
-        current_collection_properties: List,
-        new_collection_properties: Optional[List],
-    ) -> None:
-        if new_collection_properties is not None:
-            old_collection_properties = deepcopy(current_collection_properties)
-            for prop in new_collection_properties:
-                if prop not in current_collection_properties:
-                    current_collection_properties.append(prop)
-
-            if current_collection_properties != old_collection_properties:
-                all_queries, blob_arr = build_property_query(
-                    collection_name,
-                    command_type="update",
-                    all_properties=current_collection_properties,
-                )
-                response, _ = self._client.query(all_queries, [blob_arr])
-                # self._client.print_last_response()
-
-    def update_document(
-        self, collection_name: str, document_id: str, document: Document
+        document_id: str,
+        document: Document
     ) -> None:
         """Update a document in the collection.
 
@@ -1281,7 +1289,10 @@ class VDMS(VectorStore):
         return self.update_documents(collection_name, [document_id], [document])
 
     def update_documents(
-        self, collection_name: str, ids: List[str], documents: List[Document]
+        self,
+        collection_name: str,
+        ids: List[str],
+        documents: List[Document]
     ) -> None:
         """Update a document in the collection.
 
@@ -1290,33 +1301,10 @@ class VDMS(VectorStore):
             documents (List[Document]): List of documents to update.
         """
         text = [document.page_content for document in documents]
-        metadata = [document.metadata for document in documents]
-        if self._embedding_function is None:
-            raise ValueError(
-                "For update, you must specify an embedding function on creation."
-            )
-        embeddings = self._embedding_function.embed_documents(text)
+        metadata = [validate_vdms_properties(document.metadata) for document in documents]
+        embeddings = self._embed_documents(text)
 
-        # if hasattr(
-        #     self._collection._client, "max_batch_size"
-        # ):
-        #     # from vdmsdb.utils.batch_utils import create_batches
-
-        #     for batch in create_batches(
-        #         api=self._collection._client,
-        #         ids=ids,
-        #         metadatas=metadata,
-        #         documents=text,
-        #         embeddings=embeddings,
-        #     ):
-        #         self._collection.update(
-        #             ids=batch[0],
-        #             embeddings=batch[1],
-        #             documents=batch[3],
-        #             metadatas=batch[2],
-        #         )
-        # else:
-        self.run_update_documents(
+        updated_ids = self.__update(
             collection_name,
             ids,
             metadatas=metadata,
@@ -1554,7 +1542,7 @@ def check_vdms_then_adddescriptor(
     )
 
     props_as_constraints = (
-        None if props is None else {k: ["==", v] for k, v in props.items()}
+        None if props is None else {k: ["==", v] for k, v in props.items() if k=='id'}
     )
     results = (
         None
@@ -1624,16 +1612,7 @@ def str2bytes(in_str: str) -> bytes:
 def validate_vdms_properties(metadata: Dict) -> Dict:
     new_metadata = {}
     for key, value in metadata.items():
-        if isinstance(value, list) and len(value) == 1:
-            new_metadata[key] = value[0]
-        elif isinstance(value, list) and len(value) >= 1:
-            print("VDMS doesn't support arrays as properties.")
-            if isinstance(value[0], str):
-                print("Converting str of arrays to comma delimited string")
-                new_metadata[key] = ",".join(value)
-            else:
-                print(f"Skipping array of {value[0].__class__.__name__}")
-        else:
+        if not isinstance(value, list):
             new_metadata[key] = value
     return new_metadata
 

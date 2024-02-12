@@ -1,4 +1,4 @@
-"""Test VDMS Vector Search functionality."""
+"""Test VDMS functionality."""
 import logging
 import os
 
@@ -19,7 +19,7 @@ docker-compose -f vdms.yml up -d
 
 By default runs against local docker instance of VDMS using port (VDMS_DBPORT) 55555.
 Use the following to specify different port:
-VDMS_DBPORT=<port> docker-compose -f vdms.yml up -d
+docker-compose -f vdms.yml up -d
 """
 
 
@@ -28,14 +28,9 @@ class TestVDMS:
     @classmethod
     def setup_class(cls) -> None:
         db_host = "localhost"
-        db_port = os.getenv("VDMS_DBPORT", 55557)
+        db_port = os.getenv("VDMS_DBPORT", 55555)
         print(f"VDMS using {db_host} and {db_port}")
         cls.connection_args = {"host": db_host, "port": db_port}
-
-    # @classmethod
-    # def teardown_class(cls) -> None:
-    #     cls.client.disconnect()
-    #     print("Disconnected VDMS")
 
     def test_init_from_client(self) -> None:
         embedding_function = FakeEmbeddings()
