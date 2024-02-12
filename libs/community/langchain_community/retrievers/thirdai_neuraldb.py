@@ -272,9 +272,7 @@ class NeuralDBRetriever(BaseRetriever):
         try:
             if "top_k" not in kwargs:
                 kwargs["top_k"] = 10
-            references = self.db.search(
-                query=query, **kwargs
-            )
+            references = self.db.search(query=query, **kwargs)
             return [
                 Document(
                     page_content=ref.text,
