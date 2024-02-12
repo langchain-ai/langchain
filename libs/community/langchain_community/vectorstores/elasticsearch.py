@@ -15,6 +15,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -113,6 +114,7 @@ class BaseRetrievalStrategy(ABC):
         return True
 
 
+@deprecated("0.1.11", alternative="Use class in langchain-elasticsearch package")
 class ApproxRetrievalStrategy(BaseRetrievalStrategy):
     """Approximate retrieval strategy using the `HNSW` algorithm."""
 
@@ -233,6 +235,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         }
 
 
+@deprecated("0.1.11", alternative="Use class in langchain-elasticsearch package")
 class ExactRetrievalStrategy(BaseRetrievalStrategy):
     """Exact retrieval strategy using the `script_score` query."""
 
@@ -300,6 +303,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         }
 
 
+@deprecated("0.1.11", alternative="Use class in langchain-elasticsearch package")
 class SparseRetrievalStrategy(BaseRetrievalStrategy):
     """Sparse retrieval strategy using the `text_expansion` processor."""
 
@@ -381,6 +385,7 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
         return False
 
 
+@deprecated("0.1.11", alternative="Use class in langchain-elasticsearch package")
 class ElasticsearchStore(VectorStore):
     """`Elasticsearch` vector store.
 

@@ -50,6 +50,10 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
     }
 
 
+@deprecated(
+    "0.1.11",
+    alternative="Use ElasticsearchStore class in langchain-elasticsearch package",
+)
 class ElasticVectorSearch(VectorStore):
     """
 
