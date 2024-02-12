@@ -53,6 +53,66 @@ class Llamafile(LLM):
     temperature: float = 0.8
     """Temperature. Default: 0.8"""
 
+    top_k: int = 40
+    """Limit the next token selection to the K most probable tokens. 
+    Default: 40."""
+
+    top_p: float = 0.95
+    """Limit the next token selection to a subset of tokens with a cumulative 
+    probability above a threshold P. Default: 0.95."""
+
+    min_p: float = 0.05
+    """The minimum probability for a token to be considered, relative to 
+    the probability of the most likely token. Default: 0.05."""
+
+    n_predict: int = -1
+    """Set the maximum number of tokens to predict when generating text. 
+    Note: May exceed the set limit slightly if the last token is a partial 
+    multibyte character. When 0, no tokens will be generated but the prompt 
+    is evaluated into the cache. Default: -1 = infinity."""
+
+    n_keep: int = 0
+    """Specify the number of tokens from the prompt to retain when the 
+    context size is exceeded and tokens need to be discarded. By default, 
+    this value is set to 0 (meaning no tokens are kept). Use -1 to retain all 
+    tokens from the prompt."""
+
+    tfs_z: float = 1.0
+    """Enable tail free sampling with parameter z. Default: 1.0 = disabled."""
+
+    typical_p: float = 1.0
+    """Enable locally typical sampling with parameter p. 
+    Default: 1.0 = disabled."""
+
+    repeat_penalty: float = 1.1
+    """Control the repetition of token sequences in the generated text. 
+    Default: 1.1"""
+
+    repeat_last_n: int = 64
+    """Last n tokens to consider for penalizing repetition. Default: 64, 
+    0 = disabled, -1 = ctx-size."""
+
+    penalize_nl: bool = True
+    """Penalize newline tokens when applying the repeat penalty. 
+    Default: true."""
+
+    presence_penalty: float = 0.0
+    """Repeat alpha presence penalty. Default: 0.0 = disabled."""
+
+    frequency_penalty: float = 0.0
+    """Repeat alpha frequency penalty. Default: 0.0 = disabled"""
+
+    mirostat: int = 0
+    """Enable Mirostat sampling, controlling perplexity during text 
+    generation. 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0. 
+    Default: disabled."""
+
+    mirostat_tau: float = 5.0
+    """Set the Mirostat target entropy, parameter tau. Default: 5.0."""
+
+    mirostat_eta: float = 0.1
+    """Set the Mirostat learning rate, parameter eta. Default: 0.1."""
+
     class Config:
         """Configuration for this pydantic object."""
 

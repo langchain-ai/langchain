@@ -8,6 +8,28 @@ from pytest import MonkeyPatch
 from langchain_community.llms.llamafile import Llamafile
 
 
+def default_generation_params():
+    return {
+        "temperature": 0.8,
+        "seed": -1,
+        "top_k": 40,
+        "top_p": 0.95,
+        "min_p": 0.05,
+        "n_predict": -1,
+        "n_keep": 0,
+        "tfs_z": 1.0,
+        "typical_p": 1.0,
+        "repeat_penalty": 1.1,
+        "repeat_last_n": 64,
+        "penalize_nl": True,
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "mirostat": 0,
+        "mirostat_tau": 5.0,
+        "mirostat_eta": 0.1
+    }
+
+
 def mock_response():
     contents = {"content": "the quick brown fox"}
     contents = json.dumps(contents)
@@ -54,9 +76,22 @@ def test_call(monkeypatch: MonkeyPatch):
         # 'unknown' kwarg should be ignored
         assert json == {
             "prompt": "Test prompt",
-            "temperature": 0.8,
-            "seed": -1,
+            **default_generation_params()
         }
+        # assert json == {
+        #     "prompt": "Test prompt",
+        #     "temperature": 0.8,
+        #     "seed": -1,
+        #
+        #     "top_k": 40,
+        #     "top_p": 0.95,
+        #     "min_p": 0.05,
+        #     "n_predict": -1,
+        #     "n_keep": 0,
+        #     "tfs_z": 1.0,
+        #     "typical_p": 1.0,
+        #     "repeat_penalty": 1.1
+        # }
         assert stream is False
         assert timeout is None
         return mock_response()
@@ -82,11 +117,12 @@ def test_call_with_kwargs(monkeypatch: MonkeyPatch):
             "Content-Type": "application/json",
         }
         # 'unknown' kwarg should be ignored
-        assert json == {
+        expected = {
             "prompt": "Test prompt",
-            "temperature": 0.8,
-            "seed": 0,
+            **default_generation_params()
         }
+        expected["seed"] = 0
+        assert json == expected
         assert stream is False
         assert timeout is None
         return mock_response()
@@ -129,12 +165,12 @@ def test_streaming(monkeypatch: MonkeyPatch):
         }
         # 'unknown' kwarg should be ignored
         assert "unknown" not in json
-        assert json == {
+        expected = {
             "prompt": "Test prompt",
-            "temperature": 0.8,
-            "seed": -1,
-            "stream": True,
+            **default_generation_params()
         }
+        expected["stream"] = True
+        assert json == expected
         assert stream is True
         assert timeout is None
 
