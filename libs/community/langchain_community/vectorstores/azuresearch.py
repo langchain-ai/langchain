@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 import numpy as np
@@ -419,9 +420,7 @@ class AzureSearch(VectorStore):
             search_text="",
             vector_queries=[
                 VectorizedQuery(
-                    vector=np.array(
-                        self.embedding_function(query), dtype=np.float32
-                    ).tolist(),
+                    vector=np.array(self.embed_query(query), dtype=np.float32).tolist(),
                     k_nearest_neighbors=k,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
@@ -480,9 +479,7 @@ class AzureSearch(VectorStore):
             search_text=query,
             vector_queries=[
                 VectorizedQuery(
-                    vector=np.array(
-                        self.embedding_function(query), dtype=np.float32
-                    ).tolist(),
+                    vector=np.array(self.embed_query(query), dtype=np.float32).tolist(),
                     k_nearest_neighbors=k,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
@@ -561,9 +558,7 @@ class AzureSearch(VectorStore):
             search_text=query,
             vector_queries=[
                 VectorizedQuery(
-                    vector=np.array(
-                        self.embedding_function(query), dtype=np.float32
-                    ).tolist(),
+                    vector=np.array(self.embed_query(query), dtype=np.float32).tolist(),
                     k_nearest_neighbors=k,
                     fields=FIELDS_CONTENT_VECTOR,
                 )
