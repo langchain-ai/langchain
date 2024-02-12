@@ -23,6 +23,7 @@ EXPECTED_ALL = [
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
+    "AthenaLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
