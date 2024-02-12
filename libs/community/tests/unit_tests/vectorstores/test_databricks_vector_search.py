@@ -1,7 +1,7 @@
 import itertools
 import random
 import uuid
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -121,7 +121,7 @@ EXAMPLE_SEARCH_RESPONSE = {
     "next_page_token": "",
 }
 
-EXAMPLE_SEARCH_RESPONSE_FIXED_SCORE = {
+EXAMPLE_SEARCH_RESPONSE_FIXED_SCORE: Dict = {
     "manifest": {
         "column_count": 3,
         "columns": [

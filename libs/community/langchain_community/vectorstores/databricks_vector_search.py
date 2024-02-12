@@ -437,7 +437,9 @@ class DatabricksVectorSearch(VectorStore):
             lambda_mult=lambda_mult,
         )
 
-        ignore_cols = [embedding_column] if embedding_column not in self.columns else []
+        ignore_cols: List = (
+            [embedding_column] if embedding_column not in self.columns else []
+        )
         candidates = self._parse_search_response(search_resp, ignore_cols=ignore_cols)
         selected_results = [r[0] for i, r in enumerate(candidates) if i in mmr_selected]
         return selected_results
