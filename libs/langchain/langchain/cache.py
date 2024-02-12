@@ -24,7 +24,6 @@ __all__ = [
     "SQLAlchemyCache",
     "SQLiteCache",
     "UpstashRedisCache",
-    "AsyncRedisCache",
     "RedisCache",
     "RedisSemanticCache",
     "GPTCache",

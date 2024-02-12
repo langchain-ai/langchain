@@ -1,5 +1,14 @@
 """Test chat model integration."""
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
+from typing import Dict, List, Union
+
+import pytest
+from langchain_core.messages import (
+    AIMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture
 
@@ -36,7 +45,7 @@ def test_api_key_is_string() -> None:
 
 def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     chat = ChatGoogleGenerativeAI(model="gemini-nano", google_api_key="secret-api-key")
-    print(chat.google_api_key, end="")
+    print(chat.google_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -58,3 +67,9 @@ def test_parse_history() -> None:
         "parts": [{"text": system_input}, {"text": text_question1}],
     }
     assert history[1] == {"role": "model", "parts": [{"text": text_answer1}]}
+
+
+@pytest.mark.parametrize("content", ['["a"]', '{"a":"b"}', "function output"])
+def test_parse_function_history(content: Union[str, List[Union[str, Dict]]]) -> None:
+    function_message = FunctionMessage(name="search_tool", content=content)
+    _parse_chat_history([function_message], convert_system_message_to_human=True)

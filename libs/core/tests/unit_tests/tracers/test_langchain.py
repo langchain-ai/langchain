@@ -22,6 +22,7 @@ def test_example_id_assignment_threadsafe() -> None:
         return unittest.mock.MagicMock()
 
     client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
     client.create_run = mock_create_run
     tracer = LangChainTracer(client=client)
     old_persist_run_single = tracer._persist_run_single
@@ -35,6 +36,7 @@ def test_example_id_assignment_threadsafe() -> None:
     ):
         run_id_1 = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
         run_id_2 = UUID("f1f9fa53-8b2f-4742-bdbc-38215f7bd1e1")
+        run_id_3 = UUID("f1f9fa53-8b2f-4742-bdbc-38215f7cd1e1")
         example_id_1 = UUID("57e42c57-8c79-4d9f-8765-bf6cd3a98055")
         tracer.example_id = example_id_1
         tracer.on_llm_start({"name": "example_1"}, ["foo"], run_id=run_id_1)
@@ -44,9 +46,14 @@ def test_example_id_assignment_threadsafe() -> None:
         tracer.on_llm_start({"name": "example_2"}, ["foo"], run_id=run_id_2)
         tracer.on_llm_end(LLMResult(generations=[], llm_output={}), run_id=run_id_2)
         tracer.example_id = None
+        tracer.on_chain_start(
+            {"name": "no_examples"}, {"inputs": (i for i in range(10))}, run_id=run_id_3
+        )
+        tracer.on_chain_error(ValueError("Foo bar"), run_id=run_id_3)
         expected_example_ids = {
             run_id_1: example_id_1,
             run_id_2: example_id_2,
+            run_id_3: None,
         }
         tracer.wait_for_futures()
         assert example_ids == expected_example_ids

@@ -56,7 +56,7 @@ class TestPinecone:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the vectors in the index
-        print("called")
+        print("called")  # noqa: T201
         self.index.delete(delete_all=True, namespace=NAMESPACE_NAME)
         # index_stats = self.index.describe_index_stats()
         # for _namespace_name in index_stats["namespaces"].keys():
@@ -119,7 +119,7 @@ class TestPinecone:
         """Test end to end construction and search with scores and IDs."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
-        print("metadatas", metadatas)
+        print("metadatas", metadatas)  # noqa: T201
         docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
@@ -127,7 +127,7 @@ class TestPinecone:
             metadatas=metadatas,
             namespace=NAMESPACE_NAME,
         )
-        print(texts)
+        print(texts)  # noqa: T201
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
         output = docsearch.similarity_search_with_score(
             "foo", k=3, namespace=NAMESPACE_NAME
@@ -135,7 +135,7 @@ class TestPinecone:
         docs = [o[0] for o in output]
         scores = [o[1] for o in output]
         sorted_documents = sorted(docs, key=lambda x: x.metadata["page"])
-        print(sorted_documents)
+        print(sorted_documents)  # noqa: T201
 
         # TODO: why metadata={"page": 0.0}) instead of {"page": 0}, etc???
         assert sorted_documents == [
@@ -230,7 +230,7 @@ class TestPinecone:
         # wait for the index to be ready
         time.sleep(DEFAULT_SLEEP)
         output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
-        print(output)
+        print(output)  # noqa: T201
         assert all(
             (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
         )

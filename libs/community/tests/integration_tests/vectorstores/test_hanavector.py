@@ -1,4 +1,5 @@
 """Test HANA vectorstore functionality."""
+
 import os
 import random
 from typing import List
@@ -230,7 +231,7 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
         )
         exception_occured = False
     except AttributeError as err:
-        print(err)
+        print(err)  # noqa: T201
         exception_occured = True
     assert exception_occured
 

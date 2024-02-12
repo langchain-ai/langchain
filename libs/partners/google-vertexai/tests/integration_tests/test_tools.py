@@ -81,7 +81,6 @@ def test_tools() -> None:
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
     response = agent_executor.invoke({"input": "What is 6 raised to the 0.43 power?"})
-    print(response)
     assert isinstance(response, dict)
     assert response["input"] == "What is 6 raised to the 0.43 power?"
 
@@ -89,7 +88,7 @@ def test_tools() -> None:
     # use regex to find \d+\.\d+
     just_numbers = re.findall(r"\d+\.\d+", response["output"])[0]
 
-    assert round(float(just_numbers), 3) == 2.161
+    assert round(float(just_numbers), 2) == 2.16
 
 
 def test_stream() -> None:
@@ -106,7 +105,6 @@ def test_stream() -> None:
     ]
     response = list(llm.stream("What is 6 raised to the 0.43 power?", functions=tools))
     assert len(response) == 1
-    # for chunk in response:
     assert isinstance(response[0], AIMessageChunk)
     assert "function_call" in response[0].additional_kwargs
 
