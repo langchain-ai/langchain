@@ -144,6 +144,22 @@ class Llama2Chat(ChatWrapper):
     usr_0_end: str = " [/INST]"
 
 
+class Mixtral(ChatWrapper):
+    """See https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1#instruction-format"""
+    @property
+    def _llm_type(self) -> str:
+        return "mixtral"
+
+    sys_beg: str = "<s>[INST] "
+    sys_end: str = "\n"
+    ai_n_beg: str = " "
+    ai_n_end: str = " </s>"
+    usr_n_beg: str = " [INST] "
+    usr_n_end: str = " [/INST]"
+    usr_0_beg: str = ""
+    usr_0_end: str = " [/INST]"
+
+
 class Orca(ChatWrapper):
     @property
     def _llm_type(self) -> str:
