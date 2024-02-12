@@ -37,6 +37,7 @@ from langchain_core.messages import (
     convert_to_messages,
     message_chunk_to_message,
 )
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -49,7 +50,7 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables.config import ensure_config, run_in_executor
 
 if TYPE_CHECKING:
-    from langchain_core.runnables import RunnableConfig
+    from langchain_core.runnables import Runnable, RunnableConfig
 
 
 def _get_verbosity() -> bool:
@@ -310,6 +311,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 await run_manager.on_llm_end(
                     LLMResult(generations=[[generation]]),
                 )
+
+    def as_str(self) -> Runnable[LanguageModelInput, str]:
+        return self | StrOutputParser()
 
     # --- Custom methods ---
 
