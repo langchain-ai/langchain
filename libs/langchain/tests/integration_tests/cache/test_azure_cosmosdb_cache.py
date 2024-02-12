@@ -10,12 +10,15 @@ import os
 import uuid
 
 import pytest
+from langchain_community.cache import AzureCosmosDBSemanticCache
+from langchain_community.vectorstores.azure_cosmos_db import (
+    CosmosDBSimilarityType,
+    CosmosDBVectorSearchType,
+)
 from langchain_core.outputs import Generation
+
 from langchain.globals import get_llm_cache, set_llm_cache
-from langchain.cache import AzureCosmosDBSemanticCache
-from langchain.vectorstores.azure_cosmos_db import CosmosDBSimilarityType, CosmosDBVectorSearchType
 from tests.integration_tests.cache.fake_embeddings import (
-    ConsistentFakeEmbeddings,
     FakeEmbeddings,
 )
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -36,11 +39,7 @@ score_threshold = 0.1
 
 
 def _has_env_vars() -> bool:
-    return all(
-        [
-            "MONGODB_VCORE_URI" in os.environ
-        ]
-    )
+    return all(["MONGODB_VCORE_URI" in os.environ])
 
 
 def random_string() -> str:
@@ -48,7 +47,9 @@ def random_string() -> str:
 
 
 @pytest.mark.requires("pymongo")
-@pytest.mark.skipif(not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars")
+@pytest.mark.skipif(
+    not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars"
+)
 def test_azure_cosmos_db_semantic_cache() -> None:
     set_llm_cache(
         AzureCosmosDBSemanticCache(
@@ -64,7 +65,7 @@ def test_azure_cosmos_db_semantic_cache() -> None:
             m=m,
             ef_construction=ef_construction,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
     )
 
@@ -80,11 +81,12 @@ def test_azure_cosmos_db_semantic_cache() -> None:
 
     # clear the cache
     get_llm_cache().clear(llm_string=llm_string)
-    print("a")
 
 
 @pytest.mark.requires("pymongo")
-@pytest.mark.skipif(not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars")
+@pytest.mark.skipif(
+    not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars"
+)
 def test_azure_cosmos_db_semantic_cache_inner_product() -> None:
     set_llm_cache(
         AzureCosmosDBSemanticCache(
@@ -100,7 +102,7 @@ def test_azure_cosmos_db_semantic_cache_inner_product() -> None:
             m=m,
             ef_construction=ef_construction,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
     )
 
@@ -119,7 +121,9 @@ def test_azure_cosmos_db_semantic_cache_inner_product() -> None:
 
 
 @pytest.mark.requires("pymongo")
-@pytest.mark.skipif(not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars")
+@pytest.mark.skipif(
+    not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars"
+)
 def test_azure_cosmos_db_semantic_cache_multi() -> None:
     set_llm_cache(
         AzureCosmosDBSemanticCache(
@@ -135,7 +139,7 @@ def test_azure_cosmos_db_semantic_cache_multi() -> None:
             m=m,
             ef_construction=ef_construction,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
     )
 
@@ -156,7 +160,9 @@ def test_azure_cosmos_db_semantic_cache_multi() -> None:
 
 
 @pytest.mark.requires("pymongo")
-@pytest.mark.skipif(not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars")
+@pytest.mark.skipif(
+    not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars"
+)
 def test_azure_cosmos_db_semantic_cache_multi_inner_product() -> None:
     set_llm_cache(
         AzureCosmosDBSemanticCache(
@@ -172,7 +178,7 @@ def test_azure_cosmos_db_semantic_cache_multi_inner_product() -> None:
             m=m,
             ef_construction=ef_construction,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
     )
 
@@ -193,7 +199,9 @@ def test_azure_cosmos_db_semantic_cache_multi_inner_product() -> None:
 
 
 @pytest.mark.requires("pymongo")
-@pytest.mark.skipif(not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars")
+@pytest.mark.skipif(
+    not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars"
+)
 def test_azure_cosmos_db_semantic_cache_hnsw() -> None:
     set_llm_cache(
         AzureCosmosDBSemanticCache(
@@ -209,7 +217,7 @@ def test_azure_cosmos_db_semantic_cache_hnsw() -> None:
             m=m,
             ef_construction=ef_construction,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
     )
 
@@ -228,7 +236,9 @@ def test_azure_cosmos_db_semantic_cache_hnsw() -> None:
 
 
 @pytest.mark.requires("pymongo")
-@pytest.mark.skipif(not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars")
+@pytest.mark.skipif(
+    not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars"
+)
 def test_azure_cosmos_db_semantic_cache_inner_product_hnsw() -> None:
     set_llm_cache(
         AzureCosmosDBSemanticCache(
@@ -244,7 +254,7 @@ def test_azure_cosmos_db_semantic_cache_inner_product_hnsw() -> None:
             m=m,
             ef_construction=ef_construction,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
     )
 
@@ -263,7 +273,9 @@ def test_azure_cosmos_db_semantic_cache_inner_product_hnsw() -> None:
 
 
 @pytest.mark.requires("pymongo")
-@pytest.mark.skipif(not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars")
+@pytest.mark.skipif(
+    not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars"
+)
 def test_azure_cosmos_db_semantic_cache_multi_hnsw() -> None:
     set_llm_cache(
         AzureCosmosDBSemanticCache(
@@ -279,7 +291,7 @@ def test_azure_cosmos_db_semantic_cache_multi_hnsw() -> None:
             m=m,
             ef_construction=ef_construction,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
     )
 
@@ -300,7 +312,9 @@ def test_azure_cosmos_db_semantic_cache_multi_hnsw() -> None:
 
 
 @pytest.mark.requires("pymongo")
-@pytest.mark.skipif(not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars")
+@pytest.mark.skipif(
+    not _has_env_vars(), reason="Missing Azure CosmosDB Mongo vCore env. vars"
+)
 def test_azure_cosmos_db_semantic_cache_multi_inner_product_hnsw() -> None:
     set_llm_cache(
         AzureCosmosDBSemanticCache(
@@ -316,7 +330,7 @@ def test_azure_cosmos_db_semantic_cache_multi_inner_product_hnsw() -> None:
             m=m,
             ef_construction=ef_construction,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
     )
 
