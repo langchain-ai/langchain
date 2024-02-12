@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import os
 import sys
-import warnings
 from typing import (
     Any,
     AsyncIterator,
