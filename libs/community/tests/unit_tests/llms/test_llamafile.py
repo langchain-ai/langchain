@@ -26,7 +26,7 @@ def default_generation_params():
         "frequency_penalty": 0.0,
         "mirostat": 0,
         "mirostat_tau": 5.0,
-        "mirostat_eta": 0.1
+        "mirostat_eta": 0.1,
     }
 
 
@@ -74,10 +74,7 @@ def test_call(monkeypatch: MonkeyPatch):
             "Content-Type": "application/json",
         }
         # 'unknown' kwarg should be ignored
-        assert json == {
-            "prompt": "Test prompt",
-            **default_generation_params()
-        }
+        assert json == {"prompt": "Test prompt", **default_generation_params()}
         assert stream is False
         assert timeout is None
         return mock_response()
@@ -103,10 +100,7 @@ def test_call_with_kwargs(monkeypatch: MonkeyPatch):
             "Content-Type": "application/json",
         }
         # 'unknown' kwarg should be ignored
-        expected = {
-            "prompt": "Test prompt",
-            **default_generation_params()
-        }
+        expected = {"prompt": "Test prompt", **default_generation_params()}
         expected["seed"] = 0
         assert json == expected
         assert stream is False
@@ -151,10 +145,7 @@ def test_streaming(monkeypatch: MonkeyPatch):
         }
         # 'unknown' kwarg should be ignored
         assert "unknown" not in json
-        expected = {
-            "prompt": "Test prompt",
-            **default_generation_params()
-        }
+        expected = {"prompt": "Test prompt", **default_generation_params()}
         expected["stream"] = True
         assert json == expected
         assert stream is True
