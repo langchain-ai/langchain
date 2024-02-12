@@ -2,7 +2,7 @@
 import warnings
 from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
-from langchain.agents import AgentType, create_openai_tools_agent, create_react_agent
+from langchain.agents import AgentType, create_openai_tools_agent
 from langchain.agents.agent import (
     AgentExecutor,
     BaseMultiActionAgent,
@@ -15,11 +15,18 @@ from langchain.agents.openai_functions_agent.base import (
     OpenAIFunctionsAgent,
     create_openai_functions_agent,
 )
+from langchain.tools.render import render_text_description
+
+
 from langchain_core.callbacks import BaseCallbackManager
-from langchain_core.language_models import LanguageModelLike
+from langchain_core.language_models import BaseLanguageModel,LanguageModelLike
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+
+from langchain.agents.format_scratchpad import format_log_to_str
+from langchain.agents.output_parsers import ReActSingleInputOutputParser
 from langchain_core.utils.interactive_env import is_interactive_env
 
 from langchain_experimental.agents.agent_toolkits.pandas.prompt import (
@@ -83,13 +90,11 @@ def _get_single_prompt(
     else:
         suffix_to_use = SUFFIX_NO_DF
     prefix = prefix if prefix is not None else PREFIX
-
     prompt = ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,
         suffix=suffix_to_use,
     )
-
     partial_prompt = prompt.partial()
     if "df_head" in partial_prompt.input_variables:
         df_head = str(df.head(number_of_head_rows).to_markdown())
@@ -146,6 +151,21 @@ def _get_functions_prompt(df: Any, **kwargs: Any) -> ChatPromptTemplate:
         else _get_functions_single_prompt(df, **kwargs)
     )
 
+def _create_react_agent_pandas(llm:BaseLanguageModel, tools:List[BaseTool], prompt:BasePromptTemplate) -> Runnable:
+    prompt = prompt.partial(
+    tools=render_text_description(list(tools)),
+    tool_names=", ".join([t.name for t in tools]),
+)
+    llm_with_stop = llm.bind(stop=["\nObservation"])
+    agent = (
+        RunnablePassthrough.assign(
+            agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
+        )
+        | prompt
+        | llm_with_stop
+        | ReActSingleInputOutputParser()
+    )
+    return agent
 
 def create_pandas_dataframe_agent(
     llm: LanguageModelLike,
@@ -260,7 +280,7 @@ def create_pandas_dataframe_agent(
             tools=tools,
         )
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent] = RunnableAgent(
-            runnable=create_react_agent(llm, tools, prompt),  # type: ignore
+            runnable=_create_react_agent_pandas(llm, tools, prompt),  # type: ignore
             input_keys_arg=["input"],
             return_keys_arg=["output"],
         )
