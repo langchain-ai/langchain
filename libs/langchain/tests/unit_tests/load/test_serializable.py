@@ -40,8 +40,21 @@ def import_all_modules(package_name: str) -> dict:
 
 
 def test_serializable_mapping() -> None:
+    # This should have had a different namespace, as it was never
+    # exported from the langchain module, but we keep for whoever has
+    # already serialized it.
+    to_skip = {
+        ("langchain", "prompts", "image", "ImagePromptTemplate"): (
+            "langchain_core",
+            "prompts",
+            "image",
+            "ImagePromptTemplate",
+        ),
+    }
     serializable_modules = import_all_modules("langchain")
-    missing = set(SERIALIZABLE_MAPPING).difference(serializable_modules)
+    missing = set(SERIALIZABLE_MAPPING).difference(
+        set(serializable_modules).union(to_skip)
+    )
     assert missing == set()
     extra = set(serializable_modules).difference(SERIALIZABLE_MAPPING)
     assert extra == set()

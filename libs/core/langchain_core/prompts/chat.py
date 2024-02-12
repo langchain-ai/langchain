@@ -1,11 +1,11 @@
 """Chat prompt template."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Optional,
@@ -80,7 +80,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         raise NotImplementedError
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
@@ -130,13 +130,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value}"
             )
-        for v in convert_to_messages(value):
-            if not isinstance(v, BaseMessage):
-                raise ValueError(
-                    f"variable {self.variable_name} should be a list of base messages,"
-                    f" got {value}"
-                )
-        return value
+        return convert_to_messages(value)
 
     @property
     def input_variables(self) -> List[str]:
@@ -453,7 +447,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 content=text, additional_kwargs=self.additional_kwargs
             )
         else:
-            content = []
+            content: List = []
             for prompt in self.prompt:
                 inputs = {var: kwargs[var] for var in prompt.input_variables}
                 if isinstance(prompt, StringPromptTemplate):
@@ -550,7 +544,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         raise NotImplementedError
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
 MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate]
@@ -563,7 +557,7 @@ MessageLikeRepresentation = Union[
 
 
 class ChatPromptTemplate(BaseChatPromptTemplate):
-    """A prompt template for chat models.
+    """Prompt template for chat models.
 
     Use to create flexible templated prompts for chat models.
 
@@ -755,13 +749,20 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         # Automatically infer input variables from messages
         input_vars: Set[str] = set()
+        partial_vars: Dict[str, Any] = {}
         for _message in _messages:
-            if isinstance(
+            if isinstance(_message, MessagesPlaceholder) and _message.optional:
+                partial_vars[_message.variable_name] = []
+            elif isinstance(
                 _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
             ):
                 input_vars.update(_message.input_variables)
 
-        return cls(input_variables=sorted(input_vars), messages=_messages)
+        return cls(
+            input_variables=sorted(input_vars),
+            messages=_messages,
+            partial_variables=partial_vars,
+        )
 
     def format(self, **kwargs: Any) -> str:
         """Format the chat template into a string.
@@ -799,7 +800,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 raise ValueError(f"Unexpected input: {message_template}")
         return result
 
-    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> ChatPromptTemplate:
+    def partial(self, **kwargs: Any) -> ChatPromptTemplate:
         """Get a new ChatPromptTemplate with some input variables already filled in.
 
         Args:
