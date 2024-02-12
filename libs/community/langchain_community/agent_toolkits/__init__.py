@@ -18,6 +18,7 @@ from langchain_community.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain_community.agent_toolkits.azure_cognitive_services import (
     AzureCognitiveServicesToolkit,
 )
+from langchain_community.agent_toolkits.cogniswitch.toolkit import CogniswitchToolkit
 from langchain_community.agent_toolkits.connery import ConneryToolkit
 from langchain_community.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
@@ -46,8 +47,6 @@ from langchain_community.agent_toolkits.sql.base import create_sql_agent
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.agent_toolkits.steam.toolkit import SteamToolkit
 from langchain_community.agent_toolkits.zapier.toolkit import ZapierToolkit
-from langchain_community.agent_toolkits.cogniswitch.toolkit import CogniswitchToolkit
-
 
 __all__ = [
     "AINetworkToolkit",

@@ -119,19 +119,24 @@ def _import_brave_search_tool() -> Any:
 
 
 def _import_cogniswitch_store_file_tool() -> Any:
-    from langchain_community.tools.cogniswitch.tool import CogniswitchKnowledgeSourceFile
+    from langchain_community.tools.cogniswitch.tool import (
+        CogniswitchKnowledgeSourceFile,
+    )
 
     return CogniswitchKnowledgeSourceFile
+
 
 def _import_cogniswitch_store_url_tool() -> Any:
     from langchain_community.tools.cogniswitch.tool import CogniswitchKnowledgeSourceURL
 
     return CogniswitchKnowledgeSourceURL
 
+
 def _import_cogniswitch_answer_tool() -> Any:
     from langchain_community.tools.cogniswitch.tool import CogniswitchKnowledgeRequest
 
     return CogniswitchKnowledgeRequest
+
 
 def _import_cogniswitch_knowledge_status_tool() -> Any:
     from langchain_community.tools.cogniswitch.tool import CogniswitchKnowledgeStatus
