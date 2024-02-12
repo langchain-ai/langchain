@@ -53,6 +53,8 @@ class GPTRouterException(Exception):
 
 
 class GPTRouterModel(BaseModel):
+    """GPTRouter model."""
+
     name: str
     provider_name: str
 

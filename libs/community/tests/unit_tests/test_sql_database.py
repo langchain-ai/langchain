@@ -2,7 +2,6 @@
 """Test SQL database wrapper."""
 import pytest
 import sqlalchemy as sa
-from langchain_community.utilities.sql_database import SQLDatabase, truncate_word
 from sqlalchemy import (
     Column,
     Integer,
@@ -15,6 +14,8 @@ from sqlalchemy import (
     insert,
     select,
 )
+
+from langchain_community.utilities.sql_database import SQLDatabase, truncate_word
 
 metadata_obj = MetaData()
 

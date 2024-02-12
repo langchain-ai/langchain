@@ -1,15 +1,16 @@
 """Test Redis cache functionality."""
+
 import uuid
 from contextlib import asynccontextmanager, contextmanager
 from typing import AsyncGenerator, Generator, List, Optional, cast
 
 import pytest
+from langchain_community.cache import AsyncRedisCache, RedisCache, RedisSemanticCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.load.dump import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
-from langchain.cache import AsyncRedisCache, RedisCache, RedisSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
 from tests.integration_tests.cache.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -309,8 +310,8 @@ def test_redis_semantic_cache_hit(
     ]
     llm_cache = cast(RedisSemanticCache, get_llm_cache())
     for prompt_i, llm_generations_i in zip(prompts, llm_generations):
-        print(prompt_i)
-        print(llm_generations_i)
+        print(prompt_i)  # noqa: T201
+        print(llm_generations_i)  # noqa: T201
         llm_cache.update(prompt_i, llm_string, llm_generations_i)
     llm.generate(prompts)
     assert llm.generate(prompts) == LLMResult(
