@@ -5,7 +5,6 @@ import json
 import warnings
 from abc import ABC
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     AsyncIterator,
@@ -15,6 +14,12 @@ from typing import (
     Mapping,
     Optional,
 )
+
+try:
+    from botocore.client import Config
+except ImportError:
+    Config = Any
+
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -30,9 +35,6 @@ from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
-
-if TYPE_CHECKING:
-    from botocore.config import Config
 
 AMAZON_BEDROCK_TRACE_KEY = "amazon-bedrock-trace"
 GUARDRAILS_BODY_KEY = "amazon-bedrock-guardrailAssessment"
@@ -303,6 +305,9 @@ class BedrockBase(BaseModel, ABC):
             if reason == "GUARDRAIL_INTERVENED":
                 ...Logic to handle guardrail intervention...
     """  # noqa: E501
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
