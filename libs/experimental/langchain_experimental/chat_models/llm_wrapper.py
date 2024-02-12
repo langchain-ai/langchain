@@ -145,7 +145,8 @@ class Llama2Chat(ChatWrapper):
 
 
 class Mixtral(ChatWrapper):
-    """See https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1#instruction-format"""
+    """See https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1#instruction-format"""  # noqa: E501
+
     @property
     def _llm_type(self) -> str:
         return "mixtral"
