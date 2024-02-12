@@ -7,13 +7,9 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
 from typing import Generator
 
 import pytest
-from google.generativeai.types.safety_types import (  # type: ignore[import]
-    HarmBlockThreshold,
-    HarmCategory,
-)
 from langchain_core.outputs import LLMResult
 
-from langchain_google_genai.llms import GoogleGenerativeAI
+from langchain_google_genai import GoogleGenerativeAI, HarmBlockThreshold, HarmCategory
 
 model_names = ["models/text-bison-001", "gemini-pro"]
 
@@ -83,7 +79,7 @@ def test_safety_settings_gemini() -> None:
 
     # safety filters
     safety_settings = {
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,  # noqa: E501
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
     }
 
     # test with safety filters directly to generate

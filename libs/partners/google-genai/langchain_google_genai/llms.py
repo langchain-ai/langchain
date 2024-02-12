@@ -5,10 +5,6 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import google.api_core
 import google.generativeai as genai  # type: ignore[import]
-from google.generativeai.types.safety_types import (  # type: ignore
-    HarmBlockThreshold,
-    HarmCategory,
-)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -18,6 +14,11 @@ from langchain_core.language_models.llms import BaseLLM, create_base_retry_decor
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
+
+from langchain_google_genai._enums import (
+    HarmBlockThreshold,
+    HarmCategory,
+)
 
 
 class GoogleModelFamily(str, Enum):
