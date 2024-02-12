@@ -517,6 +517,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
             "temperature": self.temperature,
             "top_k": self.top_k,
             "n": self.n,
+            "safety_settings": self.safety_settings,
         }
 
     def _prepare_params(
@@ -549,7 +550,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         params, chat, message = self._prepare_chat(
             messages,
             stop=stop,
-            functions=kwargs.get("functions"),
+            **kwargs,
         )
         response: genai.types.GenerateContentResponse = _chat_with_retry(
             content=message,
@@ -568,7 +569,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         params, chat, message = self._prepare_chat(
             messages,
             stop=stop,
-            functions=kwargs.get("functions"),
+            **kwargs,
         )
         response: genai.types.GenerateContentResponse = await _achat_with_retry(
             content=message,
@@ -587,7 +588,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         params, chat, message = self._prepare_chat(
             messages,
             stop=stop,
-            functions=kwargs.get("functions"),
+            **kwargs,
         )
         response: genai.types.GenerateContentResponse = _chat_with_retry(
             content=message,
@@ -613,7 +614,7 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
         params, chat, message = self._prepare_chat(
             messages,
             stop=stop,
-            functions=kwargs.get("functions"),
+            **kwargs,
         )
         async for chunk in await _achat_with_retry(
             content=message,
@@ -636,9 +637,14 @@ class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
     ) -> Tuple[Dict[str, Any], genai.ChatSession, genai.types.ContentDict]:
         client = self.client
         functions = kwargs.pop("functions", None)
-        if functions:
-            tools = convert_to_genai_function_declarations(functions)
-            client = genai.GenerativeModel(model_name=self.model, tools=tools)
+        safety_settings = kwargs.pop("safety_settings", self.safety_settings)
+        if functions or safety_settings:
+            tools = (
+                convert_to_genai_function_declarations(functions) if functions else None
+            )
+            client = genai.GenerativeModel(
+                model_name=self.model, tools=tools, safety_settings=safety_settings
+            )
 
         params = self._prepare_params(stop, **kwargs)
         history = _parse_chat_history(
