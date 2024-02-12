@@ -12,7 +12,7 @@ Required to run this test:
 """
 
 import os
-from typing import Iterator
+from typing import AsyncIterator, Iterator
 
 import pytest
 from langchain_core.outputs import Generation, LLMResult
@@ -41,7 +41,20 @@ def astradb_cache() -> Iterator[AstraDBCache]:
         namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
     )
     yield cache
-    cache.astra_db.delete_collection("lc_integration_test_cache")
+    cache.collection.astra_db.delete_collection("lc_integration_test_cache")
+
+
+@pytest.fixture
+async def async_astradb_cache() -> AsyncIterator[AstraDBCache]:
+    cache = AstraDBCache(
+        collection_name="lc_integration_test_cache",
+        token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+        api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+        namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        async_setup=True,
+    )
+    yield cache
+    await cache.async_collection.astra_db.delete_collection("lc_integration_test_cache")
 
 
 @pytest.fixture(scope="module")
@@ -55,7 +68,22 @@ def astradb_semantic_cache() -> Iterator[AstraDBSemanticCache]:
         embedding=fake_embe,
     )
     yield sem_cache
-    sem_cache.astra_db.delete_collection("lc_integration_test_cache")
+    sem_cache.collection.astra_db.delete_collection("lc_integration_test_cache")
+
+
+@pytest.fixture
+async def async_astradb_semantic_cache() -> AsyncIterator[AstraDBSemanticCache]:
+    fake_embe = FakeEmbeddings()
+    sem_cache = AstraDBSemanticCache(
+        collection_name="lc_integration_test_sem_cache",
+        token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+        api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+        namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        embedding=fake_embe,
+        async_setup=True,
+    )
+    yield sem_cache
+    sem_cache.collection.astra_db.delete_collection("lc_integration_test_cache")
 
 
 @pytest.mark.requires("astrapy")
@@ -78,7 +106,24 @@ class TestAstraDBCaches:
         assert output == expected_output
         astradb_cache.clear()
 
-    def test_cassandra_semantic_cache(
+    async def test_astradb_cache_async(self, async_astradb_cache: AstraDBCache) -> None:
+        set_llm_cache(async_astradb_cache)
+        llm = FakeLLM()
+        params = llm.dict()
+        params["stop"] = None
+        llm_string = str(sorted([(k, v) for k, v in params.items()]))
+        await get_llm_cache().aupdate("foo", llm_string, [Generation(text="fizz")])
+        output = await llm.agenerate(["foo"])
+        print(output)  # noqa: T201
+        expected_output = LLMResult(
+            generations=[[Generation(text="fizz")]],
+            llm_output={},
+        )
+        print(expected_output)  # noqa: T201
+        assert output == expected_output
+        await async_astradb_cache.aclear()
+
+    def test_astradb_semantic_cache(
         self, astradb_semantic_cache: AstraDBSemanticCache
     ) -> None:
         set_llm_cache(astradb_semantic_cache)
@@ -98,3 +143,24 @@ class TestAstraDBCaches:
         output = llm.generate(["bar"])  # 'fizz' is erased away now
         assert output != expected_output
         astradb_semantic_cache.clear()
+
+    async def test_astradb_semantic_cache_async(
+        self, async_astradb_semantic_cache: AstraDBSemanticCache
+    ) -> None:
+        set_llm_cache(async_astradb_semantic_cache)
+        llm = FakeLLM()
+        params = llm.dict()
+        params["stop"] = None
+        llm_string = str(sorted([(k, v) for k, v in params.items()]))
+        await get_llm_cache().aupdate("foo", llm_string, [Generation(text="fizz")])
+        output = await llm.agenerate(["bar"])  # same embedding as 'foo'
+        expected_output = LLMResult(
+            generations=[[Generation(text="fizz")]],
+            llm_output={},
+        )
+        assert output == expected_output
+        # clear the cache
+        await async_astradb_semantic_cache.aclear()
+        output = await llm.agenerate(["bar"])  # 'fizz' is erased away now
+        assert output != expected_output
+        await async_astradb_semantic_cache.aclear()
