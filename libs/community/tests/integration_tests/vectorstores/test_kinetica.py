@@ -46,7 +46,6 @@ def test_kinetica(create_config: KineticaSettings) -> None:
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         collection_name="test_kinetica",
         pre_delete_collection=True,
     )
@@ -64,7 +63,6 @@ def test_kinetica_embeddings(create_config: KineticaSettings) -> None:
         config=create_config,
         text_embeddings=text_embedding_pairs,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         collection_name="test_kinetica_embeddings",
         pre_delete_collection=False,
     )
@@ -82,7 +80,6 @@ def test_kinetica_with_metadatas(create_config: KineticaSettings) -> None:
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         collection_name="test_kinetica_with_metadatas",
         pre_delete_collection=False,
     )
@@ -101,7 +98,6 @@ def test_kinetica_with_metadatas_with_scores(create_config: KineticaSettings) ->
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         collection_name="test_kinetica_with_metadatas_with_scores",
         pre_delete_collection=False,
     )
@@ -120,7 +116,6 @@ def test_kinetica_with_filter_match(create_config: KineticaSettings) -> None:
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         collection_name="test_kinetica_with_filter_match",
         pre_delete_collection=False,
     )
@@ -139,7 +134,6 @@ def test_kinetica_with_filter_distant_match(create_config: KineticaSettings) -> 
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         collection_name="test_kinetica_with_filter_distant_match",
         pre_delete_collection=False,
     )
@@ -159,7 +153,6 @@ def test_kinetica_with_filter_in_set(create_config: KineticaSettings) -> None:
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         collection_name="test_kinetica_with_filter_in_set",
         pre_delete_collection=False,
     )
@@ -183,7 +176,6 @@ def test_kinetica_relevance_score(create_config: KineticaSettings) -> None:
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         collection_name="test_kinetica_relevance_score",
         pre_delete_collection=False,
     )
@@ -207,7 +199,6 @@ def test_kinetica_max_marginal_relevance_search(
         config=create_config,
         texts=texts,
         embedding=openai,
-        dimensions=1536,
         distance_strategy=DistanceStrategy.COSINE,
         collection_name="test_kinetica_max_marginal_relevance_search",
         pre_delete_collection=False,
@@ -227,7 +218,6 @@ def test_kinetica_max_marginal_relevance_search_with_score(
         config=create_config,
         texts=texts,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         distance_strategy=DistanceStrategy.EUCLIDEAN,
         collection_name="test_kinetica_max_marginal_relevance_search_with_score",
         pre_delete_collection=False,
@@ -251,7 +241,6 @@ def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> Non
         texts=texts,
         metadatas=metadatas,
         embedding=openai,
-        dimensions=1536,
         collection_name="kinetica_openai_test",
         pre_delete_collection=False,
     )
@@ -270,7 +259,6 @@ def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) ->
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         distance_strategy=DistanceStrategy.EUCLIDEAN,
         collection_name="test_kinetica_retriever_search_threshold",
         pre_delete_collection=False,
@@ -298,7 +286,6 @@ def test_kinetica_retriever_search_threshold_custom_normalization_fn(
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        dimensions=3,
         distance_strategy=DistanceStrategy.EUCLIDEAN,
         collection_name="test_kinetica_retriever_search_threshold_custom_normalization_fn",
         pre_delete_collection=False,
