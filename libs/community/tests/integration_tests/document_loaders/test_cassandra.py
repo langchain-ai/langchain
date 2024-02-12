@@ -14,7 +14,7 @@ CASSANDRA_TABLE = "docloader_test_table"
 
 
 @pytest.fixture(autouse=True, scope="session")
-def keyspace() -> str:
+def keyspace() -> str:  # type: ignore[misc]
     import cassio
     from cassandra.cluster import Cluster
     from cassio.config import check_resolve_session, resolve_keyspace

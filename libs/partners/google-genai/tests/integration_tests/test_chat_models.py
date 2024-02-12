@@ -1,4 +1,5 @@
 """Test ChatGoogleGenerativeAI chat model."""
+
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
@@ -102,7 +103,7 @@ def test_chat_google_genai_invoke_multimodal() -> None:
 
     # Try streaming
     for chunk in llm.stream(messages):
-        print(chunk)
+        print(chunk)  # noqa: T201
         assert isinstance(chunk.content, str)
         assert len(chunk.content.strip()) > 0
 

@@ -1,4 +1,5 @@
 """BasePrompt schema definition."""
+
 from __future__ import annotations
 
 import warnings
@@ -174,4 +175,4 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         return self.format(**dummy_vars)
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201

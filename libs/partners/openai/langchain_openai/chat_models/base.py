@@ -1,10 +1,10 @@
 """OpenAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
 import os
 import sys
-import warnings
 from typing import (
     Any,
     AsyncIterator,
@@ -64,6 +64,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from langchain_core.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -290,25 +291,9 @@ class ChatOpenAI(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        for field_name in list(values):
-            if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
-            if field_name not in all_required_field_names:
-                warnings.warn(
-                    f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
-                )
-                extra[field_name] = values.pop(field_name)
-
-        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
-        if invalid_model_kwargs:
-            raise ValueError(
-                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
-                f"Instead they were passed in as part of `model_kwargs` parameter."
-            )
-
-        values["model_kwargs"] = extra
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
         return values
 
     @root_validator()
@@ -339,9 +324,11 @@ class ChatOpenAI(BaseChatModel):
         )
 
         client_params = {
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
-            else None,
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
@@ -424,9 +411,9 @@ class ChatOpenAI(BaseChatModel):
             chunk = ChatGenerationChunk(
                 message=chunk, generation_info=generation_info or None
             )
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+            yield chunk
 
     def _generate(
         self,
@@ -516,11 +503,11 @@ class ChatOpenAI(BaseChatModel):
             chunk = ChatGenerationChunk(
                 message=chunk, generation_info=generation_info or None
             )
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(
                     token=chunk.text, chunk=chunk, logprobs=logprobs
                 )
+            yield chunk
 
     async def _agenerate(
         self,
@@ -572,19 +559,9 @@ class ChatOpenAI(BaseChatModel):
             model = self.tiktoken_model_name
         else:
             model = self.model_name
-            if model == "gpt-3.5-turbo":
-                # gpt-3.5-turbo may change over time.
-                # Returning num tokens assuming gpt-3.5-turbo-0301.
-                model = "gpt-3.5-turbo-0301"
-            elif model == "gpt-4":
-                # gpt-4 may change over time.
-                # Returning num tokens assuming gpt-4-0314.
-                model = "gpt-4-0314"
-        # Returns the number of tokens used by a list of messages.
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
-            logger.warning("Warning: model not found. Using cl100k_base encoding.")
             model = "cl100k_base"
             encoding = tiktoken.get_encoding(model)
         return model, encoding
@@ -659,7 +636,7 @@ class ChatOpenAI(BaseChatModel):
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call
                 (if any).
-            kwargs: Any additional parameters to pass to the
+            **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
@@ -711,22 +688,21 @@ class ChatOpenAI(BaseChatModel):
                 "auto" to automatically determine which function to call
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
-            kwargs: Any additional parameters to pass to the
+            **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None:
-            if isinstance(tool_choice, str) and tool_choice not in ("auto", "none"):
+            if isinstance(tool_choice, str) and (tool_choice not in ("auto", "none")):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            if isinstance(tool_choice, dict) and len(formatted_tools) != 1:
+            if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
                     f"tool. Received {len(formatted_tools)} tools."
                 )
-            if (
-                isinstance(tool_choice, dict)
-                and formatted_tools[0]["function"]["name"]
+            if isinstance(tool_choice, dict) and (
+                formatted_tools[0]["function"]["name"]
                 != tool_choice["function"]["name"]
             ):
                 raise ValueError(
@@ -734,7 +710,4 @@ class ChatOpenAI(BaseChatModel):
                     f"provided tool was {formatted_tools[0]['function']['name']}."
                 )
             kwargs["tool_choice"] = tool_choice
-        return super().bind(
-            tools=formatted_tools,
-            **kwargs,
-        )
+        return super().bind(tools=formatted_tools, **kwargs)
