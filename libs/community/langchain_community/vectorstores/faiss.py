@@ -333,8 +333,9 @@ class FAISS(VectorStore):
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            if filter is not None and filter_func(doc.metadata):
-                docs.append((doc, scores[0][j]))
+            if filter is not None:
+                if filter_func(doc.metadata):
+                    docs.append((doc, scores[0][j]))
             else:
                 docs.append((doc, scores[0][j]))
 
