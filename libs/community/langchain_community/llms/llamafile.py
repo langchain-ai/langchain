@@ -22,7 +22,9 @@ class Llamafile(LLM):
 
     1. Download a llamafile.
     2. Make the downloaded file executable: `chmod +x path/to/model.llamafile`
-    3. Start the llamafile in server mode: `./path/to/model.llamafile --server --nobrowser`
+    3. Start the llamafile in server mode:
+
+        `./path/to/model.llamafile --server --nobrowser`
 
     Example:
         .. code-block:: python

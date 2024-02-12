@@ -9,9 +9,7 @@ from langchain_community.llms.llamafile import Llamafile
 
 
 def mock_response():
-    contents = {
-        "content": "the quick brown fox"
-    }
+    contents = {"content": "the quick brown fox"}
     contents = json.dumps(contents)
     response = requests.Response()
     response.status_code = 200
@@ -20,10 +18,12 @@ def mock_response():
 
 
 def mock_response_stream():  # type: ignore[no-untyped-def]
-    mock_response = deque([
-        b'data: {"content":"the","multimodal":false,"slot_id":0,"stop":false}\n\n',
-        b'data: {"content":" quick","multimodal":false,"slot_id":0,"stop":false}\n\n',
-    ])
+    mock_response = deque(
+        [
+            b'data: {"content":"the","multimodal":false,"slot_id":0,"stop":false}\n\n',
+            b'data: {"content":" quick","multimodal":false,"slot_id":0,"stop":false}\n\n',
+        ]
+    )
 
     class MockRaw:
         def read(self, chunk_size):  # type: ignore[no-untyped-def]
@@ -95,7 +95,7 @@ def test_call_with_kwargs(monkeypatch: MonkeyPatch):
     out = llm.invoke(
         "Test prompt",
         unknown="unknown option",  # should be ignored
-        seed=0  # should override the default
+        seed=0,  # should override the default
     )
     assert out == "the quick brown fox"
 
@@ -123,7 +123,7 @@ def test_streaming(monkeypatch: MonkeyPatch):
     )
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
-        assert url == f"http://llamafile-hostname:8080/completion"
+        assert url == "http://llamafile-hostname:8080/completion"
         assert headers == {
             "Content-Type": "application/json",
         }
@@ -133,7 +133,7 @@ def test_streaming(monkeypatch: MonkeyPatch):
             "prompt": "Test prompt",
             "temperature": 0.8,
             "seed": -1,
-            "stream": True
+            "stream": True,
         }
         assert stream is True
         assert timeout is None

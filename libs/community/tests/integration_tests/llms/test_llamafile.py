@@ -7,7 +7,9 @@ from requests.exceptions import ConnectionError, HTTPError
 
 from langchain_community.llms.llamafile import Llamafile
 
-LLAMAFILE_SERVER_BASE_URL = os.getenv("LLAMAFILE_SERVER_BASE_URL", "http://localhost:8080")
+LLAMAFILE_SERVER_BASE_URL = os.getenv(
+    "LLAMAFILE_SERVER_BASE_URL", "http://localhost:8080"
+)
 
 
 def _ping_llamafile_server():
@@ -23,7 +25,7 @@ def _ping_llamafile_server():
 @pytest.mark.skipif(
     not _ping_llamafile_server(),
     reason=f"unable to find llamafile server at {LLAMAFILE_SERVER_BASE_URL}, "
-           f"please start one and re-run this test"
+    f"please start one and re-run this test",
 )
 def test_llamafile_call():
     llm = Llamafile()
@@ -34,7 +36,7 @@ def test_llamafile_call():
 @pytest.mark.skipif(
     not _ping_llamafile_server(),
     reason=f"unable to find llamafile server at {LLAMAFILE_SERVER_BASE_URL}, "
-           f"please start one and re-run this test"
+    f"please start one and re-run this test",
 )
 def test_llamafile_streaming():
     llm = Llamafile(streaming=True)
