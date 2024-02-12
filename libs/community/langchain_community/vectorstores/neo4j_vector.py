@@ -14,6 +14,7 @@ from typing import (
     Tuple,
     Type,
 )
+import hashlib
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -481,47 +482,64 @@ class Neo4jVector(VectorStore):
         texts: Iterable[str],
         embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
+        parent_ids: Optional[List[str]] = None,  # New argument for parent IDs
         **kwargs: Any,
-    ) -> List[str]:
-        """Add embeddings to the vectorstore.
+        ) -> List[str]:
+            """Add embeddings to the vectorstore.
 
-        Args:
-            texts: Iterable of strings to add to the vectorstore.
-            embeddings: List of list of embedding vectors.
-            metadatas: List of metadatas associated with the texts.
-            kwargs: vectorstore specific parameters
-        """
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            Args:
+                texts: Iterable of strings to add to the vectorstore.
+                embeddings: List of list of embedding vectors.
+                metadatas: List of metadatas associated with the texts.
+                parent_ids: Optionally, a list of parent identifiers for the texts.
+                kwargs: Additional vectorstore-specific parameters.
+            """
 
-        if not metadatas:
-            metadatas = [{} for _ in texts]
+            # Get child ids from the kwargs
+            child_ids = kwargs.get("child_ids", [])
+            parent_ids = kwargs.get("parent_ids", [])
+            relationship = kwargs.get("relationship", "HAS_CHILD")
 
-        import_query = (
-            "UNWIND $data AS row "
-            "CALL { WITH row "
-            f"MERGE (c:`{self.node_label}` {{{self.text_node_property}: row.text}}) "
-            "WITH c, row "
-            f"CALL db.create.setVectorProperty(c, "
-            f"'{self.embedding_node_property}', row.embedding) "
-            "YIELD node "
-            "SET c.id = row.id "
-            "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
-        )
+            # Generate deterministic IDs based on hash of texts
+            ids = [hashlib.sha256(text.encode('utf-8')).hexdigest() for text in texts]
 
-        parameters = {
-            "data": [
-                {"text": text, "metadata": metadata, "embedding": embedding, "id": id}
-                for text, metadata, embedding, id in zip(
-                    texts, metadatas, embeddings, ids
-                )
-            ]
-        }
+            # Initialize metadata for each text if not provided
+            if not metadatas:
+                metadatas = [{} for _ in texts]
 
-        self.query(import_query, params=parameters)
+            # Define the import query with dynamic relationship type
+            import_query = """
+            UNWIND $data AS row
+            MERGE (c:`{node_label}` {{id: row.id}})
+            ON CREATE SET c.{text_property} = row.text, c.{embedding_property} = row.embedding, c += row.metadata
+            WITH c, row
+            FOREACH (parentId IN (CASE WHEN $parent_ids IS NOT NULL THEN $parent_ids ELSE [] END) |
+                MERGE (p:`{node_label}` {{id: parentId}})
+                MERGE (p)-[:HAS_CHILD]->(c)
+            )
+            WITH c
+            FOREACH (childId IN (CASE WHEN $child_ids IS NOT NULL THEN $child_ids ELSE [] END) |
+                MERGE (ch:`{node_label}` {{id: childId}})
+                MERGE (c)-[:{relationship}]->(ch)
+            )
+            """.format(node_label=self.node_label, text_property=self.text_node_property, embedding_property=self.embedding_node_property, relationship=relationship)
 
-        return ids
+
+            parameters = {
+                "data": [
+                    {"text": text, "metadata": metadata, "embedding": embedding, "id": id}
+                    for text, metadata, embedding, id in zip(
+                        texts, metadatas, embeddings, ids
+                    )
+                ],
+                "parent_ids": parent_ids,
+                "child_ids": child_ids,
+            }
+
+            self.query(import_query, params=parameters)
+
+            return ids
+
 
     def add_texts(
         self,
