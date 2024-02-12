@@ -1,1 +1,1 @@
-"Cogniswitch Toolkit"
+"Cogniswitch Tools"
