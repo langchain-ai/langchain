@@ -78,20 +78,6 @@ def test_call(monkeypatch: MonkeyPatch):
             "prompt": "Test prompt",
             **default_generation_params()
         }
-        # assert json == {
-        #     "prompt": "Test prompt",
-        #     "temperature": 0.8,
-        #     "seed": -1,
-        #
-        #     "top_k": 40,
-        #     "top_p": 0.95,
-        #     "min_p": 0.05,
-        #     "n_predict": -1,
-        #     "n_keep": 0,
-        #     "tfs_z": 1.0,
-        #     "typical_p": 1.0,
-        #     "repeat_penalty": 1.1
-        # }
         assert stream is False
         assert timeout is None
         return mock_response()
