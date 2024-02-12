@@ -407,7 +407,11 @@ class ChatOpenAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+                chunk = (
+                    getattr(chunk, "model_dump")()
+                    if hasattr(chunk, "model_dump")
+                    else chunk.dict()
+                )
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -465,7 +469,11 @@ class ChatOpenAI(BaseChatModel):
     def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
-            response = response.dict()
+            response = (
+                getattr(response, "model_dump")()
+                if hasattr(response, "model_dump")
+                else response.dict()
+            )
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res.get("finish_reason"))
@@ -499,7 +507,11 @@ class ChatOpenAI(BaseChatModel):
             messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+                chunk = (
+                    getattr(chunk, "model_dump")()
+                    if hasattr(chunk, "model_dump")
+                    else chunk.dict()
+                )
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
