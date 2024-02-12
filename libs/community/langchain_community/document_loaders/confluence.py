@@ -564,7 +564,7 @@ class ConfluenceLoader(BaseLoader):
                 texts.append(text)
             except requests.HTTPError as e:
                 if e.response.status_code == 404:
-                    print(f"Attachment not found at {absolute_url}")
+                    print(f"Attachment not found at {absolute_url}")  # noqa: T201
                     continue
                 else:
                     raise

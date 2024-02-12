@@ -66,3 +66,36 @@ def test_bulk_message_implementation_only() -> None:
     assert len(store) == 4
     assert store[2] == HumanMessage(content="Hello")
     assert store[3] == HumanMessage(content="World")
+
+
+async def test_async_interface() -> None:
+    """Test async interface for BaseChatMessageHistory."""
+
+    class BulkAddHistory(BaseChatMessageHistory):
+        def __init__(self) -> None:
+            self.messages = []
+
+        def add_messages(self, message: Sequence[BaseMessage]) -> None:
+            """Add a message to the store."""
+            self.messages.extend(message)
+
+        def clear(self) -> None:
+            """Clear the store."""
+            self.messages.clear()
+
+    chat_history = BulkAddHistory()
+    await chat_history.aadd_messages(
+        [HumanMessage(content="Hello"), HumanMessage(content="World")]
+    )
+    assert await chat_history.aget_messages() == [
+        HumanMessage(content="Hello"),
+        HumanMessage(content="World"),
+    ]
+    await chat_history.aadd_messages([HumanMessage(content="!")])
+    assert await chat_history.aget_messages() == [
+        HumanMessage(content="Hello"),
+        HumanMessage(content="World"),
+        HumanMessage(content="!"),
+    ]
+    await chat_history.aclear()
+    assert await chat_history.aget_messages() == []

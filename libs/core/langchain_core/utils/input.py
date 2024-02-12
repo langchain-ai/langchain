@@ -1,4 +1,5 @@
 """Handle chained inputs."""
+
 from typing import Dict, List, Optional, TextIO
 
 _TEXT_COLOR_MAPPING = {
@@ -37,6 +38,6 @@ def print_text(
 ) -> None:
     """Print text with highlighting and no end characters."""
     text_to_print = get_colored_text(text, color) if color else text
-    print(text_to_print, end=end, file=file)
+    print(text_to_print, end=end, file=file)  # noqa: T201
     if file:
         file.flush()  # ensure all printed content are written to file

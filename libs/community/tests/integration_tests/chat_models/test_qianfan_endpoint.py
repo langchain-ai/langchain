@@ -318,11 +318,11 @@ def test_qianfan_key_masked_when_passed_from_env(
     monkeypatch.setenv("QIANFAN_SK", "test-secret-key")
 
     chat = QianfanChatEndpoint()
-    print(chat.qianfan_ak, end="")
+    print(chat.qianfan_ak, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.qianfan_sk, end="")
+    print(chat.qianfan_sk, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
@@ -335,11 +335,11 @@ def test_qianfan_key_masked_when_passed_via_constructor(
         qianfan_ak="test-api-key",
         qianfan_sk="test-secret-key",
     )
-    print(chat.qianfan_ak, end="")
+    print(chat.qianfan_ak, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.qianfan_sk, end="")
+    print(chat.qianfan_sk, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
