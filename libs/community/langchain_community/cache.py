@@ -49,9 +49,11 @@ from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
-from langchain_community.vectorstores.azure_cosmos_db import CosmosDBDocumentType, \
-    CosmosDBSimilarityType, \
-    CosmosDBVectorSearchType
+from langchain_community.vectorstores.azure_cosmos_db import (
+    CosmosDBDocumentType,
+    CosmosDBSimilarityType,
+    CosmosDBVectorSearchType,
+)
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -67,8 +69,8 @@ from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
 
 from langchain_community.utilities.astradb import AstraDBEnvironment
-from langchain_community.vectorstores.redis import Redis as RedisVectorstore
 from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+from langchain_community.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
 
@@ -1632,21 +1634,21 @@ class AzureCosmosDBSemanticCache(BaseCache):
     DEFAULT_COLLECTION_NAME = "CosmosMongoVCoreCacheColl"
 
     def __init__(
-            self,
-            cosmosdb_connection_string: str,
-            embedding: Embeddings,
-            *,
-            cosmosdb_client: Optional[Any] = None,
-            database_name: str = None,
-            collection_name: str = None,
-            num_lists: int = 100,
-            similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
-            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
-            dimensions: int = 1536,
-            m: int = 16,
-            ef_construction: int = 64,
-            ef_search: int = 40,
-            score_threshold: Optional[float] = None
+        self,
+        cosmosdb_connection_string: str,
+        embedding: Embeddings,
+        *,
+        cosmosdb_client: Optional[Any] = None,
+        database_name: str = None,
+        collection_name: str = None,
+        num_lists: int = 100,
+        similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
+        kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+        dimensions: int = 1536,
+        m: int = 16,
+        ef_construction: int = 64,
+        ef_search: int = 40,
+        score_threshold: Optional[float] = None,
     ):
         """
         Args:
@@ -1740,7 +1742,9 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 index_name=index_name,
             )
         else:
-            self._cache_dict[index_name] = AzureCosmosDBVectorSearch.from_connection_string(
+            self._cache_dict[
+                index_name
+            ] = AzureCosmosDBVectorSearch.from_connection_string(
                 connection_string=self.cosmosdb_connection_string,
                 namespace=namespace,
                 embedding=self.embedding,
@@ -1756,7 +1760,8 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 self.similarity,
                 self.dimensions,
                 self.m,
-                self.ef_construction)
+                self.ef_construction,
+            )
 
         return vectorstore
 
@@ -1770,7 +1775,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
             k=1,
             kind=self.kind,
             ef_search=self.ef_search,
-            score_threshold=self.score_threshold
+            score_threshold=self.score_threshold,
         )
         if results:
             for document in results:
@@ -1796,7 +1801,8 @@ class AzureCosmosDBSemanticCache(BaseCache):
             if not isinstance(gen, Generation):
                 raise ValueError(
                     "CosmosDBMongoVCoreSemanticCache only supports caching of "
-                    f"normal LLM generations, got {type(gen)}")
+                    f"normal LLM generations, got {type(gen)}"
+                )
 
         llm_cache = self._get_llm_cache(llm_string)
         metadata = {
@@ -1817,4 +1823,3 @@ class AzureCosmosDBSemanticCache(BaseCache):
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
         if not isinstance(value, enum_type):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
-

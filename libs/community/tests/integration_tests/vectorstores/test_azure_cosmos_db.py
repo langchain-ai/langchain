@@ -10,7 +10,8 @@ from langchain_core.documents import Document
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.azure_cosmos_db import (
     AzureCosmosDBVectorSearch,
-    CosmosDBSimilarityType, CosmosDBVectorSearchType,
+    CosmosDBSimilarityType,
+    CosmosDBVectorSearchType,
 )
 
 logging.basicConfig(level=logging.DEBUG)
@@ -92,7 +93,7 @@ class TestAzureCosmosDBVectorSearch:
         return "805.555.1212"
 
     def test_from_documents_cosine_distance(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -117,7 +118,11 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -127,7 +132,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_from_documents_inner_product(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -152,7 +157,11 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -162,7 +171,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_from_texts_cosine_distance(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -184,7 +193,11 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output[0].page_content == "What is a sandwich?"
@@ -192,7 +205,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_cosine_distance(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -216,18 +229,21 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
         assert output[0].page_content == "What is a sandwich?"
         assert output[0].metadata["c"] == 1
 
-
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_delete_one(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -251,7 +267,11 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -265,16 +285,19 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be updated
 
         output2 = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
         assert output2
         assert output2[0].page_content != "What is a sandwich?"
 
-
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_delete_multiple(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -298,7 +321,11 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=5, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=5,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         first_document_id = str(output[0].metadata["_id"])
@@ -312,21 +339,24 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be updated
 
         output_2 = vectorstore.similarity_search(
-            "Sandwich", k=5, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=5,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
         assert output
         assert output_2
 
         assert len(output) == 4  # we should see all the four documents
         assert (
-                len(output_2) == 1
+            len(output_2) == 1
         )  # we should see only one document left after three have been deleted
-
 
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_inner_product(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -350,7 +380,11 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -360,7 +394,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_euclidean_distance(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -384,7 +418,11 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -394,7 +432,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_max_marginal_relevance_cosine_distance(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = AzureCosmosDBVectorSearch.from_texts(
@@ -422,7 +460,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_max_marginal_relevance_inner_product(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = AzureCosmosDBVectorSearch.from_texts(
@@ -454,7 +492,7 @@ class TestAzureCosmosDBVectorSearch:
     """
 
     def test_from_documents_cosine_distance_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -474,13 +512,21 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            similarity_algorithm,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -490,7 +536,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_from_documents_inner_product_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -510,13 +556,21 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, CosmosDBSimilarityType.IP, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            CosmosDBSimilarityType.IP,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -526,7 +580,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_from_texts_cosine_distance_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -543,13 +597,21 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, CosmosDBSimilarityType.IP, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            CosmosDBSimilarityType.IP,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output[0].page_content == "What is a sandwich?"
@@ -557,7 +619,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_cosine_distance_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -576,24 +638,31 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            similarity_algorithm,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
         assert output[0].page_content == "What is a sandwich?"
         assert output[0].metadata["c"] == 1
 
-
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_delete_one_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -612,13 +681,21 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            similarity_algorithm,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -632,17 +709,19 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be updated
 
         output2 = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
         assert output2
         assert output2[0].page_content != "What is a sandwich?"
 
-
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_delete_multiple_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -661,13 +740,21 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            similarity_algorithm,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=5, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=5,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         first_document_id = str(output[0].metadata["_id"])
@@ -681,22 +768,24 @@ class TestAzureCosmosDBVectorSearch:
         sleep(2)  # waits for the index to be updated
 
         output_2 = vectorstore.similarity_search(
-            "Sandwich", k=5, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=5,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
         assert output
         assert output_2
 
         assert len(output) == 4  # we should see all the four documents
         assert (
-                len(output_2) == 1
+            len(output_2) == 1
         )  # we should see only one document left after three have been deleted
-
 
         vectorstore.delete_index()
 
     def test_from_texts_with_metadatas_inner_product_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -715,13 +804,21 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, CosmosDBSimilarityType.IP, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            CosmosDBSimilarityType.IP,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, kind=CosmosDBVectorSearchType.VECTOR_HNSW, ef_search=ef_search,
-            score_threshold=score_threshold
+            "Sandwich",
+            k=1,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
 
         assert output
@@ -731,7 +828,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_max_marginal_relevance_cosine_distance_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = AzureCosmosDBVectorSearch.from_texts(
@@ -743,13 +840,22 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            similarity_algorithm,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         query = "foo"
         output = vectorstore.max_marginal_relevance_search(
-            query, k=10, kind=CosmosDBVectorSearchType.VECTOR_HNSW, lambda_mult=0.1, score_threshold=score_threshold
+            query,
+            k=10,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            lambda_mult=0.1,
+            score_threshold=score_threshold,
         )
 
         assert len(output) == len(texts)
@@ -759,7 +865,7 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_max_marginal_relevance_inner_product_vector_hnsw(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = AzureCosmosDBVectorSearch.from_texts(
@@ -771,13 +877,22 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW, num_lists, CosmosDBSimilarityType.IP, dimensions, m, ef_construction
+            CosmosDBVectorSearchType.VECTOR_HNSW,
+            num_lists,
+            CosmosDBSimilarityType.IP,
+            dimensions,
+            m,
+            ef_construction,
         )
         sleep(2)  # waits for the index to be set up
 
         query = "foo"
         output = vectorstore.max_marginal_relevance_search(
-            query, k=10, kind=CosmosDBVectorSearchType.VECTOR_HNSW, lambda_mult=0.1, score_threshold=score_threshold
+            query,
+            k=10,
+            kind=CosmosDBVectorSearchType.VECTOR_HNSW,
+            lambda_mult=0.1,
+            score_threshold=score_threshold,
         )
 
         assert len(output) == len(texts)
@@ -788,7 +903,7 @@ class TestAzureCosmosDBVectorSearch:
 
     @staticmethod
     def invoke_delete_with_no_args(
-            azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> Optional[bool]:
         vectorstore: AzureCosmosDBVectorSearch = (
             AzureCosmosDBVectorSearch.from_connection_string(
@@ -803,7 +918,7 @@ class TestAzureCosmosDBVectorSearch:
 
     @staticmethod
     def invoke_delete_by_id_with_no_args(
-            azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         vectorstore: AzureCosmosDBVectorSearch = (
             AzureCosmosDBVectorSearch.from_connection_string(
@@ -817,15 +932,17 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_document_by_id()
 
     def test_invalid_arguments_to_delete(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         with pytest.raises(ValueError) as exception_info:
             self.invoke_delete_with_no_args(azure_openai_embeddings, collection)
         assert str(exception_info.value) == "No document ids provided to delete."
 
     def test_no_arguments_to_delete_by_id(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
     ) -> None:
         with pytest.raises(Exception) as exception_info:
-            self.invoke_delete_by_id_with_no_args(azure_openai_embeddings=azure_openai_embeddings, collection=collection)
+            self.invoke_delete_by_id_with_no_args(
+                azure_openai_embeddings=azure_openai_embeddings, collection=collection
+            )
         assert str(exception_info.value) == "No document id provided to delete."
