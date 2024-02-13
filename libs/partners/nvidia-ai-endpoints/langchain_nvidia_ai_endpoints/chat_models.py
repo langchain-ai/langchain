@@ -1,4 +1,5 @@
 """Chat Model Components Derived from ChatModel/NVIDIA"""
+
 from __future__ import annotations
 
 import base64
@@ -60,7 +61,7 @@ def _is_b64(s: str) -> bool:
 
 def _resize_image(img_data: bytes, max_dim: int = 1024) -> str:
     if not has_pillow:
-        print(
+        print(  # noqa: T201
             "Pillow is required to resize images down to reasonable scale."
             " Please install it using `pip install pillow`."
             " For now, not resizing; may cause NVIDIA API to fail."
