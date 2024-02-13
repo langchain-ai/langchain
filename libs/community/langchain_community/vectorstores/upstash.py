@@ -43,7 +43,7 @@ class UpstashVectorStore(VectorStore):
 
     def __init__(
         self,
-        text_key: Optional[str] = "text",
+        text_key: str = "text",
         index: Optional[Index] = None,
         async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
