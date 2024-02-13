@@ -1,3 +1,5 @@
+name: API docs build
+
 on:
   workflow_dispatch:
   schedule:
