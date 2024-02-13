@@ -30,7 +30,7 @@ def test_huggingface_text_generation() -> None:
     """Test valid call to HuggingFace text generation model."""
     llm = HuggingFaceEndpoint(repo_id="gpt2", model_kwargs={"max_new_tokens": 10})
     output = llm("Say foo:")
-    print(output)
+    print(output)  # noqa: T201
     assert isinstance(output, str)
 
 

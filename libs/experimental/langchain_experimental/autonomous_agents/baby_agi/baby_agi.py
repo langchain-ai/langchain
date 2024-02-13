@@ -1,4 +1,5 @@
 """BabyAGI agent."""
+
 from collections import deque
 from typing import Any, Dict, List, Optional
 
@@ -59,17 +60,17 @@ class BabyAGI(Chain, BaseModel):  # type: ignore[misc]
         self.task_list.append(task)
 
     def print_task_list(self) -> None:
-        print("\033[95m\033[1m" + "\n*****TASK LIST*****\n" + "\033[0m\033[0m")
+        print("\033[95m\033[1m" + "\n*****TASK LIST*****\n" + "\033[0m\033[0m")  # noqa: T201
         for t in self.task_list:
-            print(str(t["task_id"]) + ": " + t["task_name"])
+            print(str(t["task_id"]) + ": " + t["task_name"])  # noqa: T201
 
     def print_next_task(self, task: Dict) -> None:
-        print("\033[92m\033[1m" + "\n*****NEXT TASK*****\n" + "\033[0m\033[0m")
-        print(str(task["task_id"]) + ": " + task["task_name"])
+        print("\033[92m\033[1m" + "\n*****NEXT TASK*****\n" + "\033[0m\033[0m")  # noqa: T201
+        print(str(task["task_id"]) + ": " + task["task_name"])  # noqa: T201
 
     def print_task_result(self, result: str) -> None:
-        print("\033[93m\033[1m" + "\n*****TASK RESULT*****\n" + "\033[0m\033[0m")
-        print(result)
+        print("\033[93m\033[1m" + "\n*****TASK RESULT*****\n" + "\033[0m\033[0m")  # noqa: T201
+        print(result)  # noqa: T201
 
     @property
     def input_keys(self) -> List[str]:
@@ -190,7 +191,7 @@ class BabyAGI(Chain, BaseModel):  # type: ignore[misc]
                 )
             num_iters += 1
             if self.max_iterations is not None and num_iters == self.max_iterations:
-                print(
+                print(  # noqa: T201
                     "\033[91m\033[1m" + "\n*****TASK ENDING*****\n" + "\033[0m\033[0m"
                 )
                 break

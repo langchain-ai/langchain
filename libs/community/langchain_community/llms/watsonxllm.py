@@ -166,24 +166,30 @@ class WatsonxLLM(BaseLLM):
 
             credentials = {
                 "url": values["url"].get_secret_value() if values["url"] else None,
-                "apikey": values["apikey"].get_secret_value()
-                if values["apikey"]
-                else None,
-                "token": values["token"].get_secret_value()
-                if values["token"]
-                else None,
-                "password": values["password"].get_secret_value()
-                if values["password"]
-                else None,
-                "username": values["username"].get_secret_value()
-                if values["username"]
-                else None,
-                "instance_id": values["instance_id"].get_secret_value()
-                if values["instance_id"]
-                else None,
-                "version": values["version"].get_secret_value()
-                if values["version"]
-                else None,
+                "apikey": (
+                    values["apikey"].get_secret_value() if values["apikey"] else None
+                ),
+                "token": (
+                    values["token"].get_secret_value() if values["token"] else None
+                ),
+                "password": (
+                    values["password"].get_secret_value()
+                    if values["password"]
+                    else None
+                ),
+                "username": (
+                    values["username"].get_secret_value()
+                    if values["username"]
+                    else None
+                ),
+                "instance_id": (
+                    values["instance_id"].get_secret_value()
+                    if values["instance_id"]
+                    else None
+                ),
+                "version": (
+                    values["version"].get_secret_value() if values["version"] else None
+                ),
             }
             credentials_without_none_value = {
                 key: value for key, value in credentials.items() if value is not None
@@ -384,14 +390,14 @@ class WatsonxLLM(BaseLLM):
 
                 response = watsonx_llm.stream("What is a molecule")
                 for chunk in response:
-                    print(chunk, end='')
+                    print(chunk, end='')  # noqa: T201
         """
         params = self._get_chat_params(stop=stop)
         for stream_resp in self.watsonx_model.generate_text_stream(
             prompt=prompt, raw_response=True, params=params
         ):
             chunk = self._stream_response_to_generation_chunk(stream_resp)
-            yield chunk
 
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk

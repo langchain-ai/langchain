@@ -1,4 +1,5 @@
 """A Tracer implementation that records to LangChain endpoint."""
+
 from __future__ import annotations
 
 import logging
@@ -62,8 +63,16 @@ def _get_executor() -> ThreadPoolExecutor:
     return _EXECUTOR
 
 
+def _run_to_dict(run: Run) -> dict:
+    return {
+        **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+        "inputs": run.inputs.copy() if run.inputs is not None else None,
+        "outputs": run.outputs.copy() if run.outputs is not None else None,
+    }
+
+
 class LangChainTracer(BaseTracer):
-    """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
+    """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
 
     def __init__(
         self,
@@ -150,7 +159,7 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
-        run_dict = run.dict(exclude={"child_runs"})
+        run_dict = _run_to_dict(run)
         run_dict["tags"] = self._get_tags(run)
         extra = run_dict.get("extra", {})
         extra["runtime"] = get_runtime_environment()
@@ -165,7 +174,7 @@ class LangChainTracer(BaseTracer):
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
         try:
-            run_dict = run.dict()
+            run_dict = _run_to_dict(run)
             run_dict["tags"] = self._get_tags(run)
             self.client.update_run(run.id, **run_dict)
         except Exception as e:
