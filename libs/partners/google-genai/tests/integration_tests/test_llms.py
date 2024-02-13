@@ -4,10 +4,12 @@ Note: This test must be run with the GOOGLE_API_KEY environment variable set to 
       valid API key.
 """
 
+from typing import Generator
+
 import pytest
 from langchain_core.outputs import LLMResult
 
-from langchain_google_genai.llms import GoogleGenerativeAI
+from langchain_google_genai import GoogleGenerativeAI, HarmBlockThreshold, HarmCategory
 
 model_names = ["models/text-bison-001", "gemini-pro"]
 
@@ -60,3 +62,45 @@ def test_generativeai_stream() -> None:
     llm = GoogleGenerativeAI(temperature=0, model="gemini-pro")
     outputs = list(llm.stream("Please say foo:"))
     assert isinstance(outputs[0], str)
+
+
+def test_generativeai_get_num_tokens_gemini() -> None:
+    llm = GoogleGenerativeAI(temperature=0, model="gemini-pro")
+    output = llm.get_num_tokens("How are you?")
+    assert output == 4
+
+
+def test_safety_settings_gemini() -> None:
+    # test with blocked prompt
+    llm = GoogleGenerativeAI(temperature=0, model="gemini-pro")
+    output = llm.generate(prompts=["how to make a bomb?"])
+    assert isinstance(output, LLMResult)
+    assert len(output.generations[0]) == 0
+
+    # safety filters
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    }
+
+    # test with safety filters directly to generate
+    output = llm.generate(["how to make a bomb?"], safety_settings=safety_settings)
+    assert isinstance(output, LLMResult)
+    assert len(output.generations[0]) > 0
+
+    # test with safety filters directly to stream
+    streamed_messages = []
+    output_stream = llm.stream("how to make a bomb?", safety_settings=safety_settings)
+    assert isinstance(output_stream, Generator)
+    for message in output_stream:
+        streamed_messages.append(message)
+    assert len(streamed_messages) > 0
+
+    # test  with safety filters on instantiation
+    llm = GoogleGenerativeAI(
+        model="gemini-pro",
+        safety_settings=safety_settings,
+        temperature=0,
+    )
+    output = llm.generate(prompts=["how to make a bomb?"])
+    assert isinstance(output, LLMResult)
+    assert len(output.generations[0]) > 0

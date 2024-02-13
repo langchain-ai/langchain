@@ -49,7 +49,7 @@ class TestAzureMLChatOnlineEndpoint:
     ) -> None:
         """Test that the API key is masked"""
         azure_chat = request.getfixturevalue(fixture_name)
-        print(azure_chat.endpoint_api_key, end="")
+        print(azure_chat.endpoint_api_key, end="")  # noqa: T201
         captured = capsys.readouterr()
         assert (
             (str(azure_chat.endpoint_api_key) == "**********")
