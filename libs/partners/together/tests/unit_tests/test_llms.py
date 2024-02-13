@@ -1,4 +1,5 @@
 """Test Together LLM"""
+
 from typing import cast
 
 from langchain_core.pydantic_v1 import SecretStr
@@ -28,7 +29,7 @@ def test_together_api_key_masked_when_passed_from_env(
         temperature=0.2,
         max_tokens=250,
     )
-    print(llm.together_api_key, end="")
+    print(llm.together_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -44,7 +45,7 @@ def test_together_api_key_masked_when_passed_via_constructor(
         temperature=0.2,
         max_tokens=250,
     )
-    print(llm.together_api_key, end="")
+    print(llm.together_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

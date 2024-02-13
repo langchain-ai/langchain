@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import base64
 from abc import ABC, abstractmethod
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     Iterator,
@@ -13,40 +16,35 @@ from typing import (
 
 from langchain_core.stores import BaseStore, ByteStore
 
+from langchain_community.utilities.astradb import AstraDBEnvironment
+
+if TYPE_CHECKING:
+    from astrapy.db import AstraDB
+
 V = TypeVar("V")
 
 
 class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
+    """Base class for the DataStax AstraDB data store."""
+
     def __init__(
         self,
         collection_name: str,
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[Any] = None,  # 'astrapy.db.AstraDB' if passed
+        astra_db_client: Optional[AstraDB] = None,
         namespace: Optional[str] = None,
     ) -> None:
-        try:
-            from astrapy.db import AstraDB, AstraDBCollection
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Could not import a recent astrapy python package. "
-                "Please install it with `pip install --upgrade astrapy`."
-            )
-
-        # Conflicting-arg checks:
-        if astra_db_client is not None:
-            if token is not None or api_endpoint is not None:
-                raise ValueError(
-                    "You cannot pass 'astra_db_client' to AstraDB if passing "
-                    "'token' and 'api_endpoint'."
-                )
-
-        astra_db = astra_db_client or AstraDB(
+        astra_env = AstraDBEnvironment(
             token=token,
             api_endpoint=api_endpoint,
+            astra_db_client=astra_db_client,
             namespace=namespace,
         )
-        self.collection = AstraDBCollection(collection_name, astra_db=astra_db)
+        self.astra_db = astra_env.astra_db
+        self.collection = self.astra_db.create_collection(
+            collection_name=collection_name,
+        )
 
     @abstractmethod
     def decode_value(self, value: Any) -> Optional[V]:
@@ -83,6 +81,7 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
 
 class AstraDBStore(AstraDBBaseStore[Any]):
     """BaseStore implementation using DataStax AstraDB as the underlying store.
+
     The value type can be any type serializable by json.dumps.
     Can be used to store embeddings with the CacheBackedEmbeddings.
     Documents in the AstraDB collection will have the format
@@ -101,6 +100,7 @@ class AstraDBStore(AstraDBBaseStore[Any]):
 
 class AstraDBByteStore(AstraDBBaseStore[bytes], ByteStore):
     """ByteStore implementation using DataStax AstraDB as the underlying store.
+
     The bytes values are converted to base64 encoded strings
     Documents in the AstraDB collection will have the format
     {
