@@ -1,4 +1,5 @@
 """Test ChatYuan2 wrapper."""
+from typing import List
 
 import pytest
 from langchain_core.callbacks import CallbackManager
@@ -61,7 +62,7 @@ def test_chat_yuan2_generate() -> None:
         max_retries=3,
         streaming=False,
     )
-    messages = [
+    messages: List = [
         HumanMessage(content="Hello"),
     ]
     response = chat.generate([messages])
@@ -73,6 +74,7 @@ def test_chat_yuan2_generate() -> None:
         assert isinstance(gen, ChatGeneration)
         assert isinstance(gen.text, str)
         assert gen.text == gen.message.content
+
 
 @pytest.mark.scheduled
 def test_chat_yuan2_streaming() -> None:
@@ -108,7 +110,7 @@ async def test_async_chat_yuan2() -> None:
         max_retries=3,
         streaming=False,
     )
-    messages = [
+    messages: List = [
         HumanMessage(content="Hello"),
     ]
     response = await chat.agenerate([messages])
@@ -136,7 +138,7 @@ async def test_async_chat_yuan2_streaming() -> None:
         streaming=True,
         callback_manager=callback_manager,
     )
-    messages = [
+    messages: List = [
         HumanMessage(content="Hello"),
     ]
     response = await chat.agenerate([messages])

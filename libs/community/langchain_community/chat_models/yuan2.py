@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
@@ -44,10 +45,6 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from openai.types.chat import (
-    ChatCompletion,
-    ChatCompletionMessage,
-)
 from tenacity import (
     before_sleep_log,
     retry,
@@ -55,6 +52,9 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +71,11 @@ def _create_retry_decorator(llm: ChatYuan2) -> Callable[[Any], Any]:
         stop=stop_after_attempt(llm.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-                retry_if_exception_type(openai.APITimeoutError)
-                | retry_if_exception_type(openai.APIError)
-                | retry_if_exception_type(openai.APIConnectionError)
-                | retry_if_exception_type(openai.RateLimitError)
-                | retry_if_exception_type(openai.InternalServerError)
+            retry_if_exception_type(openai.APITimeoutError)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.InternalServerError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -94,7 +94,7 @@ async def acompletion_with_retry(llm: ChatYuan2, **kwargs: Any) -> Any:
 
 
 def _convert_delta_to_message_chunk(
-        _dict: ChatCompletionMessage, default_class: Type[BaseMessageChunk]
+    _dict: ChatCompletionMessage, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
@@ -207,8 +207,7 @@ class ChatYuan2(BaseChatModel):
     """Automatically inferred from env var `YUAN2_API_KEY` if not provided."""
 
     yuan2_api_base: Optional[str] = Field(
-        default="http://127.0.0.1:8000",
-        alias="base_url"
+        default="http://127.0.0.1:8000", alias="base_url"
     )
     """Base URL path for API requests, an OpenAI compatible API server."""
 
@@ -251,6 +250,7 @@ class ChatYuan2(BaseChatModel):
 
     class Config:
         """Configuration for this pydantic object."""
+
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -352,17 +352,14 @@ class ChatYuan2(BaseChatModel):
                     overall_token_usage[k] += v
                 else:
                     overall_token_usage[k] = v
-        return {
-            "token_usage": overall_token_usage,
-            "model_name": self.model_name
-        }
+        return {"token_usage": overall_token_usage, "model_name": self.model_name}
 
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
@@ -390,11 +387,11 @@ class ChatYuan2(BaseChatModel):
                 run_manager.on_llm_new_token(chunk.content)
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
             stream_iter = self._stream(
@@ -408,7 +405,7 @@ class ChatYuan2(BaseChatModel):
         return self._create_chat_result(response)
 
     def _create_message_dicts(
-            self, messages: List[BaseMessage], stop: Optional[List[str]]
+        self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = dict(self._invocation_params)
         if stop is not None:
@@ -438,18 +435,18 @@ class ChatYuan2(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
         async for chunk in await acompletion_with_retry(
-                self, messages=message_dicts, **params
+            self, messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -472,11 +469,11 @@ class ChatYuan2(BaseChatModel):
                 await run_manager.on_llm_new_token(chunk.content)
 
     async def _agenerate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
             stream_iter = self._astream(
