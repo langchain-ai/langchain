@@ -12,6 +12,7 @@ def _make_iterator(
     length_func: Callable[[], int], show_progress: bool = False
 ) -> Callable[[Iterable[T]], Iterator[T]]:
     """Create a function that optionally wraps an iterable in tqdm."""
+    iterator: Callable[[Iterable[T]], Iterator[T]]
     if show_progress:
         try:
             from tqdm.auto import tqdm
@@ -29,7 +30,7 @@ def _make_iterator(
 
         iterator = _with_tqdm
     else:
-        iterator = iter  # type: ignore
+        iterator = iter
 
     return iterator
 
