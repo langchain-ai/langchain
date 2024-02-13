@@ -16,8 +16,7 @@ from tests.integration_tests.cache.fake_embeddings import (
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-DEFAULT = "mongodb://localhost:62754/?directConnection=true"
-CONN_STRING = os.environ.get("MONGODB_ATLAS_URI", DEFAULT)
+CONN_STRING = os.environ.get("MONGODB_ATLAS_URI")
 COLLECTION = "default"
 DATABASE = "default"
 

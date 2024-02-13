@@ -1652,6 +1652,7 @@ def _generate_mongo_client(connection_string: str):
         driver=DriverInfo(name="Langchain", version=version("langchain")),
     )
 
+
 def _wait_until(predicate, success_description, timeout=10):
     """Wait up to 10 seconds (by default) for predicate to be true.
 
@@ -1677,8 +1678,12 @@ def _wait_until(predicate, success_description, timeout=10):
 
         time.sleep(interval)
 
+
 class MongoDBAtlasCache(BaseCache):
-    """MongoDB Atlas cache."""
+    """MongoDB Atlas cache
+
+    A cache that uses MongoDB Atlas as a backend
+    """
 
     PROMPT = "prompt"
     LLM = "llm"
@@ -1690,6 +1695,17 @@ class MongoDBAtlasCache(BaseCache):
         database_name: str = "default",
         **kwargs,
     ):
+        """
+        Initialize Atlas Cache. Creates collection on instantiation
+
+        Args:
+            collection_name (str): Name of collection for cache to live.
+                Defaults to "default".
+            connection_string (str): Connection URI to MongoDB Atlas.
+                Defaults to "default".
+            database_name (str): Name of database for cache to live.
+                Defaults to "default".
+        """
         self.client = _generate_mongo_client(connection_string)
 
         self.__database_name = database_name
@@ -1702,10 +1718,12 @@ class MongoDBAtlasCache(BaseCache):
 
     @property
     def database(self):
+        """Returns the database used to store cache values."""
         return self.client[self.__database_name]
 
     @property
     def collection(self):
+        """Returns the collection used to store cache values."""
         return self.database[self.__collection_name]
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
@@ -1729,12 +1747,22 @@ class MongoDBAtlasCache(BaseCache):
         return {self.PROMPT: prompt, self.LLM: llm_string}
 
     def clear(self, **kwargs: Any) -> None:
-        """Clear cache that can take additional keyword arguments."""
-        self.collection.delete_many({})
+        """Clear cache that can take additional keyword arguments.
+        Any additional arguments will propagate as filtration criteria for
+        what gets deleted.
+
+        E.g.
+            # Delete only entries that have llm_string as "fake-model"
+            self.clear(llm_string="fake-model")
+        """
+        self.collection.delete_many({**kwargs})
 
 
 class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
-    """MongoDB Atlas Semantic cache."""
+    """MongoDB Atlas Semantic cache.
+
+    A Cache backed by a MongoDB Atlas server with vector-store support
+    """
 
     LLM = "llm_string"
     RETURN_VAL = "return_val"
@@ -1748,6 +1776,20 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         wait_until_ready: bool = False,
         **kwargs,
     ):
+        """
+        Initialize Atlas VectorSearch Cache.
+        Assumes collection exists before instantiation
+
+        Args:
+            connection_string (str): MongoDB URI to connect to MongoDB Atlas cluster.
+            embedding (Embeddings): Text embedding model to use.
+            collection_name (str): MongoDB Collection to add the texts to.
+                Defaults to "default".
+            database_name (str): MongoDB Database where to store texts.
+                Defaults to "default".
+            wait_until_ready (bool): Block until MongoDB Atlas finishes indexing
+                the stored text. Hard timeout of 10 seconds. Defaults to False.
+        """
         client = _generate_mongo_client(connection_string)
         self.collection = client[database_name][collection_name]
         self._wait_until_ready = wait_until_ready
@@ -1759,10 +1801,16 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
             prompt, 1, pre_filter={self.LLM: {"$eq": llm_string}}
         )
         if search_response:
-            return_val = search_response[0][0].metadata.get('return_val')
-            return _loads_generations(return_val) or return_val 
+            return_val = search_response[0][0].metadata.get("return_val")
+            return _loads_generations(return_val) or return_val
 
-    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE, wait_until_ready: Optional[bool] = None) -> None:
+    def update(
+        self,
+        prompt: str,
+        llm_string: str,
+        return_val: RETURN_VAL_TYPE,
+        wait_until_ready: Optional[bool] = None,
+    ) -> None:
         """Update cache based on prompt and llm_string."""
         self.add_texts(
             [prompt],
@@ -1776,20 +1824,18 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         wait = self._wait_until_ready if wait_until_ready is None else wait_until_ready
 
         def is_value_stored():
-            lookup = self.lookup(prompt, llm_string)
-            print(lookup)
-            return lookup == return_val
+            return self.lookup(prompt, llm_string) == return_val
 
         if wait:
             _wait_until(is_value_stored, return_val)
 
-    def clear(self, llm_string=False, **kwargs: Any) -> None:
-        """Clear cache that can take additional keyword arguments."""
-        specs = {}
-        if llm_string:
-            specs[self.LLM] = {"$exists": True}
-        additional_kwargs = {
-            k: {"$exists": True} for k, v in kwargs.items() if v is True
-        }
-        self.collection.delete_many({**additional_kwargs, **specs})
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache that can take additional keyword arguments.
+        Any additional arguments will propagate as filtration criteria for
+        what gets deleted.
 
+        E.g.
+            # Delete only entries that have llm_string as "fake-model"
+            self.clear(llm_string="fake-model")
+        """
+        self.collection.delete_many({**kwargs})
