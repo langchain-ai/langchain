@@ -17,7 +17,13 @@ class Yuan2(LLM):
     Example:
         .. code-block:: python
 
-            yuan_llm = Yuan2(infer_api="http://127.0.0.1:8000/yuan", max_tokens=1024, temp=1.0, top_p=0.9, top_k=40)
+            yuan_llm = Yuan2(
+                infer_api="http://127.0.0.1:8000/yuan", 
+                max_tokens=1024, 
+                temp=1.0, 
+                top_p=0.9, 
+                top_k=40,
+            )
             print(yuan_llm)
             print(yuan_llm("你是谁？"))
     """
@@ -38,7 +44,8 @@ class Yuan2(LLM):
     """The top-k value to use for sampling."""
 
     do_sample: bool = False
-    """The do_sample is a Boolean value that determines whether to use the sampling method during text generation."""
+    """The do_sample is a Boolean value that determines whether 
+    to use the sampling method during text generation."""
 
     echo: Optional[bool] = False
     """Whether to echo the prompt."""
@@ -148,7 +155,8 @@ class Yuan2(LLM):
 
             if resp["errCode"] != "0":
                 raise ValueError(
-                    f"Failed with error code [{resp['errCode']}], error message: [{resp['errMessage']}]"
+                    f"Failed with error code [{resp['errCode']}], "
+                    f"error message: [{resp['errMessage']}]"
                 )
 
             if "resData" in resp:
