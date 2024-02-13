@@ -5,7 +5,7 @@ This template performs RAG with no reliance on external APIs.
 
 It utilizes Ollama the LLM, GPT4All for embeddings, and ClickHouse for the vectorstore.
 
-The vectorstore is created in `chain.py` and by default indexes a [popular blog posts on Agents](https://lilianweng.github.io/posts/2023-06-23-agent/) for question-answering. 
+The vectorstore is created in `chain.py` and by default indexes a [blog post about feature stores]([https://lilianweng.github.io/posts/2023-06-23-agent/](https://clickhouse.com/blog/powering-featurestores-with-clickhouse)) for question-answering. 
 
 ## Environment Setup
 
