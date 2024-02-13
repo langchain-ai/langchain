@@ -19,7 +19,10 @@ class EmbeddingInputOutputAdapter:
 
     @classmethod
     def prepare_inputs(
-        cls, provider: str, texts: List[str], model_kwargs: Dict[str, Any],
+        cls,
+        provider: str,
+        texts: List[str],
+        model_kwargs: Dict[str, Any],
         input_type: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         input_body = {**model_kwargs}
@@ -32,18 +35,13 @@ class EmbeddingInputOutputAdapter:
             return [input_body]
         elif provider == "amazon":
             # amazon does not support native batching
-            return [
-                {**input_body, "inputText": text}
-                for text in texts
-            ]
+            return [{**input_body, "inputText": text} for text in texts]
         else:
             msg = f"Provider {provider} not supported"
             raise NotImplementedError(msg)
 
     @classmethod
-    def prepare_outputs(
-        cls, provider: str, response: Any
-    ) -> List[List[float]]:
+    def prepare_outputs(cls, provider: str, response: Any) -> List[List[float]]:
         response_body = json.loads(response.get("body").read())
         if provider == "cohere":
             return response_body.get("embeddings")
@@ -51,9 +49,7 @@ class EmbeddingInputOutputAdapter:
             return [response_body.get("embedding")]
 
     @classmethod
-    def prepare_output(
-        cls, provider: str, response: Any
-    ) -> List[float]:
+    def prepare_output(cls, provider: str, response: Any) -> List[float]:
         return EmbeddingInputOutputAdapter.prepare_outputs(provider, response)[0]
 
 
@@ -160,7 +156,6 @@ class BedrockEmbeddings(BaseModel, Embeddings):
 
         return values
 
-
     def _embedding_func(
         self, texts: List[str], input_type: Optional[str] = None
     ) -> List[List[float]]:
@@ -179,7 +174,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             # invoke bedrock API
             responses = [
                 self.client.invoke_model(
-                   body=json.dumps(input_body),
+                    body=json.dumps(input_body),
                     modelId=self.model_id,
                     accept="application/json",
                     contentType="application/json",
@@ -212,10 +207,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         """
         embeddings = self._embedding_func(texts, input_type="search_document")
         if self.normalize:
-            embeddings = [
-                self._normalize_vector(embedding)
-                for embedding in embeddings
-            ]
+            embeddings = [self._normalize_vector(embedding) for embedding in embeddings]
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
