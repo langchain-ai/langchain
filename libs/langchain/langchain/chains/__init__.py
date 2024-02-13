@@ -41,6 +41,7 @@ from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
+from langchain.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
 from langchain.chains.graph_qa.ontotext_graphdb import OntotextGraphDBQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
@@ -116,6 +117,7 @@ __all__ = [
     "NatBotChain",
     "NebulaGraphQAChain",
     "NeptuneOpenCypherQAChain",
+    "NeptuneSparqlQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
     "QAGenerationChain",
