@@ -224,16 +224,6 @@ class ChatYuan2(BaseChatModel):
     top_p: Optional[float] = 0.9
     """The top-p value to use for sampling."""
 
-    # top_k: Optional[int] = 40
-    # """The top-k value to use for sampling."""
-
-    # do_sample: bool = False
-    # """The do_sample is a Boolean value that determines whether
-    # to use the sampling method during text generation."""
-
-    # echo: Optional[bool] = False
-    # """Whether to echo the prompt."""
-
     stop: Optional[List[str]] = ["<eod>"]
     """A list of strings to stop generation when encountered."""
 
