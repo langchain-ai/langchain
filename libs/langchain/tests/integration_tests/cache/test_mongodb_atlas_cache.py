@@ -2,11 +2,12 @@ import os
 import uuid
 
 import pytest
-from langchain.cache import MongoDBAtlasCache, MongoDBAtlasSemanticCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.load.dump import dumps
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
-from langchain_core.messages import HumanMessage, AIMessage
+
+from langchain.cache import MongoDBAtlasCache, MongoDBAtlasSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
 from tests.integration_tests.cache.fake_embeddings import (
     ConsistentFakeEmbeddings,
