@@ -428,7 +428,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         if save_path.suffix == ".json":
             with open(save_path, "w") as f:
                 json.dump(self.deanonymizer_mapping, f, indent=2)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(save_path, "w") as f:
                 yaml.dump(self.deanonymizer_mapping, f, default_flow_style=False)
 
@@ -452,7 +452,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         if load_path.suffix == ".json":
             with open(load_path, "r") as f:
                 loaded_mapping = json.load(f)
-        elif load_path.suffix == ".yaml":
+        elif load_path.suffix.endswith((".yaml", ".yml")):
             with open(load_path, "r") as f:
                 loaded_mapping = yaml.load(f, Loader=yaml.FullLoader)
 

@@ -65,6 +65,12 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     since: Optional[str] = None
     """Only show notifications updated after the given time.
         This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ."""
+    page: Optional[int] = None
+    """The page number for paginated results. 
+        Defaults to 1 in the GitHub API."""
+    per_page: Optional[int] = None
+    """Number of items per page. 
+        Defaults to 30 in the GitHub API."""
 
     @validator("since", allow_reuse=True)
     def validate_since(cls, v: Optional[str]) -> Optional[str]:
@@ -112,7 +118,11 @@ class GitHubIssuesLoader(BaseGitHubLoader):
                 if not self.include_prs and doc.metadata["is_pull_request"]:
                     continue
                 yield doc
-            if response.links and response.links.get("next"):
+            if (
+                response.links
+                and response.links.get("next")
+                and (not self.page and not self.per_page)
+            ):
                 url = response.links["next"]["url"]
             else:
                 url = None
@@ -176,6 +186,8 @@ class GitHubIssuesLoader(BaseGitHubLoader):
             "sort": self.sort,
             "direction": self.direction,
             "since": self.since,
+            "page": self.page,
+            "per_page": self.per_page,
         }
         query_params_list = [
             f"{k}={v}" for k, v in query_params_dict.items() if v is not None
