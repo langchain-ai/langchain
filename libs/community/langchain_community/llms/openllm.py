@@ -217,9 +217,9 @@ class OpenLLM(LLM):
     def _identifying_params(self) -> IdentifyingParams:
         """Get the identifying parameters."""
         if self._client is not None:
-            self.llm_kwargs.update(self._client._config())
-            model_name = self._client._metadata()["model_name"]
-            model_id = self._client._metadata()["model_id"]
+            self.llm_kwargs.update(self._client._config)
+            model_name = self._client._metadata.model_dump()["model_name"]
+            model_id = self._client._metadata.model_dump()["model_id"]
         else:
             if self._runner is None:
                 raise ValueError("Runner must be initialized.")
