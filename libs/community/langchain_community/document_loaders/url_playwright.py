@@ -114,20 +114,19 @@ class PlaywrightURLLoader(BaseLoader):
         proxy (Optional[Dict[str, str]]): If set, the browser will access URLs
             through the specified proxy.
 
-    Examples
-    --------
-    # crwal with proxy
-    from langchain_community.document_loaders import PlaywrightURLLoader
-    urls = [
-        "https://api.ipify.org/?format=json",
-    ]
-    proxy={
-        "server": "https://xx.xx.xx:15818", # https://<host>:<port>
-        "username": "username",
-        "password": "password"
-    }
-    loader = PlaywrightURLLoader(urls=urls, proxy=proxy)
-    data = loader.load()
+    Example:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import PlaywrightURLLoader
+
+            urls = ["https://api.ipify.org/?format=json",]
+            proxy={
+                "server": "https://xx.xx.xx:15818", # https://<host>:<port>
+                "username": "username",
+                "password": "password"
+            }
+            loader = PlaywrightURLLoader(urls, proxy=proxy)
+            data = loader.load()
     """
 
     def __init__(
