@@ -1,10 +1,11 @@
 import os
 import uuid
+from typing import Any
 
 import pytest
-from langchain_core.embeddings import Embeddings
+from langchain_core.caches import BaseCache
 from langchain_core.load.dump import dumps
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
 from langchain.cache import MongoDBAtlasCache, MongoDBAtlasSemanticCache
@@ -25,7 +26,7 @@ def random_string() -> str:
     return str(uuid.uuid4())
 
 
-def llm_cache(cls):
+def llm_cache(cls: Any) -> BaseCache:
     set_llm_cache(
         cls(
             embedding=ConsistentFakeEmbeddings(dimensionality=1536),
@@ -39,33 +40,40 @@ def llm_cache(cls):
     return get_llm_cache()
 
 
-def _execute_test(prompt, llm, response):
+def _execute_test(
+    prompt: str | list[BaseMessage],
+    llm: str | FakeLLM | FakeChatModel,
+    response: list[Generation],
+) -> None:
     # Fabricate an LLM String
-    llm_string = llm
 
     if not isinstance(llm, str):
         params = llm.dict()
         params["stop"] = None
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    else:
+        llm_string = llm
 
     # If the prompt is a str then we should pass just the string
-    dumped_prompt = prompt if isinstance(prompt, str) else dumps(prompt)
+    dumped_prompt: str = prompt if isinstance(prompt, str) else dumps(prompt)
 
     # Update the cache
     get_llm_cache().update(dumped_prompt, llm_string, response)
 
     # Retrieve the cached result through 'generate' call
+    output: list[Generation] | LLMResult | None
+    expected_output: list[Generation] | LLMResult
     if isinstance(llm, str):
-        output = get_llm_cache().lookup(prompt, llm)
+        output = get_llm_cache().lookup(dumped_prompt, llm)  # type: ignore
         expected_output = response
     else:
-        output = llm.generate([prompt])
+        output = llm.generate([prompt])  # type: ignore
         expected_output = LLMResult(
             generations=[response],
             llm_output={},
         )
 
-    assert output == expected_output
+    assert output == expected_output  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -86,7 +94,12 @@ def _execute_test(prompt, llm, response):
     ],
 )
 @pytest.mark.parametrize("cacher", [MongoDBAtlasCache, MongoDBAtlasSemanticCache])
-def test_mongodb_cache(cacher, prompt, llm, response):
+def test_mongodb_cache(
+    cacher: MongoDBAtlasCache | MongoDBAtlasSemanticCache,
+    prompt: str | list[BaseMessage],
+    llm: str | FakeLLM | FakeChatModel,
+    response: list[Generation],
+) -> None:
     llm_cache(cacher)
     try:
         _execute_test(prompt, llm, response)
@@ -94,7 +107,6 @@ def test_mongodb_cache(cacher, prompt, llm, response):
         get_llm_cache().clear()
 
 
-@pytest.mark.parametrize("embedding", [ConsistentFakeEmbeddings(dimensionality=1536)])
 @pytest.mark.parametrize(
     "prompts, generations",
     [
@@ -118,10 +130,9 @@ def test_mongodb_cache(cacher, prompt, llm, response):
     ],
 )
 def test_mongodb_atlas_cache_matrix(
-    embedding: Embeddings,
     prompts: list[str],
     generations: list[list[str]],
-):
+) -> None:
     llm_cache(MongoDBAtlasSemanticCache)
     llm = FakeLLM()
 
