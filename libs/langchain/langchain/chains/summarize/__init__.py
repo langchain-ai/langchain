@@ -52,6 +52,7 @@ def _load_map_reduce_chain(
     verbose: Optional[bool] = None,
     token_max: int = 3000,
     callbacks: Callbacks = None,
+    *,
     collapse_max_retries: Optional[int] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
