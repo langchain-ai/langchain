@@ -1,11 +1,8 @@
-from __future__ import annotations
-
 import asyncio
 import json
 import warnings
 from abc import ABC
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     AsyncIterator,
@@ -30,9 +27,6 @@ from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
-
-if TYPE_CHECKING:
-    from botocore.config import Config
 
 AMAZON_BEDROCK_TRACE_KEY = "amazon-bedrock-trace"
 GUARDRAILS_BODY_KEY = "amazon-bedrock-guardrailAssessment"
@@ -226,9 +220,6 @@ class BedrockBase(BaseModel, ABC):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    config: Optional[Config] = None
-    """An optional botocore.config.Config instance to pass to the client."""
-
     provider: Optional[str] = None
     """The model provider, e.g., amazon, cohere, ai21, etc. When not supplied, provider
     is extracted from the first part of the model_id e.g. 'amazon' in 
@@ -333,8 +324,6 @@ class BedrockBase(BaseModel, ABC):
                 client_params["region_name"] = values["region_name"]
             if values["endpoint_url"]:
                 client_params["endpoint_url"] = values["endpoint_url"]
-            if values["config"]:
-                client_params["config"] = values["config"]
 
             values["client"] = session.client("bedrock-runtime", **client_params)
 
