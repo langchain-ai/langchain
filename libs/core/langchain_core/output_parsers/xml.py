@@ -48,6 +48,9 @@ class XMLOutputParser(BaseTransformOutputParser):
             text.endswith(">") or text.endswith(">\n")
         ):
             root = ET.fromstring(text)
+            # If root text contains any non-whitespace character it returns {root.tag: root.text}
+            if bool(re.search(r'\S', root.text)):
+                return {root.tag: root.text}
             return self._root_to_dict(root)
         else:
             raise ValueError(f"Could not parse output: {text}")
