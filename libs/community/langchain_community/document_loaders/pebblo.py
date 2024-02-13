@@ -5,7 +5,7 @@ import os
 import pwd
 import uuid
 from http import HTTPStatus
-from typing import Any, Iterator, List
+from typing import Any, Iterator, List, Dict
 
 import requests
 from langchain_core.documents import Document
@@ -147,7 +147,7 @@ class PebbloSafeLoader(BaseLoader):
                     ),
                 }
             )
-        payload: dict[str, Any] = {
+        payload: Dict[str, Any] = {
             "name": self.app_name,
             "owner": self.owner,
             "docs": docs,
