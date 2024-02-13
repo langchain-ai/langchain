@@ -619,9 +619,12 @@ class OpenSearchVectorSearch(VectorStore):
         if ids is None:
             raise ValueError("No ids provided to delete.")
 
-        # TODO: Check if this can be done in bulk
-        for id in ids:
-            self.client.delete(index=self.index_name, id=id)
+        actions = [{"delete": {"_index": self.index_name, "_id": id_}} for id_ in ids]
+        response = self.client.bulk(actions, **kwargs)
+
+        return not any(
+            item.get("delete", {}).get("error") for item in response["items"]
+        )
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
@@ -639,11 +642,8 @@ class OpenSearchVectorSearch(VectorStore):
         if ids is None:
             raise ValueError("No ids provided to delete.")
 
-        # Perform bulk deletion
         actions = [{"delete": {"_index": self.index_name, "_id": id_}} for id_ in ids]
-        # Execute bulk operation asynchronously
         response = await self.async_client.bulk(body=actions, **kwargs)
-        # Check for errors in the bulk response
         return not any(
             item.get("delete", {}).get("error") for item in response["items"]
         )
@@ -738,9 +738,11 @@ class OpenSearchVectorSearch(VectorStore):
             (
                 Document(
                     page_content=hit["_source"][text_field],
-                    metadata=hit["_source"]
-                    if metadata_field == "*" or metadata_field not in hit["_source"]
-                    else hit["_source"][metadata_field],
+                    metadata=(
+                        hit["_source"]
+                        if metadata_field == "*" or metadata_field not in hit["_source"]
+                        else hit["_source"][metadata_field]
+                    ),
                 ),
                 hit["_score"],
             )
