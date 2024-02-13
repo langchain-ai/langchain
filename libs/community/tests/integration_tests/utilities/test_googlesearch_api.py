@@ -1,4 +1,5 @@
 """Integration test for Google Search API Wrapper."""
+
 from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 
 
@@ -15,7 +16,7 @@ def test_no_result_call() -> None:
     output = search.run(
         "NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL"
     )
-    print(type(output))
+    print(type(output))  # noqa: T201
     assert "No good Google Search Result was found" == output
 
 
