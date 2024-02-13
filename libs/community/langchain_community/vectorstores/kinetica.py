@@ -154,11 +154,7 @@ class Kinetica(VectorStore):
                             Defaults to None.
         """
 
-        self.dimensions = (
-            int(Dimension.OPENAI)
-            if dimensions is None or not isinstance(dimensions, int) or dimensions <= 0
-            else dimensions
-        )
+        self.dimensions = dimensions
 
         self._config = config
         self.embedding_function = embedding_function
