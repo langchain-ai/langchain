@@ -6,7 +6,18 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
+
 from urllib.parse import urlparse
 
 import requests
@@ -25,6 +36,9 @@ from langchain_community.document_loaders.parsers.pdf import (
     PyPDFParser,
 )
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
+
+if TYPE_CHECKING:
+    from textractor.data.text_linearization_config import TextLinearizationConfig
 
 logger = logging.getLogger(__file__)
 
@@ -588,11 +602,13 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         self,
         file_path: str,
         textract_features: Optional[Sequence[str]] = None,
+        linearization_config: Optional[TextLinearizationConfig] = None,
         client: Optional[Any] = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
         endpoint_url: Optional[str] = None,
         headers: Optional[Dict] = None,
+
     ) -> None:
         """Initialize the loader.
 
@@ -601,6 +617,9 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             textract_features: Features to be used for extraction, each feature
                                should be passed as a str that conforms to the enum
                                `Textract_Features`, see `amazon-textract-caller` pkg
+            linearization_config: Config to be used for linearization of the output
+                                  should be an instance of TextLinearizationConfig from
+                                  the `textractor` pkg
             client: boto3 textract client (Optional)
             credentials_profile_name: AWS profile name, if not default (Optional)
             region_name: AWS region, eg us-east-1 (Optional)
@@ -650,7 +669,11 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                     "Please check that credentials in the specified "
                     "profile name are valid."
                 ) from e
-        self.parser = AmazonTextractPDFParser(textract_features=features, client=client)
+        self.parser = AmazonTextractPDFParser(
+            textract_features=features,
+            linearization_config=linearization_config,
+            client=client,
+        )
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
