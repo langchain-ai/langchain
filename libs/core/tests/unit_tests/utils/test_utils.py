@@ -1,5 +1,5 @@
 from contextlib import AbstractContextManager, nullcontext
-from typing import Dict, Optional, Tuple, Type
+from typing import Dict, Optional, Tuple, Type, Union
 from unittest.mock import patch
 
 import pytest
@@ -91,7 +91,7 @@ def test_check_package_version(
     ),
 )
 def test_merge_dicts(
-    left: dict, right: dict, expected: dict | AbstractContextManager
+    left: dict, right: dict, expected: Union[dict, AbstractContextManager]
 ) -> None:
     if isinstance(expected, AbstractContextManager):
         err = expected
