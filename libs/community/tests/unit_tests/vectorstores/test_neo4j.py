@@ -52,10 +52,11 @@ def test_index_fetching() -> None:
     url = os.getenv("NEO4J_URI")
     username = os.getenv("NEO4J_USERNAME")
     password = os.getenv("NEO4J_PASSWORD")
+    embeddings = FakeEmbeddings()
 
-    def create_index(node_label, index, text_properties):
+    def create_store(node_label, index, text_properties) -> Neo4jVector:
         return Neo4jVector.from_existing_graph(
-            embedding=FakeEmbeddings(),
+            embedding=embeddings,
             url=url,
             username=username,
             password=password,
@@ -65,14 +66,28 @@ def test_index_fetching() -> None:
             embedding_node_property=f"embedding",
         )
 
+    def fetch_store(index_name) -> Neo4jVector:
+        store = Neo4jVector.from_existing_index(
+            embedding=embeddings,
+            url=url,
+            username=username,
+            password=password,
+            index_name=index_name,
+        )
+        return store
+
     # create index 0
-    store_0 = create_index('label0', 'index0', ['text'])
-    assert store_0.index_name == "index0"
+    index_0_str = "index0"
+    create_store('label0', index_0_str, ['text'])
+
     # create index 1
-    store_1 = create_index('label1', 'index1', ['text'])
-    assert store_1.index_name == "index1"
-    # create index 2
-    store_2 = create_index('label2', 'index2', ["text"])
-    assert store_2.index_name == "index2"
-    assert store_2.index_name != store_2.index_name
+    index_1_str = "index1"
+    create_store('label1', index_1_str, ['text'])
+
+    index_1_store = fetch_store(index_1_str)
+    assert index_1_store.index_name == index_1_str
+
+    index_0_store = fetch_store(index_0_str)
+    assert index_0_store.index_name == index_0_str
+
 
