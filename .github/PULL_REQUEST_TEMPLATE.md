@@ -15,7 +15,7 @@ Checklist:
   2. an example notebook showing its use. It lives in `docs/docs/integrations` directory.
 
 Additional guidelines:
-- Make sure optional dependencies are imported within a function
+- Make sure optional dependencies are imported within a function.
 - Please do not add dependencies to pyproject.toml files (even optional ones) unless they are required for unit tests.
 - Most PRs should not touch more than one package.
 - Changes should be backwards compatible.
