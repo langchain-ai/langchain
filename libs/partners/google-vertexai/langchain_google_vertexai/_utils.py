@@ -129,4 +129,12 @@ def get_generation_info(
     if stream:
         # Remove non-streamable types, like bools.
         info.pop("is_blocked")
+
+    # NOTE:
+    # "safety_attributes" can contain different values for the same keys
+    # for each generation. Put it in a list so it can be merged later by merge_dicts().
+    #
+    safety_attributes = info.get("safety_attributes") or {}
+    info["safety_attributes"] = [safety_attributes]
+
     return info
