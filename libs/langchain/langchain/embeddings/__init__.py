@@ -94,7 +94,6 @@ __all__ = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
-    "QuantizedBiEncoderEmbeddings"
 ]
 
 

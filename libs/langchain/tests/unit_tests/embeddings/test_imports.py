@@ -55,7 +55,6 @@ EXPECTED_ALL = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
-    "QuantizedBiEncoderEmbeddings"
 ]
 
 
