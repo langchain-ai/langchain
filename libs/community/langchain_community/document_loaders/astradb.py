@@ -65,7 +65,7 @@ class AstraDBLoader(BaseLoader):
         return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
-        queue = Queue(self.nb_prefetched)  # type: ignore[var-annotated]
+        queue = Queue(self.nb_prefetched)  # type: ignore
         t = threading.Thread(target=self.fetch_results, args=(queue,))
         t.start()
         while True:

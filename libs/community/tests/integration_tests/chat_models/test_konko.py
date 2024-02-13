@@ -1,4 +1,5 @@
 """Evaluate ChatKonko Interface."""
+
 from typing import Any, cast
 
 import pytest
@@ -21,11 +22,11 @@ def test_konko_key_masked_when_passed_from_env(
 
     chat = ChatKonko()
 
-    print(chat.openai_api_key, end="")
+    print(chat.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.konko_api_key, end="")
+    print(chat.konko_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
@@ -36,11 +37,11 @@ def test_konko_key_masked_when_passed_via_constructor(
     """Test initialization with an API key provided via the initializer"""
     chat = ChatKonko(openai_api_key="test-openai-key", konko_api_key="test-konko-key")
 
-    print(chat.konko_api_key, end="")
+    print(chat.konko_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.konko_secret_key, end="")  # type: ignore[attr-defined]
+    print(chat.konko_secret_key, end="")  # type: ignore[attr-defined] # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 

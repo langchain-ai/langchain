@@ -20,11 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 class ref(BaseModel):
+    """Reference used in CharacterGLM."""
+
     enable: bool = Field(True)
     search_query: str = Field("")
 
 
 class meta(BaseModel):
+    """Metadata used in CharacterGLM."""
+
     user_info: str = Field("")
     bot_info: str = Field("")
     bot_name: str = Field("")
