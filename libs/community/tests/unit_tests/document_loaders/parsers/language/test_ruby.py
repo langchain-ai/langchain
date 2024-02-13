@@ -43,7 +43,6 @@ end"""
     def test_extract_functions_classes(self) -> None:
         segmenter = RubySegmenter(self.example_code)
         extracted_code = segmenter.extract_functions_classes()
-        print(extracted_code)
         self.assertEqual(extracted_code, self.expected_extracted_code)
 
     def test_simplify_code(self) -> None:
