@@ -47,12 +47,14 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
 
 
 class BaseEmbeddingStore:
-    """Embedding store."""
+    """Base class for the Lantern embedding store."""
 
 
 def get_embedding_store(
     distance_strategy: DistanceStrategy, collection_name: str
 ) -> Any:
+    """Get the embedding store class."""
+
     embedding_type = None
 
     if distance_strategy == DistanceStrategy.HAMMING:
