@@ -608,7 +608,6 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         region_name: Optional[str] = None,
         endpoint_url: Optional[str] = None,
         headers: Optional[Dict] = None,
-
     ) -> None:
         """Initialize the loader.
 
