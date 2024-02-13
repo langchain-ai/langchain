@@ -19,12 +19,14 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 
     BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
 """
+
 from __future__ import annotations
 
 import hashlib
 import inspect
 import json
 import logging
+import time
 import uuid
 import warnings
 from datetime import timedelta
@@ -62,6 +64,7 @@ from langchain_core.utils import get_from_env
 
 from langchain_community.utilities.astradb import AstraDBEnvironment
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
+from langchain_community.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 
 logger = logging.getLogger(__file__)
 
@@ -1515,3 +1518,162 @@ class AstraDBSemanticCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear the *whole* semantic cache."""
         self.astra_db.truncate_collection(self.collection_name)
+
+
+def _generate_mongo_client(connection_string: str):
+    try:
+        from importlib.metadata import version
+
+        from pymongo import MongoClient
+        from pymongo.driver_info import DriverInfo
+    except ImportError:
+        raise ImportError(
+            "Could not import pymongo, please install it with " "`pip install pymongo`."
+        )
+
+    return MongoClient(
+        connection_string,
+        driver=DriverInfo(name="Langchain", version=version("langchain")),
+    )
+
+def _wait_until(predicate, success_description, timeout=10):
+    """Wait up to 10 seconds (by default) for predicate to be true.
+
+    E.g.:
+
+        wait_until(lambda: client.primary == ('a', 1),
+                'connect to the primary')
+
+    If the lambda-expression isn't true after 10 seconds, we raise
+    AssertionError("Didn't ever connect to the primary").
+
+    Returns the predicate's first true value.
+    """
+    start = time.time()
+    interval = min(float(timeout) / 100, 0.1)
+    while True:
+        retval = predicate()
+        if retval:
+            return retval
+
+        if time.time() - start > timeout:
+            raise AssertionError("Didn't ever %s" % success_description)
+
+        time.sleep(interval)
+
+class MongoDBAtlasCache(BaseCache):
+    """MongoDB Atlas cache."""
+
+    PROMPT = "prompt"
+    LLM = "llm"
+
+    def __init__(
+        self,
+        collection_name: str = "default",
+        connection_string: str = "default",
+        database_name: str = "default",
+        **kwargs,
+    ):
+        self.client = _generate_mongo_client(connection_string)
+
+        self.__database_name = database_name
+        self.__collection_name = collection_name
+
+        if self.__collection_name not in self.database.list_collection_names():
+            self.database.create_collection(self.__collection_name)
+            # Create an index on key and llm_string
+            self.collection.create_index([self.PROMPT, self.LLM])
+
+    @property
+    def database(self):
+        return self.client[self.__database_name]
+
+    @property
+    def collection(self):
+        return self.database[self.__collection_name]
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        return_doc = (
+            self.collection.find_one(self._generate_keys(prompt, llm_string)) or {}
+        )
+        if return_doc.get("return_val"):
+            return _loads_generations(return_doc.get("return_val"))
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        self.collection.update_one(
+            {**self._generate_keys(prompt, llm_string)},
+            {"$set": {"return_val": _dumps_generations(return_val)}},
+            upsert=True,
+        )
+
+    def _generate_keys(self, prompt: str, llm_string: str) -> dict[str, str]:
+        """Create keyed fields for caching layer"""
+        return {self.PROMPT: prompt, self.LLM: llm_string}
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache that can take additional keyword arguments."""
+        self.collection.delete_many({})
+
+
+class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
+    """MongoDB Atlas Semantic cache."""
+
+    LLM = "llm_string"
+    RETURN_VAL = "return_val"
+
+    def __init__(
+        self,
+        connection_string: str,
+        embedding: Embeddings,
+        collection_name: str = "default",
+        database_name: str = "default",
+        wait_until_ready: bool = False,
+        **kwargs,
+    ):
+        client = _generate_mongo_client(connection_string)
+        self.collection = client[database_name][collection_name]
+        self._wait_until_ready = wait_until_ready
+        super().__init__(self.collection, embedding, **kwargs)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        search_response = self.similarity_search_with_score(
+            prompt, 1, pre_filter={self.LLM: {"$eq": llm_string}}
+        )
+        if search_response:
+            return_val = search_response[0][0].metadata.get('return_val')
+            return _loads_generations(return_val) or return_val 
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE, wait_until_ready: Optional[bool] = None) -> None:
+        """Update cache based on prompt and llm_string."""
+        self.add_texts(
+            [prompt],
+            [
+                {
+                    self.LLM: llm_string,
+                    self.RETURN_VAL: _dumps_generations(return_val),
+                }
+            ],
+        )
+        wait = self._wait_until_ready if wait_until_ready is None else wait_until_ready
+
+        def is_value_stored():
+            lookup = self.lookup(prompt, llm_string)
+            print(lookup)
+            return lookup == return_val
+
+        if wait:
+            _wait_until(is_value_stored, return_val)
+
+    def clear(self, llm_string=False, **kwargs: Any) -> None:
+        """Clear cache that can take additional keyword arguments."""
+        specs = {}
+        if llm_string:
+            specs[self.LLM] = {"$exists": True}
+        additional_kwargs = {
+            k: {"$exists": True} for k, v in kwargs.items() if v is True
+        }
+        self.collection.delete_many({**additional_kwargs, **specs})
+
