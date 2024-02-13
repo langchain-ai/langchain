@@ -152,12 +152,12 @@ class OpenLLM(LLM):
                 if server_type == "http"
                 else openllm.client.GrpcClient
             )
-            client = client_cls(server_url, timeout)
+            client = client_cls(server_url,timeout)
 
             super().__init__(
                 **{
                     "server_url": server_url,
-                    "timeout": timeout,
+                    "timeout":timeout,
                     "server_type": server_type,
                     "llm_kwargs": llm_kwargs,
                 }
@@ -269,11 +269,9 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            res = (
-                self._client.generate(prompt, **config.model_dump(flatten=True))
-                .outputs[0]
-                .text
-            )
+            res = self._client.generate(
+                prompt, **config.model_dump(flatten=True)
+            ).outputs[0].text
         else:
             assert self._runner is not None
             res = self._runner(prompt, **config.model_dump(flatten=True))
