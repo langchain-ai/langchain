@@ -1,7 +1,9 @@
 name: API docs build
 
 on:
-  push: bagatur/api_docs_build_gha
+  push:
+    - branches:
+        - 'bagatur/api_docs_build_gha'
   workflow_dispatch:
   schedule:
     - cron:  '0 13 * * *'
