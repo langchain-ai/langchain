@@ -45,8 +45,11 @@ class EmbeddingInputOutputAdapter:
         response_body = json.loads(response.get("body").read())
         if provider == "cohere":
             return response_body.get("embeddings")
-        if provider == "amazon":
+        elif provider == "amazon":
             return [response_body.get("embedding")]
+        else:
+            msg = f"Provider {provider} not supported"
+            raise NotImplementedError(msg)
 
     @classmethod
     def prepare_output(cls, provider: str, response: Any) -> List[float]:
