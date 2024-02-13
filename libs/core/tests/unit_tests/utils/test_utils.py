@@ -1,3 +1,4 @@
+from contextlib import AbstractContextManager, nullcontext
 from typing import Dict, Optional, Tuple, Type
 from unittest.mock import patch
 
@@ -38,9 +39,14 @@ def test_check_package_version(
         ({"a": None}, {"a": 1}, {"a": 1}),
         # Merge `1` and `None`.
         ({"a": 1}, {"a": None}, {"a": 1}),
+        # Merge `None` and a value.
+        ({"a": None}, {"a": 0}, {"a": 0}),
+        ({"a": None}, {"a": "txt"}, {"a": "txt"}),
         # Merge equal values.
         ({"a": 1}, {"a": 1}, {"a": 1}),
         ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}),
+        ({"a": True}, {"a": True}, {"a": True}),
+        ({"a": False}, {"a": False}, {"a": False}),
         ({"a": "txt"}, {"a": "txt"}, {"a": "txt"}),
         ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2]}),
         ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txt"}}),
@@ -57,8 +63,41 @@ def test_check_package_version(
         ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}),
         ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}),
         ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}),
+        #
+        # Invalid inputs.
+        #
+        (
+            {"a": 1},
+            {"a": "1"},
+            pytest.raises(
+                TypeError,
+                match=(
+                    'additional_kwargs\["a"\] already exists in this message, '
+                    "but with a different type\."
+                ),
+            ),
+        ),
+        (
+            {"a": (1, 2)},
+            {"a": (3,)},
+            pytest.raises(
+                TypeError,
+                match=(
+                    "Additional kwargs key a already exists in left dict and value "
+                    "has unsupported type .+tuple.+\."
+                ),
+            ),
+        ),
     ),
 )
-def test_merge_dicts(left: dict, right: dict, expected: dict) -> None:
-    actual = merge_dicts(left, right)
-    assert actual == expected
+def test_merge_dicts(
+    left: dict, right: dict, expected: dict | AbstractContextManager
+) -> None:
+    if isinstance(expected, AbstractContextManager):
+        err = expected
+    else:
+        err = nullcontext()
+
+    with err:
+        actual = merge_dicts(left, right)
+        assert actual == expected
