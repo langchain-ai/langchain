@@ -65,6 +65,7 @@ from langchain_community.embeddings.mlflow import (
 from langchain_community.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
 from langchain_community.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain_community.embeddings.mosaicml import MosaicMLInstructorEmbeddings
+from langchain_community.embeddings.nemo import NeMoEmbeddings
 from langchain_community.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain_community.embeddings.oci_generative_ai import OCIGenAIEmbeddings
 from langchain_community.embeddings.octoai_embeddings import OctoAIEmbeddings
@@ -87,7 +88,6 @@ from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.volcengine import VolcanoEmbeddings
 from langchain_community.embeddings.voyageai import VoyageEmbeddings
 from langchain_community.embeddings.xinference import XinferenceEmbeddings
-from langchain_community.embeddings.nemo import NeMoEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +149,7 @@ __all__ = [
     "BookendEmbeddings",
     "VolcanoEmbeddings",
     "OCIGenAIEmbeddings",
+    "NeMoEmbeddings",
 ]
 
 
