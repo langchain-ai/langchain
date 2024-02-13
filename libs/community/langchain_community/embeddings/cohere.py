@@ -92,12 +92,14 @@ class CohereEmbeddings(BaseModel, Embeddings):
     async def aembed(
         self, texts: List[str], *, input_type: Optional[str] = None
     ) -> List[List[float]]:
-        embeddings = (await self.async_client.embed(
-            model=self.model,
-            texts=texts,
-            input_type=input_type,
-            truncate=self.truncate,
-        )).embeddings
+        embeddings = (
+            await self.async_client.embed(
+                model=self.model,
+                texts=texts,
+                input_type=input_type,
+                truncate=self.truncate,
+            )
+        ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
