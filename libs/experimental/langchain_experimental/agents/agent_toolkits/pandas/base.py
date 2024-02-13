@@ -10,7 +10,7 @@ from langchain.agents.agent import (
     RunnableAgent,
     RunnableMultiActionAgent,
 )
-from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.agents.openai_functions_agent.base import (
     OpenAIFunctionsAgent,
     create_openai_functions_agent,
@@ -23,6 +23,7 @@ from langchain_core.language_models import BaseLanguageModel,LanguageModelLike
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
+
 from langchain_core.tools import BaseTool
 
 from langchain.agents.format_scratchpad import format_log_to_str
@@ -50,7 +51,6 @@ def _get_multi_prompt(
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    tools: Sequence[BaseTool] = (),
 ) -> BasePromptTemplate:
     if suffix is not None:
         suffix_to_use = suffix
@@ -60,11 +60,8 @@ def _get_multi_prompt(
         suffix_to_use = SUFFIX_NO_DF
     prefix = prefix if prefix is not None else MULTI_DF_PREFIX
 
-    prompt = ZeroShotAgent.create_prompt(
-        tools,
-        prefix=prefix,
-        suffix=suffix_to_use,
-    )
+    template = "\n\n".join([prefix, "{tools}", FORMAT_INSTRUCTIONS, suffix_to_use])
+    prompt = PromptTemplate.from_template(template)
     partial_prompt = prompt.partial()
     if "dfs_head" in partial_prompt.input_variables:
         dfs_head = "\n\n".join([d.head(number_of_head_rows).to_markdown() for d in dfs])
@@ -81,7 +78,6 @@ def _get_single_prompt(
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
-    tools: Sequence[BaseTool] = (),
 ) -> BasePromptTemplate:
     if suffix is not None:
         suffix_to_use = suffix
@@ -95,6 +91,9 @@ def _get_single_prompt(
         prefix=prefix,
         suffix=suffix_to_use,
     )
+    template = "\n\n".join([prefix, "{tools}", FORMAT_INSTRUCTIONS, suffix_to_use])
+    prompt = PromptTemplate.from_template(template)
+
     partial_prompt = prompt.partial()
     if "df_head" in partial_prompt.input_variables:
         df_head = str(df.head(number_of_head_rows).to_markdown())
@@ -277,7 +276,6 @@ def create_pandas_dataframe_agent(
             suffix=suffix,
             include_df_in_prompt=include_df_in_prompt,
             number_of_head_rows=number_of_head_rows,
-            tools=tools,
         )
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent] = RunnableAgent(
             runnable=_create_react_agent_pandas(llm, tools, prompt),  # type: ignore
