@@ -55,7 +55,7 @@ class NotionDBLoader(BaseLoader):
             "Notion-Version": "2022-06-28",
         }
         self.request_timeout_sec = request_timeout_sec
-        self.filter_object = filter_object
+        self.filter_object = filter_object or {}
 
     def load(self) -> List[Document]:
         """Load documents from the Notion database.
@@ -213,7 +213,7 @@ class NotionDBLoader(BaseLoader):
             headers=self.headers,
             json=query_dict,
             timeout=self.request_timeout_sec,
-            filter=filter_object,
+            filter=filter_object or {},
         )
         res.raise_for_status()
         return res.json()
