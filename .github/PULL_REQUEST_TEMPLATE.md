@@ -2,7 +2,7 @@ Thank you for contributing to LangChain!
 
 Checklist:
 
-- [ ] PR title: Please title your PR "package: description", where "package" is whichever of langchain, community, core, experimental, etc. is being modified. 
+- [ ] PR title: Please title your PR "package: description", where "package" is whichever of langchain, community, core, experimental, etc. is being modified. Use "docs: ..." for purely docs changes, "templates: ..." for template changes, "infra: ..." for CI changes.
   - Example: "community: add foobar LLM"
 - [ ] PR message: Delete this entire template and replace it with the following bulleted list
     - **Description:** a description of the change
