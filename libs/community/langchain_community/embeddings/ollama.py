@@ -157,7 +157,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """
         headers = {
             "Content-Type": "application/json",
-            **(self.headers if isinstance(self.headers, dict) else {}),
+            **(self.headers or {}),
         }
 
         try:
