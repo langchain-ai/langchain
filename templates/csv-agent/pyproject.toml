@@ -18,11 +18,7 @@ pydantic = "<2"
 gigachain-experimental = ">=0.0.37"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-
-[tool.gigaserve]
-export_module = "csv_agent"
-export_attr = "agent_executor"
+langchain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "question-answering"

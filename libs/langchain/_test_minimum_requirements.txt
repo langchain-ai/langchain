@@ -1,2 +1,0 @@
-gigachain-core==0.1.16
-gigachain-community==0.0.14

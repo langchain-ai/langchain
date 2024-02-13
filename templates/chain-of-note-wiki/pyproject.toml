@@ -13,11 +13,7 @@ wikipedia = "^1.4.0"
 langchainhub = "^0.1.14"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.4"
-fastapi = "^0.104.0"
-sse-starlette = "^1.6.5"
-
-[tool.gigaserve]
+langchain-cli = ">=0.0.21"
 export_module = "chain_of_note_wiki"
 export_attr = "chain"
 

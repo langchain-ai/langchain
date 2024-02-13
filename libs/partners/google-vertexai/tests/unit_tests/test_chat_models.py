@@ -1,22 +1,35 @@
 """Test chat model integration."""
 
+import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from google.cloud.aiplatform_v1beta1.types import (
+    Content,
+    FunctionCall,
+    Part,
+)
+from google.cloud.aiplatform_v1beta1.types import (
+    content as gapic_content_types,
+)
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
 from vertexai.language_models import ChatMessage, InputOutputTextPair  # type: ignore
+from vertexai.preview.generative_models import (  # type: ignore
+    Candidate,
+)
 
 from langchain_google_vertexai.chat_models import (
     ChatVertexAI,
     _parse_chat_history,
     _parse_chat_history_gemini,
     _parse_examples,
+    _parse_response_candidate,
 )
 
 
@@ -187,7 +200,7 @@ def test_default_params_gemini() -> None:
             StubGeminiResponse(
                 text="Goodbye",
                 content=Mock(parts=[Mock(function_call=None)]),
-                citation_metadata=Mock(),
+                citation_metadata=None,
             )
         ]
         mock_chat = MagicMock()
@@ -202,3 +215,104 @@ def test_default_params_gemini() -> None:
         message = HumanMessage(content=user_prompt)
         _ = model([message])
         mock_start_chat.assert_called_once_with(history=[])
+
+
+@pytest.mark.parametrize(
+    "raw_candidate, expected",
+    [
+        (
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"name": "Ben"},
+                            ),
+                        )
+                    ],
+                )
+            ),
+            {
+                "name": "Information",
+                "arguments": {"name": "Ben"},
+            },
+        ),
+        (
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"info": ["A", "B", "C"]},
+                            ),
+                        )
+                    ],
+                )
+            ),
+            {
+                "name": "Information",
+                "arguments": {"info": ["A", "B", "C"]},
+            },
+        ),
+        (
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={
+                                    "people": [
+                                        {"name": "Joe", "age": 30},
+                                        {"name": "Martha"},
+                                    ]
+                                },
+                            ),
+                        )
+                    ],
+                )
+            ),
+            {
+                "name": "Information",
+                "arguments": {
+                    "people": [
+                        {"name": "Joe", "age": 30},
+                        {"name": "Martha"},
+                    ]
+                },
+            },
+        ),
+        (
+            gapic_content_types.Candidate(
+                content=Content(
+                    role="model",
+                    parts=[
+                        Part(
+                            function_call=FunctionCall(
+                                name="Information",
+                                args={"info": [[1, 2, 3], [4, 5, 6]]},
+                            ),
+                        )
+                    ],
+                )
+            ),
+            {
+                "name": "Information",
+                "arguments": {"info": [[1, 2, 3], [4, 5, 6]]},
+            },
+        ),
+    ],
+)
+def test_parse_response_candidate(raw_candidate, expected) -> None:
+    response_candidate = Candidate._from_gapic(raw_candidate)
+    result = _parse_response_candidate(response_candidate)
+    result_arguments = json.loads(
+        result.additional_kwargs["function_call"]["arguments"]
+    )
+
+    assert result_arguments == expected["arguments"]

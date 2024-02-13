@@ -315,6 +315,37 @@ def convert_to_openai_function(
         )
 
 
+def convert_to_gigachat_function(
+    function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+) -> Dict[str, Any]:
+    """Convert a raw function/class to an OpenAI function.
+
+    Args:
+        function: Either a dictionary, a pydantic.BaseModel class, or a Python function.
+            If a dictionary is passed in, it is assumed to already be a valid OpenAI
+            function.
+
+    Returns:
+        A dict version of the passed in function which is compatible with the
+            OpenAI function-calling API.
+    """
+    from langchain_core.tools import BaseTool
+
+    if isinstance(function, dict):
+        return function
+    elif isinstance(function, type) and issubclass(function, BaseModel):
+        return cast(Dict, convert_pydantic_to_openai_function(function))
+    elif isinstance(function, BaseTool):
+        return format_tool_to_openai_function(function)
+    elif callable(function):
+        return convert_python_function_to_openai_function(function)
+    else:
+        raise ValueError(
+            f"Unsupported function type {type(function)}. Functions must be passed in"
+            f" as Dict, pydantic.BaseModel, or Callable."
+        )
+
+
 def convert_to_openai_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> Dict[str, Any]:

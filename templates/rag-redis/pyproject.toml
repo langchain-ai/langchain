@@ -27,11 +27,7 @@ extras = [
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
-gigachain-cli = ">=0.0.15"
-
-[tool.gigaserve]
-export_module = "rag_redis.chain"
-export_attr = "chain"
+langchain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "rag"

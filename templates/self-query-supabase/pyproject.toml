@@ -16,13 +16,7 @@ supabase = "^1.2.0"
 lark = "^1.1.8"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-
-[tool.poetry.group.dev.dependencies.python-dotenv]
-extras = [
-    "cli",
-]
-version = "^1.0.0"
+langchain-cli = ">=0.0.21"
 
 [tool.gigaserve]
 export_module = "self_query_supabase.chain"

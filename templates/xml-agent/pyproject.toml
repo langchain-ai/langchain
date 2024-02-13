@@ -15,7 +15,7 @@ langchainhub = ">=0.1.13"
 duckduckgo-search = "^3.8.3"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
+gigachain-cli = ">=0.0.21"
 
 [tool.gigaserve]
 export_module = "xml_agent"

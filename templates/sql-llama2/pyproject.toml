@@ -13,11 +13,7 @@ gigachain = ">=0.0.325"
 replicate = ">=0.15.4"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-
-[tool.gigaserve]
-export_module = "sql_llama2"
-export_attr = "chain"
+langchain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "sql"

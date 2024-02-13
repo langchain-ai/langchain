@@ -15,13 +15,7 @@ tiktoken = "^0.5.1"
 weaviate-client = ">=3.24.2"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-
-[tool.poetry.group.dev.dependencies.python-dotenv]
-extras = [
-    "cli",
-]
-version = "^1.0.0"
+langchain-cli = ">=0.0.21"
 
 [tool.gigaserve]
 export_module = "rag_weaviate"

@@ -11,11 +11,7 @@ gigachain = ">=0.0.325"
 google-cloud-aiplatform = "^1.36.4"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-fastapi = "^0.104.0"
-sse-starlette = "^1.6.5"
-
-[tool.gigaserve]
+langchain-cli = ">=0.0.21"
 export_module = "vertexai_chuck_norris.chain"
 export_attr = "chain"
 

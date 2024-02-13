@@ -93,10 +93,10 @@ class ShellTool(BaseTool):
                     return self.process.run(commands)
                 else:
                     logger.info("Invalid input. User aborted command execution.")
-                    return None
+                    return None  # type: ignore[return-value]
             else:
                 return self.process.run(commands)
 
         except Exception as e:
             logger.error(f"Error during command execution: {e}")
-            return None
+            return None  # type: ignore[return-value]

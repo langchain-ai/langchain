@@ -15,11 +15,7 @@ langchainhub = ">=0.1.13"
 gigachain-experimental = ">=0.0.37"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-
-[tool.gigaserve]
-export_module = "extraction_anthropic_functions"
-export_attr = "chain"
+langchain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "extraction"

@@ -12,11 +12,7 @@ openai = "<2"
 duckduckgo-search = "^3.9.3" 
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-fastapi = "^0.104.0"
-sse-starlette = "^1.6.5"
-
-[tool.gigaserve]
+langchain-cli = ">=0.0.21"
 export_module = "solo_performance_prompting_agent.agent"
 export_attr = "agent_executor"
 

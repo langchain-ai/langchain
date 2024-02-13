@@ -15,11 +15,7 @@ tiktoken = ">=0.5.1"
 pinecone-client = ">=2.2.4"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-
-[tool.gigaserve]
-export_module = "rag_pinecone"
-export_attr = "chain"
+langchain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "rag"

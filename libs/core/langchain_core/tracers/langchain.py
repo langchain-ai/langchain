@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import logging
-import weakref
-from concurrent.futures import Future, ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from langsmith import Client
@@ -27,7 +26,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_TRACERS: weakref.WeakSet[LangChainTracer] = weakref.WeakSet()
 _CLIENT: Optional[Client] = None
 _EXECUTOR: Optional[ThreadPoolExecutor] = None
 
@@ -43,10 +41,9 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    global _TRACERS
-    for tracer in list(_TRACERS):
-        if tracer is not None:
-            tracer.wait_for_futures()
+    global _CLIENT
+    if _CLIENT is not None and _CLIENT.tracing_queue is not None:
+        _CLIENT.tracing_queue.join()
 
 
 def get_client() -> Client:
@@ -65,16 +62,6 @@ def _get_executor() -> ThreadPoolExecutor:
     return _EXECUTOR
 
 
-def _copy(run: Run) -> Run:
-    """Copy a run."""
-    try:
-        return run.copy(deep=True)
-    except TypeError:
-        # Fallback in case the object contains a lock or other
-        # non-pickleable object
-        return run.copy()
-
-
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
@@ -84,7 +71,6 @@ class LangChainTracer(BaseTracer):
         project_name: Optional[str] = None,
         client: Optional[Client] = None,
         tags: Optional[List[str]] = None,
-        use_threading: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
@@ -94,12 +80,8 @@ class LangChainTracer(BaseTracer):
         )
         self.project_name = project_name or ls_utils.get_tracer_project()
         self.client = client or get_client()
-        self._futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.tags = tags or []
-        self.executor = _get_executor() if use_threading else None
         self.latest_run: Optional[Run] = None
-        global _TRACERS
-        _TRACERS.add(self)
 
     def on_chat_model_start(
         self,
@@ -191,75 +173,69 @@ class LangChainTracer(BaseTracer):
             log_error_once("patch", e)
             raise
 
-    def _submit(self, function: Callable[[Run], None], run: Run) -> None:
-        """Submit a function to the executor."""
-        if self.executor is None:
-            function(run)
-        else:
-            self._futures.add(self.executor.submit(function, run))
-
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, _copy(run))
+        self._persist_run_single(run)
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, _copy(run))
+        self._persist_run_single(run)
 
     def _on_llm_end(self, run: Run) -> None:
         """Process the LLM Run."""
-        self._submit(self._update_run_single, _copy(run))
+        self._update_run_single(run)
 
     def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""
-        self._submit(self._update_run_single, _copy(run))
+        self._update_run_single(run)
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, _copy(run))
+        self._persist_run_single(run)
 
     def _on_chain_end(self, run: Run) -> None:
         """Process the Chain Run."""
-        self._submit(self._update_run_single, _copy(run))
+        self._update_run_single(run)
 
     def _on_chain_error(self, run: Run) -> None:
         """Process the Chain Run upon error."""
-        self._submit(self._update_run_single, _copy(run))
+        self._update_run_single(run)
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, _copy(run))
+        self._persist_run_single(run)
 
     def _on_tool_end(self, run: Run) -> None:
         """Process the Tool Run."""
-        self._submit(self._update_run_single, _copy(run))
+        self._update_run_single(run)
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
-        self._submit(self._update_run_single, _copy(run))
+        self._update_run_single(run)
 
     def _on_retriever_start(self, run: Run) -> None:
         """Process the Retriever Run upon start."""
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
-        self._submit(self._persist_run_single, _copy(run))
+        self._persist_run_single(run)
 
     def _on_retriever_end(self, run: Run) -> None:
         """Process the Retriever Run."""
-        self._submit(self._update_run_single, _copy(run))
+        self._update_run_single(run)
 
     def _on_retriever_error(self, run: Run) -> None:
         """Process the Retriever Run upon error."""
-        self._submit(self._update_run_single, _copy(run))
+        self._update_run_single(run)
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        wait(self._futures)
+        if self.client is not None and self.client.tracing_queue is not None:
+            self.client.tracing_queue.join()

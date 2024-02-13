@@ -1,34 +1,26 @@
 import logging
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Type
+from typing import (TYPE_CHECKING, Any, AsyncIterator, Callable, Dict,
+                    Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
+                    Union)
 
 from gigachat.models import Messages
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    agenerate_from_stream,
-    generate_from_stream,
-)
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    ChatMessageChunk,
-    FunctionMessage,
-    FunctionMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    SystemMessage,
-    SystemMessageChunk,
-    ToolMessageChunk,
-)
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-
 from langchain_community.llms.gigachat import _BaseGigaChat
+from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
+                                      CallbackManagerForLLMRun)
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        agenerate_from_stream,
+                                                        generate_from_stream)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, ChatMessage,
+                                     ChatMessageChunk, FunctionMessage,
+                                     FunctionMessageChunk, HumanMessage,
+                                     HumanMessageChunk, SystemMessage,
+                                     SystemMessageChunk, ToolMessageChunk)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult)
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import Runnable
 
 logger = logging.getLogger(__name__)
 
@@ -280,6 +272,50 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
                 await run_manager.on_llm_new_token(content)
+
+
+    def bind_functions(
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        function_call: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind functions (and other objects) to this chat model.
+
+        Args:
+            functions: A list of function definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, or callable. Pydantic
+                models and callables will be automatically converted to
+                their schema dictionary representation.
+            function_call: Which function to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any).
+            kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        # from langchain.chains.openai_functions.base import \
+        #     convert_to_openai_function
+        from langchain_core.utils.function_calling import convert_to_gigachat_function
+
+        formatted_functions = [convert_to_gigachat_function(fn) for fn in functions]
+        if function_call is not None:
+            if len(formatted_functions) != 1:
+                raise ValueError(
+                    "When specifying `function_call`, you must provide exactly one "
+                    "function."
+                )
+            if formatted_functions[0]["name"] != function_call:
+                raise ValueError(
+                    f"Function call {function_call} was specified, but the only "
+                    f"provided function was {formatted_functions[0]['name']}."
+                )
+            function_call_ = {"name": function_call}
+            kwargs = {**kwargs, "function_call": function_call_}
+        return super().bind(
+            functions=formatted_functions,
+            **kwargs,
+        )
 
     class Config:
         extra = "allow"

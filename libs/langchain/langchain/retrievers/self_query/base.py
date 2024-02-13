@@ -12,6 +12,7 @@ from langchain_community.vectorstores import (
     MongoDBAtlasVectorSearch,
     MyScale,
     OpenSearchVectorSearch,
+    PGVector,
     Pinecone,
     Qdrant,
     Redis,
@@ -43,6 +44,7 @@ from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.opensearch import OpenSearchTranslator
+from langchain.retrievers.self_query.pgvector import PGVectorTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.redis import RedisTranslator
@@ -58,6 +60,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,
+        PGVector: PGVectorTranslator,
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,

@@ -14,11 +14,7 @@ langsmith = ">=0.0.54"
 langchainhub = ">=0.1.13"
 
 [tool.poetry.group.dev.dependencies]
-gigachain-cli = ">=0.0.15"
-fastapi = "^0.104.0"
-sse-starlette = "^1.6.5"
-
-[tool.gigaserve]
+langchain-cli = ">=0.0.21"
 export_module = "chat_bot_feedback.chain"
 export_attr = "chain"
 

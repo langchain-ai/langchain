@@ -13,6 +13,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import requests
@@ -169,7 +170,9 @@ class ChatKonko(ChatOpenAI):
         }
 
         if openai_api_key:
-            headers["X-OpenAI-Api-Key"] = openai_api_key.get_secret_value()
+            headers["X-OpenAI-Api-Key"] = cast(
+                SecretStr, openai_api_key
+            ).get_secret_value()
 
         models_response = requests.get(models_url, headers=headers)
 
