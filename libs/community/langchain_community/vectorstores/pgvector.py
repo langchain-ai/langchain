@@ -238,7 +238,7 @@ class PGVector(VectorStore):
 
     def create_vector_extension(self) -> None:
         try:
-            with Session(self._bind) as session:
+            with Session(self._bind) as session:  # type: ignore[arg-type]
                 # The advisor lock fixes issue arising from concurrent
                 # creation of the vector extension.
                 # https://github.com/langchain-ai/langchain/issues/12933
@@ -256,24 +256,24 @@ class PGVector(VectorStore):
             raise Exception(f"Failed to create vector extension: {e}") from e
 
     def create_tables_if_not_exists(self) -> None:
-        with Session(self._bind) as session, session.begin():
+        with Session(self._bind) as session, session.begin():  # type: ignore[arg-type]
             Base.metadata.create_all(session.get_bind())
 
     def drop_tables(self) -> None:
-        with Session(self._bind) as session, session.begin():
+        with Session(self._bind) as session, session.begin():  # type: ignore[arg-type]
             Base.metadata.drop_all(session.get_bind())
 
     def create_collection(self) -> None:
         if self.pre_delete_collection:
             self.delete_collection()
-        with Session(self._bind) as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             self.CollectionStore.get_or_create(
                 session, self.collection_name, cmetadata=self.collection_metadata
             )
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
-        with Session(self._bind) as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             collection = self.get_collection(session)
             if not collection:
                 self.logger.warning("Collection not found")
@@ -284,7 +284,7 @@ class PGVector(VectorStore):
     @contextlib.contextmanager
     def _make_session(self) -> Generator[Session, None, None]:
         """Create a context manager for the session, bind to _conn string."""
-        yield Session(self._bind)
+        yield Session(self._bind)  # type: ignore[arg-type]
 
     def delete(
         self,
@@ -298,7 +298,7 @@ class PGVector(VectorStore):
             ids: List of ids to delete.
             collection_only: Only delete ids in the collection.
         """
-        with Session(self._bind) as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             if ids is not None:
                 self.logger.debug(
                     "Trying to delete vectors by ids (represented by the model "
@@ -383,7 +383,7 @@ class PGVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        with Session(self._bind) as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
@@ -508,7 +508,7 @@ class PGVector(VectorStore):
         ]
         return docs
 
-    def _create_filter_clause(self, key, value):
+    def _create_filter_clause(self, key, value):  # type: ignore[no-untyped-def]
         IN, NIN, BETWEEN, GT, LT, NE = "in", "nin", "between", "gt", "lt", "ne"
         EQ, LIKE, CONTAINS, OR, AND = "eq", "like", "contains", "or", "and"
 
@@ -575,7 +575,7 @@ class PGVector(VectorStore):
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Any]:
         """Query the collection."""
-        with Session(self._bind) as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")

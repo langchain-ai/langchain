@@ -12,17 +12,23 @@ if TYPE_CHECKING:
 
 
 class Edge(NamedTuple):
+    """Edge in a graph."""
+
     source: str
     target: str
 
 
 class Node(NamedTuple):
+    """Node in a graph."""
+
     id: str
     data: Union[Type[BaseModel], RunnableType]
 
 
 @dataclass
 class Graph:
+    """Graph of nodes and edges."""
+
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
 
@@ -137,4 +143,4 @@ class Graph:
         )
 
     def print_ascii(self) -> None:
-        print(self.draw_ascii())
+        print(self.draw_ascii())  # noqa: T201

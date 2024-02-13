@@ -207,9 +207,9 @@ class PGEmbedding(VectorStore):
                 # Create the HNSW index
                 session.execute(create_index_query)
                 session.commit()
-            print("HNSW extension and index created successfully.")
+            print("HNSW extension and index created successfully.")  # noqa: T201
         except Exception as e:
-            print(f"Failed to create HNSW extension or index: {e}")
+            print(f"Failed to create HNSW extension or index: {e}")  # noqa: T201
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
@@ -398,7 +398,7 @@ class PGEmbedding(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result.EmbeddingStore.document,
+                    page_content=result.EmbeddingStore.document,  # type: ignore[arg-type]
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
                 result.distance if self.embedding_function is not None else 0.0,

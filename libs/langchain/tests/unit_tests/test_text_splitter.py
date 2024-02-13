@@ -1,7 +1,9 @@
 """Test text splitting functionality."""
+import random
 import re
+import string
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 import pytest
 from langchain_core.documents import Document
@@ -13,6 +15,8 @@ from langchain.text_splitter import (
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
+    RecursiveJsonSplitter,
+    TextSplitter,
     Tokenizer,
     split_text_on_tokens,
 )
@@ -169,19 +173,47 @@ def test_create_documents_with_metadata() -> None:
     assert docs == expected_docs
 
 
-def test_create_documents_with_start_index() -> None:
+@pytest.mark.parametrize(
+    "splitter, text, expected_docs",
+    [
+        (
+            CharacterTextSplitter(
+                separator=" ", chunk_size=7, chunk_overlap=3, add_start_index=True
+            ),
+            "foo bar baz 123",
+            [
+                Document(page_content="foo bar", metadata={"start_index": 0}),
+                Document(page_content="bar baz", metadata={"start_index": 4}),
+                Document(page_content="baz 123", metadata={"start_index": 8}),
+            ],
+        ),
+        (
+            RecursiveCharacterTextSplitter(
+                chunk_size=6,
+                chunk_overlap=0,
+                separators=["\n\n", "\n", " ", ""],
+                add_start_index=True,
+            ),
+            "w1 w1 w1 w1 w1 w1 w1 w1 w1",
+            [
+                Document(page_content="w1 w1", metadata={"start_index": 0}),
+                Document(page_content="w1 w1", metadata={"start_index": 6}),
+                Document(page_content="w1 w1", metadata={"start_index": 12}),
+                Document(page_content="w1 w1", metadata={"start_index": 18}),
+                Document(page_content="w1", metadata={"start_index": 24}),
+            ],
+        ),
+    ],
+)
+def test_create_documents_with_start_index(
+    splitter: TextSplitter, text: str, expected_docs: List[Document]
+) -> None:
     """Test create documents method."""
-    texts = ["foo bar baz 123"]
-    splitter = CharacterTextSplitter(
-        separator=" ", chunk_size=7, chunk_overlap=3, add_start_index=True
-    )
-    docs = splitter.create_documents(texts)
-    expected_docs = [
-        Document(page_content="foo bar", metadata={"start_index": 0}),
-        Document(page_content="bar baz", metadata={"start_index": 4}),
-        Document(page_content="baz 123", metadata={"start_index": 8}),
-    ]
+    docs = splitter.create_documents([text])
     assert docs == expected_docs
+    for doc in docs:
+        s_i = doc.metadata["start_index"]
+        assert text[s_i : s_i + len(doc.page_content)] == doc.page_content
 
 
 def test_metadata_not_shallow() -> None:
@@ -1273,3 +1305,48 @@ def test_split_text_on_tokens() -> None:
     output = split_text_on_tokens(text=text, tokenizer=tokenizer)
     expected_output = ["foo bar", "bar baz", "baz 123"]
     assert output == expected_output
+
+
+def test_split_json() -> None:
+    """Test json text splitter"""
+    max_chunk = 800
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
+
+    def random_val() -> str:
+        return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
+
+    test_data: Any = {
+        "val0": random_val(),
+        "val1": {f"val1{i}": random_val() for i in range(100)},
+    }
+    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
+
+    # uses create_docs and split_text
+    docs = splitter.create_documents(texts=[test_data])
+
+    output = [len(doc.page_content) < max_chunk * 1.05 for doc in docs]
+    expected_output = [True for doc in docs]
+    assert output == expected_output
+
+
+def test_split_json_with_lists() -> None:
+    """Test json text splitter with list conversion"""
+    max_chunk = 800
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
+
+    def random_val() -> str:
+        return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
+
+    test_data: Any = {
+        "val0": random_val(),
+        "val1": {f"val1{i}": random_val() for i in range(100)},
+    }
+    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
+
+    test_data_list: Any = {"testPreprocessing": [test_data]}
+
+    # test text splitter
+    texts = splitter.split_text(json_data=test_data)
+    texts_list = splitter.split_text(json_data=test_data_list, convert_lists=True)
+
+    assert len(texts_list) >= len(texts)
