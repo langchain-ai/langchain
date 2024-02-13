@@ -82,6 +82,8 @@ class OpenLLM(LLM):
     See 'openllm models' for all available model variants."""
     server_url: Optional[str] = None
     """Optional server URL that currently runs a LLMServer with 'openllm start'."""
+    timeout: int = 30
+    """"Time out for the openllm client"""
     server_type: ServerType = "http"
     """Optional server type. Either 'http' or 'grpc'."""
     embedded: bool = True
@@ -125,6 +127,7 @@ class OpenLLM(LLM):
         *,
         model_id: Optional[str] = None,
         server_url: Optional[str] = None,
+        timeout: int = 30,
         server_type: Literal["grpc", "http"] = "http",
         embedded: bool = True,
         **llm_kwargs: Any,
@@ -149,11 +152,12 @@ class OpenLLM(LLM):
                 if server_type == "http"
                 else openllm.client.GrpcClient
             )
-            client = client_cls(server_url)
+            client = client_cls(server_url, timeout)
 
             super().__init__(
                 **{
                     "server_url": server_url,
+                    "timeout": timeout,
                     "server_type": server_type,
                     "llm_kwargs": llm_kwargs,
                 }
