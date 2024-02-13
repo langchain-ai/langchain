@@ -225,6 +225,18 @@ def test_chat_vertexai_system_message(model_name: Optional[str]) -> None:
     assert isinstance(response.content, str)
 
 
+@pytest.mark.parametrize("model_name", model_names_to_test)
+def test_get_num_tokens_from_messages(model_name: str) -> None:
+    if model_name:
+        model = ChatVertexAI(model_name=model_name, temperature=0.0)
+    else:
+        model = ChatVertexAI(temperature=0.0)
+    message = HumanMessage(content="Hello")
+    token = model.get_num_tokens_from_messages(messages=[message])
+    assert isinstance(token, int)
+    assert token == 3
+
+
 def test_chat_vertexai_gemini_function_calling() -> None:
     class MyModel(BaseModel):
         name: str

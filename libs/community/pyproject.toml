@@ -150,8 +150,6 @@ tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
-boto3 = ">=1.28.57,<2"
-google-cloud-aiplatform = ">=1.37.0,<2"
 
 [tool.poetry.group.lint]
 optional = true
@@ -262,14 +260,17 @@ extended_testing = [
 ]
 
 [tool.ruff]
+exclude = [
+  "tests/examples/non-utf8-encoding.py",
+  "tests/integration_tests/examples/non-utf8-encoding.py",
+]
+
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
-]
-exclude = [
-  "tests/examples/non-utf8-encoding.py",
-  "tests/integration_tests/examples/non-utf8-encoding.py",
+  "T201", # print
 ]
 
 [tool.mypy]

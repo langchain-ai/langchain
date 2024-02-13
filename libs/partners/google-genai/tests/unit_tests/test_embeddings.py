@@ -1,4 +1,5 @@
 """Test embeddings model integration."""
+
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture
 
@@ -31,7 +32,7 @@ def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> N
         model="models/embedding-001",
         google_api_key="secret-api-key",
     )
-    print(embeddings.google_api_key, end="")
+    print(embeddings.google_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

@@ -509,8 +509,8 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     target_filename=name,
                 )
             except NotImplementedError as e:
-                print("Could not save model.")
-                print(repr(e))
+                print("Could not save model.")  # noqa: T201
+                print(repr(e))  # noqa: T201
                 pass
 
         # Cleanup after adding everything to ClearML
