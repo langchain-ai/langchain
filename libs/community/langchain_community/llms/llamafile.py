@@ -123,7 +123,7 @@ class Llamafile(LLM):
         return "llamafile"
 
     @property
-    def _param_fieldnames(self):
+    def _param_fieldnames(self) -> List[str]:
         # Return the list of fieldnames that will be passed as configurable
         # generation options to the llamafile server. Exclude 'builtin' fields
         # from the BaseLLM class like 'metadata' as well as fields that should
@@ -153,7 +153,7 @@ class Llamafile(LLM):
         return params
 
     def _get_parameters(
-        self, stop: Optional[List[str]] = None, **kwargs
+        self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         params = self._default_params
 
