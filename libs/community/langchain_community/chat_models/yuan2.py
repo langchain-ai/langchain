@@ -482,4 +482,4 @@ class ChatYuan2(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "yuan2"
+        return "chat-yuan2"
