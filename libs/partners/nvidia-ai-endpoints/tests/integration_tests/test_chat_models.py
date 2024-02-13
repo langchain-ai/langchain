@@ -11,7 +11,7 @@ def test_chat_ai_endpoints() -> None:
         temperature=0.7,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 

@@ -36,6 +36,7 @@ from langchain_community.document_loaders.assemblyai import (
 )
 from langchain_community.document_loaders.astradb import AstraDBLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
+from langchain_community.document_loaders.athena import AthenaLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
@@ -159,6 +160,7 @@ from langchain_community.document_loaders.pdf import (
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
+from langchain_community.document_loaders.pebblo import PebbloSafeLoader
 from langchain_community.document_loaders.polars_dataframe import PolarsDataFrameLoader
 from langchain_community.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain_community.document_loaders.psychic import PsychicLoader
@@ -257,6 +259,7 @@ __all__ = [
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
+    "AthenaLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
@@ -282,6 +285,7 @@ __all__ = [
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
+    "PebbloSafeLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
