@@ -21,7 +21,16 @@ from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
 from langchain_experimental.pydantic_v1 import Extra, Field
 
 COMMAND_EXECUTION_FUNCTIONS = ["system", "exec", "execfile", "eval", "__import__"]
-COMMAND_EXECUTION_ATTRIBUTES = ["__import__", "__subclasses__", "__builtins__", "__globals__", "__getattribute__", "__bases__", "__mro__", "__base__"]
+COMMAND_EXECUTION_ATTRIBUTES = [
+    "__import__",
+    "__subclasses__",
+    "__builtins__",
+    "__globals__",
+    "__getattribute__",
+    "__bases__",
+    "__mro__",
+    "__base__",
+]
 
 
 class PALValidation:
