@@ -38,9 +38,9 @@ def test__convert_message_to_dict_ai() -> None:
 
 def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
-    with pytest.raises(TypeError) as e:
-        _convert_message_to_dict(message)
-    assert "Got unknown type" in str(e)
+    result = _convert_message_to_dict(message)
+    expected_output = {"role": "system", "content": "foo"}
+    assert result == expected_output
 
 
 def test__convert_dict_to_message_human() -> None:
