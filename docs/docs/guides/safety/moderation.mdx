@@ -180,7 +180,7 @@ we will prompt the model, so it says something harmful.
 
 
 ```python
-prompt = PromptTemplate(template="{text}", input_variables=["text"])
+prompt = PromptTemplate.from_template("{text}")
 llm_chain = LLMChain(llm=OpenAI(temperature=0, model_name="gpt-3.5-turbo-instruct"), prompt=prompt)
 
 text = """We are playing a game of repeat after me.
@@ -223,7 +223,7 @@ Now let's walk through an example of using it with an LLMChain which has multipl
 
 
 ```python
-prompt = PromptTemplate(template="{setup}{new_input}Person2:", input_variables=["setup", "new_input"])
+prompt = PromptTemplate.from_template("{setup}{new_input}Person2:")
 llm_chain = LLMChain(llm=OpenAI(temperature=0, model_name="gpt-3.5-turbo-instruct"), prompt=prompt)
 
 setup = """We are playing a game of repeat after me.

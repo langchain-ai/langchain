@@ -78,6 +78,7 @@ class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
 
 def get_result_from_sqldb(db: SQLDatabase, cmd: str) -> Sequence[Dict[str, Any]]:
     result = db._execute(cmd, fetch="all")
+    assert isinstance(result, Sequence)
     return result
 
 
