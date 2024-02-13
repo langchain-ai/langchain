@@ -289,7 +289,6 @@ class CogniswitchKnowledgeSourceFile(BaseTool):
         if response.status_code == 200:
             return response.json()
         else:
-            print(response.status_code)
             return {"message": "Bad Request"}
 
 
