@@ -5,12 +5,11 @@ from io import BytesIO
 from pathlib import Path
 
 import pypdfium2 as pdfium
-from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
+from langchain_openai.chat_models import ChatOpenAI
 from PIL import Image
-
-from rag_redis_multi_modal_multi_vector.utils import make_mv_retriever, ID_KEY
+from rag_redis_multi_modal_multi_vector.utils import ID_KEY, make_mv_retriever
 
 
 def image_summarize(img_base64, prompt):

@@ -1,11 +1,12 @@
 import os
 
-from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain_community.storage import RedisStore
 from langchain_community.vectorstores import Redis as RedisVectorDB
-from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain_openai.embeddings import OpenAIEmbeddings
 
 ID_KEY = "doc_id"
+
 
 def get_boolean_env_var(var_name, default_value=False):
     """Retrieve the boolean value of an environment variable.
@@ -75,7 +76,7 @@ def make_mv_retriever():
         index_name="image_summaries",
         key_prefix="summary",
         index_schema=INDEX_SCHEMA,
-        embedding=OpenAIEmbeddings()
+        embedding=OpenAIEmbeddings(),
     )
     store = RedisStore(redis_url=REDIS_URL, namespace="image")
 

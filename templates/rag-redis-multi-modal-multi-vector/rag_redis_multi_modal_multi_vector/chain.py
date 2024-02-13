@@ -12,7 +12,6 @@ from PIL import Image
 from rag_redis_multi_modal_multi_vector.utils import make_mv_retriever
 
 
-
 def resize_base64_image(base64_string, size=(128, 128)):
     """
     Resize an image encoded as a Base64 string.
@@ -56,10 +55,12 @@ def img_prompt_func(data_dict, num_images=2):
     messages = []
     if data_dict["context"]["images"]:
         for image in data_dict["context"]["images"][:num_images]:
-            messages.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{image}"},
-            })
+            messages.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image}"},
+                }
+            )
 
     text_message = {
         "type": "text",
