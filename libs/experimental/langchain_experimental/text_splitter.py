@@ -105,23 +105,27 @@ class SemanticChunker(BaseDocumentTransformer):
             self.breakpoint_threshold_amount = breakpoint_threshold_amount
 
     def _calculate_breakpoint_threshold(self, distances: List[float]) -> float:
-        match self.breakpoint_threshold_type:
-            case "percentile":
-                return cast(
-                    float,
-                    np.percentile(distances, self.breakpoint_threshold_amount),
-                )
-            case "standard_deviation":
-                return cast(
-                    float,
-                    np.mean(distances)
-                    + self.breakpoint_threshold_amount * np.std(distances),
-                )
-            case "interquartile":
-                q1, q3 = np.percentile(distances, [25, 75])
-                iqr = q3 - q1
+        if self.breakpoint_threshold_type == "percentile":
+            return cast(
+                float,
+                np.percentile(distances, self.breakpoint_threshold_amount),
+            )
+        elif self.breakpoint_threshold_type == "standard_deviation":
+            return cast(
+                float,
+                np.mean(distances)
+                + self.breakpoint_threshold_amount * np.std(distances),
+            )
+        elif self.breakpoint_threshold_type == "interquartile":
+            q1, q3 = np.percentile(distances, [25, 75])
+            iqr = q3 - q1
 
-                return np.mean(distances) + self.breakpoint_threshold_amount * iqr
+            return np.mean(distances) + self.breakpoint_threshold_amount * iqr
+        else:
+            raise ValueError(
+                f"Got unexpected `breakpoint_threshold_type`: "
+                f"{self.breakpoint_threshold_type}"
+            )
 
     def _threshold_from_clusters(self, distances: List[float]) -> float:
         """
