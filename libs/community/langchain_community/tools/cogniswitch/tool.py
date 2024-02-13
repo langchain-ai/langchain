@@ -273,7 +273,8 @@ class CogniswitchKnowledgeSourceFile(BaseTool):
         if not document_description:
             document_description = ""
 
-        files = {"file": open(file, "rb")}
+        if file is not None:
+            files = {"file": open(file, "rb")}
 
         data = {
             "documentName": document_name,
