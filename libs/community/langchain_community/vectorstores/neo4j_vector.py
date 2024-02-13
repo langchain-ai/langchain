@@ -4,6 +4,7 @@ import enum
 import logging
 import os
 import uuid
+import hashlib
 from typing import (
     Any,
     Callable,
@@ -14,7 +15,6 @@ from typing import (
     Tuple,
     Type,
 )
-import hashlib
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -71,8 +71,7 @@ def check_if_not_null(props: List[str], values: List[Any]) -> None:
     """Check if the values are not None or empty string"""
     for prop, value in zip(props, values):
         if not value:
-            raise ValueError(
-                f"Parameter `{prop}` must not be None or empty string")
+            raise ValueError(f"Parameter `{prop}` must not be None or empty string")
 
 
 def sort_by_index_name(
@@ -194,8 +193,7 @@ class Neo4jVector(VectorStore):
         password = get_from_env("password", "NEO4J_PASSWORD", password)
         database = get_from_env("database", "NEO4J_DATABASE", database)
 
-        self._driver = neo4j.GraphDatabase.driver(
-            url, auth=(username, password))
+        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
         self.schema = ""
         # Verify connection
@@ -290,8 +288,7 @@ class Neo4jVector(VectorStore):
         """
         version = self.query("CALL dbms.components()")[0]["versions"][0]
         if "aura" in version:
-            version_tuple = tuple(
-                map(int, version.split("-")[0].split("."))) + (0,)
+            version_tuple = tuple(map(int, version.split("-")[0].split("."))) + (0,)
         else:
             version_tuple = tuple(map(int, version.split(".")))
 
@@ -329,8 +326,7 @@ class Neo4jVector(VectorStore):
             },
         )
         # sort by index_name
-        index_information = sort_by_index_name(
-            index_information, self.index_name)
+        index_information = sort_by_index_name(index_information, self.index_name)
         try:
             self.index_name = index_information[0]["name"]
             self.node_label = index_information[0]["labelsOrTypes"][0]
@@ -369,8 +365,7 @@ class Neo4jVector(VectorStore):
             },
         )
         # sort by index_name
-        index_information = sort_by_index_name(
-            index_information, self.index_name)
+        index_information = sort_by_index_name(index_information, self.index_name)
         try:
             self.keyword_index_name = index_information[0]["name"]
             self.text_node_property = index_information[0]["properties"][0]
@@ -496,49 +491,34 @@ class Neo4jVector(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             embeddings: List of list of embedding vectors.
             metadatas: List of metadatas associated with the texts.
-            kwargs: Additional vectorstore-specific parameters.
+            kwargs: vectorstore specific parameters
         """
-
-        # Get child ids from the kwargs
-        child_ids = kwargs.get("child_ids", [])
-        parent_ids = kwargs.get("parent_ids", [])
-        relationship = kwargs.get("relationship", "HAS_CHILD")
-
-        # Generate deterministic IDs based on hash of texts
-        ids = [hashlib.sha256(text.encode('utf-8')).hexdigest()
+        if ids is None:
+            ids = [hashlib.sha256(text.encode('utf-8')).hexdigest()
                for text in texts]
 
-        # Initialize metadata for each text if not provided
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        # Define the import query with dynamic relationship type
-        import_query = """
-            UNWIND $data AS row
-            MERGE (c:`{node_label}` {{id: row.id}})
-            ON CREATE SET c.{text_property} = row.text, c.{embedding_property} = row.embedding, c += row.metadata
-            WITH c, row
-            FOREACH (parentId IN (CASE WHEN $parent_ids IS NOT NULL THEN $parent_ids ELSE [] END) |
-                MERGE (p:`{node_label}` {{id: parentId}})
-                MERGE (p)-[:HAS_CHILD]->(c)
-            )
-            WITH c
-            FOREACH (childId IN (CASE WHEN $child_ids IS NOT NULL THEN $child_ids ELSE [] END) |
-                MERGE (ch:`{node_label}` {{id: childId}})
-                MERGE (c)-[:{relationship}]->(ch)
-            )
-            """.format(node_label=self.node_label, text_property=self.text_node_property, embedding_property=self.embedding_node_property, relationship=relationship)
+        import_query = (
+            "UNWIND $data AS row "
+            "CALL { WITH row "
+            f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
+            "WITH c, row "
+            f"CALL db.create.setVectorProperty(c, "
+            f"'{self.embedding_node_property}', row.embedding) "
+            "YIELD node "
+            f"SET c.`{self.text_node_property}` = row.text "
+            "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
+        )
 
         parameters = {
             "data": [
-                {"text": text, "metadata": metadata,
-                    "embedding": embedding, "id": id}
+                {"text": text, "metadata": metadata, "embedding": embedding, "id": id}
                 for text, metadata, embedding, id in zip(
                     texts, metadatas, embeddings, ids
                 )
-            ],
-            "parent_ids": parent_ids,
-            "child_ids": child_ids,
+            ]
         }
 
         self.query(import_query, params=parameters)
@@ -638,8 +618,7 @@ class Neo4jVector(VectorStore):
             self.retrieval_query if self.retrieval_query else default_retrieval
         )
 
-        read_query = _get_search_index_query(
-            self.search_type) + retrieval_query
+        read_query = _get_search_index_query(self.search_type) + retrieval_query
         parameters = {
             "index": self.index_name,
             "k": k,
@@ -927,8 +906,7 @@ class Neo4jVector(VectorStore):
             )
         # FTS index for Hybrid search
         if search_type == SearchType.HYBRID:
-            fts_node_label = store.retrieve_existing_fts_index(
-                text_node_properties)
+            fts_node_label = store.retrieve_existing_fts_index(text_node_properties)
             # If the FTS index doesn't exist yet
             if not fts_node_label:
                 store.create_new_keyword_index(text_node_properties)
@@ -948,10 +926,8 @@ class Neo4jVector(VectorStore):
                 "k IN $props | str + '\\n' + k + ':' + coalesce(n[k], '')) AS text "
                 "LIMIT 1000"
             )
-            data = store.query(fetch_query, params={
-                               "props": text_node_properties})
-            text_embeddings = embedding.embed_documents(
-                [el["text"] for el in data])
+            data = store.query(fetch_query, params={"props": text_node_properties})
+            text_embeddings = embedding.embed_documents([el["text"] for el in data])
 
             params = {
                 "data": [
