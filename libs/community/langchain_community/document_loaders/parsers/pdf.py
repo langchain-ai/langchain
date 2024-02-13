@@ -454,7 +454,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
     def __init__(
         self,
         textract_features: Optional[Sequence[int]] = None,
-        linearization_config: Optional[TextLinearizationConfig] = None,
+        linearization_config: Optional["TextLinearizationConfig"] = None,
         client: Optional[Any] = None,
     ) -> None:
         """Initializes the parser.

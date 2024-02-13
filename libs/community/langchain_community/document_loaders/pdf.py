@@ -17,7 +17,6 @@ from typing import (
     Sequence,
     Union,
 )
-
 from urllib.parse import urlparse
 
 import requests
@@ -602,7 +601,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         self,
         file_path: str,
         textract_features: Optional[Sequence[str]] = None,
-        linearization_config: Optional[TextLinearizationConfig] = None,
+        linearization_config: Optional["TextLinearizationConfig"] = None,
         client: Optional[Any] = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
