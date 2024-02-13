@@ -4,13 +4,14 @@ from pytest import MonkeyPatch
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 
 
-def mock_response():
-    class MockResponse:
-        status_code = 200
+class MockResponse:
+    status_code = 200
 
-        def json(self):
-            return {"embedding": [1, 2, 3]}
+    def json(self) -> dict:
+        return {"embedding": [1, 2, 3]}
 
+
+def mock_response() -> MockResponse:
     return MockResponse()
 
 
@@ -24,7 +25,7 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
         },
     )
 
-    def mock_post(url, headers, json):
+    def mock_post(url: str, headers: dict, json: str) -> MockResponse:
         assert url == "https://ollama-hostname:8000/api/embeddings"
         assert headers == {
             "Content-Type": "application/json",
@@ -46,7 +47,7 @@ def test_handle_if_headers_not_provided(monkeypatch: MonkeyPatch) -> None:
         model="foo",
     )
 
-    def mock_post(url, headers, json):
+    def mock_post(url: str, headers: dict, json: str) -> MockResponse:
         assert url == "https://ollama-hostname:8000/api/embeddings"
         assert headers == {
             "Content-Type": "application/json",
