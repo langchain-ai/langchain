@@ -205,15 +205,14 @@ class NotionDBLoader(BaseLoader):
         method: str = "GET",
         query_dict: Dict[str, Any] = {},
         *,
-        filter_object: Dict[str, Any] = None,
+        filter_object: Optional[Dict[str, Any]] = None,
     ) -> Any:
         res = requests.request(
             method,
             url,
             headers=self.headers,
-            json=query_dict,
+            json={**query_dict, "filter": filter_object or {}},
             timeout=self.request_timeout_sec,
-            filter=filter_object or {},
         )
         res.raise_for_status()
         return res.json()
