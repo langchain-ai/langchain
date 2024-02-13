@@ -2,7 +2,7 @@ name: API docs build
 
 on:
   push:
-    - branches:
+    branches:
         - 'bagatur/api_docs_build_gha'
   workflow_dispatch:
   schedule:
