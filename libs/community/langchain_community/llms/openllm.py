@@ -72,7 +72,7 @@ class OpenLLM(LLM):
 
             from langchain_community.llms import OpenLLM
             llm = OpenLLM(server_url='http://localhost:3000')
-            llm("What is the difference between a duck and a goose?")
+            llm.invoke("What is the difference between a duck and a goose?")
     """
 
     model_name: Optional[str] = None
@@ -265,9 +265,11 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            res = self._client.generate(
-                prompt, **config.model_dump(flatten=True)
-            ).responses[0]
+            res = (
+                self._client.generate(prompt, **config.model_dump(flatten=True))
+                .outputs[0]
+                .text
+            )
         else:
             assert self._runner is not None
             res = self._runner(prompt, **config.model_dump(flatten=True))
