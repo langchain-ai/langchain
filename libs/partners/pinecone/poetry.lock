@@ -318,7 +318,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.17"
+version = "0.1.22"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -328,7 +328,7 @@ develop = true
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
-langsmith = ">=0.0.83,<0.1"
+langsmith = "^0.0.87"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -361,13 +361,13 @@ tiktoken = ">=0.5.2,<0.6.0"
 
 [[package]]
 name = "langsmith"
-version = "0.0.83"
+version = "0.0.87"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.83-py3-none-any.whl", hash = "sha256:a5bb7ac58c19a415a9d5f51db56dd32ee2cd7343a00825bbc2018312eb3d122a"},
-    {file = "langsmith-0.0.83.tar.gz", hash = "sha256:94427846b334ad9bdbec3266fee12903fe9f5448f628667689d0412012aaf392"},
+    {file = "langsmith-0.0.87-py3-none-any.whl", hash = "sha256:8903d3811b9fc89eb18f5961c8e6935fbd2d0f119884fbf30dc70b8f8f4121fc"},
+    {file = "langsmith-0.0.87.tar.gz", hash = "sha256:36c4cc47e5b54be57d038036a30fb19ce6e4c73048cd7a464b8f25b459694d34"},
 ]
 
 [package.dependencies]
@@ -973,42 +973,6 @@ files = [
 ]
 
 [[package]]
-name = "simsimd"
-version = "3.6.3"
-description = "Fastest SIMD-Accelerated Vector Similarity Functions for x86 and Arm"
-optional = false
-python-versions = "*"
-files = [
-    {file = "simsimd-3.6.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:107bce051ce8400873c12581502f904a1065f2c2c33b014d78b404a766790d25"},
-    {file = "simsimd-3.6.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:5418ab23eeda2ab5fe8bb51ee02013e9fa382ee595a7836c204117ed648ed6ff"},
-    {file = "simsimd-3.6.3-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:5d97b5676936bb82db2a0d829c3da23d8c496d965a889f493bb1c34b8f06ed25"},
-    {file = "simsimd-3.6.3-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:9dcfaa380dff710a74b252796475942a40d87b58917b3e48aa69e6a478e306f0"},
-    {file = "simsimd-3.6.3-cp310-cp310-win_amd64.whl", hash = "sha256:f7608db9712864f6405c9fa6475c8f56ca357d1b76d18e2b24186970312e5bbd"},
-    {file = "simsimd-3.6.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:81ac4252ef3f7c7a43b65041d590953cd4a3b62a94f582e0febcd6c830430f7b"},
-    {file = "simsimd-3.6.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:9bf67762caeceb2340ca73ffe3d2a386b8841288e76ad6964f6c87a6e0fad648"},
-    {file = "simsimd-3.6.3-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:e3809a0d4430d8d5c9bae1c6d418f2356423ef497e891d71902fb759d9d9e1ef"},
-    {file = "simsimd-3.6.3-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:e31608e25c80406620174ade45a07fe0af67520352c0e8f16ca4b59488ea97cd"},
-    {file = "simsimd-3.6.3-cp311-cp311-win_amd64.whl", hash = "sha256:7400f2549a58744c0c61dd62532686fc40bee49efcbfb5ec163fd942a3d00c09"},
-    {file = "simsimd-3.6.3-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:56dbc4726ce2a07ae2b9f9121784d60944d1f980d8eca086c6c2e152ecc3c389"},
-    {file = "simsimd-3.6.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:07138cec69335960b202850f4c92419f2f9316bc4bf3995ba36935043c450527"},
-    {file = "simsimd-3.6.3-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:e2d2a7661d364928e7bdf45524e793df04b8f5114b112400310f9c84996b3537"},
-    {file = "simsimd-3.6.3-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:6dc612fcef38ca0e5d6dec26f9d4e254b2f86692344cb929195f8c3bc0178e9c"},
-    {file = "simsimd-3.6.3-cp312-cp312-win_amd64.whl", hash = "sha256:9dd142ce8d8e3191a6229cd69d571b32f3f9859cac5236013942a8d090e1e0ef"},
-    {file = "simsimd-3.6.3-cp36-cp36m-win_amd64.whl", hash = "sha256:a6a34de7067fea77f60a8e88ff572ad017e664c58811c36107c62ad82d73cbad"},
-    {file = "simsimd-3.6.3-cp37-cp37m-win_amd64.whl", hash = "sha256:f32724f8128220bb6d296dede90db5473ed1e0c51d62ebbac8e9d76faa1956ec"},
-    {file = "simsimd-3.6.3-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:739d0c145d9f1127cec1206e20f57dfeb65e6f541614305ff3d247516a4f323e"},
-    {file = "simsimd-3.6.3-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:bf631d942985d2e60f2fcc81b3030f45e6e19c38d91d6c8d849aefcf5505723e"},
-    {file = "simsimd-3.6.3-cp38-cp38-manylinux_2_28_aarch64.whl", hash = "sha256:0cb9932f8ca0a9a375baf593e4e6ec3ee4c91bf9ff4e7d6905efbc93954365df"},
-    {file = "simsimd-3.6.3-cp38-cp38-manylinux_2_28_x86_64.whl", hash = "sha256:882b5a9c900de57c33cfcb0dc5584ccd5f70cea87ad2ac5365b1548ede7e6dda"},
-    {file = "simsimd-3.6.3-cp38-cp38-win_amd64.whl", hash = "sha256:87b2761ac7b0264e4dfefdb4cf0a725cd0c349a6c480cf39f0cdb9741487f78b"},
-    {file = "simsimd-3.6.3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:1efee420355204798eb44f6355f7447b76a3d1941357620cb2187170e6e397e6"},
-    {file = "simsimd-3.6.3-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:c54dfa652438f96ca0b75ca2d0ac4c241d5f4aa9a9d4da5a0b633ecee607cac9"},
-    {file = "simsimd-3.6.3-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:a5170a2865391138cafa1aa5084082a450c0041fcd9efd8df8e82df82956491a"},
-    {file = "simsimd-3.6.3-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:a738662bb8c45792fda624ba51d0e6a02fb3750b3339c18fbb31b7f44ac7d6d2"},
-    {file = "simsimd-3.6.3-cp39-cp39-win_amd64.whl", hash = "sha256:54306a63ffdea756f28c3085330462d739ed46c5a36d827473bbd711557c37d3"},
-]
-
-[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -1209,5 +1173,5 @@ watchmedo = ["PyYAML (>=3.10)"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8.1,<4.0"
-content-hash = "9b38ca11dda09f4e7c1456e73ca69585b017cfd811ad9e50653f58d5bc94cf90"
+python-versions = ">=3.8.1,<3.13"
+content-hash = "e12831055a5ebb19af506df742ac22c57c80684145e3a35e6ae82c848150c676"
