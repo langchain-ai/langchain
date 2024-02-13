@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class BaseMessage(Serializable):
-    """The base abstract Message class.
+    """Base abstract Message class.
 
     Messages are the inputs and outputs of ChatModels.
     """
@@ -56,7 +56,7 @@ class BaseMessage(Serializable):
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
 def merge_content(
@@ -96,7 +96,7 @@ def merge_content(
 
 
 class BaseMessageChunk(BaseMessage):
-    """A Message chunk, which can be concatenated with other Message chunks."""
+    """Message chunk, which can be concatenated with other Message chunks."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -195,6 +195,15 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
 
 
 def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
+    """Get a title representation for a message.
+
+    Args:
+        title: The title.
+        bold: Whether to bold the title.
+
+    Returns:
+        The title representation.
+    """
     padded = " " + title + " "
     sep_len = (80 - len(padded)) // 2
     sep = "=" * sep_len
