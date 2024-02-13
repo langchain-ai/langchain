@@ -837,7 +837,7 @@ class Kinetica(VectorStore):
 
         Args:
             cls (Type[Kinetica]): Kinetica class
-            text_embeddings (List[Tuple[str, List[float]]]): A list of texts 
+            text_embeddings (List[Tuple[str, List[float]]]): A list of texts
                             and the embeddings
             embedding (Embeddings): List of embeddings
             metadatas (Optional[List[dict]], optional): List of dicts, JSON describing
