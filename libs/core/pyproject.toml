@@ -5,7 +5,7 @@ description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
+repository = "https://github.com/ai-forever/gigachain"
 packages = [
     {include = "langchain_core"}
 ]
@@ -68,11 +68,12 @@ dependencies = {}
 [tool.poetry.extras]
 extended_testing = ["jinja2"]
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "T201", # print
 ]
 
 [tool.mypy]

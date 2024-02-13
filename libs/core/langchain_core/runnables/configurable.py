@@ -42,7 +42,7 @@ from langchain_core.runnables.utils import (
 
 
 class DynamicRunnable(RunnableSerializable[Input, Output]):
-    """A Serializable Runnable that can be dynamically configured."""
+    """Serializable Runnable that can be dynamically configured."""
 
     default: RunnableSerializable[Input, Output]
 
@@ -220,7 +220,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
 
 class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
-    """A Runnable that can be dynamically configured."""
+    """Runnable that can be dynamically configured."""
 
     fields: Dict[str, AnyConfigurableField]
 
@@ -297,7 +297,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
 # Before Python 3.11 native StrEnum is not available
 class StrEnum(str, enum.Enum):
-    """A string enum."""
+    """String enum."""
 
     pass
 
@@ -313,10 +313,10 @@ _enums_for_spec_lock = threading.Lock()
 
 
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
-    """A Runnable that can be dynamically configured.
+    """Runnable that can be dynamically configured.
 
     A RunnableConfigurableAlternatives should be initiated using the
-    `configurable_alternatives` method of a runnable or can be
+    `configurable_alternatives` method of a Runnable or can be
     initiated directly as well.
 
     Here is an example of using a RunnableConfigurableAlternatives that uses

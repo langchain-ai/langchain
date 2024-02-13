@@ -1,4 +1,5 @@
 """Test Xinference embeddings."""
+
 import time
 from typing import AsyncGenerator, Tuple
 
@@ -17,7 +18,7 @@ async def setup() -> AsyncGenerator[Tuple[str, str], None]:
     pool = await create_worker_actor_pool(
         f"test://127.0.0.1:{xo.utils.get_next_port()}"
     )
-    print(f"Pool running on localhost:{pool.external_address}")
+    print(f"Pool running on localhost:{pool.external_address}")  # noqa: T201
 
     endpoint = await start_supervisor_components(
         pool.external_address, "127.0.0.1", xo.utils.get_next_port()

@@ -685,10 +685,10 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
-                json.dump(chain_dict, f, indent=4, ensure_ascii=False)
-        elif save_path.suffix == ".yaml":
-            with open(file_path, "w") as f:
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(chain_dict, f, indent=4)
+        elif save_path.suffix.endswith((".yaml", ".yml")):
+            with open(file_path, "w", encoding="utf-8") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")

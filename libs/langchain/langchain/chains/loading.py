@@ -607,7 +607,7 @@ def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
     if file_path.suffix == ".json":
         with open(file_path, encoding="utf-8") as f:
             config = json.load(f)
-    elif file_path.suffix == ".yaml":
+    elif file_path.suffix.endswith((".yaml", ".yml")):
         with open(file_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
     else:

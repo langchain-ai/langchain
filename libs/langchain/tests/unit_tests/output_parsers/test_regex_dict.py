@@ -1,4 +1,5 @@
 """Test in memory docstore."""
+
 from langchain.output_parsers.regex_dict import RegexDictParser
 
 DEF_EXPECTED_RESULT = {"action": "Search", "action_input": "How to use this class?"}
@@ -33,5 +34,5 @@ def test_regex_dict_result() -> None:
         output_key_to_format=DEF_OUTPUT_KEY_TO_FORMAT, no_update_value="N/A"
     )
     result_dict = regex_dict_parser.parse(DEF_README)
-    print("parse_result:", result_dict)
+    print("parse_result:", result_dict)  # noqa: T201
     assert DEF_EXPECTED_RESULT == result_dict

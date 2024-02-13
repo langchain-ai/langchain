@@ -320,7 +320,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "AIMessage": {
                 "title": "AIMessage",
-                "description": "A Message from an AI.",
+                "description": "Message from an AI.",
                 "type": "object",
                 "properties": {
                     "content": {
@@ -355,7 +355,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "HumanMessage": {
                 "title": "HumanMessage",
-                "description": "A Message from a human.",
+                "description": "Message from a human.",
                 "type": "object",
                 "properties": {
                     "content": {
@@ -390,7 +390,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ChatMessage": {
                 "title": "ChatMessage",
-                "description": "A Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa
+                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -421,7 +421,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "A Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa
+                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -451,7 +451,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "A Message for passing the result of executing a function back to a model.",  # noqa
+                "description": "Message for passing the result of executing a function back to a model.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
@@ -482,7 +482,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ToolMessage": {
                 "title": "ToolMessage",
-                "description": "A Message for passing the result of executing a tool back to a model.",  # noqa
+                "description": "Message for passing the result of executing a tool back to a model.",  # noqa
                 "type": "object",
                 "properties": {
                     "content": {
