@@ -496,7 +496,6 @@ class Neo4jVector(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             embeddings: List of list of embedding vectors.
             metadatas: List of metadatas associated with the texts.
-            parent_ids: Optionally, a list of parent identifiers for the texts.
             kwargs: Additional vectorstore-specific parameters.
         """
 
