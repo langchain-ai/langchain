@@ -5,7 +5,7 @@ import os
 import pwd
 import uuid
 from http import HTTPStatus
-from typing import Any, Iterator, List, Dict
+from typing import Any, Dict, Iterator, List
 
 import requests
 from langchain_core.documents import Document
