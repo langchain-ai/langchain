@@ -11,6 +11,8 @@ from langchain_community.document_loaders.blob_loaders import Blob
 
 
 class VsdxParser(BaseBlobParser, ABC):
+    """Parser for vsdx files."""
+
     def parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[override]
         """Parse a vsdx file."""
         return self.lazy_parse(blob)
@@ -59,13 +61,13 @@ class VsdxParser(BaseBlobParser, ABC):
             )
 
         if "visio/pages/pages.xml" not in zfile.namelist():
-            print("WARNING - No pages.xml file found in {}".format(source))
+            print("WARNING - No pages.xml file found in {}".format(source))  # noqa: T201
             return  # type: ignore[return-value]
         if "visio/pages/_rels/pages.xml.rels" not in zfile.namelist():
-            print("WARNING - No pages.xml.rels file found in {}".format(source))
+            print("WARNING - No pages.xml.rels file found in {}".format(source))  # noqa: T201
             return  # type: ignore[return-value]
         if "docProps/app.xml" not in zfile.namelist():
-            print("WARNING - No app.xml file found in {}".format(source))
+            print("WARNING - No app.xml file found in {}".format(source))  # noqa: T201
             return  # type: ignore[return-value]
 
         pagesxml_content: dict = xmltodict.parse(zfile.read("visio/pages/pages.xml"))

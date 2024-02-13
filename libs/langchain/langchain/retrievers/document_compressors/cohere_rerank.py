@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional, Sequence
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Extra, root_validator
@@ -9,23 +10,13 @@ from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.utils import get_from_dict_or_env
 
-if TYPE_CHECKING:
-    from cohere import Client
-else:
-    # We do to avoid pydantic annotation issues when actually instantiating
-    # while keeping this import optional
-    try:
-        from cohere import Client
-    except ImportError:
-        pass
-
 
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
 
-    client: Client
+    client: Any
     """Cohere client to use for compressing documents."""
-    top_n: int = 3
+    top_n: Optional[int] = 3
     """Number of documents to return."""
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
@@ -57,6 +48,42 @@ class CohereRerank(BaseDocumentCompressor):
         values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
         return values
 
+    def rerank(
+        self,
+        documents: Sequence[Union[str, Document, dict]],
+        query: str,
+        *,
+        model: Optional[str] = None,
+        top_n: Optional[int] = -1,
+        max_chunks_per_doc: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Returns an ordered list of documents ordered by their relevance to the provided query.
+
+        Args:
+            query: The query to use for reranking.
+            documents: A sequence of documents to rerank.
+            model: The model to use for re-ranking. Default to self.model.
+            top_n : The number of results to return. If None returns all results.
+                Defaults to self.top_n.
+            max_chunks_per_doc : The maximum number of chunks derived from a document.
+        """  # noqa: E501
+        if len(documents) == 0:  # to avoid empty api call
+            return []
+        docs = [
+            doc.page_content if isinstance(doc, Document) else doc for doc in documents
+        ]
+        model = model or self.model
+        top_n = top_n if (top_n is None or top_n > 0) else self.top_n
+        results = self.client.rerank(
+            query, docs, model, top_n=top_n, max_chunks_per_doc=max_chunks_per_doc
+        )
+        result_dicts = []
+        for res in results:
+            result_dicts.append(
+                {"index": res.index, "relevance_score": res.relevance_score}
+            )
+        return result_dicts
+
     def compress_documents(
         self,
         documents: Sequence[Document],
@@ -74,16 +101,10 @@ class CohereRerank(BaseDocumentCompressor):
         Returns:
             A sequence of compressed documents.
         """
-        if len(documents) == 0:  # to avoid empty api call
-            return []
-        doc_list = list(documents)
-        _docs = [d.page_content for d in doc_list]
-        results = self.client.rerank(
-            model=self.model, query=query, documents=_docs, top_n=self.top_n
-        )
-        final_results = []
-        for r in results:
-            doc = doc_list[r.index]
-            doc.metadata["relevance_score"] = r.relevance_score
-            final_results.append(doc)
-        return final_results
+        compressed = []
+        for res in self.rerank(documents, query):
+            doc = documents[res["index"]]
+            doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
+            doc_copy.metadata["relevance_score"] = res["relevance_score"]
+            compressed.append(doc_copy)
+        return compressed

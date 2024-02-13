@@ -1,4 +1,5 @@
 """Use to load blobs from the local file system."""
+
 from pathlib import Path
 from typing import Callable, Iterable, Iterator, Optional, Sequence, TypeVar, Union
 
@@ -46,7 +47,7 @@ class FileSystemBlobLoader(BlobLoader):
         from langchain_community.document_loaders.blob_loaders import FileSystemBlobLoader
         loader = FileSystemBlobLoader("/path/to/directory")
         for blob in loader.yield_blobs():
-            print(blob)
+            print(blob)  # noqa: T201
     """  # noqa: E501
 
     def __init__(
