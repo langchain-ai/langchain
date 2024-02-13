@@ -9,7 +9,7 @@ It uses GPT-4V to create image summaries for each slide, embeds the summaries, a
  
 Given a question, relevant slides are retrieved and passed to GPT-4V for answer synthesis.
 
-IMAGE TBD
+![](RAG-architecture.png)
 
 ## Input
 
