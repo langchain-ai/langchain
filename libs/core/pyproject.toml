@@ -66,11 +66,12 @@ dependencies = {}
 [tool.poetry.extras]
 extended_testing = ["jinja2"]
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "T201", # print
 ]
 
 [tool.mypy]

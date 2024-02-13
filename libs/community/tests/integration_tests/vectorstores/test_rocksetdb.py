@@ -155,3 +155,19 @@ ORDER BY dist DESC
 LIMIT 4
 """
         assert q_str == expected
+
+    def test_add_documents_and_delete(self) -> None:
+        """ "add_documents" and "delete" are requirements to support use
+        with RecordManager"""
+
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"metadata_index": i} for i in range(len(texts))]
+
+        _docs = zip(texts, metadatas)
+        docs = [Document(page_content=pc, metadata=i) for pc, i in _docs]
+
+        ids = self.rockset_vectorstore.add_documents(docs)
+        assert len(ids) == len(texts)
+
+        deleted = self.rockset_vectorstore.delete(ids)
+        assert deleted

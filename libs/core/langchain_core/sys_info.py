@@ -1,4 +1,5 @@
 """Print information about the system and langchain packages for debugging purposes."""
+
 from typing import Sequence
 
 
@@ -37,17 +38,17 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         "OS Version": platform.version(),
         "Python Version": sys.version,
     }
-    print()
-    print("System Information")
-    print("------------------")
-    print("> OS: ", system_info["OS"])
-    print("> OS Version: ", system_info["OS Version"])
-    print("> Python Version: ", system_info["Python Version"])
+    print()  # noqa: T201
+    print("System Information")  # noqa: T201
+    print("------------------")  # noqa: T201
+    print("> OS: ", system_info["OS"])  # noqa: T201
+    print("> OS Version: ", system_info["OS Version"])  # noqa: T201
+    print("> Python Version: ", system_info["Python Version"])  # noqa: T201
 
     # Print out only langchain packages
-    print()
-    print("Package Information")
-    print("-------------------")
+    print()  # noqa: T201
+    print("Package Information")  # noqa: T201
+    print("-------------------")  # noqa: T201
 
     not_installed = []
 
@@ -68,18 +69,18 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
 
         # Print package with version
         if package_version is not None:
-            print(f"> {pkg}: {package_version}")
+            print(f"> {pkg}: {package_version}")  # noqa: T201
         else:
-            print(f"> {pkg}: Installed. No version info available.")
+            print(f"> {pkg}: Installed. No version info available.")  # noqa: T201
 
     if not_installed:
-        print()
-        print("Packages not installed (Not Necessarily a Problem)")
-        print("--------------------------------------------------")
-        print("The following packages were not found:")
-        print()
+        print()  # noqa: T201
+        print("Packages not installed (Not Necessarily a Problem)")  # noqa: T201
+        print("--------------------------------------------------")  # noqa: T201
+        print("The following packages were not found:")  # noqa: T201
+        print()  # noqa: T201
         for pkg in not_installed:
-            print(f"> {pkg}")
+            print(f"> {pkg}")  # noqa: T201
 
 
 if __name__ == "__main__":
