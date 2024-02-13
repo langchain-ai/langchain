@@ -106,7 +106,7 @@ class VDMS(VectorStore):
             from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 
             vectorstore = VDMS(
-                collection_name="langchain_store",
+                collection_name="langchain-demo",
                 distance_strategy="L2",
                 engine="FaissFlat"
                 embedding_function=HuggingFaceEmbeddings(),
