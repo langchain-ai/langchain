@@ -64,9 +64,7 @@ class ElasticsearchTranslator(Visitor):
             value = comparison.value
             if isinstance(comparison.value, dict) and "date" in comparison.value:
                 value = comparison.value["date"]
-            return {
-                "range": {field: {self._format_func(comparison.comparator): value}}
-                }
+            return {"range": {field: {self._format_func(comparison.comparator): value}}}
 
         if comparison.comparator == Comparator.CONTAIN:
             return {
