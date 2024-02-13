@@ -397,7 +397,7 @@ class WatsonxLLM(BaseLLM):
             prompt=prompt, raw_response=True, params=params
         ):
             chunk = self._stream_response_to_generation_chunk(stream_resp)
-            yield chunk
 
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
