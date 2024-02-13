@@ -443,16 +443,16 @@ def _convert_delta_to_message_chunk(
 
 
 def _convert_dict_to_message(_dict: ChatCompletionMessage) -> BaseMessage:
-    role = _dict.role
+    role = _dict.get("role")
     if role == "user":
-        return HumanMessage(content=_dict.content)
+        return HumanMessage(content=_dict.get("content"))
     elif role == "assistant":
-        content = _dict.content or ""
+        content = _dict.get("content") or ""
         return AIMessage(content=content)
     elif role == "system":
-        return SystemMessage(content=_dict.content)
+        return SystemMessage(content=_dict.get("content"))
     else:
-        return ChatMessage(content=_dict.content, role=role)
+        return ChatMessage(content=_dict.get("content"), role=role)
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
