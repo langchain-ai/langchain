@@ -122,10 +122,10 @@ class DirectoryLoader(BaseLoader):
 
         if self.sample_size > 0:
             if self.randomize_sample:
-                randomizer = (
-                    random.Random(self.sample_seed) if self.sample_seed else random
+                randomizer = random.Random(
+                    self.sample_seed if self.sample_seed else None
                 )
-                randomizer.shuffle(items)  # type: ignore
+                randomizer.shuffle(items)
             items = items[: min(len(items), self.sample_size)]
 
         pbar = None

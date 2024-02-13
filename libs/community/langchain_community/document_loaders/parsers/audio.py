@@ -64,7 +64,7 @@ class OpenAIWhisperParser(BaseBlobParser):
                 file_obj.name = f"part_{split_number}.mp3"
 
             # Transcribe
-            print(f"Transcribing part {split_number + 1}!")
+            print(f"Transcribing part {split_number + 1}!")  # noqa: T201
             attempts = 0
             while attempts < 3:
                 try:
@@ -77,10 +77,10 @@ class OpenAIWhisperParser(BaseBlobParser):
                     break
                 except Exception as e:
                     attempts += 1
-                    print(f"Attempt {attempts} failed. Exception: {str(e)}")
+                    print(f"Attempt {attempts} failed. Exception: {str(e)}")  # noqa: T201
                     time.sleep(5)
             else:
-                print("Failed to transcribe after 3 attempts.")
+                print("Failed to transcribe after 3 attempts.")  # noqa: T201
                 continue
 
             yield Document(
@@ -169,7 +169,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 rec_model = "openai/whisper-large"
             self.lang_model = lang_model if lang_model else rec_model
 
-        print("Using the following model: ", self.lang_model)
+        print("Using the following model: ", self.lang_model)  # noqa: T201
 
         self.batch_size = batch_size
 
@@ -216,7 +216,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
         # Transcribe
-        print(f"Transcribing part {blob.path}!")
+        print(f"Transcribing part {blob.path}!")  # noqa: T201
 
         y, sr = librosa.load(file_obj, sr=16000)
 
