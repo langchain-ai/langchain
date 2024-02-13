@@ -40,11 +40,12 @@ ruff = "^0.1.5"
 # For langserve
 serve = []
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "T201", # print
 ]
 
 [tool.poe.tasks]
