@@ -433,7 +433,6 @@ class Kinetica(VectorStore):
         resp: Dict = self.__query_collection(embedding, k, filter)
 
         records: OrderedDict = resp["records"]
-        print(records)
         results = list(zip(*list(records.values())))
 
         return self._results_to_docs_and_scores(results)
