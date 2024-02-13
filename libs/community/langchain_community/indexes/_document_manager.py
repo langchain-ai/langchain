@@ -136,7 +136,6 @@ class MongoDocumentManager(DocumentManager):
         server_info = self.sync_db.command("hostInfo")
         local_time = server_info["system"]["currentTime"]
         timestamp = local_time.timestamp()
-        print(f"timestamp {timestamp}")
         return timestamp
 
     async def aget_time(self) -> float:
