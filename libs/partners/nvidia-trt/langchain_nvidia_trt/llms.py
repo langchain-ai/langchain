@@ -40,7 +40,7 @@ class TritonTensorRTLLM(BaseLLM):
         length_penalty: (float) The penalty to apply repeated tokens
         tokens: (int) The maximum number of tokens to generate.
         client: The client object used to communicate with the inference server
-        verbose: flag to pass to the client on creation
+        verbose_client: flag to pass to the client on creation
 
     Example:
         .. code-block:: python
@@ -74,7 +74,7 @@ class TritonTensorRTLLM(BaseLLM):
         description="Request the inference server to load the specified model.\
             Certain Triton configurations do not allow for this operation.",
     )
-    verbose: bool = False
+    verbose_client: bool = False
 
     def __del__(self):
         """Ensure the client streaming connection is properly shutdown"""
@@ -85,7 +85,7 @@ class TritonTensorRTLLM(BaseLLM):
         """Validate that python package exists in environment."""
         if not values.get("client"):
             values["client"] = grpcclient.InferenceServerClient(
-                values["server_url"], verbose=values.get("verbose", False)
+                values["server_url"], verbose=values.get("verbose_client", False)
             )
         return values
 
