@@ -1,8 +1,6 @@
 import logging
 import os
 
-import rockset
-import rockset.models
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.rocksetdb import Rockset
@@ -44,6 +42,9 @@ class TestRockset:
 
     @classmethod
     def setup_class(cls) -> None:
+        import rockset
+        import rockset.models
+
         assert os.environ.get("ROCKSET_API_KEY") is not None
         assert os.environ.get("ROCKSET_REGION") is not None
 
