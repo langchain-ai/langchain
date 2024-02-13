@@ -222,7 +222,7 @@ class BigQueryVectorSearch(VectorStore):
                 self._logger.debug("Vector index already exists.")
                 self._have_index = True
 
-    def _create_index_in_background(self):
+    def _create_index_in_background(self):  # type: ignore[no-untyped-def]
         if self._have_index or self._creating_index:
             # Already have an index or in the process of creating one.
             return
@@ -231,7 +231,7 @@ class BigQueryVectorSearch(VectorStore):
         thread = Thread(target=self._create_index, daemon=True)
         thread.start()
 
-    def _create_index(self):
+    def _create_index(self):  # type: ignore[no-untyped-def]
         from google.api_core.exceptions import ClientError
 
         table = self.bq_client.get_table(self.vectors_table)
@@ -289,7 +289,7 @@ class BigQueryVectorSearch(VectorStore):
     def full_table_id(self) -> str:
         return self._full_table_id
 
-    def add_texts(
+    def add_texts(  # type: ignore[override]
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,

@@ -16,7 +16,7 @@ gpt4all = ">=1.0.8"
 beautifulsoup4 = ">=4.12.2"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_chroma_private"
