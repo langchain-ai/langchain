@@ -149,7 +149,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             return None
         return zep_memory
 
-    def add_user_message(
+    def add_user_message(  # type: ignore[override]
         self, message: str, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Convenience method for adding a human message string to the store.
@@ -160,7 +160,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         """
         self.add_message(HumanMessage(content=message), metadata=metadata)
 
-    def add_ai_message(
+    def add_ai_message(  # type: ignore[override]
         self, message: str, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Convenience method for adding an AI message string to the store.

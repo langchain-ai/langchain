@@ -219,7 +219,7 @@ class TextGen(LLM):
             if response.status_code == 200:
                 result = response.json()["results"][0]["text"]
             else:
-                print(f"ERROR: response: {response}")
+                print(f"ERROR: response: {response}")  # noqa: T201
                 result = ""
 
         return result
@@ -265,7 +265,7 @@ class TextGen(LLM):
             if response.status_code == 200:
                 result = response.json()["results"][0]["text"]
             else:
-                print(f"ERROR: response: {response}")
+                print(f"ERROR: response: {response}")  # noqa: T201
                 result = ""
 
         return result
@@ -303,7 +303,7 @@ class TextGen(LLM):
                 )
                 for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
                         stop=["'","\n"]):
-                    print(chunk, end='', flush=True)
+                    print(chunk, end='', flush=True)  # noqa: T201
 
         """
         try:
@@ -376,7 +376,7 @@ class TextGen(LLM):
                 )
                 for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
                         stop=["'","\n"]):
-                    print(chunk, end='', flush=True)
+                    print(chunk, end='', flush=True)  # noqa: T201
 
         """
         try:

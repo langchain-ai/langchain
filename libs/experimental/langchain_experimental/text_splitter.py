@@ -148,11 +148,10 @@ class SemanticChunker(BaseDocumentTransformer):
         return cast(float, np.percentile(distances, y))
 
     def _calculate_sentence_distances(
-        self, text: str
+        self, single_sentences_list: List[str]
     ) -> Tuple[List[float], List[dict]]:
         """Split text into multiple components."""
-        # Splitting the essay on '.', '?', and '!'
-        single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
+
         _sentences = [
             {"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)
         ]
@@ -169,7 +168,14 @@ class SemanticChunker(BaseDocumentTransformer):
         self,
         text: str,
     ) -> List[str]:
-        distances, sentences = self._calculate_sentence_distances(text)
+        # Splitting the essay on '.', '?', and '!'
+        single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
+
+        # having len(single_sentences_list) == 1 would cause the following
+        # np.percentile to fail.
+        if len(single_sentences_list) == 1:
+            return single_sentences_list
+        distances, sentences = self._calculate_sentence_distances(single_sentences_list)
         if self.number_of_chunks is not None:
             breakpoint_distance_threshold = self._threshold_from_clusters(distances)
         else:
