@@ -125,7 +125,6 @@ class Kinetica(VectorStore):
             )
     """
 
-
     def __init__(
         self,
         config: KineticaSettings,
@@ -794,13 +793,13 @@ class Kinetica(VectorStore):
 
         if len(texts) == 0:
             raise ValueError("texts is empty")
-        
+
         try:
             first_embedding = embedding.embed_documents(texts[0:1])
         except NotImplementedError:
             first_embedding = [embedding.embed_query(texts[0])]
 
-        dimensions= len(first_embedding[0])
+        dimensions = len(first_embedding[0])
         embeddings = embedding.embed_documents(list(texts))
 
         kinetica_store = cls.__from(
@@ -816,7 +815,7 @@ class Kinetica(VectorStore):
             pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
-        
+
         return kinetica_store
 
     @classmethod
