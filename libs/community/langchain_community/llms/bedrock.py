@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 import json
 import warnings
@@ -14,12 +12,6 @@ from typing import (
     Mapping,
     Optional,
 )
-
-try:
-    from botocore.client import Config
-except ImportError:
-    Config = Any
-
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -228,7 +220,7 @@ class BedrockBase(BaseModel, ABC):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    config: Optional[Config] = None
+    config: Any = None
     """An optional botocore.config.Config instance to pass to the client."""
 
     provider: Optional[str] = None
@@ -305,9 +297,6 @@ class BedrockBase(BaseModel, ABC):
             if reason == "GUARDRAIL_INTERVENED":
                 ...Logic to handle guardrail intervention...
     """  # noqa: E501
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
