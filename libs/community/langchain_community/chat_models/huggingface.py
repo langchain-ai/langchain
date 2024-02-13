@@ -49,6 +49,7 @@ class ChatHuggingFace(BaseChatModel):
         from transformers import AutoTokenizer
 
         self._resolve_model_id()
+
         self.tokenizer = (
             AutoTokenizer.from_pretrained(self.model_id)
             if self.tokenizer is None
