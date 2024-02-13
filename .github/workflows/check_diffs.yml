@@ -1,5 +1,5 @@
 ---
-name: Check library diffs
+name: CI
 
 on:
   push:
@@ -32,6 +32,7 @@ jobs:
     outputs:
       dirs-to-run: ${{ steps.set-matrix.outputs.dirs-to-run }}
   ci:
+    name: cd ${{ matrix.working-directory }}
     needs: [ build ]
     strategy:
       matrix:

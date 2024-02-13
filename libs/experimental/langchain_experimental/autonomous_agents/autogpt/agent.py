@@ -98,7 +98,7 @@ class AutoGPT:
             )
 
             # Print Assistant thoughts
-            print(assistant_reply)
+            print(assistant_reply)  # noqa: T201
             self.chat_history_memory.add_message(HumanMessage(content=user_input))
             self.chat_history_memory.add_message(AIMessage(content=assistant_reply))
 
@@ -135,7 +135,7 @@ class AutoGPT:
             if self.feedback_tool is not None:
                 feedback = f"\n{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
-                    print("EXITING")
+                    print("EXITING")  # noqa: T201
                     return "EXITING"
                 memory_to_add += feedback
 
