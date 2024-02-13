@@ -39,6 +39,7 @@ def import_mlflow() -> Any:
 
 
 def mlflow_callback_metrics() -> List[str]:
+    """Get the metrics to log to MLFlow."""
     return [
         "step",
         "starts",
@@ -59,6 +60,7 @@ def mlflow_callback_metrics() -> List[str]:
 
 
 def get_text_complexity_metrics() -> List[str]:
+    """Get the text complexity metrics from textstat."""
     return [
         "flesch_reading_ease",
         "flesch_kincaid_grade",
@@ -644,9 +646,11 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             {
                 "page_content": doc.page_content,
                 "metadata": {
-                    k: str(v)
-                    if not isinstance(v, list)
-                    else ",".join(str(x) for x in v)
+                    k: (
+                        str(v)
+                        if not isinstance(v, list)
+                        else ",".join(str(x) for x in v)
+                    )
                     for k, v in doc.metadata.items()
                 },
             }
@@ -755,15 +759,15 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                         langchain_asset.save_agent(langchain_asset_path)
                         self.mlflg.artifact(langchain_asset_path)
                     except AttributeError:
-                        print("Could not save model.")
+                        print("Could not save model.")  # noqa: T201
                         traceback.print_exc()
                         pass
                     except NotImplementedError:
-                        print("Could not save model.")
+                        print("Could not save model.")  # noqa: T201
                         traceback.print_exc()
                         pass
                 except NotImplementedError:
-                    print("Could not save model.")
+                    print("Could not save model.")  # noqa: T201
                     traceback.print_exc()
                     pass
         if finish:

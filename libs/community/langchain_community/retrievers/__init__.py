@@ -70,6 +70,7 @@ from langchain_community.retrievers.weaviate_hybrid_search import (
     WeaviateHybridSearchRetriever,
 )
 from langchain_community.retrievers.wikipedia import WikipediaRetriever
+from langchain_community.retrievers.you import YouRetriever
 from langchain_community.retrievers.zep import ZepRetriever
 from langchain_community.retrievers.zilliz import ZillizRetriever
 
@@ -79,6 +80,7 @@ __all__ = [
     "ArceeRetriever",
     "ArxivRetriever",
     "AzureCognitiveSearchRetriever",
+    "BM25Retriever",
     "BreebsRetriever",
     "ChatGPTPluginRetriever",
     "ChaindeskRetriever",
@@ -103,10 +105,10 @@ __all__ = [
     "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
-    "BM25Retriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
     "WikipediaRetriever",
+    "YouRetriever",
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",

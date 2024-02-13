@@ -146,6 +146,7 @@ partners = [
     (p.name, p.name.replace("-", "_") + "_api_reference")
     for p in partners_dir.iterdir()
 ]
+partners = sorted(partners)
 
 html_context = {
     "display_github": True,  # Integrate GitHub

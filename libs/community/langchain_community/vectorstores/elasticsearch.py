@@ -484,8 +484,8 @@ class ElasticsearchStore(VectorStore):
             from langchain_community.vectorstores.utils import DistanceStrategy
 
             vectorstore = ElasticsearchStore(
+                "langchain-demo",
                 embedding=OpenAIEmbeddings(),
-                index_name="langchain-demo",
                 es_url="http://localhost:9200",
                 distance_strategy="DOT_PRODUCT"
             )

@@ -36,6 +36,7 @@ from langchain_community.document_loaders.assemblyai import (
 )
 from langchain_community.document_loaders.astradb import AstraDBLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
+from langchain_community.document_loaders.athena import AthenaLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
@@ -102,7 +103,10 @@ from langchain_community.document_loaders.gcs_file import GCSFileLoader
 from langchain_community.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain_community.document_loaders.git import GitLoader
 from langchain_community.document_loaders.gitbook import GitbookLoader
-from langchain_community.document_loaders.github import GitHubIssuesLoader
+from langchain_community.document_loaders.github import (
+    GithubFileLoader,
+    GitHubIssuesLoader,
+)
 from langchain_community.document_loaders.google_speech_to_text import (
     GoogleSpeechToTextLoader,
 )
@@ -254,6 +258,7 @@ __all__ = [
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
+    "AthenaLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
@@ -296,6 +301,7 @@ __all__ = [
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
+    "GithubFileLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
