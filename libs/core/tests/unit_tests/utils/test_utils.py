@@ -1,3 +1,4 @@
+import re
 from contextlib import AbstractContextManager, nullcontext
 from typing import Dict, Optional, Tuple, Type, Union
 from unittest.mock import patch
@@ -71,9 +72,9 @@ def test_check_package_version(
             {"a": "1"},
             pytest.raises(
                 TypeError,
-                match=(
-                    'additional_kwargs\["a"\] already exists in this message, '
-                    "but with a different type\."
+                match=re.escape(
+                    'additional_kwargs["a"] already exists in this message, '
+                    "but with a different type."
                 ),
             ),
         ),
@@ -84,7 +85,7 @@ def test_check_package_version(
                 TypeError,
                 match=(
                     "Additional kwargs key a already exists in left dict and value "
-                    "has unsupported type .+tuple.+\."
+                    "has unsupported type .+tuple.+."
                 ),
             ),
         ),
