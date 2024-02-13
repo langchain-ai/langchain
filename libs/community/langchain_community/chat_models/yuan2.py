@@ -189,11 +189,6 @@ class ChatYuan2(BaseChatModel):
 
         return attributes
 
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
-        return True
-
     client: Any  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
 
