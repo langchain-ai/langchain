@@ -65,9 +65,13 @@ class FalkorDBGraph(GraphStore):
                 "Please install it with `pip install falkordb`."
             )
 
-        self._driver = FalkorDB(
-            host=host, port=port, username=username, password=password, ssl=ssl
-        )
+        try:
+            self._driver = FalkorDB(
+                host=host, port=port, username=username, password=password, ssl=ssl
+            )
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to FalkorDB: {e}")
+        
         self._graph = self._driver.select_graph(database)
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
