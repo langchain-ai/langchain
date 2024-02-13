@@ -12,16 +12,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 
-try:
-    from surrealdb import Surreal
-    from surrealdb.ws import SurrealException
-except ImportError as e:
-    raise ImportError(
-        """Cannot import from surrealdb.
-        please install with `pip install surrealdb`."""
-    ) from e
-
-
 class SurrealDBStore(VectorStore):
     """
     SurrealDB as Vector Store.
@@ -65,6 +55,14 @@ class SurrealDBStore(VectorStore):
         embedding_function: Embeddings,
         **kwargs: Any,
     ) -> None:
+        try:
+            from surrealdb import Surreal
+        except ImportError as e:
+            raise ImportError(
+                """Cannot import from surrealdb.
+                please install with `pip install surrealdb`."""
+            ) from e
+
         self.dburl = kwargs.pop("dburl", "ws://localhost:8000/rpc")
 
         if self.dburl[0:2] == "ws":
@@ -238,6 +236,7 @@ class SurrealDBStore(VectorStore):
         result = results[0]
 
         if result["status"] != "OK":
+            from surrealdb.ws import SurrealException
             err = result.get("result", "Unknown Error")
             raise SurrealException(err)
 
