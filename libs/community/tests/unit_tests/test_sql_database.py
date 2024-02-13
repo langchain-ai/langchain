@@ -1,17 +1,20 @@
-# flake8: noqa=E501
+# flake8: noqa: E501
 """Test SQL database wrapper."""
-
-from langchain_community.utilities.sql_database import SQLDatabase, truncate_word
+import pytest
+import sqlalchemy as sa
 from sqlalchemy import (
     Column,
     Integer,
     MetaData,
+    Result,
     String,
     Table,
     Text,
-    create_engine,
     insert,
+    select,
 )
+
+from langchain_community.utilities.sql_database import SQLDatabase, truncate_word
 
 metadata_obj = MetaData()
 
@@ -31,11 +34,19 @@ company = Table(
 )
 
 
-def test_table_info() -> None:
-    """Test that table info is constructed properly."""
-    engine = create_engine("sqlite:///:memory:")
+@pytest.fixture
+def engine() -> sa.Engine:
+    return sa.create_engine("sqlite:///:memory:")
+
+
+@pytest.fixture
+def db(engine: sa.Engine) -> SQLDatabase:
     metadata_obj.create_all(engine)
-    db = SQLDatabase(engine)
+    return SQLDatabase(engine)
+
+
+def test_table_info(db: SQLDatabase) -> None:
+    """Test that table info is constructed properly."""
     output = db.table_info
     expected_output = """
     CREATE TABLE user (
@@ -64,20 +75,19 @@ def test_table_info() -> None:
     assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
-def test_table_info_w_sample_rows() -> None:
+def test_table_info_w_sample_rows(db: SQLDatabase) -> None:
     """Test that table info is constructed properly."""
-    engine = create_engine("sqlite:///:memory:")
-    metadata_obj.create_all(engine)
+
+    # Provision.
     values = [
         {"user_id": 13, "user_name": "Harrison", "user_bio": "bio"},
         {"user_id": 14, "user_name": "Chase", "user_bio": "bio"},
     ]
     stmt = insert(user).values(values)
-    with engine.begin() as conn:
-        conn.execute(stmt)
+    db._execute(stmt)
 
-    db = SQLDatabase(engine, sample_rows_in_table_info=2)
-
+    # Query and verify.
+    db = SQLDatabase(db._engine, sample_rows_in_table_info=2)
     output = db.table_info
 
     expected_output = """
@@ -108,16 +118,16 @@ def test_table_info_w_sample_rows() -> None:
     assert sorted(output.split()) == sorted(expected_output.split())
 
 
-def test_sql_database_run() -> None:
-    """Test that commands can be run successfully and returned in correct format."""
-    engine = create_engine("sqlite:///:memory:")
-    metadata_obj.create_all(engine)
+def test_sql_database_run_fetch_all(db: SQLDatabase) -> None:
+    """Verify running SQL expressions returning results as strings."""
+
+    # Provision.
     stmt = insert(user).values(
         user_id=13, user_name="Harrison", user_bio="That is my Bio " * 24
     )
-    with engine.begin() as conn:
-        conn.execute(stmt)
-    db = SQLDatabase(engine)
+    db._execute(stmt)
+
+    # Query and verify.
     command = "select user_id, user_name, user_bio from user where user_id = 13"
     partial_output = db.run(command)
     user_bio = "That is my Bio " * 19 + "That is my..."
@@ -131,18 +141,79 @@ def test_sql_database_run() -> None:
     assert full_output == expected_full_output
 
 
-def test_sql_database_run_update() -> None:
+def test_sql_database_run_fetch_result(db: SQLDatabase) -> None:
+    """Verify running SQL expressions returning results as SQLAlchemy `Result` instances."""
+
+    # Provision.
+    stmt = insert(user).values(user_id=17, user_name="hwchase")
+    db._execute(stmt)
+
+    # Query and verify.
+    command = "select user_id, user_name, user_bio from user where user_id = 17"
+    result = db.run(command, fetch="cursor", include_columns=True)
+    expected = [{"user_id": 17, "user_name": "hwchase", "user_bio": None}]
+    assert isinstance(result, Result)
+    assert result.mappings().fetchall() == expected
+
+
+def test_sql_database_run_with_parameters(db: SQLDatabase) -> None:
+    """Verify running SQL expressions with query parameters."""
+
+    # Provision.
+    stmt = insert(user).values(user_id=17, user_name="hwchase")
+    db._execute(stmt)
+
+    # Query and verify.
+    command = "select user_id, user_name, user_bio from user where user_id = :user_id"
+    full_output = db.run(command, parameters={"user_id": 17}, include_columns=True)
+    expected_full_output = "[{'user_id': 17, 'user_name': 'hwchase', 'user_bio': None}]"
+    assert full_output == expected_full_output
+
+
+def test_sql_database_run_sqlalchemy_selectable(db: SQLDatabase) -> None:
+    """Verify running SQL expressions using SQLAlchemy selectable."""
+
+    # Provision.
+    stmt = insert(user).values(user_id=17, user_name="hwchase")
+    db._execute(stmt)
+
+    # Query and verify.
+    command = select(user).where(user.c.user_id == 17)
+    full_output = db.run(command, include_columns=True)
+    expected_full_output = "[{'user_id': 17, 'user_name': 'hwchase', 'user_bio': None}]"
+    assert full_output == expected_full_output
+
+
+def test_sql_database_run_update(db: SQLDatabase) -> None:
     """Test commands which return no rows return an empty string."""
-    engine = create_engine("sqlite:///:memory:")
-    metadata_obj.create_all(engine)
+
+    # Provision.
     stmt = insert(user).values(user_id=13, user_name="Harrison")
-    with engine.begin() as conn:
-        conn.execute(stmt)
-    db = SQLDatabase(engine)
+    db._execute(stmt)
+
+    # Query and verify.
     command = "update user set user_name='Updated' where user_id = 13"
     output = db.run(command)
     expected_output = ""
     assert output == expected_output
+
+
+def test_sql_database_schema_translate_map() -> None:
+    """Verify using statement-specific execution options."""
+
+    engine = sa.create_engine("sqlite:///:memory:")
+    db = SQLDatabase(engine)
+
+    # Define query using SQLAlchemy selectable.
+    command = select(user).where(user.c.user_id == 17)
+
+    # Define statement-specific execution options.
+    execution_options = {"schema_translate_map": {None: "bar"}}
+
+    # Verify the schema translation is applied.
+    with pytest.raises(sa.exc.OperationalError) as ex:
+        db.run(command, execution_options=execution_options, fetch="cursor")
+    assert ex.match("no such table: bar.user")
 
 
 def test_truncate_word() -> None:

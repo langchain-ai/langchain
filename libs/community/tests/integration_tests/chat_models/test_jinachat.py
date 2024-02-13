@@ -24,7 +24,7 @@ def test_jinachat_api_key_masked_when_passed_from_env(
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("JINACHAT_API_KEY", "secret-api-key")
     llm = JinaChat()
-    print(llm.jinachat_api_key, end="")
+    print(llm.jinachat_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -35,7 +35,7 @@ def test_jinachat_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = JinaChat(jinachat_api_key="secret-api-key")
-    print(llm.jinachat_api_key, end="")
+    print(llm.jinachat_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
