@@ -33,7 +33,6 @@ __all__ = [
     "KuzuGraph",
     "HugeGraph",
     "RdfGraph",
-    "NeptuneRdfGraph",
     "ArangoGraph",
     "FalkorDBGraph",
 ]
