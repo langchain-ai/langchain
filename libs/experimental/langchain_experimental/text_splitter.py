@@ -1,6 +1,6 @@
 import copy
 import re
-from typing import Any, Iterable, List, Literal, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
 
 import numpy as np
 from langchain_community.utils.math import (
@@ -66,7 +66,7 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
 
 
 BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile"]
-BREAKPOINT_DEFAULTS: dict[BreakpointThresholdType, float] = {
+BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "percentile": 95,
     "standard_deviation": 3,
     "interquartile": 1.5,
@@ -132,6 +132,10 @@ class SemanticChunker(BaseDocumentTransformer):
         Calculate the threshold based on the number of chunks.
         Inverse of percentile method.
         """
+        if self.number_of_chunks is None:
+            raise ValueError(
+                "This should never be called if `number_of_chunks` is None."
+            )
         x1, y1 = len(distances), 0.0
         x2, y2 = 1.0, 100.0
 
@@ -149,10 +153,10 @@ class SemanticChunker(BaseDocumentTransformer):
         """Split text into multiple components."""
         # Splitting the essay on '.', '?', and '!'
         single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
-        sentences = [
+        _sentences = [
             {"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)
         ]
-        sentences = combine_sentences(sentences)
+        sentences = combine_sentences(_sentences)
         embeddings = self.embeddings.embed_documents(
             [x["combined_sentence"] for x in sentences]
         )
