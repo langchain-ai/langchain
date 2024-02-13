@@ -9,12 +9,26 @@ from transformers import AutoTokenizer
 
 
 class QuantizedBiEncoderEmbeddings(BaseModel, Embeddings):
-    """HuggingFace sentence_transformers embedding models.
+    """Quantized bi-encoders embedding models.
 
-        To use, you should have the ``optimum-intel`` python package installed.
+    Please ensure that you have installed optimum-intel and ipex.
 
-        Example:
-            .. code-block:: python
+    Input:
+        max_seq_len: int = The maximum sequence length for tokenization. (default 512)
+        pooling_strategy: str =
+            "mean" or "cls", pooling strategy for the final layer. (default "mean")
+        query_instruction: Optional[str] =
+            An instruction to add to the query before embedding. (default None)
+        document_instruction: Optional[str] =
+            An instruction to add to each document before embedding. (default None)
+        padding: Optional[bool] =
+            Whether to add padding during tokenization or not. (default True)
+        model_kwargs: Optional[Dict] =
+            Parameters to add to the model during initialization. (default {})
+        encode_kwargs: Optional[Dict] =
+            Parameters to add during the embedding forward pass. (default {})
+
+    Example:
 
     from langchain_community.embeddings import QuantizedBiEncoderEmbeddings
 
@@ -34,19 +48,18 @@ class QuantizedBiEncoderEmbeddings(BaseModel, Embeddings):
         query_instruction: Optional[str] = None,
         document_instruction: Optional[str] = None,
         padding: Optional[bool] = True,
-        use_auth_token: Optional[bool] = False,
         model_kwargs: Optional[Dict] = {},
         encode_kwargs: Optional[Dict] = {},
         **kwargs: Any,
     ):
         super().__init__(**kwargs)
         self.model_name_or_path = self.model_name
-        self.use_auth_token = use_auth_token
         self.max_seq_len = max_seq_len
         self.pooling = pooling_strategy
         self.padding = padding
         self.encode_kwargs = encode_kwargs
         self.model_kwargs = model_kwargs
+
         self.normalize = self.encode_kwargs.get("normalize_embeddings", False)
         self.batch_size = self.encode_kwargs.get("batch_size", 32)
 
@@ -134,13 +147,12 @@ For more information, please visit:
         return self._embed(inputs).tolist()
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Compute doc embeddings using the Optimized Embedder model.
+        """Embed a list of text documents using the Optimized Embedder model.
 
-        Args:
-            texts: The list of texts to embed.
-
-        Returns:
-            List of embeddings, one for each text.
+        Input:
+            texts: List[str] = List of text documents to embed.
+        Output:
+            List[List[float]] = The embeddings of each text document.
         """
         docs = [
             self.document_instruction + d.content if self.document_instruction else d
@@ -162,14 +174,6 @@ For more information, please visit:
         return vectors
 
     def embed_query(self, text: str) -> List[float]:
-        """Compute query embeddings using the Optimized Embedder model.
-
-        Args:
-            text: The text to embed.
-
-        Returns:
-            Embeddings for the text.
-        """
         if self.query_instruction:
             text = self.query_instruction + text
         return self._embed_text([text])[0]
