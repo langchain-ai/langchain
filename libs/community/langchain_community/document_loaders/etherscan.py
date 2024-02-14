@@ -85,7 +85,7 @@ class EtherscanLoader(BaseLoader):
             response = requests.get(url)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print("Error occurred while making the request:", e)
+            print("Error occurred while making the request:", e)  # noqa: T201
         items = response.json()["result"]
         result = []
         if len(items) == 0:
@@ -94,7 +94,7 @@ class EtherscanLoader(BaseLoader):
             content = str(item)
             metadata = {"from": item["from"], "tx_hash": item["hash"], "to": item["to"]}
             result.append(Document(page_content=content, metadata=metadata))
-        print(len(result))
+        print(len(result))  # noqa: T201
         return result
 
     def getEthBalance(self) -> List[Document]:
@@ -107,7 +107,7 @@ class EtherscanLoader(BaseLoader):
             response = requests.get(url)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print("Error occurred while making the request:", e)
+            print("Error occurred while making the request:", e)  # noqa: T201
         return [Document(page_content=response.json()["result"])]
 
     def getInternalTx(self) -> List[Document]:
@@ -122,7 +122,7 @@ class EtherscanLoader(BaseLoader):
             response = requests.get(url)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print("Error occurred while making the request:", e)
+            print("Error occurred while making the request:", e)  # noqa: T201
         items = response.json()["result"]
         result = []
         if len(items) == 0:
@@ -145,7 +145,7 @@ class EtherscanLoader(BaseLoader):
             response = requests.get(url)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print("Error occurred while making the request:", e)
+            print("Error occurred while making the request:", e)  # noqa: T201
         items = response.json()["result"]
         result = []
         if len(items) == 0:
@@ -168,7 +168,7 @@ class EtherscanLoader(BaseLoader):
             response = requests.get(url)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print("Error occurred while making the request:", e)
+            print("Error occurred while making the request:", e)  # noqa: T201
         items = response.json()["result"]
         result = []
         if len(items) == 0:
@@ -191,7 +191,7 @@ class EtherscanLoader(BaseLoader):
             response = requests.get(url)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print("Error occurred while making the request:", e)
+            print("Error occurred while making the request:", e)  # noqa: T201
         items = response.json()["result"]
         result = []
         if len(items) == 0:

@@ -23,7 +23,7 @@ def test_llm_rails_add_documents() -> None:
     # test without filter
     output1 = docsearch.similarity_search("large language model", k=1)
 
-    print(output1)
+    print(output1)  # noqa: T201
     assert len(output1) == 1
     assert output1[0].page_content == "large language model"
 

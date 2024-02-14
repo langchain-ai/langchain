@@ -91,7 +91,9 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
 
 
 async def astream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
-    """Because the dashscope SDK doesn't provide an async API,
+    """Async version of `stream_generate_with_retry`.
+
+    Because the dashscope SDK doesn't provide an async API,
     we wrap `stream_generate_with_retry` with an async generator."""
 
     class _AioTongyiGenerator:

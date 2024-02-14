@@ -1686,7 +1686,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -1734,7 +1734,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -1829,7 +1829,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -1877,7 +1877,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -1948,7 +1948,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -1993,7 +1993,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2084,7 +2084,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2132,7 +2132,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2227,7 +2227,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2275,7 +2275,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2346,7 +2346,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -2391,7 +2391,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2466,7 +2466,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2514,7 +2514,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2562,7 +2562,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2610,7 +2610,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2659,7 +2659,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -2704,7 +2704,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2767,7 +2767,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2815,7 +2815,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2910,7 +2910,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2958,7 +2958,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3029,7 +3029,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -3074,7 +3074,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3137,7 +3137,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3185,7 +3185,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3280,7 +3280,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3328,7 +3328,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3399,7 +3399,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -3444,7 +3444,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3499,7 +3499,7 @@
   dict({
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3547,7 +3547,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3642,7 +3642,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3690,7 +3690,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3772,7 +3772,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -3817,7 +3817,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3899,7 +3899,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3947,7 +3947,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3995,7 +3995,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4043,7 +4043,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4092,7 +4092,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -4137,7 +4137,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
