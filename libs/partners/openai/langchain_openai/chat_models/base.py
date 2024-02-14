@@ -793,7 +793,7 @@ class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
         else:
             raise ValueError(
                 f"Unrecognized return_type argument. Expected one of 'raw', 'parsed' "
-                f"or 'all. Received: '{return_type}'"
+                f"or 'all'. Received: '{return_type}'"
             )
 
 
