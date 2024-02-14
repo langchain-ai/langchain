@@ -1,4 +1,5 @@
 """Test OpenAI Chat API wrapper."""
+
 import json
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -48,6 +49,13 @@ def test__convert_dict_to_message_ai() -> None:
     message = {"role": "assistant", "content": "foo"}
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(content="foo")
+    assert result == expected_output
+
+
+def test__convert_dict_to_message_ai_with_name() -> None:
+    message = {"role": "assistant", "content": "foo", "name": "test"}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(content="foo", additional_kwargs={"name": "test"})
     assert result == expected_output
 
 
