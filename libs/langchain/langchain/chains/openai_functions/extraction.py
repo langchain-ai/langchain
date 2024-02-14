@@ -1,5 +1,9 @@
 from typing import Any, List, Optional
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import (
@@ -11,10 +15,6 @@ from langchain.output_parsers.openai_functions import (
     JsonKeyOutputFunctionsParser,
     PydanticAttrOutputFunctionsParser,
 )
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_extraction_function(entity_schema: dict) -> dict:
@@ -31,7 +31,7 @@ def _get_extraction_function(entity_schema: dict) -> dict:
     }
 
 
-_EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned\
+_EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned \
 in the following passage together with their properties.
 
 Only extract the properties mentioned in the 'information_extraction' function.
@@ -47,6 +47,7 @@ def create_extraction_chain(
     schema: dict,
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
+    tags: Optional[List[str]] = None,
     verbose: bool = False,
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
@@ -71,6 +72,7 @@ def create_extraction_chain(
         prompt=extraction_prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
+        tags=tags,
         verbose=verbose,
     )
     return chain

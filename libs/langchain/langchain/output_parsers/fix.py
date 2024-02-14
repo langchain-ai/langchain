@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import BasePromptTemplate
+
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
-from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
-from langchain.schema.language_model import BaseLanguageModel
 
 T = TypeVar("T")
 
@@ -17,9 +20,12 @@ class OutputFixingParser(BaseOutputParser[T]):
         return True
 
     parser: BaseOutputParser[T]
+    """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Any
+    """The LLMChain to use to retry the completion."""
     max_retries: int = 1
+    """The maximum number of times to retry the parse."""
 
     @classmethod
     def from_llm(
@@ -35,7 +41,7 @@ class OutputFixingParser(BaseOutputParser[T]):
             llm: llm to use for fixing
             parser: parser to use for parsing
             prompt: prompt to use for fixing
-            max_retries: Maximum number of retries to parser.
+            max_retries: Maximum number of retries to parse.
 
         Returns:
             OutputFixingParser

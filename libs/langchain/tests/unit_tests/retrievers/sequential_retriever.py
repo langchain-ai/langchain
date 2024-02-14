@@ -1,6 +1,6 @@
 from typing import List
 
-from langchain.schema import BaseRetriever, Document
+from langchain_core.retrievers import BaseRetriever, Document
 
 
 class SequentialRetriever(BaseRetriever):

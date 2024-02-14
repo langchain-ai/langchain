@@ -2,10 +2,10 @@
 
 This covers how to load all documents in a directory.
 
-Under the hood, by default this uses the [UnstructuredLoader](/docs/integrations/document_loaders/unstructured_file.html).
+Under the hood, by default this uses the [UnstructuredLoader](/docs/integrations/document_loaders/unstructured_file).
 
 ```python
-from langchain.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import DirectoryLoader
 ```
 
 We can use the `glob` parameter to control which files to load. Note that here it doesn't load the `.rst` file or the `.html` files.
@@ -69,7 +69,7 @@ By default this uses the `UnstructuredLoader` class. However, you can change up 
 
 
 ```python
-from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 ```
 
 
@@ -99,7 +99,7 @@ If you need to load Python source code files, use the `PythonLoader`.
 
 
 ```python
-from langchain.document_loaders import PythonLoader
+from langchain_community.document_loaders import PythonLoader
 ```
 
 
@@ -127,9 +127,9 @@ len(docs)
 
 ## Auto-detect file encodings with TextLoader
 
-In this example we will see some strategies that can be useful when loading a big list of arbitrary files from a directory using the `TextLoader` class.
+In this example we will see some strategies that can be useful when loading a large list of arbitrary files from a directory using the `TextLoader` class.
 
-First to illustrate the problem, let's try to load multiple text with arbitrary encodings.
+First to illustrate the problem, let's try to load multiple texts with arbitrary encodings.
 
 
 ```python

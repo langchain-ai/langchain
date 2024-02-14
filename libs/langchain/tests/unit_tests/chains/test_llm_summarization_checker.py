@@ -14,6 +14,13 @@ from langchain.chains.llm_summarization_checker.base import (
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
+def test_input_variables() -> None:
+    assert CREATE_ASSERTIONS_PROMPT.input_variables == ["summary"]
+    assert CHECK_ASSERTIONS_PROMPT.input_variables == ["assertions"]
+    assert REVISED_SUMMARY_PROMPT.input_variables == ["checked_assertions", "summary"]
+    assert ARE_ALL_TRUE_PROMPT.input_variables == ["checked_assertions"]
+
+
 @pytest.fixture
 def fake_llm_summarization_checker_chain() -> LLMSummarizationCheckerChain:
     """Fake LLMCheckerChain for testing."""

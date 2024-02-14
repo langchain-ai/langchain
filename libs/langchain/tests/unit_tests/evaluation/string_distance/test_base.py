@@ -17,7 +17,6 @@ def test_zero_distance(distance: StringDistance) -> None:
     assert result["score"] == 0
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", list(StringDistance))
 async def test_zero_distance_async(distance: StringDistance) -> None:
@@ -43,7 +42,6 @@ def test_zero_distance_pairwise(
     assert result["score"] == 0
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", list(StringDistance))
 async def test_zero_distance_pairwise_async(distance: StringDistance) -> None:
@@ -77,7 +75,6 @@ def test_non_zero_distance(distance: StringDistance, normalize_score: bool) -> N
         assert result["score"] < 1.0
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", valid_distances)
 async def test_non_zero_distance_async(distance: StringDistance) -> None:
@@ -104,7 +101,6 @@ def test_non_zero_distance_pairwise(distance: StringDistance) -> None:
     assert 0 < result["score"] < 1.0
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", valid_distances)
 async def test_non_zero_distance_pairwise_async(distance: StringDistance) -> None:

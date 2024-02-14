@@ -1,14 +1,10 @@
 """Test formatting functionality."""
-
-import unittest
 from typing import Union
 
-from langchain.prompts.base import StringPromptValue
-from langchain.prompts.chat import ChatPromptValueConcrete
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import AgentAction, AgentFinish, Document
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import (
+import pytest
+from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.documents import Document
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
@@ -19,70 +15,10 @@ from langchain.schema.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    get_buffer_string,
-    messages_from_dict,
-    messages_to_dict,
 )
-
-
-class TestGetBufferString(unittest.TestCase):
-    def setUp(self) -> None:
-        self.human_msg = HumanMessage(content="human")
-        self.ai_msg = AIMessage(content="ai")
-        self.sys_msg = SystemMessage(content="sys")
-
-    def test_empty_input(self) -> None:
-        self.assertEqual(get_buffer_string([]), "")
-
-    def test_valid_single_message(self) -> None:
-        expected_output = f"Human: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg]),
-            expected_output,
-        )
-
-    def test_custom_human_prefix(self) -> None:
-        prefix = "H"
-        expected_output = f"{prefix}: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg], human_prefix="H"),
-            expected_output,
-        )
-
-    def test_custom_ai_prefix(self) -> None:
-        prefix = "A"
-        expected_output = f"{prefix}: {self.ai_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.ai_msg], ai_prefix="A"),
-            expected_output,
-        )
-
-    def test_multiple_msg(self) -> None:
-        msgs = [self.human_msg, self.ai_msg, self.sys_msg]
-        expected_output = "\n".join(
-            [
-                f"Human: {self.human_msg.content}",
-                f"AI: {self.ai_msg.content}",
-                f"System: {self.sys_msg.content}",
-            ]
-        )
-        self.assertEqual(
-            get_buffer_string(msgs),
-            expected_output,
-        )
-
-
-def test_multiple_msg() -> None:
-    human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
-    ai_msg = AIMessage(content="ai")
-    sys_msg = SystemMessage(content="sys")
-
-    msgs = [
-        human_msg,
-        ai_msg,
-        sys_msg,
-    ]
-    assert messages_from_dict(messages_to_dict(msgs)) == msgs
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
+from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
 
 def test_serialization_of_wellknown_objects() -> None:
@@ -108,6 +44,9 @@ def test_serialization_of_wellknown_objects() -> None:
             AgentFinish,
             AgentAction,
             AgentActionMessageLog,
+            ChatGeneration,
+            Generation,
+            ChatGenerationChunk,
         ]
 
     lc_objects = [
@@ -144,6 +83,16 @@ def test_serialization_of_wellknown_objects() -> None:
             log="",
             message_log=[HumanMessage(content="human")],
         ),
+        Generation(
+            text="hello",
+            generation_info={"info": "info"},
+        ),
+        ChatGeneration(
+            message=HumanMessage(content="human"),
+        ),
+        ChatGenerationChunk(
+            message=HumanMessageChunk(content="cat"),
+        ),
     ]
 
     for lc_object in lc_objects:
@@ -151,3 +100,7 @@ def test_serialization_of_wellknown_objects() -> None:
         assert "type" in d, f"Missing key `type` for {type(lc_object)}"
         obj1 = WellKnownLCObject.parse_obj(d)
         assert type(obj1.__root__) == type(lc_object), f"failed for {type(lc_object)}"
+
+    with pytest.raises(ValidationError):
+        # Make sure that specifically validation error is raised
+        WellKnownLCObject.parse_obj({})
