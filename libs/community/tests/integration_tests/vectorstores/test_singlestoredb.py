@@ -1,5 +1,4 @@
 """Test SingleStoreDB functionality."""
-import time
 from typing import List
 
 import numpy as np
@@ -166,11 +165,8 @@ def test_singlestoredb_vector_index_large() -> None:
         vector_index_name="vector_index_large",
         host=TEST_SINGLESTOREDB_URL,
     )
-    startTime = time.time()
-    for i in range(1000):
-        output = docsearch.similarity_search("foo", k=1)
-    print("Time to search 300k vectors: ", (time.time() - startTime) / 1000)
-    output[0].page_content == "foo"
+    output = docsearch.similarity_search("foo", k=1)
+    assert output[0].page_content == "foo"
     drop(table_name)
 
 
