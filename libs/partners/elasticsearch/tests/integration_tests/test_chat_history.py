@@ -30,18 +30,16 @@ class TestElasticsearch:
 
         es_url = os.environ.get("ES_URL", "http://localhost:9200")
         es_cloud_id = os.environ.get("ES_CLOUD_ID")
-        es_username = os.environ.get("ES_USERNAME", "elastic")
-        es_password = os.environ.get("ES_PASSWORD", "changeme")
+        es_api_key = os.environ.get("ES_API_KEY")
 
         if es_cloud_id:
             es = Elasticsearch(
                 cloud_id=es_cloud_id,
-                basic_auth=(es_username, es_password),
+                api_key=es_api_key,
             )
             yield {
                 "es_cloud_id": es_cloud_id,
-                "es_user": es_username,
-                "es_password": es_password,
+                "es_api_key": es_api_key,
             }
 
         else:

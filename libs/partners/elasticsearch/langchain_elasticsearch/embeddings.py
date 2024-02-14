@@ -49,8 +49,7 @@ class ElasticsearchEmbeddings(Embeddings):
         model_id: str,
         *,
         es_cloud_id: Optional[str] = None,
-        es_user: Optional[str] = None,
-        es_password: Optional[str] = None,
+        es_api_key: Optional[str] = None,
         input_field: str = "text_field",
     ) -> ElasticsearchEmbeddings:
         """Instantiate embeddings from Elasticsearch credentials.
@@ -94,13 +93,10 @@ class ElasticsearchEmbeddings(Embeddings):
         from elasticsearch.client import MlClient
 
         es_cloud_id = es_cloud_id or get_from_env("es_cloud_id", "ES_CLOUD_ID")
-        es_user = es_user or get_from_env("es_user", "ES_USER")
-        es_password = es_password or get_from_env("es_password", "ES_PASSWORD")
+        es_api_key = es_api_key or get_from_env("es_api_key", "ES_API_KEY")
 
         # Connect to Elasticsearch
-        es_connection = Elasticsearch(
-            cloud_id=es_cloud_id, basic_auth=(es_user, es_password)
-        )
+        es_connection = Elasticsearch(cloud_id=es_cloud_id, api_key=es_api_key)
         client = MlClient(es_connection)
         return cls(client, model_id, input_field=input_field)
 

@@ -28,8 +28,7 @@ docker-compose -f elasticsearch.yml up
 By default runs against local docker instance of Elasticsearch.
 To run against Elastic Cloud, set the following environment variables:
 - ES_CLOUD_ID
-- ES_USERNAME
-- ES_PASSWORD
+- ES_API_KEY
 
 Some of the tests require the following models to be deployed in the ML Node:
 - elser (can be downloaded and deployed through Kibana and trained models UI)
@@ -56,20 +55,18 @@ class TestElasticsearch:
     def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:
         es_url = os.environ.get("ES_URL", "http://localhost:9200")
         cloud_id = os.environ.get("ES_CLOUD_ID")
-        es_username = os.environ.get("ES_USERNAME", "elastic")
-        es_password = os.environ.get("ES_PASSWORD", "changeme")
+        api_key = os.environ.get("ES_API_KEY")
 
         if cloud_id:
             # Running this integration test with Elastic Cloud
             # Required for in-stack inference testing (ELSER + model_id)
             es = Elasticsearch(
                 cloud_id=cloud_id,
-                basic_auth=(es_username, es_password),
+                api_key=api_key,
             )
             yield {
                 "es_cloud_id": cloud_id,
-                "es_user": es_username,
-                "es_password": es_password,
+                "es_api_key": api_key,
             }
 
         else:
@@ -108,15 +105,14 @@ class TestElasticsearch:
 
         es_url = os.environ.get("ES_URL", "http://localhost:9200")
         cloud_id = os.environ.get("ES_CLOUD_ID")
-        es_username = os.environ.get("ES_USERNAME", "elastic")
-        es_password = os.environ.get("ES_PASSWORD", "changeme")
+        api_key = os.environ.get("ES_API_KEY")
 
         if cloud_id:
             # Running this integration test with Elastic Cloud
             # Required for in-stack inference testing (ELSER + model_id)
             es = Elasticsearch(
                 cloud_id=cloud_id,
-                basic_auth=(es_username, es_password),
+                api_key=api_key,
                 transport_class=CustomTransport,
             )
             return es
