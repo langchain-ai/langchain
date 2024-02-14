@@ -1,4 +1,4 @@
-"""LangSmith utilities.
+"""**LangSmith** utilities.
 
 This module provides utilities for connecting to `LangSmith <https://smith.langchain.com/>`_. For more information on LangSmith, see the `LangSmith documentation <https://docs.smith.langchain.com/>`_.
 
@@ -10,7 +10,7 @@ An example of this is shown below, assuming you've created a LangSmith dataset c
 .. code-block:: python
 
     from langsmith import Client
-    from langchain.chat_models import ChatOpenAI
+    from langchain_community.chat_models import ChatOpenAI
     from langchain.chains import LLMChain
     from langchain.smith import RunEvalConfig, run_on_dataset
 
@@ -97,6 +97,5 @@ from langchain.smith.evaluation import (
 __all__ = [
     "arun_on_dataset",
     "run_on_dataset",
-    "ChoicesOutputParser",
     "RunEvalConfig",
 ]

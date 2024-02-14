@@ -1,10 +1,10 @@
 import pytest
+from langchain_core.documents import Document
 
 from langchain.embeddings import FakeEmbeddings
 from langchain.retrievers import KNNRetriever, TFIDFRetriever
 from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
-from langchain.schema import Document
 
 
 @pytest.mark.requires("rank_bm25")

@@ -1,5 +1,8 @@
 from typing import Any, Optional
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import ChatPromptTemplate
+
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import _convert_schema, get_llm_kwargs
@@ -7,8 +10,6 @@ from langchain.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_tagging_function(schema: dict) -> dict:
@@ -32,7 +33,7 @@ def create_tagging_chain(
     schema: dict,
     llm: BaseLanguageModel,
     prompt: Optional[ChatPromptTemplate] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Chain:
     """Creates a chain that extracts information from a passage
      based on a schema.
@@ -62,7 +63,7 @@ def create_tagging_chain_pydantic(
     pydantic_schema: Any,
     llm: BaseLanguageModel,
     prompt: Optional[ChatPromptTemplate] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Chain:
     """Creates a chain that extracts information from a passage
      based on a pydantic schema.

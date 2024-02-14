@@ -1,183 +1,59 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
-import inspect
-import re
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
-
-from pydantic import BaseModel
-
-from langchain.base_language import BaseLanguageModel
-from langchain.chains import LLMChain
-from langchain.output_parsers.openai_functions import (
-    JsonOutputFunctionsParser,
-    PydanticAttrOutputFunctionsParser,
-    PydanticOutputFunctionsParser,
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Type,
+    Union,
 )
-from langchain.prompts import BasePromptTemplate
-from langchain.schema import BaseLLMOutputParser
 
-PYTHON_TO_JSON_TYPES = {
-    "str": "string",
-    "int": "number",
-    "float": "number",
-    "bool": "boolean",
-}
+from langchain_core._api import deprecated
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import (
+    BaseLLMOutputParser,
+)
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils.function_calling import (
+    PYTHON_TO_JSON_TYPES,
+    convert_to_openai_function,
+)
 
+from langchain.chains import LLMChain
+from langchain.chains.structured_output.base import (
+    create_openai_fn_runnable,
+    create_structured_output_runnable,
+    get_openai_output_parser,
+)
+from langchain.output_parsers.openai_functions import (
+    PydanticAttrOutputFunctionsParser,
+)
 
-def _get_python_function_name(function: Callable) -> str:
-    """Get the name of a Python function."""
-    source = inspect.getsource(function)
-    return re.search(r"^def (.*)\(", source).groups()[0]  # type: ignore
-
-
-def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
-    """Parse the function and argument descriptions from the docstring of a function.
-
-    Assumes the function docstring follows Google Python style guide.
-    """
-    docstring = inspect.getdoc(function)
-    if docstring:
-        docstring_blocks = docstring.split("\n\n")
-        descriptors = []
-        args_block = None
-        past_descriptors = False
-        for block in docstring_blocks:
-            if block.startswith("Args:"):
-                args_block = block
-                break
-            elif block.startswith("Returns:") or block.startswith("Example:"):
-                # Don't break in case Args come after
-                past_descriptors = True
-            elif not past_descriptors:
-                descriptors.append(block)
-            else:
-                continue
-        description = " ".join(descriptors)
-    else:
-        description = ""
-        args_block = None
-    arg_descriptions = {}
-    if args_block:
-        arg = None
-        for line in args_block.split("\n")[1:]:
-            if ":" in line:
-                arg, desc = line.split(":")
-                arg_descriptions[arg.strip()] = desc.strip()
-            elif arg:
-                arg_descriptions[arg.strip()] += " " + line.strip()
-    return description, arg_descriptions
+__all__ = [
+    "get_openai_output_parser",
+    "create_openai_fn_runnable",
+    "create_structured_output_runnable",
+    "create_openai_fn_chain",  # deprecated
+    "create_structured_output_chain",  # deprecated
+    "PYTHON_TO_JSON_TYPES",  # backwards compatibility
+    "convert_to_openai_function",  # backwards compatibility
+]
 
 
-def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -> dict:
-    """Get JsonSchema describing a Python functions arguments.
-
-    Assumes all function arguments are of primitive types (int, float, str, bool) or
-    are subclasses of pydantic.BaseModel.
-    """
-    properties = {}
-    annotations = inspect.getfullargspec(function).annotations
-    for arg, arg_type in annotations.items():
-        if arg == "return":
-            continue
-        if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
-            properties[arg] = arg_type.schema()
-        elif arg_type.__name__ in PYTHON_TO_JSON_TYPES:
-            properties[arg] = {"type": PYTHON_TO_JSON_TYPES[arg_type.__name__]}
-        if arg in arg_descriptions:
-            if arg not in properties:
-                properties[arg] = {}
-            properties[arg]["description"] = arg_descriptions[arg]
-    return properties
-
-
-def _get_python_function_required_args(function: Callable) -> List[str]:
-    """Get the required arguments for a Python function."""
-    spec = inspect.getfullargspec(function)
-    required = spec.args[: -len(spec.defaults)] if spec.defaults else spec.args
-    required += [k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})]
-    return required
-
-
-def convert_python_function_to_openai_function(function: Callable) -> Dict[str, Any]:
-    """Convert a Python function to an OpenAI function-calling API compatible dict.
-
-    Assumes the Python function has type hints and a docstring with a description. If
-        the docstring has Google Python style argument descriptions, these will be
-        included as well.
-    """
-    description, arg_descriptions = _parse_python_function_docstring(function)
-    return {
-        "name": _get_python_function_name(function),
-        "description": description,
-        "parameters": {
-            "type": "object",
-            "properties": _get_python_function_arguments(function, arg_descriptions),
-            "required": _get_python_function_required_args(function),
-        },
-    }
-
-
-def convert_to_openai_function(
-    function: Union[Dict[str, Any], Type[BaseModel], Callable]
-) -> Dict[str, Any]:
-    """Convert a raw function/class to an OpenAI function.
-
-    Args:
-        function: Either a dictionary, a pydantic.BaseModel class, or a Python function.
-            If a dictionary is passed in, it is assumed to already be a valid OpenAI
-            function.
-
-    Returns:
-        A dict version of the passed in function which is compatible with the
-            OpenAI function-calling API.
-    """
-    if isinstance(function, dict):
-        return function
-    elif isinstance(function, type) and issubclass(function, BaseModel):
-        schema = function.schema()
-        return {
-            "name": schema["title"],
-            "description": schema["description"],
-            "parameters": schema,
-        }
-    elif callable(function):
-        return convert_python_function_to_openai_function(function)
-
-    else:
-        raise ValueError(
-            f"Unsupported function type {type(function)}. Functions must be passed in"
-            f" as Dict, pydantic.BaseModel, or Callable."
-        )
-
-
-def _get_openai_output_parser(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
-    function_names: Sequence[str],
-) -> BaseLLMOutputParser:
-    """Get the appropriate function output parser given the user functions."""
-    if isinstance(functions[0], type) and issubclass(functions[0], BaseModel):
-        if len(functions) > 1:
-            pydantic_schema: Union[Dict, Type[BaseModel]] = {
-                name: fn for name, fn in zip(function_names, functions)
-            }
-        else:
-            pydantic_schema = functions[0]
-        output_parser: BaseLLMOutputParser = PydanticOutputFunctionsParser(
-            pydantic_schema=pydantic_schema
-        )
-    else:
-        output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
-    return output_parser
-
-
+@deprecated(since="0.1.1", removal="0.2.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
     functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
+    enforce_single_function_usage: bool = True,
+    output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
 ) -> LLMChain:
-    """Create an LLM chain that uses OpenAI functions.
+    """[Legacy] Create an LLM chain that uses OpenAI functions.
 
     Args:
         functions: A sequence of either dictionaries, pydantic.BaseModels classes, or
@@ -192,6 +68,10 @@ def create_openai_fn_chain(
             pydantic.BaseModels for arguments.
         llm: Language model to use, assumed to support the OpenAI function-calling API.
         prompt: BasePromptTemplate to pass to the model.
+        enforce_single_function_usage: only used if a single function is passed in. If
+            True, then the model will be forced to use the given function. If False,
+            then the model will be given the option to use the given function or not.
+        output_key: The key to use when returning the output in LLMChain.__call__.
         output_parser: BaseLLMOutputParser to use for parsing model outputs. By default
             will be inferred from the function types. If pydantic.BaseModels are passed
             in, then the OutputParser will try to parse outputs using those. Otherwise
@@ -206,11 +86,13 @@ def create_openai_fn_chain(
     Example:
         .. code-block:: python
 
-                from langchain.chains.openai_functions import create_openai_fn_chain
-                from langchain.chat_models import ChatOpenAI
-                from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+                from typing import Optional
 
-                from pydantic import BaseModel, Field
+                from langchain.chains.openai_functions import create_openai_fn_chain
+                from langchain_community.chat_models import ChatOpenAI
+                from langchain_core.prompts import ChatPromptTemplate
+
+                from langchain_core.pydantic_v1 import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -229,50 +111,51 @@ def create_openai_fn_chain(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
-                prompt_msgs = [
-                    SystemMessage(
-                        content="You are a world class algorithm for recording entities"
-                    ),
-                    HumanMessage(content="Make calls to the relevant function to record the entities in the following input:"),
-                    HumanMessagePromptTemplate.from_template("{input}"),
-                    HumanMessage(content="Tips: Make sure to answer in the correct format"),
-                ]
-                prompt = ChatPromptTemplate(messages=prompt_msgs)
-                chain = create_openai_fn_chain([RecordPerson, RecordDog])
+                llm = ChatOpenAI(model="gpt-4", temperature=0)
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        ("system", "You are a world class algorithm for recording entities."),
+                        ("human", "Make calls to the relevant function to record the entities in the following input: {input}"),
+                        ("human", "Tip: Make sure to answer in the correct format"),
+                    ]
+                )
+                chain = create_openai_fn_chain([RecordPerson, RecordDog], llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
         raise ValueError("Need to pass in at least one function. Received zero.")
     openai_functions = [convert_to_openai_function(f) for f in functions]
-    fn_names = [oai_fn["name"] for oai_fn in openai_functions]
-    output_parser = output_parser or _get_openai_output_parser(functions, fn_names)
+    output_parser = output_parser or get_openai_output_parser(functions)
     llm_kwargs: Dict[str, Any] = {
         "functions": openai_functions,
     }
-    if len(openai_functions) == 1:
+    if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
     llm_chain = LLMChain(
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
         llm_kwargs=llm_kwargs,
-        output_key="function",
+        output_key=output_key,
         **kwargs,
     )
     return llm_chain
 
 
+@deprecated(
+    since="0.1.1", removal="0.2.0", alternative="create_structured_output_runnable"
+)
 def create_structured_output_chain(
     output_schema: Union[Dict[str, Any], Type[BaseModel]],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
+    output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
 ) -> LLMChain:
-    """Create an LLMChain that uses an OpenAI function to get a structured output.
+    """[Legacy] Create an LLMChain that uses an OpenAI function to get a structured output.
 
     Args:
         output_schema: Either a dictionary or pydantic.BaseModel class. If a dictionary
@@ -281,6 +164,7 @@ def create_structured_output_chain(
             the schema represents and descriptions for the parameters.
         llm: Language model to use, assumed to support the OpenAI function-calling API.
         prompt: BasePromptTemplate to pass to the model.
+        output_key: The key to use when returning the output in LLMChain.__call__.
         output_parser: BaseLLMOutputParser to use for parsing model outputs. By default
             will be inferred from the function types. If pydantic.BaseModels are passed
             in, then the OutputParser will try to parse outputs using those. Otherwise
@@ -292,11 +176,13 @@ def create_structured_output_chain(
     Example:
         .. code-block:: python
 
-                from langchain.chains.openai_functions import create_structured_output_chain
-                from langchain.chat_models import ChatOpenAI
-                from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+                from typing import Optional
 
-                from pydantic import BaseModel, Field
+                from langchain.chains.openai_functions import create_structured_output_chain
+                from langchain_community.chat_models import ChatOpenAI
+                from langchain_core.prompts import ChatPromptTemplate
+
+                from langchain_core.pydantic_v1 import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"
@@ -306,15 +192,13 @@ def create_structured_output_chain(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
-                prompt_msgs = [
-                    SystemMessage(
-                        content="You are a world class algorithm for extracting information in structured formats."
-                    ),
-                    HumanMessage(content="Use the given format to extract information from the following input:"),
-                    HumanMessagePromptTemplate.from_template("{input}"),
-                    HumanMessage(content="Tips: Make sure to answer in the correct format"),
-                ]
-                prompt = ChatPromptTemplate(messages=prompt_msgs)
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        ("system", "You are a world class algorithm for extracting information in structured formats."),
+                        ("human", "Use the given format to extract information from the following input: {input}"),
+                        ("human", "Tip: Make sure to answer in the correct format"),
+                    ]
+                )
                 chain = create_structured_output_chain(Dog, llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
@@ -340,5 +224,10 @@ def create_structured_output_chain(
             pydantic_schema=_OutputFormatter, attr_name="output"
         )
     return create_openai_fn_chain(
-        [function], llm, prompt, output_parser=output_parser, **kwargs
+        [function],
+        llm,
+        prompt,
+        output_key=output_key,
+        output_parser=output_parser,
+        **kwargs,
     )

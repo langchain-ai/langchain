@@ -111,11 +111,13 @@ class TaskExecutor:
             dep_task = self.id_task_map[dep_id]
             for k, v in task.args.items():
                 if f"<resource-{dep_id}>" in v:
-                    task.args[k].replace(f"<resource-{dep_id}>", dep_task.result)
+                    task.args[k] = task.args[k].replace(
+                        f"<resource-{dep_id}>", dep_task.result
+                    )
 
     def run(self) -> str:
         for task in self.tasks:
-            print(f"running {task}")
+            print(f"running {task}")  # noqa: T201
             if task.pending() and self.check_dependency(task):
                 self.update_args(task)
                 task.run()

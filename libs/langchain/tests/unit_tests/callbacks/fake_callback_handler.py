@@ -3,10 +3,10 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
-from langchain.schema.messages import BaseMessage
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -289,6 +289,13 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     def ignore_agent(self) -> bool:
         """Whether to ignore agent callbacks."""
         return self.ignore_agent_
+
+    async def on_retry(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        self.on_retry_common()
 
     async def on_llm_start(
         self,

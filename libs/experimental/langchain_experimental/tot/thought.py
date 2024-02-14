@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Set
 
-from pydantic import BaseModel, Field
+from langchain_experimental.pydantic_v1 import BaseModel, Field
 
 
 class ThoughtValidity(Enum):

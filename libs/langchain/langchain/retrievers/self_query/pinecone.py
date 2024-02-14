@@ -11,14 +11,17 @@ from langchain.chains.query_constructor.ir import (
 
 
 class PineconeTranslator(Visitor):
-    """Translate the internal query language elements to valid filters."""
+    """Translate `Pinecone` internal query language elements to valid filters."""
 
     allowed_comparators = (
         Comparator.EQ,
+        Comparator.NE,
         Comparator.LT,
         Comparator.LTE,
         Comparator.GT,
         Comparator.GTE,
+        Comparator.IN,
+        Comparator.NIN,
     )
     """Subset of allowed logical comparators."""
     allowed_operators = (Operator.AND, Operator.OR)
@@ -33,6 +36,11 @@ class PineconeTranslator(Visitor):
         return {self._format_func(operation.operator): args}
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
+        if comparison.comparator in (Comparator.IN, Comparator.NIN) and not isinstance(
+            comparison.value, list
+        ):
+            comparison.value = [comparison.value]
+
         return {
             comparison.attribute: {
                 self._format_func(comparison.comparator): comparison.value

@@ -1,10 +1,10 @@
 """Fake LLM wrapper for testing purposes."""
 from typing import Any, Dict, List, Mapping, Optional, cast
 
-from pydantic import validator
+from langchain_core.language_models.llms import LLM
+from langchain_core.pydantic_v1 import validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
 
 
 class FakeLLM(LLM):
@@ -42,7 +42,6 @@ class FakeLLM(LLM):
     ) -> str:
         if self.sequential_responses:
             return self._get_next_response_in_sequence
-
         if self.queries is not None:
             return self.queries[prompt]
         if stop is None:

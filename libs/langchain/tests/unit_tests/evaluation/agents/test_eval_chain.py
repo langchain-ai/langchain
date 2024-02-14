@@ -3,12 +3,17 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
-from pydantic import Field
+from langchain_core.agents import AgentAction, BaseMessage
+from langchain_core.exceptions import OutputParserException
+from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import tool
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
-from langchain.schema import AgentAction, BaseMessage
-from langchain.tools.base import tool
+from langchain.evaluation.agents.trajectory_eval_chain import (
+    TrajectoryEval,
+    TrajectoryEvalChain,
+    TrajectoryOutputParser,
+)
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 
 
@@ -53,8 +58,63 @@ class _FakeTrajectoryChatModel(FakeChatModel):
             return self.queries[prompt]
 
 
+def test_trajectory_output_parser_parse() -> None:
+    trajectory_output_parser = TrajectoryOutputParser()
+    text = """Judgment: Given the good reasoning in the final answer
+but otherwise poor performance, we give the model a score of 2.
+
+Score: 2"""
+    got = trajectory_output_parser.parse(text)
+    want = TrajectoryEval(
+        score=0.25,
+        reasoning="""Judgment: Given the good reasoning in the final answer
+but otherwise poor performance, we give the model a score of 2.""",
+    )
+
+    assert got["score"] == want["score"]
+    assert got["reasoning"] == want["reasoning"]
+
+    with pytest.raises(OutputParserException):
+        trajectory_output_parser.parse(
+            """Judgment: Given the good reasoning in the final answer
+but otherwise poor performance, we give the model a score of 2."""
+        )
+
+    with pytest.raises(OutputParserException):
+        trajectory_output_parser.parse(
+            """Judgment: Given the good reasoning in the final answer
+but otherwise poor performance, we give the model a score of 2.
+
+Score: 9"""
+        )
+
+    with pytest.raises(OutputParserException):
+        trajectory_output_parser.parse(
+            """Judgment: Given the good reasoning in the final answer
+but otherwise poor performance, we give the model a score of 2.
+
+Score: 10"""
+        )
+
+    with pytest.raises(OutputParserException):
+        trajectory_output_parser.parse(
+            """Judgment: Given the good reasoning in the final answer
+but otherwise poor performance, we give the model a score of 2.
+
+Score: 0.1"""
+        )
+
+    with pytest.raises(OutputParserException):
+        trajectory_output_parser.parse(
+            """Judgment: Given the good reasoning in the final answer
+but otherwise poor performance, we give the model a score of 2.
+
+Score: One"""
+        )
+
+
 def test_trajectory_eval_chain(
-    intermediate_steps: List[Tuple[AgentAction, str]]
+    intermediate_steps: List[Tuple[AgentAction, str]],
 ) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={
@@ -82,7 +142,7 @@ def test_trajectory_eval_chain(
 
 
 def test_trajectory_eval_chain_no_tools(
-    intermediate_steps: List[Tuple[AgentAction, str]]
+    intermediate_steps: List[Tuple[AgentAction, str]],
 ) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={

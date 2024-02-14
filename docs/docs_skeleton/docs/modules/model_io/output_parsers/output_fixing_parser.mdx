@@ -1,9 +1,0 @@
-# Auto-fixing parser
-
-This output parser wraps another output parser, and in the event that the first one fails it calls out to another LLM to fix any errors.
-
-But we can do other things besides throw errors. Specifically, we can pass the misformatted output, along with the formatted instructions, to the model and ask it to fix it.
-
-import Example from "@snippets/modules/model_io/output_parsers/output_fixing_parser.mdx"
-
-<Example/>

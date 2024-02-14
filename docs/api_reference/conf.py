@@ -23,6 +23,7 @@ from sphinx.util.docutils import SphinxDirective
 _DIR = Path(__file__).parent.absolute()
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath("../../libs/langchain"))
+sys.path.insert(0, os.path.abspath("../../libs/experimental"))
 
 with (_DIR.parents[1] / "libs" / "langchain" / "pyproject.toml").open("r") as f:
     data = toml.load(f)
@@ -71,8 +72,8 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, Harrison Chase"
-author = "Harrison Chase"
+copyright = "2023, LangChain, Inc."
+author = "LangChain, Inc."
 
 version = data["tool"]["poetry"]["version"]
 release = version
@@ -99,6 +100,9 @@ extensions = [
 ]
 source_suffix = [".rst"]
 
+# some autodoc pydantic options are repeated in the actual template.
+# potentially user error, but there may be bugs in the sphinx extension
+# with options not being passed through correctly (from either the location in the code)
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_field_list_validators = False
 autodoc_pydantic_config_members = False
@@ -111,13 +115,6 @@ autodoc_member_order = "groupwise"
 autoclass_content = "both"
 autodoc_typehints_format = "short"
 
-autodoc_default_options = {
-    "members": True,
-    "show-inheritance": True,
-    "inherited-members": "BaseModel",
-    "undoc-members": True,
-    "special-members": "__call__",
-}
 # autodoc_typehints = "description"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
@@ -139,18 +136,26 @@ html_theme_path = ["themes"]
 # redirects dictionary maps from old links to new links
 html_additional_pages = {}
 redirects = {
-    "index": "api_reference",
+    "index": "langchain_api_reference",
 }
 for old_link in redirects:
     html_additional_pages[old_link] = "redirects.html"
 
+partners_dir = Path(__file__).parent.parent.parent / "libs/partners"
+partners = [
+    (p.name, p.name.replace("-", "_") + "_api_reference")
+    for p in partners_dir.iterdir()
+]
+partners = sorted(partners)
+
 html_context = {
     "display_github": True,  # Integrate GitHub
-    "github_user": "hwchase17",  # Username
+    "github_user": "langchain-ai",  # Username
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
     "redirects": redirects,
+    "partners": partners,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -159,7 +164,7 @@ html_context = {
 html_static_path = ["_static"]
 
 # These paths are either relative to html_static_path
-# or fully qualified paths (eg. https://...)
+# or fully qualified paths (e.g. https://...)
 html_css_files = [
     "css/custom.css",
 ]

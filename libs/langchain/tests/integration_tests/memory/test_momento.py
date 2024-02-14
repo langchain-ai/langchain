@@ -10,11 +10,10 @@ from datetime import timedelta
 from typing import Iterator
 
 import pytest
-from momento import CacheClient, Configurations, CredentialProvider
+from langchain_community.chat_message_histories import MomentoChatMessageHistory
+from langchain_core.messages import message_to_dict
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import MomentoChatMessageHistory
-from langchain.schema.messages import _message_to_dict
 
 
 def random_string() -> str:
@@ -23,10 +22,12 @@ def random_string() -> str:
 
 @pytest.fixture(scope="function")
 def message_history() -> Iterator[MomentoChatMessageHistory]:
+    from momento import CacheClient, Configurations, CredentialProvider
+
     cache_name = f"langchain-test-cache-{random_string()}"
     client = CacheClient(
         Configurations.Laptop.v1(),
-        CredentialProvider.from_environment_variable("MOMENTO_AUTH_TOKEN"),
+        CredentialProvider.from_environment_variable("MOMENTO_API_KEY"),
         default_ttl=timedelta(seconds=30),
     )
     try:
@@ -60,7 +61,7 @@ def test_memory_with_message_store(message_history: MomentoChatMessageHistory) -
 
     # Verify that the messages are in the store
     messages = memory.chat_memory.messages
-    messages_json = json.dumps([_message_to_dict(msg) for msg in messages])
+    messages_json = json.dumps([message_to_dict(msg) for msg in messages])
 
     assert "This is me, the AI" in messages_json
     assert "This is me, the human" in messages_json

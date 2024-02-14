@@ -5,13 +5,14 @@ import logging
 import re
 from typing import Optional, Union
 
-from pydantic import Field
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.pydantic_v1 import Field
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS
 from langchain.output_parsers import OutputFixingParser
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
-from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +20,19 @@ logger = logging.getLogger(__name__)
 class StructuredChatOutputParser(AgentOutputParser):
     """Output parser for the structured chat agent."""
 
+    format_instructions: str = FORMAT_INSTRUCTIONS
+    """Default formatting instructions"""
+
+    pattern = re.compile(r"```(?:json\s+)?(\W.*?)```", re.DOTALL)
+    """Regex pattern to parse the output."""
+
     def get_format_instructions(self) -> str:
-        return FORMAT_INSTRUCTIONS
+        """Returns formatting instructions for the given output parser."""
+        return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
-            action_match = re.search(r"```(.*?)```?", text, re.DOTALL)
+            action_match = self.pattern.search(text)
             if action_match is not None:
                 response = json.loads(action_match.group(1).strip(), strict=False)
                 if isinstance(response, list):
@@ -78,7 +86,7 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     ) -> StructuredChatOutputParserWithRetries:
         if llm is not None:
             base_parser = base_parser or StructuredChatOutputParser()
-            output_fixing_parser = OutputFixingParser.from_llm(
+            output_fixing_parser: OutputFixingParser = OutputFixingParser.from_llm(
                 llm=llm, parser=base_parser
             )
             return cls(output_fixing_parser=output_fixing_parser)

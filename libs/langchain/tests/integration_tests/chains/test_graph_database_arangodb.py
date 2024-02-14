@@ -1,10 +1,11 @@
 """Test Graph Database Chain."""
 from typing import Any
 
+from langchain_community.graphs import ArangoGraph
+from langchain_community.graphs.arangodb_graph import get_arangodb_client
+from langchain_community.llms.openai import OpenAI
+
 from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
-from langchain.graphs import ArangoGraph
-from langchain.graphs.arangodb_graph import get_arangodb_client
-from langchain.llms.openai import OpenAI
 
 
 def populate_arangodb_database(db: Any) -> None:
@@ -53,6 +54,21 @@ def test_connect_arangodb() -> None:
 
     sample_aql_result = graph.query("RETURN 'hello world'")
     assert ["hello_world"] == sample_aql_result
+
+
+def test_empty_schema_on_no_data() -> None:
+    """Test that the schema is empty for an empty ArangoDB Database"""
+    db = get_arangodb_client()
+    db.delete_graph("GameOfThrones", drop_collections=True, ignore_missing=True)
+    db.delete_collection("empty_collection", ignore_missing=True)
+    db.create_collection("empty_collection")
+
+    graph = ArangoGraph(db)
+
+    assert graph.schema == {
+        "Graph Schema": [],
+        "Collection Schema": [],
+    }
 
 
 def test_aql_generation() -> None:

@@ -1,49 +1,48 @@
-"""Wrappers on top of vector stores."""
-from langchain.vectorstores.alibabacloud_opensearch import (
-    AlibabaCloudOpenSearch,
-    AlibabaCloudOpenSearchSettings,
-)
-from langchain.vectorstores.analyticdb import AnalyticDB
-from langchain.vectorstores.annoy import Annoy
-from langchain.vectorstores.atlas import AtlasDB
-from langchain.vectorstores.awadb import AwaDB
-from langchain.vectorstores.azuresearch import AzureSearch
-from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.cassandra import Cassandra
-from langchain.vectorstores.chroma import Chroma
-from langchain.vectorstores.clarifai import Clarifai
-from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
-from langchain.vectorstores.deeplake import DeepLake
-from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
-from langchain.vectorstores.elastic_vector_search import (
-    ElasticKnnSearch,
-    ElasticVectorSearch,
-)
-from langchain.vectorstores.faiss import FAISS
-from langchain.vectorstores.hologres import Hologres
-from langchain.vectorstores.lancedb import LanceDB
-from langchain.vectorstores.marqo import Marqo
-from langchain.vectorstores.matching_engine import MatchingEngine
-from langchain.vectorstores.milvus import Milvus
-from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
-from langchain.vectorstores.myscale import MyScale, MyScaleSettings
-from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
-from langchain.vectorstores.pgembedding import PGEmbedding
-from langchain.vectorstores.pgvector import PGVector
-from langchain.vectorstores.pinecone import Pinecone
-from langchain.vectorstores.qdrant import Qdrant
-from langchain.vectorstores.redis import Redis
-from langchain.vectorstores.rocksetdb import Rockset
-from langchain.vectorstores.singlestoredb import SingleStoreDB
-from langchain.vectorstores.sklearn import SKLearnVectorStore
-from langchain.vectorstores.starrocks import StarRocks
-from langchain.vectorstores.supabase import SupabaseVectorStore
-from langchain.vectorstores.tair import Tair
-from langchain.vectorstores.tigris import Tigris
-from langchain.vectorstores.typesense import Typesense
-from langchain.vectorstores.vectara import Vectara
-from langchain.vectorstores.weaviate import Weaviate
-from langchain.vectorstores.zilliz import Zilliz
+"""**Vector store** stores embedded data and performs vector search.
+
+One of the most common ways to store and search over unstructured data is to
+embed it and store the resulting embedding vectors, and then query the store
+and retrieve the data that are 'most similar' to the embedded query.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    VectorStore --> <name>  # Examples: Annoy, FAISS, Milvus
+
+    BaseRetriever --> VectorStoreRetriever --> <name>Retriever  # Example: VespaRetriever
+
+**Main helpers:**
+
+.. code-block::
+
+    Embeddings, Document
+"""  # noqa: E501
+import warnings
+from typing import Any
+
+from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.vectorstores import VectorStore
+
+from langchain.utils.interactive_env import is_interactive_env
+
+
+def __getattr__(name: str) -> Any:
+    from langchain_community import vectorstores
+
+    # If not in interactive env, raise warning.
+    if not is_interactive_env():
+        warnings.warn(
+            "Importing vector stores from langchain is deprecated. Importing from "
+            "langchain will no longer be supported as of langchain==0.2.0. "
+            "Please import from langchain-community instead:\n\n"
+            f"`from langchain_community.vectorstores import {name}`.\n\n"
+            "To install langchain-community run `pip install -U langchain-community`.",
+            category=LangChainDeprecationWarning,
+        )
+
+    return getattr(vectorstores, name)
+
 
 __all__ = [
     "AlibabaCloudOpenSearch",
@@ -53,48 +52,65 @@ __all__ = [
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
+    "Bagel",
     "Cassandra",
-    "Chroma",
-    "Clickhouse",
-    "ClickhouseSettings",
-    "DeepLake",
-    "DocArrayHnswSearch",
-    "DocArrayInMemorySearch",
-    "ElasticVectorSearch",
-    "ElasticKnnSearch",
-    "FAISS",
-    "PGEmbedding",
-    "Hologres",
-    "LanceDB",
-    "MatchingEngine",
-    "Marqo",
-    "Milvus",
-    "Zilliz",
-    "SingleStoreDB",
+    "AstraDB",
     "Chroma",
     "Clarifai",
-    "OpenSearchVectorSearch",
-    "AtlasDB",
+    "Clickhouse",
+    "ClickhouseSettings",
+    "DashVector",
+    "DatabricksVectorSearch",
     "DeepLake",
-    "Annoy",
+    "Dingo",
+    "DocArrayHnswSearch",
+    "DocArrayInMemorySearch",
+    "ElasticKnnSearch",
+    "ElasticVectorSearch",
+    "ElasticsearchStore",
+    "Epsilla",
+    "FAISS",
+    "Hologres",
+    "LanceDB",
+    "LLMRails",
+    "Marqo",
+    "MatchingEngine",
+    "Meilisearch",
+    "Milvus",
+    "MomentoVectorIndex",
     "MongoDBAtlasVectorSearch",
     "MyScale",
     "MyScaleSettings",
+    "Neo4jVector",
     "OpenSearchVectorSearch",
+    "PGEmbedding",
+    "PGVector",
     "Pinecone",
     "Qdrant",
     "Redis",
     "Rockset",
     "SKLearnVectorStore",
+    "ScaNN",
+    "SemaDB",
     "SingleStoreDB",
+    "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
+    "TileDB",
     "Tigris",
+    "TimescaleVector",
     "Typesense",
+    "USearch",
+    "Vald",
+    "Vearch",
     "Vectara",
-    "VectorStore",
+    "VespaStore",
     "Weaviate",
+    "Yellowbrick",
+    "ZepVectorStore",
     "Zilliz",
-    "PGVector",
+    "TencentVectorDB",
+    "AzureCosmosDBVectorSearch",
+    "VectorStore",
 ]

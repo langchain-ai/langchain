@@ -16,7 +16,14 @@ if TYPE_CHECKING:
 
 
 class QdrantTranslator(Visitor):
-    """Translate the internal query language elements to valid filters."""
+    """Translate `Qdrant` internal query language elements to valid filters."""
+
+    allowed_operators = (
+        Operator.AND,
+        Operator.OR,
+        Operator.NOT,
+    )
+    """Subset of allowed logical operators."""
 
     allowed_comparators = (
         Comparator.EQ,
@@ -24,6 +31,7 @@ class QdrantTranslator(Visitor):
         Comparator.LTE,
         Comparator.GT,
         Comparator.GTE,
+        Comparator.LIKE,
     )
     """Subset of allowed logical comparators."""
 
@@ -31,7 +39,13 @@ class QdrantTranslator(Visitor):
         self.metadata_key = metadata_key
 
     def visit_operation(self, operation: Operation) -> rest.Filter:
-        from qdrant_client.http import models as rest
+        try:
+            from qdrant_client.http import models as rest
+        except ImportError as e:
+            raise ImportError(
+                "Cannot import qdrant_client. Please install with `pip install "
+                "qdrant-client`."
+            ) from e
 
         args = [arg.accept(self) for arg in operation.arguments]
         operator = {
@@ -42,13 +56,23 @@ class QdrantTranslator(Visitor):
         return rest.Filter(**{operator: args})
 
     def visit_comparison(self, comparison: Comparison) -> rest.FieldCondition:
-        from qdrant_client.http import models as rest
+        try:
+            from qdrant_client.http import models as rest
+        except ImportError as e:
+            raise ImportError(
+                "Cannot import qdrant_client. Please install with `pip install "
+                "qdrant-client`."
+            ) from e
 
         self._validate_func(comparison.comparator)
         attribute = self.metadata_key + "." + comparison.attribute
         if comparison.comparator == Comparator.EQ:
             return rest.FieldCondition(
                 key=attribute, match=rest.MatchValue(value=comparison.value)
+            )
+        if comparison.comparator == Comparator.LIKE:
+            return rest.FieldCondition(
+                key=attribute, match=rest.MatchText(text=comparison.value)
             )
         kwargs = {comparison.comparator.value: comparison.value}
         return rest.FieldCondition(key=attribute, range=rest.Range(**kwargs))
