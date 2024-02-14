@@ -59,7 +59,7 @@ class SingleStoreDB(VectorStore):
         vector_field: str = "vector",
         use_vector_index: bool = False,
         vector_index_name: str = "",
-        vector_index_options: dict = {},
+        vector_index_options: Optional[dict] = None,
         vector_size: int = 1536,
         pool_size: int = 5,
         max_overflow: int = 10,
@@ -226,7 +226,7 @@ class SingleStoreDB(VectorStore):
 
         self.use_vector_index = bool(use_vector_index)
         self.vector_index_name = self._sanitize_input(vector_index_name)
-        self.vector_index_options = dict(vector_index_options)
+        self.vector_index_options = dict(vector_index_options or {})
         self.vector_index_options["metric_type"] = self.distance_strategy
         self.vector_size = int(vector_size)
 
@@ -476,7 +476,7 @@ class SingleStoreDB(VectorStore):
         vector_field: str = "vector",
         use_vector_index: bool = False,
         vector_index_name: str = "",
-        vector_index_options: dict = {},
+        vector_index_options: Optional[dict] = None,
         vector_size: int = 1536,
         pool_size: int = 5,
         max_overflow: int = 10,
