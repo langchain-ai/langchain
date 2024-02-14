@@ -22,7 +22,7 @@ class NomicEmbeddings(Embeddings):
         *,
         model: str,
         nomic_api_key: Optional[str] = None,
-        dimensionality: int = None,
+        dimensionality: Optional[int] = None,
     ):
         """Initialize NomicEmbeddings model.
 
