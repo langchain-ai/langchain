@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
@@ -24,6 +24,8 @@ class BaseMessage(Serializable):
     """Any additional information."""
 
     type: str
+
+    name: Optional[str] = None
 
     class Config:
         extra = Extra.allow

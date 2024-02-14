@@ -1,5 +1,5 @@
 import unittest
-from typing import List
+from typing import List, Type
 
 import pytest
 
@@ -176,6 +176,21 @@ def test_multiple_msg() -> None:
     human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
     ai_msg = AIMessage(content="ai")
     sys_msg = SystemMessage(content="sys")
+
+    msgs = [
+        human_msg,
+        ai_msg,
+        sys_msg,
+    ]
+    assert messages_from_dict(messages_to_dict(msgs)) == msgs
+
+
+def test_multiple_msg_with_name() -> None:
+    human_msg = HumanMessage(
+        content="human", additional_kwargs={"key": "value"}, name="human erick"
+    )
+    ai_msg = AIMessage(content="ai", name="ai erick")
+    sys_msg = SystemMessage(content="sys", name="sys erick")
 
     msgs = [
         human_msg,
@@ -475,20 +490,23 @@ def test_convert_to_messages() -> None:
     ]
 
 
-def test_ai_message_name_sync() -> None:
-    msg = AIMessage(content="foo", name="bar")
-    assert msg.additional_kwargs == {"name": "bar"}
+@pytest.mark.parametrize(
+    "MessageClass",
+    [
+        AIMessage,
+        AIMessageChunk,
+        ChatMessage,
+        ChatMessageChunk,
+        FunctionMessage,
+        FunctionMessageChunk,
+        HumanMessage,
+        HumanMessageChunk,
+        SystemMessage,
+    ],
+)
+def test_message_name(MessageClass: Type) -> None:
+    msg = MessageClass(content="foo", name="bar")
     assert msg.name == "bar"
 
-    msg2 = AIMessage(content="foo", additional_kwargs={"name": "bar"})
-    assert msg2.additional_kwargs == {"name": "bar"}
+    msg2 = MessageClass(content="foo", additional_kwargs={"name": "bar"})
     assert msg2.name == "bar"
-
-    # should pass if names are same in both places
-    msg3 = AIMessage(content="foo", name="bar", additional_kwargs={"name": "bar"})
-    assert msg3.additional_kwargs == {"name": "bar"}
-    assert msg3.name == "bar"
-
-    # fail if different names
-    with pytest.raises(ValueError):
-        AIMessage(content="foo", name="bar", additional_kwargs={"name": "baz"})
