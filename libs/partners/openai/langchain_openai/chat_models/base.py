@@ -745,7 +745,7 @@ class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
         self,
         output_schema: _OutputSchema,
         *,
-        method: Literal["function-calling", "json-format"] = "function-calling",
+        method: Literal["function_calling", "json_format"] = "function_calling",
         return_type: Literal["raw", "parsed", "all"] = "parsed",
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _OutputFormat]:
@@ -753,7 +753,7 @@ class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(output_schema)
-        if method == "function-calling":
+        if method == "function_calling":
             llm = self.bind_tools([output_schema], tool_choice=True)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
@@ -764,7 +764,7 @@ class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
                 output_parser = JsonOutputKeyToolsParser(
                     key_name=key_name, return_single=True
                 )
-        elif method == "json-format":
+        elif method == "json_format":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
                 PydanticOutputParser(pydantic_object=output_schema)
@@ -773,8 +773,8 @@ class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
             )
         else:
             raise ValueError(
-                f"Unrecognized method argument. Expected one of 'tools' or 'json'. "
-                f"Received: {method}"
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_format'. Received: '{method}'"
             )
 
         if return_type == "raw":
@@ -790,7 +790,11 @@ class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        return llm | output_parser
+        else:
+            raise ValueError(
+                f"Unrecognized return_type argument. Expected one of 'raw', 'parsed' "
+                f"or 'all. Received: '{return_type}'"
+            )
 
 
 def _is_pydantic_class(obj: Any) -> bool:
