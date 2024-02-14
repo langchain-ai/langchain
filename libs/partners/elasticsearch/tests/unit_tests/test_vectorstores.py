@@ -18,7 +18,7 @@ def test_elasticsearch_hybrid_scores_guard() -> None:
     from elasticsearch import Elasticsearch
 
     query_string = "foo"
-    embeddings = FakeEmbeddings(5)
+    embeddings = FakeEmbeddings()
 
     store = ElasticsearchStore(
         index_name="dummy_index",
