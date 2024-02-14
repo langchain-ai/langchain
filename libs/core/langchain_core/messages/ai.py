@@ -1,10 +1,11 @@
-from typing import Any, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
     merge_content,
 )
+from langchain_core.pydantic_v1 import root_validator
 
 
 class AIMessage(BaseMessage):
@@ -16,6 +17,27 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
+
+    name: Optional[str] = None
+
+    @root_validator
+    def sync_name(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Sync the name of the message with the name of the function."""
+        additional_kwargs = values.get("additional_kwargs", {})
+        if "name" in values and values["name"] is not None:
+            if (
+                "name" in additional_kwargs
+                and values["name"] != additional_kwargs["name"]
+            ):
+                raise ValueError(
+                    "Name is defined differently in name and the "
+                    'additional_kwargs["name"].'
+                )
+            additional_kwargs["name"] = values["name"]
+            values["additional_kwargs"] = additional_kwargs
+        elif "name" in additional_kwargs:
+            values["name"] = additional_kwargs["name"]
+        return values
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
