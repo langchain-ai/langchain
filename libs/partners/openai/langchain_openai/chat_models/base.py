@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
@@ -22,12 +23,10 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    overload,
 )
 
 import openai
 import tiktoken
-from langchain.output_parsers import PydanticOutputParser
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -54,10 +53,14 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import (
+    JsonOutputParser,
+    PydanticOutputParser,
+)
+from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     convert_to_secret_str,
@@ -70,9 +73,12 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.utils import build_extra_kwargs
 
-logger = logging.getLogger(__name__)
+from langchain_openai.output_parsers import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 
-_BM = TypeVar("_BM", bound=BaseModel)
+logger = logging.getLogger(__name__)
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -195,7 +201,12 @@ class _FunctionCall(TypedDict):
     name: str
 
 
-class ChatOpenAI(BaseChatModel):
+_BM = TypeVar("_BM", bound=BaseModel)
+_OutputSchema = Union[Dict[str, Any], Type[_BM]]
+_OutputFormat = Union[BaseMessage, Dict, _BM]
+
+
+class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
     """`OpenAI` Chat large language models API.
 
     To use, you should have the
@@ -730,67 +741,56 @@ class ChatOpenAI(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @overload
     def with_output_format(
         self,
-        output_schema: Dict[str, Any],
+        output_schema: _OutputSchema,
         *,
-        mode: Literal["tools", "json"] = "tools",
-        enforce_schema: bool = True,
-        return_single: bool = True,
-    ) -> Runnable[LanguageModelInput, Dict]:
-        ...
-
-    @overload
-    def with_output_format(
-        self,
-        output_schema: Type[_BM],
-        *,
-        mode: Literal["tools", "json"] = "tools",
-        enforce_schema: bool = True,
-        return_single: bool = True,
-    ) -> Runnable[LanguageModelInput, _BM]:
-        ...
-
-    def with_output_format(
-        self,
-        output_schema: Union[Dict[str, Any], Type[_BM]],
-        *,
-        mode: Literal["tools", "json"] = "tools",
-        enforce_schema: bool = True,
-        return_single: bool = True,
-    ) -> Runnable[LanguageModelInput, Union[Dict, _BM]]:
-        if mode == "tools":
-            oai_tool = convert_to_openai_tool(output_schema)
-            if enforce_schema:
-                llm = self.bind_tools([output_schema], tool_choice=oai_tool)
-            else:
-                llm = self.bind_tools([output_schema])
-            if _is_pydantic_class(output_schema):
-                output_parser = PydanticToolsParser(
-                    tools=[output_schema], return_single=return_single
+        method: Literal["function-calling", "json-format"] = "function-calling",
+        return_type: Literal["raw", "parsed", "all"] = "parsed",
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _OutputFormat]:
+        """"""
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(output_schema)
+        if method == "function-calling":
+            llm = self.bind_tools([output_schema], tool_choice=True)
+            if is_pydantic_schema:
+                output_parser: OutputParserLike = PydanticToolsParser(
+                    tools=[output_schema], return_single=True
                 )
             else:
-                key_name = convert_to_openai_tool(output_schema)
+                key_name = convert_to_openai_tool(output_schema)["function"]["name"]
                 output_parser = JsonOutputKeyToolsParser(
-                    return_single=return_single, key_name=key_name
+                    key_name=key_name, return_single=True
                 )
-            return llm | output_parser
-        elif mode == "json":
-            if _is_pydantic_class(output_schema):
-                output_parser = PydanticOutputParser(
-                    pydantic_object=output_schema,
-                )
-            else:
-                output_parser = JsonOutputParser()
-
+        elif method == "json-format":
             llm = self.bind(response_format={"type": "json_object"})
-            return llm | output_parser
+            output_parser = (
+                PydanticOutputParser(pydantic_object=output_schema)
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
         else:
             raise ValueError(
-                f"Unrecognized mode argument. Expected one of 'tools' or 'json'. "
-                f"Received: {mode}"
+                f"Unrecognized method argument. Expected one of 'tools' or 'json'. "
+                f"Received: {method}"
             )
+
+        if return_type == "raw":
+            return llm
+        elif return_type == "parsed":
+            return llm | output_parser
+        elif return_type == "all":
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        return llm | output_parser
 
 
 def _is_pydantic_class(obj: Any) -> bool:

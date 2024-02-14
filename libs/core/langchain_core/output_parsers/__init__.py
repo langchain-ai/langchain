@@ -10,6 +10,7 @@ from langchain_core.output_parsers.list import (
     MarkdownListOutputParser,
     NumberedListOutputParser,
 )
+from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.transform import (
     BaseCumulativeTransformOutputParser,
@@ -31,4 +32,5 @@ __all__ = [
     "SimpleJsonOutputParser",
     "XMLOutputParser",
     "JsonOutputParser",
+    "PydanticOutputParser",
 ]
