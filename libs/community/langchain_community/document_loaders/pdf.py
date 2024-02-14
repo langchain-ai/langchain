@@ -318,7 +318,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         output_string = StringIO()
         with open_filename(self.file_path, "rb") as fp:
             extract_text_to_fp(
-                fp,  # type: ignore[arg-type]
+                fp,
                 output_string,
                 codec="",
                 laparams=LAParams(),
