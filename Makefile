@@ -15,7 +15,12 @@ docs_build:
 	docs/.local_build.sh
 
 docs_clean:
-	rm -r _dist
+	@if [ -d _dist ]; then \
+			rm -r _dist; \
+			echo "Directory _dist has been cleaned."; \
+	else \
+			echo "Nothing to clean."; \
+	fi
 
 docs_linkcheck:
 	poetry run linkchecker _dist/docs/ --ignore-url node_modules
