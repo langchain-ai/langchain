@@ -105,7 +105,13 @@ class Yuan2(LLM):
             },
         }
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call out to a Yuan2.0 LLM inference endpoint.
 
         Args:
@@ -123,7 +129,7 @@ class Yuan2(LLM):
 
         if self.use_history:
             self.history.append(prompt)
-            input = "\n".join(self.history)
+            input = "<n>".join(self.history)
         else:
             input = prompt
 
