@@ -505,10 +505,10 @@ def test_message_name(MessageClass: Type) -> None:
     assert msg.name == "bar"
 
     msg2 = MessageClass(content="foo", name=None)
-    assert msg2.name == None
+    assert msg2.name is None
 
     msg3 = MessageClass(content="foo")
-    assert msg3.name == None
+    assert msg3.name is None
 
 
 @pytest.mark.parametrize(
@@ -530,7 +530,7 @@ def test_message_name_chat(MessageClass: Type) -> None:
     assert msg.name == "bar"
 
     msg2 = MessageClass(content="foo", role="user", name=None)
-    assert msg2.name == None
+    assert msg2.name is None
 
     msg3 = MessageClass(content="foo", role="user")
-    assert msg3.name == None
+    assert msg3.name is None
