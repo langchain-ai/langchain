@@ -49,6 +49,7 @@ __all__ = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
+    "ApacheDoris",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
