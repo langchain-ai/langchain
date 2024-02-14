@@ -63,7 +63,10 @@ from langchain_core.load.load import loads
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
 
-from langchain_community.utilities.astradb import AstraDBCollectionEnvironment
+from langchain_community.utilities.astradb import (
+    SetupMode,
+    _AstraDBCollectionEnvironment,
+)
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
@@ -1376,7 +1379,7 @@ class AstraDBCache(BaseCache):
         async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
         pre_delete_collection: bool = False,
-        async_setup: bool = False,
+        setup_mode: SetupMode = SetupMode.SYNC,
     ):
         """
         Create an AstraDB cache using a collection for storage.
@@ -1399,15 +1402,15 @@ class AstraDBCache(BaseCache):
             async_setup (bool): whether to create the collection asynchronously.
                 Enable only if there is a running asyncio event loop. Defaults to False.
         """
-        self.astra_env = AstraDBCollectionEnvironment(
+        self.astra_env = _AstraDBCollectionEnvironment(
             collection_name=collection_name,
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
             async_astra_db_client=async_astra_db_client,
             namespace=namespace,
+            setup_mode=setup_mode,
             pre_delete_collection=pre_delete_collection,
-            async_setup=async_setup,
         )
         self.collection = self.astra_env.collection
         self.async_collection = self.astra_env.async_collection
@@ -1527,7 +1530,9 @@ ASTRA_DB_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE = 16
 _unset = ["unset"]
 
 
-class CachedAwaitable:
+class _CachedAwaitable:
+    """Caches the result of an awaitable so it can be awaited multiple times"""
+
     def __init__(self, awaitable: Awaitable[Any]):
         self.awaitable = awaitable
         self.result = _unset
@@ -1538,17 +1543,22 @@ class CachedAwaitable:
         return self.result
 
 
-def reawaitable(func: Callable) -> Callable:
+def _reawaitable(func: Callable) -> Callable:
+    """Makes an async function result awaitable multiple times"""
+
     @wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> CachedAwaitable:
-        return CachedAwaitable(func(*args, **kwargs))
+    def wrapper(*args: Any, **kwargs: Any) -> _CachedAwaitable:
+        return _CachedAwaitable(func(*args, **kwargs))
 
     return wrapper
 
 
-def async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
+def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
+    """Least-recently-used async cache decorator.
+    Equivalent to functools.lru_cache for async functions"""
+
     def decorating_function(user_function: Callable) -> Callable:
-        return lru_cache(maxsize, typed)(reawaitable(user_function))
+        return lru_cache(maxsize, typed)(_reawaitable(user_function))
 
     return decorating_function
 
@@ -1575,8 +1585,8 @@ class AstraDBSemanticCache(BaseCache):
         astra_db_client: Optional[AstraDB] = None,
         async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
+        setup_mode: SetupMode = SetupMode.SYNC,
         pre_delete_collection: bool = False,
-        async_setup: bool = False,
         embedding: Embeddings,
         metric: Optional[str] = None,
         similarity_threshold: float = ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD,
@@ -1596,10 +1606,10 @@ class AstraDBSemanticCache(BaseCache):
                 you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
             namespace (Optional[str]): namespace (aka keyspace) where the
                 collection is created. Defaults to the database's "default namespace".
+            setup_mode (SetupMode): mode used to create the collection in the DB
+                (SYNC, ASYNC or OFF). Defaults to SYNC.
             pre_delete_collection (bool): whether to delete and re-create the
                 collection. Defaults to False.
-            async_setup (bool): whether to create the collection asynchronously.
-                Enable only if there is a running asyncio event loop. Defaults to False.
             embedding (Embedding): Embedding provider for semantic
                 encoding and search.
             metric: the function to use for evaluating similarity of text embeddings.
@@ -1626,27 +1636,27 @@ class AstraDBSemanticCache(BaseCache):
 
         self._get_embedding = _cache_embedding
 
-        @async_lru_cache(maxsize=ASTRA_DB_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE)
+        @_async_lru_cache(maxsize=ASTRA_DB_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE)
         async def _acache_embedding(text: str) -> List[float]:
             return await self.embedding.aembed_query(text=text)
 
         self._aget_embedding = _acache_embedding
 
-        embedding_dimension: Union[int, Awaitable[int], None]
-        if async_setup:
+        embedding_dimension: Union[int, Awaitable[int], None] = None
+        if setup_mode == SetupMode.ASYNC:
             embedding_dimension = self._aget_embedding_dimension()
-        else:
+        elif setup_mode == SetupMode.SYNC:
             embedding_dimension = self._get_embedding_dimension()
 
-        self.astra_env = AstraDBCollectionEnvironment(
+        self.astra_env = _AstraDBCollectionEnvironment(
             collection_name=collection_name,
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
             async_astra_db_client=async_astra_db_client,
             namespace=namespace,
+            setup_mode=setup_mode,
             pre_delete_collection=pre_delete_collection,
-            async_setup=async_setup,
             embedding_dimension=embedding_dimension,
             metric=metric,
         )

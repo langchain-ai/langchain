@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 from asyncio import InvalidStateError, Task
+from enum import Enum
 from typing import TYPE_CHECKING, Awaitable, Optional, Union
 
 if TYPE_CHECKING:
@@ -12,7 +13,13 @@ if TYPE_CHECKING:
     )
 
 
-class AstraDBEnvironment:
+class SetupMode(Enum):
+    SYNC = 1
+    ASYNC = 2
+    OFF = 3
+
+
+class _AstraDBEnvironment:
     def __init__(
         self,
         token: Optional[str] = None,
@@ -86,7 +93,7 @@ class AstraDBEnvironment:
             )
 
 
-class AstraDBCollectionEnvironment(AstraDBEnvironment):
+class _AstraDBCollectionEnvironment(_AstraDBEnvironment):
     def __init__(
         self,
         collection_name: str,
@@ -95,8 +102,8 @@ class AstraDBCollectionEnvironment(AstraDBEnvironment):
         astra_db_client: Optional[AstraDB] = None,
         async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
+        setup_mode: SetupMode = SetupMode.SYNC,
         pre_delete_collection: bool = False,
-        async_setup: bool = False,
         embedding_dimension: Union[int, Awaitable[int], None] = None,
         metric: Optional[str] = None,
     ) -> None:
@@ -117,7 +124,7 @@ class AstraDBCollectionEnvironment(AstraDBEnvironment):
         )
 
         self.async_setup_db_task: Optional[Task] = None
-        if async_setup:
+        if setup_mode == SetupMode.ASYNC:
             async_astra_db = self.async_astra_db
 
             async def _setup_db() -> None:
@@ -132,7 +139,7 @@ class AstraDBCollectionEnvironment(AstraDBEnvironment):
                 )
 
             self.async_setup_db_task = asyncio.create_task(_setup_db())
-        else:
+        elif setup_mode == SetupMode.SYNC:
             if pre_delete_collection:
                 self.astra_db.delete_collection(collection_name)
             if inspect.isawaitable(embedding_dimension):
