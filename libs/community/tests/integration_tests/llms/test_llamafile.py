@@ -12,7 +12,7 @@ LLAMAFILE_SERVER_BASE_URL = os.getenv(
 )
 
 
-def _ping_llamafile_server():
+def _ping_llamafile_server() -> bool:
     try:
         response = requests.get(LLAMAFILE_SERVER_BASE_URL)
         response.raise_for_status()
@@ -27,7 +27,7 @@ def _ping_llamafile_server():
     reason=f"unable to find llamafile server at {LLAMAFILE_SERVER_BASE_URL}, "
     f"please start one and re-run this test",
 )
-def test_llamafile_call():
+def test_llamafile_call() -> None:
     llm = Llamafile()
     output = llm.invoke("Say foo:")
     assert isinstance(output, str)
@@ -38,7 +38,7 @@ def test_llamafile_call():
     reason=f"unable to find llamafile server at {LLAMAFILE_SERVER_BASE_URL}, "
     f"please start one and re-run this test",
 )
-def test_llamafile_streaming():
+def test_llamafile_streaming() -> None:
     llm = Llamafile(streaming=True)
     generator = llm.stream("Tell me about Roman dodecahedrons.")
     assert isinstance(generator, Generator)

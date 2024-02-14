@@ -1,5 +1,6 @@
 import json
 from collections import deque
+from typing import Any, Dict
 
 import pytest
 import requests
@@ -8,7 +9,7 @@ from pytest import MonkeyPatch
 from langchain_community.llms.llamafile import Llamafile
 
 
-def default_generation_params():
+def default_generation_params() -> Dict[str, Any]:
     return {
         "temperature": 0.8,
         "seed": -1,
@@ -30,9 +31,8 @@ def default_generation_params():
     }
 
 
-def mock_response():
-    contents = {"content": "the quick brown fox"}
-    contents = json.dumps(contents)
+def mock_response() -> requests.Response:
+    contents = json.dumps({"content": "the quick brown fox"})
     response = requests.Response()
     response.status_code = 200
     response._content = str.encode(contents)
@@ -42,10 +42,8 @@ def mock_response():
 def mock_response_stream():  # type: ignore[no-untyped-def]
     mock_response = deque(
         [
-            b'data: {"content":"the","multimodal":false,"slot_id":0,"stop":fal'
-            b'se}\n\n',
-            b'data: {"content":" quick","multimodal":false,"slot_id":0,"stop":f'
-            b'alse}\n\n',
+            b'data: {"content":"the","multimodal":false,"slot_id":0,"stop":false}\n\n',  # noqa
+            b'data: {"content":" quick","multimodal":false,"slot_id":0,"stop":false}\n\n',  # noqa
         ]
     )
 
@@ -62,7 +60,7 @@ def mock_response_stream():  # type: ignore[no-untyped-def]
     return response
 
 
-def test_call(monkeypatch: MonkeyPatch):
+def test_call(monkeypatch: MonkeyPatch) -> None:
     """
     Test basic functionality of the `invoke` method
     """
@@ -70,7 +68,7 @@ def test_call(monkeypatch: MonkeyPatch):
         base_url="http://llamafile-host:8080",
     )
 
-    def mock_post(url, headers, json, stream, timeout):
+    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "http://llamafile-host:8080/completion"
         assert headers == {
             "Content-Type": "application/json",
@@ -86,7 +84,7 @@ def test_call(monkeypatch: MonkeyPatch):
     assert out == "the quick brown fox"
 
 
-def test_call_with_kwargs(monkeypatch: MonkeyPatch):
+def test_call_with_kwargs(monkeypatch: MonkeyPatch) -> None:
     """
     Test kwargs passed to `invoke` override the default values and are passed
     to the endpoint correctly. Also test that any 'unknown' kwargs that are not
@@ -96,7 +94,7 @@ def test_call_with_kwargs(monkeypatch: MonkeyPatch):
         base_url="http://llamafile-host:8080",
     )
 
-    def mock_post(url, headers, json, stream, timeout):
+    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "http://llamafile-host:8080/completion"
         assert headers == {
             "Content-Type": "application/json",
@@ -118,7 +116,7 @@ def test_call_with_kwargs(monkeypatch: MonkeyPatch):
     assert out == "the quick brown fox"
 
 
-def test_call_raises_exception_on_missing_server(monkeypatch: MonkeyPatch):
+def test_call_raises_exception_on_missing_server(monkeypatch: MonkeyPatch) -> None:
     """
     Test that the LLM raises a ConnectionError when no llamafile server is
     listening at the base_url.
@@ -131,7 +129,7 @@ def test_call_raises_exception_on_missing_server(monkeypatch: MonkeyPatch):
         llm.invoke("Test prompt")
 
 
-def test_streaming(monkeypatch: MonkeyPatch):
+def test_streaming(monkeypatch: MonkeyPatch) -> None:
     """
     Test basic functionality of `invoke` with streaming enabled.
     """
