@@ -209,7 +209,7 @@ class VectorStore(ABC):
 
     def similarity_search_with_score(
         self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
         """Run similarity search with distance."""
         raise NotImplementedError
 
@@ -250,15 +250,18 @@ class VectorStore(ABC):
             List of Tuples of (doc, similarity_score)
         """
         relevance_score_fn = self._select_relevance_score_fn()
+
         docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
 
-        if isinstance(query, str):  # Flat structure
-            return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
-        else:  # Nested structure
+        is_batch = isinstance(query, list)
+
+        if is_batch:
             return [
-                [(doc, relevance_score_fn(score)) for doc, score in grouped_results]
-                for grouped_results in docs_and_scores
+                [(doc, relevance_score_fn(score)) for doc, score in d_and_s]
+                for d_and_s in docs_and_scores
             ]
+        else:
+            return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     async def _asimilarity_search_with_relevance_scores(
         self,
@@ -309,10 +312,13 @@ class VectorStore(ABC):
             List of Tuples of (doc, similarity_score)
         """
 
-        # Process score threshold filtering and warnings for single or multiple queries
-        def filter_scores(
-            docs_and_similarities: List[Tuple[Document, float]]
-        ) -> List[Tuple[Document, float]]:
+        score_threshold = kwargs.pop("score_threshold", None)
+
+        is_batch = isinstance(query, list)
+        results = self._similarity_search_with_relevance_scores(query, k=k, **kwargs)
+
+        batch_results = []
+        for docs_and_similarities in results if is_batch else [results]:
             if any(
                 similarity < 0.0 or similarity > 1.0
                 for _, similarity in docs_and_similarities
@@ -333,23 +339,12 @@ class VectorStore(ABC):
                         "No relevant docs were retrieved using the relevance score"
                         f" threshold {score_threshold}"
                     )
-            return docs_and_similarities
+            batch_results.append(docs_and_similarities)
 
-        score_threshold = kwargs.pop("score_threshold", None)
-
-        # docs_and_similarities could be a flat list or a list of lists
-        docs_and_similarities = self._similarity_search_with_relevance_scores(
-            query, k=k, **kwargs
-        )
-
-        if isinstance(query, list):
-            # Multiple queries, expect docs_and_similarities to be a list of lists
-            return [
-                filter_scores(docs_and_sim) for docs_and_sim in docs_and_similarities
-            ]
+        if is_batch:
+            return batch_results
         else:
-            # Single query, docs_and_similarities should be a flat list
-            return filter_scores(docs_and_similarities)
+            return batch_results[0]
 
     async def asimilarity_search_with_relevance_scores(
         self,

@@ -34,38 +34,39 @@ DEFAULT_K = 4  # Number of Documents to return.
 
 def _results_to_docs(results: Any) -> List[Document] | List[List[Document]]:
     docs_and_scores = _results_to_docs_and_scores(results)
-    if len(results["documents"]) == 1:  # Flat structure
+    is_batch = len(results["documents"]) > 1
+
+    if is_batch:
+        return [[doc for doc, _ in d_and_s] for d_and_s in docs_and_scores]
+
+    else:
         return [doc for doc, _ in docs_and_scores]
-    else:  # Nested structure
-        return [
-            [doc for doc, _ in grouped_results] for grouped_results in docs_and_scores
-        ]
 
 
+# make docstrings
 def _results_to_docs_and_scores(
     results: Any,
 ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
-    def process_group(
-        page_contents, metadatas, distances
-    ) -> List[Tuple[Document, float]]:
-        return [
-            (Document(page_content=content, metadata=metadata or {}), distance)
-            for content, metadata, distance in zip(page_contents, metadatas, distances)
-        ]
 
-    if len(results["documents"]) == 1:
-        # Handling a single group of documents
-        return process_group(
-            results["documents"][0], results["metadatas"][0], results["distances"][0]
+    n_results = len(results["documents"])
+
+    batch_docs_and_scores = []
+    for i in range(n_results):
+        batch_docs_and_scores.append(
+            [
+                (Document(page_content=content, metadata=metadata or {}), distance)
+                for content, metadata, distance in zip(
+                    results["documents"][i],
+                    results["metadatas"][i],
+                    results["distances"][i],
+                )
+            ]
         )
+
+    if n_results == 1:
+        return batch_docs_and_scores[0]
     else:
-        # Handling multiple groups of documents
-        grouped_results = []
-        for page_contents, metadatas, distances in zip(
-            results["documents"], results["metadatas"], results["distances"]
-        ):
-            grouped_results.append(process_group(page_contents, metadatas, distances))
-        return grouped_results
+        return batch_docs_and_scores
 
 
 class Chroma(VectorStore):
@@ -368,11 +369,10 @@ class Chroma(VectorStore):
         docs_and_scores = self.similarity_search_with_score(
             query, k, filter=filter, **kwargs
         )
-        if isinstance(query, list):
-            return [
-                [doc for doc, _ in grouped_results]
-                for grouped_results in docs_and_scores
-            ]
+        is_batch = isinstance(query, list)
+
+        if is_batch:
+            return [[doc for doc, _ in d_and_s] for d_and_s in docs_and_scores]
         else:
             return [doc for doc, _ in docs_and_scores]
 
@@ -469,9 +469,9 @@ class Chroma(VectorStore):
                 **kwargs,
             )
         else:
-            queries_embeddings = self._embedding_function.embed_documents(queries)
+            query_embeddings = self._embedding_function.embed_documents(queries)
             results = self.__query_collection(
-                query_embeddings=queries_embeddings,
+                query_embeddings=query_embeddings,
                 n_results=k,
                 where=filter,
                 where_document=where_document,
@@ -540,9 +540,10 @@ class Chroma(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        query_embeddings = [embedding] if isinstance(embedding[0], float) else embedding
 
         results = self.__query_collection(
-            query_embeddings=embedding,
+            query_embeddings=query_embeddings,
             n_results=fetch_k,
             where=filter,
             where_document=where_document,
@@ -550,26 +551,36 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
-        list_of_selected_results = []
-        for embeddings in results["embeddings"]:
+        batch_results = [
+            {
+                "documents": [results["documents"][i]],
+                "metadatas": [results["metadatas"][i]],
+                "distances": [results["distances"][i]],
+                "embeddings": [results["embeddings"][i]],
+            }
+            for i in range(len(query_embeddings))
+        ]
+
+        batch_selected_results = []
+
+        for i in range(len(batch_results)):
             mmr_selected = maximal_marginal_relevance(
-                np.array(embedding, dtype=np.float32),
-                embeddings,
+                np.array(query_embeddings[i], dtype=np.float32),
+                batch_results[i]["embeddings"][0],
                 k=k,
                 lambda_mult=lambda_mult,
             )
-
-            candidates = _results_to_docs(results)
+            candidates = _results_to_docs(batch_results[i])
 
             selected_results = [
                 r for i, r in enumerate(candidates) if i in mmr_selected
             ]
-            list_of_selected_results.append(selected_results)
+            batch_selected_results.append(selected_results)
 
         return (
-            list_of_selected_results[0]
-            if len(list_of_selected_results) == 1
-            else list_of_selected_results
+            batch_selected_results[0]
+            if len(batch_results) == 1
+            else batch_selected_results
         )
 
     # Todo change doc
