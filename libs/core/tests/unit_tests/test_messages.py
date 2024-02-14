@@ -495,10 +495,6 @@ def test_convert_to_messages() -> None:
     [
         AIMessage,
         AIMessageChunk,
-        ChatMessage,
-        ChatMessageChunk,
-        FunctionMessage,
-        FunctionMessageChunk,
         HumanMessage,
         HumanMessageChunk,
         SystemMessage,
@@ -508,5 +504,33 @@ def test_message_name(MessageClass: Type) -> None:
     msg = MessageClass(content="foo", name="bar")
     assert msg.name == "bar"
 
-    msg2 = MessageClass(content="foo", additional_kwargs={"name": "bar"})
-    assert msg2.name == "bar"
+    msg2 = MessageClass(content="foo", name=None)
+    assert msg2.name == None
+
+    msg3 = MessageClass(content="foo")
+    assert msg3.name == None
+
+
+@pytest.mark.parametrize(
+    "MessageClass",
+    [FunctionMessage, FunctionMessageChunk],
+)
+def test_message_name_function(MessageClass: Type) -> None:
+    # functionmessage doesn't support name=None
+    msg = MessageClass(name="foo", content="bar")
+    assert msg.name == "foo"
+
+
+@pytest.mark.parametrize(
+    "MessageClass",
+    [ChatMessage, ChatMessageChunk],
+)
+def test_message_name_chat(MessageClass: Type) -> None:
+    msg = MessageClass(content="foo", role="user", name="bar")
+    assert msg.name == "bar"
+
+    msg2 = MessageClass(content="foo", role="user", name=None)
+    assert msg2.name == None
+
+    msg3 = MessageClass(content="foo", role="user")
+    assert msg3.name == None

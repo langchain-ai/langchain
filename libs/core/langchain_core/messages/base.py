@@ -55,6 +55,8 @@ class BaseMessage(Serializable):
     def pretty_repr(self, html: bool = False) -> str:
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
         # TODO: handle non-string content.
+        if self.name is not None:
+            title += f"\nName: {self.name}"
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
