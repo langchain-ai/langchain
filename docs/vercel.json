@@ -1,6 +1,14 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/llms/huggingface_textgen_inference",
+      "destination": "/docs/integrations/llms/huggingface_endpoint"
+    },
+    {
+      "source": "/docs/integrations/llms/huggingface_hub",
+      "destination": "/docs/integrations/llms/huggingface_endpoint"
+    },
+    {
       "source": "/docs/integrations/llms/watsonxllm",
       "destination": "/docs/integrations/llms/ibm_watsonx"
     },
