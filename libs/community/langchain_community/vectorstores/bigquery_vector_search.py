@@ -16,6 +16,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
+from langchain_community.utils.google import get_client_info
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
     maximal_marginal_relevance,
@@ -28,8 +29,8 @@ DEFAULT_METADATA_COLUMN_NAME = "metadata"  # document metadata
 DEFAULT_CONTENT_COLUMN_NAME = "content"  # text content, do not rename
 DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
 
+_MIN_INDEX_ROWS = 5000  # minimal number of rows for creating an index
 _INDEX_CHECK_PERIOD_SECONDS = 60  # Do not check for index more often that this.
-
 _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
 
 
@@ -89,8 +90,12 @@ class BigQueryVectorSearch(VectorStore):
         try:
             from google.cloud import bigquery
 
+            client_info = get_client_info(module="bigquery-vector-search")
             self.bq_client = bigquery.Client(
-                project=project_id, location=location, credentials=credentials
+                project=project_id,
+                location=location,
+                credentials=credentials,
+                client_info=client_info,
             )
         except ModuleNotFoundError:
             raise ImportError(
@@ -192,6 +197,11 @@ class BigQueryVectorSearch(VectorStore):
         if self._have_index or self._creating_index:
             # Already have an index or in the process of creating one.
             return
+        table = self.bq_client.get_table(self.vectors_table)
+        if (table.num_rows or 0) < _MIN_INDEX_ROWS:
+            # Not enough rows to create index.
+            self._logger.debug("Not enough rows to create a vector index.")
+            return
         if (
             datetime.utcnow() - self._last_index_check
         ).total_seconds() < _INDEX_CHECK_PERIOD_SECONDS:
@@ -216,7 +226,7 @@ class BigQueryVectorSearch(VectorStore):
                 self._logger.debug("Vector index already exists.")
                 self._have_index = True
 
-    def _create_index_in_background(self):
+    def _create_index_in_background(self):  # type: ignore[no-untyped-def]
         if self._have_index or self._creating_index:
             # Already have an index or in the process of creating one.
             return
@@ -225,9 +235,13 @@ class BigQueryVectorSearch(VectorStore):
         thread = Thread(target=self._create_index, daemon=True)
         thread.start()
 
-    def _create_index(self):
+    def _create_index(self):  # type: ignore[no-untyped-def]
         from google.api_core.exceptions import ClientError
 
+        table = self.bq_client.get_table(self.vectors_table)
+        if (table.num_rows or 0) < _MIN_INDEX_ROWS:
+            # Not enough rows to create index.
+            return
         if self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             distance_type = "EUCLIDEAN"
         elif self.distance_strategy == DistanceStrategy.COSINE:
@@ -279,7 +293,7 @@ class BigQueryVectorSearch(VectorStore):
     def full_table_id(self) -> str:
         return self._full_table_id
 
-    def add_texts(
+    def add_texts(  # type: ignore[override]
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
@@ -534,6 +548,7 @@ class BigQueryVectorSearch(VectorStore):
             else:
                 metadata = {}
             metadata["__id"] = row[self.doc_id_field]
+            metadata["__job_id"] = job.job_id
             doc = Document(page_content=row[self.content_field], metadata=metadata)
             document_tuples.append(
                 (doc, row[self.text_embedding_field], row["_vector_search_distance"])
@@ -833,3 +848,14 @@ class BigQueryVectorSearch(VectorStore):
         vs_obj = BigQueryVectorSearch(embedding=embedding, **kwargs)
         vs_obj.add_texts(texts, metadatas)
         return vs_obj
+
+    def explore_job_stats(self, job_id: str) -> Dict:
+        """Return the statistics for a single job execution.
+
+        Args:
+            job_id: The BigQuery Job id.
+
+        Returns:
+            A dictionary of job statistics for a given job.
+        """
+        return self.bq_client.get_job(job_id)._properties["statistics"]

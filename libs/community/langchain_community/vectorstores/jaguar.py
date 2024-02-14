@@ -135,7 +135,7 @@ class Jaguar(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         return self._embedding
 
-    def add_texts(
+    def add_texts(  # type: ignore[override]
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
@@ -158,12 +158,19 @@ class Jaguar(VectorStore):
         """
         vcol = self._vector_index
         filecol = kwargs.get("file_column", "")
+        text_tag = kwargs.get("text_tag", "")
         podstorevcol = self._pod + "." + self._store + "." + vcol
         q = "textcol " + podstorevcol
         js = self.run(q)
         if js == "":
             return []
         textcol = js["data"]
+
+        if text_tag != "":
+            tag_texts = []
+            for t in texts:
+                tag_texts.append(text_tag + " " + t)
+            texts = tag_texts
 
         embeddings = self._embedding.embed_documents(list(texts))
         ids = []
@@ -344,7 +351,7 @@ class Jaguar(VectorStore):
         return False
 
     @classmethod
-    def from_texts(
+    def from_texts(  # type: ignore[override]
         cls,
         texts: List[str],
         embedding: Embeddings,
@@ -376,7 +383,7 @@ class Jaguar(VectorStore):
         q = "truncate store " + podstore
         self.run(q)
 
-    def delete(self, zids: List[str], **kwargs: Any) -> None:
+    def delete(self, zids: List[str], **kwargs: Any) -> None:  # type: ignore[override]
         """
         Delete records in jaguardb by a list of zero-ids
         Args:
@@ -424,7 +431,7 @@ class Jaguar(VectorStore):
 
     def prt(self, msg: str) -> None:
         with open("/tmp/debugjaguar.log", "a") as file:
-            print(f"msg={msg}", file=file, flush=True)
+            print(f"msg={msg}", file=file, flush=True)  # noqa: T201
 
     def _parseMeta(self, nvmap: dict, filecol: str) -> Tuple[List[str], List[str], str]:
         filepath = ""
@@ -444,4 +451,5 @@ class Jaguar(VectorStore):
                     nvec.append(k)
                     vvec.append(v)
 
-        return nvec, vvec, filepath
+        vvec_s = [str(e) for e in vvec]
+        return nvec, vvec_s, filepath

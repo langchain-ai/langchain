@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import logging
 import os
 from io import BytesIO
@@ -15,14 +16,17 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Type,
     Union,
     cast,
 )
 from urllib.parse import urlparse
 
+import google.ai.generativelanguage as glm
+import google.api_core
+
 # TODO: remove ignore once the google package is published with types
 import google.generativeai as genai  # type: ignore[import]
+import proto  # type: ignore[import]
 import requests
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -33,14 +37,12 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    ChatMessage,
-    ChatMessageChunk,
+    FunctionMessage,
     HumanMessage,
-    HumanMessageChunk,
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
@@ -51,6 +53,10 @@ from tenacity import (
 )
 
 from langchain_google_genai._common import GoogleGenerativeAIError
+from langchain_google_genai._function_utils import (
+    convert_to_genai_function_declarations,
+)
+from langchain_google_genai.llms import GoogleModelFamily, _BaseGoogleGenerativeAI
 
 IMAGE_TYPES: Tuple = ()
 try:
@@ -87,8 +93,6 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
         Callable[[Any], Any]: A retry decorator configured for handling specific
         Google API exceptions.
     """
-    import google.api_core.exceptions
-
     multiplier = 2
     min_seconds = 1
     max_seconds = 60
@@ -123,14 +127,22 @@ def _chat_with_retry(generation_method: Callable, **kwargs: Any) -> Any:
         Any: The result from the chat generation method.
     """
     retry_decorator = _create_retry_decorator()
-    from google.api_core.exceptions import InvalidArgument  # type: ignore
 
     @retry_decorator
     def _chat_with_retry(**kwargs: Any) -> Any:
         try:
             return generation_method(**kwargs)
-        except InvalidArgument as e:
-            # Do not retry for these errors.
+        # Do not retry for these errors.
+        except google.api_core.exceptions.FailedPrecondition as exc:
+            if "location is not supported" in exc.message:
+                error_msg = (
+                    "Your location is not supported by google-generativeai "
+                    "at the moment. Try to use ChatVertexAI LLM from "
+                    "langchain_google_vertexai."
+                )
+                raise ValueError(error_msg)
+
+        except google.api_core.exceptions.InvalidArgument as e:
             raise ChatGoogleGenerativeAIError(
                 f"Invalid argument provided to Gemini: {e}"
             ) from e
@@ -312,14 +324,47 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro", convert_system_message_to_human
             continue
         elif isinstance(message, AIMessage):
             role = "model"
+            raw_function_call = message.additional_kwargs.get("function_call")
+            if raw_function_call:
+                function_call = glm.FunctionCall(
+                    {
+                        "name": raw_function_call["name"],
+                        "args": json.loads(raw_function_call["arguments"]),
+                    }
+                )
+                parts = [glm.Part(function_call=function_call)]
+            else:
+                parts = _convert_to_parts(message.content)
         elif isinstance(message, HumanMessage):
             role = "user"
+            parts = _convert_to_parts(message.content)
+        elif isinstance(message, FunctionMessage):
+            role = "user"
+            response: Any
+            if not isinstance(message.content, str):
+                response = message.content
+            else:
+                try:
+                    response = json.loads(message.content)
+                except json.JSONDecodeError:
+                    response = message.content  # leave as str representation
+            parts = [
+                glm.Part(
+                    function_response=glm.FunctionResponse(
+                        name=message.name,
+                        response=(
+                            {"output": response}
+                            if not isinstance(response, dict)
+                            else response
+                        ),
+                    )
+                )
+            ]
         else:
             raise ValueError(
                 f"Unexpected message with type {type(message)} at the position {i}."
             )
 
-        parts = _convert_to_parts(message.content)
         if raw_system_message:
             if role == "model":
                 raise ValueError(
@@ -332,71 +377,51 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro", convert_system_message_to_human
     return messages
 
 
-def _parts_to_content(parts: List[genai.types.PartType]) -> Union[List[dict], str]:
-    """Converts a list of Gemini API Part objects into a list of LangChain messages."""
-    if len(parts) == 1 and parts[0].text is not None and not parts[0].inline_data:
-        # Simple text response. The typical response
-        return parts[0].text
-    elif not parts:
-        logger.warning("Gemini produced an empty response.")
-        return ""
-    messages = []
-    for part in parts:
-        if part.text is not None:
-            messages.append(
-                {
-                    "type": "text",
-                    "text": part.text,
-                }
-            )
-        else:
-            # TODO: Handle inline_data if that's a thing?
-            raise ChatGoogleGenerativeAIError(f"Unexpected part type. {part}")
-    return messages
+def _parse_response_candidate(
+    response_candidate: glm.Candidate, stream: bool
+) -> AIMessage:
+    first_part = response_candidate.content.parts[0]
+    if first_part.function_call:
+        function_call = proto.Message.to_dict(first_part.function_call)
+        function_call["arguments"] = json.dumps(function_call.pop("args", {}))
+        return (AIMessageChunk if stream else AIMessage)(
+            content="", additional_kwargs={"function_call": function_call}
+        )
+    else:
+        parts = response_candidate.content.parts
+
+    if len(parts) == 1 and parts[0].text:
+        content: Union[str, List[Union[str, Dict]]] = parts[0].text
+    else:
+        content = [proto.Message.to_dict(part) for part in parts]
+    return (AIMessageChunk if stream else AIMessage)(
+        content=content, additional_kwargs={}
+    )
 
 
 def _response_to_result(
-    response: genai.types.GenerateContentResponse,
-    ai_msg_t: Type[BaseMessage] = AIMessage,
-    human_msg_t: Type[BaseMessage] = HumanMessage,
-    chat_msg_t: Type[BaseMessage] = ChatMessage,
-    generation_t: Type[ChatGeneration] = ChatGeneration,
+    response: glm.GenerateContentResponse,
+    stream: bool = False,
 ) -> ChatResult:
     """Converts a PaLM API response into a LangChain ChatResult."""
-    llm_output = {}
-    if response.prompt_feedback:
-        try:
-            prompt_feedback = type(response.prompt_feedback).to_dict(
-                response.prompt_feedback, use_integers_for_enums=False
-            )
-            llm_output["prompt_feedback"] = prompt_feedback
-        except Exception as e:
-            logger.debug(f"Unable to convert prompt_feedback to dict: {e}")
+    llm_output = {"prompt_feedback": proto.Message.to_dict(response.prompt_feedback)}
 
     generations: List[ChatGeneration] = []
 
-    role_map = {
-        "model": ai_msg_t,
-        "user": human_msg_t,
-    }
     for candidate in response.candidates:
-        content = candidate.content
-        parts_content = _parts_to_content(content.parts)
-        if content.role not in role_map:
-            logger.warning(
-                f"Unrecognized role: {content.role}. Treating as a ChatMessage."
-            )
-            msg = chat_msg_t(content=parts_content, role=content.role)
-        else:
-            msg = role_map[content.role](content=parts_content)
         generation_info = {}
         if candidate.finish_reason:
             generation_info["finish_reason"] = candidate.finish_reason.name
-        if candidate.safety_ratings:
-            generation_info["safety_ratings"] = [
-                type(rating).to_dict(rating) for rating in candidate.safety_ratings
-            ]
-        generations.append(generation_t(message=msg, generation_info=generation_info))
+        generation_info["safety_ratings"] = [
+            proto.Message.to_dict(safety_rating, use_integers_for_enums=False)
+            for safety_rating in candidate.safety_ratings
+        ]
+        generations.append(
+            (ChatGenerationChunk if stream else ChatGeneration)(
+                message=_parse_response_candidate(candidate, stream=stream),
+                generation_info=generation_info,
+            )
+        )
     if not response.candidates:
         # Likely a "prompt feedback" violation (e.g., toxic input)
         # Raising an error would be different than how OpenAI handles it,
@@ -405,11 +430,16 @@ def _response_to_result(
             "Gemini produced an empty response. Continuing with empty message\n"
             f"Feedback: {response.prompt_feedback}"
         )
-        generations = [generation_t(message=ai_msg_t(content=""), generation_info={})]
+        generations = [
+            (ChatGenerationChunk if stream else ChatGeneration)(
+                message=(AIMessageChunk if stream else AIMessage)(content=""),
+                generation_info={},
+            )
+        ]
     return ChatResult(generations=generations, llm_output=llm_output)
 
 
-class ChatGoogleGenerativeAI(BaseChatModel):
+class ChatGoogleGenerativeAI(_BaseGoogleGenerativeAI, BaseChatModel):
     """`Google Generative AI` Chat models API.
 
     To use, you must have either:
@@ -427,40 +457,8 @@ class ChatGoogleGenerativeAI(BaseChatModel):
 
     """
 
-    model: str = Field(
-        ...,
-        description="""The name of the model to use.
-Supported examples:
-    - gemini-pro""",
-    )
-    max_output_tokens: int = Field(default=None, description="Max output tokens")
-
     client: Any  #: :meta private:
-    google_api_key: Optional[SecretStr] = None
-    temperature: Optional[float] = None
-    """Run inference with this temperature. Must by in the closed
-       interval [0.0, 1.0]."""
-    top_k: Optional[int] = None
-    """Decode using top-k sampling: consider the set of top_k most probable tokens.
-       Must be positive."""
-    top_p: Optional[int] = None
-    """The maximum cumulative probability of tokens to consider when sampling.
 
-        The model uses combined Top-k and nucleus sampling.
-
-        Tokens are sorted based on their assigned probabilities so
-        that only the most likely tokens are considered. Top-k
-        sampling directly limits the maximum number of tokens to
-        consider, while Nucleus sampling limits number of tokens
-        based on the cumulative probability.
-
-        Note: The default value varies by model, see the
-        `Model.top_p` attribute of the `Model` returned the
-        `genai.get_model` function.
-    """
-    n: int = Field(default=1, alias="candidate_count")
-    """Number of chat completions to generate for each prompt. Note that the API may
-       not return the full n completions if duplicates are generated."""
     convert_system_message_to_human: bool = False
     """Whether to merge any leading SystemMessage into the following HumanMessage.
     
@@ -478,22 +476,24 @@ Supported examples:
     def _llm_type(self) -> str:
         return "chat-google-generative-ai"
 
-    @property
-    def _is_geminiai(self) -> bool:
-        return self.model is not None and "gemini" in self.model
-
     @classmethod
     def is_lc_serializable(self) -> bool:
         return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
+        """Validates params and passes them to google-generativeai package."""
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
         if isinstance(google_api_key, SecretStr):
             google_api_key = google_api_key.get_secret_value()
-        genai.configure(api_key=google_api_key)
+
+        genai.configure(
+            api_key=google_api_key,
+            transport=values.get("transport"),
+            client_options=values.get("client_options"),
+        )
         if (
             values.get("temperature") is not None
             and not 0 <= values["temperature"] <= 1
@@ -517,6 +517,7 @@ Supported examples:
             "temperature": self.temperature,
             "top_k": self.top_k,
             "n": self.n,
+            "safety_settings": self.safety_settings,
         }
 
     def _prepare_params(
@@ -546,7 +547,11 @@ Supported examples:
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params, chat, message = self._prepare_chat(messages, stop=stop)
+        params, chat, message = self._prepare_chat(
+            messages,
+            stop=stop,
+            **kwargs,
+        )
         response: genai.types.GenerateContentResponse = _chat_with_retry(
             content=message,
             **params,
@@ -561,7 +566,11 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params, chat, message = self._prepare_chat(messages, stop=stop)
+        params, chat, message = self._prepare_chat(
+            messages,
+            stop=stop,
+            **kwargs,
+        )
         response: genai.types.GenerateContentResponse = await _achat_with_retry(
             content=message,
             **params,
@@ -576,7 +585,11 @@ Supported examples:
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        params, chat, message = self._prepare_chat(messages, stop=stop)
+        params, chat, message = self._prepare_chat(
+            messages,
+            stop=stop,
+            **kwargs,
+        )
         response: genai.types.GenerateContentResponse = _chat_with_retry(
             content=message,
             **params,
@@ -584,17 +597,12 @@ Supported examples:
             stream=True,
         )
         for chunk in response:
-            _chat_result = _response_to_result(
-                chunk,
-                ai_msg_t=AIMessageChunk,
-                human_msg_t=HumanMessageChunk,
-                chat_msg_t=ChatMessageChunk,
-                generation_t=ChatGenerationChunk,
-            )
+            _chat_result = _response_to_result(chunk, stream=True)
             gen = cast(ChatGenerationChunk, _chat_result.generations[0])
-            yield gen
+
             if run_manager:
                 run_manager.on_llm_new_token(gen.text)
+            yield gen
 
     async def _astream(
         self,
@@ -603,24 +611,23 @@ Supported examples:
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        params, chat, message = self._prepare_chat(messages, stop=stop)
+        params, chat, message = self._prepare_chat(
+            messages,
+            stop=stop,
+            **kwargs,
+        )
         async for chunk in await _achat_with_retry(
             content=message,
             **params,
             generation_method=chat.send_message_async,
             stream=True,
         ):
-            _chat_result = _response_to_result(
-                chunk,
-                ai_msg_t=AIMessageChunk,
-                human_msg_t=HumanMessageChunk,
-                chat_msg_t=ChatMessageChunk,
-                generation_t=ChatGenerationChunk,
-            )
+            _chat_result = _response_to_result(chunk, stream=True)
             gen = cast(ChatGenerationChunk, _chat_result.generations[0])
-            yield gen
+
             if run_manager:
                 await run_manager.on_llm_new_token(gen.text)
+            yield gen
 
     def _prepare_chat(
         self,
@@ -628,11 +635,42 @@ Supported examples:
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Tuple[Dict[str, Any], genai.ChatSession, genai.types.ContentDict]:
+        client = self.client
+        functions = kwargs.pop("functions", None)
+        safety_settings = kwargs.pop("safety_settings", self.safety_settings)
+        if functions or safety_settings:
+            tools = (
+                convert_to_genai_function_declarations(functions) if functions else None
+            )
+            client = genai.GenerativeModel(
+                model_name=self.model, tools=tools, safety_settings=safety_settings
+            )
+
         params = self._prepare_params(stop, **kwargs)
         history = _parse_chat_history(
             messages,
             convert_system_message_to_human=self.convert_system_message_to_human,
         )
         message = history.pop()
-        chat = self.client.start_chat(history=history)
+        chat = client.start_chat(history=history)
         return params, chat, message
+
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        if self._model_family == GoogleModelFamily.GEMINI:
+            result = self.client.count_tokens(text)
+            token_count = result.total_tokens
+        else:
+            result = self.client.count_text_tokens(model=self.model, prompt=text)
+            token_count = result["token_count"]
+
+        return token_count

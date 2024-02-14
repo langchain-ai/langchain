@@ -1,16 +1,25 @@
 """Utilities to init Vertex AI."""
+
+import dataclasses
 from importlib import metadata
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import google.api_core
+import proto  # type: ignore[import-untyped]
 from google.api_core.gapic_v1.client_info import ClientInfo
-from google.cloud import storage  # type: ignore
+from google.cloud import storage  # type: ignore[attr-defined]
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import create_base_retry_decorator
-from vertexai.preview.generative_models import Image  # type: ignore
+from vertexai.generative_models._generative_models import (  # type: ignore[import-untyped]
+    Candidate,
+)
+from vertexai.language_models import (  # type: ignore[import-untyped]
+    TextGenerationResponse,
+)
+from vertexai.preview.generative_models import Image  # type: ignore[import-untyped]
 
 
 def create_retry_decorator(
@@ -86,3 +95,38 @@ def is_codey_model(model_name: str) -> bool:
 def is_gemini_model(model_name: str) -> bool:
     """Returns True if the model name is a Gemini model."""
     return model_name is not None and "gemini" in model_name
+
+
+def get_generation_info(
+    candidate: Union[TextGenerationResponse, Candidate],
+    is_gemini: bool,
+    *,
+    stream: bool = False,
+) -> Dict[str, Any]:
+    if is_gemini:
+        # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini#response_body
+        info = {
+            "is_blocked": any([rating.blocked for rating in candidate.safety_ratings]),
+            "safety_ratings": [
+                {
+                    "category": rating.category.name,
+                    "probability_label": rating.probability.name,
+                    "blocked": rating.blocked,
+                }
+                for rating in candidate.safety_ratings
+            ],
+            "citation_metadata": (
+                proto.Message.to_dict(candidate.citation_metadata)
+                if candidate.citation_metadata
+                else None
+            ),
+        }
+    # https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/text-chat#response_body
+    else:
+        info = dataclasses.asdict(candidate)
+        info.pop("text")
+        info = {k: v for k, v in info.items() if not k.startswith("_")}
+    if stream:
+        # Remove non-streamable types, like bools.
+        info.pop("is_blocked")
+    return info

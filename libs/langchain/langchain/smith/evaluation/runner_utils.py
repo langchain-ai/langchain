@@ -34,7 +34,7 @@ from langchain_core.tracers.evaluation import (
 )
 from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
-from langsmith.env import get_git_info
+from langsmith.env import get_git_info, get_langchain_env_var_metadata
 from langsmith.evaluation import EvaluationResult, RunEvaluator
 from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example, TracerSession
@@ -97,6 +97,7 @@ class TestResult(dict):
             for col in df.columns
             if col.startswith("inputs.")
             or col.startswith("outputs.")
+            or col in {"input", "output"}
             or col.startswith("reference")
         ]
         return df.describe(include="all").drop(to_drop, axis=1)
@@ -656,6 +657,7 @@ async def _arun_llm(
     tags: Optional[List[str]] = None,
     callbacks: Callbacks = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> Union[str, BaseMessage]:
     """Asynchronously run the language model.
 
@@ -674,15 +676,16 @@ async def _arun_llm(
     """
     if input_mapper is not None:
         prompt_or_messages = input_mapper(inputs)
-        if isinstance(prompt_or_messages, str):
-            return await llm.apredict(
-                prompt_or_messages, callbacks=callbacks, tags=tags
-            )
-        elif isinstance(prompt_or_messages, list) and all(
-            isinstance(msg, BaseMessage) for msg in prompt_or_messages
+        if (
+            isinstance(prompt_or_messages, str)
+            or isinstance(prompt_or_messages, list)
+            and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
-            return await llm.apredict_messages(
-                prompt_or_messages, callbacks=callbacks, tags=tags
+            return await llm.ainvoke(
+                prompt_or_messages,
+                config=RunnableConfig(
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                ),
             )
         else:
             raise InputFormatError(
@@ -694,13 +697,19 @@ async def _arun_llm(
     else:
         try:
             prompt = _get_prompt(inputs)
-            llm_output: Union[str, BaseMessage] = await llm.apredict(
-                prompt, callbacks=callbacks, tags=tags
+            llm_output: Union[str, BaseMessage] = await llm.ainvoke(
+                prompt,
+                config=RunnableConfig(
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                ),
             )
         except InputFormatError:
             messages = _get_messages(inputs)
-            llm_output = await llm.apredict_messages(
-                messages, callbacks=callbacks, tags=tags
+            llm_output = await llm.ainvoke(
+                messages,
+                config=RunnableConfig(
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                ),
             )
     return llm_output
 
@@ -712,6 +721,7 @@ async def _arun_chain(
     *,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> Union[dict, str]:
     """Run a chain asynchronously on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
@@ -722,9 +732,16 @@ async def _arun_chain(
         and chain.input_keys
     ):
         val = next(iter(inputs_.values()))
-        output = await chain.acall(val, callbacks=callbacks, tags=tags)
+        output = await chain.ainvoke(
+            val,
+            config=RunnableConfig(
+                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+            ),
+        )
     else:
-        runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
+        runnable_config = RunnableConfig(
+            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
+        )
         output = await chain.ainvoke(inputs_, config=runnable_config)
     return output
 
@@ -760,6 +777,7 @@ async def _arun_llm_or_chain(
                 tags=config["tags"],
                 callbacks=config["callbacks"],
                 input_mapper=input_mapper,
+                metadata=config.get("metadata"),
             )
         else:
             chain = llm_or_chain_factory()
@@ -769,6 +787,7 @@ async def _arun_llm_or_chain(
                 tags=config["tags"],
                 callbacks=config["callbacks"],
                 input_mapper=input_mapper,
+                metadata=config.get("metadata"),
             )
         result = output
     except Exception as e:
@@ -791,6 +810,7 @@ def _run_llm(
     *,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> Union[str, BaseMessage]:
     """
     Run the language model on the example.
@@ -807,17 +827,19 @@ def _run_llm(
         ValueError: If the LLM type is unsupported.
         InputFormatError: If the input format is invalid.
     """
+    # Most of this is legacy code; we could probably remove a lot of it.
     if input_mapper is not None:
         prompt_or_messages = input_mapper(inputs)
-        if isinstance(prompt_or_messages, str):
-            llm_output: Union[str, BaseMessage] = llm.predict(
-                prompt_or_messages, callbacks=callbacks, tags=tags
-            )
-        elif isinstance(prompt_or_messages, list) and all(
-            isinstance(msg, BaseMessage) for msg in prompt_or_messages
+        if (
+            isinstance(prompt_or_messages, str)
+            or isinstance(prompt_or_messages, list)
+            and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
-            llm_output = llm.predict_messages(
-                prompt_or_messages, callbacks=callbacks, tags=tags
+            llm_output: Union[str, BaseMessage] = llm.invoke(
+                prompt_or_messages,
+                config=RunnableConfig(
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                ),
             )
         else:
             raise InputFormatError(
@@ -828,10 +850,18 @@ def _run_llm(
     else:
         try:
             llm_prompts = _get_prompt(inputs)
-            llm_output = llm.predict(llm_prompts, callbacks=callbacks, tags=tags)
+            llm_output = llm.invoke(
+                llm_prompts,
+                config=RunnableConfig(
+                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                ),
+            )
         except InputFormatError:
             llm_messages = _get_messages(inputs)
-            llm_output = llm.predict_messages(llm_messages, callbacks=callbacks)
+            llm_output = llm.invoke(
+                llm_messages,
+                config=RunnableConfig(callbacks=callbacks, metadata=metadata or {}),
+            )
     return llm_output
 
 
@@ -842,6 +872,7 @@ def _run_chain(
     *,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> Union[Dict, str]:
     """Run a chain on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
@@ -852,9 +883,16 @@ def _run_chain(
         and chain.input_keys
     ):
         val = next(iter(inputs_.values()))
-        output = chain(val, callbacks=callbacks, tags=tags)
+        output = chain.invoke(
+            val,
+            config=RunnableConfig(
+                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+            ),
+        )
     else:
-        runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
+        runnable_config = RunnableConfig(
+            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
+        )
         output = chain.invoke(inputs_, config=runnable_config)
     return output
 
@@ -891,6 +929,7 @@ def _run_llm_or_chain(
                 config["callbacks"],
                 tags=config["tags"],
                 input_mapper=input_mapper,
+                metadata=config.get("metadata"),
             )
         else:
             chain = llm_or_chain_factory()
@@ -900,6 +939,7 @@ def _run_llm_or_chain(
                 config["callbacks"],
                 tags=config["tags"],
                 input_mapper=input_mapper,
+                metadata=config.get("metadata"),
             )
         result = output
     except Exception as e:
@@ -959,7 +999,7 @@ run_on_dataset(
             f"\n\n{example_msg}"
         )
     comparison_url = dataset.url + f"/compare?selectedSessions={project.id}"
-    print(
+    print(  # noqa: T201
         f"View the evaluation results for project '{project_name}'"
         f" at:\n{comparison_url}\n\n"
         f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
@@ -1075,8 +1115,13 @@ class _DatasetRunContainer:
         input_mapper: Optional[Callable[[Dict], Any]] = None,
         concurrency_level: int = 5,
         project_metadata: Optional[Dict[str, Any]] = None,
+        revision_id: Optional[str] = None,
     ) -> _DatasetRunContainer:
         project_name = project_name or name_generation.random_name()
+        if revision_id:
+            if not project_metadata:
+                project_metadata = {}
+            project_metadata.update({"revision_id": revision_id})
         wrapped_model, project, dataset, examples = _prepare_eval_run(
             client,
             dataset_name,
@@ -1100,7 +1145,6 @@ class _DatasetRunContainer:
                     LangChainTracer(
                         project_name=project.name,
                         client=client,
-                        use_threading=False,
                         example_id=example.id,
                     ),
                     EvaluatorCallbackHandler(
@@ -1113,6 +1157,7 @@ class _DatasetRunContainer:
                 ],
                 tags=tags,
                 max_concurrency=concurrency_level,
+                metadata={"revision_id": revision_id} if revision_id else {},
             )
             for example in examples
         ]
@@ -1145,8 +1190,8 @@ def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
         formatted_string = aggregate_results.to_string(
             float_format=lambda x: f"{x:.2f}", justify="right"
         )
-        print("\n Experiment Results:")
-        print(formatted_string)
+        print("\n Experiment Results:")  # noqa: T201
+        print(formatted_string)  # noqa: T201
 
 
 _INPUT_MAPPER_DEP_WARNING = (
@@ -1175,11 +1220,14 @@ async def arun_on_dataset(
     project_metadata: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
     tags: Optional[List[str]] = None,
+    revision_id: Optional[str] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
+    if revision_id is None:
+        revision_id = get_langchain_env_var_metadata().get("revision_id")
 
     if kwargs:
         warn_deprecated(
@@ -1200,6 +1248,7 @@ async def arun_on_dataset(
         input_mapper,
         concurrency_level,
         project_metadata=project_metadata,
+        revision_id=revision_id,
     )
     batch_results = await runnable_utils.gather_with_concurrency(
         container.configs[0].get("max_concurrency"),
@@ -1227,11 +1276,14 @@ def run_on_dataset(
     project_metadata: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
     tags: Optional[List[str]] = None,
+    revision_id: Optional[str] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
+    if revision_id is None:
+        revision_id = get_langchain_env_var_metadata().get("revision_id")
 
     if kwargs:
         warn_deprecated(
@@ -1252,6 +1304,7 @@ def run_on_dataset(
         input_mapper,
         concurrency_level,
         project_metadata=project_metadata,
+        revision_id=revision_id,
     )
     if concurrency_level == 0:
         batch_results = [
@@ -1301,6 +1354,8 @@ Args:
         log feedback and run traces.
     verbose: Whether to print progress.
     tags: Tags to add to each run in the project.
+    revision_id: Optional revision identifier to assign this test run to
+        track the performance of different versions of your system.
 Returns:
     A dictionary containing the run's project name and the resulting model outputs.
 
@@ -1313,7 +1368,7 @@ Examples
 .. code-block:: python
 
     from langsmith import Client
-    from langchain_community.chat_models import ChatOpenAI
+    from langchain_openai import ChatOpenAI
     from langchain.chains import LLMChain
     from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
 

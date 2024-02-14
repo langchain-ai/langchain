@@ -696,280 +696,6 @@
   }
   '''
 # ---
-# name: test_llm_with_fallbacks[llm_chain_with_fallbacks]
-  '''
-  {
-    "lc": 1,
-    "type": "constructor",
-    "id": [
-      "langchain",
-      "schema",
-      "runnable",
-      "RunnableSequence"
-    ],
-    "kwargs": {
-      "first": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "schema",
-          "runnable",
-          "RunnableParallel"
-        ],
-        "kwargs": {
-          "steps": {
-            "buz": {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "langchain_core",
-                "runnables",
-                "base",
-                "RunnableLambda"
-              ],
-              "repr": "RunnableLambda(lambda x: x)"
-            }
-          }
-        }
-      },
-      "middle": [],
-      "last": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "schema",
-          "runnable",
-          "RunnableWithFallbacks"
-        ],
-        "kwargs": {
-          "runnable": {
-            "lc": 1,
-            "type": "constructor",
-            "id": [
-              "langchain",
-              "schema",
-              "runnable",
-              "RunnableSequence"
-            ],
-            "kwargs": {
-              "first": {
-                "lc": 1,
-                "type": "constructor",
-                "id": [
-                  "langchain",
-                  "prompts",
-                  "prompt",
-                  "PromptTemplate"
-                ],
-                "kwargs": {
-                  "input_variables": [
-                    "buz"
-                  ],
-                  "template": "what did baz say to {buz}",
-                  "template_format": "f-string",
-                  "partial_variables": {}
-                }
-              },
-              "middle": [],
-              "last": {
-                "lc": 1,
-                "type": "not_implemented",
-                "id": [
-                  "tests",
-                  "unit_tests",
-                  "fake",
-                  "llm",
-                  "FakeListLLM"
-                ],
-                "repr": "FakeListLLM(responses=['foo'], i=1)"
-              },
-              "name": null
-            }
-          },
-          "fallbacks": [
-            {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "schema",
-                "runnable",
-                "RunnableSequence"
-              ],
-              "kwargs": {
-                "first": {
-                  "lc": 1,
-                  "type": "constructor",
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "prompt",
-                    "PromptTemplate"
-                  ],
-                  "kwargs": {
-                    "input_variables": [
-                      "buz"
-                    ],
-                    "template": "what did baz say to {buz}",
-                    "template_format": "f-string",
-                    "partial_variables": {}
-                  }
-                },
-                "middle": [],
-                "last": {
-                  "lc": 1,
-                  "type": "not_implemented",
-                  "id": [
-                    "tests",
-                    "unit_tests",
-                    "fake",
-                    "llm",
-                    "FakeListLLM"
-                  ],
-                  "repr": "FakeListLLM(responses=['bar'])"
-                },
-                "name": null
-              }
-            }
-          ],
-          "exceptions_to_handle": [
-            {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "builtins",
-                "Exception"
-              ],
-              "repr": "<class 'Exception'>"
-            }
-          ]
-        }
-      },
-      "name": null
-    }
-  }
-  '''
-# ---
-# name: test_llm_with_fallbacks[llm_with_fallbacks]
-  '''
-  {
-    "lc": 1,
-    "type": "constructor",
-    "id": [
-      "langchain",
-      "schema",
-      "runnable",
-      "RunnableWithFallbacks"
-    ],
-    "kwargs": {
-      "runnable": {
-        "lc": 1,
-        "type": "not_implemented",
-        "id": [
-          "tests",
-          "unit_tests",
-          "fake",
-          "llm",
-          "FakeListLLM"
-        ],
-        "repr": "FakeListLLM(responses=['foo'], i=1)"
-      },
-      "fallbacks": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "tests",
-            "unit_tests",
-            "fake",
-            "llm",
-            "FakeListLLM"
-          ],
-          "repr": "FakeListLLM(responses=['bar'])"
-        }
-      ],
-      "exceptions_to_handle": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "builtins",
-            "Exception"
-          ],
-          "repr": "<class 'Exception'>"
-        }
-      ]
-    }
-  }
-  '''
-# ---
-# name: test_llm_with_fallbacks[llm_with_multi_fallbacks]
-  '''
-  {
-    "lc": 1,
-    "type": "constructor",
-    "id": [
-      "langchain",
-      "schema",
-      "runnable",
-      "RunnableWithFallbacks"
-    ],
-    "kwargs": {
-      "runnable": {
-        "lc": 1,
-        "type": "not_implemented",
-        "id": [
-          "tests",
-          "unit_tests",
-          "fake",
-          "llm",
-          "FakeListLLM"
-        ],
-        "repr": "FakeListLLM(responses=['foo'], i=1)"
-      },
-      "fallbacks": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "tests",
-            "unit_tests",
-            "fake",
-            "llm",
-            "FakeListLLM"
-          ],
-          "repr": "FakeListLLM(responses=['baz'], i=1)"
-        },
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "tests",
-            "unit_tests",
-            "fake",
-            "llm",
-            "FakeListLLM"
-          ],
-          "repr": "FakeListLLM(responses=['bar'])"
-        }
-      ],
-      "exceptions_to_handle": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "builtins",
-            "Exception"
-          ],
-          "repr": "<class 'Exception'>"
-        }
-      ]
-    }
-  }
-  '''
-# ---
 # name: test_prompt_with_chat_model
   '''
   ChatPromptTemplate(input_variables=['question'], messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], template='You are a nice assistant.')), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], template='{question}'))])
@@ -1818,7 +1544,8 @@
                           }
                         }
                       }
-                    ]
+                    ],
+                    "partial_variables": {}
                   }
                 },
                 "middle": [],
@@ -1891,7 +1618,8 @@
                           }
                         }
                       }
-                    ]
+                    ],
+                    "partial_variables": {}
                   }
                 },
                 "middle": [],
@@ -1958,7 +1686,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2006,7 +1734,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2101,7 +1829,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2149,7 +1877,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2220,7 +1948,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -2265,7 +1993,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2356,7 +2084,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2404,7 +2132,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2499,7 +2227,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2547,7 +2275,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2618,7 +2346,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -2663,7 +2391,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2738,7 +2466,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2786,7 +2514,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2834,7 +2562,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2882,7 +2610,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2931,7 +2659,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -2976,7 +2704,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3039,7 +2767,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3087,7 +2815,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3182,7 +2910,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3230,7 +2958,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3301,7 +3029,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -3346,7 +3074,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3409,7 +3137,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3457,7 +3185,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3552,7 +3280,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3600,7 +3328,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3671,7 +3399,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -3716,7 +3444,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3771,7 +3499,7 @@
   dict({
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3819,7 +3547,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3914,7 +3642,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3962,7 +3690,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4044,7 +3772,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -4089,7 +3817,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4171,7 +3899,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4219,7 +3947,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4267,7 +3995,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4315,7 +4043,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4364,7 +4092,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -4409,7 +4137,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',

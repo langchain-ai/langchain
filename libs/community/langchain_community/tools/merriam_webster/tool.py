@@ -11,7 +11,7 @@ from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapp
 class MerriamWebsterQueryRun(BaseTool):
     """Tool that searches the Merriam-Webster API."""
 
-    name: str = "MerriamWebster"
+    name: str = "merriam_webster"
     description: str = (
         "A wrapper around Merriam-Webster. "
         "Useful for when you need to get the definition of a word."

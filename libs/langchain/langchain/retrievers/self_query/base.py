@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_community.vectorstores import (
+    AstraDB,
     Chroma,
     DashVector,
     DeepLake,
@@ -11,6 +12,7 @@ from langchain_community.vectorstores import (
     MongoDBAtlasVectorSearch,
     MyScale,
     OpenSearchVectorSearch,
+    PGVector,
     Pinecone,
     Qdrant,
     Redis,
@@ -33,6 +35,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain.retrievers.self_query.astradb import AstraDBTranslator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
@@ -41,6 +44,7 @@ from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.opensearch import OpenSearchTranslator
+from langchain.retrievers.self_query.pgvector import PGVectorTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.redis import RedisTranslator
@@ -55,6 +59,8 @@ logger = logging.getLogger(__name__)
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
+        AstraDB: AstraDBTranslator,
+        PGVector: PGVectorTranslator,
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
