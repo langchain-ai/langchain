@@ -663,9 +663,7 @@ def test_lambda_schemas() -> None:
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
-    assert RunnableLambda(
-        second_lambda
-    ).input_schema.schema() == {  # type: ignore[arg-type]
+    assert RunnableLambda(second_lambda).input_schema.schema() == {  # type: ignore[arg-type]
         "title": "RunnableLambdaInput",
         "type": "object",
         "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
@@ -724,26 +722,27 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert RunnableLambda(
-        aget_values_typed
-    ).input_schema.schema() == {  # type: ignore[arg-type]
-        "title": "aget_values_typed_input",
-        "$ref": "#/definitions/InputType",
-        "definitions": {
-            "InputType": {
-                "properties": {
-                    "variable_name": {
-                        "title": "Variable " "Name",
-                        "type": "string",
+    assert (
+        RunnableLambda(aget_values_typed).input_schema.schema()
+        == {  # type: ignore[arg-type]
+            "title": "aget_values_typed_input",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
+                        },
+                        "yo": {"title": "Yo", "type": "integer"},
                     },
-                    "yo": {"title": "Yo", "type": "integer"},
-                },
-                "required": ["variable_name", "yo"],
-                "title": "InputType",
-                "type": "object",
-            }
-        },
-    }
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
+    )
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
         "title": "aget_values_typed_output",
