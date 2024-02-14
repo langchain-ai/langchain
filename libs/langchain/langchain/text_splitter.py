@@ -1493,9 +1493,7 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
 
 
 class RecursiveJsonSplitter:
-    def __init__(
-        self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
-    ):
+    def __init__(self, max_chunk_size: int = 500, min_chunk_size: Optional[int] = None):
         super().__init__()
         self.max_chunk_size = max_chunk_size
         self.min_chunk_size = (
@@ -1564,7 +1562,7 @@ class RecursiveJsonSplitter:
     def split_json(
         self,
         json_data: Dict[str, Any],
-        convert_lists: bool = False,
+        convert_lists: bool = True,
     ) -> List[Dict]:
         """Splits JSON into a list of JSON chunks"""
 
@@ -1579,7 +1577,7 @@ class RecursiveJsonSplitter:
         return chunks
 
     def split_text(
-        self, json_data: Dict[str, Any], convert_lists: bool = False
+        self, json_data: Dict[str, Any], convert_lists: bool = True
     ) -> List[str]:
         """Splits JSON into a list of JSON formatted strings"""
 
@@ -1591,7 +1589,7 @@ class RecursiveJsonSplitter:
     def create_documents(
         self,
         texts: List[Dict],
-        convert_lists: bool = False,
+        convert_lists: bool = True,
         metadatas: Optional[List[dict]] = None,
     ) -> List[Document]:
         """Create documents from a list of json objects (Dict)."""
