@@ -206,7 +206,8 @@ class SingleStoreDB(VectorStore):
             Using vector index:
 
             .. code-block:: python
-               from langchain_community.embeddings import OpenAIEmbeddings
+
+                from langchain_community.embeddings import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
@@ -223,7 +224,7 @@ class SingleStoreDB(VectorStore):
         self.metadata_field = self._sanitize_input(metadata_field)
         self.vector_field = self._sanitize_input(vector_field)
 
-        self.use_vector_index = use_vector_index
+        self.use_vector_index = bool(use_vector_index)
         self.vector_index_name = self._sanitize_input(vector_index_name)
         self.vector_index_options = dict(vector_index_options)
         self.vector_index_options["metric_type"] = self.distance_strategy
@@ -265,7 +266,7 @@ class SingleStoreDB(VectorStore):
         try:
             cur = conn.cursor()
             try:
-                if self.use_vector_index is True:
+                if self.use_vector_index:
                     index_options = ""
                     if self.vector_index_options and len(self.vector_index_options) > 0:
                         index_options = "INDEX_OPTIONS '{}'".format(
@@ -344,7 +345,7 @@ class SingleStoreDB(VectorStore):
                             json.dumps(metadata),
                         ),
                     )
-                if self.use_vector_index is True:
+                if self.use_vector_index:
                     cur.execute("OPTIMIZE TABLE {} FLUSH;".format(self.table_name))
             finally:
                 cur.close()
