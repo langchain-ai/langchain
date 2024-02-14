@@ -204,8 +204,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         ]
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
-        from pprint import pprint
-        pprint({k:v for k,v in params.items() if k != "queryVector"})
         cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
         docs = []
         for res in cursor:
