@@ -453,12 +453,20 @@ files = [
 
 [[package]]
 name = "nomic"
+<<<<<<< HEAD
 version = "3.0.10"
+=======
+version = "3.0.12"
+>>>>>>> master
 description = "The official Nomic python client."
 optional = false
 python-versions = "*"
 files = [
+<<<<<<< HEAD
     {file = "nomic-3.0.10.tar.gz", hash = "sha256:3efcc90c67eb62fd4f5ac46d5f3576b7931d6df04135afd384c6e9813b7fac3b"},
+=======
+    {file = "nomic-3.0.12.tar.gz", hash = "sha256:1a90dfa49dfe24c2a0f3b2c4469c83716ff3f11ef778cd612d1744a3f6f9f08d"},
+>>>>>>> master
 ]
 
 [package.dependencies]
@@ -1284,4 +1292,8 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
+<<<<<<< HEAD
 content-hash = "02d626e153ef55b754f24d101c77db91037f00c0a172b2f8fbbc9449f5d76c43"
+=======
+content-hash = "5edfa51542ce9188854d0dc41076db6aaed2f6f5a915af506447d8fc5ee40b1b"
+>>>>>>> master
