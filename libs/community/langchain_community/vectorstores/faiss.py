@@ -333,8 +333,9 @@ class FAISS(VectorStore):
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            if filter is not None and filter_func(doc.metadata):
-                docs.append((doc, scores[0][j]))
+            if filter is not None:
+                if filter_func(doc.metadata):
+                    docs.append((doc, scores[0][j]))
             else:
                 docs.append((doc, scores[0][j]))
 
@@ -920,11 +921,13 @@ class FAISS(VectorStore):
         else:
             # Default to L2, currently other metric types not initialized.
             index = faiss.IndexFlatL2(len(embeddings[0]))
+        docstore = kwargs.pop("docstore", InMemoryDocstore())
+        index_to_docstore_id = kwargs.pop("index_to_docstore_id", {})
         vecstore = cls(
             embedding,
             index,
-            InMemoryDocstore(),
-            {},
+            docstore,
+            index_to_docstore_id,
             normalize_L2=normalize_L2,
             distance_strategy=distance_strategy,
             **kwargs,

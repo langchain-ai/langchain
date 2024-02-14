@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.1.22"
+version = "0.1.23"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -66,11 +66,12 @@ dependencies = {}
 [tool.poetry.extras]
 extended_testing = ["jinja2"]
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "T201", # print
 ]
 
 [tool.mypy]

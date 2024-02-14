@@ -1,4 +1,5 @@
 """deepinfra.com chat models wrapper"""
+
 from __future__ import annotations
 
 import json
@@ -58,6 +59,8 @@ logger = logging.getLogger(__name__)
 
 
 class ChatDeepInfraException(Exception):
+    """Exception raised when the DeepInfra API returns an error."""
+
     pass
 
 
@@ -67,7 +70,7 @@ def _create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions"""
+    """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions."""
     return create_base_retry_decorator(
         error_types=[requests.exceptions.ConnectTimeout, ChatDeepInfraException],
         max_retries=llm.max_retries,
@@ -205,7 +208,7 @@ class ChatDeepInfra(BaseChatModel):
                 return response
             except Exception as e:
                 # import pdb; pdb.set_trace()
-                print("EX", e)
+                print("EX", e)  # noqa: T201
                 raise
 
         return _completion_with_retry(**kwargs)
@@ -229,7 +232,7 @@ class ChatDeepInfra(BaseChatModel):
                     self._handle_status(response.status, response.text)
                     return await response.json()
             except Exception as e:
-                print("EX", e)
+                print("EX", e)  # noqa: T201
                 raise
 
         return await _completion_with_retry(**kwargs)

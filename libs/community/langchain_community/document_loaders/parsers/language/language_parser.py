@@ -6,28 +6,66 @@ from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.parsers.language.c import CSegmenter
 from langchain_community.document_loaders.parsers.language.cobol import CobolSegmenter
+from langchain_community.document_loaders.parsers.language.cpp import CPPSegmenter
+from langchain_community.document_loaders.parsers.language.csharp import CSharpSegmenter
+from langchain_community.document_loaders.parsers.language.go import GoSegmenter
+from langchain_community.document_loaders.parsers.language.java import JavaSegmenter
 from langchain_community.document_loaders.parsers.language.javascript import (
     JavaScriptSegmenter,
 )
+from langchain_community.document_loaders.parsers.language.kotlin import KotlinSegmenter
+from langchain_community.document_loaders.parsers.language.lua import LuaSegmenter
+from langchain_community.document_loaders.parsers.language.perl import PerlSegmenter
 from langchain_community.document_loaders.parsers.language.python import PythonSegmenter
+from langchain_community.document_loaders.parsers.language.ruby import RubySegmenter
+from langchain_community.document_loaders.parsers.language.rust import RustSegmenter
+from langchain_community.document_loaders.parsers.language.scala import ScalaSegmenter
+from langchain_community.document_loaders.parsers.language.typescript import (
+    TypeScriptSegmenter,
+)
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import Language
+    from langchain.langchain.text_splitter import Language
 
 try:
-    from langchain.text_splitter import Language
+    from langchain.langchain.text_splitter import Language
 
     LANGUAGE_EXTENSIONS: Dict[str, str] = {
         "py": Language.PYTHON,
         "js": Language.JS,
         "cobol": Language.COBOL,
+        "c": Language.C,
+        "cpp": Language.CPP,
+        "cs": Language.CSHARP,
+        "rb": Language.RUBY,
+        "scala": Language.SCALA,
+        "rs": Language.RUST,
+        "go": Language.GO,
+        "kt": Language.KOTLIN,
+        "lua": Language.LUA,
+        "pl": Language.PERL,
+        "ts": Language.TS,
+        "java": Language.JAVA,
     }
 
     LANGUAGE_SEGMENTERS: Dict[str, Any] = {
         Language.PYTHON: PythonSegmenter,
         Language.JS: JavaScriptSegmenter,
         Language.COBOL: CobolSegmenter,
+        Language.C: CSegmenter,
+        Language.CPP: CPPSegmenter,
+        Language.CSHARP: CSharpSegmenter,
+        Language.RUBY: RubySegmenter,
+        Language.RUST: RustSegmenter,
+        Language.SCALA: ScalaSegmenter,
+        Language.GO: GoSegmenter,
+        Language.KOTLIN: KotlinSegmenter,
+        Language.LUA: LuaSegmenter,
+        Language.PERL: PerlSegmenter,
+        Language.TS: TypeScriptSegmenter,
+        Language.JAVA: JavaSegmenter,
     }
 except ImportError:
     LANGUAGE_EXTENSIONS = {}
@@ -43,10 +81,33 @@ class LanguageParser(BaseBlobParser):
 
     This approach can potentially improve the accuracy of QA models over source code.
 
-    Currently, the supported languages for code parsing are Python and JavaScript.
+    The supported languages for code parsing are:
+
+    - C (*)
+    - C++ (*)
+    - C# (*)
+    - COBOL
+    - Go (*)
+    - Java (*)
+    - JavaScript (requires package `esprima`)
+    - Kotlin (*)
+    - Lua (*)
+    - Perl (*)
+    - Python
+    - Ruby (*)
+    - Rust (*)
+    - Scala (*)
+    - TypeScript (*)
+
+    Items marked with (*) require the packages `tree_sitter` and
+    `tree_sitter_languages`. It is straightforward to add support for additional
+    languages using `tree_sitter`, although this currently requires modifying LangChain.
 
     The language used for parsing can be configured, along with the minimum number of
     lines required to activate the splitting based on syntax.
+
+    If a language is not explicitly specified, `LanguageParser` will infer one from
+    filename extensions, if present.
 
     Examples:
 
