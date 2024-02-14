@@ -10,7 +10,7 @@ class ONNXEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import ONNXEmbeddings
-            from langchain.embeddings.huggingface import (
+            from langchain_community.embeddings.huggingface import (
                 DEFAULT_QUERY_BGE_INSTRUCTION_EN
             )
 
