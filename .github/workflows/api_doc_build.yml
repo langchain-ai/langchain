@@ -19,7 +19,7 @@ jobs:
       - name: Merge master
         run: | 
           git fetch origin master
-          git merge master -m "Merge master"
+          git merge origin/master -m "Merge master"
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
