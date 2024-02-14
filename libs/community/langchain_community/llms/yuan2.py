@@ -18,10 +18,10 @@ class Yuan2(LLM):
         .. code-block:: python
 
             yuan_llm = Yuan2(
-                infer_api="http://127.0.0.1:8000/yuan", 
-                max_tokens=1024, 
-                temp=1.0, 
-                top_p=0.9, 
+                infer_api="http://127.0.0.1:8000/yuan",
+                max_tokens=1024,
+                temp=1.0,
+                top_p=0.9,
                 top_k=40,
             )
             print(yuan_llm)
@@ -45,7 +45,8 @@ class Yuan2(LLM):
 
     do_sample: bool = False
     """The do_sample is a Boolean value that determines whether 
-    to use the sampling method during text generation."""
+    to use the sampling method during text generation.
+    """
 
     echo: Optional[bool] = False
     """Whether to echo the prompt."""
