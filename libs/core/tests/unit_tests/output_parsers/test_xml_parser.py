@@ -53,6 +53,40 @@ def test_xml_output_parser(result: str) -> None:
     ]
 
 
+ROOT_LEVEL_ONLY_ENCODING = """<?xml version="1.0" encoding="UTF-8"?>
+<body>Text of the body.</body>
+"""
+
+ROOT_LEVEL_ONLY_EXPECTED = {"body": "Text of the body."}
+
+
+@pytest.mark.parametrize(
+    "result",
+    [
+        ROOT_LEVEL_ONLY_ENCODING,
+        ROOT_LEVEL_ONLY_ENCODING[ROOT_LEVEL_ONLY_ENCODING.find("\n") :],
+        f"""
+```xml
+{ROOT_LEVEL_ONLY_ENCODING}
+```
+""",
+        f"""
+Some random text
+```xml
+{ROOT_LEVEL_ONLY_ENCODING}
+```
+More random text
+""",
+    ],
+)
+def test_root_only_xml_output_parser(result: str) -> None:
+    """Test XMLOutputParser when xml only contains the root level tag"""
+
+    xml_parser = XMLOutputParser()
+
+    assert xml_parser.parse(result) == ROOT_LEVEL_ONLY_EXPECTED
+
+
 @pytest.mark.parametrize("result", ["foo></foo>", "<foo></foo", "foo></foo", "foofoo"])
 def test_xml_output_parser_fail(result: str) -> None:
     """Test XMLOutputParser where complete output is not in XML format."""
