@@ -448,7 +448,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.22"
+version = "0.1.23"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1177,13 +1177,13 @@ files = [
 
 [[package]]
 name = "types-pillow"
-version = "10.2.0.20240206"
+version = "10.2.0.20240213"
 description = "Typing stubs for Pillow"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-Pillow-10.2.0.20240206.tar.gz", hash = "sha256:f0de5107ff8362ffdbbd53ec896202ac905e6ab22ae784b46bcdad160ea143b9"},
-    {file = "types_Pillow-10.2.0.20240206-py3-none-any.whl", hash = "sha256:abc339ae28af5916146a7729261480d68ac902cd4ff57e0bdd402eee7962644d"},
+    {file = "types-Pillow-10.2.0.20240213.tar.gz", hash = "sha256:4800b61bf7eabdae2f1b17ade0d080709ed33e9f26a2e900e470e8b56ebe2387"},
+    {file = "types_Pillow-10.2.0.20240213-py3-none-any.whl", hash = "sha256:062c5a0f20301a30f2df4db583f15b3c2a1283a12518d1f9d81396154e12c1af"},
 ]
 
 [[package]]
