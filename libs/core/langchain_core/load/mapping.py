@@ -115,6 +115,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat",
         "SystemMessagePromptTemplate",
     ),
+    ("langchain", "prompts", "image", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
+    ),
     ("langchain", "schema", "agent", "AgentActionMessageLog"): (
         "langchain_core",
         "agents",
@@ -509,6 +515,12 @@ _OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "messages",
         "system",
         "SystemMessage",
+    ),
+    ("langchain", "schema", "prompt_template", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
     ),
 }
 

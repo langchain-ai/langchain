@@ -24,7 +24,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    name: Python ${{ matrix.python-version }}
+    name: "poetry run pytest -m compile tests/integration_tests #${{ matrix.python-version }}"
     steps:
       - uses: actions/checkout@v4
 

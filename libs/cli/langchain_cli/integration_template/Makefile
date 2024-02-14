@@ -5,13 +5,10 @@ all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+integration_test integration_tests: TEST_FILE = tests/integration_tests/
 
-test:
+test tests integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
-
-tests:
-	poetry run pytest $(TEST_FILE)
-
 
 ######################
 # LINTING AND FORMATTING
@@ -30,7 +27,7 @@ lint lint_diff lint_package lint_tests:
 	poetry run ruff .
 	poetry run ruff format $(PYTHON_FILES) --diff
 	poetry run ruff --select I $(PYTHON_FILES)
-	mkdir $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	mkdir -p $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)

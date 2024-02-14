@@ -687,7 +687,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(chain_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
