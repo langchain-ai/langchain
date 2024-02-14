@@ -33,7 +33,7 @@ class XMLOutputParser(BaseTransformOutputParser):
     def get_format_instructions(self) -> str:
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> Dict[str, List[Any]]:
+    def parse(self, text: str) -> Union[Dict[str, str], Dict[str, List[Any]]]:
         # Try to find XML string within triple backticks
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
@@ -48,9 +48,6 @@ class XMLOutputParser(BaseTransformOutputParser):
             text.endswith(">") or text.endswith(">\n")
         ):
             root = ET.fromstring(text)
-            # If root text contains any non-whitespace character it returns {root.tag: root.text}
-            if bool(re.search(r'\S', root.text)):
-                return {root.tag: root.text}
             return self._root_to_dict(root)
         else:
             raise ValueError(f"Could not parse output: {text}")
@@ -136,8 +133,14 @@ class XMLOutputParser(BaseTransformOutputParser):
         # close parser
         parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> Dict[str, List[Any]]:
+    def _root_to_dict(
+        self, root: ET.Element
+    ) -> Union[Dict[str, str], Dict[str, List[Any]]]:
         """Converts xml tree to python dictionary."""
+        if root.text and bool(re.search(r"\S", root.text)):
+            # If root text contains any non-whitespace character it
+            # returns {root.tag: root.text}
+            return {root.tag: root.text}
         result: Dict[str, List[Any]] = {root.tag: []}
         for child in root:
             if len(child) == 0:
