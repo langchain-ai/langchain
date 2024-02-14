@@ -4,6 +4,8 @@ EXPECTED_ALL = [
     "ChatGoogleGenerativeAI",
     "GoogleGenerativeAIEmbeddings",
     "GoogleGenerativeAI",
+    "HarmBlockThreshold",
+    "HarmCategory",
 ]
 
 
