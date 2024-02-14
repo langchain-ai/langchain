@@ -14,7 +14,7 @@ from langchain_core.utils import get_pydantic_field_names
 logger = logging.getLogger(__name__)
 
 
-@deprecated("0.1.7", alternative="HuggingFaceEndpoint") 
+@deprecated("0.1.7", alternative="HuggingFaceEndpoint")
 class HuggingFaceTextGenInference(LLM):
     """
     HuggingFace text generation API.
