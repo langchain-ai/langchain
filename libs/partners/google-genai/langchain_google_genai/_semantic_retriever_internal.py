@@ -20,11 +20,10 @@ from typing import (
 )
 
 import google.ai.generativelanguage as genai
-
-import langchain.vectorstores.google.generativeai.genai_extension as genaix
 from langchain.pydantic_v1 import BaseModel, PrivateAttr
 
-from .base import DoesNotExistsException
+from . import _genai_extension as genaix
+from .semantic_retriever import DoesNotExistsException
 
 VST = TypeVar("VST", bound="SemanticRetriever")
 logger = logging.getLogger(__name__)

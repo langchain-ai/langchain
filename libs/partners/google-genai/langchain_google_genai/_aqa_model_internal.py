@@ -1,9 +1,9 @@
 from typing import Any, List, Optional
 
 import google.ai.generativelanguage as genai
-
-import langchain.vectorstores.google.generativeai.genai_extension as genaix
 from langchain.pydantic_v1 import BaseModel, PrivateAttr
+
+from . import _genai_extension as genaix
 
 
 class AqaModel(BaseModel):

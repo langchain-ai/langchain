@@ -11,13 +11,12 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional
 
 import google.ai.generativelanguage as genai
+import langchain
 from google.api_core import client_options as client_options_lib
 from google.api_core import exceptions as gapi_exception
 from google.api_core import gapic_v1
-from google.auth import credentials, exceptions
+from google.auth import credentials, exceptions  # type: ignore
 from google.protobuf import timestamp_pb2
-
-import langchain
 
 _logger = logging.getLogger(__name__)
 _DEFAULT_API_ENDPOINT = "generativelanguage.googleapis.com"
@@ -129,26 +128,33 @@ class Document:
 class Config:
     """Global configuration for Google Generative AI API.
 
-    Normally, the defaults should work fine. Change them only if you understand
-    why.
+    Normally, the defaults should work fine. Use this to pass Google Auth credentials
+    such as using a service account. Refer to for auth credentials documentation:
+    https://developers.google.com/identity/protocols/oauth2/service-account#creatinganaccount.
 
     Attributes:
         api_endpoint: The Google Generative API endpoint address.
         user_agent: The user agent to use for logging.
         page_size: For paging RPCs, how many entities to return per RPC.
         testing: Are the unit tests running?
+        auth_credentials: For setting credentials such as using service accounts.
     """
 
     api_endpoint: str = _DEFAULT_API_ENDPOINT
     user_agent: str = _USER_AGENT
     page_size: int = _DEFAULT_PAGE_SIZE
     testing: bool = False
+    auth_credentials: Optional[credentials.Credentials] = None
 
 
-def set_defaults(config: Config) -> None:
+def set_config(config: Config) -> None:
     """Set global defaults for operations with Google Generative AI API."""
     global _config
     _config = config
+
+
+def get_config() -> Config:
+    return _config
 
 
 _config = Config()
@@ -191,20 +197,25 @@ class TestCredentials(credentials.Credentials):
         """Test credentials do nothing to the request."""
 
 
-def _get_test_credentials() -> Optional[credentials.Credentials]:
-    """Returns a fake credential for testing or None.
+def _get_credentials() -> Optional[credentials.Credentials]:
+    """Returns credential from config if set or fake credentials for unit testing.
 
     If _config.testing is True, a fake credential is returned.
-    Otherwise, we are in a real environment and a None is returned.
+    Otherwise, we are in a real environment and will use credentials if provided
+    or None is returned.
 
     If None is passed to the clients later on, the actual credentials will be
     inferred by the rules specified in google.auth package.
     """
-    return TestCredentials() if _config.testing else None
+    if _config.testing:
+        return TestCredentials()
+    elif _config.auth_credentials:
+        return _config.auth_credentials
+    return None
 
 
 def build_semantic_retriever() -> genai.RetrieverServiceClient:
-    credentials = _get_test_credentials()
+    credentials = _get_credentials()
     return genai.RetrieverServiceClient(
         credentials=credentials,
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
@@ -215,7 +226,7 @@ def build_semantic_retriever() -> genai.RetrieverServiceClient:
 
 
 def build_generative_service() -> genai.GenerativeServiceClient:
-    credentials = _get_test_credentials()
+    credentials = _get_credentials()
     return genai.GenerativeServiceClient(
         credentials=credentials,
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
@@ -374,8 +385,8 @@ def batch_create_chunk(
         metadatas = [{} for _ in texts]
     if len(texts) != len(metadatas):
         raise ValueError(
-            f"metadatas's length {len(metadatas)} and "
-            f"texts's length {len(texts)} are mismatched"
+            f"metadatas's length {len(metadatas)} "
+            f"and texts's length {len(texts)} are mismatched"
         )
 
     doc_name = str(EntityName(corpus_id=corpus_id, document_id=document_id))
@@ -492,7 +503,7 @@ class GenerateAnswerError(Exception):
 
     def __str__(self) -> str:
         return (
-            f"finish_reason: {self.finish_reason.name} "
+            f"finish_reason: {self.finish_reason} "
             f"finish_message: {self.finish_message} "
             f"safety ratings: {self.safety_ratings}"
         )
@@ -532,9 +543,10 @@ def generate_answer(
     )
 
     if response.answer.finish_reason != genai.Candidate.FinishReason.STOP:
+        finish_message = _get_finish_message(response.answer)
         raise GenerateAnswerError(
             finish_reason=response.answer.finish_reason,
-            finish_message=response.answer.finish_message,
+            finish_message=finish_message,
             safety_ratings=response.answer.safety_ratings,
         )
 
@@ -551,6 +563,22 @@ def generate_answer(
         ],
         answerable_probability=response.answerable_probability,
     )
+
+
+# TODO: Use candidate.finish_message when that field is launched.
+# For now, we derive this message from other existing fields.
+def _get_finish_message(candidate: genai.Candidate) -> str:
+    finish_messages: Dict[int, str] = {
+        genai.Candidate.FinishReason.MAX_TOKENS: "Maximum token in context window reached",  # noqa: E501
+        genai.Candidate.FinishReason.SAFETY: "Blocked because of safety",
+        genai.Candidate.FinishReason.RECITATION: "Blocked because of recitation",
+    }
+
+    finish_reason = candidate.finish_reason
+    if finish_reason not in finish_messages:
+        return "Unexpected generation error"
+
+    return finish_messages[finish_reason]
 
 
 def _convert_to_metadata(metadata: Dict[str, Any]) -> List[genai.CustomMetadata]:

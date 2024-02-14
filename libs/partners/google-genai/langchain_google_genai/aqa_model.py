@@ -80,7 +80,7 @@ class GenAIAqa(RunnableSerializable[AqaModelInput, AqaModelOutput]):
             temperature: 0.0 to 1.0.
         """
         try:
-            from .aqa_model import AqaModel
+            from ._aqa_model_internal import AqaModel
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -92,7 +92,7 @@ class GenAIAqa(RunnableSerializable[AqaModelInput, AqaModelOutput]):
     ) -> AqaModelOutput:
         """Generates a grounded response using the provided passages."""
         try:
-            from .aqa_model import AqaModel
+            from ._aqa_model_internal import AqaModel
         except ImportError:
             raise ImportError(_import_err_msg)
 

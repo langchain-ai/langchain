@@ -55,15 +55,34 @@ embeddings.embed_query("hello, world!")
 ```
 """  # noqa: E501
 
-from langchain_google_genai._enums import HarmBlockThreshold, HarmCategory
+from langchain_google_genai._enums import (
+    HarmBlockThreshold,
+    HarmCategory,
+)
+from langchain_google_genai.aqa_model import (
+    AqaModelInput,
+    AqaModelOutput,
+    GenAIAqa,
+)
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain_google_genai.llms import GoogleGenerativeAI
+from langchain_google_genai.semantic_retriever import (
+    DoesNotExistsException,
+    GoogleVectorStore,
+    ServerSideEmbedding,
+)
 
 __all__ = [
+    "AqaModelInput",
+    "AqaModelOutput",
+    "GenAIAqa",
     "ChatGoogleGenerativeAI",
+    "DoesNotExistsException",
     "GoogleGenerativeAIEmbeddings",
     "GoogleGenerativeAI",
+    "GoogleVectorStore",
     "HarmBlockThreshold",
     "HarmCategory",
+    "ServerSideEmbedding",
 ]

@@ -9,16 +9,16 @@ try:
 except ImportError:
     has_google = False
 
-from langchain.llms.google.generativeai import (
+from langchain_google_genai import (
     AqaModelInput,
     GenAIAqa,
 )
 
 if has_google:
-    import langchain.vectorstores.google.generativeai.genai_extension as genaix
+    from langchain_google_genai import _genai_extension as genaix
 
     # Make sure the tests do not hit actual production servers.
-    genaix.set_defaults(
+    genaix.set_config(
         genaix.Config(
             api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
             testing=True,

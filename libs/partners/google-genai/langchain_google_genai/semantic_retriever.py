@@ -21,15 +21,16 @@ from typing import (
     cast,
 )
 
-from langchain.llms.google.generativeai import (
-    AqaModelInput,
-    AqaModelOutput,
-    GenAIAqa,
-)
 from langchain.schema.document import Document
 from langchain.schema.embeddings import Embeddings
 from langchain.schema.runnable import Runnable, RunnableLambda, RunnablePassthrough
 from langchain.schema.vectorstore import VectorStore
+
+from .aqa_model import (
+    AqaModelInput,
+    AqaModelOutput,
+    GenAIAqa,
+)
 
 VST = TypeVar("VST", bound="GoogleVectorStore")
 _import_err_msg = (
@@ -124,7 +125,7 @@ class GoogleVectorStore(VectorStore):
                 `create_document` to create one.
         """
         try:
-            from .semantic_retriever import SemanticRetriever
+            from ._semantic_retriever_internal import SemanticRetriever
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -149,7 +150,7 @@ class GoogleVectorStore(VectorStore):
             An instance of vector store that points to the newly created corpus.
         """
         try:
-            import langchain.vectorstores.google.generativeai.genai_extension as genaix
+            from . import _genai_extension as genaix
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -184,7 +185,7 @@ class GoogleVectorStore(VectorStore):
             document.
         """
         try:
-            import langchain.vectorstores.google.generativeai.genai_extension as genaix
+            from . import _genai_extension as genaix
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -245,7 +246,7 @@ class GoogleVectorStore(VectorStore):
         corpus or document via Google Generative AI API.
         """
         try:
-            from .semantic_retriever import SemanticRetriever
+            from ._semantic_retriever_internal import SemanticRetriever
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -256,7 +257,7 @@ class GoogleVectorStore(VectorStore):
     def corpus_id(self) -> str:
         """Returns the corpus ID managed by this vector store."""
         try:
-            from .semantic_retriever import SemanticRetriever
+            from ._semantic_retriever_internal import SemanticRetriever
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -268,7 +269,7 @@ class GoogleVectorStore(VectorStore):
     def document_id(self) -> Optional[str]:
         """Returns the document ID managed by this vector store."""
         try:
-            from .semantic_retriever import SemanticRetriever
+            from ._semantic_retriever_internal import SemanticRetriever
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -293,7 +294,7 @@ class GoogleVectorStore(VectorStore):
             Chunk's names created on Google servers.
         """
         try:
-            from .semantic_retriever import SemanticRetriever
+            from ._semantic_retriever_internal import SemanticRetriever
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -324,7 +325,7 @@ class GoogleVectorStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance."""
         try:
-            from .semantic_retriever import SemanticRetriever
+            from ._semantic_retriever_internal import SemanticRetriever
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -344,7 +345,7 @@ class GoogleVectorStore(VectorStore):
             True if successful. Otherwise, you should get an exception anyway.
         """
         try:
-            from .semantic_retriever import SemanticRetriever
+            from ._semantic_retriever_internal import SemanticRetriever
         except ImportError:
             raise ImportError(_import_err_msg)
 
