@@ -15,61 +15,10 @@ logger = logging.getLogger()
 DEBUG = False
 
 
-def has_mul_sub_str(s: str, *args: Any) -> bool:
-    """
-    Check if a string has multiple substrings.
-    Args:
-        s: The string to check
-        *args: The substrings to check for in the string
-
-    Returns:
-        bool: True if all substrings are present in the string, False otherwise
-    """
-    for a in args:
-        if a not in s:
-            return False
-    return True
-
-
-def debug_output(s: Any) -> None:
-    """
-    Print a debug message if DEBUG is True.
-    Args:
-        s: The message to print
-    """
-    if DEBUG:
-        print(s)  # noqa: T201
-
-
-def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
-    """
-    Get a named result from a query.
-    Args:
-        connection: The connection to the database
-        query: The query to execute
-
-    Returns:
-        List[dict[str, Any]]: The result of the query
-    """
-    cursor = connection.cursor()
-    cursor.execute(query)
-    columns = cursor.description
-    result = []
-    for value in cursor.fetchall():
-        r = {}
-        for idx, datum in enumerate(value):
-            k = columns[idx][0]
-            r[k] = datum
-        result.append(r)
-    debug_output(result)
-    cursor.close()
-    return result
-
-
 class ApacheDorisSettings(BaseSettings):
     """Apache Doris client configuration.
 
-    Attribute:
+    Attributes:
         apache_doris_host (str) : An URL to connect to frontend.
                              Defaults to 'localhost'.
         apache_doris_port (int) : URL port to connect with HTTP. Defaults to 9030.
@@ -142,7 +91,7 @@ class ApacheDoris(VectorStore):
             config (ApacheDorisSettings): Apache Doris client configuration information
         """
         try:
-            import pymysql
+            import pymysql  # type: ignore[import]
         except ImportError:
             raise ImportError(
                 "Could not import pymysql python package. "
@@ -181,9 +130,9 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         self.dim = dim
         self.BS = "\\"
         self.must_escape = ("\\", "'")
-        self.embedding_function = embedding
+        self._embedding = embedding
         self.dist_order = "DESC"
-        debug_output(self.config)
+        _debug_output(self.config)
 
         # Create a connection to Apache Doris
         self.connection = pymysql.connect(
@@ -195,15 +144,15 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             **kwargs,
         )
 
-        debug_output(self.schema)
-        get_named_result(self.connection, self.schema)
+        _debug_output(self.schema)
+        _get_named_result(self.connection, self.schema)
 
     def escape_str(self, value: str) -> str:
         return "".join(f"{self.BS}{c}" if c in self.must_escape else c for c in value)
 
     @property
     def embeddings(self) -> Embeddings:
-        return self.embedding_function
+        return self._embedding
 
     def _build_insert_sql(self, transac: Iterable, column_names: Iterable[str]) -> str:
         ks = ",".join(column_names)
@@ -233,8 +182,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     def _insert(self, transac: Iterable, column_names: Iterable[str]) -> None:
         _insert_query = self._build_insert_sql(transac, column_names)
-        debug_output(_insert_query)
-        get_named_result(self.connection, _insert_query)
+        _debug_output(_insert_query)
+        _get_named_result(self.connection, _insert_query)
 
     def add_texts(
         self,
@@ -263,7 +212,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         column_names = {
             colmap_["id"]: ids,
             colmap_["document"]: texts,
-            colmap_["embedding"]: self.embedding_function.embed_documents(list(texts)),
+            colmap_["embedding"]: self._embedding.embed_documents(list(texts)),
         }
         metadatas = metadatas or [{} for _ in texts]
         column_names[colmap_["metadata"]] = map(json.dumps, metadatas)
@@ -312,8 +261,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             config (ApacheDorisSettings, Optional): Apache Doris configuration
             text_ids (Optional[Iterable], optional): IDs for the texts.
                                                      Defaults to None.
-            batch_size (int, optional): BatchSize when transmitting data to Apache Doris.
-                                        Defaults to 32.
+            batch_size (int, optional): BatchSize when transmitting data to Apache
+                                        Doris. Defaults to 32.
             metadata (List[dict], optional): metadata to texts. Defaults to None.
         Returns:
             Apache Doris Index
@@ -340,8 +289,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         _repr += f"\033[0m|\033[96m{columns[2]:24s}\033[0m|\n"
         _repr += "-" * (width * fields + 1) + "\n"
         q_str = f"DESC {self.config.database}.{self.config.table}"
-        debug_output(q_str)
-        rs = get_named_result(self.connection, q_str)
+        _debug_output(q_str)
+        rs = _get_named_result(self.connection, q_str)
         for r in rs:
             _repr += f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type']:24s}"
             _repr += f"\033[0m|\033[96m{r['Key']:24s}\033[0m|\n"
@@ -368,7 +317,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             LIMIT {topk}
             """
 
-        debug_output(q_str)
+        _debug_output(q_str)
         return q_str
 
     def similarity_search(
@@ -391,7 +340,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             List[Document]: List of Documents
         """
         return self.similarity_search_by_vector(
-            self.embedding_function.embed_query(query), k, where_str, **kwargs
+            self._embedding.embed_query(query), k, where_str, **kwargs
         )
 
     def similarity_search_by_vector(
@@ -424,7 +373,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                     page_content=r[self.config.column_map["document"]],
                     metadata=json.loads(r[self.config.column_map["metadata"]]),
                 )
-                for r in get_named_result(self.connection, q_str)
+                for r in _get_named_result(self.connection, q_str)
             ]
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
@@ -449,9 +398,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         Returns:
             List[Document]: List of documents
         """
-        q_str = self._build_query_sql(
-            self.embedding_function.embed_query(query), k, where_str
-        )
+        q_str = self._build_query_sql(self._embedding.embed_query(query), k, where_str)
         try:
             return [
                 (
@@ -461,7 +408,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                     ),
                     r["dist"],
                 )
-                for r in get_named_result(self.connection, q_str)
+                for r in _get_named_result(self.connection, q_str)
             ]
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
@@ -471,7 +418,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         """
         Helper function: Drop data
         """
-        get_named_result(
+        _get_named_result(
             self.connection,
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}",
         )
@@ -479,3 +426,54 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
     @property
     def metadata_column(self) -> str:
         return self.config.column_map["metadata"]
+
+
+def _has_mul_sub_str(s: str, *args: Any) -> bool:
+    """Check if a string has multiple substrings.
+
+    Args:
+        s: The string to check
+        *args: The substrings to check for in the string
+
+    Returns:
+        bool: True if all substrings are present in the string, False otherwise
+    """
+    for a in args:
+        if a not in s:
+            return False
+    return True
+
+
+def _debug_output(s: Any) -> None:
+    """Print a debug message if DEBUG is True.
+
+    Args:
+        s: The message to print
+    """
+    if DEBUG:
+        print(s)  # noqa: T201
+
+
+def _get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
+    """Get a named result from a query.
+
+    Args:
+        connection: The connection to the database
+        query: The query to execute
+
+    Returns:
+        List[dict[str, Any]]: The result of the query
+    """
+    cursor = connection.cursor()
+    cursor.execute(query)
+    columns = cursor.description
+    result = []
+    for value in cursor.fetchall():
+        r = {}
+        for idx, datum in enumerate(value):
+            k = columns[idx][0]
+            r[k] = datum
+        result.append(r)
+    _debug_output(result)
+    cursor.close()
+    return result
