@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1"
-mistralai = "^0.0.11"
+mistralai = ">=0.0.11,<0.1"
 tokenizers = "^0.15.1"
 
 [tool.poetry.group.test]
@@ -22,7 +22,7 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 pytest-asyncio = "^0.21.1"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
@@ -43,19 +43,19 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.ruff.lint]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
   "T201", # print
 ]
 
@@ -63,9 +63,7 @@ select = [
 disallow_untyped_defs = "True"
 
 [tool.coverage.run]
-omit = [
-    "tests/*",
-]
+omit = ["tests/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
