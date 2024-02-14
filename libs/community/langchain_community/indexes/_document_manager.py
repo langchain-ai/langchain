@@ -171,7 +171,7 @@ class MongoDocumentManager(DocumentManager):
         limit: Optional[int] = None,
     ) -> List[str]:
         """List documents in the MongoDB collection based on the provided date range."""
-        query = {"namespace": self.namespace}
+        query: Dict[str, Any] = {"namespace": self.namespace}
         if before:
             query["updated_at"] = {"$lt": before}
         if after:
@@ -198,7 +198,7 @@ class MongoDocumentManager(DocumentManager):
         Asynchronously list documents in the MongoDB collection
         based on the provided date range.
         """
-        query = {"namespace": self.namespace}
+        query: Dict[str, Any] = {"namespace": self.namespace}
         if before:
             query["updated_at"] = {"$lt": before}
         if after:
