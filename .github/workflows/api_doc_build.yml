@@ -16,6 +16,11 @@ jobs:
         with:
           ref: bagatur/api_docs_build
 
+      - name: Merge master
+        run: | 
+          git fetch origin master
+          git merge master -m "Merge master"
+
       - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
