@@ -10,4 +10,4 @@ For docs, refer to: https://python.langchain.com
 ## [0.0.1] - 2024-02-13
 
 ### Fixed 
-- Update pinecone for latest api changes
+- Update pinecone for latest api changes (refer: https://docs.pinecone.io/docs/new-api)
