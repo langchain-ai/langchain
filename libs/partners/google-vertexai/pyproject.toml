@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.7,<0.2"
+langchain-core = "^0.1.7"
 google-cloud-aiplatform = "^1.39.0"
 google-cloud-storage = "^2.14.0"
 
