@@ -21,6 +21,7 @@ class NomicEmbeddings(Embeddings):
         *,
         model: str,
         nomic_api_key: Optional[str] = None,
+        dimensionality: int = None,
     ):
         """Initialize NomicEmbeddings model.
 
@@ -33,6 +34,7 @@ class NomicEmbeddings(Embeddings):
         if _api_key:
             nomic.login(_api_key)
         self.model = model
+        self.dimensionality = dimensionality
 
     def embed(self, texts: List[str], *, task_type: str) -> List[List[float]]:
         """Embed texts.
@@ -45,7 +47,12 @@ class NomicEmbeddings(Embeddings):
         # TODO: do this via nomic.embed when fixed in nomic sdk
         from nomic import embed
 
-        output = embed.text(texts=texts, model=self.model, task_type=task_type)
+        output = embed.text(
+            texts=texts,
+            model=self.model,
+            task_type=task_type,
+            dimensionality=self.dimensionality,
+        )
         return output["embeddings"]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

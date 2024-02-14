@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-nomic"
-version = "0.0.1"
+version = "0.0.2"
 description = "An integration package connecting Nomic and LangChain"
 authors = []
 readme = "README.md"
@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
-nomic = "^3.0.7"
+nomic = "^3.0.10"
 
 [tool.poetry.group.test]
 optional = true
@@ -82,7 +82,7 @@ build-backend = "poetry.core.masonry.api"
 #
 # https://github.com/tophat/syrupy
 # --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+addopts = "--strict-markers --strict-config --durations=5"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
@@ -90,4 +90,3 @@ markers = [
   "asyncio: mark tests as requiring asyncio",
   "compile: mark placeholder test used to compile integration tests without running them",
 ]
-asyncio_mode = "auto"
