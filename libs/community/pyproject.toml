@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.19"
+version = "0.0.20"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -83,6 +83,8 @@ msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+tree-sitter = {version = "^0.20.2", optional = true}
+tree-sitter-languages = {version = "^1.8.0", optional = true}
 azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 oracle-ads = {version = "^2.9.1", optional = true}
 zhipuai = {version = "^1.0.7", optional = true}
@@ -177,7 +179,6 @@ setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
 
 [tool.poetry.extras]
-
 cli = ["typer"]
 
 # An extra used to be able to add extended testing.
@@ -249,6 +250,8 @@ extended_testing = [
  "databricks-vectorsearch",
  "dgml-utils",
  "cohere",
+ "tree-sitter",
+ "tree-sitter-languages",
  "azure-ai-documentintelligence",
  "oracle-ads",
  "zhipuai",
@@ -260,14 +263,17 @@ extended_testing = [
 ]
 
 [tool.ruff]
+exclude = [
+  "tests/examples/non-utf8-encoding.py",
+  "tests/integration_tests/examples/non-utf8-encoding.py",
+]
+
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
-]
-exclude = [
-  "tests/examples/non-utf8-encoding.py",
-  "tests/integration_tests/examples/non-utf8-encoding.py",
+  "T201", # print
 ]
 
 [tool.mypy]
