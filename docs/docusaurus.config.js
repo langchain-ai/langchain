@@ -188,7 +188,7 @@ const config = {
               },
               {
                 to: "/docs/contributing",
-                label: "Developer's guide",
+                label: "Contributing",
               },
               {
                 type: "docSidebar",
