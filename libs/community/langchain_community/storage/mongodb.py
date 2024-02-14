@@ -41,6 +41,7 @@ class MongoDBStore(BaseStore[str, Document]):
         connection_string: str,
         db_name: str,
         collection_name: str,
+        *,
         client_kwargs: Optional[dict] = None,
     ) -> None:
         """Initialize the MongoDBStore with a MongoDB connection string.
