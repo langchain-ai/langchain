@@ -66,11 +66,11 @@ class ExaSearchRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        response = self.client.search_and_contents(
+        response = self.client.search_and_contents(  # type: ignore[misc]
             query,
             num_results=self.k,
             text=self.text_contents_options,
-            highlights=self.highlights,
+            highlights=self.highlights or None,
             include_domains=self.include_domains,
             exclude_domains=self.exclude_domains,
             start_crawl_date=self.start_crawl_date,
