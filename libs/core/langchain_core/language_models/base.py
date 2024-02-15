@@ -61,8 +61,7 @@ LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
 
 
 class BaseLanguageModel(
-    RunnableSerializable[LanguageModelInput, LanguageModelOutputVar],
-    ABC,
+    RunnableSerializable[LanguageModelInput, LanguageModelOutputVar], ABC
 ):
     """Abstract base class for interfacing with language models.
 

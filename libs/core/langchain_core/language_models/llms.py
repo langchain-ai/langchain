@@ -46,10 +46,7 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models.base import (
-    BaseLanguageModel,
-    LanguageModelInput,
-)
+from langchain_core.language_models.base import BaseLanguageModel, LanguageModelInput
 from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
