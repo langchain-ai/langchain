@@ -92,11 +92,7 @@ __all__ = [
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
-<<<<<<< HEAD
-    "ErnieEmbeddings",
-=======
     "BookendEmbeddings",
->>>>>>> e438fe6be9f609b4229fe4c7688899425f758072
 ]
 
 
