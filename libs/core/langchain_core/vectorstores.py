@@ -225,7 +225,6 @@ class VectorStore(ABC):
             None, self.similarity_search_with_score, *args, **kwargs
         )
 
-    # change doc
     def _similarity_search_with_relevance_scores(
         self,
         query: str | List[str],
@@ -236,18 +235,22 @@ class VectorStore(ABC):
         Default similarity search with relevance scores. Modify if necessary
         in subclass.
         Return docs and relevance scores in the range [0, 1].
+        This function supports both single and batch queries.
 
         0 is dissimilar, 1 is most similar.
 
         Args:
-            query: input text
+            query: input text or list of input texts.
             k: Number of Documents to return. Defaults to 4.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of (doc, similarity_score)
+            If a single query is provided:
+                List of Tuples of (doc, similarity_score)
+            If a list of queries is provided:
+                List where each element is a List of Tuples of (doc, similarity_score)
         """
         relevance_score_fn = self._select_relevance_score_fn()
 
@@ -289,7 +292,6 @@ class VectorStore(ABC):
         docs_and_scores = await self.asimilarity_search_with_score(query, k, **kwargs)
         return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
-    # change doc
     def similarity_search_with_relevance_scores(
         self,
         query: str | List[str],
@@ -297,18 +299,22 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
         """Return docs and relevance scores in the range [0, 1].
+        This function supports both single and batch queries.
 
         0 is dissimilar, 1 is most similar.
 
         Args:
-            query: input text
+            query: input text or list of input texts
             k: Number of Documents to return. Defaults to 4.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of (doc, similarity_score)
+            If a single query is provided:
+                List of Tuples of (doc, similarity_score)
+            If a list of queries is provided:
+                List where each element ist a List of Tuples of (doc, similarity_score)
         """
 
         score_threshold = kwargs.pop("score_threshold", None)
