@@ -22,12 +22,7 @@ function waitGraphDBStart {
   done
 }
 
-function loadData {
-  echo -e "\nImporting starwars-data.trig"
-  curl -X POST -H "Content-Type: application/x-trig" -T /starwars-data.trig ${GRAPHDB_URI}/repositories/${REPOSITORY_ID}/statements
-}
 
 startGraphDB &
 waitGraphDBStart
-loadData
 wait

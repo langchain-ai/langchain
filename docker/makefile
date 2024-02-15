@@ -1,7 +1,7 @@
 # Makefile
 
 build_graphdb:
-	docker-compose up -d graphdb
+	docker build --tag graphdb ./graphdb
 
 start_graphdb:
 	docker-compose up -d graphdb
