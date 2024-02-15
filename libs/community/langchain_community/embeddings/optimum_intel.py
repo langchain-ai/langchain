@@ -1,11 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-import pandas as pd
-import torch
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
-from tqdm import tqdm
-from transformers import AutoTokenizer
 
 
 class QuantizedBiEncoderEmbeddings(BaseModel, Embeddings):
@@ -14,6 +10,7 @@ class QuantizedBiEncoderEmbeddings(BaseModel, Embeddings):
     Please ensure that you have installed optimum-intel and ipex.
 
     Input:
+        model_name: str = Model name.
         max_seq_len: int = The maximum sequence length for tokenization. (default 512)
         pooling_strategy: str =
             "mean" or "cls", pooling strategy for the final layer. (default "mean")
@@ -35,7 +32,7 @@ class QuantizedBiEncoderEmbeddings(BaseModel, Embeddings):
     model_name = "Intel/bge-small-en-v1.5-rag-int8-static"
     encode_kwargs = {'normalize_embeddings': True}
     hf = QuantizedBiEncoderEmbeddings(
-        model_name=model_name,
+        model_name,
         encode_kwargs=encode_kwargs,
         query_instruction="Represent this sentence for searching relevant passages: "
     )
@@ -43,22 +40,23 @@ class QuantizedBiEncoderEmbeddings(BaseModel, Embeddings):
 
     def __init__(
         self,
+        model_name: str,
         max_seq_len: int = 512,
         pooling_strategy: str = "mean",  # "mean" or "cls"
         query_instruction: Optional[str] = None,
         document_instruction: Optional[str] = None,
-        padding: Optional[bool] = True,
-        model_kwargs: Optional[Dict] = {},
-        encode_kwargs: Optional[Dict] = {},
+        padding: bool = True,
+        model_kwargs: Optional[Dict] = None,
+        encode_kwargs: Optional[Dict] = None,
         **kwargs: Any,
-    ):
+    ) -> None:
         super().__init__(**kwargs)
-        self.model_name_or_path = self.model_name
+        self.model_name_or_path = model_name
         self.max_seq_len = max_seq_len
         self.pooling = pooling_strategy
         self.padding = padding
-        self.encode_kwargs = encode_kwargs
-        self.model_kwargs = model_kwargs
+        self.encode_kwargs = encode_kwargs or {}
+        self.model_kwargs = model_kwargs or {}
 
         self.normalize = self.encode_kwargs.get("normalize_embeddings", False)
         self.batch_size = self.encode_kwargs.get("batch_size", 32)
@@ -68,7 +66,14 @@ class QuantizedBiEncoderEmbeddings(BaseModel, Embeddings):
 
         self.load_model()
 
-    def load_model(self):
+    def load_model(self) -> None:
+        try:
+            from transformers import AutoTokenizer
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import transformers, please install with "
+                "`pip install -U transformers`."
+            ) from e
         try:
             from optimum.intel import IPEXModel
 
@@ -100,7 +105,13 @@ For more information, please visit:
 
         extra = Extra.allow
 
-    def _embed(self, inputs):
+    def _embed(self, inputs: Any) -> Any:
+        try:
+            import torch
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import torch, please install with `pip install -U torch`."
+            ) from e
         with torch.inference_mode():
             outputs = self.transformer_model(**inputs)
             if self.pooling == "mean":
@@ -115,7 +126,7 @@ For more information, please visit:
             return emb
 
     @staticmethod
-    def _cls_pooling(outputs):
+    def _cls_pooling(outputs: Any) -> Any:
         if isinstance(outputs, dict):
             token_embeddings = outputs["last_hidden_state"]
         else:
@@ -123,7 +134,13 @@ For more information, please visit:
         return token_embeddings[:, 0]
 
     @staticmethod
-    def _mean_pooling(outputs, attention_mask):
+    def _mean_pooling(outputs: Any, attention_mask: Any) -> Any:
+        try:
+            import torch
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import torch, please install with `pip install -U torch`."
+            ) from e
         if isinstance(outputs, dict):
             token_embeddings = outputs["last_hidden_state"]
         else:
@@ -154,8 +171,20 @@ For more information, please visit:
         Output:
             List[List[float]] = The embeddings of each text document.
         """
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import pandas, please install with `pip install -U pandas`."
+            ) from e
+        try:
+            import tqdm
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import tqdm, please install with `pip install -U tqdm`."
+            ) from e
         docs = [
-            self.document_instruction + d.content if self.document_instruction else d
+            self.document_instruction + d if self.document_instruction else d
             for d in texts
         ]
 
