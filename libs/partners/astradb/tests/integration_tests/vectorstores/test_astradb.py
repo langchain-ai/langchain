@@ -25,7 +25,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_astradb.vectorstores import AstraDBVectorStore
 
 # Faster testing (no actual collection deletions). On by default
-SKIP_COLLECTION_DELETE = int(os.environ.get("TEST_SKIP_COLLECTION_DELETE", "1")) != 0
+SKIP_COLLECTION_DELETE = int(os.environ.get("ASTRA_DB_SKIP_COLLECTION_DELETIONS", "1")) != 0
 
 COLLECTION_NAME_DIM2 = "lc_test_d2"
 COLLECTION_NAME_DIM2_EUCLIDEAN = "lc_test_d2_eucl"
