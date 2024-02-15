@@ -454,7 +454,7 @@ aiohttp = ">=3.8.3,<4.0.0"
 anyio = "<4.0"
 async-timeout = {version = ">=4.0.0,<5.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">=0.5.7,<0.7"
-gigachat = ">=0.1.6"
+gigachat = ">=0.1.16"
 jsonpatch = ">=1.33,<2.0"
 langsmith = ">=0.0.63,<0.1.0"
 numpy = ">=1,<2"

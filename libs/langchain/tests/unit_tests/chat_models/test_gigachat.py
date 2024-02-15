@@ -162,7 +162,6 @@ def patch_gigachat(
     chat_completion: ChatCompletion,
     chat_completion_stream: List[ChatCompletionChunk],
 ) -> None:
-    print(type(mocker))
     mock = mocker.Mock()
     mock.chat.return_value = chat_completion
     mock.stream.return_value = chat_completion_stream

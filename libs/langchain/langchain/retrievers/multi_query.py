@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from typing import List, Optional, Sequence
 
@@ -26,17 +25,6 @@ class LineListOutputParser(BaseOutputParser[List[str]]):
         return lines
 
 
-class JSONLineListOutputParser(PydanticOutputParser):
-    """Output parser for a list of lines."""
-
-    def __init__(self) -> None:
-        super().__init__(pydantic_object=LineList)
-
-    def parse(self, text: str) -> LineList:
-        lines = json.loads(text)
-        return LineList(lines=lines)
-
-
 # Default prompt
 DEFAULT_QUERY_PROMPT = PromptTemplate(
     input_variables=["question"],
@@ -50,10 +38,14 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
 )
 
 
+def _unique_documents(documents: Sequence[Document]) -> List[Document]:
+    return [doc for i, doc in enumerate(documents) if doc not in documents[:i]]
+
+
 class MultiQueryRetriever(BaseRetriever):
     """Given a query, use an LLM to write a set of queries.
 
-    Retrieve docs for each query. Rake the unique union of all retrieved docs.
+    Retrieve docs for each query. Return the unique union of all retrieved docs.
     """
 
     retriever: BaseRetriever
@@ -158,7 +150,7 @@ class MultiQueryRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
-        """Get relevated documents given a user query.
+        """Get relevant documents given a user query.
 
         Args:
             question: user query
@@ -170,8 +162,7 @@ class MultiQueryRetriever(BaseRetriever):
         if self.include_original:
             queries.append(query)
         documents = self.retrieve_documents(queries, run_manager)
-        unique_documents = self.unique_union(documents)
-        return unique_documents
+        return self.unique_union(documents)
 
     def generate_queries(
         self, question: str, run_manager: CallbackManagerForRetrieverRun
@@ -220,12 +211,4 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of unique retrieved Documents
         """
-        # Create a dictionary with page_content as keys to remove duplicates
-        # TODO: Add Document ID property (e.g., UUID)
-        unique_documents_dict = {
-            (doc.page_content, tuple(sorted(doc.metadata.items()))): doc
-            for doc in documents
-        }
-
-        unique_documents = list(unique_documents_dict.values())
-        return unique_documents
+        return _unique_documents(documents)

@@ -59,12 +59,14 @@ build_all:
 	poetry lock --no-update
 	make lint
 	make tests
+	pip install .
 	cd ../..
 
 	cd libs/community
 	poetry lock --no-update
 	make lint
 	make tests
+	pip install .
 	cd ../..
 
 	cd libs/langchain
@@ -72,6 +74,7 @@ build_all:
 	make lint
 	make tests
 	make extended_tests
+	pip install .
 	cd ../..
 
 ######################

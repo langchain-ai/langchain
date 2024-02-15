@@ -961,7 +961,7 @@ async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
 gigachain-community = ">=0.0.14,<0.1"
 gigachain-core = ">=0.1.17,<0.2"
-gigachat = ">=0.1.15"
+gigachat = ">=0.1.16"
 jsonpatch = "^1.33"
 langsmith = ">=0.0.83,<0.1"
 numpy = "^1"

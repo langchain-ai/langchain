@@ -1,26 +1,49 @@
 import logging
-from typing import (TYPE_CHECKING, Any, AsyncIterator, Callable, Dict,
-                    Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
-                    Union)
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 from gigachat.models import Messages
-from langchain_community.llms.gigachat import _BaseGigaChat
-from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
-                                      CallbackManagerForLLMRun)
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (BaseChatModel,
-                                                        agenerate_from_stream,
-                                                        generate_from_stream)
-from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
-                                     BaseMessageChunk, ChatMessage,
-                                     ChatMessageChunk, FunctionMessage,
-                                     FunctionMessageChunk, HumanMessage,
-                                     HumanMessageChunk, SystemMessage,
-                                     SystemMessageChunk, ToolMessageChunk)
-from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
-                                    ChatResult)
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    FunctionMessage,
+    FunctionMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+    ToolMessageChunk,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
+
+from langchain_community.llms.gigachat import _BaseGigaChat
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +295,6 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
                 await run_manager.on_llm_new_token(content)
-
 
     def bind_functions(
         self,
