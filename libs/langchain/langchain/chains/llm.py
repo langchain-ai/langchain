@@ -130,7 +130,7 @@ class LLMChain(Chain):
                     generations.append([ChatGeneration(message=res)])
                 else:
                     generations.append([Generation(text=res)])
-            return LLMResult(generations=generations)
+            return prompts, LLMResult(generations=generations)
 
     async def _agenerate_also_return_prompt(
         self,
@@ -157,7 +157,7 @@ class LLMChain(Chain):
                     generations.append([ChatGeneration(message=res)])
                 else:
                     generations.append([Generation(text=res)])
-            return LLMResult(generations=generations)
+            return prompts, LLMResult(generations=generations)
 
     def generate(
         self,
