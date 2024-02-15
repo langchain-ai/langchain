@@ -91,10 +91,10 @@ def _get_search_client(
         SemanticField,
         SemanticPrioritizedFields,
         SemanticSearch,
+        VectorSearch,
         VectorSearchAlgorithmKind,
         VectorSearchAlgorithmMetric,
         VectorSearchProfile,
-        VectorSearch,
     )
 
     default_fields = default_fields or []
