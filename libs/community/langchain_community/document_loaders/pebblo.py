@@ -2,7 +2,6 @@
 
 import logging
 import os
-import pwd
 import uuid
 from http import HTTPStatus
 from typing import Any, Dict, Iterator, List
@@ -260,6 +259,8 @@ class PebbloSafeLoader(BaseLoader):
             str: Name of owner.
         """
         try:
+            import pwd
+
             file_owner_uid = os.stat(file_path).st_uid
             file_owner_name = pwd.getpwuid(file_owner_uid).pw_name
         except Exception:
