@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.12"
+langchain-core = ">=0.1"
 astrapy = "^0.7.1"
 numpy = "^1"
 
