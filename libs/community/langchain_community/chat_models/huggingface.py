@@ -44,7 +44,7 @@ class ChatHuggingFace(BaseChatModel):
     llm: Union[HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub]
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
     tokenizer: Any = None
-    model_id: str = None  # type: ignore
+    model_id: Optional[str] = None
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

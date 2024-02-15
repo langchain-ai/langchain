@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.50"
+version = "0.0.51"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -18,6 +18,8 @@ faker = {version = "^19.3.1", optional = true}
 vowpal-wabbit-next = {version = "0.6.0", optional = true}
 sentence-transformers = {version = "^2", optional = true}
 jinja2 = {version = "^3", optional = true}
+pandas = { version = "^2.0.1", optional = true }
+tabulate = {version = "^0.9.0", optional = true}
 
 [tool.poetry.group.lint]
 optional = true
@@ -79,13 +81,16 @@ extended_testing = [
  "vowpal-wabbit-next",
  "sentence-transformers",
  "jinja2",
+ "pandas",
+ "tabulate",
 ]
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+  "T201", # print
 ]
 
 [tool.mypy]

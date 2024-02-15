@@ -10,6 +10,7 @@ Required to run this test:
     - optionally this as well (otherwise defaults are used):
         export ASTRA_DB_KEYSPACE="my_keyspace"
 """
+
 import os
 from typing import Iterator
 
@@ -68,12 +69,12 @@ class TestAstraDBCaches:
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
         get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
         output = llm.generate(["foo"])
-        print(output)
+        print(output)  # noqa: T201
         expected_output = LLMResult(
             generations=[[Generation(text="fizz")]],
             llm_output={},
         )
-        print(expected_output)
+        print(expected_output)  # noqa: T201
         assert output == expected_output
         astradb_cache.clear()
 

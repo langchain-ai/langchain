@@ -1686,7 +1686,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -1718,6 +1718,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -1734,7 +1738,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -1760,6 +1764,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -1829,7 +1837,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -1877,7 +1885,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -1908,6 +1916,10 @@
             'default': False,
             'title': 'Example',
             'type': 'boolean',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'type': dict({
             'default': 'human',
@@ -1948,7 +1960,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -1977,6 +1989,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -1993,7 +2009,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2019,6 +2035,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -2084,7 +2104,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2116,6 +2136,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2132,7 +2156,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2158,6 +2182,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2227,7 +2255,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2275,7 +2303,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2306,6 +2334,10 @@
             'default': False,
             'title': 'Example',
             'type': 'boolean',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'type': dict({
             'default': 'human',
@@ -2346,7 +2378,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -2375,6 +2407,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -2391,7 +2427,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2417,6 +2453,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -2466,7 +2506,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2498,6 +2538,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2514,7 +2558,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2541,6 +2585,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
@@ -2562,7 +2610,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2610,7 +2658,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2642,6 +2690,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -2659,7 +2711,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -2688,6 +2740,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -2704,7 +2760,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2730,6 +2786,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -2767,7 +2827,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2799,6 +2859,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2815,7 +2879,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2841,6 +2905,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2910,7 +2978,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2958,7 +3026,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -2989,6 +3057,10 @@
             'default': False,
             'title': 'Example',
             'type': 'boolean',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'type': dict({
             'default': 'human',
@@ -3029,7 +3101,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -3058,6 +3130,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -3074,7 +3150,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3100,6 +3176,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -3137,7 +3217,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3169,6 +3249,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -3185,7 +3269,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3211,6 +3295,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -3280,7 +3368,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3328,7 +3416,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3359,6 +3447,10 @@
             'default': False,
             'title': 'Example',
             'type': 'boolean',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'type': dict({
             'default': 'human',
@@ -3399,7 +3491,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -3428,6 +3520,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -3444,7 +3540,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3470,6 +3566,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -3499,7 +3599,7 @@
   dict({
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3531,6 +3631,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -3547,7 +3651,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3573,6 +3677,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -3642,7 +3750,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3690,7 +3798,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3721,6 +3829,10 @@
             'default': False,
             'title': 'Example',
             'type': 'boolean',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'type': dict({
             'default': 'human',
@@ -3772,7 +3884,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -3801,6 +3913,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -3817,7 +3933,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3843,6 +3959,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -3899,7 +4019,7 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'A Message from an AI.',
+        'description': 'Message from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3931,6 +4051,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -3947,7 +4071,7 @@
         'type': 'object',
       }),
       'ChatMessage': dict({
-        'description': 'A Message that can be assigned an arbitrary speaker (i.e. role).',
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -3974,6 +4098,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'role': dict({
             'title': 'Role',
             'type': 'string',
@@ -3995,7 +4123,7 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'A Message for passing the result of executing a function back to a model.',
+        'description': 'Message for passing the result of executing a function back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4043,7 +4171,7 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'A Message from a human.',
+        'description': 'Message from a human.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4075,6 +4203,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -4092,7 +4224,7 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          A Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior, usually passed in as the first of a sequence
           of input messages.
         ''',
         'properties': dict({
@@ -4121,6 +4253,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -4137,7 +4273,7 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'A Message for passing the result of executing a tool back to a model.',
+        'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -4163,6 +4299,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
