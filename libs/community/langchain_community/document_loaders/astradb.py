@@ -19,7 +19,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables import run_in_executor
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_community.utilities.astradb import AstraDBEnvironment
+from langchain_community.utilities.astradb import _AstraDBEnvironment
 
 if TYPE_CHECKING:
     from astrapy.db import AstraDB, AsyncAstraDB
@@ -44,7 +44,7 @@ class AstraDBLoader(BaseLoader):
         nb_prefetched: int = 1000,
         extraction_function: Callable[[Dict], str] = json.dumps,
     ) -> None:
-        astra_env = AstraDBEnvironment(
+        astra_env = _AstraDBEnvironment(
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
@@ -65,7 +65,7 @@ class AstraDBLoader(BaseLoader):
         return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
-        queue = Queue(self.nb_prefetched)  # type: ignore[var-annotated]
+        queue = Queue(self.nb_prefetched)  # type: ignore
         t = threading.Thread(target=self.fetch_results, args=(queue,))
         t.start()
         while True:
