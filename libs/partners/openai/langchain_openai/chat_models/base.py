@@ -922,8 +922,8 @@ class ChatOpenAI(BaseChatModel, FormattedOutputMixin[_OutputSchema, _FormattedOu
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             raise ValueError(
-                f"Unrecognized return_type argument. Expected one of 'raw', 'parsed' "
-                f"or 'all'. Received: '{return_type}'"
+                f"Unrecognized return_type argument. Expected one of 'parsed' or "
+                f"'all'. Received: '{return_type}'"
             )
 
 
