@@ -27,10 +27,10 @@ from langchain_community.document_loaders.parsers.language.typescript import (
 )
 
 if TYPE_CHECKING:
-    from langchain.langchain.text_splitter import Language
+    from langchain.text_splitter import Language
 
 try:
-    from langchain.langchain.text_splitter import Language
+    from langchain.text_splitter import Language
 
     LANGUAGE_EXTENSIONS: Dict[str, str] = {
         "py": Language.PYTHON,
