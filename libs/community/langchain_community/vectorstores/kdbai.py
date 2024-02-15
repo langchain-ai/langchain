@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class KDBAI(VectorStore):
-    """`KDB.AI` vector store [https://kdb.ai](https://kdb.ai)
+    """`KDB.AI` vector store.
+
+     See [https://kdb.ai](https://kdb.ai)
 
     To use, you should have the `kdbai_client` python package installed.
 

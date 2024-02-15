@@ -19,7 +19,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables import run_in_executor
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_community.utilities.astradb import AstraDBEnvironment
+from langchain_community.utilities.astradb import _AstraDBEnvironment
 
 if TYPE_CHECKING:
     from astrapy.db import AstraDB, AsyncAstraDB
@@ -44,7 +44,7 @@ class AstraDBLoader(BaseLoader):
         nb_prefetched: int = 1000,
         extraction_function: Callable[[Dict], str] = json.dumps,
     ) -> None:
-        astra_env = AstraDBEnvironment(
+        astra_env = _AstraDBEnvironment(
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
@@ -65,7 +65,7 @@ class AstraDBLoader(BaseLoader):
         return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
-        queue = Queue(self.nb_prefetched)
+        queue = Queue(self.nb_prefetched)  # type: ignore
         t = threading.Thread(target=self.fetch_results, args=(queue,))
         t.start()
         while True:
@@ -95,7 +95,7 @@ class AstraDBLoader(BaseLoader):
                 item = await run_in_executor(None, lambda it: next(it, done), iterator)
                 if item is done:
                     break
-                yield item
+                yield item  # type: ignore[misc]
             return
         async_collection = await self.astra_env.async_astra_db.collection(
             self.collection_name
@@ -116,13 +116,13 @@ class AstraDBLoader(BaseLoader):
                 },
             )
 
-    def fetch_results(self, queue: Queue):
+    def fetch_results(self, queue: Queue):  # type: ignore[no-untyped-def]
         self.fetch_page_result(queue)
         while self.find_options.get("pageState"):
             self.fetch_page_result(queue)
         queue.put(None)
 
-    def fetch_page_result(self, queue: Queue):
+    def fetch_page_result(self, queue: Queue):  # type: ignore[no-untyped-def]
         res = self.collection.find(
             filter=self.filter,
             options=self.find_options,

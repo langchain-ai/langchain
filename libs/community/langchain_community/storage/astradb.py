@@ -16,7 +16,7 @@ from typing import (
 
 from langchain_core.stores import BaseStore, ByteStore
 
-from langchain_community.utilities.astradb import AstraDBEnvironment
+from langchain_community.utilities.astradb import _AstraDBEnvironment
 
 if TYPE_CHECKING:
     from astrapy.db import AstraDB
@@ -25,6 +25,8 @@ V = TypeVar("V")
 
 
 class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
+    """Base class for the DataStax AstraDB data store."""
+
     def __init__(
         self,
         collection_name: str,
@@ -33,7 +35,7 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
         astra_db_client: Optional[AstraDB] = None,
         namespace: Optional[str] = None,
     ) -> None:
-        astra_env = AstraDBEnvironment(
+        astra_env = _AstraDBEnvironment(
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
@@ -79,6 +81,7 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
 
 class AstraDBStore(AstraDBBaseStore[Any]):
     """BaseStore implementation using DataStax AstraDB as the underlying store.
+
     The value type can be any type serializable by json.dumps.
     Can be used to store embeddings with the CacheBackedEmbeddings.
     Documents in the AstraDB collection will have the format
@@ -97,6 +100,7 @@ class AstraDBStore(AstraDBBaseStore[Any]):
 
 class AstraDBByteStore(AstraDBBaseStore[bytes], ByteStore):
     """ByteStore implementation using DataStax AstraDB as the underlying store.
+
     The bytes values are converted to base64 encoded strings
     Documents in the AstraDB collection will have the format
     {
