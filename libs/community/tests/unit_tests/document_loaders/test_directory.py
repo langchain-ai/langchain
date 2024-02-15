@@ -24,7 +24,7 @@ def test_raise_error_if_path_is_not_directory() -> None:
 
 
 class CustomLoader:
-    """Test loader. Mimicks interface of existing file loader."""
+    """Test loader. Mimics interface of existing file loader."""
 
     def __init__(self, path: Path, **kwargs: Any) -> None:
         """Initialize the loader."""
