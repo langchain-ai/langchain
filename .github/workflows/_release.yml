@@ -189,7 +189,6 @@ jobs:
           ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
           ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
           ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
-          ASTRA_DB_SKIP_COLLECTION_DELETIONS: ${{ secrets.ASTRA_DB_SKIP_COLLECTION_DELETIONS }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
