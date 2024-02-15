@@ -1,17 +1,22 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
 from typing import Any, Callable, Dict, Optional, Sequence
 
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.output_parsers.boolean import BooleanOutputParser
+<<<<<<< HEAD
 from langchain.output_parsers.retry import RetryOutputParser
 from langchain.prompts import PromptTemplate
+=======
+>>>>>>> master
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,
 )
-from langchain.schema import BasePromptTemplate, Document
-from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_default_chain_prompt() -> PromptTemplate:
@@ -59,7 +64,7 @@ class LLMChainFilter(BaseDocumentCompressor):
         cls,
         llm: BaseLanguageModel,
         prompt: Optional[BasePromptTemplate] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> "LLMChainFilter":
         """Create a LLMChainFilter from a language model.
 

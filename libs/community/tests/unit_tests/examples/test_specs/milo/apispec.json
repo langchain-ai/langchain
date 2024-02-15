@@ -1,0 +1,57 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "title": "Milo",
+      "description": "Use the Milo plugin to lookup how parents can help create magic moments / meaningful memories with their families everyday. Milo can answer - what's magic today?",
+      "version": "v2"
+   },
+   "servers": [
+      {
+         "url": "https://www.joinmilo.com/api"
+      }
+   ],
+   "paths": {
+      "/askMilo": {
+         "get": {
+            "operationId": "askMilo",
+            "summary": "Get daily suggestions from Milo about how to create a magical moment or meaningful memory for parents. Milo can only answer 'what's magic today?'",
+            "parameters": [
+               {
+                  "in": "query",
+                  "name": "query",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "required": true,
+                  "description": "This should always be 'what's magic today?'"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/askMiloResponse"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   },
+   "components": {
+      "schemas": {
+         "askMiloResponse": {
+            "type": "object",
+            "properties": {
+               "answer": {
+                  "type": "string",
+                  "description": "A text response drawn from Milo's repository"
+               }
+            }
+         }
+      }
+   }
+}

@@ -39,7 +39,7 @@ class ElasticsearchTranslator(Visitor):
             Comparator.LT: "lt",
             Comparator.LTE: "lte",
             Comparator.CONTAIN: "match",
-            Comparator.LIKE: "fuzzy",
+            Comparator.LIKE: "match",
         }
         return map_dict[func]
 
@@ -61,25 +61,32 @@ class ElasticsearchTranslator(Visitor):
         ]
 
         if is_range_comparator:
+            value = comparison.value
+            if isinstance(comparison.value, dict) and "date" in comparison.value:
+                value = comparison.value["date"]
+            return {"range": {field: {self._format_func(comparison.comparator): value}}}
+
+        if comparison.comparator == Comparator.CONTAIN:
             return {
-                "range": {
-                    field: {self._format_func(comparison.comparator): comparison.value}
+                self._format_func(comparison.comparator): {
+                    field: {"query": comparison.value}
                 }
             }
 
         if comparison.comparator == Comparator.LIKE:
             return {
                 self._format_func(comparison.comparator): {
-                    field: {"value": comparison.value, "fuzziness": "AUTO"}
+                    field: {"query": comparison.value, "fuzziness": "AUTO"}
                 }
             }
-
-        if comparison.comparator == Comparator.CONTAIN:
-            return {self._format_func(comparison.comparator): {field: comparison.value}}
 
         # we assume that if the value is a string,
         # we want to use the keyword field
         field = f"{field}.keyword" if isinstance(comparison.value, str) else field
+
+        if isinstance(comparison.value, dict):
+            if "date" in comparison.value:
+                comparison.value = comparison.value["date"]
 
         return {self._format_func(comparison.comparator): {field: comparison.value}}
 

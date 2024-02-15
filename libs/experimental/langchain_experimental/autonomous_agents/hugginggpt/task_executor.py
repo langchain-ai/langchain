@@ -117,7 +117,7 @@ class TaskExecutor:
 
     def run(self) -> str:
         for task in self.tasks:
-            print(f"running {task}")
+            print(f"running {task}")  # noqa: T201
             if task.pending() and self.check_dependency(task):
                 self.update_args(task)
                 task.run()

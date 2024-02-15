@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseLLMOutputParser
+from langchain_core.pydantic_v1 import Field
+
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.generate_prompt import PROMPT
 from langchain.output_parsers.regex import RegexParser
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.output_parser import BaseLLMOutputParser
 
 _QA_OUTPUT_PARSER = RegexParser(
     regex=r"QUESTION: (.*?)\n+ANSWER: (.*)", output_keys=["query", "answer"]
@@ -20,6 +21,10 @@ class QAGenerateChain(LLMChain):
 
     output_parser: BaseLLMOutputParser = Field(default=_QA_OUTPUT_PARSER)
     output_key: str = "qa_pairs"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> QAGenerateChain:

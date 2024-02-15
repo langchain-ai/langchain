@@ -4,15 +4,17 @@
 # Required
 version: 2
 
+formats:
+  - pdf
+
 # Set the version of Python and other tools you might need
 build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-  jobs:
-    pre_build:
-      - python docs/api_reference/create_api_rst.py
-
+  commands:
+    - mkdir -p $READTHEDOCS_OUTPUT
+    - cp -r api_reference_build/* $READTHEDOCS_OUTPUT
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
    configuration: docs/api_reference/conf.py

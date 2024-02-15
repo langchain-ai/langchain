@@ -3,6 +3,9 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -10,11 +13,8 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.chains.base import Chain
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
-from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import RUN_KEY
-from langchain.schema.embeddings import Embeddings
 from langchain.utils.math import cosine_similarity
 
 

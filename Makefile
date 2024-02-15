@@ -15,10 +15,15 @@ docs_build:
 	docs/.local_build.sh
 
 docs_clean:
-	rm -r docs/_dist
+	@if [ -d _dist ]; then \
+			rm -r _dist; \
+			echo "Directory _dist has been cleaned."; \
+	else \
+			echo "Nothing to clean."; \
+	fi
 
 docs_linkcheck:
-	poetry run linkchecker docs/_dist/docs_skeleton/ --ignore-url node_modules
+	poetry run linkchecker _dist/docs/ --ignore-url node_modules
 
 api_docs_build:
 	poetry run python docs/api_reference/create_api_rst.py
@@ -36,6 +41,19 @@ spell_check:
 
 spell_fix:
 	poetry run codespell --toml pyproject.toml -w
+
+######################
+# LINTING AND FORMATTING
+######################
+
+lint lint_package lint_tests:
+	poetry run ruff docs templates cookbook
+	poetry run ruff format docs templates cookbook --diff
+	poetry run ruff --select I docs templates cookbook
+
+format format_diff:
+	poetry run ruff format docs templates cookbook
+	poetry run ruff --select I --fix docs templates cookbook
 
 ######################
 # HELP

@@ -9,7 +9,7 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate, OutputParserException
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.llm_bash.bash import BashProcess
 from langchain_experimental.llm_bash.prompt import PROMPT
@@ -25,7 +25,7 @@ class LLMBashChain(Chain):
         .. code-block:: python
 
             from langchain.chains import LLMBashChain
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             llm_bash = LLMBashChain.from_llm(OpenAI())
     """
 
@@ -56,7 +56,9 @@ class LLMBashChain(Chain):
                 values["llm_chain"] = LLMChain(llm=values["llm"], prompt=prompt)
         return values
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     def validate_prompt(cls, values: Dict) -> Dict:
         if values["llm_chain"].prompt.output_parser is None:
             raise ValueError(
