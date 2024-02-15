@@ -9,7 +9,7 @@ _FormattedOutput = TypeVar("_FormattedOutput")
 
 
 class FormattedOutputMixin(Generic[_OutputSchema, _FormattedOutput], ABC):
-    """Mixing for language models that offer native output formatting."""
+    """Mixin for language models that offer native output formatting."""
 
     @abstractmethod
     def with_output_format(
