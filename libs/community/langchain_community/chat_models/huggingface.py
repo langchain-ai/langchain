@@ -1,6 +1,6 @@
 """Hugging Face Chat Wrapper."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -19,7 +19,11 @@ from langchain_core.outputs import (
     LLMResult,
 )
 
-from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain_community.llms.huggingface_endpoint import (
+    HuggingFaceEndpoint,
+    HuggingFaceHub,
+    HuggingFaceTextGenInference,
+)
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
@@ -38,7 +42,7 @@ class ChatHuggingFace(BaseChatModel):
     Adapted from: https://python.langchain.com/docs/integrations/chat/llama2_chat
     """
 
-    llm: HuggingFaceEndpoint
+    llm: Union[HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub]
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
     tokenizer: Any = None
     model_id: Optional[str] = None
