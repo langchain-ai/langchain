@@ -817,7 +817,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
 
                 If schema is a dict then _DictOrPydantic is a dict.
 
-        Function-calling, Pydantic schema example (method="function-calling", return_type="parsed"):
+        Function-calling, Pydantic schema example (method="function_calling", return_type="parsed"):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -829,7 +829,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
                     justification: str
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_output_format(AnswerWithJustification)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
 
@@ -838,7 +838,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Function-calling, Pydantic schema example (method="function-calling", return_type="all"):
+        Function-calling, Pydantic schema example (method="function_calling", return_type="all"):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -850,7 +850,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
                     justification: str
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_output_format(AnswerWithJustification, return_type="all")
+                structured_llm = llm.with_structured_output(AnswerWithJustification, return_type="all")
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
@@ -859,7 +859,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
                 #     'parsing_error': None
                 # }
 
-        Function-calling, dict schema example (method="function-calling", return_type="parsed"):
+        Function-calling, dict schema example (method="function_calling", return_type="parsed"):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -873,7 +873,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_output_format(dict_schema)
+                structured_llm = llm.with_structured_output(dict_schema)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
