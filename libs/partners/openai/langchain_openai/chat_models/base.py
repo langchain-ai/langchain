@@ -750,7 +750,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
         return super().bind(tools=formatted_tools, **kwargs)
 
     @overload
-    def with_output_format(
+    def with_structured_output(
         self,
         schema: _DictOrPydanticClass,
         *,
@@ -761,7 +761,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
         ...
 
     @overload
-    def with_output_format(
+    def with_structured_output(
         self,
         schema: _DictOrPydanticClass,
         *,
