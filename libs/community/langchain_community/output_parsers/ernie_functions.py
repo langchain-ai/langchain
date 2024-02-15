@@ -13,6 +13,7 @@ from langchain_core.outputs.chat_generation import (
     ChatGeneration,
     Generation,
 )
+from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
@@ -22,7 +23,13 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
+    ) -> Any:
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             raise OutputParserException(
@@ -60,7 +67,13 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
+    ) -> Any:
         if len(result) != 1:
             raise OutputParserException(
                 f"Expected exactly one result, but got {len(result)}"
@@ -130,7 +143,13 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
     key_name: str
     """The name of the key to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
+    ) -> Any:
         res = super().parse_result(result, partial=partial)
         if partial and res is None:
             return None
@@ -157,7 +176,13 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             )
         return values
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
+    ) -> Any:
         _result = super().parse_result(result)
         if self.args_only:
             pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
@@ -174,6 +199,12 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     attr_name: str
     """The name of the attribute to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
+    ) -> Any:
         result = super().parse_result(result)
         return getattr(result, self.attr_name)
