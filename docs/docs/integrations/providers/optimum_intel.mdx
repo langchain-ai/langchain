@@ -1,0 +1,26 @@
+# Optimum-intel
+
+All functionality related to the [optimum-intel](https://github.com/huggingface/optimum-intel.git) and [IPEX](https://github.com/intel/intel-extension-for-pytorch).
+
+## Installation
+
+Install using optimum-intel and ipex using:
+
+```bash
+pip install optimum[neural-compressor]
+pip install intel_extension_for_pytorch
+```
+
+Please follow the installation instructions as specified below:
+
+* Install optimum-intel as shown [here](https://github.com/huggingface/optimum-intel).
+* Install IPEX as shown [here](https://intel.github.io/intel-extension-for-pytorch/index.html#installation?platform=cpu&version=v2.2.0%2Bcpu).
+
+## Embedding Models
+
+See a [usage example](/docs/integrations/text_embedding/optimum_intel).
+We also offer a full tutorial notebook "rag_with_quantized_embeddings.ipynb" for using the embedder in a RAG pipeline in the cookbook dir.
+
+```python
+from langchain_community.embeddings import QuantizedBiEncoderEmbeddings
+```
