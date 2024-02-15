@@ -1,5 +1,5 @@
 ---
-name: Codespell
+name: CI / cd . / make spell_check
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   codespell:
-    name: Check for spelling errors
+    name: (Check for spelling errors)
     runs-on: ubuntu-latest
 
     steps:
@@ -34,3 +34,4 @@ jobs:
         with:
           skip: guide_imports.json
           ignore_words_list: ${{ steps.extract_ignore_words.outputs.ignore_words_list }}
+          exclude_file: libs/community/langchain_community/llms/yuan2.py

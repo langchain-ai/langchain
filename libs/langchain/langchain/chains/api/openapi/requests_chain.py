@@ -4,11 +4,12 @@ import json
 import re
 from typing import Any
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts.prompt import PromptTemplate
+
 from langchain.chains.api.openapi.prompts import REQUEST_TEMPLATE
 from langchain.chains.llm import LLMChain
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseOutputParser
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class APIRequesterOutputParser(BaseOutputParser):
@@ -38,6 +39,10 @@ class APIRequesterOutputParser(BaseOutputParser):
 
 class APIRequesterChain(LLMChain):
     """Get the request parser."""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @classmethod
     def from_llm_and_typescript(

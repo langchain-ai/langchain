@@ -1,3 +1,3 @@
-from rag_weaviate.chain import chain
+from hybrid_search_weaviate.chain import chain
 
 __all__ = ["chain"]

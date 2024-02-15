@@ -41,10 +41,10 @@ Check out the instructions
 
 The primary `unstructured` wrappers within `langchain` are data loaders. The following
 shows how to use the most basic unstructured data loader. There are other file-specific
-data loaders available in the `langchain.document_loaders` module.
+data loaders available in the `langchain_community.document_loaders` module.
 
 ```python
-from langchain.document_loaders import UnstructuredFileLoader
+from langchain_community.document_loaders import UnstructuredFileLoader
 
 loader = UnstructuredFileLoader("state_of_the_union.txt")
 loader.load()

@@ -1,15 +1,15 @@
 from pathlib import Path
 
-from langchain.chat_models import ChatOllama
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.utilities import SQLDatabase
+from langchain_community.chat_models import ChatOllama
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
 # Add the LLM downloaded from Ollama
-ollama_llm = "llama2:13b-chat"
+ollama_llm = "zephyr"
 llm = ChatOllama(model=ollama_llm)
 
 

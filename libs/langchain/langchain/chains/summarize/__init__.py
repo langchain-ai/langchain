@@ -1,7 +1,10 @@
 """Load summarizing chains."""
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
@@ -9,8 +12,6 @@ from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.summarize import map_reduce_prompt, refine_prompts, stuff_prompt
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class LoadingCallable(Protocol):
@@ -51,6 +52,8 @@ def _load_map_reduce_chain(
     verbose: Optional[bool] = None,
     token_max: int = 3000,
     callbacks: Callbacks = None,
+    *,
+    collapse_max_retries: Optional[int] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(
@@ -91,6 +94,7 @@ def _load_map_reduce_chain(
         token_max=token_max,
         verbose=verbose,
         callbacks=callbacks,
+        collapse_max_retries=collapse_max_retries,
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
