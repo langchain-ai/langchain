@@ -127,7 +127,8 @@ class HuggingFaceHub(LLM):
                 response = hf("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
-        parameters = {**({"return_full_text":False} if self.task=="text-generation" else {}),
+        parameters = {**({"return_full_text":False} 
+                         if self.task=="text-generation" else {}),
                       **_model_kwargs,
                       **kwargs}
 
