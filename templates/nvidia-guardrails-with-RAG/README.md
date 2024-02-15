@@ -30,16 +30,10 @@ export NGC_API_KEY=<your ngc_api_key>
 ```
 ### NeMo Guardrails
 
-To add guardrails, first you need to clone the nemoguardrails package with langchain runnable integrations as follows:
-
-Create a directory named `nemoguardrails`, clone and install the package with all necessary dependencies
+To add guardrails, first you need to install the latest version of nemoguardrails library using the following command
 
 ```
-mkdir nemoguardrails
-cd nemoguardrails
-git clone https://github.com/NVIDIA/NeMo-Guardrails.git
-cd NeMo-Guardrails
-pip install -e .
+pip install nemoguardrails
 ```
 
 ### Milvus Setup
