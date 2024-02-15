@@ -252,7 +252,6 @@ class VectorStore(ABC):
         relevance_score_fn = self._select_relevance_score_fn()
 
         docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
-
         is_batch = isinstance(query, list)
 
         if is_batch:

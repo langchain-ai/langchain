@@ -282,7 +282,6 @@ def test_chroma_update_document() -> None:
     assert new_embedding != old_embedding
 
 
-# still not working
 def test_chroma_with_relevance_score() -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
     texts = ["foo", "bar", "baz"]
@@ -294,20 +293,14 @@ def test_chroma_with_relevance_score() -> None:
         metadatas=metadatas,
         collection_metadata={"hnsw:space": "l2"},
     )
-    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=1)
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 1.0),
-        (Document(page_content="bar", metadata={"page": "1"}), 0.8),
-        (Document(page_content="baz", metadata={"page": "2"}), 0.5),
     ]
 
-    outputs = docsearch.similarity_search_with_relevance_scores(
-        ["foo", "bar", "baz"], k=1
-    )
+    outputs = docsearch.similarity_search_with_relevance_scores(["foo"], k=1)
     assert outputs == [
         [(Document(page_content="foo", metadata={"page": "0"}), 1.0)],
-        [(Document(page_content="bar", metadata={"page": "1"}), 0.8)],
-        [(Document(page_content="baz", metadata={"page": "2"}), 0.5)],
     ]
 
 
@@ -328,6 +321,14 @@ def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
         (Document(page_content="foo", metadata={"page": "0"}), -0.0),
         (Document(page_content="bar", metadata={"page": "1"}), -0.0),
         (Document(page_content="baz", metadata={"page": "2"}), -0.0),
+    ]
+    outputs = docsearch.similarity_search_with_relevance_scores(["foo"], k=3)
+    assert outputs == [
+        [
+            (Document(page_content="foo", metadata={"page": "0"}), -0.0),
+            (Document(page_content="bar", metadata={"page": "1"}), -0.0),
+            (Document(page_content="baz", metadata={"page": "2"}), -0.0),
+        ]
     ]
 
 

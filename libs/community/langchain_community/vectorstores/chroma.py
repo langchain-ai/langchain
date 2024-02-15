@@ -32,26 +32,18 @@ logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
 
 
-def _results_to_docs(results: Any) -> List[Document] | List[List[Document]]:
-    docs_and_scores = _results_to_docs_and_scores(results)
-    is_batch = len(results["documents"]) > 1
-
-    if is_batch:
-        return [[doc for doc, _ in d_and_s] for d_and_s in docs_and_scores]
-
-    else:
-        return [doc for doc, _ in docs_and_scores]
+def _results_to_batch_docs(results: Any) -> List[List[Document]]:
+    batch_docs_and_scores = _results_to_batch_docs_and_scores(results)
+    return [[doc for doc, _ in d_and_s] for d_and_s in batch_docs_and_scores]
 
 
 # make docstrings
-def _results_to_docs_and_scores(
+def _results_to_batch_docs_and_scores(
     results: Any,
-) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
-
-    n_results = len(results["documents"])
+) -> List[List[Tuple[Document, float]]]:
 
     batch_docs_and_scores = []
-    for i in range(n_results):
+    for i in range(len(results["documents"])):
         batch_docs_and_scores.append(
             [
                 (Document(page_content=content, metadata=metadata or {}), distance)
@@ -63,10 +55,7 @@ def _results_to_docs_and_scores(
             ]
         )
 
-    if n_results == 1:
-        return batch_docs_and_scores[0]
-    else:
-        return batch_docs_and_scores
+    return batch_docs_and_scores
 
 
 class Chroma(VectorStore):
@@ -400,7 +389,14 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs(results)
+        batch_docs = _results_to_batch_docs(results)
+
+        is_batch = isinstance(embedding[0], list)
+
+        if is_batch:
+            return batch_docs
+        else:
+            return batch_docs[0]
 
     # TODO update doc
     def similarity_search_by_vector_with_relevance_scores(
@@ -431,7 +427,14 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs_and_scores(results)
+        batch_docs_and_scores = _results_to_batch_docs_and_scores(results)
+
+        is_batch = isinstance(embedding[0], list)
+
+        if is_batch:
+            return batch_docs_and_scores
+        else:
+            return batch_docs_and_scores[0]
 
     # TODO update doc
     def similarity_search_with_score(
@@ -478,7 +481,14 @@ class Chroma(VectorStore):
                 **kwargs,
             )
 
-        return _results_to_docs_and_scores(results)
+        batch_docs_and_scores = _results_to_batch_docs_and_scores(results)
+
+        is_batch = isinstance(query, list)
+
+        if is_batch:
+            return batch_docs_and_scores
+        else:
+            return batch_docs_and_scores[0]
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -540,7 +550,9 @@ class Chroma(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        query_embeddings = [embedding] if isinstance(embedding[0], float) else embedding
+        is_batch = isinstance(embedding[0], list)
+
+        query_embeddings = embedding if is_batch else [embedding]
 
         results = self.__query_collection(
             query_embeddings=query_embeddings,
@@ -570,18 +582,14 @@ class Chroma(VectorStore):
                 k=k,
                 lambda_mult=lambda_mult,
             )
-            candidates = _results_to_docs(batch_results[i])
+            candidates = _results_to_batch_docs(batch_results[i])[0]
 
             selected_results = [
                 r for i, r in enumerate(candidates) if i in mmr_selected
             ]
             batch_selected_results.append(selected_results)
 
-        return (
-            batch_selected_results[0]
-            if len(batch_results) == 1
-            else batch_selected_results
-        )
+        return batch_selected_results if is_batch else batch_selected_results[0]
 
     # Todo change doc
     def max_marginal_relevance_search(
@@ -615,8 +623,9 @@ class Chroma(VectorStore):
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
+        is_batch = isinstance(query, list)
 
-        queries = [query] if isinstance(query, str) else query
+        queries = query if is_batch else [query]
 
         embeddings = self._embedding_function.embed_documents(queries)
         docs = self.max_marginal_relevance_search_by_vector(
@@ -627,7 +636,7 @@ class Chroma(VectorStore):
             filter=filter,
             where_document=where_document,
         )
-        return docs
+        return docs if is_batch else docs[0]
 
     def delete_collection(self) -> None:
         """Delete the collection."""
