@@ -38,7 +38,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.language_models.output_format import FormattedOutputMixin
+from langchain_core.language_models.structured_output import StructuredOutputMixin
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -214,9 +214,7 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-class ChatOpenAI(
-    BaseChatModel, FormattedOutputMixin[_DictOrPydanticClass, _DictOrPydantic]
-):
+class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
     """`OpenAI` Chat large language models API.
 
     To use, you should have the
@@ -773,7 +771,7 @@ class ChatOpenAI(
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
-    def with_output_format(
+    def with_structured_output(
         self,
         schema: _DictOrPydanticClass,
         *,
