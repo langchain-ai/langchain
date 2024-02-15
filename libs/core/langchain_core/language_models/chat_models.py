@@ -102,7 +102,41 @@ async def agenerate_from_stream(
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
-    """Base class for Chat models."""
+    """
+    Base class for Chat models.
+
+    Attributes:
+        cache (Optional[Union[bool, BaseCache]]): Configures the caching mechanism for model responses.
+        Caching can significantly improve performance by reducing the number of API calls to the LLM provider,
+        especially for frequently repeated prompts or inputs. It can be configured in two primary ways:
+
+        1. **Boolean Value:**
+           - `True`: Enables caching using a built-in, general-purpose cache. This is useful for common or
+             repeated queries, reducing API calls and potentially saving costs.
+           - `False`: Disables caching, ensuring fresh responses for every query by making live API calls.
+
+        2. **Custom Caching Implementation:**
+           - Providing a subclass of `BaseCache` as the `cache` value allows for a tailored caching strategy.
+             Custom caches should implement essential methods like `get`, `set`, and `delete` to be compatible
+             with the model's caching mechanism. This flexibility enables developers to design caching strategies
+             that best fit their specific needs, such as optimizing for performance, persistence, or memory usage.
+
+    Examples:
+
+    ```python
+    # Enable built-in caching
+    model = MyChatModel(cache=True)
+
+    # Disable caching
+    model = MyChatModel(cache=False)
+
+    # Use a custom caching implementation
+    class MyCustomCache(BaseCache):
+        # ... (implementation details)
+
+    model = MyChatModel(cache=MyCustomCache())
+    ```
+    """
 
     cache: Optional[bool | BaseCache] = None
     """Whether to cache the response."""

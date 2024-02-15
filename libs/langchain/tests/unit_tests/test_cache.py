@@ -4,6 +4,7 @@ from typing import Dict, Generator, List, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from unittest.mock import MagicMock
 from langchain_community.chat_models import FakeListChatModel
 from langchain_community.llms import FakeListLLM
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -17,8 +18,23 @@ from sqlalchemy.orm import Session
 from langchain.cache import (
     InMemoryCache,
     SQLAlchemyCache,
+    BaseCache,
 )
 from langchain.globals import get_llm_cache, set_llm_cache
+
+
+class MockCache(BaseCache):
+    def __init__(self):
+        self.store = {}
+
+    def get(self, key):
+        return self.store.get(key)
+
+    def set(self, key, value):
+        self.store[key] = value
+
+    def clear(self):
+        self.store.clear()
 
 
 def get_sqlite_cache() -> SQLAlchemyCache:
@@ -32,6 +48,7 @@ def get_sqlite_cache() -> SQLAlchemyCache:
 CACHE_OPTIONS = [
     InMemoryCache,
     get_sqlite_cache,
+    MockCache,
 ]
 
 
@@ -53,6 +70,64 @@ def set_cache_and_teardown(request: FixtureRequest) -> Generator[None, None, Non
         set_llm_cache(None)
     else:
         raise ValueError("Cache not set. This should never happen.")
+
+
+@pytest.mark.asyncio
+async def test_custom_cache_integration():
+    # Use MockCache as the cache
+    chat_model = FakeListChatModel(cache=MockCache())
+    prompt = "How are you?"
+    expected_response = "I'm fine, thanks!"
+    chat_model.invoke = MagicMock(
+        return_value=expected_response)  # Mock the invoke method
+
+    # Perform an operation that should trigger caching
+    result = await chat_model.ainvoke(prompt)
+    assert result == expected_response  # Ensure the response is as expected
+
+    # Verify the response was cached using the custom cache implementation
+    # Adjust based on how cache keys are generated
+    cache_key = f"custom_key_{prompt}"
+    cached_response = chat_model.cache.get(cache_key)
+    assert cached_response == expected_response
+
+
+@pytest.mark.asyncio
+async def test_cache_boolean_true():
+    chat_model = FakeListChatModel(cache=True)  # Set cache=True
+    prompt = "How are you?"
+    expected_response = "I'm fine, thanks!"
+    chat_model.invoke = MagicMock(
+        return_value=expected_response)  # Mock the invoke method
+
+    # Perform an operation that should trigger caching
+    result = await chat_model.ainvoke(prompt)
+    assert result == expected_response  # Ensure the response is as expected
+
+    # Verify the response was cached in the global LLM cache
+    llm_cache = chat_model.llm_cache
+    cache_key = chat_model._get_cache_key(prompt, stop=None)
+    cached_response = llm_cache.lookup(cache_key)
+    assert cached_response == result
+
+
+@pytest.mark.asyncio
+async def test_cache_boolean_false():
+    chat_model = FakeListChatModel(cache=False)  # Set cache=False
+    prompt = "How are you?"
+    expected_response = "I'm fine, thanks!"
+    chat_model.invoke = MagicMock(
+        return_value=expected_response)  # Mock the invoke method
+
+    # Perform an operation that should not trigger caching
+    result = await chat_model.ainvoke(prompt)
+    assert result == expected_response  # Ensure the response is as expected
+
+    # Verify the response was not cached in the global LLM cache
+    llm_cache = chat_model.llm_cache
+    cache_key = chat_model._get_cache_key(prompt, stop=None)
+    cached_response = llm_cache.lookup(cache_key)
+    assert cached_response is None
 
 
 async def test_llm_caching() -> None:
