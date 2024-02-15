@@ -61,6 +61,7 @@ def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
             new_lst.append(item)
     return new_lst
 
+
 @deprecated(
     since="0.1.23",
     removal="0.2.0",

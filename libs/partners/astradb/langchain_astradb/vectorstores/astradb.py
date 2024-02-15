@@ -6,7 +6,6 @@ import warnings
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -21,6 +20,16 @@ from typing import (
 )
 
 import numpy as np
+from astrapy.db import (
+    AstraDB as AstraDBClient,
+)
+from astrapy.db import (
+    AstraDBCollection,
+    AsyncAstraDBCollection,
+)
+from astrapy.db import (
+    AsyncAstraDB as AsyncAstraDBClient,
+)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import run_in_executor
@@ -29,10 +38,6 @@ from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
 
 from langchain_astradb.utils.mmr import maximal_marginal_relevance
-
-if TYPE_CHECKING:
-    from astrapy.db import AstraDB as AstraDBClient
-    from astrapy.db import AsyncAstraDB as AsyncAstraDBClient
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -64,9 +69,6 @@ def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
 class AstraDBVectorStore(VectorStore):
     """Wrapper around DataStax Astra DB for vector-store workloads.
 
-    To use it, you need a recent installation of the `astrapy` library
-    and an Astra DB cloud database.
-
     For quickstart and details, visit:
         docs.datastax.com/en/astra/home/astra.html
 
@@ -81,7 +83,7 @@ class AstraDBVectorStore(VectorStore):
                   embedding=embeddings,
                   collection_name="my_store",
                   token="AstraCS:...",
-                  api_endpoint="https://<DB-ID>-us-east1.apps.astra.datastax.com"
+                  api_endpoint="https://<DB-ID>-<REGION>.apps.astra.datastax.com"
                 )
 
                 vectorstore.add_texts(["Giraffes", "All good here"])
@@ -181,16 +183,6 @@ class AstraDBVectorStore(VectorStore):
         """
         Create an AstraDBVectorStore vector store object. See class docstring for help.
         """
-        try:
-            from astrapy.db import (
-                AstraDB as AstraDBClient,
-            )
-            from astrapy.db import AstraDBCollection
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Could not import a recent astrapy python package. "
-                "Please install it with `pip install --upgrade astrapy`."
-            )
 
         # Conflicting-arg checks:
         if astra_db_client is not None or async_astra_db_client is not None:
@@ -232,18 +224,11 @@ class AstraDBVectorStore(VectorStore):
                 api_endpoint=cast(str, self.api_endpoint),
                 namespace=self.namespace,
             )
-            try:
-                from astrapy.db import AsyncAstraDB as AsyncAstraDBClient
-
-                self.async_astra_db = AsyncAstraDBClient(
-                    token=cast(str, self.token),
-                    api_endpoint=cast(str, self.api_endpoint),
-                    namespace=self.namespace,
-                )
-            except (ImportError, ModuleNotFoundError):
-                # This will be reverted once landing in partner package
-                # with strict version management
-                pass
+            self.async_astra_db = AsyncAstraDBClient(
+                token=cast(str, self.token),
+                api_endpoint=cast(str, self.api_endpoint),
+                namespace=self.namespace,
+            )
 
         if self.astra_db is not None:
             self.collection = AstraDBCollection(
@@ -253,13 +238,6 @@ class AstraDBVectorStore(VectorStore):
 
         self.async_setup_db_task: Optional[Task] = None
         if self.async_astra_db is not None:
-            try:
-                from astrapy.db import AsyncAstraDBCollection
-            except (ImportError, ModuleNotFoundError):
-                raise ImportError(
-                    "Could not import a recent astrapy python package. "
-                    "Please install it with `pip install --upgrade astrapy`."
-                )
             self.async_collection = AsyncAstraDBCollection(
                 collection_name=self.collection_name,
                 astra_db=self.async_astra_db,
@@ -1271,7 +1249,7 @@ class AstraDBVectorStore(VectorStore):
                 routed to the respective methods as they are.
 
         Returns:
-            an `AstraDb` vectorstore.
+            an `AstraDBVectorStore` vectorstore.
         """
         astra_db_store = AstraDBVectorStore._from_kwargs(embedding, **kwargs)
         astra_db_store.add_texts(
@@ -1306,7 +1284,7 @@ class AstraDBVectorStore(VectorStore):
                 routed to the respective methods as they are.
 
         Returns:
-            an `AstraDb` vectorstore.
+            an `AstraDBVectorStore` vectorstore.
         """
         astra_db_store = AstraDBVectorStore._from_kwargs(embedding, **kwargs)
         await astra_db_store.aadd_texts(
