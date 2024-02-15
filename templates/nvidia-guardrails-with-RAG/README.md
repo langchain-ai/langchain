@@ -1,6 +1,6 @@
 # Guardrails Integration with LangChain Expression Language Template
 
-This example demonstrates integrating NeMo Guardrails with LangChain Expression Language Templates. Here we start of with a `nvidia-rag-canonical` from the LangChain [templates](https://github.com/langchain-ai/langchain/tree/master/templates/nvidia-rag-canonical) which performs RAG using Milvus Vector Store and NVIDIA Models, both embedding and Chat.
+This example demonstrates integrating NeMo Guardrails with LangChain Expression Language Template which performs RAG using Milvus Vector Store and NVIDIA Models, both embedding and Chat.
 
 ## Environmental Setup
 
