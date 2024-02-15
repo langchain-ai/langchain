@@ -263,6 +263,11 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat_models",
         "ChatVertexAI",
     ),
+    ("langchain", "chat_models", "mistralai", "ChatMistralAI"): (
+        "langchain_mistralai",
+        "chat_models",
+        "ChatMistralAI",
+    ),
     ("langchain", "schema", "output", "ChatGenerationChunk"): (
         "langchain_core",
         "outputs",
