@@ -34,12 +34,12 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
     def __init__(
         self,
         collection_name: str,
-        *,
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
         astra_db_client: Optional[AstraDB] = None,
-        async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
+        *,
+        async_astra_db_client: Optional[AsyncAstraDB] = None,
         pre_delete_collection: bool = False,
         setup_mode: SetupMode = SetupMode.SYNC,
     ) -> None:
