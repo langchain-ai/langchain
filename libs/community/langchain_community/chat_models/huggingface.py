@@ -1,6 +1,6 @@
 """Hugging Face Chat Wrapper."""
 
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -19,11 +19,9 @@ from langchain_core.outputs import (
     LLMResult,
 )
 
-from langchain_community.llms.huggingface_endpoint import (
-    HuggingFaceEndpoint,
-    HuggingFaceHub,
-    HuggingFaceTextGenInference,
-)
+from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain_community.llms.huggingface_hub import HuggingFaceHub
+from langchain_community.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
