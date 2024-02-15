@@ -232,7 +232,10 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return self.parse_with_prompt(result[0].text, prompt)
+        if prompt:
+            return self.parse_with_prompt(result[0].text, prompt)
+        else:
+            return self.parse(result[0].text)
 
     @abstractmethod
     def parse(self, text: str) -> T:
