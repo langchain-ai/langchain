@@ -204,17 +204,19 @@ class _FunctionCall(TypedDict):
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_OutputSchema = Union[Dict[str, Any], Type[_BM]]
-_FormattedOutput = Union[Dict, _BM]
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM]]
+_DictOrPydantic = Union[Dict, _BM]
 
 
-class _AllFormattedOutput(TypedDict):
+class _AllReturnType(TypedDict):
     raw: BaseMessage
-    parsed: Optional[_FormattedOutput]
+    parsed: Optional[_DictOrPydantic]
     parsing_error: Optional[BaseException]
 
 
-class ChatOpenAI(BaseChatModel, FormattedOutputMixin[_OutputSchema, _FormattedOutput]):
+class ChatOpenAI(
+    BaseChatModel, FormattedOutputMixin[_DictOrPydanticClass, _DictOrPydantic]
+):
     """`OpenAI` Chat large language models API.
 
     To use, you should have the
@@ -752,33 +754,33 @@ class ChatOpenAI(BaseChatModel, FormattedOutputMixin[_OutputSchema, _FormattedOu
     @overload
     def with_output_format(
         self,
-        schema: _OutputSchema,
+        schema: _DictOrPydanticClass,
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         return_type: Literal["all"] = "all",
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllFormattedOutput]:
+    ) -> Runnable[LanguageModelInput, _AllReturnType]:
         ...
 
     @overload
     def with_output_format(
         self,
-        schema: _OutputSchema,
+        schema: _DictOrPydanticClass,
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         return_type: Literal["parsed"] = "parsed",
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _FormattedOutput]:
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
     def with_output_format(
         self,
-        schema: _OutputSchema,
+        schema: _DictOrPydanticClass,
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         return_type: Literal["parsed", "all"] = "parsed",
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _FormattedOutput]:
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -806,16 +808,16 @@ class ChatOpenAI(BaseChatModel, FormattedOutputMixin[_OutputSchema, _FormattedOu
 
                 If return_type == "all" then a dict with keys:
                     raw: BaseMessage
-                    parsed: Optional[_FormattedOutput]
+                    parsed: Optional[_DictOrPydantic]
                     parsing_error: Optional[BaseException]
 
-                If return_type == "parsed" then just _FormattedOutput is returned,
-                where _FormattedOutput depends on the schema:
+                If return_type == "parsed" then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
 
-                If schema is a Pydantic class then _FormattedOutput is the Pydantic
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
                     class.
 
-                If schema is a dict then _FormattedOutput is a dict.
+                If schema is a dict then _DictOrPydantic is a dict.
 
         Function-calling, Pydantic schema example (method="function-calling", return_type="parsed"):
             .. code-block:: python
