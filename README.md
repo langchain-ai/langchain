@@ -244,6 +244,48 @@ chat.get_num_tokens("Сколько токенов в этой строке")
 
 Вы также можете [использовать локальные эмбеддинги](docs/docs/modules/chains/how_to/retrieve.ipynb).
 
+## Устранение проблем
+
+Если у вас возникли проблемы при работе с GigaChain убедитесь, что:
+
+- у вас установлена последняя версия библиотеки;
+- вместо модулей GigaChain не установлены модули LangChain.
+
+В любом случае для решения проблемы нужно удалить модули LangChain и повторно установить последние версии модулей GigaChain.
+
+Для вывода полного списка установленных модулей используйте команду:
+
+```shell
+pip list
+```
+
+> [!NOTE]
+> Модули `langchain_hub` и `langsmith` не требуют удаления и переустановки.
+
+Для удаления модулей LangChain используйте команды менеджера пакетов:
+
+```shell
+pip uninstall langchain_core
+pip uninstall langchain_community
+pip uninstall langchain_expiremental
+#Модуль langchain_openai содержит зависимости от langchain_core
+pip uninstall langchain_openai
+pip uninstall langchain
+```
+
+> [!WARNING]
+> Если кроме представленных в примере модулей вы используете модули `langgraph` и `langserve` их также потребуется заменить на `gigagraph` и `gigaserve`, соответственно.
+
+Для установки последних версий модулей GigaChain используйте команды менеджера пакетов:
+
+```shell
+pip install -U gigachain_core
+pip install -U gigachain_community
+pip install -U gigachain_expiremental
+pip install -U gigahain_openai
+pip install -U gigachain
+```
+
 ## Коллекция примеров
 
 Ниже представлен список примеров использования GigaChain.
