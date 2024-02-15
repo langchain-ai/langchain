@@ -530,6 +530,52 @@ class Runnable(Generic[Input, Output], ABC):
         with get_executor_for_config(configs[0]) as executor:
             return cast(List[Output], list(executor.map(invoke, inputs, configs)))
 
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Tuple[Input, Output]]:
+        """Run invoke in parallel on a list of inputs,
+        yielding results as they complete."""
+
+        if not inputs:
+            return
+
+        configs = get_config_list(config, len(inputs))
+
+        def invoke(input: Input, config: RunnableConfig) -> Union[Output, Exception]:
+            if return_exceptions:
+                try:
+                    out = self.invoke(input, config, **kwargs)
+                except Exception as e:
+                    out = e
+            else:
+                out = self.invoke(input, config, **kwargs)
+
+            return (input, out)
+
+        if len(inputs) == 1:
+            yield (inputs[0], invoke(inputs[0], configs[0]))
+            return
+
+        with get_executor_for_config(configs[0]) as executor:
+            futures = [
+                executor.submit(invoke, input, config)
+                for input, config in zip(inputs, configs)
+            ]
+
+            try:
+                while futures:
+                    done, futures = wait(futures, return_when=FIRST_COMPLETED)
+                    while done:
+                        yield done.pop().result()
+            finally:
+                for future in futures:
+                    future.cancel()
+
     async def abatch(
         self,
         inputs: List[Input],
@@ -563,6 +609,40 @@ class Runnable(Generic[Input, Output], ABC):
 
         coros = map(ainvoke, inputs, configs)
         return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
+
+    async def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[Input, Output]]:
+        """Run ainvoke in parallel on a list of inputs,
+        yielding results as they complete."""
+
+        if not inputs:
+            return []
+
+        configs = get_config_list(config, len(inputs))
+
+        async def ainvoke(
+            input: Input, config: RunnableConfig
+        ) -> Union[Output, Exception]:
+            if return_exceptions:
+                try:
+                    out = await self.ainvoke(input, config, **kwargs)
+                except Exception as e:
+                    out = e
+            else:
+                out = await self.ainvoke(input, config, **kwargs)
+
+            return (input, out)
+
+        coros = map(ainvoke, inputs, configs)
+
+        for coro in asyncio.as_completed(coros):
+            yield await coro
 
     def stream(
         self,
