@@ -29,18 +29,18 @@ class CassandraLoader(BaseLoader):
         table: Optional[str] = None,
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
-        query: Optional[Union[str, Statement]] = None,
+        query: Union[str, Statement, None] = None,
         page_content_mapper: Callable[[Any], str] = str,
         metadata_mapper: Callable[[Any], dict] = lambda _: {},
         *,
-        query_parameters: Union[dict, Sequence] = None,  # type: ignore[assignment]
+        query_parameters: Union[dict, Sequence, None] = None,
         query_timeout: Optional[float] = _NOT_SET,  # type: ignore[assignment]
         query_trace: bool = False,
-        query_custom_payload: dict = None,  # type: ignore[assignment]
+        query_custom_payload: Optional[dict] = None,
         query_execution_profile: Any = _NOT_SET,
         query_paging_state: Any = None,
-        query_host: Host = None,
-        query_execute_as: str = None,  # type: ignore[assignment]
+        query_host: Optional[Host] = None,
+        query_execute_as: Optional[str] = None,
     ) -> None:
         """
         Document Loader for Apache Cassandra.
