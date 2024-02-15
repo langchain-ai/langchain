@@ -205,7 +205,7 @@ class _FunctionCall(TypedDict):
 
 _BM = TypeVar("_BM", bound=BaseModel)
 _OutputSchema = Union[Dict[str, Any], Type[_BM]]
-_FormattedOutput = Union[BaseMessage, Dict, _BM]
+_FormattedOutput = Union[Dict, _BM]
 
 
 class _AllFormattedOutput(TypedDict):
