@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Any, List
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain_community.document_loaders import DirectoryLoader
 
@@ -21,16 +23,26 @@ def test_raise_error_if_path_is_not_directory() -> None:
     assert str(e.value) == f"Expected directory, got file: '{__file__}'"
 
 
-@pytest.mark.requires("unstructured")
+class CustomLoader:
+    """Test loader. Mimicks interface of existing file loader."""
+
+    def __init__(self, path: Path, **kwargs: Any) -> None:
+        """Initialize the loader."""
+        self.path = path
+
+    def load(self) -> List[Document]:
+        """Load documents."""
+        with open(self.path, "r") as f:
+            return [Document(page_content=f.read())]
+
+
 def test_exclude_ignores_matching_files(tmp_path: Path) -> None:
     txt_file = tmp_path / "test.txt"
     py_file = tmp_path / "test.py"
     txt_file.touch()
     py_file.touch()
-
-    loader = DirectoryLoader(str(tmp_path), exclude=["*.py"])
+    loader = DirectoryLoader(str(tmp_path), exclude=["*.py"], loader_cls=CustomLoader)
     data = loader.load()
-
     assert len(data) == 1
 
 
