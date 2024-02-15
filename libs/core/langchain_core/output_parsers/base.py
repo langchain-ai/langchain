@@ -30,7 +30,13 @@ class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -42,7 +48,11 @@ class BaseLLMOutputParser(Generic[T], ABC):
         """
 
     async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
@@ -203,34 +213,12 @@ class BaseOutputParser(
                 run_type="parser",
             )
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
-        """Parse a list of candidate model Generations into a specific format.
-
-        The return value is parsed from only the first Generation in the result, which
-            is assumed to be the highest-likelihood Generation.
-
-        Args:
-            result: A list of Generations to be parsed. The Generations are assumed
-                to be different candidate outputs for a single model input.
-
-        Returns:
-            Structured output.
-        """
-        return self.parse(result[0].text)
-
-    @abstractmethod
-    def parse(self, text: str) -> T:
-        """Parse a single string model output into some structure.
-
-        Args:
-            text: String output of a language model.
-
-        Returns:
-            Structured output.
-        """
-
-    async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
@@ -244,7 +232,41 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return await run_in_executor(None, self.parse_result, result, partial=partial)
+        return self.parse_with_prompt(result[0].text, prompt)
+
+    @abstractmethod
+    def parse(self, text: str) -> T:
+        """Parse a single string model output into some structure.
+
+        Args:
+            text: String output of a language model.
+
+        Returns:
+            Structured output.
+        """
+
+    async def aparse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
+    ) -> T:
+        """Parse a list of candidate model Generations into a specific format.
+
+        The return value is parsed from only the first Generation in the result, which
+            is assumed to be the highest-likelihood Generation.
+
+        Args:
+            result: A list of Generations to be parsed. The Generations are assumed
+                to be different candidate outputs for a single model input.
+
+        Returns:
+            Structured output.
+        """
+        return await run_in_executor(
+            None, self.parse_result, result, prompt=prompt, partial=partial
+        )
 
     async def aparse(self, text: str) -> T:
         """Parse a single string model output into some structure.

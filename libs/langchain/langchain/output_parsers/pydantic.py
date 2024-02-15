@@ -1,5 +1,5 @@
 import json
-from typing import Any, List, Type
+from typing import Any, List, Optional, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
@@ -7,6 +7,7 @@ from langchain_core.outputs import Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
 from langchain.output_parsers.format_instructions import PYDANTIC_FORMAT_INSTRUCTIONS
+from langchain.schema.prompt import PromptValue
 
 
 class PydanticOutputParser(JsonOutputParser):
@@ -19,7 +20,13 @@ class PydanticOutputParser(JsonOutputParser):
         pydantic <2 or leverage the v1 namespace in pydantic >= 2.
     """
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
+    ) -> Any:
         json_object = super().parse_result(result)
         try:
             return self.pydantic_object.parse_obj(json_object)

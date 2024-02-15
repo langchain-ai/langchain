@@ -9,7 +9,9 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, Generation
+
 from langchain.agents.agent import AgentOutputParser
+from langchain.schema.prompt import PromptValue
 
 
 class OpenAIFunctionsAgentOutputParser(AgentOutputParser):

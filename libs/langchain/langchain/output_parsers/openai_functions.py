@@ -8,11 +8,12 @@ from langchain_core.output_parsers import (
     BaseCumulativeTransformOutputParser,
     BaseGenerationOutputParser,
 )
-
-from langchain.schema.prompt import PromptValue
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, root_validator
+
+from langchain.schema.prompt import PromptValue
+
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     """Parse an output that is one of sets of values."""
@@ -141,7 +142,13 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
     key_name: str
     """The name of the key to return."""
 
-    def parse_result(self, result: List[Generation], *, prompt: Optional[PromptValue] = None, partial: bool = False) -> Any:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: Optional[PromptValue] = None,
+        partial: bool = False,
+    ) -> Any:
         res = super().parse_result(result, partial=partial)
         if partial and res is None:
             return None

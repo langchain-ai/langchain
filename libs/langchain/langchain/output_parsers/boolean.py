@@ -1,6 +1,7 @@
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 
+
 class BooleanOutputParser(BaseOutputParser[bool]):
     """Parse the output of an LLM call to a boolean."""
 

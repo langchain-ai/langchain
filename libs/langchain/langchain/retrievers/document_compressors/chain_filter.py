@@ -8,11 +8,7 @@ from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.output_parsers.boolean import BooleanOutputParser
-<<<<<<< HEAD
 from langchain.output_parsers.retry import RetryOutputParser
-from langchain.prompts import PromptTemplate
-=======
->>>>>>> master
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,

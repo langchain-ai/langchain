@@ -11,6 +11,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
+from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import BaseModel
 
 
@@ -199,7 +200,13 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self,
+        result: List[Generation],
+        *,
+        prompt: PromptValue = None,
+        partial: bool = False,
+    ) -> Any:
         text = result[0].text
         text = text.strip()
         if partial:
