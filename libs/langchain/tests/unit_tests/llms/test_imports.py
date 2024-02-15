@@ -25,6 +25,7 @@ EXPECT_ALL = [
     "DeepInfra",
     "DeepSparse",
     "EdenAI",
+    "ErnieBot",
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
