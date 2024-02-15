@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: all format lint test tests integration_tests docker_tests help extended_tests duplicate_check
+.PHONY: all format lint test tests integration_tests docker_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -52,26 +52,6 @@ spell_fix:
 check_imports: $(shell find langchain_astradb -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
-##############################################
-# TRANSITIONAL DUPLICATED-CODE ALIGNMENT CHECK
-##############################################
-
-duplicate_check:
-	# vector store (trimming community to ignore the alias at the end)
-	diff \
-		-I "import maximal_marginal_relevance" \
-		-I ".vectorstores import AstraDB" \
-		-I "import OpenAIEmbeddings" \
-		langchain_astradb/vectorstores/astradb.py \
-		<(head -n -4 ../../community/langchain_community/vectorstores/astradb.py)
-	# vector store test module
-	diff \
-		-I ".vectorstores import AstraDB" \
-		tests/integration_tests/vectorstores/test_astradb.py \
-		../../community/tests/integration_tests/vectorstores/test_astradb.py 
-	#
-	echo -e "\n\nALL GOOD"
-
 ######################
 # HELP
 ######################
@@ -84,4 +64,3 @@ help:
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
-	@echo 'duplicate_check              * check duplicate modules community/partners (transitional)'

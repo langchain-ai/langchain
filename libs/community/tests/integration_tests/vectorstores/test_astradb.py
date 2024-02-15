@@ -1,5 +1,5 @@
 """
-Test of Astra DB vector store class `AstraDBVectorStore`
+Test of Astra DB vector store class `AstraDB`
 
 Required to run this test:
     - a recent `astrapy` Python package available
@@ -9,36 +9,20 @@ Required to run this test:
         export ASTRA_DB_APPLICATION_TOKEN="AstraCS:........."
     - optionally this as well (otherwise defaults are used):
         export ASTRA_DB_KEYSPACE="my_keyspace"
-    - optionally:
-        export SKIP_COLLECTION_DELETE="0" ("1" = no deletions, default)
 """
 
 import json
 import math
 import os
-from typing import Iterable, List, Optional, TypedDict
+from typing import Iterable, List
 
 import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
-from langchain_community.vectorstores import AstraDB as AstraDBVectorStore
-
-# Faster testing (no actual collection deletions). On by default
-SKIP_COLLECTION_DELETE = int(os.environ.get("ASTRA_DB_SKIP_COLLECTION_DELETIONS", "1")) != 0
-
-COLLECTION_NAME_DIM2 = "lc_test_d2"
-COLLECTION_NAME_DIM2_EUCLIDEAN = "lc_test_d2_eucl"
-
-MATCH_EPSILON = 0.0001
+from langchain_community.vectorstores import AstraDB
 
 # Ad-hoc embedding classes:
-
-
-class AstraDBCredentials(TypedDict):
-    token: str
-    api_endpoint: str
-    namespace: Optional[str]
 
 
 class SomeEmbeddings(Embeddings):
@@ -106,135 +90,103 @@ def _has_env_vars() -> bool:
     )
 
 
-@pytest.fixture(scope="session")
-def astradb_credentials() -> Iterable[AstraDBCredentials]:
-    yield {
-        "token": os.environ["ASTRA_DB_APPLICATION_TOKEN"],
-        "api_endpoint": os.environ["ASTRA_DB_API_ENDPOINT"],
-        "namespace": os.environ.get("ASTRA_DB_KEYSPACE"),
-    }
-
-
 @pytest.fixture(scope="function")
-def store_someemb(
-    astradb_credentials: AstraDBCredentials,
-) -> Iterable[AstraDBVectorStore]:
+def store_someemb() -> Iterable[AstraDB]:
     emb = SomeEmbeddings(dimension=2)
-    v_store = AstraDBVectorStore(
+    v_store = AstraDB(
         embedding=emb,
-        collection_name=COLLECTION_NAME_DIM2,
-        **astradb_credentials,
+        collection_name="lc_test_s",
+        token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+        api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+        namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
     )
-    v_store.clear()
-
     yield v_store
-
-    if not SKIP_COLLECTION_DELETE:
-        v_store.delete_collection()
-    else:
-        v_store.clear()
+    v_store.delete_collection()
 
 
 @pytest.fixture(scope="function")
-def store_parseremb(
-    astradb_credentials: AstraDBCredentials,
-) -> Iterable[AstraDBVectorStore]:
+def store_parseremb() -> Iterable[AstraDB]:
     emb = ParserEmbeddings(dimension=2)
-    v_store = AstraDBVectorStore(
+    v_store = AstraDB(
         embedding=emb,
-        collection_name=COLLECTION_NAME_DIM2,
-        **astradb_credentials,
+        collection_name="lc_test_p",
+        token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+        api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+        namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
     )
-    v_store.clear()
-
     yield v_store
-
-    if not SKIP_COLLECTION_DELETE:
-        v_store.delete_collection()
-    else:
-        v_store.clear()
+    v_store.delete_collection()
 
 
 @pytest.mark.requires("astrapy")
 @pytest.mark.skipif(not _has_env_vars(), reason="Missing Astra DB env. vars")
-class TestAstraDBVectorStore:
-    def test_astradb_vectorstore_create_delete(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
+class TestAstraDB:
+    def test_astradb_vectorstore_create_delete(self) -> None:
         """Create and delete."""
+        emb = SomeEmbeddings(dimension=2)
+        # creation by passing the connection secrets
+        v_store = AstraDB(
+            embedding=emb,
+            collection_name="lc_test_1",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        )
+        v_store.delete_collection()
+        # Creation by passing a ready-made astrapy client:
         from astrapy.db import AstraDB as LibAstraDB
 
-        emb = SomeEmbeddings(dimension=2)
-        # creation by passing the connection secrets
-        v_store = AstraDBVectorStore(
-            embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
-        )
-        v_store.add_texts("Sample 1")
-        if not SKIP_COLLECTION_DELETE:
-            v_store.delete_collection()
-        else:
-            v_store.clear()
-
-        # Creation by passing a ready-made astrapy client:
         astra_db_client = LibAstraDB(
-            **astradb_credentials,
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
-        v_store_2 = AstraDBVectorStore(
+        v_store_2 = AstraDB(
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
+            collection_name="lc_test_2",
             astra_db_client=astra_db_client,
         )
-        v_store_2.add_texts("Sample 2")
-        if not SKIP_COLLECTION_DELETE:
-            v_store_2.delete_collection()
-        else:
-            v_store_2.clear()
+        v_store_2.delete_collection()
 
-    async def test_astradb_vectorstore_create_delete_async(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
+    async def test_astradb_vectorstore_create_delete_async(self) -> None:
         """Create and delete."""
         emb = SomeEmbeddings(dimension=2)
         # creation by passing the connection secrets
-        v_store = AstraDBVectorStore(
+        v_store = AstraDB(
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
+            collection_name="lc_test_1_async",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         await v_store.adelete_collection()
         # Creation by passing a ready-made astrapy client:
         from astrapy.db import AsyncAstraDB
 
         astra_db_client = AsyncAstraDB(
-            **astradb_credentials,
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
-        v_store_2 = AstraDBVectorStore(
+        v_store_2 = AstraDB(
             embedding=emb,
             collection_name="lc_test_2_async",
             async_astra_db_client=astra_db_client,
         )
-        if not SKIP_COLLECTION_DELETE:
-            await v_store_2.adelete_collection()
-        else:
-            await v_store_2.aclear()
+        await v_store_2.adelete_collection()
 
-    @pytest.mark.skipif(
-        SKIP_COLLECTION_DELETE,
-        reason="Collection-deletion tests are suppressed",
-    )
-    def test_astradb_vectorstore_pre_delete_collection(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
-        """Use of the pre_delete_collection flag."""
+    def test_astradb_vectorstore_pre_delete_collection(self) -> None:
+        """Create and delete."""
         emb = SomeEmbeddings(dimension=2)
-        v_store = AstraDBVectorStore(
+        # creation by passing the connection secrets
+
+        v_store = AstraDB(
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
+            collection_name="lc_test_pre_del",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
-        v_store.clear()
         try:
             v_store.add_texts(
                 texts=["aa"],
@@ -245,32 +197,30 @@ class TestAstraDBVectorStore:
             )
             res1 = v_store.similarity_search("aa", k=5)
             assert len(res1) == 1
-            v_store = AstraDBVectorStore(
+            v_store = AstraDB(
                 embedding=emb,
                 pre_delete_collection=True,
-                collection_name=COLLECTION_NAME_DIM2,
-                **astradb_credentials,
+                collection_name="lc_test_pre_del",
+                token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+                api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+                namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
             )
             res1 = v_store.similarity_search("aa", k=5)
             assert len(res1) == 0
         finally:
             v_store.delete_collection()
 
-    @pytest.mark.skipif(
-        SKIP_COLLECTION_DELETE,
-        reason="Collection-deletion tests are suppressed",
-    )
-    async def test_astradb_vectorstore_pre_delete_collection_async(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
-        """Use of the pre_delete_collection flag."""
+    async def test_astradb_vectorstore_pre_delete_collection_async(self) -> None:
+        """Create and delete."""
         emb = SomeEmbeddings(dimension=2)
         # creation by passing the connection secrets
 
-        v_store = AstraDBVectorStore(
+        v_store = AstraDB(
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
+            collection_name="lc_test_pre_del_async",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         try:
             await v_store.aadd_texts(
@@ -282,108 +232,90 @@ class TestAstraDBVectorStore:
             )
             res1 = await v_store.asimilarity_search("aa", k=5)
             assert len(res1) == 1
-            v_store = AstraDBVectorStore(
+            v_store = AstraDB(
                 embedding=emb,
                 pre_delete_collection=True,
-                collection_name=COLLECTION_NAME_DIM2,
-                **astradb_credentials,
+                collection_name="lc_test_pre_del_async",
+                token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+                api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+                namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
             )
             res1 = await v_store.asimilarity_search("aa", k=5)
             assert len(res1) == 0
         finally:
             await v_store.adelete_collection()
 
-    def test_astradb_vectorstore_from_x(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
+    def test_astradb_vectorstore_from_x(self) -> None:
         """from_texts and from_documents methods."""
         emb = SomeEmbeddings(dimension=2)
-        # prepare empty collection
-        AstraDBVectorStore(
-            embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
-        ).clear()
         # from_texts
-        v_store = AstraDBVectorStore.from_texts(
+        v_store = AstraDB.from_texts(
             texts=["Hi", "Ho"],
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
+            collection_name="lc_test_ft",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         try:
             assert v_store.similarity_search("Ho", k=1)[0].page_content == "Ho"
         finally:
-            if not SKIP_COLLECTION_DELETE:
-                v_store.delete_collection()
-            else:
-                v_store.clear()
+            v_store.delete_collection()
 
         # from_documents
-        v_store_2 = AstraDBVectorStore.from_documents(
+        v_store_2 = AstraDB.from_documents(
             [
                 Document(page_content="Hee"),
                 Document(page_content="Hoi"),
             ],
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
+            collection_name="lc_test_fd",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         try:
             assert v_store_2.similarity_search("Hoi", k=1)[0].page_content == "Hoi"
         finally:
-            if not SKIP_COLLECTION_DELETE:
-                v_store_2.delete_collection()
-            else:
-                v_store_2.clear()
+            v_store_2.delete_collection()
 
-    async def test_astradb_vectorstore_from_x_async(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
+    async def test_astradb_vectorstore_from_x_async(self) -> None:
         """from_texts and from_documents methods."""
         emb = SomeEmbeddings(dimension=2)
-        # prepare empty collection
-        await AstraDBVectorStore(
-            embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
-        ).aclear()
         # from_texts
-        v_store = await AstraDBVectorStore.afrom_texts(
+        v_store = await AstraDB.afrom_texts(
             texts=["Hi", "Ho"],
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
+            collection_name="lc_test_ft_async",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         try:
             assert (await v_store.asimilarity_search("Ho", k=1))[0].page_content == "Ho"
         finally:
-            if not SKIP_COLLECTION_DELETE:
-                await v_store.adelete_collection()
-            else:
-                await v_store.aclear()
+            await v_store.adelete_collection()
 
         # from_documents
-        v_store_2 = await AstraDBVectorStore.afrom_documents(
+        v_store_2 = await AstraDB.afrom_documents(
             [
                 Document(page_content="Hee"),
                 Document(page_content="Hoi"),
             ],
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
+            collection_name="lc_test_fd_async",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         try:
             assert (await v_store_2.asimilarity_search("Hoi", k=1))[
                 0
             ].page_content == "Hoi"
         finally:
-            if not SKIP_COLLECTION_DELETE:
-                await v_store_2.adelete_collection()
-            else:
-                await v_store_2.aclear()
+            await v_store_2.adelete_collection()
 
-    def test_astradb_vectorstore_crud(self, store_someemb: AstraDBVectorStore) -> None:
+    def test_astradb_vectorstore_crud(self, store_someemb: AstraDB) -> None:
         """Basic add/delete/update behaviour."""
         res0 = store_someemb.similarity_search("Abc", k=2)
         assert res0 == []
@@ -441,9 +373,7 @@ class TestAstraDBVectorStore:
         res4 = store_someemb.similarity_search("ww", k=1, filter={"k": "w"})
         assert res4[0].metadata["ord"] == 205
 
-    async def test_astradb_vectorstore_crud_async(
-        self, store_someemb: AstraDBVectorStore
-    ) -> None:
+    async def test_astradb_vectorstore_crud_async(self, store_someemb: AstraDB) -> None:
         """Basic add/delete/update behaviour."""
         res0 = await store_someemb.asimilarity_search("Abc", k=2)
         assert res0 == []
@@ -501,25 +431,26 @@ class TestAstraDBVectorStore:
         res4 = await store_someemb.asimilarity_search("ww", k=1, filter={"k": "w"})
         assert res4[0].metadata["ord"] == 205
 
-    def test_astradb_vectorstore_mmr(self, store_parseremb: AstraDBVectorStore) -> None:
+    @staticmethod
+    def _v_from_i(i: int, N: int) -> str:
+        angle = 2 * math.pi * i / N
+        vector = [math.cos(angle), math.sin(angle)]
+        return json.dumps(vector)
+
+    def test_astradb_vectorstore_mmr(self, store_parseremb: AstraDB) -> None:
         """
         MMR testing. We work on the unit circle with angle multiples
         of 2*pi/20 and prepare a store with known vectors for a controlled
         MMR outcome.
         """
-
-        def _v_from_i(i: int, N: int) -> str:
-            angle = 2 * math.pi * i / N
-            vector = [math.cos(angle), math.sin(angle)]
-            return json.dumps(vector)
-
         i_vals = [0, 4, 5, 13]
         N_val = 20
         store_parseremb.add_texts(
-            [_v_from_i(i, N_val) for i in i_vals], metadatas=[{"i": i} for i in i_vals]
+            [self._v_from_i(i, N_val) for i in i_vals],
+            metadatas=[{"i": i} for i in i_vals],
         )
         res1 = store_parseremb.max_marginal_relevance_search(
-            _v_from_i(3, N_val),
+            self._v_from_i(3, N_val),
             k=2,
             fetch_k=3,
         )
@@ -527,36 +458,28 @@ class TestAstraDBVectorStore:
         assert res_i_vals == {0, 4}
 
     async def test_astradb_vectorstore_mmr_async(
-        self, store_parseremb: AstraDBVectorStore
+        self, store_parseremb: AstraDB
     ) -> None:
         """
         MMR testing. We work on the unit circle with angle multiples
         of 2*pi/20 and prepare a store with known vectors for a controlled
         MMR outcome.
         """
-
-        def _v_from_i(i: int, N: int) -> str:
-            angle = 2 * math.pi * i / N
-            vector = [math.cos(angle), math.sin(angle)]
-            return json.dumps(vector)
-
         i_vals = [0, 4, 5, 13]
         N_val = 20
         await store_parseremb.aadd_texts(
-            [_v_from_i(i, N_val) for i in i_vals],
+            [self._v_from_i(i, N_val) for i in i_vals],
             metadatas=[{"i": i} for i in i_vals],
         )
         res1 = await store_parseremb.amax_marginal_relevance_search(
-            _v_from_i(3, N_val),
+            self._v_from_i(3, N_val),
             k=2,
             fetch_k=3,
         )
         res_i_vals = {doc.metadata["i"] for doc in res1}
         assert res_i_vals == {0, 4}
 
-    def test_astradb_vectorstore_metadata(
-        self, store_someemb: AstraDBVectorStore
-    ) -> None:
+    def test_astradb_vectorstore_metadata(self, store_someemb: AstraDB) -> None:
         """Metadata filtering."""
         store_someemb.add_documents(
             [
@@ -619,7 +542,7 @@ class TestAstraDBVectorStore:
         assert {doc.page_content for doc in res4} == {"q", "r"}
 
     def test_astradb_vectorstore_similarity_scale(
-        self, store_parseremb: AstraDBVectorStore
+        self, store_parseremb: AstraDB
     ) -> None:
         """Scale of the similarity scores."""
         store_parseremb.add_texts(
@@ -635,10 +558,10 @@ class TestAstraDBVectorStore:
         )
         scores = [sco for _, sco in res1]
         sco_near, sco_far = scores
-        assert abs(1 - sco_near) < MATCH_EPSILON and abs(sco_far) < MATCH_EPSILON
+        assert abs(1 - sco_near) < 0.001 and abs(sco_far) < 0.001
 
     async def test_astradb_vectorstore_similarity_scale_async(
-        self, store_parseremb: AstraDBVectorStore
+        self, store_parseremb: AstraDB
     ) -> None:
         """Scale of the similarity scores."""
         await store_parseremb.aadd_texts(
@@ -654,11 +577,9 @@ class TestAstraDBVectorStore:
         )
         scores = [sco for _, sco in res1]
         sco_near, sco_far = scores
-        assert abs(1 - sco_near) < MATCH_EPSILON and abs(sco_far) < MATCH_EPSILON
+        assert abs(1 - sco_near) < 0.001 and abs(sco_far) < 0.001
 
-    def test_astradb_vectorstore_massive_delete(
-        self, store_someemb: AstraDBVectorStore
-    ) -> None:
+    def test_astradb_vectorstore_massive_delete(self, store_someemb: AstraDB) -> None:
         """Larger-scale bulk deletes."""
         M = 50
         texts = [str(i + 1 / 7.0) for i in range(2 * M)]
@@ -675,49 +596,41 @@ class TestAstraDBVectorStore:
         # nothing left
         assert store_someemb.similarity_search("x", k=2 * M) == []
 
-    @pytest.mark.skipif(
-        SKIP_COLLECTION_DELETE,
-        reason="Collection-deletion tests are suppressed",
-    )
-    def test_astradb_vectorstore_delete_collection(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
+    def test_astradb_vectorstore_drop(self) -> None:
         """behaviour of 'delete_collection'."""
-        collection_name = COLLECTION_NAME_DIM2
+        collection_name = "lc_test_d"
         emb = SomeEmbeddings(dimension=2)
-        v_store = AstraDBVectorStore(
+        v_store = AstraDB(
             embedding=emb,
             collection_name=collection_name,
-            **astradb_credentials,
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         v_store.add_texts(["huh"])
         assert len(v_store.similarity_search("hah", k=10)) == 1
         # another instance pointing to the same collection on DB
-        v_store_kenny = AstraDBVectorStore(
+        v_store_kenny = AstraDB(
             embedding=emb,
             collection_name=collection_name,
-            **astradb_credentials,
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         v_store_kenny.delete_collection()
         # dropped on DB, but 'v_store' should have no clue:
         with pytest.raises(ValueError):
             _ = v_store.similarity_search("hah", k=10)
 
-    def test_astradb_vectorstore_custom_params(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
+    def test_astradb_vectorstore_custom_params(self) -> None:
         """Custom batch size and concurrency params."""
         emb = SomeEmbeddings(dimension=2)
-        # prepare empty collection
-        AstraDBVectorStore(
+        v_store = AstraDB(
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
-        ).clear()
-        v_store = AstraDBVectorStore(
-            embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
+            collection_name="lc_test_c",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
             batch_size=17,
             bulk_insert_batch_concurrency=13,
             bulk_insert_overwrite_concurrency=7,
@@ -741,24 +654,21 @@ class TestAstraDBVectorStore:
             _ = v_store.delete(ids[N // 2 :], concurrency=23)
             #
         finally:
-            if not SKIP_COLLECTION_DELETE:
-                v_store.delete_collection()
-            else:
-                v_store.clear()
+            v_store.delete_collection()
 
-    async def test_astradb_vectorstore_custom_params_async(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
+    async def test_astradb_vectorstore_custom_params_async(self) -> None:
         """Custom batch size and concurrency params."""
         emb = SomeEmbeddings(dimension=2)
-        v_store = AstraDBVectorStore(
+        v_store = AstraDB(
             embedding=emb,
             collection_name="lc_test_c_async",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
             batch_size=17,
             bulk_insert_batch_concurrency=13,
             bulk_insert_overwrite_concurrency=7,
             bulk_delete_concurrency=19,
-            **astradb_credentials,
         )
         try:
             # add_texts
@@ -778,14 +688,9 @@ class TestAstraDBVectorStore:
             await v_store.adelete(ids[N // 2 :], concurrency=23)
             #
         finally:
-            if not SKIP_COLLECTION_DELETE:
-                await v_store.adelete_collection()
-            else:
-                await v_store.aclear()
+            await v_store.adelete_collection()
 
-    def test_astradb_vectorstore_metrics(
-        self, astradb_credentials: AstraDBCredentials
-    ) -> None:
+    def test_astradb_vectorstore_metrics(self) -> None:
         """
         Different choices of similarity metric.
         Both stores (with "cosine" and "euclidea" metrics) contain these two:
@@ -806,26 +711,14 @@ class TestAstraDBVectorStore:
             "scaled",
         ]
         query_text = json.dumps([isq2, isq2])
-
-        # prepare empty collections
-        AstraDBVectorStore(
-            embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
-            **astradb_credentials,
-        ).clear()
-        AstraDBVectorStore(
-            embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2_EUCLIDEAN,
-            metric="euclidean",
-            **astradb_credentials,
-        ).clear()
-
         # creation, population, query - cosine
-        vstore_cos = AstraDBVectorStore(
+        vstore_cos = AstraDB(
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2,
+            collection_name="lc_test_m_c",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
             metric="cosine",
-            **astradb_credentials,
         )
         try:
             vstore_cos.add_texts(
@@ -838,17 +731,16 @@ class TestAstraDBVectorStore:
             )[0]
             assert id_from_cos == "scaled"
         finally:
-            if not SKIP_COLLECTION_DELETE:
-                vstore_cos.delete_collection()
-            else:
-                vstore_cos.clear()
+            vstore_cos.delete_collection()
         # creation, population, query - euclidean
 
-        vstore_euc = AstraDBVectorStore(
+        vstore_euc = AstraDB(
             embedding=emb,
-            collection_name=COLLECTION_NAME_DIM2_EUCLIDEAN,
+            collection_name="lc_test_m_e",
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
             metric="euclidean",
-            **astradb_credentials,
         )
         try:
             vstore_euc.add_texts(
@@ -861,7 +753,4 @@ class TestAstraDBVectorStore:
             )[0]
             assert id_from_euc == "rotated"
         finally:
-            if not SKIP_COLLECTION_DELETE:
-                vstore_euc.delete_collection()
-            else:
-                vstore_euc.clear()
+            vstore_euc.delete_collection()
