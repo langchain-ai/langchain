@@ -464,7 +464,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             return {**inputs, **outputs}
 
     def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
-        """Validate and prepare chain inputs, including adding inputs from memory.
+        """Prepare chain inputs, including adding inputs from memory.
 
         Args:
             inputs: Dictionary of raw inputs, or single input if chain expects
