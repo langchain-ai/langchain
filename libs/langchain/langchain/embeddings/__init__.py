@@ -87,6 +87,7 @@ __all__ = [
     "LocalAIEmbeddings",
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
+    "ErnieEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
     "QianfanEmbeddingsEndpoint",
