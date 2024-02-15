@@ -135,6 +135,14 @@ class NetworkxEntityGraph:
         """Clear the graph."""
         self._graph.clear()
 
+    def clear_edges(self) -> None:
+        """Clear the graph edges."""
+        self._graph.clear_edges()
+
+    def get_number_of_nodes(self) -> int:
+        """Get number of nodes in the graph."""
+        return self._graph.number_of_nodes()
+
     def get_topological_sort(self) -> List[str]:
         """Get a list of entity names in the graph sorted by causal dependence."""
         import networkx as nx

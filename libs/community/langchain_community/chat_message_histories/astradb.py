@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import json
 import time
-import typing
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-if typing.TYPE_CHECKING:
-    from astrapy.db import AstraDB as LibAstraDB
+from langchain_community.utilities.astradb import AstraDBEnvironment
+
+if TYPE_CHECKING:
+    from astrapy.db import AstraDB
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -42,40 +43,22 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         collection_name: str = DEFAULT_COLLECTION_NAME,
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[LibAstraDB] = None,  # type 'astrapy.db.AstraDB'
+        astra_db_client: Optional[AstraDB] = None,
         namespace: Optional[str] = None,
     ) -> None:
         """Create an Astra DB chat message history."""
-        try:
-            from astrapy.db import AstraDB as LibAstraDB
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Could not import a recent astrapy python package. "
-                "Please install it with `pip install --upgrade astrapy`."
-            )
+        astra_env = AstraDBEnvironment(
+            token=token,
+            api_endpoint=api_endpoint,
+            astra_db_client=astra_db_client,
+            namespace=namespace,
+        )
+        self.astra_db = astra_env.astra_db
 
-        # Conflicting-arg checks:
-        if astra_db_client is not None:
-            if token is not None or api_endpoint is not None:
-                raise ValueError(
-                    "You cannot pass 'astra_db_client' to AstraDB if passing "
-                    "'token' and 'api_endpoint'."
-                )
+        self.collection = self.astra_db.create_collection(collection_name)
 
         self.session_id = session_id
         self.collection_name = collection_name
-        self.token = token
-        self.api_endpoint = api_endpoint
-        self.namespace = namespace
-        if astra_db_client is not None:
-            self.astra_db = astra_db_client
-        else:
-            self.astra_db = LibAstraDB(
-                token=self.token,
-                api_endpoint=self.api_endpoint,
-                namespace=self.namespace,
-            )
-        self.collection = self.astra_db.create_collection(self.collection_name)
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore

@@ -64,10 +64,10 @@ class BaseLoader(ABC):
         iterator = await run_in_executor(None, self.lazy_load)
         done = object()
         while True:
-            doc = await run_in_executor(None, next, iterator, done)
+            doc = await run_in_executor(None, next, iterator, done)  # type: ignore[call-arg, arg-type]
             if doc is done:
                 break
-            yield doc
+            yield doc  # type: ignore[misc]
 
 
 class BaseBlobParser(ABC):

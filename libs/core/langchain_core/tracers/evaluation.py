@@ -31,7 +31,7 @@ def wait_for_all_evaluators() -> None:
 
 
 class EvaluatorCallbackHandler(BaseTracer):
-    """A tracer that runs a run evaluator whenever a run is persisted.
+    """Tracer that runs a run evaluator whenever a run is persisted.
 
     Parameters
     ----------
