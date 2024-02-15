@@ -94,8 +94,10 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
 
     def add_message(self, message: BaseMessage) -> None:
         message["additional_kwargs"] = {
+            **message["additional_kwargs"],
             "timestamp": _get_firestore_timestamp()
         }
+
         self.messages.append(message)
         self.upsert_messages()
 
