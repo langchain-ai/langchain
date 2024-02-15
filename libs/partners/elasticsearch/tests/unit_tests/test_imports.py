@@ -2,7 +2,6 @@ from langchain_elasticsearch import __all__
 
 EXPECTED_ALL = [
     "ApproxRetrievalStrategy",
-    "ElasticSearchBM25Retriever",
     "ElasticsearchChatMessageHistory",
     "ElasticsearchEmbeddings",
     "ElasticsearchStore",
