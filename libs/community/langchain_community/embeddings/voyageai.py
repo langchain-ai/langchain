@@ -74,7 +74,6 @@ class VoyageEmbeddings(BaseModel, Embeddings):
             query_result = voyage.embed_query(text)
     """
 
-    model: str
     voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
     voyage_api_key: Optional[SecretStr] = None
     batch_size: int = 8
