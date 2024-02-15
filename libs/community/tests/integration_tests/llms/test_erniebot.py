@@ -1,4 +1,4 @@
-"""Test ERNIE Bot API wrapper."""
+"""Test ERNIE Bot wrapper."""
 
 from typing import Generator
 

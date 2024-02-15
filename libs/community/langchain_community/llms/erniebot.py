@@ -19,7 +19,7 @@ from langchain_core.utils import get_from_dict_or_env
 
 
 class ErnieBot(LLM):
-    """ERNIE Bot large language models.
+    """ERNIE large language models.
 
     To use, you should have the ``erniebot`` python package installed, and the
     environment variable ``AISTUDIO_ACCESS_TOKEN`` set with your AI Studio
@@ -28,7 +28,7 @@ class ErnieBot(LLM):
     Example:
         .. code-block:: python
 
-            from erniebot_agent.extensions.langchain.llms import ErnieBot
+            from langchain_community.llms import ErnieBot
             erniebot = ErnieBot(model="ernie-3.5")
     """
 
@@ -55,7 +55,7 @@ class ErnieBot(LLM):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling ERNIE Bot API."""
+        """Get the default parameters for calling ERNIE Bot APIs."""
         normal_params = {
             "model": self.model,
             "top_p": self.top_p,

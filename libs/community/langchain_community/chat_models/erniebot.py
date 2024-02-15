@@ -31,7 +31,7 @@ _MessageDict = Dict[str, Any]
 
 
 class ErnieBotChat(BaseChatModel):
-    """ERNIE Bot Chat large language models API.
+    """ERNIE large language models.
 
     To use, you should have the ``erniebot`` python package installed, and the
     environment variable ``AISTUDIO_ACCESS_TOKEN`` set with your AI Studio
@@ -39,7 +39,7 @@ class ErnieBotChat(BaseChatModel):
 
     Example:
         .. code-block:: python
-            from erniebot_agent.extensions.langchain.chat_models import ErnieBotChat
+            from langchain_community.chat_models import ErnieBotChat
             erniebot_chat = ErnieBotChat(model="ernie-3.5")
     """
 
@@ -70,7 +70,7 @@ class ErnieBotChat(BaseChatModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling ERNIE Bot API."""
+        """Get the default parameters for calling ERNIE Bot APIs."""
         normal_params = {
             "model": self.model,
             "top_p": self.top_p,

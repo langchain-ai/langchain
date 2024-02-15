@@ -15,7 +15,7 @@ class ErnieEmbeddings(BaseModel, Embeddings):
 
     Example:
         .. code-block:: python
-            from erniebot_agent.extensions.langchain.embeddings import ErnieEmbeddings
+            from langchain_community.embeddings import ErnieEmbeddings
             ernie_embeddings = ErnieEmbeddings()
     """
 
