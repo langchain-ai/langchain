@@ -260,7 +260,7 @@ def create_ernie_fn_runnable(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
 
-                llm = ErnieBotChat(model_name="ERNIE-Bot-4")
+                llm = ErnieBotChat(model_name="ernie-4.0")
                 prompt = ChatPromptTemplate.from_messages(
                     [
                         ("user", "Make calls to the relevant function to record the entities in the following input: {input}"),
@@ -324,7 +324,7 @@ def create_structured_output_runnable(
                     color: str = Field(..., description="The dog's color")
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
-                llm = ErnieBotChat(model_name="ERNIE-Bot-4")
+                llm = ErnieBotChat(model_name="ernie-4.0")
                 prompt = ChatPromptTemplate.from_messages(
                     [
                         ("user", "Use the given format to extract information from the following input: {input}"),
@@ -432,7 +432,7 @@ def create_ernie_fn_chain(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
 
-                llm = ErnieBotChat(model_name="ERNIE-Bot-4")
+                llm = ErnieBotChat(model_name="ernie-4.0")
                 prompt = ChatPromptTemplate.from_messages(
                     [
                         ("user", "Make calls to the relevant function to record the entities in the following input: {input}"),
@@ -509,7 +509,7 @@ def create_structured_output_chain(
                     color: str = Field(..., description="The dog's color")
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
-                llm = ErnieBotChat(model_name="ERNIE-Bot-4")
+                llm = ErnieBotChat(model_name="ernie-4.0")
                 prompt = ChatPromptTemplate.from_messages(
                     [
                         ("user", "Use the given format to extract information from the following input: {input}"),

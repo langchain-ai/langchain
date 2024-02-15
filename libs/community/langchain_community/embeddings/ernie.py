@@ -15,17 +15,18 @@ class ErnieEmbeddings(BaseModel, Embeddings):
 
     Example:
         .. code-block:: python
-            from langchain.embeddings import ErnieEmbeddings
+            from erniebot_agent.extensions.langchain.embeddings import ErnieEmbeddings
             ernie_embeddings = ErnieEmbeddings()
     """
 
     client: Any = None
-    max_retries: int = 6
-    """Maximum number of retries to make when generating."""
     chunk_size: int = 16
     """Chunk size to use when the input is a list of texts."""
     aistudio_access_token: Optional[str] = None
     """AI Studio access token."""
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
+
     model: str = "ernie-text-embedding"
     """Model to use."""
     request_timeout: Optional[int] = 60
@@ -71,8 +72,8 @@ class ErnieEmbeddings(BaseModel, Embeddings):
             values["client"] = erniebot.Embedding
         except ImportError:
             raise ImportError(
-                "Could not import erniebot python package. "
-                "Please install it with `pip install erniebot`."
+                "Could not import erniebot python package."
+                " Please install it with `pip install erniebot`."
             )
         return values
 
@@ -92,7 +93,9 @@ class ErnieEmbeddings(BaseModel, Embeddings):
         lst = []
         for chunk in text_in_chunks:
             resp = self.client.create(
-                _config_=self._get_auth_config(), input=chunk, model=self.model
+                _config_={"max_retries": self.max_retries, **self._get_auth_config()},
+                input=chunk,
+                model=self.model,
             )
             lst.extend([res["embedding"] for res in resp["data"]])
         return lst
@@ -105,7 +108,9 @@ class ErnieEmbeddings(BaseModel, Embeddings):
         lst = []
         for chunk in text_in_chunks:
             resp = await self.client.acreate(
-                _config_=self._get_auth_config(), input=chunk, model=self.model
+                _config_={"max_retries": self.max_retries, **self._get_auth_config()},
+                input=chunk,
+                model=self.model,
             )
             for res in resp["data"]:
                 lst.extend([res["embedding"]])

@@ -2,17 +2,17 @@ import os
 from typing import (
     Any,
     AsyncIterator,
-    Callable,
     Dict,
     Iterator,
     List,
     Mapping,
     Optional,
-    Type,
-    Union,
 )
 
-from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -23,7 +23,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -39,23 +39,24 @@ class ErnieBotChat(BaseChatModel):
 
     Example:
         .. code-block:: python
-            from langchain.chat_models import ErnieBotChat
+            from erniebot_agent.extensions.langchain.chat_models import ErnieBotChat
             erniebot_chat = ErnieBotChat(model="ernie-3.5")
     """
 
     client: Any = None
-    max_retries: int = 6
-    """Maximum number of retries to make when generating."""
     aistudio_access_token: Optional[str] = None
     """AI Studio access token."""
-    streaming: Optional[bool] = False
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
+    streaming: bool = False
     """Whether to stream the results or not."""
+
     model: str = "ernie-3.5"
     """Model to use."""
-    top_p: Optional[float] = 0.8
-    """Parameter of nucleus sampling that affects the diversity of generated content."""
     temperature: Optional[float] = 0.95
     """Sampling temperature to use."""
+    top_p: Optional[float] = 0.8
+    """Parameter of nucleus sampling that affects the diversity of generated content."""
     penalty_score: Optional[float] = 1
     """Penalty assigned to tokens that have been generated."""
     request_timeout: Optional[int] = 60
@@ -90,7 +91,10 @@ class ErnieBotChat(BaseChatModel):
             "api_type": "aistudio",
             "access_token": self.aistudio_access_token,
         }
-        return {**{"_config_": auth_cfg}, **self._default_params}
+        return {
+            **{"_config_": {"max_retries": self.max_retries, **auth_cfg}},
+            **self._default_params,
+        }
 
     @property
     def _llm_type(self) -> str:
@@ -133,8 +137,8 @@ class ErnieBotChat(BaseChatModel):
             values["client"] = erniebot.ChatCompletion
         except ImportError:
             raise ImportError(
-                "Could not import erniebot python package. "
-                "Please install it with `pip install erniebot`."
+                "Could not import erniebot python package."
+                " Please install it with `pip install erniebot`."
             )
         return values
 
@@ -161,10 +165,13 @@ class ErnieBotChat(BaseChatModel):
             params = self._invocation_params
             params.update(kwargs)
             params["messages"] = self._convert_messages_to_dicts(messages)
+            system_prompt = self._build_system_prompt_from_messages(messages)
+            if system_prompt is not None:
+                params["system"] = system_prompt
+            if stop is not None:
+                params["stop"] = stop
             params["stream"] = False
-            response = _create_completion_with_retry(
-                self, run_manager=run_manager, **params
-            )
+            response = self.client.create(**params)
             return self._build_chat_result_from_response(response)
 
     async def _agenerate(
@@ -190,10 +197,13 @@ class ErnieBotChat(BaseChatModel):
             params = self._invocation_params
             params.update(kwargs)
             params["messages"] = self._convert_messages_to_dicts(messages)
+            system_prompt = self._build_system_prompt_from_messages(messages)
+            if system_prompt is not None:
+                params["system"] = system_prompt
+            if stop is not None:
+                params["stop"] = stop
             params["stream"] = False
-            response = await _acreate_completion_with_retry(
-                self, run_manager=run_manager, **params
-            )
+            response = await self.client.acreate(**params)
             return self._build_chat_result_from_response(response)
 
     def _stream(
@@ -204,16 +214,17 @@ class ErnieBotChat(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if stop is not None:
-            raise TypeError(
+            raise ValueError(
                 "Currently, `stop` is not supported when streaming is enabled."
             )
         params = self._invocation_params
         params.update(kwargs)
         params["messages"] = self._convert_messages_to_dicts(messages)
+        system_prompt = self._build_system_prompt_from_messages(messages)
+        if system_prompt is not None:
+            params["system"] = system_prompt
         params["stream"] = True
-        for resp in _create_completion_with_retry(
-            self, run_manager=run_manager, **params
-        ):
+        for resp in self.client.create(**params):
             chunk = self._build_chunk_from_response(resp)
             yield chunk
             if run_manager:
@@ -227,16 +238,17 @@ class ErnieBotChat(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         if stop is not None:
-            raise TypeError(
+            raise ValueError(
                 "Currently, `stop` is not supported when streaming is enabled."
             )
         params = self._invocation_params
         params.update(kwargs)
         params["messages"] = self._convert_messages_to_dicts(messages)
+        system_prompt = self._build_system_prompt_from_messages(messages)
+        if system_prompt is not None:
+            params["system"] = system_prompt
         params["stream"] = True
-        async for resp in await _acreate_completion_with_retry(
-            self, run_manager=run_manager, **params
-        ):
+        async for resp in await self.client.acreate(**params):
             chunk = self._build_chunk_from_response(resp)
             yield chunk
             if run_manager:
@@ -248,7 +260,6 @@ class ErnieBotChat(BaseChatModel):
         message_dict = self._build_dict_from_response(response)
         generation = ChatGeneration(
             message=self._convert_dict_to_message(message_dict),
-            generation_info=dict(finish_reason="stop"),
         )
         token_usage = response.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model}
@@ -274,14 +285,26 @@ class ErnieBotChat(BaseChatModel):
             message_dict["content"] = response["result"]
         return message_dict
 
+    def _build_system_prompt_from_messages(
+        self, messages: List[BaseMessage]
+    ) -> Optional[str]:
+        system_message_content_list: List[str] = []
+        for msg in messages:
+            if isinstance(msg, SystemMessage):
+                if isinstance(msg.content, str):
+                    system_message_content_list.append(msg.content)
+                else:
+                    raise TypeError
+        if len(system_message_content_list) > 0:
+            return "\n".join(system_message_content_list)
+        else:
+            return None
+
     def _convert_messages_to_dicts(self, messages: List[BaseMessage]) -> List[dict]:
         erniebot_messages = []
         for msg in messages:
             if isinstance(msg, SystemMessage):
-                logger.warning(
-                    "Ignoring system messages "
-                    "since they are currently not supported for ERNIE Bot."
-                )
+                # Ignore system messages, as we handle them elsewhere.
                 continue
             eb_msg = self._convert_message_to_dict(msg)
             erniebot_messages.append(eb_msg)
@@ -333,48 +356,3 @@ class ErnieBotChat(BaseChatModel):
             raise TypeError(f"Got unknown type {message}")
 
         return message_dict
-
-
-def _create_completion_with_retry(
-    llm: ErnieBotChat,
-    run_manager: Optional[CallbackManagerForLLMRun] = None,
-    **kwargs: Any,
-) -> Any:
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
-
-    @retry_decorator
-    def _client_create(**kwargs: Any) -> Any:
-        return llm.client.create(**kwargs)
-
-    return _client_create(**kwargs)
-
-
-async def _acreate_completion_with_retry(
-    llm: ErnieBotChat,
-    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    **kwargs: Any,
-) -> Any:
-    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
-
-    @retry_decorator
-    async def _client_acreate(**kwargs: Any) -> Any:
-        return await llm.client.acreate(**kwargs)
-
-    return await _client_acreate(**kwargs)
-
-
-def _create_retry_decorator(
-    llm: ErnieBotChat,
-    run_manager: Optional[
-        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
-    ] = None,
-) -> Callable[[Any], Any]:
-    import erniebot
-
-    errors: List[Type[BaseException]] = [
-        erniebot.errors.TimeoutError,
-        erniebot.errors.RequestLimitError,
-    ]
-    return create_base_retry_decorator(
-        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
-    )
