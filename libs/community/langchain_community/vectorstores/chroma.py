@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 import numpy as np
@@ -41,7 +42,6 @@ def _results_to_batch_docs(results: Any) -> List[List[Document]]:
 def _results_to_batch_docs_and_scores(
     results: Any,
 ) -> List[List[Tuple[Document, float]]]:
-
     batch_docs_and_scores = []
     for i in range(len(results["documents"])):
         batch_docs_and_scores.append(
@@ -339,11 +339,11 @@ class Chroma(VectorStore):
 
     def similarity_search(
         self,
-        query: str | List[str],
+        query: Union[str, List[str]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document] | List[List[Document]]:
+    ) -> Union[List[Document], List[List[Document]]]:
         """Run similarity search with Chroma.
         This function supports both single and batch queries.
 
@@ -372,12 +372,12 @@ class Chroma(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float] | List[List[float]],
+        embedding: Union[List[float], List[List[float]]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> Union[List[Document], List[List[Document]]]:
         """Return docs most similar to embedding vector.
         This function supports both single and batch queries.
 
@@ -412,12 +412,12 @@ class Chroma(VectorStore):
 
     def similarity_search_by_vector_with_relevance_scores(
         self,
-        embedding: List[float] | List[List[float]],
+        embedding: Union[List[float], List[List[float]]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
+    ) -> Union[List[Tuple[Document, float]], List[List[Tuple[Document, float]]]]:
         """
         Return docs most similar to embedding vector and similarity score.
         This function supports both single and batch queries.
@@ -458,12 +458,12 @@ class Chroma(VectorStore):
 
     def similarity_search_with_score(
         self,
-        query: str | list[str],
+        query: Union[str, list[str]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
+    ) -> Union[List[Tuple[Document, float]], List[List[Tuple[Document, float]]]]:
         """Run similarity search with Chroma with distance.
         The function supports both single and batch queries.
 
@@ -545,14 +545,14 @@ class Chroma(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float] | List[List[float]],
+        embedding: Union[List[float], List[List[float]]],
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document] | List[List[Document]]:
+    ) -> Union[List[Document], List[List[Document]]]:
         """Return docs or list of docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents. The function supports both single and batch queries.
@@ -618,14 +618,14 @@ class Chroma(VectorStore):
 
     def max_marginal_relevance_search(
         self,
-        query: str | List[str],
+        query: Union[str, List[str]],
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document] | List[List[Document]]:
+    ) -> Union[List[Document], List[List[Document]]]:
         """Return docs or list of docs selected using the maximal marginal
         relevance. Maximal marginal relevance optimizes for similarity to
         query AND diversity among selected documents. This function supports

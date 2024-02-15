@@ -17,6 +17,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
 )
 
 from langchain_core.embeddings import Embeddings
@@ -209,7 +210,7 @@ class VectorStore(ABC):
 
     def similarity_search_with_score(
         self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
+    ) -> Union[List[Tuple[Document, float]], List[List[Tuple[Document, float]]]]:
         """Run similarity search with distance."""
         raise NotImplementedError
 
@@ -227,10 +228,10 @@ class VectorStore(ABC):
 
     def _similarity_search_with_relevance_scores(
         self,
-        query: str | List[str],
+        query: Union[str, List[str]],
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
+    ) -> Union[List[Tuple[Document, float]], List[List[Tuple[Document, float]]]]:
         """
         Default similarity search with relevance scores. Modify if necessary
         in subclass.
@@ -294,10 +295,10 @@ class VectorStore(ABC):
 
     def similarity_search_with_relevance_scores(
         self,
-        query: str | List[str],
+        query: Union[str, List[str]],
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]] | List[List[Tuple[Document, float]]]:
+    ) -> Union[List[Tuple[Document, float]], List[List[Tuple[Document, float]]]]:
         """Return docs and relevance scores in the range [0, 1].
         This function supports both single and batch queries.
 
