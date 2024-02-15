@@ -29,8 +29,6 @@ from langchain_core.globals import get_llm_cache
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LanguageModelInput,
-    _OutputFormat,
-    _OutputSchema,
 )
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
@@ -105,7 +103,7 @@ async def agenerate_from_stream(
     )
 
 
-class BaseChatModel(BaseLanguageModel[BaseMessage, _OutputSchema, _OutputFormat], ABC):
+class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for Chat models."""
 
     cache: Optional[bool] = None

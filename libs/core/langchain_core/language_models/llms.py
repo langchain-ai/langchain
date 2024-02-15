@@ -49,8 +49,6 @@ from langchain_core.globals import get_llm_cache
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LanguageModelInput,
-    _OutputFormat,
-    _OutputSchema,
 )
 from langchain_core.load import dumpd
 from langchain_core.messages import (
@@ -200,7 +198,7 @@ async def aupdate_cache(
     return llm_output
 
 
-class BaseLLM(BaseLanguageModel[str, _OutputSchema, _OutputFormat], ABC):
+class BaseLLM(BaseLanguageModel[str], ABC):
     """Base LLM abstract interface.
 
     It should take in a prompt and return a string."""

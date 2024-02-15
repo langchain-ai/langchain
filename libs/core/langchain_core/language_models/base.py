@@ -5,7 +5,6 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     List,
     Optional,
     Sequence,
@@ -60,13 +59,9 @@ LanguageModelOutput = Union[BaseMessage, str]
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
 
-_OutputSchema = TypeVar("_OutputSchema")
-_OutputFormat = TypeVar("_OutputFormat")
-
 
 class BaseLanguageModel(
     RunnableSerializable[LanguageModelInput, LanguageModelOutputVar],
-    Generic[LanguageModelOutputVar, _OutputSchema, _OutputFormat],
     ABC,
 ):
     """Abstract base class for interfacing with language models.
@@ -160,16 +155,6 @@ class BaseLanguageModel(
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-
-    # Child classes can implement this if there is a way of steering the model to
-    # generate responses that match a given schema.
-    def with_output_format(
-        self, output_schema: _OutputSchema, **kwargs: Any
-    ) -> Runnable[LanguageModelInput, _OutputFormat]:
-        """Not implemented."""
-        raise NotImplementedError(
-            f"'with_output_format()' not implemented for {self.__class__.__name__}."
-        )
 
     @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     @abstractmethod

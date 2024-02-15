@@ -23,6 +23,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import openai
@@ -37,6 +38,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
+from langchain_core.language_models.output_format import FormattedOutputMixin
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -203,10 +205,16 @@ class _FunctionCall(TypedDict):
 
 _BM = TypeVar("_BM", bound=BaseModel)
 _OutputSchema = Union[Dict[str, Any], Type[_BM]]
-_OutputFormat = Union[BaseMessage, Dict, _BM]
+_FormattedOutput = Union[BaseMessage, Dict, _BM]
 
 
-class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
+class _AllFormattedOutput(TypedDict):
+    raw: BaseMessage
+    parsed: Optional[_FormattedOutput]
+    parsing_error: Optional[BaseException]
+
+
+class ChatOpenAI(BaseChatModel, FormattedOutputMixin[_OutputSchema, _FormattedOutput]):
     """`OpenAI` Chat large language models API.
 
     To use, you should have the
@@ -741,33 +749,110 @@ class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
+    @overload
     def with_output_format(
         self,
-        output_schema: _OutputSchema,
+        schema: _OutputSchema,
         *,
-        method: Literal["function_calling", "json_format"] = "function_calling",
-        return_type: Literal["raw", "parsed", "all"] = "parsed",
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        return_type: Literal["all"] = "all",
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _OutputFormat]:
-        """"""
+    ) -> Runnable[LanguageModelInput, _AllFormattedOutput]:
+        ...
+
+    @overload
+    def with_output_format(
+        self,
+        schema: _OutputSchema,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        return_type: Literal["parsed"] = "parsed",
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _FormattedOutput]:
+        ...
+
+    def with_output_format(
+        self,
+        schema: _OutputSchema,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        return_type: Literal["parsed", "all"] = "parsed",
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _FormattedOutput]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec.
+            method: The method for steering model generation, either "function_calling"
+                or "json_mode". If "function_calling" then the schema will be converted
+                to an OpenAI function and the returned model will make use of the
+                function-calling API. If "json_mode" then OpenAI's JSON mode will be
+                used.
+            return_type: The wrapped model's return type, either "parsed" or "all". If
+                "parsed" then only the parsed structured output is returned. If an
+                error occurs during model output parsing it will be raised. If "all"
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If return_type == "all" then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_FormattedOutput]
+                    parsing_error: Optional[BaseException]
+                    
+                If return_type == "parsed" then just _FormattedOutput is returned,
+                where _FormattedOutput depends on the schema:
+                
+                If schema is a Pydantic class then _FormattedOutput is the Pydantic 
+                    class.
+                
+                If schema is a dict then _FormattedOutput is a dict.
+        
+        Function-calling, Pydantic schema example (method="function-calling", return_type="parsed"):
+            .. code-block:: python
+            
+                from langchain_openai import ChatOpenAI
+                from langchain_core.pydantic_v1 import BaseModel
+                
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+                    
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_output_format(AnswerWithJustification)
+                
+                structured_llm.invoke("Should we invest more in solar or nuclear?")
+                
+
+        """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = _is_pydantic_class(output_schema)
+        is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
-            llm = self.bind_tools([output_schema], tool_choice=True)
+            llm = self.bind_tools([schema], tool_choice=True)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[output_schema], return_single=True
+                    tools=[schema], return_single=True
                 )
             else:
-                key_name = convert_to_openai_tool(output_schema)["function"]["name"]
+                key_name = convert_to_openai_tool(schema)["function"]["name"]
                 output_parser = JsonOutputKeyToolsParser(
                     key_name=key_name, return_single=True
                 )
-        elif method == "json_format":
+        elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=output_schema)
+                PydanticOutputParser(pydantic_object=schema)
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
@@ -777,9 +862,7 @@ class ChatOpenAI(BaseChatModel[_OutputSchema, _OutputFormat]):
                 f"'json_format'. Received: '{method}'"
             )
 
-        if return_type == "raw":
-            return llm
-        elif return_type == "parsed":
+        if return_type == "parsed":
             return llm | output_parser
         elif return_type == "all":
             parser_assign = RunnablePassthrough.assign(
