@@ -808,31 +808,78 @@ class ChatOpenAI(BaseChatModel, FormattedOutputMixin[_OutputSchema, _FormattedOu
                     raw: BaseMessage
                     parsed: Optional[_FormattedOutput]
                     parsing_error: Optional[BaseException]
-                    
+
                 If return_type == "parsed" then just _FormattedOutput is returned,
                 where _FormattedOutput depends on the schema:
-                
-                If schema is a Pydantic class then _FormattedOutput is the Pydantic 
+
+                If schema is a Pydantic class then _FormattedOutput is the Pydantic
                     class.
-                
+
                 If schema is a dict then _FormattedOutput is a dict.
-        
+
         Function-calling, Pydantic schema example (method="function-calling", return_type="parsed"):
             .. code-block:: python
-            
+
                 from langchain_openai import ChatOpenAI
                 from langchain_core.pydantic_v1 import BaseModel
-                
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
                     answer: str
                     justification: str
-                    
+
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_output_format(AnswerWithJustification)
-                
-                structured_llm.invoke("Should we invest more in solar or nuclear?")
-                
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
+        Function-calling, Pydantic schema example (method="function-calling", return_type="all"):
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_output_format(AnswerWithJustification, return_type="all")
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+                #     'parsing_error': None
+                # }
+
+        Function-calling, dict schema example (method="function-calling", return_type="parsed"):
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_core.utils.function_calling import convert_to_openai_tool
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                dict_schema = convert_to_openai_tool(AnswerWithJustification)
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_output_format(dict_schema)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
 
         """  # noqa: E501
         if kwargs:
