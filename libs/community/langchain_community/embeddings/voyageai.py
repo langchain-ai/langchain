@@ -69,12 +69,12 @@ class VoyageEmbeddings(BaseModel, Embeddings):
 
             from langchain_community.embeddings import VoyageEmbeddings
 
-            voyage = VoyageEmbeddings(voyage_api_key="your-api-key")
+            voyage = VoyageEmbeddings(voyage_api_key="your-api-key", model="voyage-2")
             text = "This is a test query."
             query_result = voyage.embed_query(text)
     """
 
-    model: str = "voyage-01"
+    model: str
     voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
     voyage_api_key: Optional[SecretStr] = None
     batch_size: int = 8
@@ -121,7 +121,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         embeddings: List[List[float]] = []
 
         if batch_size is None:
-            batch_size = self.batch_size
+            batch_size = 72 if self.model in ["voyage-2", "voyage-02"] else 7
 
         if self.show_progress_bar:
             try:

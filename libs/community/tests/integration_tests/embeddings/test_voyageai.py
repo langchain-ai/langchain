@@ -2,7 +2,7 @@
 from langchain_community.embeddings.voyageai import VoyageEmbeddings
 
 # Please set VOYAGE_API_KEY in the environment variables
-MODEL = "voyage-01"
+MODEL = "voyage-2"
 
 
 def test_voyagi_embedding_documents() -> None:
