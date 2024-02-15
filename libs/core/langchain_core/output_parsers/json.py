@@ -204,7 +204,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         self,
         result: List[Generation],
         *,
-        prompt: PromptValue = None,
+        prompt: Optional[PromptValue] = None,
         partial: bool = False,
     ) -> Any:
         text = result[0].text

@@ -34,7 +34,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
         self,
         result: List[Generation],
         *,
-        prompt: PromptValue = None,
+        prompt: Optional[PromptValue] = None,
         partial: bool = False,
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
@@ -51,7 +51,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
         self,
         result: List[Generation],
         *,
-        prompt: PromptValue = None,
+        prompt: Optional[PromptValue] = None,
         partial: bool = False,
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
@@ -217,7 +217,7 @@ class BaseOutputParser(
         self,
         result: List[Generation],
         *,
-        prompt: PromptValue = None,
+        prompt: Optional[PromptValue] = None,
         partial: bool = False,
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
@@ -249,7 +249,7 @@ class BaseOutputParser(
         self,
         result: List[Generation],
         *,
-        prompt: PromptValue = None,
+        prompt: Optional[PromptValue] = None,
         partial: bool = False,
     ) -> T:
         """Parse a list of candidate model Generations into a specific format.
