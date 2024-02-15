@@ -622,7 +622,7 @@ class Runnable(Generic[Input, Output], ABC):
         yielding results as they complete."""
 
         if not inputs:
-            return []
+            return
 
         configs = get_config_list(config, len(inputs))
 
