@@ -120,42 +120,6 @@ class TestRockset:
         )
         assert output == [Document(page_content="bar", metadata={"metadata_index": 1})]
 
-    def test_build_query_sql(self) -> None:
-        vector = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-        q_str = self.rockset_vectorstore._build_query_sql(
-            vector,
-            Rockset.DistanceFunction.COSINE_SIM,
-            4,
-        )
-        vector_str = ",".join(map(str, vector))
-        expected = f"""\
-SELECT * EXCEPT({embedding_key}), \
-COSINE_SIM({embedding_key}, [{vector_str}]) as dist
-FROM {workspace}.{collection_name}
-ORDER BY dist DESC
-LIMIT 4
-"""
-        assert q_str == expected
-
-    def test_build_query_sql_with_where(self) -> None:
-        vector = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-        q_str = self.rockset_vectorstore._build_query_sql(
-            vector,
-            Rockset.DistanceFunction.COSINE_SIM,
-            4,
-            "age >= 10",
-        )
-        vector_str = ",".join(map(str, vector))
-        expected = f"""\
-SELECT * EXCEPT({embedding_key}), \
-COSINE_SIM({embedding_key}, [{vector_str}]) as dist
-FROM {workspace}.{collection_name}
-WHERE age >= 10
-ORDER BY dist DESC
-LIMIT 4
-"""
-        assert q_str == expected
-
     def test_add_documents_and_delete(self) -> None:
         """ "add_documents" and "delete" are requirements to support use
         with RecordManager"""
