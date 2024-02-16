@@ -245,8 +245,8 @@ def deprecated(
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
+        # old_doc can be None
         if not old_doc:
-            "old_doc can be None"
             old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
