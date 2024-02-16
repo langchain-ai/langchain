@@ -13,7 +13,7 @@ from pymongo.collection import Collection
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_mongodb_atlas.vectorstores import MongoDBAtlasVectorStore
+from langchain_mongodb_atlas.vectorstores import MongoDBAtlasVectorSearch
 
 
 INDEX_NAME = "langchain-test-index"
@@ -32,7 +32,7 @@ def collection() -> Collection:
     return get_collection()
 
 
-class TestMongoDBAtlasVectorStore:
+class TestMongoDBAtlasVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
         # insure the test collection is empty
@@ -61,7 +61,7 @@ class TestMongoDBAtlasVectorStore:
             Document(page_content="What is a sandwich?", metadata={"c": 1}),
             Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
         ]
-        vectorstore = MongoDBAtlasVectorStore.from_documents(
+        vectorstore = MongoDBAtlasVectorSearch.from_documents(
             documents,
             embedding_openai,
             collection=collection,
@@ -79,7 +79,7 @@ class TestMongoDBAtlasVectorStore:
             "What is a sandwich?",
             "That fence is purple.",
         ]
-        vectorstore = MongoDBAtlasVectorStore.from_texts(
+        vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
             embedding_openai,
             collection=collection,
@@ -99,7 +99,7 @@ class TestMongoDBAtlasVectorStore:
             "The fence is purple.",
         ]
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
-        vectorstore = MongoDBAtlasVectorStore.from_texts(
+        vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
             embedding_openai,
             metadatas=metadatas,
@@ -121,7 +121,7 @@ class TestMongoDBAtlasVectorStore:
             "The fence is purple.",
         ]
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
-        vectorstore = MongoDBAtlasVectorStore.from_texts(
+        vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
             embedding_openai,
             metadatas=metadatas,
@@ -136,7 +136,7 @@ class TestMongoDBAtlasVectorStore:
 
     def test_mmr(self, embedding_openai: Embeddings, collection: Any) -> None:
         texts = ["foo", "foo", "fou", "foy"]
-        vectorstore = MongoDBAtlasVectorStore.from_texts(
+        vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
             embedding_openai,
             collection=collection,

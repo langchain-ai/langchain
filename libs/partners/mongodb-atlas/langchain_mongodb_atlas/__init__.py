@@ -1,8 +1,8 @@
 from langchain_mongodb_atlas.vectorstores import (
-    MongoDBAtlasVectorStore,
+    MongoDBAtlasVectorSearch,
 )
 
 
 __all__ = [
-    "MongoDBAtlasVectorStore",
+    "MongoDBAtlasVectorSearch",
 ]

@@ -2,7 +2,7 @@ from langchain_mongodb_atlas import __all__
 
 EXPECTED_ALL = [
     "MongoDBAtlasVectorSearch",
-    "MongoDBAtlasVectorStore",
+    "MongoDBAtlasVectorSearch",
 ]
 
 

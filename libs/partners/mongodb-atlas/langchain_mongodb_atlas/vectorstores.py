@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 
-import asyncio
-from functools import partial
-
 import logging
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,6 +20,7 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
@@ -34,10 +33,10 @@ VST = TypeVar("VST", bound=VectorStore)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_INSERT_BATCH_SIZE = 100
+DEFAULT_INSERT_BATCH_SIZE = 1000
 
 
-class MongoDBAtlasVectorStore(VectorStore):
+class MongoDBAtlasVectorSearch(VectorStore):
     """`MongoDB Atlas Vector Search` vector store.
 
     To use, you should have both:
@@ -48,14 +47,14 @@ class MongoDBAtlasVectorStore(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import MongoDBAtlasVectorStore
+            from langchain_community.vectorstores import MongoDBAtlasVectorSearch
             from langchain_community.embeddings.openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
             collection = mongo_client["<db_name>"]["<collection_name>"]
             embeddings = OpenAIEmbeddings()
-            vectorstore = MongoDBAtlasVectorStore(collection, embeddings)
+            vectorstore = MongoDBAtlasVectorSearch(collection, embeddings)
     """
 
     def __init__(
@@ -74,11 +73,15 @@ class MongoDBAtlasVectorStore(VectorStore):
             embedding: Text embedding model to use.
             text_key: MongoDB field that will contain the text for each
                 document.
+                defaults to 'text'
             embedding_key: MongoDB field that will contain the embedding for
                 each document.
+                defaults to 'embedding'
             index_name: Name of the Atlas Search index.
+                defaults to 'default'
             relevance_score_fn: The similarity score used for the index.
-            Currently supported: Euclidean, cosine, and dot product.
+                defaults to 'cosine'
+            Currently supported: 'euclidean', 'cosine', and 'dotProduct'.
         """
         self._collection = collection
         self._embedding = embedding
@@ -92,12 +95,13 @@ class MongoDBAtlasVectorStore(VectorStore):
         return self._embedding
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        if self._relevance_score_fn == "euclidean":
-            return self._euclidean_relevance_score_fn
-        elif self._relevance_score_fn == "dotProduct":
-            return self._max_inner_product_relevance_score_fn
-        elif self._relevance_score_fn == "cosine":
-            return self._cosine_relevance_score_fn
+        scoring: dict[str, Callable] = {
+            "euclidean": self._euclidean_relevance_score_fn,
+            "dotProduct": self._max_inner_product_relevance_score_fn,
+            "cosine": self._cosine_relevance_score_fn,
+        }
+        if self._relevance_score_fn in scoring:
+            return scoring[self._relevance_score_fn]
         else:
             raise NotImplementedError(
                 f"No relevance score function for ${self._relevance_score_fn}"
@@ -110,7 +114,7 @@ class MongoDBAtlasVectorStore(VectorStore):
         namespace: str,
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> MongoDBAtlasVectorStore:
+    ) -> MongoDBAtlasVectorSearch:
         """Construct a `MongoDB Atlas Vector Search` vector store
         from a MongoDB connection URI.
 
@@ -120,7 +124,7 @@ class MongoDBAtlasVectorStore(VectorStore):
             embedding: The text embedding model to use for the vector store.
 
         Returns:
-            A new MongoDBAtlasVectorStore instance.
+            A new MongoDBAtlasVectorSearch instance.
 
         """
         try:
@@ -342,7 +346,7 @@ class MongoDBAtlasVectorStore(VectorStore):
         metadatas: Optional[List[Dict]] = None,
         collection: Optional[Collection[MongoDBDocumentType]] = None,
         **kwargs: Any,
-    ) -> MongoDBAtlasVectorStore:
+    ) -> MongoDBAtlasVectorSearch:
         """Construct a `MongoDB Atlas Vector Search` vector store from raw documents.
 
         This is a user-friendly interface that:
@@ -356,13 +360,13 @@ class MongoDBAtlasVectorStore(VectorStore):
             .. code-block:: python
                 from pymongo import MongoClient
 
-                from langchain_community.vectorstores import MongoDBAtlasVectorStore
+                from langchain_community.vectorstores import MongoDBAtlasVectorSearch
                 from langchain_community.embeddings import OpenAIEmbeddings
 
                 mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
                 collection = mongo_client["<db_name>"]["<collection_name>"]
                 embeddings = OpenAIEmbeddings()
-                vectorstore = MongoDBAtlasVectorStore.from_texts(
+                vectorstore = MongoDBAtlasVectorSearch.from_texts(
                     texts,
                     embeddings,
                     metadatas=metadatas,
@@ -375,68 +379,78 @@ class MongoDBAtlasVectorStore(VectorStore):
         vectorstore.add_texts(texts, metadatas=metadatas)
         return vectorstore
 
-    async def aadd_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.add_texts, **kwargs), texts, metadatas
-        )
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by ObjectId or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        search_params = {self._text_key: {}}
+        if ids:
+            search_params["$in"] = ids
+
+        return self._collection.delete_many({**search_params, **kwargs})
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
-        raise NotImplementedError
+        """Delete by vector ID or other criteria.
 
-    async def asimilarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search, query, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
 
-    async def asimilarity_search_with_score(
-        self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_with_score, *args, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        return await run_in_executor(None, self.delete, ids=ids, **kwargs)
 
-    async def asimilarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_by_vector, embedding, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
-
-    async def amax_marginal_relevance_search(
+    async def max_marginal_relevance_search_by_vector(
         self,
-        query: str,
+        embedding: List[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        pre_filter: Optional[Dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(
-            self.max_marginal_relevance_search,
-            query,
-            k=k,
-            fetch_k=fetch_k,
-            lambda_mult=lambda_mult,
-            **kwargs,
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        docs = self._similarity_search_with_score(
+            embedding,
+            k=fetch_k,
+            pre_filter=pre_filter,
+            post_filter_pipeline=post_filter_pipeline,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        mmr_doc_indexes = maximal_marginal_relevance(
+            np.array(embedding),
+            [doc.metadata[self._embedding_key] for doc, _ in docs],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        mmr_docs = [docs[i][0] for i in mmr_doc_indexes]
+        return mmr_docs
 
     async def amax_marginal_relevance_search_by_vector(
         self,
@@ -446,16 +460,13 @@ class MongoDBAtlasVectorStore(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        raise NotImplementedError
-
-    @classmethod
-    async def afrom_texts(
-        cls: Type[VST],
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> VST:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(cls.from_texts, **kwargs), texts, embedding, metadatas
+        """Return docs selected using the maximal marginal relevance."""
+        return await run_in_executor(
+            None,
+            self.max_marginal_relevance_search_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
         )
