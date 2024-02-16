@@ -18,7 +18,7 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
 
     anyscale_api_key: SecretStr = Field(default=None)
     """AnyScale Endpoints API keys."""
-    model_name: str = Field(default=DEFAULT_MODEL, alias="model")
+    model: str = Field(default=DEFAULT_MODEL)
     """Model name to use."""
     anyscale_api_base: str = Field(default=DEFAULT_API_BASE)
     """Base URL path for API requests."""
@@ -49,9 +49,6 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
             "ANYSCALE_API_BASE",
             default=DEFAULT_API_BASE,
         )
-        
-        # Use model 
-        values["model"] = values["model_name"]
         try:
             import openai
 
