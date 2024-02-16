@@ -482,7 +482,9 @@ class Chroma(VectorStore):
                 is a list of tuples, as described above, corresponding to each
                 query in the batch.
         """
-        queries = [query] if isinstance(query, str) else query
+        is_batch = isinstance(query, list)
+
+        queries = query if is_batch else [query]
 
         if self._embedding_function is None:
             results = self.__query_collection(
@@ -503,8 +505,6 @@ class Chroma(VectorStore):
             )
 
         batch_docs_and_scores = _results_to_batch_docs_and_scores(results)
-
-        is_batch = isinstance(query, list)
 
         if is_batch:
             return batch_docs_and_scores
