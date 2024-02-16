@@ -16,6 +16,7 @@ optional = true
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
+pytest-dotenv = "^0.5.2"
 freezegun = "^1.2.2"
 pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
