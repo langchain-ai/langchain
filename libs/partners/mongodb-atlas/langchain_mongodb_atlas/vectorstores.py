@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -388,11 +387,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        search_params = {self._text_key: {}}
+        search_params: dict[str, Any] = {}
         if ids:
-            search_params["$in"] = ids
+            search_params[self._text_key]["$in"] = ids
 
-        return self._collection.delete_many({**search_params, **kwargs})
+        return self._collection.delete_many({**search_params, **kwargs}).acknowledged
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
@@ -409,7 +408,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         return await run_in_executor(None, self.delete, ids=ids, **kwargs)
 
-    async def max_marginal_relevance_search_by_vector(
+    def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
@@ -418,7 +417,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[Document]:  # type: ignore
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -432,6 +431,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            pre_filter: (Optional) dictionary of argument(s) to prefilter on document
+                fields.
+            post_filter_pipeline: (Optional) pipeline of MongoDB aggregation stages
+                following the vectorSearch stage.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
