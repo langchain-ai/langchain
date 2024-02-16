@@ -7,20 +7,18 @@ import sqlalchemy
 from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
 from sqlalchemy import (
-    Executable,
     MetaData,
-    Result,
     Table,
     create_engine,
     inspect,
     select,
     text,
 )
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine, Result
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql.expression import Executable
 from sqlalchemy.types import NullType
-
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     return (
