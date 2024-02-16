@@ -341,7 +341,7 @@ class BedrockBase(BaseModel, ABC):
             raise ValueError(
                 "Could not load credentials to authenticate with AWS client. "
                 "Please check that credentials in the specified "
-                f"profile name are valid. {e}"
+                f"profile name are valid. Bedrock error: {e}"
             ) from e
 
         return values
