@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.12"
+langchain-core = "^0.1"
 exa-py = "^1.0.7"
 
 [tool.poetry.group.test]
