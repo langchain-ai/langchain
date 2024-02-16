@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+# import httpx
 
 # Default batch size
 DEFAULT_BATCH_SIZE = 100
@@ -64,6 +65,8 @@ class CouchbaseVectorStore(VectorStore):
         embedding_key (optional[str]): key in document to use for the embeddings.
     """
 
+    _metadata_key = "metadata"
+
     def __init__(
         self,
         cluster: Cluster,
@@ -75,6 +78,10 @@ class CouchbaseVectorStore(VectorStore):
         *,
         text_key: Optional[str] = "text",
         embedding_key: Optional[str] = None,
+        scoped_index: bool = True,
+        # db_host: Optional[str] = None,
+        # db_username: Optional[str] = None,
+        # db_password: Optional[str] = None,
     ) -> None:
         try:
             from couchbase.cluster import Cluster
@@ -98,6 +105,8 @@ class CouchbaseVectorStore(VectorStore):
 
         if not embedding_key:
             self._embedding_key = text_key + "_embedding"
+        else:
+            self._embedding_key = embedding_key
 
         self._bucket_name = bucket_name
         self._scope_name = scope_name
@@ -105,6 +114,11 @@ class CouchbaseVectorStore(VectorStore):
         self._embedding_function = embedding
         self._text_key = text_key
         self._index_name = index_name
+        self._scoped_index = scoped_index
+
+        # self._connection_string = db_host
+        # self._db_username = db_username
+        # self._db_password = db_password
 
         if not isinstance(cluster, Cluster):
             raise ValueError(
@@ -120,6 +134,26 @@ class CouchbaseVectorStore(VectorStore):
         self._bucket = self._cluster.bucket(self._bucket_name)
         self._scope = self._bucket.scope(self._scope_name)
         self._collection = self._scope.collection(self._collection_name)
+
+        # Check if the index exists
+        if self._scoped_index:
+            all_indexes = [
+                index.name for index in self._scope.search_indexes().get_all_indexes()
+            ]
+            if index_name not in all_indexes:
+                raise ValueError(
+                    f"Index {index_name} does not exist. "
+                    " Please create the index before searching."
+                )
+        else:
+            all_indexes = [
+                index.name for index in self._cluster.search_indexes().get_all_indexes()
+            ]
+            if index_name not in all_indexes:
+                raise ValueError(
+                    f"Index {index_name} does not exist. "
+                    " Please create the index before searching."
+                )
 
     def add_texts(
         self,
@@ -161,7 +195,7 @@ class CouchbaseVectorStore(VectorStore):
                 id: {
                     self._text_key: text,
                     self._embedding_key: vector,
-                    "metadata": metadata,
+                    self._metadata_key: metadata,
                 }
                 for id, text, vector, metadata in zip(
                     ids, texts, embedded_texts, metadatas
@@ -220,12 +254,18 @@ class CouchbaseVectorStore(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
+        fetch_k: int = 20,
+        search_params: Optional[Dict[str:Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector with their scores.
         Args:
             embedding (List[float]): Embedding vector to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch before passing to vector search.
+                Defaults to 20.
+            search_params (Optional[Dict[str, Any]]): Optional search options that are
+                passed to Couchbase search. Defaults to None.
 
         Returns:
             List of (Document, score) that are the most similar to the query vector.
@@ -234,42 +274,60 @@ class CouchbaseVectorStore(VectorStore):
         from couchbase.options import SearchOptions
         from couchbase.vector_search import VectorQuery, VectorSearch
 
+        fields = kwargs.get("fields", [])
+        # print(fields)
+
+        if fields is None:
+            fields = [self._text_key, self._metadata_key]
+
         search_req = search.SearchRequest.create(
-            search.MatchAllQuery()
-        ).with_vector_search(
             VectorSearch.from_vector_query(
                 VectorQuery(
                     field_name=self._embedding_key,
                     vector=embedding,
-                    num_candidates=k * 10,
+                    num_candidates=fetch_k,
                 )
             )
         )
+        try:
+            if self._scoped_index:
+                search_iter = self._scope.search(
+                    self._index_name,
+                    search_req,
+                    SearchOptions(limit=k, fields=fields, raw=search_params),
+                )
+            else:
+                search_iter = self._cluster.search(
+                    search_req,
+                    SearchOptions(limit=k, fields=fields, raw=search_params),
+                )
+            docs_with_score = []
 
-        search_iter = self._scope.search(
-            self._index_name,
-            search_req,
-            SearchOptions(limit=k, fields=[self._text_key, "metadata"]),
-        )
+            # print(search_iter._request)
 
-        docs_with_score = []
+            for row in search_iter.rows():
+                print(f"row: {row}")
+                text = row.fields.pop(self._text_key)
+                metadata = row.fields
+                score = row.score
+                doc = Document(page_content=text, metadata=metadata)
+                docs_with_score.append((doc, score))
 
-        for row in search_iter.rows():
-            text = row.fields.pop(self._text_key)
-            metadata = row.fields
-            score = row.score
-            doc = Document(page_content=text, metadata=metadata)
-            docs_with_score.append((doc, score))
-            print(f"row: {row}")
+        except Exception as e:
+            raise ValueError(f"Search failed with error: {e}")
+
         # db_host = self._connection_string.split("//")[-1].strip("/")
+        # docs_with_score = []
 
         # search_query = {
-        #     "fields": [self._text_key, "metadata"],
+        #     "fields": fields,
         #     "sort": ["-_score"],
         #     "limit": k,
         #     "query": {"match_none": {}},
-        #     "knn": [{"k": k * 10, "field": self._embedding_key, "vector": embedding}],
+        #     "knn": [{"k": fetch_k, "field": self._embedding_key, "vector": embedding}],
         # }
+
+        # print(f"{search_query=}")
 
         # search_result = httpx.post(
         #     f"http://{db_host}:8094/api/bucket/{self._bucket_name}/scope/{self._scope_name}/index/{self._index_name}/query",
@@ -280,6 +338,7 @@ class CouchbaseVectorStore(VectorStore):
 
         # if search_result.status_code == 200:
         #     response_json = search_result.json()
+        #     print(f"{response_json=}")
         #     results = response_json["hits"]
 
         #     for result in results:
@@ -296,34 +355,47 @@ class CouchbaseVectorStore(VectorStore):
         return docs_with_score
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        search_params: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return documents that are most similar to the query.
         Args:
             query (str): Query to look up for similar documents
             k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch before passing to vector search.
+                Defaults to 20.
 
         Returns:
             List of Documents most similar to the query."""
-        docs_with_scores = self.similarity_search_with_score(query, k, **kwargs)
+        docs_with_scores = self.similarity_search_with_score(
+            query, k, fetch_k, search_params, **kwargs
+        )
         return [doc for doc, _ in docs_with_scores]
 
     def similarity_search_with_score(
         self,
         query: str,
         k: int = 4,
+        fetch_k: int = 20,
+        search_params: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with score."
         Args:
             query (str): Query to look up for similar documents
             k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch before passing to vector search.
+                Defaults to 20.
         Returns:
             List of (Document, score) that are most similar to the query.
         """
         query_embedding = self.embeddings.embed_query(query)
         docs_with_score = self.similarity_search_with_score_by_vector(
-            query_embedding, k
+            query_embedding, k, fetch_k, search_params, **kwargs
         )
         return docs_with_score
 
@@ -331,17 +403,23 @@ class CouchbaseVectorStore(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
+        fetch_k: int = 20,
+        search_params: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return documents that are most similar to the vector embedding.
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch before passing to vector search.
+                Defaults to 20.
 
         Returns:
             List of Documents most similar to the query.
         """
-        docs_with_score = self.similarity_search_with_score_by_vector(embedding, k)
+        docs_with_score = self.similarity_search_with_score_by_vector(
+            embedding, k, fetch_k, search_params, **kwargs
+        )
         return [doc for doc, _ in docs_with_score]
 
     @classmethod
@@ -358,6 +436,7 @@ class CouchbaseVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         metadatas: Optional[List[Dict[str, Any]]] = None,
         embedding_key: Optional[str] = None,
+        scoped_index: Optional[bool] = True,
     ) -> CouchbaseVectorStore:
         """Construct a Couchbase vector store from a list of texts.
 
@@ -406,6 +485,7 @@ class CouchbaseVectorStore(VectorStore):
             ids (optional[List[str]]): list of ids to add to documents.
             metadatas (optional[List[Dict]): list of metadatas to add to documents.
             embedding_key (optional[str]): key in document to use for the embeddings.
+            scoped_index (optional[bool]): specifies whether the index is a scoped index.
 
         Returns:
             A Couchbase vector store.
@@ -432,6 +512,7 @@ class CouchbaseVectorStore(VectorStore):
             index_name,
             text_key,
             embedding_key,
+            scoped_index,
         )
 
         vector_store.add_texts(texts, metadatas=metadatas, ids=ids)
