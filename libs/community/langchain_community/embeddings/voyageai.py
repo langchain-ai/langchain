@@ -113,7 +113,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         self, input: List[str], input_type: Optional[str] = None
     ) -> Dict:
         api_key = cast(SecretStr, self.voyage_api_key).get_secret_value()
-        params = {
+        params: Dict = {
             "url": self.voyage_api_base,
             "headers": {"Authorization": f"Bearer {api_key}"},
             "json": {"model": self.model, "input": input, "input_type": input_type},
