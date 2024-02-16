@@ -4,14 +4,16 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from langchain_community.graphs import GremlinGraph
-from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.callbacks.manager import CallbackManager, CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Field
 
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
     CYPHER_QA_PROMPT,
+    GRAPHDB_SPARQL_FIX_TEMPLATE,
     GREMLIN_GENERATION_PROMPT,
 )
 from langchain.chains.llm import LLMChain
@@ -49,6 +51,8 @@ class GremlinQAChain(Chain):
     graph: GremlinGraph = Field(exclude=True)
     gremlin_generation_chain: LLMChain
     qa_chain: LLMChain
+    gremlin_fix_chain: LLMChain
+    max_fix_retries: int = 3
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     top_k: int = 100
@@ -77,6 +81,12 @@ class GremlinQAChain(Chain):
         cls,
         llm: BaseLanguageModel,
         *,
+        gremlin_fix_prompt: BasePromptTemplate = PromptTemplate(
+            input_variables=["error_message", "generated_sparql", "schema"],
+            template=GRAPHDB_SPARQL_FIX_TEMPLATE.replace("SPARQL", "Gremlin").replace(
+                "in Turtle format", ""
+            ),
+        ),
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         gremlin_prompt: BasePromptTemplate = GREMLIN_GENERATION_PROMPT,
         **kwargs: Any,
@@ -84,10 +94,11 @@ class GremlinQAChain(Chain):
         """Initialize from LLM."""
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
         gremlin_generation_chain = LLMChain(llm=llm, prompt=gremlin_prompt)
-
+        gremlinl_fix_chain = LLMChain(llm=llm, prompt=gremlin_fix_prompt)
         return cls(
             qa_chain=qa_chain,
             gremlin_generation_chain=gremlin_generation_chain,
+            gremlin_fix_chain=gremlinl_fix_chain,
             **kwargs,
         )
 
@@ -119,7 +130,9 @@ class GremlinQAChain(Chain):
         intermediate_steps.append({"query": generated_gremlin})
 
         if generated_gremlin:
-            context = self.graph.query(generated_gremlin)[: self.top_k]
+            context = self.execute_with_retry(
+                _run_manager, callbacks, generated_gremlin
+            )[: self.top_k]
         else:
             context = []
 
@@ -144,3 +157,62 @@ class GremlinQAChain(Chain):
             chain_result[INTERMEDIATE_STEPS_KEY] = intermediate_steps
 
         return chain_result
+
+    def execute_query(self, query: str) -> List[Any]:
+        try:
+            return self.graph.query(query)
+        except Exception as e:
+            if hasattr(e, "status_message"):
+                raise ValueError(e.status_message)
+            else:
+                raise ValueError(str(e))
+
+    def execute_with_retry(
+        self,
+        _run_manager: CallbackManagerForChainRun,
+        callbacks: CallbackManager,
+        generated_gremlin: str,
+    ) -> List[Any]:
+        try:
+            return self.execute_query(generated_gremlin)
+        except Exception as e:
+            retries = 0
+            error_message = str(e)
+            self.log_invalid_query(_run_manager, generated_gremlin, error_message)
+
+            while retries < self.max_fix_retries:
+                try:
+                    fix_chain_result = self.gremlin_fix_chain.invoke(
+                        {
+                            "error_message": error_message,
+                            # we are borrowing template from sparql
+                            "generated_sparql": generated_gremlin,
+                            "schema": self.schema,
+                        },
+                        callbacks=callbacks,
+                    )
+                    fixed_gremlin = fix_chain_result[self.gremlin_fix_chain.output_key]
+                    return self.execute_query(fixed_gremlin)
+                except Exception as e:
+                    retries += 1
+                    parse_exception = str(e)
+                    self.log_invalid_query(_run_manager, fixed_gremlin, parse_exception)
+
+        raise ValueError("The generated Gremlin query is invalid.")
+
+    def log_invalid_query(
+        self,
+        _run_manager: CallbackManagerForChainRun,
+        generated_query: str,
+        error_message: str,
+    ) -> None:
+        _run_manager.on_text("Invalid Gremlin query: ", end="\n", verbose=self.verbose)
+        _run_manager.on_text(
+            generated_query, color="red", end="\n", verbose=self.verbose
+        )
+        _run_manager.on_text(
+            "Gremlin Query Parse Error: ", end="\n", verbose=self.verbose
+        )
+        _run_manager.on_text(
+            error_message, color="red", end="\n\n", verbose=self.verbose
+        )
