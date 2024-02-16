@@ -2,7 +2,7 @@
 """Tools for interacting with a SQL database."""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
-from sqlalchemy import Result
+from sqlalchemy.engine import Result
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
