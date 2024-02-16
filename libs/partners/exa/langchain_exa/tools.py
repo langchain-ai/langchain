@@ -1,6 +1,6 @@
 """Tool for the Exa Search API."""
 
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from exa_py import Exa  # type: ignore
 from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore
@@ -35,7 +35,7 @@ class ExaSearchResults(BaseTool):
         self,
         query: str,
         num_results: int,
-        text_contents_options: Union[TextContentsOptions, Literal[True]],
+        text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
@@ -51,7 +51,7 @@ class ExaSearchResults(BaseTool):
             return self.client.search_and_contents(
                 query,
                 num_results=num_results,
-                text=text_contents_options,
+                text=text_contents_options,  # type: ignore
                 highlights=highlights,  # type: ignore
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
