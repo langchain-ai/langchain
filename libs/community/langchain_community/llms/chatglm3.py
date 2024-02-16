@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 from typing import Any, List, Optional, Union
@@ -55,6 +56,15 @@ class ChatGLM3(LLM):
     http_client: Union[Any, None] = None
     timeout: int = DEFAULT_TIMEOUT
 
+    agent_mode: bool = False
+    """Whether llm operates in agent mode or not"""
+    agent_messages: List[BaseMessage] = Field(default_factory=list)
+    """Series of history messages."""
+    in_function_calling: bool = False
+    """Whether the llm is in a function calling or not"""
+    active_tools: List[dict] = Field(default_factory=dict)
+    """Current tools being in use"""
+
     @property
     def _llm_type(self) -> str:
         return "chat_glm_3"
@@ -78,13 +88,37 @@ class ChatGLM3(LLM):
         return self.http_client or httpx.Client(timeout=self.timeout)
 
     def _get_payload(self, prompt: str) -> dict:
+        _sys, _human, _function = None, None, None
+        if not self.in_function_calling:
+            _system, self.active_tools, _query = self._extract_system(prompt)
+            _sys = SystemMessage(content=_system) if len(_system) > 0 else _sys
+            _human = HumanMessage(content=_query)
+        else:
+            _observation = self._extract_observation(prompt)
+            _function = FunctionMessage(name="", content=_observation)
+        # fill messages
+        messages = self.prefix_messages + self.agent_messages
+        messages.append(_sys) if _sys is not None else None
+        messages.append(_human) if _human is not None else None
+        messages.append(_function) if _function is not None else None
+        # save messages to agent_messages
+        if self.agent_mode:
+            # ignore the system message
+            self.agent_messages.append(_human) if _human is not None else None
+            self.agent_messages.append(_function) if _function is not None else None
+        # add messages to the params
         params = self._invocation_params
-        messages = self.prefix_messages + [HumanMessage(content=prompt)]
         params.update(
             {
                 "messages": [_convert_message_to_dict(m) for m in messages],
             }
         )
+        # add active tools to the params
+        params.update(
+            {
+                "tools": self.active_tools,
+            }
+        ) if len(self.active_tools) > 0 else None
         return params
 
     def _call(
@@ -148,4 +182,93 @@ class ChatGLM3(LLM):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
 
+        if self.agent_mode:
+            self.agent_messages.append(AIMessage(content=text))
+            text = self._extract_tool(text)
+
         return text
+
+    def _extract_system(self, prompt: str):
+        _header = "You have access to the following tools:\n\n"
+        if _header not in prompt:
+            return "", [], prompt
+
+        _tips = "\n\nUse a json blob"
+        tool_prompts = prompt.split(_header)[1].split(_tips)[0].split("\n")
+        tools = []
+
+        for tool_desc in tool_prompts:
+            name = tool_desc.split(":")[0]
+            description = tool_desc.split(", args:")[0].split(":")[1].strip()
+            parameters_str = tool_desc.split("args:")[1].strip()
+            parameters_dict = ast.literal_eval(parameters_str)
+            params_cleaned = {}
+            for param, details in parameters_dict.items():
+                desc = details['description'] if 'description' in details else ""
+                params_cleaned[param] = {'description': desc, 'type': details['type']}
+
+            tools.append({
+                "name": name,
+                "description": description,
+                "parameters": params_cleaned
+            })
+
+        _split = "Use a json blob to specify a tool by providing an action key"
+        prompt = _split + prompt.split(_split)[1].strip()
+        system = "Human: ".join(prompt.split("Human: ")[:-1])
+        query = prompt.split("Human: ")[-1].strip()
+        return system, tools, query
+
+    def _extract_observation(self, prompt: str):
+        observation = prompt.split("Observation: ")[-1].split("\nThought:")[0]
+        return observation
+
+    def _extract_tool(self, text: dict):
+        if "\ntool_call(" in text:
+            metadata = text.split('\n')[0]
+            metadata = metadata.split('<|assistant|>')[1] \
+                if '<|assistant|>' in metadata else metadata
+            metadata = metadata.strip()
+            content = '\n'.join(text.split('\n')[1:])
+
+            lines = content.split('\n')
+            for line in lines:
+                if 'tool_call(' in line and ')' in line:
+                    # get the string inside the brackets
+                    _contents = line.strip().split('tool_call(')[-1].strip()
+                    _contents = _contents.split(')')[:-1]
+                    params_str = ")".join(_contents)
+                    # extract the parameters pairs
+                    params_pairs = [
+                        param.split("=") \
+                            for param in params_str.split(",") if "=" in param
+                    ]
+                    params_pairs = [
+                        [pair[0] if pair[0] != "查询" else "query", pair[1]] \
+                            for pair in params_pairs
+                    ]
+                    params = {
+                        pair[0].strip(): pair[1].strip().strip("'\"") \
+                            for pair in params_pairs
+                    }
+                    action_json = {
+                        "action": metadata,
+                        "action_input": params
+                    }
+                    self.in_function_calling = True
+                    return f"""
+Action:
+```
+{json.dumps(action_json, ensure_ascii=False)}
+```"""
+            raise ValueError(f"No tool_call in text: {text}")
+        final_answer_json = {
+            "action": "Final Answer",
+            "action_input": text
+        }
+        self.in_function_calling = False
+        return f"""
+Action:
+```
+{json.dumps(final_answer_json, ensure_ascii=False)}
+```"""
