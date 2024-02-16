@@ -7,14 +7,12 @@ from time import sleep
 from typing import Any
 
 import pytest
-
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
-from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_mongodb_atlas.vectorstores import MongoDBAtlasVectorSearch
-
 
 INDEX_NAME = "langchain-test-index"
 NAMESPACE = "langchain_test_db.langchain_test_collection"
