@@ -2,6 +2,7 @@
 
 from langchain_community.graphs.arangodb_graph import ArangoGraph
 from langchain_community.graphs.falkordb_graph import FalkorDBGraph
+from langchain_community.graphs.gremlin_graph import GremlinGraph
 from langchain_community.graphs.hugegraph import HugeGraph
 from langchain_community.graphs.kuzu_graph import KuzuGraph
 from langchain_community.graphs.memgraph_graph import MemgraphGraph
@@ -13,7 +14,6 @@ from langchain_community.graphs.networkx_graph import NetworkxEntityGraph
 from langchain_community.graphs.ontotext_graphdb_graph import OntotextGraphDBGraph
 from langchain_community.graphs.rdf_graph import RdfGraph
 from langchain_community.graphs.tigergraph_graph import TigerGraph
-from langchain_community.graphs.gremlin_graph import GremlinGraph
 
 __all__ = [
     "MemgraphGraph",
@@ -29,5 +29,5 @@ __all__ = [
     "FalkorDBGraph",
     "TigerGraph",
     "OntotextGraphDBGraph",
-    "GremlinGraph"
+    "GremlinGraph",
 ]
