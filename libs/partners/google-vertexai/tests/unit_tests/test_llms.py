@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -25,7 +25,7 @@ from langchain_google_vertexai.llms import VertexAI
     ],
 )
 def test_set_params_palm_model(params):
-    with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
+    with patch("vertexai._model_garden._model_garden_models._from_pretrained") as _:
         model = VertexAI(model_name="text-bison", **params)
         assert model._default_params == params
 
@@ -46,7 +46,7 @@ def test_set_params_palm_model(params):
     ],
 )
 def test_set_params_codey_model(params):
-    with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
+    with patch("vertexai._model_garden._model_garden_models._from_pretrained") as _:
         model = VertexAI(model_name="code-bison", **params)
         assert model._default_params == params
 
