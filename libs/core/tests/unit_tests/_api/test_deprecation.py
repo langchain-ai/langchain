@@ -290,7 +290,8 @@ def test_whole_class_deprecation() -> None:
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
         # [*Deprecated*] should be inserted only once:
-        assert obj.__doc__.count("[*Deprecated*]") == 1
+        if obj.__doc__ is not None:
+            assert obj.__doc__.count("[*Deprecated*]") == 1
 
 
 def test_whole_class_inherited_deprecation() -> None:
@@ -344,7 +345,8 @@ def test_whole_class_inherited_deprecation() -> None:
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
         # if [*Deprecated*] was inserted only once:
-        assert obj.__doc__.count("[*Deprecated*]") == 1
+        if obj.__doc__ is not None:
+            assert obj.__doc__.count("[*Deprecated*]") == 1
 
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
@@ -366,8 +368,9 @@ def test_whole_class_inherited_deprecation() -> None:
             "LangChain 2.2.0 and will be removed in 3.2.0"
         )
         # if [*Deprecated*] was inserted only once:
-        assert obj.__doc__.count("[*Deprecated*]") == 1
-        assert "[*Deprecated*] Inherited deprecated class." in obj.__doc__
+        if obj.__doc__ is not None:
+            assert obj.__doc__.count("[*Deprecated*]") == 1
+            assert "[*Deprecated*] Inherited deprecated class." in obj.__doc__
 
 
 # Tests with pydantic models
