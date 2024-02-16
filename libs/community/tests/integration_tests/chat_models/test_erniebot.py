@@ -1,7 +1,5 @@
 """Test ERNIE Bot wrapper."""
 
-from typing import List
-
 import pytest
 from langchain_core.messages import (
     AIMessage,
