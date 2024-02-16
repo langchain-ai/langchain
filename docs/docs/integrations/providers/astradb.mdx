@@ -14,8 +14,8 @@ pip install "astrapy>=0.7.1"
 ## Vector Store
 
 ```python
-from langchain_community.vectorstores import AstraDB
-vector_store = AstraDB(
+from langchain_astradb import AstraDBVectorStore
+vector_store = AstraDBVectorStore(
     embedding=my_embedding,
     collection_name="my_store",
     api_endpoint="...",
@@ -82,10 +82,10 @@ Learn more in the [example notebook](/docs/integrations/document_loaders/astradb
 ## Self-querying retriever
 
 ```python
-from langchain_community.vectorstores import AstraDB
+from langchain_astradb import AstraDBVectorStore
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 
-vector_store = AstraDB(
+vector_store = AstraDBVectorStore(
     embedding=my_embedding,
     collection_name="my_store",
     api_endpoint="...",
