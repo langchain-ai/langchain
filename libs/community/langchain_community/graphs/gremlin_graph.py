@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.utils import get_from_env
 
-from langchain_community.graphs.graph_document import GraphDocument
+from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_community.graphs.graph_store import GraphStore
 
 
@@ -83,12 +83,20 @@ class GremlinGraph(GraphStore):
         """
         vertex_schema = self.client.submit("g.V().label().dedup()").all().result()
         edge_schema = self.client.submit("g.E().label().dedup()").all().result()
+        vertex_properties = (
+            self.client.submit(
+                "g.V().group().by(label).by(properties().label(). dedup(). fold())"
+            )
+            .all()
+            .result()[0]
+        )
         self.schema = "\n".join(
             [
-                "Node labes are the following:",
+                "Vertex labels are the following:",
                 ",".join(vertex_schema),
                 "Edge labes are the following:",
                 ",".join(edge_schema),
+                f"Vertexes have following properties:\n{vertex_properties}",
             ]
         )
 
@@ -115,7 +123,7 @@ class GremlinGraph(GraphStore):
 
             # Import nodes to vertexes
             for el in document.nodes:
-                node = self.add_node(el.type, el.id, el.properties)
+                node = self.add_node(el)
                 if include_source:
                     # Add Edge to document for each node
                     self.add_edge("source", doc_node, node, {})
@@ -124,62 +132,53 @@ class GremlinGraph(GraphStore):
             # Edges
             for el in document.relationships:
                 # Find or create the source vertex
-                source = self.add_node(
-                    el.source.type, el.source.id, el.source.properties, node_cache
-                )
+                self.add_node(el.source, node_cache)
                 # Find or create the target vertex
-                target = self.add_node(
-                    el.target.type, el.target.id, el.target.properties, node_cache
-                )
+                self.add_node(el.target, node_cache)
                 # Find or create the edge
-                self.add_edge(el.type, source, target, el.properties)
+                self.add_edge(el)
 
-    def build_vertex_query(self, label_value: str, id_value, properties: dict):
+    def build_vertex_query(self, node: Node):
         base_query = (
-            f"g.V().hasLabel('{label_value}').has('id','{id_value}').fold()"
-            + f".coalesce(unfold(),addV('{label_value}')"
-            + f".property('id','{id_value}').property('type', '{label_value}')"
+            f"g.V().has('id','{node.id}').fold()"
+            + f".coalesce(unfold(),addV('{node.type}')"
+            + f".property('id','{node.id}')"
+            + f".property('type','{node.type}')"
         )
-        for key, value in properties.items():
+        for key, value in node.properties.items():
             base_query += f".property('{key}', '{value}')"
 
         return base_query + ")"
 
-    def build_edge_query(
-        self, type: str, source_node: dict, target_node: dict, properties: dict
-    ):
-        source_query = (
-            f".hasLabel('{source_node['label']}')"
-            + f".has('type', '{source_node['label']}')"
-            + f".has('id','{source_node['id']}')"
-        )
-        target_query = (
-            f".hasLabel('{target_node['label']}')"
-            + f".has('type', '{target_node['label']}').has('id','{target_node['id']}')"
-        )
+    def build_edge_query(self, relationship: Relationship):
+        source_query = f".has('id','{relationship.source.id}')"
+        target_query = f".has('id','{relationship.target.id}')"
 
         base_query = f""""g.V(){source_query}.as('a')  
             .V(){target_query}.as('b') 
             .choose(
-                __.inE('{type}').where(outV().as('a')),
+                __.inE('{relationship.type}').where(outV().as('a')),
                 __.identity(),
-                __.addE('{type}').from('a').to('b')
+                __.addE('{relationship.type}').from('a').to('b')
             )        
             """.replace("\n", "").replace("\t", "")
-        for key, value in properties.items():
+        for key, value in relationship.properties.items():
             base_query += f".property('{key}', '{value}')"
 
         return base_query
 
-    def add_node(self, type: str, id: str, properties: dict, node_cache: dict = {}):
-        if id in node_cache:
-            return node_cache[id]
+    def add_node(self, node: Node, node_cache: dict = {}):
+        # if properties does not have label, add type as label
+        if "label" not in node.properties:
+            node.properties["label"] = node.type
+        if node.id in node_cache:
+            return node_cache[node.id]
         else:
-            query = self.build_vertex_query(type, id, properties)
-            node = self.client.submit(query).all().result()[0]
-            node_cache[id] = node
+            query = self.build_vertex_query(node)
+            _ = self.client.submit(query).all().result()[0]
+            node_cache[node.id] = node
             return node
 
-    def add_edge(self, type: str, source: dict, target: dict, properties: dict):
-        query = self.build_edge_query(type, source, target, properties)
+    def add_edge(self, relationship: Relationship):
+        query = self.build_edge_query(relationship)
         return self.client.submit(query).all().result()[0]
