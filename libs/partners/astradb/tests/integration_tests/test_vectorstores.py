@@ -10,7 +10,7 @@ Required to run this test:
     - optionally this as well (otherwise defaults are used):
         export ASTRA_DB_KEYSPACE="my_keyspace"
     - optionally:
-        export SKIP_COLLECTION_DELETE="0" ("1" = no deletions, default)
+        export ASTRA_DB_SKIP_COLLECTION_DELETIONS="0" ("1" = no deletions, default)
 """
 
 import json
@@ -157,7 +157,6 @@ def store_parseremb(
         v_store.clear()
 
 
-@pytest.mark.requires("astrapy")
 @pytest.mark.skipif(not _has_env_vars(), reason="Missing Astra DB env. vars")
 class TestAstraDBVectorStore:
     def test_astradb_vectorstore_create_delete(
