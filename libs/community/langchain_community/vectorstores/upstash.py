@@ -259,14 +259,11 @@ class UpstashVectorStore(VectorStore):
             include_metadata=True,
         )
 
-        print(f"results from querying for {embedding}:", results)
-
         for res in results:
             metadata = res.metadata
             if metadata and self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 score = res.score
-                print("metadata:", metadata)
                 docs.append(
                     (Document(page_content=text, metadata=metadata), score))
             else:
