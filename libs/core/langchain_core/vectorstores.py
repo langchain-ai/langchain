@@ -315,7 +315,7 @@ class VectorStore(ABC):
             If a single query is provided:
                 List of Tuples of (doc, similarity_score)
             If a list of queries is provided:
-                List where each element ist a List of Tuples of (doc, similarity_score)
+                List where each element is a List of Tuples of (doc, similarity_score)
         """
 
         score_threshold = kwargs.pop("score_threshold", None)
