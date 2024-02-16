@@ -68,11 +68,12 @@ class GremlinGraph(GraphStore):
             if message_serializer
             else serializer.GraphSONSerializersV2d0(),
         )
+        self.schema: str = ""
 
     @property
     def get_schema(self) -> str:
         """Returns the schema of the Gremlin database"""
-        if self.schema is None:
+        if len(self.schema) == 0:
             self.refresh_schema()
         return self.schema
 
@@ -82,7 +83,6 @@ class GremlinGraph(GraphStore):
         """
         vertex_schema = self.client.submit("g.V().label().dedup()").all().result()
         edge_schema = self.client.submit("g.E().label().dedup()").all().result()
-
         self.schema = "\n".join(
             [
                 "Node labes are the following:",
