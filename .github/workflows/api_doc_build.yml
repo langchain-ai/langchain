@@ -1,0 +1,52 @@
+name: API docs build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '0 13 * * *'
+env:
+  POETRY_VERSION: "1.7.1"
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bagatur/api_docs_build
+
+      - name: Set Git config
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
+
+      - name: Merge master
+        run: | 
+          git fetch origin master
+          git merge origin/master -m "Merge master" --allow-unrelated-histories -X theirs
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          cache-key: api-docs
+
+      - name: Install dependencies
+        run: |
+          poetry run python -m pip install --upgrade --no-cache-dir pip setuptools
+          poetry run python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
+          poetry run python -m pip install ./libs/partners/*
+          poetry run python -m pip install --exists-action=w --no-cache-dir -r docs/api_reference/requirements.txt
+
+      - name: Build docs
+        run: |
+          poetry run python -m pip install --upgrade --no-cache-dir pip setuptools
+          poetry run python docs/api_reference/create_api_rst.py
+          poetry run python -m sphinx -T -E -b html -d _build/doctrees -c docs/api_reference docs/api_reference api_reference_build/html -j auto
+
+      # https://github.com/marketplace/actions/add-commit
+      - uses: EndBug/add-and-commit@v9
+        with:
+          message: 'Update API docs build'
