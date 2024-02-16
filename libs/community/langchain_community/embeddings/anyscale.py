@@ -1,18 +1,18 @@
 """Anyscale embeddings wrapper."""
 from __future__ import annotations
 
-import os
-from typing import Callable, Dict, Optional, Union
+from typing import Dict
 
-import openai
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-
 from langchain_openai.embeddings.base import OpenAIEmbeddings
+
 from langchain_community.utils.openai import is_openai_v1
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "thenlper/gte-large"
+
+
 class AnyscaleEmbeddings(OpenAIEmbeddings):
     """`Anyscale` Embeddings API."""
 
@@ -26,13 +26,13 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
     """Set this to False for non-OpenAI implementations of the embeddings API"""
     embedding_ctx_length: int = 500
     """The maximum number of tokens to embed at once."""
-    
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {
             "anyscale_api_key": "ANYSCALE_API_KEY",
-    }
-    
+        }
+
     @root_validator()
     def validate_environment(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
@@ -58,7 +58,7 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
                 "Please install it with `pip install openai`."
             )
         if is_openai_v1():
-            # For backwards compatibility. 
+            # For backwards compatibility.
             client_params = {
                 "api_key": values["anyscale_api_key"].get_secret_value(),
                 "base_url": values["anyscale_api_base"],
