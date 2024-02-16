@@ -594,11 +594,7 @@
     },
     {
       "source": "/docs/integrations/cassandra",
-      "destination": "/docs/integrations/providers/astradb"
-    },
-    {
-      "source": "/docs/integrations/providers/cassandra",
-      "destination": "/docs/integrations/providers/astradb"
+      "destination": "/docs/integrations/providers/cassandra"
     },
     {
       "source": "/docs/integrations/providers/providers/semadb",
@@ -607,10 +603,6 @@
     {
       "source": "/docs/integrations/vectorstores/vectorstores/semadb",
       "destination": "/docs/integrations/vectorstores/semadb"
-    },
-    {
-      "source": "/docs/integrations/vectorstores/cassandra",
-      "destination": "/docs/integrations/vectorstores/astradb"
     },
     {
       "source": "/docs/integrations/vectorstores/async_faiss",

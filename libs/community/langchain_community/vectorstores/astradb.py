@@ -20,6 +20,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import run_in_executor
@@ -61,6 +62,11 @@ def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
     return new_lst
 
 
+@deprecated(
+    since="0.1.23",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBVectorStore",
+)
 class AstraDB(VectorStore):
     """Wrapper around DataStax Astra DB for vector-store workloads.
 
