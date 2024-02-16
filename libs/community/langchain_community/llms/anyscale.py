@@ -26,6 +26,7 @@ from langchain_community.utils.openai import is_openai_v1
 DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 
+
 def update_token_usage(
     keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
 ) -> None:
