@@ -66,17 +66,25 @@ class StubTextChatResponse:
 
     text: str
 
-
-@pytest.mark.parametrize("stop", [None, "stop1"])
-def test_vertexai_args_passed(stop: Optional[str]) -> None:
-    response_text = "Goodbye"
-    user_prompt = "Hello"
-    prompt_params: Dict[str, Any] = {
+@pytest.mark.parametrize("prompt_params", [
+    {
         "max_output_tokens": 1,
         "temperature": 10000.0,
         "top_k": 10,
         "top_p": 0.5,
+    },
+    # test that non-truthy values work
+    {
+        "max_output_tokens": 0,
+        "temperature": 0.0,
+        "top_k": 0,
+        "top_p": 0.0,
     }
+    ])
+@pytest.mark.parametrize("stop", [None, "stop1"])
+def test_vertexai_args_passed(stop: Optional[str], prompt_params: Dict[str, Any]) -> None:
+    response_text = "Goodbye"
+    user_prompt = "Hello" 
 
     # Mock the library to ensure the args are passed correctly
     with patch("vertexai._model_garden._model_garden_models._from_pretrained") as mg:
@@ -174,6 +182,7 @@ def test_default_params_palm() -> None:
         mock_start_chat.assert_called_once_with(
             context=None,
             message_history=[],
+            temperature=0.0,
             max_output_tokens=128,
             top_k=40,
             top_p=0.95,
