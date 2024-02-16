@@ -3,10 +3,10 @@ from unittest import mock
 
 import pytest
 import rockset
-
-from langchain_community.vectorstores import Rockset
 from rockset.model.add_documents_response import AddDocumentsResponse
 from rockset.rockset_client import DocumentsApiWrapper
+
+from langchain_community.vectorstores import Rockset
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     fake_texts,
@@ -19,32 +19,38 @@ TEXT_KEY = "description"
 
 
 @pytest.fixture()
-def embeddings():
+def embeddings() -> ConsistentFakeEmbeddings:
     embeddings = ConsistentFakeEmbeddings()
     embeddings.embed_documents(fake_texts)
     return embeddings
 
 
 @pytest.fixture()
-def simple_rs_client():
+def simple_rs_client() -> rockset.RocksetClient:
     client = mock.Mock(rockset.RocksetClient)
     client.Documents = mock.Mock(DocumentsApiWrapper.add_documents)
     client.Documents.add_documents = mock.Mock(
-        DocumentsApiWrapper.add_documents,
-        return_value=AddDocumentsResponse(data=[])
+        DocumentsApiWrapper.add_documents, return_value=AddDocumentsResponse(data=[])
     )
     return client
 
 
 @pytest.fixture()
-def vectorstore(simple_rs_client, embeddings):
+def vectorstore(
+    simple_rs_client: rockset.RocksetClient, embeddings: ConsistentFakeEmbeddings
+) -> Rockset:
     vectorstore = Rockset(
-        simple_rs_client, embeddings, COLLECTION_NAME, TEXT_KEY, EMBEDDING_KEY, WORKSPACE
+        simple_rs_client,
+        embeddings,
+        COLLECTION_NAME,
+        TEXT_KEY,
+        EMBEDDING_KEY,
+        WORKSPACE,
     )
     return vectorstore
 
 
-def test_add_texts_does_not_modify_metadata(vectorstore: Rockset):
+def test_add_texts_does_not_modify_metadata(vectorstore: Rockset) -> None:
     """If metadata changes it will inhibit the langchain RecordManager
     functionality"""
 
@@ -59,7 +65,7 @@ def test_add_texts_does_not_modify_metadata(vectorstore: Rockset):
         assert list(metadata.keys())[0] == "source"
 
 
-def test_build_query_sql(vectorstore) -> None:
+def test_build_query_sql(vectorstore: Rockset) -> None:
     vector = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
     q_str = vectorstore._build_query_sql(
         vector,
@@ -77,7 +83,7 @@ LIMIT 4
     assert q_str == expected
 
 
-def test_build_query_sql_with_where(vectorstore) -> None:
+def test_build_query_sql_with_where(vectorstore: Rockset) -> None:
     vector = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
     q_str = vectorstore._build_query_sql(
         vector,
