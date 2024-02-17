@@ -10,9 +10,9 @@ from typing import (
 
 from langchain_core.tracers.context import register_configure_hook
 
+from langchain_community.callbacks.bedrock_info import BedrockTokenUsageCallbackHandler
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_community.callbacks.tracers.comet import CometTracer
-from langchain_community.callbacks.bedrock_info import BedrockTokenUsageCallbackHandler
 from langchain_community.callbacks.tracers.wandb import WandbTracer
 
 logger = logging.getLogger(__name__)
