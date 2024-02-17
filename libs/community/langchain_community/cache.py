@@ -1016,6 +1016,19 @@ class CassandraCache(BaseCache):
     """
     Cache that uses Cassandra / Astra DB as a backend.
 
+    Example:
+
+        .. code-block:: python
+
+            import cassio
+
+            from langchain_community.cache import CassandraCache
+            from langchain_community.globals import set_llm_cache
+
+            cassio.init(auto=True)  # Requires env. variables, see CassIO docs
+
+            set_llm_cache(CassandraCache())
+
     It uses a single Cassandra table.
     The lookup keys (which get to form the primary key) are:
         - prompt, a string
@@ -1023,7 +1036,7 @@ class CassandraCache(BaseCache):
           (needed to prevent same-prompt-different-model collisions)
 
     Constructor arguments:
-        table_name (str): name of the Cassandra table to use as cache
+        table_name (str, optional): name of the Cassandra table to use as cache
         session (cassandra.cluster.Session, None): an open Cassandra session.
             Leave unspecified to use the global cassio init (see below)
         keyspace (str, None): the keyspace to use for storing the cache.
@@ -1144,6 +1157,24 @@ class CassandraSemanticCache(BaseCache):
     Cache that uses Cassandra as a vector-store backend for semantic
     (i.e. similarity-based) lookup.
 
+    Example:
+
+        .. code-block:: python
+
+            import cassio
+
+            from langchain_community.cache import CassandraSemanticCache
+            from langchain_community.globals import set_llm_cache
+
+            cassio.init(auto=True)  # Requires env. variables, see CassIO docs
+
+            my_embedding = ...
+
+            set_llm_cache(CassandraSemanticCache(
+                embedding=my_embedding,
+                table_name="my_semantic_cache",
+            ))
+
     It uses a single (vector) Cassandra table and stores, in principle,
     cached values from several LLMs, so the LLM's llm_string is part
     of the rows' primary keys.
@@ -1156,7 +1187,9 @@ class CassandraSemanticCache(BaseCache):
         embedding (Embedding): Embedding provider for semantic
             encoding and search.
         table_name (str): name of the Cassandra (vector) table
-            to use as cache
+            to use as cache. There is a default for "simple" usage, but
+            remember to explicitly specify different tables if several embedding
+            models coexist in your app (they cannot share one cache table).
         session (cassandra.cluster.Session, None): an open Cassandra session.
             Leave unspecified to use the global cassio init (see below)
         keyspace (str, None): the keyspace to use for storing the cache.
