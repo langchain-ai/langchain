@@ -19,7 +19,7 @@ questions_category_id = "DIC_kwDOIPDwls4CS6Ve"
 
 discussions_query = """
 query Q($after: String, $category_id: ID) {
-  repository(name: "langchain", owner: "jacoblee93") {
+  repository(name: "langchain", owner: "langchain-ai") {
     discussions(first: 100, after: $after, categoryId: $category_id) {
       edges {
         cursor
@@ -62,7 +62,7 @@ query Q($after: String, $category_id: ID) {
 
 issues_query = """
 query Q($after: String) {
-  repository(name: "langchain", owner: "jacoblee93") {
+  repository(name: "langchain", owner: "langchain-ai") {
     issues(first: 100, after: $after) {
       edges {
         cursor
@@ -95,7 +95,7 @@ query Q($after: String) {
 
 prs_query = """
 query Q($after: String) {
-  repository(name: "langchain", owner: "jacoblee93") {
+  repository(name: "langchain", owner: "langchain-ai") {
     pullRequests(first: 100, after: $after) {
       edges {
         cursor
@@ -556,7 +556,7 @@ if __name__ == "__main__":
         settings=settings
     )
     authors = {**question_authors, **pr_authors}
-    maintainers_logins = {"jacoblee93"}
+    maintainers_logins = {"langchain-ai"}
     bot_names = {"dosubot", "github-actions"}
     maintainers = []
     for login in maintainers_logins:
