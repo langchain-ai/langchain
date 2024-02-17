@@ -99,7 +99,7 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
     async def __aexit__(self, *args) -> None:
         """stop the background worker,
         required to free references to the pytorch model."""
-        await self.engine.__aexit__()
+        await self.engine.__aexit__(*args)
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Async call out to Infinity's embedding endpoint.
