@@ -14,7 +14,7 @@ tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.15"
-fastapi = "^0.104.0"
+fastapi = "^0.109.1"
 sse-starlette = "^1.6.5"
 
 [tool.poetry.group.index.dependencies]
