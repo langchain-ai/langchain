@@ -65,7 +65,7 @@ class ChatMaritalk(SimpleChatModel):
         return parsed_messages
 
 
-    def _call(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, **kwargs: Any) -> Union[Dict[str, Any], str]:
+    def _call(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         """
         Sends the parsed messages to the MariTalk API and returns the generated response or an error message.
 
@@ -78,7 +78,7 @@ class ChatMaritalk(SimpleChatModel):
             stop (Optional[List[str]]): Tokens that will signal the model to stop generating further tokens.
 
         Returns:
-            Union[Dict[str, Any], str]: If the API call is successful, returns a dictionary with the response data, including the keys "answer" and "usage". If an error occurs (e.g., rate limiting), returns a string describing the error.
+            str: If the API call is successful, returns the answer. If an error occurs (e.g., rate limiting), returns a string describing the error.
         """
         url = "https://chat.maritaca.ai/api/chat/inference"
         headers = {"authorization": f"Key {self.api_key}"}
@@ -99,7 +99,7 @@ class ChatMaritalk(SimpleChatModel):
         if response.status_code == 429:
             return "Rate limited, please try again soon"
         elif response.ok:
-            return response.json()["answer"]  # This will be a dict with "answer" and potentially "usage"
+            return response.json()["answer"]
         else:
             response.raise_for_status()  # This will raise an HTTPError if the request is unsuccessful
 
