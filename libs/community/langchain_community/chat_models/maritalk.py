@@ -84,6 +84,7 @@ class ChatMaritalk(SimpleChatModel):
         """
         url = "https://chat.maritaca.ai/api/chat/inference"
         headers = {"authorization": f"Key {self.api_key}"}
+        stopping_tokens = stop if stop is not None else []
 
         parsed_messages = self.parse_messages_for_model(messages)
 
@@ -93,6 +94,7 @@ class ChatMaritalk(SimpleChatModel):
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
             "top_p": self.top_p,
+            "stopping_tokens": stopping_tokens,
         }
 
         response = requests.post(url, json=data, headers=headers)
