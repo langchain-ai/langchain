@@ -41,7 +41,7 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
     batch_size: int = 32
     "Internal batch size for inference, e.g. 32"
 
-    device: Optional[str] = None
+    device: str = "auto"
     "Device to use for inference, e.g. 'cpu' or 'cuda', or 'mps'"
 
     backend: str = "torch"
@@ -71,10 +71,11 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
                 "Please install the `pip install infinity_emb[torch,optimum]` "
                 "package to use the InfinityEmbeddingsLocal."
             )
+        logger.debug(f"Using InfinityEmbeddingsLocal with kwargs {values}")
 
         values["engine"] = AsyncEmbeddingEngine(
-            device=values["device"],
             model_name_or_path=values["model"],
+            device=values["device"],
             revision=values["revision"],
             model_warmup=values["model_warmup"],
             batch_size=values["batch_size"],
