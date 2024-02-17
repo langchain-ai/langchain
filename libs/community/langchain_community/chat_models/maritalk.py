@@ -99,7 +99,7 @@ class ChatMaritalk(SimpleChatModel):
         if response.status_code == 429:
             return "Rate limited, please try again soon"
         elif response.ok:
-            return response.json()  # This will be a dict with "answer" and potentially "usage"
+            return response.json()['answer']  # This will be a dict with "answer" and potentially "usage"
         else:
             response.raise_for_status()  # This will raise an HTTPError if the request is unsuccessful
 
