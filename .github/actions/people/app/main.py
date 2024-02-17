@@ -556,7 +556,20 @@ if __name__ == "__main__":
         settings=settings
     )
     authors = {**question_authors, **pr_authors}
-    maintainers_logins = {"langchain-ai"}
+    maintainers_logins = {
+        "hwchase17",
+        "agola11",
+        "baskaryan",
+        "hinthornw",
+        "nfcampos",
+        "efriis",
+        "eyurtsev",
+        "rlancemartin",
+        "vowelparrot",
+        "dev2049",
+        "jacoblee93",
+        "obi1kenobi"
+    }
     bot_names = {"dosubot", "github-actions"}
     maintainers = []
     for login in maintainers_logins:
