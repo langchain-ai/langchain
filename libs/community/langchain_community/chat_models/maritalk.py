@@ -1,11 +1,11 @@
 from typing import Any, List, Optional, Mapping
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langchain_core.pydantic_v1 import Field
 import requests
 
 
-class ChatMaritalk(BaseChatModel):
+class ChatMaritalk(SimpleChatModel):
     """`MariTalk` Chat models API.
 
     This class allows interacting with the MariTalk chatbot API. To use it, you must provide an API key either through the constructor.
