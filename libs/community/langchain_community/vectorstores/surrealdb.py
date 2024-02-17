@@ -117,7 +117,7 @@ class SurrealDBStore(VectorStore):
             if metadatas is not None and idx < len(metadatas):
                 data["metadata"] = metadatas[idx]  # type: ignore[assignment]
             else:
-                data["metadata"] = {}
+                data["metadata"] = []
             record = await self.sdb.create(
                 self.collection,
                 data,
