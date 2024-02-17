@@ -30,6 +30,21 @@ def test_basic_functionality(example_memory: List[ConversationBufferMemory]) -> 
     combined_memory.clear()
     assert combined_memory.load_memory_variables({}) == {"foo": "", "bar": ""}
 
+def test_complex_functionalities(example_memory: List[ConversationBufferMemory]) -> None:
+    """Test basic functionality of methods exposed by class"""
+    combined_memory = CombinedMemory(memories=[example_memory[0], example_memory[1]])
+    assert combined_memory.memory_variables == ["foo", "bar"]
+    assert combined_memory.load_memory_variables({}) == {"foo": "", "bar": ""}
+    combined_memory.save_context(
+        {"input": "Hello there"}, {"output": "Hello, how can I help you?"}
+    )
+    assert combined_memory.load_memory_variables({}) == {
+        "foo": "Human: Hello there\nAI: Hello, how can I help you?",
+        "bar": "Human: Hello there\nAI: Hello, how can I help you?",
+    }
+    combined_memory.clear()
+    assert combined_memory.load_memory_variables({}) == {"foo": "", "bar": ""}
+
 
 def test_repeated_memory_var(example_memory: List[ConversationBufferMemory]) -> None:
     """Test raising error when repeated memory variables found"""
