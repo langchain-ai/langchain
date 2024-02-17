@@ -116,7 +116,7 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
                 "Please start the engine before using it."
             )
             async with self:
-                # spawing threadpool for multithreaded encode, tokenization
+                # spawning threadpool for multithreaded encode, tokenization
                 embeddings, _ = await self.engine.embed(texts)
             # stopping threadpool on exit
             logger.warning("Stopped infinity engine after usage.")
