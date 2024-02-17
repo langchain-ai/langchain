@@ -283,46 +283,6 @@ class PRsResponse(BaseModel):
     data: PRsResponseData
 
 
-# Sponsors
-
-
-class SponsorEntity(BaseModel):
-    login: str
-    avatarUrl: str
-    url: str
-
-
-class Tier(BaseModel):
-    name: str
-    monthlyPriceInDollars: float
-
-
-class SponsorshipAsMaintainerNode(BaseModel):
-    sponsorEntity: SponsorEntity
-    tier: Tier
-
-
-class SponsorshipAsMaintainerEdge(BaseModel):
-    cursor: str
-    node: SponsorshipAsMaintainerNode
-
-
-class SponsorshipAsMaintainer(BaseModel):
-    edges: List[SponsorshipAsMaintainerEdge]
-
-
-class SponsorsUser(BaseModel):
-    sponsorshipsAsMaintainer: SponsorshipAsMaintainer
-
-
-class SponsorsResponseData(BaseModel):
-    user: SponsorsUser
-
-
-class SponsorsResponse(BaseModel):
-    data: SponsorsResponseData
-
-
 class Settings(BaseSettings):
     input_token: SecretStr
     github_repository: str
@@ -621,10 +581,8 @@ if __name__ == "__main__":
         "top_contributors": top_contributors,
         "top_reviewers": top_reviewers,
     }
-    people_path = Path("./docs/en/data/people.yml")
-    github_sponsors_path = Path("./docs/en/data/github_sponsors.yml")
+    people_path = Path("./docs/data/people.yml")
     people_old_content = people_path.read_text(encoding="utf-8")
-    github_sponsors_old_content = github_sponsors_path.read_text(encoding="utf-8")
     new_people_content = yaml.dump(
         people, sort_keys=False, width=200, allow_unicode=True
     )
@@ -634,7 +592,6 @@ if __name__ == "__main__":
         logging.info("The LangChain People data hasn't changed, finishing.")
         sys.exit(0)
     people_path.write_text(new_people_content, encoding="utf-8")
-    # github_sponsors_path.write_text(new_github_sponsors_content, encoding="utf-8")
     logging.info("Setting up GitHub Actions git user")
     subprocess.run(["git", "config", "user.name", "github-actions"], check=True)
     subprocess.run(
@@ -645,7 +602,7 @@ if __name__ == "__main__":
     subprocess.run(["git", "checkout", "-b", branch_name], check=True)
     logging.info("Adding updated file")
     subprocess.run(
-        ["git", "add", str(people_path), str(github_sponsors_path)], check=True
+        ["git", "add", str(people_path)], check=True
     )
     logging.info("Committing updated file")
     message = "👥 Update LangChain People"
