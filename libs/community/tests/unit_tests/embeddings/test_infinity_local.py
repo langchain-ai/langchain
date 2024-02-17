@@ -3,9 +3,16 @@ import pytest
 
 from langchain_community.embeddings.infinity_local import InfinityEmbeddingsLocal
 
+try:
+    import torch  # noqa
+    import infinity_emb  # noqa
 
-@pytest.mark.requires("infinity_emb")
-@pytest.mark.requires("torch")
+    IMPORTED_TORCH = True
+except ImportError:
+    IMPORTED_TORCH = False
+
+
+@pytest.mark.skipif(not IMPORTED_TORCH, reason="torch not installed")
 @pytest.mark.asyncio
 async def test_local_infinity_embeddings():
     embedder = InfinityEmbeddingsLocal(
