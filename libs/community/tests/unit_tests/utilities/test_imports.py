@@ -9,6 +9,7 @@ EXPECTED_ALL = [
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
     "DuckDuckGoSearchAPIWrapper",
+    "DriaAPIWrapper",
     "GoldenQueryAPIWrapper",
     "GoogleFinanceAPIWrapper",
     "GoogleJobsAPIWrapper",

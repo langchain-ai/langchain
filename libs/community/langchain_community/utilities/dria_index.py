@@ -20,7 +20,17 @@ class DriaAPIWrapper:
     def __init__(
         self, api_key: str, contract_id: Optional[str] = None, top_n: int = 10
     ):
-        from dria import Dria, Models
+        try:
+            from dria import Dria, Models
+        except ImportError:
+            logger.error(
+                """Dria is not installed. Please install Dria to use this wrapper.
+                
+                You can install Dria using the following command:
+                pip install dria
+                """
+            )
+            return
 
         self.api_key = api_key
         self.models = Models
@@ -34,8 +44,8 @@ class DriaAPIWrapper:
         self,
         name: str,
         description: str,
-        category: str = "Unspecified",
-        embedding: str = "jina-embeddings-v2-base-en",
+        category: str,
+        embedding: str,
     ) -> str:
         """Create a new knowledge base."""
         contract_id = self.dria_client.create(

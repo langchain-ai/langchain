@@ -42,6 +42,7 @@ __all__ = [
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
     "DuckDuckGoSearchAPIWrapper",
+    "DriaAPIWrapper",
     "GoldenQueryAPIWrapper",
     "GoogleFinanceAPIWrapper",
     "GoogleLensAPIWrapper",

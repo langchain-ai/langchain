@@ -68,7 +68,7 @@ def _import_duckduckgo_search() -> Any:
     return DuckDuckGoSearchAPIWrapper
 
 
-def _import_dria_search() -> Any:
+def _import_dria_index() -> Any:
     from langchain_community.utilities.dria_index import (
         DriaAPIWrapper,
     )
@@ -391,6 +391,8 @@ def __getattr__(name: str) -> Any:
         return _import_wolfram_alpha()
     elif name == "ZapierNLAWrapper":
         return _import_zapier()
+    elif name == "DriaAPIWrapper":
+        return _import_dria_index()
     else:
         raise AttributeError(f"Could not find: {name}")
 

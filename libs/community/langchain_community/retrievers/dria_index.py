@@ -1,6 +1,6 @@
 """Wrapper around Dria Retriever."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -14,7 +14,7 @@ class DriaRetriever(BaseRetriever):
 
     api_wrapper: DriaAPIWrapper
 
-    def __init__(self, api_key: str, contract_id: Optional[str] = None):
+    def __init__(self, api_key: str, contract_id: Optional[str] = None, **kwargs: Any):
         """
         Initialize the DriaRetriever with a DriaAPIWrapper instance.
 
@@ -22,8 +22,8 @@ class DriaRetriever(BaseRetriever):
             api_key: The API key for Dria.
             contract_id: The contract ID of the knowledge base to interact with.
         """
-        super().__init__()
-        self.api_wrapper = DriaAPIWrapper(api_key=api_key, contract_id=contract_id)
+        api_wrapper = DriaAPIWrapper(api_key=api_key, contract_id=contract_id)
+        super().__init__(api_wrapper=api_wrapper, **kwargs)
 
     def create_knowledge_base(
         self,
