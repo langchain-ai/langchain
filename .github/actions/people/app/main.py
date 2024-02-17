@@ -525,12 +525,16 @@ if __name__ == "__main__":
         "efriis",
         "eyurtsev",
         "rlancemartin",
-        "vowelparrot",
-        "dev2049",
         "jacoblee93",
-        "obi1kenobi"
+        "dqbd"
     }
-    bot_names = {"dosubot", "github-actions"}
+    hidden_logins = {
+        "dev2049",
+        "vowelparrot",
+        "obi1kenobi",
+        "langchain-infra"
+    }
+    bot_names = {"dosubot", "github-actions", "CodiumAI-Agent"}
     maintainers = []
     for login in maintainers_logins:
         user = authors[login]
@@ -548,7 +552,7 @@ if __name__ == "__main__":
     min_count_last_month = 3
     min_count_contributor = 4
     min_count_reviewer = 4
-    skip_users = maintainers_logins | bot_names
+    skip_users = maintainers_logins | bot_names | hidden_logins
     experts = get_top_users(
         counter=question_commentors,
         min_count=min_count_expert,
@@ -605,7 +609,7 @@ if __name__ == "__main__":
         ["git", "add", str(people_path)], check=True
     )
     logging.info("Committing updated file")
-    message = "👥 Update LangChain People"
+    message = "👥 Update LangChain people data"
     result = subprocess.run(["git", "commit", "-m", message], check=True)
     logging.info("Pushing branch")
     subprocess.run(["git", "push", "origin", branch_name], check=True)

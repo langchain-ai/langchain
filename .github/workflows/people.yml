@@ -4,7 +4,7 @@ on:
   # schedule:
   #   - cron: "0 14 1 * *"
   push:
-    branches: [main, jacob/people]
+    branches: [jacob/people]
   workflow_dispatch:
     inputs:
       debug_enabled:
