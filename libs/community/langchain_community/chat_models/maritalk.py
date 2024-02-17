@@ -1,7 +1,9 @@
 from typing import Any, List, Optional, Mapping
+from pydantic import Field
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 import requests
+
 
 class ChatMaritalk(SimpleChatModel):
     """`MariTalk` Chat models API.
@@ -13,34 +15,25 @@ class ChatMaritalk(SimpleChatModel):
 
             from langchain_community.chat_models import ChatMaritalk
             chat = ChatMaritalk(api_key="your_api_key_here")
-
-    Attributes:
-        api_key (str): Your MariTalk API key.
-        temperature (float): Run inference with this temperature. Must be in the closed interval [0.0, 1.0].
-        max_tokens (int): The maximum number of tokens to generate in the reply.
-        do_sample (bool): Whether or not to use sampling; use `True` to enable.
-        top_p (float): Nucleus sampling parameter controlling the size of the probability mass considered for sampling.
-        system_message_workaround (bool): Whether to include a workaround for system messages by echoing them back.
     """
 
-    def __init__(self, api_key: str, temperature: float = 0.7, max_tokens: int = 512, do_sample: bool = True, top_p: float = 0.95, system_message_workaround: bool = True):
-        """
-        Initializes the chat model with the necessary configuration to communicate with the MariTalk API.
+    api_key: str
+    """Your MariTalk API key."""
 
-        Parameters:
-            api_key (str): The API key for authenticating requests to MariTalk.
-            temperature (float): The temperature to use for generating responses. Controls randomness.
-            max_tokens (int): The maximum number of tokens to generate for the response.
-            do_sample (bool): Whether to use sampling for response generation.
-            top_p (float): The nucleus sampling parameter, controlling the size of the probability mass considered for sampling.
-            system_message_workaround (bool): Enables a workaround for handling system messages.
-        """
-        self.api_key = api_key
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.do_sample = do_sample
-        self.top_p = top_p
-        self.system_message_workaround = system_message_workaround
+    temperature: float = Field(default=0.7, gt=0.0, lt=1.0)
+    """Run inference with this temperature. Must be in the closed interval [0.0, 1.0]."""
+
+    max_tokens: int = Field(default=512, gt=0)
+    """The maximum number of tokens to generate in the reply."""
+
+    do_sample: bool = Field(default=True)
+    """Whether or not to use sampling; use `True` to enable."""
+
+    top_p: float = Field(default=0.95, gt=0.0, lt=1.0)
+    """Nucleus sampling parameter controlling the size of the probability mass considered for sampling."""
+
+    system_message_workaround: bool = Field(default=True)
+    """Whether to include a workaround for system messages by adding them as a user message."""
 
     @property
     def _llm_type(self) -> str:
