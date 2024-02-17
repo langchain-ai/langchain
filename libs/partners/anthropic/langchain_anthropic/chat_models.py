@@ -51,7 +51,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
 
 
 class ChatAnthropicMessages(BaseChatModel):
-    """Beta ChatAnthropicMessages chat model.
+    """ChatAnthropicMessages chat model.
 
     Example:
         .. code-block:: python
@@ -143,7 +143,7 @@ class ChatAnthropicMessages(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        with self._client.beta.messages.stream(**params) as stream:
+        with self._client.messages.stream(**params) as stream:
             for text in stream.text_stream:
                 yield ChatGenerationChunk(message=AIMessageChunk(content=text))
 
@@ -155,7 +155,7 @@ class ChatAnthropicMessages(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        async with self._async_client.beta.messages.stream(**params) as stream:
+        async with self._async_client.messages.stream(**params) as stream:
             async for text in stream.text_stream:
                 yield ChatGenerationChunk(message=AIMessageChunk(content=text))
 
@@ -167,7 +167,7 @@ class ChatAnthropicMessages(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        data = self._client.beta.messages.create(**params)
+        data = self._client.messages.create(**params)
         return ChatResult(
             generations=[
                 ChatGeneration(message=AIMessage(content=data.content[0].text))
@@ -183,7 +183,7 @@ class ChatAnthropicMessages(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        data = await self._async_client.beta.messages.create(**params)
+        data = await self._async_client.messages.create(**params)
         return ChatResult(
             generations=[
                 ChatGeneration(message=AIMessage(content=data.content[0].text))

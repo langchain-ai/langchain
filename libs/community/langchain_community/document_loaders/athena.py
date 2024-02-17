@@ -125,7 +125,7 @@ class AthenaLoader(BaseLoader):
             self._remove_suffix(output_uri, "/"), "s3://"
         ).split("/")
         bucket = tokens[0]
-        key = "/".join(tokens[1:]) + "/" + query_execution_id + ".csv"
+        key = "/".join(tokens[1:] + [query_execution_id]) + ".csv"
 
         obj = self.s3_client.get_object(Bucket=bucket, Key=key)
         df = pd.read_csv(io.BytesIO(obj["Body"].read()), encoding="utf8")

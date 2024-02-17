@@ -52,6 +52,8 @@ def _load_map_reduce_chain(
     verbose: Optional[bool] = None,
     token_max: int = 3000,
     callbacks: Callbacks = None,
+    *,
+    collapse_max_retries: Optional[int] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(
@@ -92,6 +94,7 @@ def _load_map_reduce_chain(
         token_max=token_max,
         verbose=verbose,
         callbacks=callbacks,
+        collapse_max_retries=collapse_max_retries,
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
