@@ -65,43 +65,43 @@ class ChatMaritalk(SimpleChatModel):
         return parsed_messages
 
 
-def _call(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, **kwargs: Any) -> Union[Dict[str, Any], str]:
-    """
-    Sends the parsed messages to the MariTalk API and returns the generated response or an error message.
+    def _call(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, **kwargs: Any) -> Union[Dict[str, Any], str]:
+        """
+        Sends the parsed messages to the MariTalk API and returns the generated response or an error message.
 
-    This method makes an HTTP POST request to the MariTalk API with the provided messages and other parameters.
-    If the request is successful and the API returns a response, this method returns a dictionary containing keys like "answer" and "usage" (indicating tokens consumed).
-    If the request is rate-limited or encounters another error, it returns a string with the error message.
+        This method makes an HTTP POST request to the MariTalk API with the provided messages and other parameters.
+        If the request is successful and the API returns a response, this method returns a dictionary containing keys like "answer" and "usage" (indicating tokens consumed).
+        If the request is rate-limited or encounters another error, it returns a string with the error message.
 
-    Parameters:
-        messages (List[BaseMessage]): Messages to send to the model.
-        stop (Optional[List[str]]): Tokens that will signal the model to stop generating further tokens.
+        Parameters:
+            messages (List[BaseMessage]): Messages to send to the model.
+            stop (Optional[List[str]]): Tokens that will signal the model to stop generating further tokens.
 
-    Returns:
-        Union[Dict[str, Any], str]: If the API call is successful, returns a dictionary with the response data, including the keys "answer" and "usage". If an error occurs (e.g., rate limiting), returns a string describing the error.
-    """
-    url = "https://chat.maritaca.ai/api/chat/inference"
-    headers = {"authorization": f"Key {self.api_key}"}
-    stopping_tokens = stop if stop is not None else []
+        Returns:
+            Union[Dict[str, Any], str]: If the API call is successful, returns a dictionary with the response data, including the keys "answer" and "usage". If an error occurs (e.g., rate limiting), returns a string describing the error.
+        """
+        url = "https://chat.maritaca.ai/api/chat/inference"
+        headers = {"authorization": f"Key {self.api_key}"}
+        stopping_tokens = stop if stop is not None else []
 
-    parsed_messages = self.parse_messages_for_model(messages)
+        parsed_messages = self.parse_messages_for_model(messages)
 
-    data = {
-        "messages": parsed_messages,
-        "do_sample": self.do_sample,
-        "max_tokens": self.max_tokens,
-        "temperature": self.temperature,
-        "top_p": self.top_p,
-        "stopping_tokens": stopping_tokens,
-    }
+        data = {
+            "messages": parsed_messages,
+            "do_sample": self.do_sample,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "stopping_tokens": stopping_tokens,
+        }
 
-    response = requests.post(url, json=data, headers=headers)
-    if response.status_code == 429:
-        return "Rate limited, please try again soon"
-    elif response.ok:
-        return response.json()  # This will be a dict with "answer" and potentially "usage"
-    else:
-        response.raise_for_status()  # This will raise an HTTPError if the request is unsuccessful
+        response = requests.post(url, json=data, headers=headers)
+        if response.status_code == 429:
+            return "Rate limited, please try again soon"
+        elif response.ok:
+            return response.json()  # This will be a dict with "answer" and potentially "usage"
+        else:
+            response.raise_for_status()  # This will raise an HTTPError if the request is unsuccessful
 
 
     @property
