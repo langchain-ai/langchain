@@ -52,11 +52,15 @@ class OpenAIWhisperParser(BaseBlobParser):
         # Need to meet 25MB size limit for Whisper API
         chunk_duration = 20
         chunk_duration_ms = chunk_duration * 60 * 1000
+        chunk_duration_threshold = 0.1
 
         # Split the audio into chunk_duration_ms chunks
         for split_number, i in enumerate(range(0, len(audio), chunk_duration_ms)):
             # Audio chunk
             chunk = audio[i : i + chunk_duration_ms]
+            # Skip chunks that are too short to transcribe
+            if chunk.duration_seconds <= chunk_duration_threshold:
+                continue
             file_obj = io.BytesIO(chunk.export(format="mp3").read())
             if blob.source is not None:
                 file_obj.name = blob.source + f"_part_{split_number}.mp3"
