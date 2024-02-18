@@ -27,7 +27,7 @@ class UpstashVectorStore(VectorStore):
 
     Also an Upstash Vector index is required. First create a new Upstash Vector index
     and copy the `index_url` and `index_token` variables. Then either pass
-    them through the constructor or set the environment 
+    them through the constructor or set the environment
     variables `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN`.
 
     Example:
@@ -38,8 +38,8 @@ class UpstashVectorStore(VectorStore):
 
             embeddings = OpenAIEmbeddings()
             vectorstore = UpstashVectorStore(
-                embedding=embeddings, 
-                index_url="...", 
+                embedding=embeddings,
+                index_url="...",
                 index_token="..."
             )
 
@@ -133,8 +133,7 @@ class UpstashVectorStore(VectorStore):
         if index_url and index_token:
             self._index = Index(url=index_url, token=index_token)
             self._async_index = AsyncIndex(url=index_url, token=index_token)
-            logger.info(
-                "Created index from the index_url and index_token parameters")
+            logger.info("Created index from the index_url and index_token parameters")
         elif not index and not async_index:
             self._index = Index.from_env()
             self._async_index = AsyncIndex.from_env()
@@ -153,7 +152,8 @@ class UpstashVectorStore(VectorStore):
         if not self._embeddings:
             raise ValueError(
                 "No embeddings object provided. "
-                "Pass an embeddings object to the constructor.")
+                "Pass an embeddings object to the constructor."
+            )
         return self._embeddings.embed_documents(list(texts))
 
     def _embed_query(self, text: str) -> List[float]:
@@ -161,7 +161,8 @@ class UpstashVectorStore(VectorStore):
         if not self._embeddings:
             raise ValueError(
                 "No embeddings object provided. "
-                "Pass an embeddings object to the constructor.")
+                "Pass an embeddings object to the constructor."
+            )
         return self._embeddings.embed_query(text)
 
     def add_documents(
@@ -174,7 +175,7 @@ class UpstashVectorStore(VectorStore):
         """
         Get the embeddings for the documents and add them to the vectorstore.
 
-        Documents are sent to the embeddings object 
+        Documents are sent to the embeddings object
         in batches of size `embedding_chunk_size`.
         The embeddings are then upserted into the vectorstore
         in batches of size `batch_size`.
@@ -210,7 +211,7 @@ class UpstashVectorStore(VectorStore):
         """
         Get the embeddings for the documents and add them to the vectorstore.
 
-        Documents are sent to the embeddings object 
+        Documents are sent to the embeddings object
         in batches of size `embedding_chunk_size`.
         The embeddings are then upserted into the vectorstore
         in batches of size `batch_size`.
@@ -247,7 +248,7 @@ class UpstashVectorStore(VectorStore):
         """
         Get the embeddings for the texts and add them to the vectorstore.
 
-        Texts are sent to the embeddings object 
+        Texts are sent to the embeddings object
         in batches of size `embedding_chunk_size`.
         The embeddings are then upserted into the vectorstore
         in batches of size `batch_size`.
@@ -278,9 +279,9 @@ class UpstashVectorStore(VectorStore):
             metadata[self._text_key] = text
 
         for i in range(0, len(texts), embedding_chunk_size):
-            chunk_texts = texts[i: i + embedding_chunk_size]
-            chunk_ids = ids[i: i + embedding_chunk_size]
-            chunk_metadatas = metadatas[i: i + embedding_chunk_size]
+            chunk_texts = texts[i : i + embedding_chunk_size]
+            chunk_ids = ids[i : i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
             for batch in batch_iterate(
@@ -301,7 +302,7 @@ class UpstashVectorStore(VectorStore):
         """
         Get the embeddings for the texts and add them to the vectorstore.
 
-        Texts are sent to the embeddings object 
+        Texts are sent to the embeddings object
         in batches of size `embedding_chunk_size`.
         The embeddings are then upserted into the vectorstore
         in batches of size `batch_size`.
@@ -332,9 +333,9 @@ class UpstashVectorStore(VectorStore):
             metadata[self._text_key] = text
 
         for i in range(0, len(texts), embedding_chunk_size):
-            chunk_texts = texts[i: i + embedding_chunk_size]
-            chunk_ids = ids[i: i + embedding_chunk_size]
-            chunk_metadatas = metadatas[i: i + embedding_chunk_size]
+            chunk_texts = texts[i : i + embedding_chunk_size]
+            chunk_ids = ids[i : i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
 
             for batch in batch_iterate(
@@ -349,7 +350,7 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
     ) -> List[Tuple[Document, float]]:
-        """Retrieve texts most similar to query and 
+        """Retrieve texts most similar to query and
         convert the result to `Document` objects.
 
         Args:
@@ -368,7 +369,7 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
     ) -> List[Tuple[Document, float]]:
-        """Retrieve texts most similar to query and 
+        """Retrieve texts most similar to query and
         convert the result to `Document` objects.
 
         Args:
@@ -440,8 +441,7 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        docs_and_scores = self.similarity_search_with_score(
-            query, k=k)
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
         return [doc for doc, _ in docs_and_scores]
 
     async def asimilarity_search(
@@ -458,12 +458,12 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        docs_and_scores = await self.asimilarity_search_with_score(
-            query, k=k)
+        docs_and_scores = await self.asimilarity_search_with_score(query, k=k)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
-            self, embedding: List[float], k: int = 4) -> List[Document]:
+        self, embedding: List[float], k: int = 4
+    ) -> List[Document]:
         """Return documents closest to the given embedding.
 
         Args:
@@ -473,12 +473,12 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        docs_and_scores = self.similarity_search_by_vector_with_score(
-            embedding, k=k)
+        docs_and_scores = self.similarity_search_by_vector_with_score(embedding, k=k)
         return [doc for doc, _ in docs_and_scores]
 
     async def asimilarity_search_by_vector(
-            self, embedding: List[float], k: int = 4) -> List[Document]:
+        self, embedding: List[float], k: int = 4
+    ) -> List[Document]:
         """Return documents closest to the given embedding.
 
         Args:
@@ -489,7 +489,8 @@ class UpstashVectorStore(VectorStore):
             List of Documents most similar to the query
         """
         docs_and_scores = await self.asimilarity_search_by_vector_with_score(
-            embedding, k=k)
+            embedding, k=k
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def _similarity_search_with_relevance_scores(
@@ -551,8 +552,7 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop(
-                (self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
             for metadata in selected
         ]
 
@@ -593,8 +593,7 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop(
-                (self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
             for metadata in selected
         ]
 
