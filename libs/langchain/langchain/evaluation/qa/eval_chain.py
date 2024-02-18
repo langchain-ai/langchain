@@ -2,25 +2,46 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Optional, Sequence
+import string
+from typing import Any, List, Optional, Sequence, Tuple
 
-from langchain import PromptTemplate
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import Extra
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
-from langchain.pydantic_v1 import Extra
 from langchain.schema import RUN_KEY
-from langchain.schema.language_model import BaseLanguageModel
 
 
-def _get_score(verdict: str) -> Optional[int]:
-    match = re.search(r"(?i)(?:grade:\s*)?(correct|incorrect)", verdict)
+def _get_score(text: str) -> Optional[Tuple[str, int]]:
+    match = re.search(r"grade:\s*(correct|incorrect)", text.strip(), re.IGNORECASE)
     if match:
         if match.group(1).upper() == "CORRECT":
-            return 1
+            return "CORRECT", 1
         elif match.group(1).upper() == "INCORRECT":
-            return 0
+            return "INCORRECT", 0
+    try:
+        first_word = (
+            text.strip().split()[0].translate(str.maketrans("", "", string.punctuation))
+        )
+        if first_word.upper() == "CORRECT":
+            return "CORRECT", 1
+        elif first_word.upper() == "INCORRECT":
+            return "INCORRECT", 0
+        last_word = (
+            text.strip()
+            .split()[-1]
+            .translate(str.maketrans("", "", string.punctuation))
+        )
+        if last_word.upper() == "CORRECT":
+            return "CORRECT", 1
+        elif last_word.upper() == "INCORRECT":
+            return "INCORRECT", 0
+    except IndexError:
+        pass
     return None
 
 
@@ -33,17 +54,15 @@ def _parse_string_eval_output(text: str) -> dict:
     Returns:
         Any: The parsed output.
     """
-    splits = text.strip().rsplit("\n", maxsplit=1)
-    if len(splits) == 1:
-        verdict = splits[0]
-        reasoning = None
+    reasoning = text.strip()
+    parsed_scores = _get_score(reasoning)
+    if parsed_scores is None:
+        value, score = None, None
     else:
-        reasoning, verdict = splits
-        reasoning = reasoning.strip()
-    score = _get_score(verdict)
+        value, score = parsed_scores
     return {
         "reasoning": reasoning,
-        "value": verdict,
+        "value": value,
         "score": score,
     }
 
@@ -57,6 +76,10 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         """Configuration for the QAEvalChain."""
 
         extra = Extra.ignore
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @property
     def evaluation_name(self) -> str:
@@ -185,6 +208,10 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain for evaluating QA w/o GT based on context"""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @property
     def requires_reference(self) -> bool:
         """Whether the chain requires a reference string."""
@@ -308,6 +335,10 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
 class CotQAEvalChain(ContextQAEvalChain):
     """LLM Chain for evaluating QA using chain of thought reasoning."""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @property
     def evaluation_name(self) -> str:

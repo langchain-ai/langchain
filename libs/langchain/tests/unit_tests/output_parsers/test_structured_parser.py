@@ -1,5 +1,6 @@
+from langchain_core.exceptions import OutputParserException
+
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
-from langchain.schema import OutputParserException
 
 
 def test_parse() -> None:

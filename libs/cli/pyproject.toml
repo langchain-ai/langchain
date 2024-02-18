@@ -1,0 +1,70 @@
+[tool.poetry]
+name = "langchain-cli"
+version = "0.0.21"
+description = "CLI for interacting with LangChain"
+authors = ["Erick Friis <erick@langchain.dev>"]
+readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/cli"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+typer = {extras = ["all"], version = "^0.9.0"}
+gitpython = "^3.1.40"
+langserve = {extras = ["all"], version = ">=0.0.16"}
+uvicorn = "^0.23.2"
+tomlkit = "^0.12.2"
+
+[tool.poetry.scripts]
+langchain = "langchain_cli.cli:app"
+langchain-cli = "langchain_cli.cli:app"
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.24.1"
+pytest = "^7.4.2"
+pytest-watch = "^4.2.0"
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1.5"
+
+[tool.poetry.group.test.dependencies]
+
+[tool.poetry.group.typing.dependencies]
+
+[tool.poetry.group.test_integration.dependencies]
+
+[tool.poetry.extras]
+# For langserve
+serve = []
+
+[tool.ruff.lint]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+  "T201", # print
+]
+
+[tool.poe.tasks]
+test = "poetry run pytest"
+watch = "poetry run ptw"
+version = "poetry version --short"
+bump = ["_bump_1", "_bump_2"]
+lint = ["_lint", "_check_formatting"]
+format = ["_lint_fix", "_format"]
+
+_bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"\n" langchain_cli/cli.py"""
+_bump_2.uses = { version = "version" }
+
+_bump_1 = "poetry version patch"
+_check_formatting = "poetry run ruff format . --diff"
+_lint = "poetry run ruff ."
+_format = "poetry run ruff format ."
+_lint_fix = "poetry run ruff . --fix"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

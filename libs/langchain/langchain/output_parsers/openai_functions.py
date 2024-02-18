@@ -1,14 +1,16 @@
 import copy
 import json
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema import (
-    ChatGeneration,
-    Generation,
-    OutputParserException,
+import jsonpatch
+from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import (
+    BaseCumulativeTransformOutputParser,
+    BaseGenerationOutputParser,
 )
-from langchain.schema.output_parser import BaseGenerationOutputParser
+from langchain_core.output_parsers.json import parse_partial_json
+from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -17,7 +19,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
-    def parse_result(self, result: List[Generation]) -> Any:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             raise OutputParserException(
@@ -34,7 +36,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
         return func_call
 
 
-class JsonOutputFunctionsParser(OutputFunctionsParser):
+class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     """Parse an output as the Json object."""
 
     strict: bool = False
@@ -45,25 +47,79 @@ class JsonOutputFunctionsParser(OutputFunctionsParser):
     Useful when the parsed output may include unicode characters or new lines.
     """
 
-    def parse_result(self, result: List[Generation]) -> Any:
-        function_call_info = super().parse_result(result)
-        if self.args_only:
-            try:
-                return json.loads(function_call_info, strict=self.strict)
-            except (json.JSONDecodeError, TypeError) as exc:
-                raise OutputParserException(
-                    f"Could not parse function call data: {exc}"
-                )
-        else:
-            try:
-                function_call_info["arguments"] = json.loads(
-                    function_call_info["arguments"], strict=self.strict
-                )
-            except (json.JSONDecodeError, TypeError) as exc:
-                raise OutputParserException(
-                    f"Could not parse function call data: {exc}"
-                )
-            return function_call_info
+    args_only: bool = True
+    """Whether to only return the arguments to the function call."""
+
+    @property
+    def _type(self) -> str:
+        return "json_functions"
+
+    def _diff(self, prev: Optional[Any], next: Any) -> Any:
+        return jsonpatch.make_patch(prev, next).patch
+
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        if len(result) != 1:
+            raise OutputParserException(
+                f"Expected exactly one result, but got {len(result)}"
+            )
+        generation = result[0]
+        if not isinstance(generation, ChatGeneration):
+            raise OutputParserException(
+                "This output parser can only be used with a chat generation."
+            )
+        message = generation.message
+        try:
+            function_call = message.additional_kwargs["function_call"]
+        except KeyError as exc:
+            if partial:
+                return None
+            else:
+                raise OutputParserException(f"Could not parse function call: {exc}")
+        try:
+            if partial:
+                try:
+                    if self.args_only:
+                        return parse_partial_json(
+                            function_call["arguments"], strict=self.strict
+                        )
+                    else:
+                        return {
+                            **function_call,
+                            "arguments": parse_partial_json(
+                                function_call["arguments"], strict=self.strict
+                            ),
+                        }
+                except json.JSONDecodeError:
+                    return None
+            else:
+                if self.args_only:
+                    try:
+                        return json.loads(
+                            function_call["arguments"], strict=self.strict
+                        )
+                    except (json.JSONDecodeError, TypeError) as exc:
+                        raise OutputParserException(
+                            f"Could not parse function call data: {exc}"
+                        )
+                else:
+                    try:
+                        return {
+                            **function_call,
+                            "arguments": json.loads(
+                                function_call["arguments"], strict=self.strict
+                            ),
+                        }
+                    except (json.JSONDecodeError, TypeError) as exc:
+                        raise OutputParserException(
+                            f"Could not parse function call data: {exc}"
+                        )
+        except KeyError:
+            return None
+
+    # This method would be called by the default implementation of `parse_result`
+    # but we're overriding that method so it's not needed.
+    def parse(self, text: str) -> Any:
+        raise NotImplementedError()
 
 
 class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
@@ -72,16 +128,60 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
     key_name: str
     """The name of the key to return."""
 
-    def parse_result(self, result: List[Generation]) -> Any:
-        res = super().parse_result(result)
-        return res[self.key_name]
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        res = super().parse_result(result, partial=partial)
+        if partial and res is None:
+            return None
+        return res.get(self.key_name) if partial else res[self.key_name]
 
 
 class PydanticOutputFunctionsParser(OutputFunctionsParser):
-    """Parse an output as a pydantic object."""
+    """Parse an output as a pydantic object.
+
+    This parser is used to parse the output of a ChatModel that uses
+    OpenAI function format to invoke functions.
+
+    The parser extracts the function call invocation and matches
+    them to the pydantic schema provided.
+
+    An exception will be raised if the function call does not match
+    the provided schema.
+
+    Example:
+
+        ... code-block:: python
+
+            message = AIMessage(
+                content="This is a test message",
+                additional_kwargs={
+                    "function_call": {
+                        "name": "cookie",
+                        "arguments": json.dumps({"name": "value", "age": 10}),
+                    }
+                },
+            )
+            chat_generation = ChatGeneration(message=message)
+
+            class Cookie(BaseModel):
+                name: str
+                age: int
+
+            class Dog(BaseModel):
+                species: str
+
+            # Full output
+            parser = PydanticOutputFunctionsParser(
+                pydantic_schema={"cookie": Cookie, "dog": Dog}
+            )
+            result = parser.parse_result([chat_generation])
+    """
 
     pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
-    """The pydantic schema to parse the output with."""
+    """The pydantic schema to parse the output with.
+    
+    If multiple schemas are provided, then the function name will be used to
+    determine which schema to use.
+    """
 
     @root_validator(pre=True)
     def validate_schema(cls, values: Dict) -> Dict:
@@ -97,7 +197,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             )
         return values
 
-    def parse_result(self, result: List[Generation]) -> Any:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         _result = super().parse_result(result)
         if self.args_only:
             pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
@@ -114,6 +214,6 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     attr_name: str
     """The name of the attribute to return."""
 
-    def parse_result(self, result: List[Generation]) -> Any:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         result = super().parse_result(result)
         return getattr(result, self.attr_name)
