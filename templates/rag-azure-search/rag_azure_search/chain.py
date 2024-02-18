@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -7,26 +8,54 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from langchain_community.vectorstores.azuresearch import AzureSearch
 
+if not os.getenv("AZURE_OPENAI_ENDPOINT"):
+    raise ValueError("Please set the environment variable AZURE_OPENAI_ENDPOINT")
+
+if not os.getenv("AZURE_OPENAI_API_KEY"):
+    raise ValueError("Please set the environment variable AZURE_OPENAI_API_KEY")
+
+if not os.getenv("AZURE_EMBEDDINGS_DEPLOYMENT"):
+    raise ValueError("Please set the environment variable AZURE_EMBEDDINGS_DEPLOYMENT")
+
+if not os.getenv("AZURE_CHAT_DEPLOYMENT"):
+    raise ValueError("Please set the environment variable AZURE_CHAT_DEPLOYMENT")
+
+if not os.getenv("AZURE_SEARCH_ENDPOINT"):
+    raise ValueError("Please set the environment variable AZURE_SEARCH_ENDPOINT")
+
+if not os.getenv("AZURE_SEARCH_KEY"):
+    raise ValueError("Please set the environment variable AZURE_SEARCH_KEY")
+
+
+api_version = os.getenv("OPENAI_API_VERSION", "2023-05-15")
+index_name = os.getenv("AZURE_SEARCH_INDEX_NAME", "rag-azure-search")
+
 embeddings = AzureOpenAIEmbeddings(
-    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-    openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
-    api_version=os.environ["OPENAI_API_VERSION"],
     deployment=os.environ["AZURE_EMBEDDINGS_DEPLOYMENT"],
+    api_version=api_version,
     chunk_size=1
 )
 
 vector_store: AzureSearch = AzureSearch(
     azure_search_endpoint=os.environ["AZURE_SEARCH_ENDPOINT"],
     azure_search_key=os.environ["AZURE_SEARCH_KEY"],
-    index_name="rag-azure-search",
+    index_name=index_name,
     embedding_function=embeddings.embed_query,
-    search_type="similarity"
 )
 
+"""
+(Optional) Example document - 
+Uncomment the following code to load the document into the vector store
+or substitute with your own.
+"""
 # from langchain.text_splitter import CharacterTextSplitter
 # from langchain_community.document_loaders import TextLoader
 
-# loader = TextLoader("/home/krpratic/langchain/templates/rag-azure-search/data/state_of_the_union.txt", encoding="utf-8")
+# current_file_path = pathlib.Path(__file__).resolve()
+# root_directory = current_file_path.parents[3]
+# target_file_path = root_directory / "docs" / "docs" / "modules" / "state_of_the_union.txt"
+
+# loader = TextLoader(str(target_file_path), encoding="utf-8")
 
 # documents = loader.load()
 # text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
@@ -45,10 +74,8 @@ retriever = vector_store.as_retriever()
 
 _prompt = ChatPromptTemplate.from_template(template)
 _model = AzureChatOpenAI(
-    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-    openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
-    api_version=os.environ["OPENAI_API_VERSION"],
     deployment_name=os.environ["AZURE_CHAT_DEPLOYMENT"],
+    api_version=api_version,
 )
 chain = (
     RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
