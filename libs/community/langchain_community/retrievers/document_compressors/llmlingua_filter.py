@@ -59,10 +59,10 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         "dynamic_context_compression_ratio": 0.4,
     }
     """Extra compression arguments"""
-    lingua: 'PromptCompressor'
+    lingua: 'Optional[PromptCompressor]' = None
     """The instance of the llm linqua"""
 
-    @root_validator(pre=True)
+    @root_validator
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
@@ -72,7 +72,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
                 "Could not import llmlingua python package. "
                 "Please install it with `pip install llmlingua`."
             )
-        if values["lingua"] is None:
+        if not values.get("lingua"):
             values["lingua"] = PromptCompressor(
                 model_name=values["model_name"],
                 device_map=values["device_map"],
