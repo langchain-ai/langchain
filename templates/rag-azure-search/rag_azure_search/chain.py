@@ -1,12 +1,11 @@
 import os
-import pathlib
 
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from langchain_community.vectorstores.azuresearch import AzureSearch
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 
 if not os.getenv("AZURE_OPENAI_ENDPOINT"):
     raise ValueError("Please set the environment variable AZURE_OPENAI_ENDPOINT")
@@ -33,7 +32,7 @@ index_name = os.getenv("AZURE_SEARCH_INDEX_NAME", "rag-azure-search")
 embeddings = AzureOpenAIEmbeddings(
     deployment=os.environ["AZURE_EMBEDDINGS_DEPLOYMENT"],
     api_version=api_version,
-    chunk_size=1
+    chunk_size=1,
 )
 
 vector_store: AzureSearch = AzureSearch(
@@ -48,12 +47,14 @@ vector_store: AzureSearch = AzureSearch(
 Uncomment the following code to load the document into the vector store
 or substitute with your own.
 """
+# import pathlib
 # from langchain.text_splitter import CharacterTextSplitter
 # from langchain_community.document_loaders import TextLoader
 
 # current_file_path = pathlib.Path(__file__).resolve()
 # root_directory = current_file_path.parents[3]
-# target_file_path = root_directory / "docs" / "docs" / "modules" / "state_of_the_union.txt"
+# target_file_path = \
+#     root_directory / "docs" / "docs" / "modules" / "state_of_the_union.txt"
 
 # loader = TextLoader(str(target_file_path), encoding="utf-8")
 
