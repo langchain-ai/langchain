@@ -82,14 +82,12 @@ class AthenaLoader(BaseLoader):
             ResultConfiguration={"OutputLocation": self.s3_output_uri},
         )
         query_execution_id = response["QueryExecutionId"]
-        print(f"Query : {self.query}")
         while True:
             response = self.athena_client.get_query_execution(
                 QueryExecutionId=query_execution_id
             )
             state = response["QueryExecution"]["Status"]["State"]
             if state == "SUCCEEDED":
-                print(f"State : {state}")
                 break
             elif state == "FAILED":
                 resp_status = response["QueryExecution"]["Status"]
@@ -98,8 +96,6 @@ class AthenaLoader(BaseLoader):
                 raise Exception(err)
             elif state == "CANCELLED":
                 raise Exception("Query was cancelled by the user.")
-            else:
-                print(f"State : {state}")
             time.sleep(1)
 
         result_set = self._get_result_set(query_execution_id)
@@ -129,7 +125,7 @@ class AthenaLoader(BaseLoader):
             self._remove_suffix(output_uri, "/"), "s3://"
         ).split("/")
         bucket = tokens[0]
-        key = "/".join(tokens[1:]) + "/" + query_execution_id + ".csv"
+        key = "/".join(tokens[1:] + [query_execution_id]) + ".csv"
 
         obj = self.s3_client.get_object(Bucket=bucket, Key=key)
         df = pd.read_csv(io.BytesIO(obj["Body"].read()), encoding="utf8")

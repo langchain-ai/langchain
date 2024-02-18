@@ -735,7 +735,7 @@ class GitHubAPIWrapper(BaseModel):
             str: A string containing the first 5 issues and pull requests
         """
         search_result = self.github.search_issues(query, repo=self.github_repository)
-        max_items = min(5, len(search_result))
+        max_items = min(5, search_result.totalCount)
         results = [f"Top {max_items} results:"]
         for issue in search_result[:max_items]:
             results.append(

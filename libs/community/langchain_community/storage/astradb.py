@@ -16,7 +16,7 @@ from typing import (
 
 from langchain_core.stores import BaseStore, ByteStore
 
-from langchain_community.utilities.astradb import AstraDBEnvironment
+from langchain_community.utilities.astradb import _AstraDBEnvironment
 
 if TYPE_CHECKING:
     from astrapy.db import AstraDB
@@ -35,7 +35,7 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
         astra_db_client: Optional[AstraDB] = None,
         namespace: Optional[str] = None,
     ) -> None:
-        astra_env = AstraDBEnvironment(
+        astra_env = _AstraDBEnvironment(
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,

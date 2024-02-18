@@ -1718,6 +1718,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -1760,6 +1764,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -1909,6 +1917,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -1977,6 +1989,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -2019,6 +2035,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -2116,6 +2136,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2158,6 +2182,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2307,6 +2335,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -2375,6 +2407,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -2417,6 +2453,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -2498,6 +2538,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2540,6 +2584,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2642,6 +2690,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -2688,6 +2740,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -2730,6 +2786,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -2799,6 +2859,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -2841,6 +2905,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -2990,6 +3058,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -3058,6 +3130,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -3100,6 +3176,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -3169,6 +3249,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -3211,6 +3295,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -3359,6 +3447,10 @@
             'default': False,
             'title': 'Example',
             'type': 'boolean',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'type': dict({
             'default': 'human',
@@ -3428,6 +3520,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -3470,6 +3566,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -3531,6 +3631,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -3573,6 +3677,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -3721,6 +3829,10 @@
             'default': False,
             'title': 'Example',
             'type': 'boolean',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'type': dict({
             'default': 'human',
@@ -3801,6 +3913,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -3843,6 +3959,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
@@ -3931,6 +4051,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -3973,6 +4097,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'role': dict({
             'title': 'Role',
@@ -4075,6 +4203,10 @@
             'title': 'Example',
             'type': 'boolean',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'human',
             'enum': list([
@@ -4121,6 +4253,10 @@
             ]),
             'title': 'Content',
           }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
           'type': dict({
             'default': 'system',
             'enum': list([
@@ -4163,6 +4299,10 @@
               }),
             ]),
             'title': 'Content',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
