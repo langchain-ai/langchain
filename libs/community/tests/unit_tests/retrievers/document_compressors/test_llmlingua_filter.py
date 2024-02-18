@@ -9,6 +9,8 @@ LLM_LINGUA_INSTRUCTION = "Given this documents, please answer the final question
 
 # Mock PromptCompressor for testing purposes
 class MockPromptCompressor:
+    """Mock PromptCompressor for testing purposes"""
+
     def compress_prompt(self, *args: list, **kwargs: dict) -> dict:
         """Mock behavior of the compress_prompt method"""
         response = {
@@ -30,6 +32,7 @@ def mock_prompt_compressor(mocker: MockerFixture) -> MockPromptCompressor:
 
 
 @pytest.fixture
+@pytest.mark.requires("llmlingua")
 def llm_lingua_compressor(
     mock_prompt_compressor: MockPromptCompressor,
 ) -> LLMLinguaCompressor:
@@ -66,8 +69,7 @@ def test_extract_ref_with_no_contents(
     llm_lingua_compressor: LLMLinguaCompressor,
 ) -> None:
     """Test extracting reference ids with an empty documents contents"""
-    contents = []
-    result = llm_lingua_compressor.extract_ref_id_tuples_and_clean(contents)
+    result = llm_lingua_compressor.extract_ref_id_tuples_and_clean([])
     assert result == []
 
 

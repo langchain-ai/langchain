@@ -1,7 +1,7 @@
 # LLM Linqua Document Compressor
 
 import re
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
@@ -10,16 +10,6 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain_community.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
-
-if TYPE_CHECKING:
-    from llmlingua import PromptCompressor
-else:
-    # We do to avoid pydantic annotation issues when actually instantiating
-    # while keeping this import optional
-    try:
-        from llmlingua import PromptCompressor
-    except ImportError:
-        pass
 
 DEFAULT_LLM_LINGUA_INSTRUCTION = (
     "Given this documents, please answer the final question"
@@ -60,10 +50,10 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         "dynamic_context_compression_ratio": 0.4,
     }
     """Extra compression arguments"""
-    lingua: PromptCompressor = None
+    lingua: Any
     """The instance of the llm linqua"""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
@@ -75,10 +65,10 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
             )
         if not values.get("lingua"):
             values["lingua"] = PromptCompressor(
-                model_name=values["model_name"],
-                device_map=values["device_map"],
-                model_config=values["model_config"],
-                open_api_config=values["open_api_config"],
+                model_name=values.get("model_name", {}),
+                device_map=values.get("device_map", {}),
+                model_config=values.get("model_config", {}),
+                open_api_config=values.get("open_api_config", {}),
             )
         return values
 
