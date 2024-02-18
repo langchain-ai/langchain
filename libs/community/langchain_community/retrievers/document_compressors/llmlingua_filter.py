@@ -1,4 +1,4 @@
-# LLM Linqua Document Compressor
+# LLM Lingua Document Compressor
 
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
