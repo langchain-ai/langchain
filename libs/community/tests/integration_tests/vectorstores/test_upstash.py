@@ -27,15 +27,7 @@ def wait_for_indexing(store: UpstashVectorStore):
         sleep(0.5)
 
 
-def is_api_accessible(url: str) -> bool:
-    try:
-        response = requests.get(url)
-        return response.status_code == 200
-    except Exception:
-        return False
-
-
-def test_upstash() -> None:
+def test_upstash_simple_insert() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     store = UpstashVectorStore.from_texts(
@@ -46,7 +38,7 @@ def test_upstash() -> None:
 
 
 @pytest.mark.asyncio
-async def test_upstash_async() -> None:
+async def test_upstash_simple_insert_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     store = UpstashVectorStore.from_texts(
@@ -70,6 +62,21 @@ def test_upstash_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
+@pytest.mark.asyncio
+async def test_upstash_with_metadatas_async() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    store = UpstashVectorStore.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+    )
+    wait_for_indexing(store)
+    output = await store.asimilarity_search("foo", k=1)
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
+
+
 def test_upstash_with_metadatas_with_scores() -> None:
     """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
@@ -81,6 +88,22 @@ def test_upstash_with_metadatas_with_scores() -> None:
     )
     wait_for_indexing(store)
     output = store.similarity_search_with_score("foo", k=1)
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 1.0)]
+
+
+@pytest.mark.asyncio
+async def test_upstash_with_metadatas_with_scores_async() -> None:
+    """Test end to end construction and scored search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    store = UpstashVectorStore.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+    )
+    wait_for_indexing(store)
+    output = await store.asimilarity_search_with_score("foo", k=1)
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
@@ -105,6 +128,27 @@ def test_upstash_with_metadatas_with_scores_using_vector() -> None:
         (Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
 
+@pytest.mark.asyncio
+async def test_upstash_with_metadatas_with_scores_using_vector_async() -> None:
+    """Test end to end construction and scored search, using embedding vector."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    embeddings = FakeEmbeddings()
+
+    store = UpstashVectorStore.from_texts(
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+    )
+    wait_for_indexing(store)
+    embedded_query = embeddings.embed_query("foo")
+    output = await store.asimilarity_search_by_vector_with_score(
+        embedding=embedded_query, k=1
+    )
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 1.0)]
+
+
 def test_upstash_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -112,6 +156,17 @@ def test_upstash_mmr() -> None:
         texts=texts, embedding=FakeEmbeddings())
     wait_for_indexing(store)
     output = store.max_marginal_relevance_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
+@pytest.mark.asyncio
+async def test_upstash_mmr_async() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    store = UpstashVectorStore.from_texts(
+        texts=texts, embedding=FakeEmbeddings())
+    wait_for_indexing(store)
+    output = await store.amax_marginal_relevance_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
 
@@ -124,6 +179,20 @@ def test_upstash_mmr_by_vector() -> None:
     wait_for_indexing(store)
     embedded_query = embeddings.embed_query("foo")
     output = store.max_marginal_relevance_search_by_vector(
+        embedded_query, k=1)
+    assert output == [Document(page_content="foo")]
+
+
+@pytest.mark.asyncio
+async def test_upstash_mmr_by_vector_async() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    embeddings = FakeEmbeddings()
+    store = UpstashVectorStore.from_texts(
+        texts=texts, embedding=embeddings)
+    wait_for_indexing(store)
+    embedded_query = embeddings.embed_query("foo")
+    output = await store.amax_marginal_relevance_search_by_vector(
         embedded_query, k=1)
     assert output == [Document(page_content="foo")]
 
