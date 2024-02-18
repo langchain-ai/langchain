@@ -364,6 +364,19 @@ class UpstashVectorStore(VectorStore):
             self._embed_query(query), k=k
         )
 
+    def _results_to_docs(self, results: List):
+        docs = []
+        for res in results:
+            metadata = res.metadata
+            if metadata and self._text_key in metadata:
+                text = metadata.pop(self._text_key)
+                docs.append(Document(page_content=text, metadata=metadata))
+            else:
+                logger.warning(
+                    f"Found document with no `{self._text_key}` key. Skipping."
+                )
+        return docs
+
     def similarity_search_by_vector_with_score(
         self,
         embedding: List[float],
@@ -371,25 +384,13 @@ class UpstashVectorStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
-        docs = []
         results = self._index.query(
             vector=embedding,
             top_k=k,
             include_metadata=True,
         )
 
-        for res in results:
-            metadata = res.metadata
-            if metadata and self._text_key in metadata:
-                text = metadata.pop(self._text_key)
-                score = res.score
-                docs.append(
-                    (Document(page_content=text, metadata=metadata), score))
-            else:
-                logger.warning(
-                    f"Found document with no `{self._text_key}` key. Skipping."
-                )
-        return docs
+        return self._results_to_docs(results)
 
     async def asimilarity_search_by_vector_with_score(
         self,
@@ -398,25 +399,13 @@ class UpstashVectorStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
-        docs = []
         results = await self._async_index.query(
             vector=embedding,
             top_k=k,
             include_metadata=True,
         )
 
-        for res in results:
-            metadata = res.metadata
-            if metadata and self._text_key in metadata:
-                text = metadata.pop(self._text_key)
-                score = res.score
-                docs.append(
-                    (Document(page_content=text, metadata=metadata), score))
-            else:
-                logger.warning(
-                    f"Found document with no `{self._text_key}` key. Skipping."
-                )
-        return docs
+        return self._results_to_docs(results)
 
     def similarity_search(
         self,
