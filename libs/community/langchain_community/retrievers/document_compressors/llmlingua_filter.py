@@ -4,10 +4,12 @@ import re
 from typing import TYPE_CHECKING, Sequence, Optional, List, Tuple, Dict
 
 from langchain_core.pydantic_v1 import root_validator
-from langchain.schema import Document
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
-from langchain.callbacks.manager import Callbacks
+from langchain_core.documents import Document
+from langchain_core.callbacks import Callbacks
 from langchain_core.utils import get_from_dict_or_env
+from langchain_community.retrievers.document_compressors.base import (
+    BaseDocumentCompressor,
+)
 
 if TYPE_CHECKING:
     from llmlingua import PromptCompressor
@@ -57,14 +59,14 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         "dynamic_context_compression_ratio": 0.4,
     }
     """Extra compression arguments"""
-    lingua: Optional[PromptCompressor] = None
+    lingua: 'PromptCompressor'
     """The instance of the llm linqua"""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
-            import llmlingua
+            from llmlingua import PromptCompressor
         except ImportError:
             raise ImportError(
                 "Could not import llmlingua python package. "
