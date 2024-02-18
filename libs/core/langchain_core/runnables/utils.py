@@ -46,7 +46,15 @@ async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
 
 
 async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> list:
-    """Gather coroutines with a limit on the number of concurrent coroutines."""
+    """Gather coroutines with a limit on the number of concurrent coroutines.
+
+    Args:
+        n: The number of coroutines to run concurrently.
+        coros: The coroutines to run.
+
+    Returns:
+        The results of the coroutines.
+    """
     if n is None:
         return await asyncio.gather(*coros)
 
@@ -344,7 +352,7 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
 
 
 class ConfigurableField(NamedTuple):
-    """A field that can be configured by the user."""
+    """Field that can be configured by the user."""
 
     id: str
 
@@ -358,7 +366,7 @@ class ConfigurableField(NamedTuple):
 
 
 class ConfigurableFieldSingleOption(NamedTuple):
-    """A field that can be configured by the user with a default value."""
+    """Field that can be configured by the user with a default value."""
 
     id: str
     options: Mapping[str, Any]
@@ -373,7 +381,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
 
 class ConfigurableFieldMultiOption(NamedTuple):
-    """A field that can be configured by the user with multiple default values."""
+    """Field that can be configured by the user with multiple default values."""
 
     id: str
     options: Mapping[str, Any]
@@ -393,7 +401,7 @@ AnyConfigurableField = Union[
 
 
 class ConfigurableFieldSpec(NamedTuple):
-    """A field that can be configured by the user. It is a specification of a field."""
+    """Field that can be configured by the user. It is a specification of a field."""
 
     id: str
     annotation: Any

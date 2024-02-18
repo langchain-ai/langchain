@@ -61,7 +61,6 @@ def _create_subset_model(
     fields = {}
     for field_name in field_names:
         field = model.__fields__[field_name]
-
         t = (
             # this isn't perfect but should work for most functions
             field.outer_type_
@@ -143,10 +142,10 @@ def create_schema_from_function(
 
 
 class ToolException(Exception):
-    """An optional exception that tool throws when execution error occurs.
+    """Optional exception that tool throws when execution error occurs.
 
     When this exception is thrown, the agent will not stop working,
-    but will handle the exception according to the handle_tool_error
+    but it will handle the exception according to the handle_tool_error
     variable of the tool, and the processing result will be returned
     to the agent as observation, and printed in red on the console.
     """
@@ -216,9 +215,9 @@ class ChildTool(BaseTool):
     You can use these to eg identify a specific instance of a tool with its use case.
     """
 
-    handle_tool_error: Optional[
-        Union[bool, str, Callable[[ToolException], str]]
-    ] = False
+    handle_tool_error: Optional[Union[bool, str, Callable[[ToolException], str]]] = (
+        False
+    )
     """Handle the content of the ToolException thrown."""
 
     handle_validation_error: Optional[

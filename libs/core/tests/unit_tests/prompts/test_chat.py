@@ -503,9 +503,27 @@ def test_messages_placeholder() -> None:
         prompt.format_messages()
     prompt = MessagesPlaceholder("history", optional=True)
     assert prompt.format_messages() == []
-    prompt.format_messages(
+    assert prompt.format_messages(
         history=[("system", "You are an AI assistant."), "Hello!"]
     ) == [
         SystemMessage(content="You are an AI assistant."),
         HumanMessage(content="Hello!"),
     ]
+
+
+def test_chat_prompt_message_placeholder_partial() -> None:
+    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    prompt = prompt.partial(history=[("system", "foo")])
+    assert prompt.format_messages() == [SystemMessage(content="foo")]
+    assert prompt.format_messages(history=[("system", "bar")]) == [
+        SystemMessage(content="bar")
+    ]
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            MessagesPlaceholder("history", optional=True),
+        ]
+    )
+    assert prompt.format_messages() == []
+    prompt = prompt.partial(history=[("system", "foo")])
+    assert prompt.format_messages() == [SystemMessage(content="foo")]

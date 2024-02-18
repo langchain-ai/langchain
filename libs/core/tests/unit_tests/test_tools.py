@@ -772,7 +772,7 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]]
+    handler: Union[bool, str, Callable[[ValidationError], str]],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -834,7 +834,7 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]]
+    handler: Union[bool, str, Callable[[ValidationError], str]],
 ) -> None:
     """Test that validation errors are handled correctly."""
 

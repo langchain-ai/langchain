@@ -56,11 +56,11 @@ class BaichuanLLM(LLM):
     def _post(self, request: Any) -> Any:
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.baichuan_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self.baichuan_api_key.get_secret_value()}",  # type: ignore[union-attr]
         }
         try:
             response = requests.post(
-                self.baichuan_api_host,
+                self.baichuan_api_host,  # type: ignore[arg-type]
                 headers=headers,
                 json=request,
                 timeout=self.timeout,

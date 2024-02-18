@@ -65,11 +65,13 @@ from langchain_community.embeddings.mlflow import (
 from langchain_community.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
 from langchain_community.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain_community.embeddings.mosaicml import MosaicMLInstructorEmbeddings
+from langchain_community.embeddings.nemo import NeMoEmbeddings
 from langchain_community.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain_community.embeddings.oci_generative_ai import OCIGenAIEmbeddings
 from langchain_community.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_community.embeddings.optimum_intel import QuantizedBiEncoderEmbeddings
 from langchain_community.embeddings.sagemaker_endpoint import (
     SagemakerEndpointEmbeddings,
 )
@@ -148,6 +150,8 @@ __all__ = [
     "BookendEmbeddings",
     "VolcanoEmbeddings",
     "OCIGenAIEmbeddings",
+    "QuantizedBiEncoderEmbeddings",
+    "NeMoEmbeddings",
 ]
 
 

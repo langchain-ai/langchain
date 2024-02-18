@@ -1,5 +1,5 @@
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -74,10 +74,15 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"
         elif isinstance(message, HumanMessage):
-            if message.content[0].get("type") == "text":
-                message_text = f"[INST] {message.content[0]['text']} [/INST]"
-            elif message.content[0].get("type") == "image_url":
-                message_text = message.content[0]["image_url"]["url"]
+            if isinstance(message.content, List):
+                first_content = cast(List[Dict], message.content)[0]
+                content_type = first_content.get("type")
+                if content_type == "text":
+                    message_text = f"[INST] {first_content['text']} [/INST]"
+                elif content_type == "image_url":
+                    message_text = first_content["image_url"]["url"]
+            else:
+                message_text = f"[INST] {message.content} [/INST]"
         elif isinstance(message, AIMessage):
             message_text = f"{message.content}"
         elif isinstance(message, SystemMessage):
@@ -94,7 +99,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
     def _convert_messages_to_ollama_messages(
         self, messages: List[BaseMessage]
     ) -> List[Dict[str, Union[str, List[str]]]]:
-        ollama_messages = []
+        ollama_messages: List = []
         for message in messages:
             role = ""
             if isinstance(message, HumanMessage):
@@ -111,7 +116,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
             if isinstance(message.content, str):
                 content = message.content
             else:
-                for content_part in message.content:
+                for content_part in cast(List[Dict], message.content):
                     if content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "image_url":
@@ -308,12 +313,12 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
             for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
                 if stream_resp:
                     chunk = _chat_stream_response_to_chat_generation_chunk(stream_resp)
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(
                             chunk.text,
                             verbose=self.verbose,
                         )
+                    yield chunk
         except OllamaEndpointNotFoundError:
             yield from self._legacy_stream(messages, stop, **kwargs)
 
@@ -324,20 +329,14 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        try:
-            async for stream_resp in self._acreate_chat_stream(
-                messages, stop, **kwargs
-            ):
-                if stream_resp:
-                    chunk = _chat_stream_response_to_chat_generation_chunk(stream_resp)
-                    yield chunk
-                    if run_manager:
-                        await run_manager.on_llm_new_token(
-                            chunk.text,
-                            verbose=self.verbose,
-                        )
-        except OllamaEndpointNotFoundError:
-            async for chunk in self._legacy_astream(messages, stop, **kwargs):
+        async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
+            if stream_resp:
+                chunk = _chat_stream_response_to_chat_generation_chunk(stream_resp)
+                if run_manager:
+                    await run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=self.verbose,
+                    )
                 yield chunk
 
     @deprecated("0.0.3", alternative="_stream")
@@ -352,9 +351,9 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_chat_generation_chunk(stream_resp)
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=self.verbose,
                     )
+                yield chunk
