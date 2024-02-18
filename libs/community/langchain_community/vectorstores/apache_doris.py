@@ -81,14 +81,15 @@ class ApacheDoris(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
+        *,
         config: Optional[ApacheDorisSettings] = None,
         **kwargs: Any,
     ) -> None:
         """Constructor for Apache Doris.
 
         Args:
-            embedding_function (Embeddings):
-            config (ApacheDorisSettings): Apache Doris client configuration information
+            embedding (Embeddings): Text embedding model.
+            config (ApacheDorisSettings): Apache Doris client configuration information.
         """
         try:
             import pymysql  # type: ignore[import]
@@ -267,7 +268,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         Returns:
             Apache Doris Index
         """
-        ctx = cls(embedding, config, **kwargs)
+        ctx = cls(embedding, config=config, **kwargs)
         ctx.add_texts(texts, ids=text_ids, batch_size=batch_size, metadatas=metadatas)
         return ctx
 
