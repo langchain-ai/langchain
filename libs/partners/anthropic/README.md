@@ -58,7 +58,7 @@ messages = [
 
 # Embeddings
 
-Anthropic does not offer its own embedding model. However their documenation offers solutions using Voyage AI.
+Anthropic does not offer its own embedding model. However their documentation offers solutions using Voyage AI.
 [Anthropic Embeddings Documentation](https://docs.anthropic.com/claude/docs/embeddings)
 
 ## Multimodal inputs
