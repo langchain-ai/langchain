@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -377,13 +377,14 @@ class UpstashVectorStore(VectorStore):
             self._embed_query(query), k=k
         )
 
-    def _results_to_docs(self, results: List):
+    def _process_results(self, results: List) -> List[Tuple[Document, float]]:
         docs = []
         for res in results:
             metadata = res.metadata
             if metadata and self._text_key in metadata:
                 text = metadata.pop(self._text_key)
-                docs.append(Document(page_content=text, metadata=metadata))
+                doc = Document(page_content=text, metadata=metadata)
+                docs.append((doc, res.score))
             else:
                 logger.warning(
                     f"Found document with no `{self._text_key}` key. Skipping."
@@ -403,7 +404,7 @@ class UpstashVectorStore(VectorStore):
             include_metadata=True,
         )
 
-        return self._results_to_docs(results)
+        return self._process_results(results)
 
     async def asimilarity_search_by_vector_with_score(
         self,
@@ -418,7 +419,7 @@ class UpstashVectorStore(VectorStore):
             include_metadata=True,
         )
 
-        return self._results_to_docs(results)
+        return self._process_results(results)
 
     def similarity_search(
         self,
@@ -485,6 +486,28 @@ class UpstashVectorStore(VectorStore):
         docs_and_scores = await self.asimilarity_search_by_vector_with_score(
             embedding, k=k)
         return [doc for doc, _ in docs_and_scores]
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """
+        Since Upstash always returns relevance scores, default implementation is used.
+        """
+        return self.similarity_search_with_score(query, k=k, **kwargs)
+
+    async def _asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """
+        Since Upstash always returns relevance scores, default implementation is used.
+        """
+        return await self.asimilarity_search_with_score(query, k=k, **kwargs)
 
     def max_marginal_relevance_search_by_vector(
         self,
