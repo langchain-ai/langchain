@@ -74,6 +74,12 @@ def _import_annoy() -> Any:
     return Annoy
 
 
+def _import_apache_doris() -> Any:
+    from langchain_community.vectorstores.apache_doris import ApacheDoris
+
+    return ApacheDoris
+
+
 def _import_atlas() -> Any:
     from langchain_community.vectorstores.atlas import AtlasDB
 
@@ -497,6 +503,8 @@ def __getattr__(name: str) -> Any:
         return _import_elastic_vector_search()
     elif name == "Annoy":
         return _import_annoy()
+    elif name == "ApacheDoris":
+        return _import_apache_doris()
     elif name == "AtlasDB":
         return _import_atlas()
     elif name == "AwaDB":
@@ -640,6 +648,7 @@ __all__ = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
+    "ApacheDoris",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",

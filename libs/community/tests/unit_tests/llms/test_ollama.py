@@ -32,7 +32,7 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
     )
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
-        assert url == "https://ollama-hostname:8000/api/generate/"
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
             "Authentication": "Bearer TEST-TOKEN-VALUE",
@@ -53,7 +53,7 @@ def test_handle_if_headers_not_provided(monkeypatch: MonkeyPatch) -> None:
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
-        assert url == "https://ollama-hostname:8000/api/generate/"
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
         }
@@ -73,7 +73,7 @@ def test_handle_kwargs_top_level_parameters(monkeypatch: MonkeyPatch) -> None:
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
-        assert url == "https://ollama-hostname:8000/api/generate/"
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
         }
@@ -119,7 +119,7 @@ def test_handle_kwargs_with_unknown_param(monkeypatch: MonkeyPatch) -> None:
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
-        assert url == "https://ollama-hostname:8000/api/generate/"
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
         }
@@ -166,7 +166,7 @@ def test_handle_kwargs_with_options(monkeypatch: MonkeyPatch) -> None:
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
-        assert url == "https://ollama-hostname:8000/api/generate/"
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
         }

@@ -34,6 +34,9 @@ codespell = "^2.2.0"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
+langchain = { path = "../../langchain", develop = true }
+langchain-community = { path = "../../community", develop = true }
+langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.lint]
 optional = true
