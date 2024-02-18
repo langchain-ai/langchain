@@ -1,7 +1,6 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 from typing import Any, List, Optional, Sequence, Tuple, Type, Union
 
-from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
@@ -20,6 +19,7 @@ from langchain_core.prompts.chat import (
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 from langchain.agents import BaseSingleActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (
@@ -71,7 +71,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
     @property
     def functions(self) -> List[dict]:
-        return [dict(format_tool_to_openai_function(t)) for t in self.tools]
+        return [dict(convert_to_openai_function(t)) for t in self.tools]
 
     def plan(
         self,
@@ -175,7 +175,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             content="You are a helpful AI assistant."
         ),
         extra_prompt_messages: Optional[List[BaseMessagePromptTemplate]] = None,
-    ) -> BasePromptTemplate:
+    ) -> ChatPromptTemplate:
         """Create prompt for this agent.
 
         Args:
@@ -303,9 +303,7 @@ def create_openai_functions_agent(
             "Prompt must have input variable `agent_scratchpad`, but wasn't found. "
             f"Found {prompt.input_variables} instead."
         )
-    llm_with_tools = llm.bind(
-        functions=[format_tool_to_openai_function(t) for t in tools]
-    )
+    llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_function_messages(

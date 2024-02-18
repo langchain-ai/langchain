@@ -1,5 +1,5 @@
 import unittest
-from typing import List
+from typing import List, Type
 
 import pytest
 
@@ -14,6 +14,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     ToolMessage,
+    convert_to_messages,
     get_buffer_string,
     message_chunk_to_message,
     messages_from_dict,
@@ -182,6 +183,21 @@ def test_multiple_msg() -> None:
     human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
     ai_msg = AIMessage(content="ai")
     sys_msg = SystemMessage(content="sys")
+
+    msgs = [
+        human_msg,
+        ai_msg,
+        sys_msg,
+    ]
+    assert messages_from_dict(messages_to_dict(msgs)) == msgs
+
+
+def test_multiple_msg_with_name() -> None:
+    human_msg = HumanMessage(
+        content="human", additional_kwargs={"key": "value"}, name="human erick"
+    )
+    ai_msg = AIMessage(content="ai", name="ai erick")
+    sys_msg = SystemMessage(content="sys", name="sys erick")
 
     msgs = [
         human_msg,
@@ -428,3 +444,100 @@ def test_tool_calls_merge() -> None:
             ]
         },
     )
+
+
+def test_convert_to_messages() -> None:
+    # dicts
+    assert convert_to_messages(
+        [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello!"},
+            {"role": "ai", "content": "Hi!"},
+            {"role": "human", "content": "Hello!", "name": "Jane"},
+            {
+                "role": "assistant",
+                "content": "Hi!",
+                "name": "JaneBot",
+                "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'},
+            },
+            {"role": "function", "name": "greet", "content": "Hi!"},
+            {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
+        ]
+    ) == [
+        SystemMessage(content="You are a helpful assistant."),
+        HumanMessage(content="Hello!"),
+        AIMessage(content="Hi!"),
+        HumanMessage(content="Hello!", name="Jane"),
+        AIMessage(
+            content="Hi!",
+            name="JaneBot",
+            additional_kwargs={
+                "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'}
+            },
+        ),
+        FunctionMessage(name="greet", content="Hi!"),
+        ToolMessage(tool_call_id="tool_id", content="Hi!"),
+    ]
+
+    # tuples
+    assert convert_to_messages(
+        [
+            ("system", "You are a helpful assistant."),
+            "hello!",
+            ("ai", "Hi!"),
+            ("human", "Hello!"),
+            ("assistant", "Hi!"),
+        ]
+    ) == [
+        SystemMessage(content="You are a helpful assistant."),
+        HumanMessage(content="hello!"),
+        AIMessage(content="Hi!"),
+        HumanMessage(content="Hello!"),
+        AIMessage(content="Hi!"),
+    ]
+
+
+@pytest.mark.parametrize(
+    "MessageClass",
+    [
+        AIMessage,
+        AIMessageChunk,
+        HumanMessage,
+        HumanMessageChunk,
+        SystemMessage,
+    ],
+)
+def test_message_name(MessageClass: Type) -> None:
+    msg = MessageClass(content="foo", name="bar")
+    assert msg.name == "bar"
+
+    msg2 = MessageClass(content="foo", name=None)
+    assert msg2.name is None
+
+    msg3 = MessageClass(content="foo")
+    assert msg3.name is None
+
+
+@pytest.mark.parametrize(
+    "MessageClass",
+    [FunctionMessage, FunctionMessageChunk],
+)
+def test_message_name_function(MessageClass: Type) -> None:
+    # functionmessage doesn't support name=None
+    msg = MessageClass(name="foo", content="bar")
+    assert msg.name == "foo"
+
+
+@pytest.mark.parametrize(
+    "MessageClass",
+    [ChatMessage, ChatMessageChunk],
+)
+def test_message_name_chat(MessageClass: Type) -> None:
+    msg = MessageClass(content="foo", role="user", name="bar")
+    assert msg.name == "bar"
+
+    msg2 = MessageClass(content="foo", role="user", name=None)
+    assert msg2.name is None
+
+    msg3 = MessageClass(content="foo", role="user")
+    assert msg3.name is None

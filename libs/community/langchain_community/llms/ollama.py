@@ -64,6 +64,10 @@ class _OllamaCommon(BaseLanguageModel):
     It is recommended to set this value to the number of physical
     CPU cores your system has (as opposed to the logical number of cores)."""
 
+    num_predict: Optional[int] = None
+    """Maximum number of tokens to predict when generating text. 
+    (Default: 128, -1 = infinite generation, -2 = fill context)"""
+
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
     repetition. (Default: 64, 0 = disabled, -1 = num_ctx)"""
@@ -126,6 +130,7 @@ class _OllamaCommon(BaseLanguageModel):
                 "num_ctx": self.num_ctx,
                 "num_gpu": self.num_gpu,
                 "num_thread": self.num_thread,
+                "num_predict": self.num_predict,
                 "repeat_last_n": self.repeat_last_n,
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
@@ -279,7 +284,10 @@ class _OllamaCommon(BaseLanguageModel):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url=api_url,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    **(self.headers if isinstance(self.headers, dict) else {}),
+                },
                 json=request_payload,
                 timeout=self.timeout,
             ) as response:
@@ -289,7 +297,7 @@ class _OllamaCommon(BaseLanguageModel):
                             "Ollama call failed with status code 404."
                         )
                     else:
-                        optional_detail = await response.json().get("error")
+                        optional_detail = await response.json().get("error")  # type: ignore[attr-defined]
                         raise ValueError(
                             f"Ollama call failed with status code {response.status}."
                             f" Details: {optional_detail}"
@@ -372,7 +380,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         """Return type of llm."""
         return "ollama-llm"
 
-    def _generate(
+    def _generate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -408,7 +416,7 @@ class Ollama(BaseLLM, _OllamaCommon):
             generations.append([final_chunk])
         return LLMResult(generations=generations)
 
-    async def _agenerate(
+    async def _agenerate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -437,7 +445,7 @@ class Ollama(BaseLLM, _OllamaCommon):
                 prompt,
                 stop=stop,
                 images=images,
-                run_manager=run_manager,
+                run_manager=run_manager,  # type: ignore[arg-type]
                 verbose=self.verbose,
                 **kwargs,
             )

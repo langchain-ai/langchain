@@ -3,11 +3,15 @@ from __future__ import annotations
 
 import json
 import time
-import typing
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
-if typing.TYPE_CHECKING:
-    from astrapy.db import AstraDB as LibAstraDB
+from langchain_community.utilities.astradb import (
+    SetupMode,
+    _AstraDBCollectionEnvironment,
+)
+
+if TYPE_CHECKING:
+    from astrapy.db import AstraDB
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -42,44 +46,32 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         collection_name: str = DEFAULT_COLLECTION_NAME,
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[LibAstraDB] = None,  # type 'astrapy.db.AstraDB'
+        astra_db_client: Optional[AstraDB] = None,
         namespace: Optional[str] = None,
+        setup_mode: SetupMode = SetupMode.SYNC,
+        pre_delete_collection: bool = False,
     ) -> None:
         """Create an Astra DB chat message history."""
-        try:
-            from astrapy.db import AstraDB as LibAstraDB
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Could not import a recent astrapy python package. "
-                "Please install it with `pip install --upgrade astrapy`."
-            )
+        self.astra_env = _AstraDBCollectionEnvironment(
+            collection_name=collection_name,
+            token=token,
+            api_endpoint=api_endpoint,
+            astra_db_client=astra_db_client,
+            namespace=namespace,
+            setup_mode=setup_mode,
+            pre_delete_collection=pre_delete_collection,
+        )
 
-        # Conflicting-arg checks:
-        if astra_db_client is not None:
-            if token is not None or api_endpoint is not None:
-                raise ValueError(
-                    "You cannot pass 'astra_db_client' to AstraDB if passing "
-                    "'token' and 'api_endpoint'."
-                )
+        self.collection = self.astra_env.collection
+        self.async_collection = self.astra_env.async_collection
 
         self.session_id = session_id
         self.collection_name = collection_name
-        self.token = token
-        self.api_endpoint = api_endpoint
-        self.namespace = namespace
-        if astra_db_client is not None:
-            self.astra_db = astra_db_client
-        else:
-            self.astra_db = LibAstraDB(
-                token=self.token,
-                api_endpoint=self.api_endpoint,
-                namespace=self.namespace,
-            )
-        self.collection = self.astra_db.create_collection(self.collection_name)
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve all session messages from DB"""
+        self.astra_env.ensure_db_setup()
         message_blobs = [
             doc["body_blob"]
             for doc in sorted(
@@ -99,16 +91,63 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
-    def add_message(self, message: BaseMessage) -> None:
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError("Use add_messages instead")
+
+    async def aget_messages(self) -> List[BaseMessage]:
+        """Retrieve all session messages from DB"""
+        await self.astra_env.aensure_db_setup()
+        docs = self.async_collection.paginated_find(
+            filter={
+                "session_id": self.session_id,
+            },
+            projection={
+                "timestamp": 1,
+                "body_blob": 1,
+            },
+        )
+        sorted_docs = sorted(
+            [doc async for doc in docs],
+            key=lambda _doc: _doc["timestamp"],
+        )
+        message_blobs = [doc["body_blob"] for doc in sorted_docs]
+        items = [json.loads(message_blob) for message_blob in message_blobs]
+        messages = messages_from_dict(items)
+        return messages
+
+    def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Write a message to the table"""
-        self.collection.insert_one(
+        self.astra_env.ensure_db_setup()
+        docs = [
             {
                 "timestamp": time.time(),
                 "session_id": self.session_id,
                 "body_blob": json.dumps(message_to_dict(message)),
             }
-        )
+            for message in messages
+        ]
+        self.collection.chunked_insert_many(docs)
+
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Write a message to the table"""
+        await self.astra_env.aensure_db_setup()
+        docs = [
+            {
+                "timestamp": time.time(),
+                "session_id": self.session_id,
+                "body_blob": json.dumps(message_to_dict(message)),
+            }
+            for message in messages
+        ]
+        await self.async_collection.chunked_insert_many(docs)
 
     def clear(self) -> None:
         """Clear session memory from DB"""
+        self.astra_env.ensure_db_setup()
         self.collection.delete_many(filter={"session_id": self.session_id})
+
+    async def aclear(self) -> None:
+        """Clear session memory from DB"""
+        await self.astra_env.aensure_db_setup()
+        await self.async_collection.delete_many(filter={"session_id": self.session_id})

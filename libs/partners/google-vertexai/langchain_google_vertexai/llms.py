@@ -31,6 +31,12 @@ from vertexai.preview.generative_models import (  # type: ignore[import-untyped]
     Image,
 )
 from vertexai.preview.language_models import (  # type: ignore[import-untyped]
+    ChatModel as PreviewChatModel,
+)
+from vertexai.preview.language_models import (
+    CodeChatModel as PreviewCodeChatModel,
+)
+from vertexai.preview.language_models import (
     CodeGenerationModel as PreviewCodeGenerationModel,
 )
 from vertexai.preview.language_models import (
@@ -239,6 +245,27 @@ class _VertexAICommon(_VertexAIBase):
             params.pop("candidate_count")
         return params
 
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input will fit in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        is_palm_chat_model = isinstance(
+            self.client_preview, PreviewChatModel
+        ) or isinstance(self.client_preview, PreviewCodeChatModel)
+        if is_palm_chat_model:
+            result = self.client_preview.start_chat().count_tokens(text)
+        else:
+            result = self.client_preview.count_tokens([text])
+
+        return result.total_tokens
+
 
 class VertexAI(_VertexAICommon, BaseLLM):
     """Google Vertex AI large language models."""
@@ -300,25 +327,13 @@ class VertexAI(_VertexAICommon, BaseLLM):
             raise ValueError("Only one candidate can be generated with streaming!")
         return values
 
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text.
-
-        Useful for checking if an input will fit in a model's context window.
-
-        Args:
-            text: The string input to tokenize.
-
-        Returns:
-            The integer number of tokens in the text.
-        """
-        result = self.client_preview.count_tokens([text])
-        return result.total_tokens
-
     def _response_to_generation(
-        self, response: TextGenerationResponse
+        self, response: TextGenerationResponse, *, stream: bool = False
     ) -> GenerationChunk:
         """Converts a stream response to a generation chunk."""
-        generation_info = get_generation_info(response, self._is_gemini_model)
+        generation_info = get_generation_info(
+            response, self._is_gemini_model, stream=stream
+        )
         try:
             text = response.text
         except AttributeError:
@@ -401,7 +416,14 @@ class VertexAI(_VertexAICommon, BaseLLM):
             run_manager=run_manager,
             **params,
         ):
-            chunk = self._response_to_generation(stream_resp)
+            # Gemini models return GenerationResponse even when streaming, which has a
+            # candidates field.
+            stream_resp = (
+                stream_resp
+                if isinstance(stream_resp, TextGenerationResponse)
+                else stream_resp.candidates[0]
+            )
+            chunk = self._response_to_generation(stream_resp, stream=True)
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(

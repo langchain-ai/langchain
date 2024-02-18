@@ -1,4 +1,5 @@
 """Integration test for PubMed API Wrapper."""
+
 from typing import List
 
 import pytest
@@ -13,7 +14,7 @@ def test_load_success() -> None:
     """Test that returns the correct answer"""
     api_client = PubMedLoader(query="chatgpt")
     docs = api_client.load()
-    print(docs)
+    print(docs)  # noqa: T201
     assert len(docs) == api_client.load_max_docs == 3
     assert_docs(docs)
 
@@ -22,7 +23,7 @@ def test_load_success_load_max_docs() -> None:
     """Test that returns the correct answer"""
     api_client = PubMedLoader(query="chatgpt", load_max_docs=2)
     docs = api_client.load()
-    print(docs)
+    print(docs)  # noqa: T201
     assert len(docs) == api_client.load_max_docs == 2
     assert_docs(docs)
 
@@ -38,7 +39,7 @@ def test_load_no_content() -> None:
     """Returns a Document without content."""
     api_client = PubMedLoader(query="37548971")
     docs = api_client.load()
-    print(docs)
+    print(docs)  # noqa: T201
     assert len(docs) > 0
     assert docs[0].page_content == ""
 
