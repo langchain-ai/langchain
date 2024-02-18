@@ -1,12 +1,13 @@
 # LLM Linqua Document Compressor
 
 import re
-from typing import TYPE_CHECKING, Sequence, Optional, List, Tuple, Dict
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.documents import Document
 from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
+
 from langchain_community.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
@@ -59,7 +60,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         "dynamic_context_compression_ratio": 0.4,
     }
     """Extra compression arguments"""
-    lingua: 'Optional[PromptCompressor]' = None
+    lingua: "Optional[PromptCompressor]" = None
     """The instance of the llm linqua"""
 
     @root_validator

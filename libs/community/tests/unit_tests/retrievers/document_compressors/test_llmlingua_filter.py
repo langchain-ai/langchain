@@ -1,7 +1,7 @@
 import pytest
+from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
-from langchain_core.documents import Document
 from langchain_community.retrievers.document_compressors import LLMLinguaCompressor
 
 
