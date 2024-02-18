@@ -8,6 +8,8 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
+from typing_extensions import Annotated
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -24,7 +26,6 @@ from langchain_core.tools import (
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
-from typing_extensions import Annotated
 
 
 def test_unnamed_decorator() -> None:
