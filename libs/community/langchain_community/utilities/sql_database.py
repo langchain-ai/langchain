@@ -58,6 +58,7 @@ class SQLDatabase:
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
         max_string_length: int = 300,
+        restricted_keywords: Optional[List[str]] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -122,6 +123,10 @@ class SQLDatabase:
             only=list(self._usable_tables),
             schema=self._schema,
         )
+
+        # Restricted keywords to not execute on database
+        self.restricted_keywords = restricted_keywords if restricted_keywords else []
+
 
     @classmethod
     def from_uri(
@@ -447,11 +452,18 @@ class SQLDatabase:
                 pass
             else:
                 raise TypeError(f"Query expression has unknown type: {type(command)}")
-            cursor = connection.execute(
-                command,
-                parameters,
-                execution_options=execution_options,
-            )
+            if not self.detect_restricted_keywords(command):
+                cursor = connection.execute(
+                    command,
+                    parameters,
+                    execution_options=execution_options,
+                )
+            else:
+                raise PermissionError(
+                    f"Restricted keywords in the SQL '{command}' "
+                    f"Commands '{self.restricted_keywords}' are forbidden."
+                )
+
 
             if cursor.returns_rows:
                 if fetch == "all":
