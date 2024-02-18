@@ -21,11 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 class UpstashVectorStore(VectorStore):
-    """Upstash Vector vector store.
+    """Upstash Vector vector store
 
-    To use, you should have the ``upstash_vector`` python package installed.
+    To use, the ``upstash-vector`` python package must be installed.
 
-    Create a new Upstash Vector database and copy the `index_url` and `index_token`.
+    Also an Upstash Vector index is required. First create a new Upstash Vector index
+    and copy the `index_url` and `index_token` variables. Then either pass them through the
+    constructor or set the environment variables `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN`.
 
     Example:
         .. code-block:: python
@@ -38,6 +40,17 @@ class UpstashVectorStore(VectorStore):
                 embedding=embeddings, 
                 index_url="...", 
                 index_token="..."
+            )
+
+            # or
+
+            import os
+
+            os.environ["UPSTASH_VECTOR_REST_URL"] = "..."
+            os.environ["UPSTASH_VECTOR_REST_TOKEN"] = "..."
+
+            vectorstore = UpstashVectorStore(
+                embedding=embeddings
             )
     """
 
