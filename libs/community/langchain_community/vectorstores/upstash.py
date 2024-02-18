@@ -150,6 +150,74 @@ class UpstashVectorStore(VectorStore):
                 "Pass an embeddings object to the constructor.")
         return self._embeddings.embed_query(text)
 
+    def add_documents(
+        self,
+        documents: Iterable[Document],
+        batch_size: int = 32,
+        embedding_chunk_size: int = 1000,
+    ) -> List[str]:
+        """
+        Get the embeddings for the documents and add them to the vectorstore.
+
+        Documents are sent to the embeddings object 
+        in batches of size `embedding_chunk_size`.
+        The embeddings are then upserted into the vectorstore
+        in batches of size `batch_size`.
+
+        Args:
+            documents: Iterable of Documents to add to the vectorstore.
+            batch_size: Batch size to use when upserting the embeddings.
+            Upstash supports at max 1000 vectors per request.
+            embedding_batch_size: Chunk size to use when embedding the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+
+        return self.add_texts(
+            texts,
+            metadatas=metadatas,
+            batch_size=batch_size,
+            embedding_chunk_size=embedding_chunk_size,
+        )
+
+    async def aadd_documents(
+        self,
+        documents: Iterable[Document],
+        batch_size: int = 32,
+        embedding_chunk_size: int = 1000,
+    ) -> List[str]:
+        """
+        Get the embeddings for the documents and add them to the vectorstore.
+
+        Documents are sent to the embeddings object 
+        in batches of size `embedding_chunk_size`.
+        The embeddings are then upserted into the vectorstore
+        in batches of size `batch_size`.
+
+        Args:
+            documents: Iterable of Documents to add to the vectorstore.
+            batch_size: Batch size to use when upserting the embeddings.
+            Upstash supports at max 1000 vectors per request.
+            embedding_batch_size: Chunk size to use when embedding the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+
+        return self.aadd_texts(
+            texts,
+            metadatas=metadatas,
+            batch_size=batch_size,
+            embedding_chunk_size=embedding_chunk_size,
+        )
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -165,9 +233,6 @@ class UpstashVectorStore(VectorStore):
         in batches of size `embedding_chunk_size`.
         The embeddings are then upserted into the vectorstore
         in batches of size `batch_size`.
-
-        For OpenAI embeddings use embedding_chunk_size>1000 
-        and batch_size~64 for best performance.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
@@ -204,6 +269,60 @@ class UpstashVectorStore(VectorStore):
                 batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
             ):
                 self._index.upsert(vectors=batch)
+
+        return ids
+
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        batch_size: int = 32,
+        embedding_chunk_size: int = 1000,
+    ) -> List[str]:
+        """
+        Get the embeddings for the texts and add them to the vectorstore.
+
+        Texts are sent to the embeddings object 
+        in batches of size `embedding_chunk_size`.
+        The embeddings are then upserted into the vectorstore
+        in batches of size `batch_size`.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            batch_size: Batch size to use when upserting the embeddings.
+            Upstash supports at max 1000 vectors per request.
+            embedding_batch_size: Chunk size to use when embedding the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        """
+        texts = list(texts)
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+
+        # Copy metadatas to avoid modifying the original documents
+        if metadatas:
+            metadatas = [m.copy() for m in metadatas]
+        else:
+            metadatas = [{} for _ in texts]
+
+        # Add text to metadata
+        for metadata, text in zip(metadatas, texts):
+            metadata[self._text_key] = text
+
+        for i in range(0, len(texts), embedding_chunk_size):
+            chunk_texts = texts[i: i + embedding_chunk_size]
+            chunk_ids = ids[i: i + embedding_chunk_size]
+            chunk_metadatas = metadatas[i: i + embedding_chunk_size]
+            embeddings = self._embed_documents(chunk_texts)
+
+            for batch in batch_iterate(
+                batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
+            ):
+                await self._async_index.upsert(vectors=batch)
 
         return ids
 
