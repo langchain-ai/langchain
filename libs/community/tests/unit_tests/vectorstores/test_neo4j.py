@@ -1,8 +1,11 @@
 """Test Neo4j functionality."""
 import os
-from langchain_community.vectorstores.neo4j_vector import remove_lucene_chars
+
+from langchain_community.vectorstores.neo4j_vector import (
+    Neo4jVector,
+    remove_lucene_chars,
+)
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-from libs.community.langchain_community.vectorstores.neo4j_vector import Neo4jVector
 
 
 def test_escaping_lucene() -> None:
@@ -63,7 +66,7 @@ def test_index_fetching() -> None:
             index_name=index,
             node_label=node_label,
             text_node_properties=text_properties,
-            embedding_node_property=f"embedding",
+            embedding_node_property="embedding",
         )
 
     def fetch_store(index_name) -> Neo4jVector:
@@ -89,5 +92,3 @@ def test_index_fetching() -> None:
 
     index_0_store = fetch_store(index_0_str)
     assert index_0_store.index_name == index_0_str
-
-
