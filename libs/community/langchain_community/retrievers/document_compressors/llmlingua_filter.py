@@ -60,7 +60,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         "dynamic_context_compression_ratio": 0.4,
     }
     """Extra compression arguments"""
-    lingua: PromptCompressor
+    lingua: PromptCompressor = None
     """The instance of the llm linqua"""
 
     @root_validator
@@ -144,7 +144,6 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
                 if match:
                     ref_id = match.group(1)
                     clean_string = pattern.sub("", clean_string).strip()
-                    break
             # Convert ref ID to int or use -1 if not found
             ref_id_to_use = int(ref_id) if ref_id and ref_id.isdigit() else -1
             ref_id_tuples.append((clean_string, ref_id_to_use))
@@ -181,6 +180,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
             add_instruction=True,
             **self.additional_compress_kwargs,
         )
+        print(compressed_prompt)
         compreseed_context = compressed_prompt["compressed_prompt"].split("\n\n")[1:]
 
         extracted_metadata = self.extract_ref_id_tuples_and_clean(compreseed_context)

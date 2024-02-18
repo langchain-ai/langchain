@@ -4,6 +4,8 @@ from pytest_mock import MockerFixture
 
 from langchain_community.retrievers.document_compressors import LLMLinguaCompressor
 
+LLM_LINGUA_INSTRUCTION = "Given this documents, please answer the final question"
+
 
 # Mock PromptCompressor for testing purposes
 class MockPromptCompressor:
@@ -11,8 +13,9 @@ class MockPromptCompressor:
         """Mock behavior of the compress_prompt method"""
         response = {
             "compressed_prompt": (
-                "<#ref0#> Compressed content for document 0 <#ref0#>\n\n",
-                "<#ref1#> Compressed content for document 1 <#ref1#>",
+                f"{LLM_LINGUA_INSTRUCTION}\n\n"
+                "<#ref0#> Compressed content for document 0 <#ref0#>\n\n"
+                "<#ref1#> Compressed content for document 1 <#ref1#>"
             )
         }
         return response
@@ -31,14 +34,15 @@ def llm_lingua_compressor(
     mock_prompt_compressor: MockPromptCompressor,
 ) -> LLMLinguaCompressor:
     """Create an instance of LLMLinguaCompressor with the mocked PromptCompressor"""
-    return LLMLinguaCompressor()
+    return LLMLinguaCompressor(instruction=LLM_LINGUA_INSTRUCTION)
 
 
+@pytest.mark.requires("llmlingua")
 def test_format_context() -> None:
     """Test the _format_context method in the llmlinguacompressor"""
     docs = [
-        Document(page_content="Content of document 0", metadata="1"),
-        Document(page_content="Content of document 1", metadata="1"),
+        Document(page_content="Content of document 0", metadata={"id": "0"}),
+        Document(page_content="Content of document 1", metadata={"id": "1"}),
     ]
     formatted_context = LLMLinguaCompressor._format_context(docs)
     assert formatted_context == [
@@ -47,6 +51,7 @@ def test_format_context() -> None:
     ]
 
 
+@pytest.mark.requires("llmlingua")
 def test_extract_ref_id_tuples_and_clean(
     llm_lingua_compressor: LLMLinguaCompressor,
 ) -> None:
@@ -56,6 +61,17 @@ def test_extract_ref_id_tuples_and_clean(
     assert result == [("Example content", 0), ("Content with no ref ID.", -1)]
 
 
+@pytest.mark.requires("llmlingua")
+def test_extract_ref_with_no_contents(
+    llm_lingua_compressor: LLMLinguaCompressor,
+) -> None:
+    """Test extracting reference ids with an empty documents contents"""
+    contents = []
+    result = llm_lingua_compressor.extract_ref_id_tuples_and_clean(contents)
+    assert result == []
+
+
+@pytest.mark.requires("llmlingua")
 def test_compress_documents_no_documents(
     llm_lingua_compressor: LLMLinguaCompressor,
 ) -> None:
@@ -64,17 +80,19 @@ def test_compress_documents_no_documents(
     assert result == []
 
 
+@pytest.mark.requires("llmlingua")
 def test_compress_documents_with_documents(
     llm_lingua_compressor: LLMLinguaCompressor,
 ) -> None:
     """Test the compress_documents method with documents"""
     docs = [
-        Document(page_content="Content of document 0", metadata="1"),
-        Document(page_content="Content of document 1", metadata="2"),
+        Document(page_content="Content of document 0", metadata={"id": "0"}),
+        Document(page_content="Content of document 1", metadata={"id": "1"}),
     ]
     compressed_docs = llm_lingua_compressor.compress_documents(docs, "query")
+    print(compressed_docs)
     assert len(compressed_docs) == 2
     assert compressed_docs[0].page_content == "Compressed content for document 0"
-    assert compressed_docs[0].metadata == "1"
+    assert compressed_docs[0].metadata == {"id": "0"}
     assert compressed_docs[1].page_content == "Compressed content for document 1"
-    assert compressed_docs[1].metadata == "2"
+    assert compressed_docs[1].metadata == {"id": "1"}
