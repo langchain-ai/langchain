@@ -4,7 +4,7 @@ from exa_py import Exa  # type: ignore
 from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.retrievers import BaseRetriever
 
 from langchain_exa._utilities import initialize_client
@@ -53,8 +53,8 @@ class ExaSearchRetriever(BaseRetriever):
     text_contents_options: Union[TextContentsOptions, Literal[True]] = True
     """How to set the page content of the results"""
 
-    client: Exa
-    exa_api_key: SecretStr
+    client: Exa = Field(default=None)
+    exa_api_key: SecretStr = Field(default=None)
     exa_base_url: Optional[str] = None
 
     @root_validator(pre=True)
@@ -66,11 +66,11 @@ class ExaSearchRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        response = self.client.search_and_contents(
+        response = self.client.search_and_contents(  # type: ignore[misc]
             query,
             num_results=self.k,
             text=self.text_contents_options,
-            highlights=self.highlights,
+            highlights=self.highlights,  # type: ignore
             include_domains=self.include_domains,
             exclude_domains=self.exclude_domains,
             start_crawl_date=self.start_crawl_date,
