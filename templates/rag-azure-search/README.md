@@ -2,7 +2,7 @@
 
 This template performs RAG on documents using [Azure AI Search](https://learn.microsoft.com/azure/search/search-what-is-azure-search) as the vectorstore and Azure OpenAI chat and embedding models.
 
-For additional context on the RAG with Azure AI Search, refer to [this notebook](https://github.com/langchain-ai/langchain/blob/master/docs/docs/integrations/vectorstores/azuresearch.ipynb).
+For additional details on RAG with Azure AI Search, refer to [this notebook](https://github.com/langchain-ai/langchain/blob/master/docs/docs/integrations/vectorstores/azuresearch.ipynb).
 
 
 ## Environment Setup
@@ -25,7 +25,7 @@ To run this template, you'll need to set the following environment variables:
 ***Optional:***
 
 - AZURE_SEARCH_INDEX_NAME - Name of an existing Azure AI Search index to use. If not provided, an index will be created with name "rag-azure-search".
-- OPENAI_API_VERSION - Azure OpenAI API version. Defaults to "2023-05-15".
+- OPENAI_API_VERSION - Azure OpenAI API version to use. Defaults to "2023-05-15". 
 
 ## Usage
 
