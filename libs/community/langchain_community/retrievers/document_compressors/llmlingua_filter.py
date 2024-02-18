@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
@@ -34,7 +33,8 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
     https://github.com/microsoft/LLMLingua
     """
 
-    # Pattern to match ref tags at the beginning or end of the string, allowing for malformed tags
+    # Pattern to match ref tags at the beginning or end of the string,
+    # allowing for malformed tags
     _pattern_beginning = re.compile(r"\A(?:<#)?(?:ref)?(\d+)(?:#>?)?")
     _pattern_ending = re.compile(r"(?:<#)?(?:ref)?(\d+)(?:#>?)?\Z")
 
@@ -60,7 +60,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         "dynamic_context_compression_ratio": 0.4,
     }
     """Extra compression arguments"""
-    lingua: "Optional[PromptCompressor]" = None
+    lingua: PromptCompressor
     """The instance of the llm linqua"""
 
     @root_validator
@@ -89,8 +89,11 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         arbitrary_types_allowed = True
 
     @staticmethod
-    def _format_context(docs: Sequence[Document]) -> str:
-        """Format the output of the retriever by including special ref tags for tracking the metadata after compression"""
+    def _format_context(docs: Sequence[Document]) -> List[str]:
+        """
+        Format the output of the retriever by including
+        special ref tags for tracking the metadata after compression
+        """
         formatted_docs = []
         for i, doc in enumerate(docs):
             content = doc.page_content.replace("\n\n", "\n")
@@ -109,15 +112,16 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         removed from the string, and its ID is recorded. If no ref ID is found,
         a generic ID of "-1" is assigned.
 
-        The search for ref tags is performed only at the beginning and end of the string,
-        with the assumption that there will be at most one ref ID per string. Malformed
-        ref tags are handled gracefully.
+        The search for ref tags is performed only at the beginning and
+        end of the string, with the assumption that there will
+        be at most one ref ID per string. Malformed ref tags are
+        handled gracefully.
 
         Args:
             contents (List[str]): A list of contents to be processed.
 
         Returns:
-            List[Tuple[str, int]]: A list where each tuple contains the cleaned string and the associated ref ID.
+            List[Tuple[str, int]]: The cleaned string and the associated ref ID.
 
         Examples:
             >>> strings_list = [
