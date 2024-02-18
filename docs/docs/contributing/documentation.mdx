@@ -17,7 +17,7 @@ Similar to linting, we recognize documentation can be annoying. If you do not wa
 ### Install dependencies
 
 - [Quarto](https://quarto.org) - package that converts Jupyter notebooks (`.ipynb` files) into mdx files for serving in Docusaurus.
-- `poetry install` from the monorepo root
+- `poetry install --with lint,docs --no-root` from the monorepo root.
 
 ### Building
 
@@ -49,7 +49,6 @@ make api_docs_linkcheck
 The docs are linted from the monorepo root. To lint the docs, run the following from there:
 
 ```bash
-poetry install --with lint,typing
 make lint
 ```
 
