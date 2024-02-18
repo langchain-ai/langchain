@@ -68,7 +68,7 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
             from infinity_emb import AsyncEmbeddingEngine  # type: ignore
         except ImportError:
             raise ImportError(
-                "Please install the `pip install infinity_emb[torch,optimum]` "
+                "Please install the `pip install 'infinity_emb[optimum,torch]>=0.0.24'` "
                 "package to use the InfinityEmbeddingsLocal."
             )
         logger.debug(f"Using InfinityEmbeddingsLocal with kwargs {values}")
