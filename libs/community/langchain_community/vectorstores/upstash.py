@@ -68,7 +68,7 @@ class UpstashVectorStore(VectorStore):
 
         If index or index_url and index_token are not provided, the constructor will
         attempt to create an index using the environment variables
-        `UPSTASH_VECTOR_URL`and `UPSTASH_VECTOR_TOKEN`.
+        `UPSTASH_VECTOR_REST_URL`and `UPSTASH_VECTOR_REST_TOKEN`.
 
         Args:
             text_key: Key to store the text in metadata.
