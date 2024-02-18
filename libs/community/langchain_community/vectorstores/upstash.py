@@ -166,6 +166,7 @@ class UpstashVectorStore(VectorStore):
     def add_documents(
         self,
         documents: Iterable[Document],
+        ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
     ) -> List[str]:
@@ -194,12 +195,14 @@ class UpstashVectorStore(VectorStore):
             texts,
             metadatas=metadatas,
             batch_size=batch_size,
+            ids=ids,
             embedding_chunk_size=embedding_chunk_size,
         )
 
     async def aadd_documents(
         self,
         documents: Iterable[Document],
+        ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
     ) -> List[str]:
@@ -227,6 +230,7 @@ class UpstashVectorStore(VectorStore):
         return self.aadd_texts(
             texts,
             metadatas=metadatas,
+            ids=ids,
             batch_size=batch_size,
             embedding_chunk_size=embedding_chunk_size,
         )
