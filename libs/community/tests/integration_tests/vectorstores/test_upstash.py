@@ -4,10 +4,9 @@ import os
 from time import sleep
 
 import pytest
-import requests
 from langchain_core.documents import Document
+from upstash_vector import AsyncIndex, Index
 
-from upstash_vector import Index, AsyncIndex
 from langchain_community.vectorstores.upstash import UpstashVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,

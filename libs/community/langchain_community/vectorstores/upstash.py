@@ -26,8 +26,9 @@ class UpstashVectorStore(VectorStore):
     To use, the ``upstash-vector`` python package must be installed.
 
     Also an Upstash Vector index is required. First create a new Upstash Vector index
-    and copy the `index_url` and `index_token` variables. Then either pass them through the
-    constructor or set the environment variables `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN`.
+    and copy the `index_url` and `index_token` variables. Then either pass
+    them through the constructor or set the environment 
+    variables `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN`.
 
     Example:
         .. code-block:: python
