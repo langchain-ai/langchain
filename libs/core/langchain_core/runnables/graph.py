@@ -115,6 +115,11 @@ class Graph:
                     "target": stable_node_ids[edge.target],
                     "data": edge.data,
                 }
+                if edge.data is not None
+                else {
+                    "source": stable_node_ids[edge.source],
+                    "target": stable_node_ids[edge.target],
+                }
                 for edge in self.edges
             ],
         }

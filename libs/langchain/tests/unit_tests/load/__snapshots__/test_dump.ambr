@@ -533,13 +533,11 @@
           "edges": [
             {
               "source": 0,
-              "target": 1,
-              "data": null
+              "target": 1
             },
             {
               "source": 1,
-              "target": 2,
-              "data": null
+              "target": 2
             }
           ]
         }
@@ -981,13 +979,11 @@
           "edges": [
             {
               "source": 0,
-              "target": 1,
-              "data": null
+              "target": 1
             },
             {
               "source": 1,
-              "target": 2,
-              "data": null
+              "target": 2
             }
           ]
         }
@@ -1039,13 +1035,11 @@
       "edges": [
         {
           "source": 0,
-          "target": 1,
-          "data": null
+          "target": 1
         },
         {
           "source": 1,
-          "target": 2,
-          "data": null
+          "target": 2
         }
       ]
     }
@@ -1850,13 +1844,11 @@
           "edges": [
             {
               "source": 0,
-              "target": 1,
-              "data": null
+              "target": 1
             },
             {
               "source": 1,
-              "target": 2,
-              "data": null
+              "target": 2
             }
           ]
         }
@@ -2322,13 +2314,11 @@
                     "edges": [
                       {
                         "source": 0,
-                        "target": 1,
-                        "data": null
+                        "target": 1
                       },
                       {
                         "source": 1,
-                        "target": 2,
-                        "data": null
+                        "target": 2
                       }
                     ]
                   }
@@ -2758,13 +2748,11 @@
           "edges": [
             {
               "source": 0,
-              "target": 1,
-              "data": null
+              "target": 1
             },
             {
               "source": 1,
-              "target": 2,
-              "data": null
+              "target": 2
             }
           ]
         }
@@ -2816,13 +2804,11 @@
       "edges": [
         {
           "source": 0,
-          "target": 1,
-          "data": null
+          "target": 1
         },
         {
           "source": 1,
-          "target": 2,
-          "data": null
+          "target": 2
         }
       ]
     }
@@ -3303,13 +3289,11 @@
           "edges": [
             {
               "source": 0,
-              "target": 1,
-              "data": null
+              "target": 1
             },
             {
               "source": 1,
-              "target": 2,
-              "data": null
+              "target": 2
             }
           ]
         }
@@ -3751,13 +3735,11 @@
           "edges": [
             {
               "source": 0,
-              "target": 1,
-              "data": null
+              "target": 1
             },
             {
               "source": 1,
-              "target": 2,
-              "data": null
+              "target": 2
             }
           ]
         }
@@ -3809,13 +3791,11 @@
       "edges": [
         {
           "source": 0,
-          "target": 1,
-          "data": null
+          "target": 1
         },
         {
           "source": 1,
-          "target": 2,
-          "data": null
+          "target": 2
         }
       ]
     }
@@ -4286,13 +4266,11 @@
       "edges": [
         {
           "source": 0,
-          "target": 1,
-          "data": null
+          "target": 1
         },
         {
           "source": 1,
-          "target": 2,
-          "data": null
+          "target": 2
         }
       ]
     }
