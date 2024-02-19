@@ -75,6 +75,7 @@ EXPECT_ALL = [
     "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
+    "WatsonxLLM",
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
@@ -82,7 +83,6 @@ EXPECT_ALL = [
     "QianfanLLMEndpoint",
     "YandexGPT",
     "VolcEngineMaasLLM",
-    "WatsonxLLM",
     "SparkLLM",
 ]
 
