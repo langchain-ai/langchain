@@ -1,17 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Type, Union
 from uuid import uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
@@ -56,23 +46,31 @@ def node_data_str(node: Node) -> str:
     return data if not data.startswith("Runnable") else data[8:]
 
 
-def node_data_json(node: Node) -> Tuple[str, Dict[str, Any]]:
+def node_data_json(node: Node) -> Dict[str, Union[str, Dict[str, Any]]]:
     from langchain_core.load.serializable import to_json_not_implemented
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
     if isinstance(node.data, RunnableSerializable):
-        data = node.data.to_json()
-        return ("runnable", {"id": data["id"], "name": data["name"]})
+        return {
+            "type": "runnable",
+            "data": {
+                "id": node.data.lc_id(),
+                "name": node.data.get_name(),
+            },
+        }
     elif isinstance(node.data, Runnable):
-        return (
-            "runnable",
-            {
+        return {
+            "type": "runnable",
+            "data": {
                 "id": to_json_not_implemented(node.data)["id"],
                 "name": node.data.get_name(),
             },
-        )
+        }
     else:
-        return ("schema", node.data.schema())
+        return {
+            "type": "schema",
+            "data": node.data.schema(),
+        }
 
 
 @dataclass
@@ -88,7 +86,7 @@ class Graph:
 
         return {
             "nodes": [
-                {"id": stable_node_ids[node.id], "data": node_data_json(node)}
+                {"id": stable_node_ids[node.id], **node_data_json(node)}
                 for node in self.nodes.values()
             ],
             "edges": [

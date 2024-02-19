@@ -35,17 +35,45 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
         "nodes": [
             {
                 "id": 0,
+                "type": "schema",
                 "data": {
                     "title": "PromptInput",
                     "type": "object",
                     "properties": {"name": {"title": "Name", "type": "string"}},
                 },
             },
-            {"id": 1, "data": "PromptTemplate"},
-            {"id": 2, "data": "FakeListLLM"},
-            {"id": 3, "data": "CommaSeparatedListOutputParser"},
+            {
+                "id": 1,
+                "type": "runnable",
+                "data": {
+                    "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
+                    "name": "PromptTemplate",
+                },
+            },
+            {
+                "id": 2,
+                "type": "runnable",
+                "data": {
+                    "id": ["tests", "unit_tests", "fake", "llm", "FakeListLLM"],
+                    "name": "FakeListLLM",
+                },
+            },
+            {
+                "id": 3,
+                "type": "runnable",
+                "data": {
+                    "id": [
+                        "langchain",
+                        "output_parsers",
+                        "list",
+                        "CommaSeparatedListOutputParser",
+                    ],
+                    "name": "CommaSeparatedListOutputParser",
+                },
+            },
             {
                 "id": 4,
+                "type": "schema",
                 "data": {
                     "title": "CommaSeparatedListOutputParserOutput",
                     "type": "array",
@@ -89,16 +117,32 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
         "nodes": [
             {
                 "id": 0,
+                "type": "schema",
                 "data": {
                     "title": "PromptInput",
                     "type": "object",
                     "properties": {"name": {"title": "Name", "type": "string"}},
                 },
             },
-            {"id": 1, "data": "PromptTemplate"},
-            {"id": 2, "data": "FakeListLLM"},
+            {
+                "id": 1,
+                "type": "runnable",
+                "data": {
+                    "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
+                    "name": "PromptTemplate",
+                },
+            },
+            {
+                "id": 2,
+                "type": "runnable",
+                "data": {
+                    "id": ["tests", "unit_tests", "fake", "llm", "FakeListLLM"],
+                    "name": "FakeListLLM",
+                },
+            },
             {
                 "id": 3,
+                "type": "schema",
                 "data": {
                     "title": "RunnableParallel<as_list,as_str>Input",
                     "anyOf": [
@@ -335,6 +379,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
             },
             {
                 "id": 4,
+                "type": "schema",
                 "data": {
                     "title": "RunnableParallel<as_list,as_str>Output",
                     "type": "object",
@@ -348,14 +393,50 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                     },
                 },
             },
-            {"id": 5, "data": "CommaSeparatedListOutputParser"},
+            {
+                "id": 5,
+                "type": "runnable",
+                "data": {
+                    "id": [
+                        "langchain",
+                        "output_parsers",
+                        "list",
+                        "CommaSeparatedListOutputParser",
+                    ],
+                    "name": "CommaSeparatedListOutputParser",
+                },
+            },
             {
                 "id": 6,
+                "type": "schema",
                 "data": {"title": "conditional_str_parser_input", "type": "string"},
             },
-            {"id": 7, "data": {"title": "conditional_str_parser_output"}},
-            {"id": 8, "data": "StrOutputParser"},
-            {"id": 9, "data": "XMLOutputParser"},
+            {
+                "id": 7,
+                "type": "schema",
+                "data": {"title": "conditional_str_parser_output"},
+            },
+            {
+                "id": 8,
+                "type": "runnable",
+                "data": {
+                    "id": ["langchain", "schema", "output_parser", "StrOutputParser"],
+                    "name": "StrOutputParser",
+                },
+            },
+            {
+                "id": 9,
+                "type": "runnable",
+                "data": {
+                    "id": [
+                        "langchain_core",
+                        "output_parsers",
+                        "xml",
+                        "XMLOutputParser",
+                    ],
+                    "name": "XMLOutputParser",
+                },
+            },
         ],
         "edges": [
             {"source": 0, "target": 1},
