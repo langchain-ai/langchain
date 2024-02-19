@@ -81,7 +81,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         )
 
     @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(self, cls, values: Dict) -> Dict:
         """Validate authenticate data in environment and python package is installed."""
         try:
             import gigachat  # noqa: F401
@@ -104,7 +104,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed_documents(
-        self, texts: List[str], model="Embeddings"
+        self, texts: List[str], model: str = "Embeddings"
     ) -> List[List[float]]:
         """Embed documents using a GigaChat embeddings models.
 
@@ -138,7 +138,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
 
         # return _embed_with_retry(self, texts=texts)
 
-    def embed_query(self, text: str, model="Embeddings") -> List[float]:
+    def embed_query(self, text: str, model: str = "Embeddings") -> List[float]:
         """Embed a query using a GigaChat embeddings models.
 
         Args:

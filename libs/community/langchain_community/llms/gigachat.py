@@ -58,6 +58,8 @@ class _BaseGigaChat(Serializable):
     max_tokens: Optional[int] = None
     """ Maximum number of tokens to generate """
     use_api_for_tokens: bool = False
+    """ Verbose logging """
+    verbose: bool = False
 
     @property
     def _llm_type(self) -> str:
@@ -133,11 +135,13 @@ class _BaseGigaChat(Serializable):
             "max_tokens": self.max_tokens,
         }
 
-    def tokens_count(self, input_: List[str], model=None) -> List[Any]:
+    def tokens_count(self, input_: List[str], model: Optional[str] = None) -> List[Any]:
         """Get tokens of string list"""
         return self._client.tokens_count(input_, model)
 
-    async def atokens_count(self, input_: List[str], model=None) -> List[Any]:
+    async def atokens_count(
+        self, input_: List[str], model: Optional[str] = None
+    ) -> List[Any]:
         """Get tokens of strings list (async)"""
         return await self._client.atokens_count(input_, model)
 
