@@ -19,11 +19,9 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
     for k, v in right.items():
         if k not in merged:
             merged[k] = v
-        elif merged[k] is None and v:
+        elif v is not None and merged[k] is None:
             merged[k] = v
-        elif v is None:
-            continue
-        elif merged[k] == v:
+        elif v is None or merged[k] == v:
             continue
         elif type(merged[k]) != type(v):
             raise TypeError(

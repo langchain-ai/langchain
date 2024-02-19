@@ -10,10 +10,12 @@ Required to run this test:
     - optionally this as well (otherwise defaults are used):
         export ASTRA_DB_KEYSPACE="my_keyspace"
 """
+from __future__ import annotations
+
 import json
 import os
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AsyncIterator, Iterator
 
 import pytest
 
@@ -35,12 +37,12 @@ def _has_env_vars() -> bool:
 
 
 @pytest.fixture
-def astra_db_collection() -> "AstraDBCollection":
+def astra_db_collection() -> Iterator[AstraDBCollection]:
     from astrapy.db import AstraDB
 
     astra_db = AstraDB(
-        token=ASTRA_DB_APPLICATION_TOKEN,
-        api_endpoint=ASTRA_DB_API_ENDPOINT,
+        token=ASTRA_DB_APPLICATION_TOKEN or "",
+        api_endpoint=ASTRA_DB_API_ENDPOINT or "",
         namespace=ASTRA_DB_KEYSPACE,
     )
     collection_name = f"lc_test_loader_{str(uuid.uuid4()).split('-')[0]}"
@@ -56,12 +58,12 @@ def astra_db_collection() -> "AstraDBCollection":
 
 
 @pytest.fixture
-async def async_astra_db_collection() -> "AsyncAstraDBCollection":
+async def async_astra_db_collection() -> AsyncIterator[AsyncAstraDBCollection]:
     from astrapy.db import AsyncAstraDB
 
     astra_db = AsyncAstraDB(
-        token=ASTRA_DB_APPLICATION_TOKEN,
-        api_endpoint=ASTRA_DB_API_ENDPOINT,
+        token=ASTRA_DB_APPLICATION_TOKEN or "",
+        api_endpoint=ASTRA_DB_API_ENDPOINT or "",
         namespace=ASTRA_DB_KEYSPACE,
     )
     collection_name = f"lc_test_loader_{str(uuid.uuid4()).split('-')[0]}"
@@ -79,7 +81,7 @@ async def async_astra_db_collection() -> "AsyncAstraDBCollection":
 @pytest.mark.requires("astrapy")
 @pytest.mark.skipif(not _has_env_vars(), reason="Missing Astra DB env. vars")
 class TestAstraDB:
-    def test_astradb_loader(self, astra_db_collection: "AstraDBCollection") -> None:
+    def test_astradb_loader(self, astra_db_collection: AstraDBCollection) -> None:
         loader = AstraDBLoader(
             astra_db_collection.collection_name,
             token=ASTRA_DB_APPLICATION_TOKEN,
@@ -106,9 +108,7 @@ class TestAstraDB:
                 "collection": astra_db_collection.collection_name,
             }
 
-    def test_extraction_function(
-        self, astra_db_collection: "AstraDBCollection"
-    ) -> None:
+    def test_extraction_function(self, astra_db_collection: AstraDBCollection) -> None:
         loader = AstraDBLoader(
             astra_db_collection.collection_name,
             token=ASTRA_DB_APPLICATION_TOKEN,
@@ -123,7 +123,7 @@ class TestAstraDB:
         assert doc.page_content == "bar"
 
     async def test_astradb_loader_async(
-        self, async_astra_db_collection: "AsyncAstraDBCollection"
+        self, async_astra_db_collection: AsyncAstraDBCollection
     ) -> None:
         await async_astra_db_collection.insert_many([{"foo": "bar", "baz": "qux"}] * 20)
         await async_astra_db_collection.insert_many(
@@ -157,7 +157,7 @@ class TestAstraDB:
             }
 
     async def test_extraction_function_async(
-        self, async_astra_db_collection: "AsyncAstraDBCollection"
+        self, async_astra_db_collection: AsyncAstraDBCollection
     ) -> None:
         loader = AstraDBLoader(
             async_astra_db_collection.collection_name,
@@ -167,5 +167,5 @@ class TestAstraDB:
             find_options={"limit": 30},
             extraction_function=lambda x: x["foo"],
         )
-        doc = await anext(loader.alazy_load())
+        doc = await loader.alazy_load().__anext__()
         assert doc.page_content == "bar"

@@ -32,7 +32,7 @@ class Generation(Serializable):
 
 
 class GenerationChunk(Generation):
-    """A Generation chunk, which can be concatenated with other Generation chunks."""
+    """Generation chunk, which can be concatenated with other Generation chunks."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

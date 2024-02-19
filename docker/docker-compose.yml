@@ -1,0 +1,21 @@
+# docker-compose to make it easier to spin up integration tests.
+# Services should use NON standard ports to avoid collision with
+version: "3"
+name: langchain-tests
+
+services:
+  redis:
+    image: redis/redis-stack-server:latest
+    # We use non standard ports since 
+    # these instances are used for testing
+    # and users may already have existing
+    # redis instances set up locally
+    # for other projects
+    ports:
+      - "6020:6379"
+    volumes:
+      - ./redis-volume:/data
+  graphdb:
+    image: graphdb
+    ports:
+      - "6021:7200"

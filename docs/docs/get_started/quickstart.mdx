@@ -184,7 +184,6 @@ A Retriever can be backed by anything - a SQL table, the internet, etc - but in 
 
 First, we need to load the data that we want to index. In order to do this, we will use the WebBaseLoader. This requires installing [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/):
 
-```
 ```shell
 pip install beautifulsoup4
 ```
@@ -194,7 +193,7 @@ After that, we can import and use WebBaseLoader.
 
 ```python
 from langchain_community.document_loaders import WebBaseLoader
-loader = WebBaseLoader("https://docs.smith.langchain.com/overview")
+loader = WebBaseLoader("https://docs.smith.langchain.com")
 
 docs = loader.load()
 ```
@@ -582,7 +581,10 @@ Using this, we can interact with the served chain as if it were running client-s
 from langserve import RemoteRunnable
 
 remote_chain = RemoteRunnable("http://localhost:8000/agent/")
-remote_chain.invoke({"input": "how can langsmith help with testing?"})
+remote_chain.invoke({
+    "input": "how can langsmith help with testing?",
+    "chat_history": []  # Providing an empty list as this is the first call
+})
 ```
 
 To learn more about the many other features of LangServe [head here](/docs/langserve).

@@ -61,12 +61,14 @@ def test_compatible_vectorstore_documentation() -> None:
         "ElasticsearchStore",
         "FAISS",
         "HanaDB",
+        "Milvus",
         "MomentoVectorIndex",
         "MyScale",
         "PGVector",
         "Pinecone",
         "Qdrant",
         "Redis",
+        "Rockset",
         "ScaNN",
         "SemaDB",
         "SupabaseVectorStore",
@@ -78,6 +80,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "VespaStore",
         "Weaviate",
         "ZepVectorStore",
+        "Zilliz",
         "Lantern",
     }
     assert compatible == documented

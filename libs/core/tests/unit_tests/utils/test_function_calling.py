@@ -1,9 +1,9 @@
-from typing import Any, Callable, Literal, Type
+from typing import Any, Callable, List, Literal, Optional, Type
 
 import pytest
 
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import convert_to_openai_function
 
 
@@ -33,7 +33,7 @@ def function() -> Callable:
 
 
 @pytest.fixture()
-def tool() -> BaseTool:
+def dummy_tool() -> BaseTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
@@ -50,7 +50,7 @@ def tool() -> BaseTool:
 
 
 def test_convert_to_openai_function(
-    pydantic: Type[BaseModel], function: Callable, tool: BaseTool
+    pydantic: Type[BaseModel], function: Callable, dummy_tool: BaseTool
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -69,6 +69,22 @@ def test_convert_to_openai_function(
         },
     }
 
-    for fn in (pydantic, function, tool, expected):
+    for fn in (pydantic, function, dummy_tool, expected):
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
+
+
+@pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
+def test_function_optional_param() -> None:
+    @tool
+    def func5(
+        a: Optional[str],
+        b: str,
+        c: Optional[List[Optional[str]]],
+    ) -> None:
+        """A test function"""
+        pass
+
+    func = convert_to_openai_function(func5)
+    req = func["parameters"]["required"]
+    assert set(req) == {"b"}

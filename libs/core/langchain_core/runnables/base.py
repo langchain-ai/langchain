@@ -186,7 +186,7 @@ class Runnable(Generic[Input, Output], ABC):
         def buggy_double(y: int) -> int:
             '''Buggy code that will fail 70% of the time'''
             if random.random() > 0.3:
-                print('This code failed, and will probably be retried!')
+                print('This code failed, and will probably be retried!')  # noqa: T201
                 raise ValueError('Triggered buggy code')
             return y * 2
 
@@ -1632,7 +1632,7 @@ class Runnable(Generic[Input, Output], ABC):
 
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
-    """A Runnable that can be serialized to JSON."""
+    """Runnable that can be serialized to JSON."""
 
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
@@ -1752,7 +1752,7 @@ def _seq_output_schema(
 
 
 class RunnableSequence(RunnableSerializable[Input, Output]):
-    """A sequence of runnables, where the output of each is the input of the next.
+    """Sequence of Runnables, where the output of each is the input of the next.
 
     RunnableSequence is the most important composition operator in LangChain as it is
     used in virtually every chain.
@@ -1764,7 +1764,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     The default implementations of `batch` and `abatch` utilize threadpools and
     asyncio gather and will be faster than naive invocation of invoke or ainvoke
-    for IO bound runnables.
+    for IO bound Runnables.
 
     Batching is implemented by invoking the batch method on each component of the
     RunnableSequence in order.
@@ -1826,8 +1826,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             chain = prompt | model | SimpleJsonOutputParser()
 
             async for chunk in chain.astream({'topic': 'colors'}):
-                print('-')
-                print(chunk, sep='', flush=True)
+                print('-')  # noqa: T201
+                print(chunk, sep='', flush=True)  # noqa: T201
     """
 
     # The steps are broken into first, middle and last, solely for type checking
@@ -2451,11 +2451,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
 
 class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
-    """A runnable that runs a mapping of runnables in parallel, and returns a mapping
+    """Runnable that runs a mapping of Runnables in parallel, and returns a mapping
     of their outputs.
 
     RunnableParallel is one of the two main composition primitives for the LCEL,
-    alongside RunnableSequence. It invokes runnables concurrently, providing the same
+    alongside RunnableSequence. It invokes Runnables concurrently, providing the same
     input to each.
 
     A RunnableParallel can be instantiated directly or by using a dict literal within a
@@ -2527,7 +2527,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             for chunk in runnable.stream({"topic": "bear"}):
                 for key in chunk:
                     output[key] = output[key] + chunk[key].content
-                print(output)
+                print(output)  # noqa: T201
     """
 
     steps: Mapping[str, Runnable[Input, Any]]
@@ -2882,8 +2882,88 @@ RunnableMap = RunnableParallel
 
 
 class RunnableGenerator(Runnable[Input, Output]):
-    """
-    A runnable that runs a generator function.
+    """Runnable that runs a generator function.
+
+    RunnableGenerators can be instantiated directly or by using a generator within
+    a sequence.
+
+    RunnableGenerators can be used to implement custom behavior, such as custom output
+    parsers, while preserving streaming capabilities. Given a generator function with
+    a signature Iterator[A] -> Iterator[B], wrapping it in a RunnableGenerator allows
+    it to emit output chunks as soon as they are streamed in from the previous step.
+
+    Note that if a generator function has a signature A -> Iterator[B], such that it
+    requires its input from the previous step to be completed before emitting chunks
+    (e.g., most LLMs need the entire prompt available to start generating), it can
+    instead be wrapped in a RunnableLambda.
+
+    Here is an example to show the basic mechanics of a RunnableGenerator:
+
+        .. code-block:: python
+
+            from typing import Any, AsyncIterator, Iterator
+
+            from langchain_core.runnables import RunnableGenerator
+
+
+            def gen(input: Iterator[Any]) -> Iterator[str]:
+                for token in ["Have", " a", " nice", " day"]:
+                    yield token
+
+
+            runnable = RunnableGenerator(gen)
+            runnable.invoke(None)  # "Have a nice day"
+            list(runnable.stream(None))  # ["Have", " a", " nice", " day"]
+            runnable.batch([None, None])  # ["Have a nice day", "Have a nice day"]
+
+
+            # Async version:
+            async def agen(input: AsyncIterator[Any]) -> AsyncIterator[str]:
+                for token in ["Have", " a", " nice", " day"]:
+                    yield token
+
+            runnable = RunnableGenerator(agen)
+            await runnable.ainvoke(None)  # "Have a nice day"
+            [p async for p in runnable.astream(None)] # ["Have", " a", " nice", " day"]
+
+    RunnableGenerator makes it easy to implement custom behavior within a streaming
+    context. Below we show an example:
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableGenerator, RunnableLambda
+            from langchain_openai import ChatOpenAI
+            from langchain.schema import StrOutputParser
+
+
+            model = ChatOpenAI()
+            chant_chain = (
+                ChatPromptTemplate.from_template("Give me a 3 word chant about {topic}")
+                | model
+                | StrOutputParser()
+            )
+
+            def character_generator(input: Iterator[str]) -> Iterator[str]:
+                for token in input:
+                    if "," in token or "." in token:
+                        yield "👏" + token
+                    else:
+                        yield token
+
+
+            runnable = chant_chain | character_generator
+            assert type(runnable.last) is RunnableGenerator
+            "".join(runnable.stream({"topic": "waste"})) # Reduce👏, Reuse👏, Recycle👏.
+
+            # Note that RunnableLambda can be used to delay streaming of one step in a
+            # sequence until the previous step is finished:
+            def reverse_generator(input: str) -> Iterator[str]:
+                # Yield characters of input in reverse order.
+                for character in input[::-1]:
+                    yield character
+
+            runnable = chant_chain | RunnableLambda(reverse_generator)
+            "".join(runnable.stream({"topic": "waste"}))  # ".elcycer ,esuer ,ecudeR"
     """
 
     def __init__(
@@ -3650,11 +3730,12 @@ class RunnableLambda(Runnable[Input, Output]):
 
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
-    """
-    A runnable that delegates calls to another runnable
+    """Runnable that delegates calls to another Runnable
     with each element of the input sequence.
 
     Use only if creating a new RunnableEach subclass with different __init__ args.
+
+    See documentation for RunnableEach for more details.
     """
 
     bound: Runnable[Input, Output]
@@ -3757,9 +3838,31 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):
-    """
-    A runnable that delegates calls to another runnable
+    """Runnable that delegates calls to another Runnable
     with each element of the input sequence.
+
+    It allows you to call multiple inputs with the bounded Runnable.
+
+    RunnableEach makes it easy to run multiple inputs for the runnable.
+    In the below example, we associate and run three inputs
+    with a Runnable:
+
+        .. code-block:: python
+
+            from langchain_core.runnables.base import RunnableEach
+            from langchain_openai import ChatOpenAI
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.output_parsers import StrOutputParser
+            prompt = ChatPromptTemplate.from_template("Tell me a short joke about
+            {topic}")
+            model = ChatOpenAI()
+            output_parser = StrOutputParser()
+            runnable = prompt | model | output_parser
+            runnable_each = RunnableEach(bound=runnable)
+            output = runnable_each.invoke([{'topic':'Computer Science'},
+                                        {'topic':'Art'},
+                                        {'topic':'Biology'}])
+            print(output)  # noqa: T201
     """
 
     @classmethod
@@ -3807,7 +3910,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):
-    """A runnable that delegates calls to another runnable with a set of kwargs.
+    """Runnable that delegates calls to another Runnable with a set of kwargs.
 
     Use only if creating a new RunnableBinding subclass with different __init__ args.
 
@@ -4086,7 +4189,7 @@ RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
 
 
 class RunnableBinding(RunnableBindingBase[Input, Output]):
-    """Wrap a runnable with additional functionality.
+    """Wrap a Runnable with additional functionality.
 
     A RunnableBinding can be thought of as a "runnable decorator" that
     preserves the essential features of Runnable; i.e., batching, streaming,
@@ -4220,12 +4323,12 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             bound=self.bound,
             kwargs=self.kwargs,
             config=self.config,
-            custom_input_type=input_type
-            if input_type is not None
-            else self.custom_input_type,
-            custom_output_type=output_type
-            if output_type is not None
-            else self.custom_output_type,
+            custom_input_type=(
+                input_type if input_type is not None else self.custom_input_type
+            ),
+            custom_output_type=(
+                output_type if output_type is not None else self.custom_output_type
+            ),
         )
 
     def with_retry(self, **kwargs: Any) -> Runnable[Input, Output]:
