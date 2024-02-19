@@ -316,7 +316,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
             account.get_current_user()
         else:
             token_backend = FileSystemTokenBackend(
-                oken_path=self.token_storage.token_path
+                token_path=self.token_storage.token_path
             )
             account = Account(
                 credentials=(
