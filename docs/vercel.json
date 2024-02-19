@@ -1,6 +1,14 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/llms/huggingface_textgen_inference",
+      "destination": "/docs/integrations/llms/huggingface_endpoint"
+    },
+    {
+      "source": "/docs/integrations/llms/huggingface_hub",
+      "destination": "/docs/integrations/llms/huggingface_endpoint"
+    },
+    {
       "source": "/docs/integrations/llms/watsonxllm",
       "destination": "/docs/integrations/llms/ibm_watsonx"
     },
@@ -209,8 +217,8 @@
       "destination": "/docs/langsmith/walkthrough"
     },
     {
-      "source": "/docs/modules/data_connection/retrievers/self_query/:path*",
-      "destination": "/docs/integrations/retrievers/self_query/:path*"
+      "source": "/docs/modules/data_connection/retrievers/self_query/:path+",
+      "destination": "/docs/integrations/retrievers/self_query/:path+"
     },
     {
       "source": "/docs/use_cases/more/agents/autonomous_agents/:path*",
@@ -594,11 +602,7 @@
     },
     {
       "source": "/docs/integrations/cassandra",
-      "destination": "/docs/integrations/providers/astradb"
-    },
-    {
-      "source": "/docs/integrations/providers/cassandra",
-      "destination": "/docs/integrations/providers/astradb"
+      "destination": "/docs/integrations/providers/cassandra"
     },
     {
       "source": "/docs/integrations/providers/providers/semadb",
@@ -607,10 +611,6 @@
     {
       "source": "/docs/integrations/vectorstores/vectorstores/semadb",
       "destination": "/docs/integrations/vectorstores/semadb"
-    },
-    {
-      "source": "/docs/integrations/vectorstores/cassandra",
-      "destination": "/docs/integrations/vectorstores/astradb"
     },
     {
       "source": "/docs/integrations/vectorstores/async_faiss",
