@@ -4,12 +4,13 @@ from typing import (
     Dict,
     List,
     Literal,
-    NotRequired,
     Optional,
     TypedDict,
     Union,
     cast,
 )
+
+from typing_extensions import NotRequired
 
 from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
 
