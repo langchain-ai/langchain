@@ -91,10 +91,12 @@
             ]
           }
         },
+        "name": "OpenAI",
         "graph": {
           "nodes": [
             {
               "id": 0,
+              "type": "schema",
               "data": {
                 "title": "OpenAIInput",
                 "anyOf": [
@@ -508,10 +510,20 @@
             },
             {
               "id": 1,
-              "data": "OpenAI"
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "llms",
+                  "openai",
+                  "OpenAI"
+                ],
+                "name": "OpenAI"
+              }
             },
             {
               "id": 2,
+              "type": "schema",
               "data": {
                 "title": "OpenAIOutput",
                 "type": "string"
@@ -547,10 +559,12 @@
           "template_format": "f-string",
           "partial_variables": {}
         },
+        "name": "PromptTemplate",
         "graph": {
           "nodes": [
             {
               "id": 0,
+              "type": "schema",
               "data": {
                 "title": "PromptInput",
                 "type": "object",
@@ -564,10 +578,20 @@
             },
             {
               "id": 1,
-              "data": "PromptTemplate"
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "prompts",
+                  "prompt",
+                  "PromptTemplate"
+                ],
+                "name": "PromptTemplate"
+              }
             },
             {
               "id": 2,
+              "type": "schema",
               "data": {
                 "title": "PromptTemplateOutput",
                 "anyOf": [
@@ -965,10 +989,12 @@
         }
       }
     },
+    "name": "LLMChain",
     "graph": {
       "nodes": [
         {
           "id": 0,
+          "type": "schema",
           "data": {
             "title": "ChainInput",
             "type": "object",
@@ -981,10 +1007,20 @@
         },
         {
           "id": 1,
-          "data": "LLMChain"
+          "type": "runnable",
+          "data": {
+            "id": [
+              "langchain",
+              "chains",
+              "llm",
+              "LLMChain"
+            ],
+            "name": "LLMChain"
+          }
         },
         {
           "id": 2,
+          "type": "schema",
           "data": {
             "title": "ChainOutput",
             "type": "object",
@@ -1042,10 +1078,12 @@
             ]
           }
         },
+        "name": "ChatOpenAI",
         "graph": {
           "nodes": [
             {
               "id": 0,
+              "type": "schema",
               "data": {
                 "title": "ChatOpenAIInput",
                 "anyOf": [
@@ -1459,10 +1497,20 @@
             },
             {
               "id": 1,
-              "data": "ChatOpenAI"
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "chat_models",
+                  "openai",
+                  "ChatOpenAI"
+                ],
+                "name": "ChatOpenAI"
+              }
             },
             {
               "id": 2,
+              "type": "schema",
               "data": {
                 "title": "ChatOpenAIOutput",
                 "anyOf": [
@@ -1846,10 +1894,12 @@
                     "template_format": "f-string",
                     "partial_variables": {}
                   },
+                  "name": "PromptTemplate",
                   "graph": {
                     "nodes": [
                       {
                         "id": 0,
+                        "type": "schema",
                         "data": {
                           "title": "PromptInput",
                           "type": "object",
@@ -1863,10 +1913,20 @@
                       },
                       {
                         "id": 1,
-                        "data": "PromptTemplate"
+                        "type": "runnable",
+                        "data": {
+                          "id": [
+                            "langchain",
+                            "prompts",
+                            "prompt",
+                            "PromptTemplate"
+                          ],
+                          "name": "PromptTemplate"
+                        }
                       },
                       {
                         "id": 2,
+                        "type": "schema",
                         "data": {
                           "title": "PromptTemplateOutput",
                           "anyOf": [
@@ -2268,10 +2328,12 @@
           ],
           "partial_variables": {}
         },
+        "name": "ChatPromptTemplate",
         "graph": {
           "nodes": [
             {
               "id": 0,
+              "type": "schema",
               "data": {
                 "title": "PromptInput",
                 "type": "object",
@@ -2285,10 +2347,20 @@
             },
             {
               "id": 1,
-              "data": "ChatPromptTemplate"
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "prompts",
+                  "chat",
+                  "ChatPromptTemplate"
+                ],
+                "name": "ChatPromptTemplate"
+              }
             },
             {
               "id": 2,
+              "type": "schema",
               "data": {
                 "title": "ChatPromptTemplateOutput",
                 "anyOf": [
@@ -2686,10 +2758,12 @@
         }
       }
     },
+    "name": "LLMChain",
     "graph": {
       "nodes": [
         {
           "id": 0,
+          "type": "schema",
           "data": {
             "title": "ChainInput",
             "type": "object",
@@ -2702,10 +2776,20 @@
         },
         {
           "id": 1,
-          "data": "LLMChain"
+          "type": "runnable",
+          "data": {
+            "id": [
+              "langchain",
+              "chains",
+              "llm",
+              "LLMChain"
+            ],
+            "name": "LLMChain"
+          }
         },
         {
           "id": 2,
+          "type": "schema",
           "data": {
             "title": "ChainOutput",
             "type": "object",
@@ -2763,10 +2847,12 @@
             ]
           }
         },
+        "name": "OpenAI",
         "graph": {
           "nodes": [
             {
               "id": 0,
+              "type": "schema",
               "data": {
                 "title": "OpenAIInput",
                 "anyOf": [
@@ -3180,10 +3266,20 @@
             },
             {
               "id": 1,
-              "data": "OpenAI"
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "llms",
+                  "openai",
+                  "OpenAI"
+                ],
+                "name": "OpenAI"
+              }
             },
             {
               "id": 2,
+              "type": "schema",
               "data": {
                 "title": "OpenAIOutput",
                 "type": "string"
@@ -3219,10 +3315,12 @@
           "template_format": "f-string",
           "partial_variables": {}
         },
+        "name": "PromptTemplate",
         "graph": {
           "nodes": [
             {
               "id": 0,
+              "type": "schema",
               "data": {
                 "title": "PromptInput",
                 "type": "object",
@@ -3236,10 +3334,20 @@
             },
             {
               "id": 1,
-              "data": "PromptTemplate"
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "prompts",
+                  "prompt",
+                  "PromptTemplate"
+                ],
+                "name": "PromptTemplate"
+              }
             },
             {
               "id": 2,
+              "type": "schema",
               "data": {
                 "title": "PromptTemplateOutput",
                 "anyOf": [
@@ -3637,10 +3745,12 @@
         }
       }
     },
+    "name": "LLMChain",
     "graph": {
       "nodes": [
         {
           "id": 0,
+          "type": "schema",
           "data": {
             "title": "ChainInput",
             "type": "object",
@@ -3653,10 +3763,20 @@
         },
         {
           "id": 1,
-          "data": "LLMChain"
+          "type": "runnable",
+          "data": {
+            "id": [
+              "langchain",
+              "chains",
+              "llm",
+              "LLMChain"
+            ],
+            "name": "LLMChain"
+          }
         },
         {
           "id": 2,
+          "type": "schema",
           "data": {
             "title": "ChainOutput",
             "type": "object",
@@ -3704,10 +3824,12 @@
         ]
       }
     },
+    "name": "OpenAI",
     "graph": {
       "nodes": [
         {
           "id": 0,
+          "type": "schema",
           "data": {
             "title": "OpenAIInput",
             "anyOf": [
@@ -4121,10 +4243,20 @@
         },
         {
           "id": 1,
-          "data": "OpenAI"
+          "type": "runnable",
+          "data": {
+            "id": [
+              "langchain",
+              "llms",
+              "openai",
+              "OpenAI"
+            ],
+            "name": "OpenAI"
+          }
         },
         {
           "id": 2,
+          "type": "schema",
           "data": {
             "title": "OpenAIOutput",
             "type": "string"
