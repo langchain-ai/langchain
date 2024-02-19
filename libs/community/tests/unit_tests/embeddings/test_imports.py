@@ -59,7 +59,7 @@ EXPECTED_ALL = [
     "VolcanoEmbeddings",
     "OCIGenAIEmbeddings",
     "NeMoEmbeddings",
-    "SparkLLMTextEmbeddings"
+    "SparkLLMTextEmbeddings",
 ]
 
 

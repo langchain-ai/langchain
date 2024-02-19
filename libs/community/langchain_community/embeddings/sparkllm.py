@@ -4,9 +4,9 @@ import hmac
 import json
 from datetime import datetime
 from time import mktime
-from wsgiref.handlers import format_date_time
-from urllib.parse import urlencode
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlencode
+from wsgiref.handlers import format_date_time
 
 import numpy as np
 import requests
@@ -28,6 +28,7 @@ EMBEDDING_Q_API_URL: str = "https://cn-huabei-1.xf-yun.com/v1/private/s50d55a16"
 # You can get one by registering at https://console.xfyun.cn/services/bm3.
 # SparkLLMTextEmbeddings support 2K token window and preduces vectors with
 # 2560 dimensions.
+
 
 class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     """SparkLLM Text Embedding models."""
@@ -52,10 +53,16 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         return values
 
     def _embed(self, texts: List[str], host: str) -> Optional[List[List[float]]]:
-        url = assemble_ws_auth_url(host, method='POST', api_key=self.spark_api_key.get_secret_value(),
-                                   api_secret=self.spark_api_secret.get_secret_value())
+        url = assemble_ws_auth_url(
+            host,
+            method="POST",
+            api_key=self.spark_api_key.get_secret_value(),
+            api_secret=self.spark_api_secret.get_secret_value(),
+        )
         content = get_body(self.spark_app_id.get_secret_value(), texts)
-        response = requests.post(url, json=content, headers={'content-type': "application/json"}).text
+        response = requests.post(
+            url, json=content, headers={"content-type": "application/json"}
+        ).text
         return parser_message(response)
 
     def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
@@ -88,18 +95,23 @@ def assemble_ws_auth_url(request_url, method="GET", api_key="", api_secret=""):
     path = u.path
     now = datetime.now()
     date = format_date_time(mktime(now.timetuple()))
-    signature_origin = "host: {}\ndate: {}\n{} {} HTTP/1.1".format(host, date, method, path)
-    signature_sha = hmac.new(api_secret.encode('utf-8'), signature_origin.encode('utf-8'),
-                             digestmod=hashlib.sha256).digest()
-    signature_sha = base64.b64encode(signature_sha).decode(encoding='utf-8')
-    authorization_origin = "api_key=\"%s\", algorithm=\"%s\", headers=\"%s\", signature=\"%s\"" % (
-        api_key, "hmac-sha256", "host date request-line", signature_sha)
-    authorization = base64.b64encode(authorization_origin.encode('utf-8')).decode(encoding='utf-8')
-    values = {
-        "host": host,
-        "date": date,
-        "authorization": authorization
-    }
+    signature_origin = "host: {}\ndate: {}\n{} {} HTTP/1.1".format(
+        host, date, method, path
+    )
+    signature_sha = hmac.new(
+        api_secret.encode("utf-8"),
+        signature_origin.encode("utf-8"),
+        digestmod=hashlib.sha256,
+    ).digest()
+    signature_sha = base64.b64encode(signature_sha).decode(encoding="utf-8")
+    authorization_origin = (
+        'api_key="%s", algorithm="%s", headers="%s", signature="%s"'
+        % (api_key, "hmac-sha256", "host date request-line", signature_sha)
+    )
+    authorization = base64.b64encode(authorization_origin.encode("utf-8")).decode(
+        encoding="utf-8"
+    )
+    values = {"host": host, "date": date, "authorization": authorization}
 
     return request_url + "?" + urlencode(values)
 
@@ -108,14 +120,14 @@ def assemble_ws_auth_url(request_url, method="GET", api_key="", api_secret=""):
 def sha256base64(data):
     sha256 = hashlib.sha256()
     sha256.update(data)
-    digest = base64.b64encode(sha256.digest()).decode(encoding='utf-8')
+    digest = base64.b64encode(sha256.digest()).decode(encoding="utf-8")
     return digest
 
 
 def parse_url(request_url):
     stidx = request_url.index("://")
-    host = request_url[stidx + 3:]
-    schema = request_url[:stidx + 3]
+    host = request_url[stidx + 3 :]
+    schema = request_url[: stidx + 3]
     edidx = host.index("/")
     if edidx <= 0:
         raise AssembleHeaderException("invalid request url:" + request_url)
@@ -140,32 +152,22 @@ class Url:
 
 def get_body(appid, text):
     body = {
-        "header": {
-            "app_id": appid,
-            "uid": "39769795890",
-            "status": 3
-        },
-        "parameter": {
-            "emb": {
-                "feature": {
-                    "encoding": "utf8"
-                }
-            }
-        },
+        "header": {"app_id": appid, "uid": "39769795890", "status": 3},
+        "parameter": {"emb": {"feature": {"encoding": "utf8"}}},
         "payload": {
             "messages": {
-                "text": base64.b64encode(json.dumps(text).encode('utf-8')).decode()
+                "text": base64.b64encode(json.dumps(text).encode("utf-8")).decode()
             }
-        }
+        },
     }
     return body
 
 
 def parser_message(message):
     data = json.loads(message)
-    code = data['header']['code']
+    code = data["header"]["code"]
     if code != 0:
-        print(f'请求错误: {code}, {data}')
+        print(f"请求错误: {code}, {data}")
     else:
         text_base = data["payload"]["feature"]["text"]
         text_data = base64.b64decode(text_base)
