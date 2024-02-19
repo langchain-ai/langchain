@@ -92,7 +92,6 @@ def test_compress_documents_with_documents(
         Document(page_content="Content of document 1", metadata={"id": "1"}),
     ]
     compressed_docs = llm_lingua_compressor.compress_documents(docs, "query")
-    print(compressed_docs)
     assert len(compressed_docs) == 2
     assert compressed_docs[0].page_content == "Compressed content for document 0"
     assert compressed_docs[0].metadata == {"id": "0"}

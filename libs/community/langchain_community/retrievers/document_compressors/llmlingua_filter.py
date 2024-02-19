@@ -170,7 +170,6 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
             add_instruction=True,
             **self.additional_compress_kwargs,
         )
-        print(compressed_prompt)
         compreseed_context = compressed_prompt["compressed_prompt"].split("\n\n")[1:]
 
         extracted_metadata = self.extract_ref_id_tuples_and_clean(compreseed_context)
