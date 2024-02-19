@@ -123,14 +123,13 @@ def create_openai_tool_runnable(
         return model | output_parser
 
 
-# TODO: implement mode='openai-tools'.
 def create_structured_output_runnable(
     output_schema: Union[Dict[str, Any], Type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
-    mode: Literal["openai-functions", "openai-json"] = "openai-functions",
+    mode: Literal["openai-functions", "openai-tools", "openai-json"] = "openai-functions",
     enforce_single_function_usage: bool = True,
     **kwargs: Any,
 ) -> Runnable:
@@ -211,6 +210,32 @@ def create_structured_output_runnable(
                 chain = prompt | structured_llm
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
+
+    OpenAI tools example:
+        .. code-block:: python
+
+                from typing import Optional
+
+                from langchain.chains import create_structured_output_runnable
+                from langchain_openai import ChatOpenAI
+                from langchain_core.pydantic_v1 import BaseModel, Field
+
+                class Dog(BaseModel):
+                    '''Identifying information about a dog.'''
+
+                    name: str = Field(..., description="The dog's name")
+                    color: str = Field(..., description="The dog's color")
+                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-tools")
+                structured_llm.invoke(
+                    "Harry was a chubby brown beagle who loved chicken. "
+                    "Joe was a black lab who loved dog food."
+                )
+                # -> [Dog(name='Harry', color='brown', fav_food='chicken'),
+                # Dog(name='Joe', color='black', fav_food='dog food')]
+
     OpenAI json response format example:
         .. code-block:: python
         
