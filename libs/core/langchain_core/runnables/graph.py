@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Type, Union
 from uuid import UUID, uuid4
@@ -37,7 +38,9 @@ class Node(NamedTuple):
 def node_data_str(node: Node) -> str:
     from langchain_core.runnables.base import Runnable
 
-    if isinstance(node.data, Runnable):
+    if not is_uuid(node.id):
+        return node.id
+    elif isinstance(node.data, Runnable):
         try:
             data = str(node.data)
             if (
@@ -75,10 +78,15 @@ def node_data_json(node: Node) -> Dict[str, Union[str, Dict[str, Any]]]:
                 "name": node.data.get_name(),
             },
         }
-    else:
+    elif inspect.isclass(node.data) and issubclass(node.data, BaseModel):
         return {
             "type": "schema",
             "data": node.data.schema(),
+        }
+    else:
+        return {
+            "type": "unknown",
+            "data": node_data_str(node),
         }
 
 
