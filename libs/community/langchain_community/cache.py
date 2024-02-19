@@ -1023,7 +1023,7 @@ class CassandraCache(BaseCache):
             import cassio
 
             from langchain_community.cache import CassandraCache
-            from langchain_community.globals import set_llm_cache
+            from langchain_core.globals import set_llm_cache
 
             cassio.init(auto=True)  # Requires env. variables, see CassIO docs
 
@@ -1063,6 +1063,16 @@ class CassandraCache(BaseCache):
         ttl_seconds: Optional[int] = CASSANDRA_CACHE_DEFAULT_TTL_SECONDS,
         skip_provisioning: bool = False,
     ):
+        try:
+            from cassio.table import ElasticCassandraTable
+        except (ImportError, ModuleNotFoundError):
+            raise ValueError(
+                "Could not import cassio python package. "
+                "Please install it with `pip install -U cassio`."
+            )
+        # if the above succeeded, this will as well:
+        from cassandra.cluster import Session as CassandraSession
+
         # Detect if called with the previous constructor signature
         # and kindly give an actionable error if so:
         if table_name is None or isinstance(table_name, CassandraSession):
@@ -1071,13 +1081,6 @@ class CassandraCache(BaseCache):
                 "legacy constructor pattern 'session, keyspace, table_name...'"
                 ". Please revise your initialization code according to the "
                 "newer __init__ signature."
-            )
-        try:
-            from cassio.table import ElasticCassandraTable
-        except (ImportError, ModuleNotFoundError):
-            raise ValueError(
-                "Could not import cassio python package. "
-                "Please install it with `pip install -U cassio`."
             )
 
         self.session = session
@@ -1164,7 +1167,7 @@ class CassandraSemanticCache(BaseCache):
             import cassio
 
             from langchain_community.cache import CassandraSemanticCache
-            from langchain_community.globals import set_llm_cache
+            from langchain_core.globals import set_llm_cache
 
             cassio.init(auto=True)  # Requires env. variables, see CassIO docs
 
@@ -1224,6 +1227,16 @@ class CassandraSemanticCache(BaseCache):
         ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
         skip_provisioning: bool = False,
     ):
+        try:
+            from cassio.table import MetadataVectorCassandraTable
+        except (ImportError, ModuleNotFoundError):
+            raise ValueError(
+                "Could not import cassio python package. "
+                "Please install it with `pip install -U cassio`."
+            )
+        # if the above succeeded, this will as well:
+        from cassandra.cluster import Session as CassandraSession
+
         # Detect if called with the previous constructor signature
         # and kindly give an actionable error if so:
         if embedding is None or isinstance(embedding, CassandraSession):
@@ -1244,13 +1257,6 @@ class CassandraSemanticCache(BaseCache):
             )
             similarity_measure = distance_metric
 
-        try:
-            from cassio.table import MetadataVectorCassandraTable
-        except (ImportError, ModuleNotFoundError):
-            raise ValueError(
-                "Could not import cassio python package. "
-                "Please install it with `pip install -U cassio`."
-            )
         self.session = session
         self.keyspace = keyspace
         self.embedding = embedding
