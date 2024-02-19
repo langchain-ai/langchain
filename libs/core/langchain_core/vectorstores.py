@@ -345,10 +345,12 @@ class VectorStore(ABC):
         Returns:
             List of Tuples of (doc, similarity_score)
         """
-        # This is a temporary workaround to make the similarity search with relevance scores
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        return await run_in_executor(None, self.similarity_search_with_relevance_scores, query, k=k, **kwargs)
+        # This is a temporary workaround to make the similarity search with 
+        # relevance scores asynchronous. The proper solution is to make the 
+        # similarity search asynchronous in the vector store implementations.
+        return await run_in_executor(
+            None, self.similarity_search_with_relevance_scores, query, k=k, **kwargs
+        )
 
 
     async def asimilarity_search(
