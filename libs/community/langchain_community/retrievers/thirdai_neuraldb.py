@@ -281,7 +281,6 @@ class NeuralDBRetriever(BaseRetriever):
                     metadata={
                         "id": ref.id,
                         "upvote_ids": ref.upvote_ids,
-                        "text": ref.text,
                         "source": ref.source,
                         "metadata": ref.metadata,
                         "score": ref.score,
