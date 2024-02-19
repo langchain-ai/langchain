@@ -601,9 +601,9 @@ if __name__ == "__main__":
     subprocess.run(
         ["git", "config", "user.email", "github-actions@github.com"], check=True
     )
-    branch_name = "langchain-people"
+    branch_name = "langchain/langchain-people"
     logging.info(f"Creating a new branch {branch_name}")
-    subprocess.run(["git", "checkout", "-b", branch_name], check=True)
+    subprocess.run(["git", "checkout", "-B", branch_name], check=True)
     logging.info("Adding updated file")
     subprocess.run(
         ["git", "add", str(people_path)], check=True
