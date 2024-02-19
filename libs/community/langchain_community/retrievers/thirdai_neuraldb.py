@@ -76,48 +76,6 @@ class NeuralDBRetriever(BaseRetriever):
         return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB(**model_kwargs))
 
     @classmethod
-    def from_bazaar(
-        cls,
-        base: str,
-        bazaar_cache: Optional[str] = None,
-        thirdai_key: Optional[str] = None,
-    ) -> NeuralDBRetriever:
-        """
-        Create a NeuralDBRetriever with a base model from the ThirdAI
-        model bazaar.
-
-        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI
-        API key, or pass ``thirdai_key`` as a named parameter.
-
-        Example:
-            .. code-block:: python
-
-                from langchain_community.retrievers import NeuralDBRetriever
-
-                retriever = NeuralDBRetriever.from_bazaar(
-                    base="General QnA",
-                    thirdai_key="your-thirdai-key",
-                )
-
-                retriever.insert([
-                    "/path/to/doc.pdf",
-                    "/path/to/doc.docx",
-                    "/path/to/doc.csv",
-                ])
-
-                documents = retriever.get_relevant_documents("AI-driven music therapy")
-        """
-        NeuralDBRetriever._verify_thirdai_library(thirdai_key)
-        from thirdai import neural_db as ndb
-
-        cache = bazaar_cache or str(Path(os.getcwd()) / "model_bazaar")
-        if not os.path.exists(cache):
-            os.mkdir(cache)
-        model_bazaar = ndb.Bazaar(cache)
-        model_bazaar.fetch()
-        return cls(thirdai_key=thirdai_key, db=model_bazaar.get_model(base))
-
-    @classmethod
     def from_checkpoint(
         cls,
         checkpoint: Union[str, Path],

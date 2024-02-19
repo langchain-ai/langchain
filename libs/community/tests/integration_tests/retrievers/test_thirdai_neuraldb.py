@@ -47,14 +47,6 @@ def test_neuraldb_retriever_from_checkpoint(test_csv):
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_bazaar(test_csv):
-    retriever = NeuralDBRetriever.from_bazaar("General QnA")
-    retriever.insert([test_csv])
-    documents = retriever.get_relevant_documents("column")
-    assert_result_correctness(documents)
-
-
-@pytest.mark.requires("thirdai[neural_db]")
 def test_neuraldb_retriever_other_methods(test_csv):
     retriever = NeuralDBRetriever.from_scratch()
     retriever.insert([test_csv])
