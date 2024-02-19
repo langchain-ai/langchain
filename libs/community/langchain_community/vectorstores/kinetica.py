@@ -112,16 +112,13 @@ class Kinetica(VectorStore):
             kinetica_settings = KineticaSettings(
                 host="http://127.0.0.1", username="", password=""
                 )
-            dimensions = 1536
             COLLECTION_NAME = "kinetica_store"
             embeddings = OpenAIEmbeddings()
             vectorstore = Kinetica.from_documents(
-                config=kinetica_settings,
-                embedding=embeddings,
-                dimensions=dimensions,
                 documents=docs,
+                embedding=embeddings,
                 collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
+                config=kinetica_settings,
             )
     """
 
@@ -129,7 +126,6 @@ class Kinetica(VectorStore):
         self,
         config: KineticaSettings,
         embedding_function: Embeddings,
-        dimensions: int,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
@@ -142,7 +138,6 @@ class Kinetica(VectorStore):
         Args:
             config (KineticaSettings): a `KineticaSettings` instance
             embedding_function (Embeddings): embedding function to use
-            dimensions (int): number of dimensions in the vector
             collection_name (str, optional): the Kinetica table name.
                             Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
             schema_name (str, optional): the Kinetica table name.
@@ -154,7 +149,6 @@ class Kinetica(VectorStore):
                             Defaults to None.
         """
 
-        self.dimensions = dimensions
 
         self._config = config
         self.embedding_function = embedding_function
@@ -178,6 +172,7 @@ class Kinetica(VectorStore):
                 "Please install it with `pip install gpudb==7.2.0.0b`."
             )
 
+        self.dimensions = dimensions
         dimension_field = f"vector({dimensions})"
 
         if self.pre_delete_collection:
@@ -267,7 +262,7 @@ class Kinetica(VectorStore):
             config=config,
             collection_name=collection_name,
             embedding_function=embedding,
-            dimensions=dimensions,
+            # dimensions=dimensions,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
             logger=logger,
@@ -369,6 +364,9 @@ class Kinetica(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
+        self.dimensions = len(embeddings[0])
+        if not hasattr(self, 'EmbeddingStore'):
+            self.__post_init__(self.dimensions)
         return self.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
