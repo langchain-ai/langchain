@@ -3440,6 +3440,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     input: Input,
                     run_manager: AsyncCallbackManagerForChainRun,
                     config: RunnableConfig,
+                    **kwargs: Any,
                 ) -> Output:
                     return call_func_with_variable_args(
                         self.func, input, config, run_manager.get_sync(), **kwargs
@@ -3645,6 +3646,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 input: Input,
                 run_manager: AsyncCallbackManagerForChainRun,
                 config: RunnableConfig,
+                **kwargs: Any,
             ) -> Output:
                 return call_func_with_variable_args(
                     self.func, input, config, run_manager.get_sync(), **kwargs
