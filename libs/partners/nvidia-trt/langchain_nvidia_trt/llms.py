@@ -383,7 +383,7 @@ class StreamingResponseGenerator(queue.Queue):
         self,
         llm: TritonTensorRTLLM,
         request_id: str,
-        force_batch: bool,
+        signal_stop: bool,
         stop_words: Sequence[str],
     ) -> None:
         """Instantiate the generator class."""
