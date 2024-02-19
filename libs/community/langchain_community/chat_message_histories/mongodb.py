@@ -24,7 +24,6 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             of a single chat session.
         database_name: name of the database to use
         collection_name: name of the collection to use
-        index_creation: bool for collection index-creation. By default index_creation is True
     """
 
     def __init__(
@@ -49,10 +48,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
-        if index_creation: 
-            """
-            Conditional Index Creation for collection
-            """
+        if index_creation: #Conditional Index Creation for collection
             self.collection.create_index("SessionId")
 
     @property
