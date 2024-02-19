@@ -2675,13 +2675,13 @@ python-dateutil = ">=2.7"
 
 [[package]]
 name = "friendli-client"
-version = "1.2.3"
+version = "1.2.4"
 description = "Client of Friendli Suite."
 optional = true
 python-versions = ">=3.8.1,<4.0.0"
 files = [
-    {file = "friendli_client-1.2.3-py3-none-any.whl", hash = "sha256:a0e48e4f4e526f43bbb39708c9ee55380f8940e9cb1a283cb3e9ebdaace82a9d"},
-    {file = "friendli_client-1.2.3.tar.gz", hash = "sha256:480a645d04e92e9dd23489d3e121e2c0d210d2b93a5f05a66859069bb428b14a"},
+    {file = "friendli_client-1.2.4-py3-none-any.whl", hash = "sha256:e59506bef21d447b0c8af968344107cd5fe0f63b363075bbe93e1b0463252e93"},
+    {file = "friendli_client-1.2.4.tar.gz", hash = "sha256:18144dbbd724a8e643993d060a0a9f1b4db22bcb3052e3bfcd50fbff3f08870d"},
 ]
 
 [package.dependencies]
@@ -9914,4 +9914,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "942d1f348fdf06deae45ac4700090a81bb703074b7f1658398662222d97a1678"
+content-hash = "aeb3705ba7da6182d15833fb37f96538bef00e7917e189c5544a2b8985905389"
