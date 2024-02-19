@@ -3425,8 +3425,9 @@ def test_bind_bind() -> None:
 
 
 def test_bind_with_runnablelambda() -> None:
-    def my_function(*args, **kwargs):
+    def my_function(*args: Any, **kwargs: Any) -> int:
         return 3 + kwargs.get("n", 0)
+
     runnable = RunnableLambda(my_function).bind(n=1)
     assert 4 == runnable.invoke({})
     chunks = list(runnable.stream({}))
@@ -3434,8 +3435,9 @@ def test_bind_with_runnablelambda() -> None:
 
 
 async def test_bind_with_runnablelambda_async() -> None:
-    def my_function(*args, **kwargs):
+    def my_function(*args: Any, **kwargs: Any) -> int:
         return 3 + kwargs.get("n", 0)
+
     runnable = RunnableLambda(my_function).bind(n=1)
     assert 4 == await runnable.ainvoke({})
     chunks = [item async for item in runnable.astream({})]

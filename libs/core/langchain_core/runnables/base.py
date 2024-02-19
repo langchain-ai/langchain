@@ -3416,6 +3416,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     input: Input,
                     run_manager: AsyncCallbackManagerForChainRun,
                     config: RunnableConfig,
+                    **kwargs: Any,
                 ) -> Output:
                     output: Optional[Output] = None
                     for chunk in call_func_with_variable_args(
