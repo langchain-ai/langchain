@@ -9,9 +9,16 @@ from langchain_core.output_parsers import (
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
-from langchain_core.utils.function_calling import convert_to_openai_function, convert_to_openai_tool
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+    convert_to_openai_tool,
+)
 
-from langchain.output_parsers import JsonOutputToolsParser, PydanticOutputParser, PydanticToolsParser
+from langchain.output_parsers import (
+    JsonOutputToolsParser,
+    PydanticOutputParser,
+    PydanticToolsParser,
+)
 from langchain.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
     PydanticAttrOutputFunctionsParser,
@@ -129,7 +136,9 @@ def create_structured_output_runnable(
     prompt: Optional[BasePromptTemplate] = None,
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
-    mode: Literal["openai-functions", "openai-tools", "openai-json"] = "openai-functions",
+    mode: Literal[
+        "openai-functions", "openai-tools", "openai-json"
+    ] = "openai-functions",
     enforce_single_function_usage: bool = True,
     **kwargs: Any,
 ) -> Runnable:
