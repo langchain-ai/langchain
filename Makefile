@@ -82,6 +82,10 @@ build_all:
 	pip install .
 	cd ../..
 
+	poetry lock --no-update
+	make lint
+	make lint_package
+
 ######################
 # HELP
 ######################
