@@ -1,5 +1,7 @@
 import json
+
 from pytest_mock import MockerFixture
+
 from langchain_community.document_loaders.notebook import NotebookLoader
 
 
@@ -19,7 +21,7 @@ def test_load_no_outputs(mocker: MockerFixture) -> None:
                     {
                         "name": "stdout",
                         "output_type": "stream",
-                        "text": ["Hello World!\n"]
+                        "text": ["Hello World!\n"],
                     }
                 ],
             }
@@ -34,7 +36,6 @@ def test_load_no_outputs(mocker: MockerFixture) -> None:
     # Mock the open function & json.load functions
     mocker.patch("builtins.open", mocker.mock_open(read_data=mock_notebook_content_str))
     mocker.patch("json.load", return_value=mock_notebook_content)
-
 
     loader = NotebookLoader(path="./testfile.ipynb")
     docs = loader.load()
@@ -55,7 +56,7 @@ def test_load_with_outputs(mocker: MockerFixture) -> None:
                     {
                         "name": "stdout",
                         "output_type": "stream",
-                        "text": ["Hello World!\n"]
+                        "text": ["Hello World!\n"],
                     }
                 ],
             }
@@ -76,5 +77,9 @@ def test_load_with_outputs(mocker: MockerFixture) -> None:
     docs = loader.load()
 
     assert len(docs) == 1
-    assert docs[0].page_content == f"'{mocked_cell_type}' cell: '{mocked_source}'\n with output: '{mocked_output}'\n\n"
+    expected_content = (
+        f"'{mocked_cell_type}' cell: '{mocked_source}'\n"
+        f" with output: '{mocked_output}'\n\n"
+    )
+    assert docs[0].page_content == expected_content
     assert docs[0].metadata == {"source": "testfile.ipynb"}
