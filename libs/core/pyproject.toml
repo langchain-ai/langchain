@@ -57,6 +57,7 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
+pytest-profiling = "^1.7.0"
 
 
 [tool.poetry.group.test_integration]
