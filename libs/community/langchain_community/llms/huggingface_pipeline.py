@@ -9,8 +9,6 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import Extra
 
-from langchain_community.llms.utils import enforce_stop_tokens
-
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
@@ -201,7 +199,12 @@ class HuggingFacePipeline(BaseLLM):
             batch_prompts = prompts[i : i + self.batch_size]
 
             # Process batch of prompts
-            responses = self.pipeline(batch_prompts, **pipeline_kwargs)
+            responses = self.pipeline(
+                batch_prompts,
+                stop_sequence=stop,
+                return_full_text=False,
+                **pipeline_kwargs,
+            )
 
             # Process each response in the batch
             for j, response in enumerate(responses):
@@ -210,23 +213,7 @@ class HuggingFacePipeline(BaseLLM):
                     response = response[0]
 
                 if self.pipeline.task == "text-generation":
-                    try:
-                        from transformers.pipelines.text_generation import ReturnType
-
-                        remove_prompt = (
-                            self.pipeline._postprocess_params.get("return_type")
-                            != ReturnType.NEW_TEXT
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f"Unable to extract pipeline return_type. "
-                            f"Received error:\n\n{e}"
-                        )
-                        remove_prompt = True
-                    if remove_prompt:
-                        text = response["generated_text"][len(batch_prompts[j]) :]
-                    else:
-                        text = response["generated_text"]
+                    text = response["generated_text"]
                 elif self.pipeline.task == "text2text-generation":
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
@@ -236,9 +223,6 @@ class HuggingFacePipeline(BaseLLM):
                         f"Got invalid task {self.pipeline.task}, "
                         f"currently only {VALID_TASKS} are supported"
                     )
-                if stop:
-                    # Enforce stop tokens
-                    text = enforce_stop_tokens(text, stop)
 
                 # Append the processed text to results
                 text_generations.append(text)
