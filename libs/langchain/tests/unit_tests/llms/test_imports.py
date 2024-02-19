@@ -83,6 +83,7 @@ EXPECT_ALL = [
     "YandexGPT",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
+    "SparkLLM",
 ]
 
 
