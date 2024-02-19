@@ -5,11 +5,11 @@ import time
 from typing import Any, Iterator, Tuple
 
 import pytest
+from langchain_core.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation, LLMResult
 
-from langchain.cache import CassandraCache, CassandraSemanticCache
-from langchain.globals import get_llm_cache, set_llm_cache
-from tests.integration_tests.cache.fake_embeddings import FakeEmbeddings
+from langchain_community.cache import CassandraCache, CassandraSemanticCache
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -20,7 +20,7 @@ def cassandra_connection() -> Iterator[Tuple[Any, str]]:
     keyspace = "langchain_cache_test_keyspace"
     # get db connection
     if "CASSANDRA_CONTACT_POINTS" in os.environ:
-        contact_points = os.environ["CONTACT_POINTS"].split(",")
+        contact_points = os.environ["CASSANDRA_CONTACT_POINTS"].split(",")
         cluster = Cluster(contact_points)
     else:
         cluster = Cluster()
