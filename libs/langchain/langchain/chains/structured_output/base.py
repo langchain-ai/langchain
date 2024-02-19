@@ -9,14 +9,15 @@ from langchain_core.output_parsers import (
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
-from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.function_calling import convert_to_openai_function, convert_to_openai_tool
 
-from langchain.output_parsers import PydanticOutputParser
+from langchain.output_parsers import JsonOutputToolsParser, PydanticOutputParser, PydanticToolsParser
 from langchain.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
     PydanticAttrOutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
+from langchain.output_parsers.openai_tools import PydanticAttrToolsParser
 
 
 def create_openai_fn_runnable(
@@ -99,6 +100,27 @@ def create_openai_fn_runnable(
         return prompt | llm.bind(**llm_kwargs) | output_parser
     else:
         return llm.bind(**llm_kwargs) | output_parser
+
+
+def create_openai_tool_runnable(
+    tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    llm: Runnable,
+    prompt: Optional[BasePromptTemplate] = None,
+    *,
+    output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
+    **kwargs: Any,
+) -> Runnable:
+    """Create a runnable sequence that uses OpenAI tools."""
+    if not tools:
+        raise ValueError("Need to pass in at least one function. Received zero.")
+    openai_tools = [convert_to_openai_tool(f) for f in tools]
+    llm_kwargs: Dict[str, Any] = {"tools": openai_tools, **kwargs}
+    model = llm.bind(**llm_kwargs)
+    output_parser = output_parser or get_openai_tool_output_parser(tools)
+    if prompt:
+        return prompt | model | output_parser
+    else:
+        return model | output_parser
 
 
 # TODO: implement mode='openai-tools'.
@@ -227,6 +249,14 @@ def create_structured_output_runnable(
             enforce_single_function_usage=enforce_single_function_usage,
             **kwargs,
         )
+    elif mode == "openai-tools":
+        return _create_openai_tools_structured_output_runnable(
+            output_schema,
+            llm,
+            prompt=prompt,
+            output_parser=output_parser,
+            **kwargs,
+        )
     elif mode == "openai-json":
         return _create_openai_json_runnable(
             output_schema, llm, prompt=prompt, output_parser=output_parser, **kwargs
@@ -234,7 +264,7 @@ def create_structured_output_runnable(
     else:
         raise ValueError(
             f"Invalid mode {mode}. Expected one of 'openai-functions', "
-            f"'openai-json'."
+            f"'openai-tools', 'openai-json'."
         )
 
 
@@ -267,6 +297,29 @@ def get_openai_output_parser(
         ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
     else:
         output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
+    return output_parser
+
+
+def get_openai_tool_output_parser(
+    tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
+    """Get the appropriate function output parser given the user functions.
+
+    Args:
+        tools: Sequence where element is a dictionary, a pydantic.BaseModel class,
+            or a Python function. If a dictionary is passed in, it is assumed to
+            already be a valid OpenAI tool.
+
+    Returns:
+        A PydanticToolsParser if functions are Pydantic classes, otherwise
+            a JsonOutputToolsParser. If there's only one function and it is
+            not a Pydantic class, then the output parser will automatically extract
+            only the function arguments and not the function name.
+    """
+    if isinstance(tools[0], type) and issubclass(tools[0], BaseModel):
+        output_parser = PydanticToolsParser(tools=tools)
+    else:
+        output_parser = JsonOutputToolsParser(args_only=len(tools) <= 1)
     return output_parser
 
 
@@ -327,6 +380,48 @@ def _create_openai_functions_structured_output_runnable(
         )
     return create_openai_fn_runnable(
         [function],
+        llm,
+        prompt=prompt,
+        output_parser=output_parser,
+        **kwargs,
+    )
+
+
+def _create_openai_tools_structured_output_runnable(
+    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    llm: Runnable,
+    prompt: Optional[BasePromptTemplate] = None,
+    *,
+    output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
+    **kwargs: Any,
+) -> Runnable:
+    if isinstance(output_schema, dict):
+        tools: Any = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "output_formatter",
+                    "description": (
+                        "Output formatter. Should always be used to format your response to the"
+                        " user."
+                    ),
+                    "parameters": output_schema,
+                },
+            }
+        ]
+    else:
+
+        class _OutputFormatter(BaseModel):
+            """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
+
+            output: output_schema  # type: ignore
+
+        tools = [_OutputFormatter]
+        output_parser = output_parser or PydanticAttrToolsParser(
+            tools=tools, attr_name="output"
+        )
+    return create_openai_tool_runnable(
+        tools,
         llm,
         prompt=prompt,
         output_parser=output_parser,
