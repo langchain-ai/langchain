@@ -3424,7 +3424,7 @@ def test_bind_bind() -> None:
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
 
 
-def test_bind_with_runnablelambda() -> None:
+def test_bind_with_lambda() -> None:
     def my_function(*args: Any, **kwargs: Any) -> int:
         return 3 + kwargs.get("n", 0)
 
@@ -3434,7 +3434,7 @@ def test_bind_with_runnablelambda() -> None:
     assert [4] == chunks
 
 
-async def test_bind_with_runnablelambda_async() -> None:
+async def test_bind_with_lambda_async() -> None:
     def my_function(*args: Any, **kwargs: Any) -> int:
         return 3 + kwargs.get("n", 0)
 
