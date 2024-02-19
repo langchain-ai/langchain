@@ -218,7 +218,7 @@ class TritonTensorRTLLM(BaseLLM):
         result_queue = StreamingResponseGenerator(
             self,
             request_id,
-            force_batch=False,
+            signal_stop=False,
             stop_words=stop_words,
         )
 
@@ -238,6 +238,7 @@ class TritonTensorRTLLM(BaseLLM):
             inputs=inputs,
             outputs=outputs,
             request_id=request_id,
+            enable_empty_final_response=self.client.get_model_config(model_name).config.model_transaction_policy.decoupled
         )
 
         return result_queue
@@ -389,7 +390,7 @@ class StreamingResponseGenerator(queue.Queue):
         super().__init__()
         self.llm = llm
         self.request_id = request_id
-        self._batch = force_batch
+        self._signal_stop = signal_stop
         self._stop_words = stop_words
 
     def __iter__(self) -> StreamingResponseGenerator:
@@ -401,7 +402,7 @@ class StreamingResponseGenerator(queue.Queue):
         val = self.get()
         if val is None or val in self._stop_words:
             self.llm.stop_stream(
-                self.llm.model_name, self.request_id, signal=not self._batch
+                self.llm.model_name, self.request_id, signal=self._signal_stop
             )
             raise StopIteration()
         return val
