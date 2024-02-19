@@ -70,6 +70,7 @@ build_all:
 	cd libs/community
 	poetry lock --no-update
 	make lint
+	make lint_package
 	make tests
 	pip install .
 	cd ../..

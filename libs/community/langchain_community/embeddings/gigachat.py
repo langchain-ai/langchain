@@ -81,7 +81,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         )
 
     @root_validator()
-    def validate_environment(self, cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate authenticate data in environment and python package is installed."""
         try:
             import gigachat  # noqa: F401
