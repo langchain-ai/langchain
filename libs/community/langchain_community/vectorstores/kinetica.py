@@ -149,7 +149,6 @@ class Kinetica(VectorStore):
                             Defaults to None.
         """
 
-
         self._config = config
         self.embedding_function = embedding_function
         self.collection_name = collection_name
@@ -365,7 +364,7 @@ class Kinetica(VectorStore):
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
         self.dimensions = len(embeddings[0])
-        if not hasattr(self, 'EmbeddingStore'):
+        if not hasattr(self, "EmbeddingStore"):
             self.__post_init__(self.dimensions)
         return self.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
