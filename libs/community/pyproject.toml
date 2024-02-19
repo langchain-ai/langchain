@@ -12,6 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+gigachat = ">=0.1.16"
 gigachain-core = ">=0.1.21,<0.2"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
@@ -120,7 +121,6 @@ pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
-gigachat = ">=0.1.16"
 gigachain-core = {path = "../core", develop = true}
 
 [tool.poetry.group.codespell]
