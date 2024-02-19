@@ -11,12 +11,12 @@ from datetime import datetime
 from queue import Queue
 from time import mktime
 from typing import Any, Dict, Generator, Iterator, List, Optional
-from urllib.parse import urlparse, urlencode, urlunparse
+from urllib.parse import urlencode, urlparse, urlunparse
 from wsgiref.handlers import format_date_time
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.outputs import GenerationChunk, ChatGenerationChunk
+from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -26,20 +26,21 @@ logger = logging.getLogger(__name__)
 class SparkLLM(LLM):
     """Wrapper around iFlyTek's Spark large language model.
 
-        To use, you should pass `app_id`, `api_key`, `api_secret`
-        as a named parameter to the constructor OR set environment
-        variables ``IFLYTEK_SPARK_APP_ID``, ``IFLYTEK_SPARK_API_KEY`` and
-        ``IFLYTEK_SPARK_API_SECRET``
+    To use, you should pass `app_id`, `api_key`, `api_secret`
+    as a named parameter to the constructor OR set environment
+    variables ``IFLYTEK_SPARK_APP_ID``, ``IFLYTEK_SPARK_API_KEY`` and
+    ``IFLYTEK_SPARK_API_SECRET``
 
-        Example:
-            .. code-block:: python
+    Example:
+        .. code-block:: python
 
-            client = SparkLLM(
-                spark_app_id="<app_id>",
-                spark_api_key="<api_key>",
-                spark_api_secret="<api_secret>"
-            )
-        """
+        client = SparkLLM(
+            spark_app_id="<app_id>",
+            spark_api_key="<api_key>",
+            spark_api_secret="<api_secret>"
+        )
+    """
+
     client: Any = None  #: :meta private:
     spark_app_id: Optional[str] = None
     spark_api_key: Optional[str] = None
@@ -109,17 +110,17 @@ class SparkLLM(LLM):
             "stream": self.streaming,
             "request_timeout": self.request_timeout,
             "top_k": self.top_k,
-            "temperature": self.temperature
+            "temperature": self.temperature,
         }
 
         return {**normal_params, **self.model_kwargs}
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to an sparkllm for each generation with a prompt.
         Args:
@@ -142,7 +143,8 @@ class SparkLLM(LLM):
             [{"role": "user", "content": prompt}],
             self.spark_user_id,
             self.model_kwargs,
-            self.streaming,)
+            self.streaming,
+        )
         for content in self.client.subscribe(timeout=self.request_timeout):
             if "data" not in content:
                 continue
@@ -151,11 +153,11 @@ class SparkLLM(LLM):
         return completion
 
     def _stream(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         self.client.run(
             [{"role": "user", "content": prompt}],
@@ -179,13 +181,13 @@ class _SparkLLMClient:
     """
 
     def __init__(
-            self,
-            app_id: str,
-            api_key: str,
-            api_secret: str,
-            api_url: Optional[str] = None,
-            spark_domain: Optional[str] = None,
-            model_kwargs: Optional[dict] = None,
+        self,
+        app_id: str,
+        api_key: str,
+        api_secret: str,
+        api_url: Optional[str] = None,
+        spark_domain: Optional[str] = None,
+        model_kwargs: Optional[dict] = None,
     ):
         try:
             import websocket
@@ -257,11 +259,11 @@ class _SparkLLMClient:
         return url
 
     def run(
-            self,
-            messages: List[Dict],
-            user_id: str,
-            model_kwargs: Optional[dict] = None,
-            streaming: bool = False,
+        self,
+        messages: List[Dict],
+        user_id: str,
+        model_kwargs: Optional[dict] = None,
+        streaming: bool = False,
     ) -> None:
         self.websocket_client.enableTrace(False)
         ws = self.websocket_client.WebSocketApp(
@@ -278,11 +280,11 @@ class _SparkLLMClient:
         ws.run_forever()
 
     def arun(
-            self,
-            messages: List[Dict],
-            user_id: str,
-            model_kwargs: Optional[dict] = None,
-            streaming: bool = False,
+        self,
+        messages: List[Dict],
+        user_id: str,
+        model_kwargs: Optional[dict] = None,
+        streaming: bool = False,
     ) -> threading.Thread:
         ws_thread = threading.Thread(
             target=self.run,
@@ -348,7 +350,7 @@ class _SparkLLMClient:
                 ws.close()
 
     def gen_params(
-            self, messages: list, user_id: str, model_kwargs: Optional[dict] = None
+        self, messages: list, user_id: str, model_kwargs: Optional[dict] = None
     ) -> dict:
         data: Dict = {
             "header": {"app_id": self.app_id, "uid": user_id},
