@@ -3433,6 +3433,15 @@ def test_bind_with_runnablelambda() -> None:
     assert [4] == chunks
 
 
+async def test_bind_with_runnablelambda_async() -> None:
+    def my_function(*args, **kwargs):
+        return 3 + kwargs.get("n", 0)
+    runnable = RunnableLambda(my_function).bind(n=1)
+    assert 4 == await runnable.ainvoke({})
+    chunks = [item async for item in runnable.astream({})]
+    assert [4] == chunks
+
+
 def test_deep_stream() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
