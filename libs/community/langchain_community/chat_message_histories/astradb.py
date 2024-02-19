@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import json
 import time
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
-from langchain_community.utilities.astradb import _AstraDBEnvironment
+from langchain_community.utilities.astradb import (
+    SetupMode,
+    _AstraDBCollectionEnvironment,
+)
 
 if TYPE_CHECKING:
     from astrapy.db import AstraDB
@@ -45,24 +48,30 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         api_endpoint: Optional[str] = None,
         astra_db_client: Optional[AstraDB] = None,
         namespace: Optional[str] = None,
+        setup_mode: SetupMode = SetupMode.SYNC,
+        pre_delete_collection: bool = False,
     ) -> None:
         """Create an Astra DB chat message history."""
-        astra_env = _AstraDBEnvironment(
+        self.astra_env = _AstraDBCollectionEnvironment(
+            collection_name=collection_name,
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
             namespace=namespace,
+            setup_mode=setup_mode,
+            pre_delete_collection=pre_delete_collection,
         )
-        self.astra_db = astra_env.astra_db
 
-        self.collection = self.astra_db.create_collection(collection_name)
+        self.collection = self.astra_env.collection
+        self.async_collection = self.astra_env.async_collection
 
         self.session_id = session_id
         self.collection_name = collection_name
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve all session messages from DB"""
+        self.astra_env.ensure_db_setup()
         message_blobs = [
             doc["body_blob"]
             for doc in sorted(
@@ -82,16 +91,63 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
-    def add_message(self, message: BaseMessage) -> None:
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError("Use add_messages instead")
+
+    async def aget_messages(self) -> List[BaseMessage]:
+        """Retrieve all session messages from DB"""
+        await self.astra_env.aensure_db_setup()
+        docs = self.async_collection.paginated_find(
+            filter={
+                "session_id": self.session_id,
+            },
+            projection={
+                "timestamp": 1,
+                "body_blob": 1,
+            },
+        )
+        sorted_docs = sorted(
+            [doc async for doc in docs],
+            key=lambda _doc: _doc["timestamp"],
+        )
+        message_blobs = [doc["body_blob"] for doc in sorted_docs]
+        items = [json.loads(message_blob) for message_blob in message_blobs]
+        messages = messages_from_dict(items)
+        return messages
+
+    def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Write a message to the table"""
-        self.collection.insert_one(
+        self.astra_env.ensure_db_setup()
+        docs = [
             {
                 "timestamp": time.time(),
                 "session_id": self.session_id,
                 "body_blob": json.dumps(message_to_dict(message)),
             }
-        )
+            for message in messages
+        ]
+        self.collection.chunked_insert_many(docs)
+
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Write a message to the table"""
+        await self.astra_env.aensure_db_setup()
+        docs = [
+            {
+                "timestamp": time.time(),
+                "session_id": self.session_id,
+                "body_blob": json.dumps(message_to_dict(message)),
+            }
+            for message in messages
+        ]
+        await self.async_collection.chunked_insert_many(docs)
 
     def clear(self) -> None:
         """Clear session memory from DB"""
+        self.astra_env.ensure_db_setup()
         self.collection.delete_many(filter={"session_id": self.session_id})
+
+    async def aclear(self) -> None:
+        """Clear session memory from DB"""
+        await self.astra_env.aensure_db_setup()
+        await self.async_collection.delete_many(filter={"session_id": self.session_id})
