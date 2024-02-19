@@ -32,6 +32,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         database_name: str = DEFAULT_DBNAME,
         collection_name: str = DEFAULT_COLLECTION_NAME,
+        index_creation:bool =True
     ):
         from pymongo import MongoClient, errors
 
@@ -47,7 +48,8 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
-        self.collection.create_index("SessionId")
+        if index_creation: #Conditional Index Creation for collection
+            self.collection.create_index("SessionId")
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
