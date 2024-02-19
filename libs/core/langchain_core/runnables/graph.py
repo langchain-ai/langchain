@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Type, Union
 from uuid import uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
@@ -25,12 +25,60 @@ class Node(NamedTuple):
     data: Union[Type[BaseModel], RunnableType]
 
 
+def node_data_str(node: Node) -> str:
+    from langchain_core.runnables.base import Runnable
+
+    if isinstance(node.data, Runnable):
+        try:
+            data = str(node.data)
+            if (
+                data.startswith("<")
+                or data[0] != data[0].upper()
+                or len(data.splitlines()) > 1
+            ):
+                data = node.data.__class__.__name__
+            elif len(data) > 42:
+                data = data[:42] + "..."
+        except Exception:
+            data = node.data.__class__.__name__
+    else:
+        data = node.data.__name__
+    return data if not data.startswith("Runnable") else data[8:]
+
+
+def node_data_json(node: Node) -> Union[str, Dict[str, Any]]:
+    from langchain_core.runnables.base import Runnable
+
+    if isinstance(node.data, Runnable):
+        return node_data_str(node)
+    else:
+        return node.data.schema()
+
+
 @dataclass
 class Graph:
     """Graph of nodes and edges."""
 
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
+
+    def to_json(self) -> Dict[str, List[Dict[str, str]]]:
+        """Convert the graph to a JSON-serializable format."""
+        stable_node_ids = {node.id: i for i, node in enumerate(self.nodes.values())}
+
+        return {
+            "nodes": [
+                {"id": stable_node_ids[node.id], "data": node_data_json(node)}
+                for node in self.nodes.values()
+            ],
+            "edges": [
+                {
+                    "source": stable_node_ids[edge.source],
+                    "target": stable_node_ids[edge.target],
+                }
+                for edge in self.edges
+            ],
+        }
 
     def __bool__(self) -> bool:
         return bool(self.nodes)
@@ -117,28 +165,8 @@ class Graph:
                 self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
-        from langchain_core.runnables.base import Runnable
-
-        def node_data(node: Node) -> str:
-            if isinstance(node.data, Runnable):
-                try:
-                    data = str(node.data)
-                    if (
-                        data.startswith("<")
-                        or data[0] != data[0].upper()
-                        or len(data.splitlines()) > 1
-                    ):
-                        data = node.data.__class__.__name__
-                    elif len(data) > 42:
-                        data = data[:42] + "..."
-                except Exception:
-                    data = node.data.__class__.__name__
-            else:
-                data = node.data.__name__
-            return data if not data.startswith("Runnable") else data[8:]
-
         return draw(
-            {node.id: node_data(node) for node in self.nodes.values()},
+            {node.id: node_data_str(node) for node in self.nodes.values()},
             [(edge.source, edge.target) for edge in self.edges],
         )
 
