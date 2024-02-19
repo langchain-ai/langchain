@@ -76,6 +76,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         OpenSearchVectorSearch: OpenSearchTranslator,
         MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
+    try:
+        from langchain_astradb.vectorstores import AstraDBVectorStore
+
+        if isinstance(vectorstore, AstraDBVectorStore):
+            return AstraDBTranslator()
+    except ImportError:
+        pass
+
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
