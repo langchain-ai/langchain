@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib
 import os
 from pathlib import Path
@@ -26,7 +28,7 @@ class NeuralDBRetriever(BaseRetriever):
         underscore_attrs_are_private = True
 
     @staticmethod
-    def _verify_thirdai_library(thirdai_key: Optional[str] = None):
+    def _verify_thirdai_library(thirdai_key: Optional[str] = None) -> None:
         try:
             from thirdai import licensing
 
@@ -43,8 +45,8 @@ class NeuralDBRetriever(BaseRetriever):
     def from_scratch(
         cls,
         thirdai_key: Optional[str] = None,
-        **model_kwargs,
-    ):
+        **model_kwargs: dict,
+    ) -> NeuralDBRetriever:
         """
         Create a NeuralDBRetriever from scratch.
 
@@ -79,7 +81,7 @@ class NeuralDBRetriever(BaseRetriever):
         base: str,
         bazaar_cache: Optional[str] = None,
         thirdai_key: Optional[str] = None,
-    ):
+    ) -> NeuralDBRetriever:
         """
         Create a NeuralDBRetriever with a base model from the ThirdAI
         model bazaar.
@@ -120,7 +122,7 @@ class NeuralDBRetriever(BaseRetriever):
         cls,
         checkpoint: Union[str, Path],
         thirdai_key: Optional[str] = None,
-    ):
+    ) -> NeuralDBRetriever:
         """
         Create a NeuralDBRetriever with a base model from a saved checkpoint
 
@@ -167,8 +169,8 @@ class NeuralDBRetriever(BaseRetriever):
         sources: List[Any],
         train: bool = True,
         fast_mode: bool = True,
-        **kwargs,
-    ):
+        **kwargs: dict,
+    ) -> None:
         """Inserts files / document sources into the retriever.
 
         Args:
@@ -186,7 +188,7 @@ class NeuralDBRetriever(BaseRetriever):
             **kwargs,
         )
 
-    def _preprocess_sources(self, sources):
+    def _preprocess_sources(self, sources: list) -> list:
         """Checks if the provided sources are string paths. If they are, convert
         to NeuralDB document objects.
 
@@ -218,7 +220,7 @@ class NeuralDBRetriever(BaseRetriever):
                     )
         return preprocessed_sources
 
-    def upvote(self, query: str, document_id: int):
+    def upvote(self, query: str, document_id: int) -> None:
         """The retriever upweights the score of a document for a specific query.
         This is useful for fine-tuning the retriever to user behavior.
 
@@ -228,7 +230,7 @@ class NeuralDBRetriever(BaseRetriever):
         """
         self.db.text_to_result(query, document_id)
 
-    def upvote_batch(self, query_id_pairs: List[Tuple[str, int]]):
+    def upvote_batch(self, query_id_pairs: List[Tuple[str, int]]) -> None:
         """Given a batch of (query, document id) pairs, the retriever upweights
         the scores of the document for the corresponding queries.
         This is useful for fine-tuning the retriever to user behavior.
@@ -239,7 +241,7 @@ class NeuralDBRetriever(BaseRetriever):
         """
         self.db.text_to_result_batch(query_id_pairs)
 
-    def associate(self, source: str, target: str):
+    def associate(self, source: str, target: str) -> None:
         """The retriever associates a source phrase with a target phrase.
         When the retriever sees the source phrase, it will also consider results
         that are relevant to the target phrase.
@@ -250,7 +252,7 @@ class NeuralDBRetriever(BaseRetriever):
         """
         self.db.associate(source, target)
 
-    def associate_batch(self, text_pairs: List[Tuple[str, str]]):
+    def associate_batch(self, text_pairs: List[Tuple[str, str]]) -> None:
         """Given a batch of (source, target) pairs, the retriever associates
         each source phrase with the corresponding target phrase.
 
@@ -291,7 +293,7 @@ class NeuralDBRetriever(BaseRetriever):
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
 
-    def save(self, path: str):
+    def save(self, path: str) -> None:
         """Saves a NeuralDB instance to disk. Can be loaded into memory by
         calling NeuralDB.from_checkpoint(path)
 
