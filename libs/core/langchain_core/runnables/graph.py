@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 from uuid import uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
@@ -46,13 +56,23 @@ def node_data_str(node: Node) -> str:
     return data if not data.startswith("Runnable") else data[8:]
 
 
-def node_data_json(node: Node) -> Union[str, Dict[str, Any]]:
-    from langchain_core.runnables.base import Runnable
+def node_data_json(node: Node) -> Tuple[str, Dict[str, Any]]:
+    from langchain_core.load.serializable import to_json_not_implemented
+    from langchain_core.runnables.base import Runnable, RunnableSerializable
 
-    if isinstance(node.data, Runnable):
-        return node_data_str(node)
+    if isinstance(node.data, RunnableSerializable):
+        data = node.data.to_json()
+        return ("runnable", {"id": data["id"], "name": data["name"]})
+    elif isinstance(node.data, Runnable):
+        return (
+            "runnable",
+            {
+                "id": to_json_not_implemented(node.data)["id"],
+                "name": node.data.get_name(),
+            },
+        )
     else:
-        return node.data.schema()
+        return ("schema", node.data.schema())
 
 
 @dataclass

@@ -20,6 +20,7 @@ class BaseSerialized(TypedDict):
 
     lc: int
     id: List[str]
+    name: NotRequired[str]
     graph: NotRequired[Dict[str, Any]]
 
 

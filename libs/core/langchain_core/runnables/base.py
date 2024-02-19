@@ -1638,6 +1638,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         """Serialize the runnable to JSON."""
         dumped = super().to_json()
         try:
+            dumped["name"] = self.get_name()
             dumped["graph"] = self.get_graph().to_json()
         except Exception:
             pass
