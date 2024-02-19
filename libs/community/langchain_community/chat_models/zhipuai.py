@@ -41,7 +41,7 @@ ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
 
 @contextmanager
-def connect_sse(client: Any, method: str, url: str, **kwargs: Any):
+def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -49,7 +49,9 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any):
 
 
 @asynccontextmanager
-async def aconnect_sse(client: Any, method: str, url: str, **kwargs: Any):
+async def aconnect_sse(
+    client: Any, method: str, url: str, **kwargs: Any
+) -> AsyncIterator:
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
@@ -142,7 +144,7 @@ def _convert_delta_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     if role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(role, content=content)
+        return ChatMessageChunk(content=content, role=role)
     return default_class(content=content)
 
 
@@ -271,6 +273,8 @@ class ChatZhipuAI(BaseChatModel):
 
     def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         generations = []
+        if not isinstance(response, dict):
+            response = response.dict()
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res.get("finish_reason"))
@@ -300,6 +304,8 @@ class ChatZhipuAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
 
+        if self.zhipuai_api_key is None:
+            raise ValueError("Did not find zhipuai_api_key.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {
             **params,
@@ -326,6 +332,10 @@ class ChatZhipuAI(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the chat response in chunks."""
+        if self.zhipuai_api_key is None:
+            raise ValueError("Did not find zhipuai_api_key.")
+        if self.zhipuai_api_base is None:
+            raise ValueError("Did not find zhipu_api_base.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
         headers = {
@@ -379,6 +389,8 @@ class ChatZhipuAI(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
 
+        if self.zhipuai_api_key is None:
+            raise ValueError("Did not find zhipuai_api_key.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {
             **params,
@@ -404,6 +416,10 @@ class ChatZhipuAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        if self.zhipuai_api_key is None:
+            raise ValueError("Did not find zhipuai_api_key.")
+        if self.zhipuai_api_base is None:
+            raise ValueError("Did not find zhipu_api_base.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
         headers = {
@@ -438,6 +454,6 @@ class ChatZhipuAI(BaseChatModel):
                     )
                     yield chunk
                     if run_manager:
-                        run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                        await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                     if finish_reason is not None:
                         break
