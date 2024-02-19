@@ -351,7 +351,9 @@ def get_openai_tool_output_parser(
             only the function arguments and not the function name.
     """
     if isinstance(tools[0], type) and issubclass(tools[0], BaseModel):
-        output_parser = PydanticToolsParser(tools=tools)
+        output_parser: Union[
+            BaseOutputParser, BaseGenerationOutputParser
+        ] = PydanticToolsParser(tools=tools)
     else:
         output_parser = JsonOutputToolsParser(args_only=len(tools) <= 1)
     return output_parser
@@ -436,7 +438,7 @@ def _create_openai_tools_structured_output_runnable(
                 "function": {
                     "name": "output_formatter",
                     "description": (
-                        "Output formatter. Should always be used to format your response to the"
+                        "Output formatter. Should always be used to format your response to the"  # noqa: E501
                         " user."
                     ),
                     "parameters": output_schema,
