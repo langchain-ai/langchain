@@ -2,13 +2,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Type, Union
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.graph_draw import draw
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
+
+
+def is_uuid(value: str) -> bool:
+    try:
+        UUID(value)
+        return True
+    except ValueError:
+        return False
 
 
 class Edge(NamedTuple):
@@ -82,7 +90,10 @@ class Graph:
 
     def to_json(self) -> Dict[str, List[Dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format."""
-        stable_node_ids = {node.id: i for i, node in enumerate(self.nodes.values())}
+        stable_node_ids = {
+            node.id: i if is_uuid(node.id) else node.id
+            for i, node in enumerate(self.nodes.values())
+        }
 
         return {
             "nodes": [
@@ -104,9 +115,11 @@ class Graph:
     def next_id(self) -> str:
         return uuid4().hex
 
-    def add_node(self, data: Union[Type[BaseModel], RunnableType]) -> Node:
+    def add_node(
+        self, data: Union[Type[BaseModel], RunnableType], id: Optional[str] = None
+    ) -> Node:
         """Add a node to the graph and return it."""
-        node = Node(id=self.next_id(), data=data)
+        node = Node(id=id or self.next_id(), data=data)
         self.nodes[node.id] = node
         return node
 
