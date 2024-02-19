@@ -99,3 +99,14 @@ class PydanticToolsParser(JsonOutputToolsParser):
         results = super().parse_result(result, partial=partial)
         name_dict = {tool.__name__: tool for tool in self.tools}
         return [name_dict[res["type"]](**res["args"]) for res in results]
+
+
+class PydanticAttrToolsParser(PydanticToolsParser):
+    """Parse an output as an attribute of a pydantic object."""
+
+    attr_name: str
+    """The name of the attribute to return."""
+
+    def parse_result(self, results: List[Generation], *, partial: bool = False) -> Any:
+        results = super().parse_result(results)
+        return [getattr(result, self.attr_name) for result in results]
