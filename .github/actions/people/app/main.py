@@ -8,7 +8,7 @@ import sys
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Container, Dict, List, Set, Union
+from typing import Any, Container, Dict, List, Set, Union, Tuple
 
 import httpx
 import yaml
@@ -391,7 +391,7 @@ def get_issues_experts(settings: Settings):
     return commentors, last_month_commentors, authors
 
 
-def get_discussions_experts(settings: Settings):
+def get_discussions_experts(settings: Settings) -> Tuple[Counter, Counter, Dict[str, Author]]:
     discussion_nodes: List[DiscussionsNode] = []
     discussion_edges = get_graphql_question_discussion_edges(settings=settings)
 
@@ -433,7 +433,7 @@ def get_discussions_experts(settings: Settings):
     return commentors, last_month_commentors, authors
 
 
-def get_experts(settings: Settings):
+def get_experts(settings: Settings) -> Tuple[Counter, Counter, Dict[str, Author]]:
     # Migrated to only use GitHub Discussions
     # (
     #     issues_commentors,
@@ -528,9 +528,15 @@ if __name__ == "__main__":
     logging.info(f"Using config: {settings.model_dump_json()}")
     g = Github(settings.input_token.get_secret_value())
     repo = g.get_repo(settings.github_repository)
-    question_commentors, question_last_month_commentors, question_authors = get_experts(
-        settings=settings
-    )
+    # Need to look up discussion category ID, and then can uncomment
+    # question_commentors, question_last_month_commentors, question_authors = get_experts(
+    #     settings=settings
+    # )
+    # Placeholder experts for now
+    question_commentors = Counter()
+    question_last_month_commentors = Counter()
+    question_authors = {}
+
     contributors, pr_commentors, reviewers, pr_authors = get_contributors(
         settings=settings
     )
