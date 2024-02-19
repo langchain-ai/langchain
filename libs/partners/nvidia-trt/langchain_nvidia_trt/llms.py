@@ -238,7 +238,9 @@ class TritonTensorRTLLM(BaseLLM):
             inputs=inputs,
             outputs=outputs,
             request_id=request_id,
-            enable_empty_final_response=self.client.get_model_config(model_name).config.model_transaction_policy.decoupled
+            enable_empty_final_response=self.client.get_model_config(
+                model_name
+            ).config.model_transaction_policy.decoupled,
         )
 
         return result_queue
