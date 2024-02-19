@@ -85,7 +85,7 @@ def create_openai_fn_runnable(
 
                 llm = ChatOpenAI(model="gpt-4", temperature=0)
                 structured_llm = create_openai_fn_runnable([RecordPerson, RecordDog], llm)
-                structured_llm.invoke("Harry was a chubby brown beagle who loved chicken)
+                structured_llm.invoke("Harry was a chubby brown beagle who loved chicken")
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
@@ -184,7 +184,7 @@ def create_structured_output_runnable(
                 structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-functions")
                 system = '''Extract information about any dogs mentioned in the user input.'''
                 prompt = ChatPromptTemplate.from_messages(
-                    [("system", system), ("human", "{input}"),]
+                    [("system", system), ("human", "{input}")]
                 )
                 chain = prompt | structured_llm
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
@@ -207,17 +207,16 @@ def create_structured_output_runnable(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-json")
                 system = '''You are a world class assistant for extracting information in structured JSON formats. \
                 
                 Extract a valid JSON blob from the user input that matches the following JSON Schema:
                 
                 {output_schema}'''
                 prompt = ChatPromptTemplate.from_messages(
-                    [("system", system), ("human", "{input}"),]
+                    [("system", system), ("human", "{input}")]
                 )
-                chain = prompt | structured_llm
-                chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+                structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-json", prompt=prompt)
+                structured_llm.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
     """  # noqa: E501
     if mode == "openai-functions":
         return _create_openai_functions_structured_output_runnable(
