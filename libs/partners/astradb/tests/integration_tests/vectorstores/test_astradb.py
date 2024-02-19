@@ -19,6 +19,8 @@ import os
 from typing import Iterable, List, Optional, TypedDict
 
 import pytest
+from astrapy.db import AstraDB as LibAstraDB
+from astrapy.db import AsyncAstraDB
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -164,7 +166,6 @@ class TestAstraDBVectorStore:
         self, astradb_credentials: AstraDBCredentials
     ) -> None:
         """Create and delete."""
-        from astrapy.db import AstraDB as LibAstraDB
 
         emb = SomeEmbeddings(dimension=2)
         # creation by passing the connection secrets
@@ -207,8 +208,6 @@ class TestAstraDBVectorStore:
         )
         await v_store.adelete_collection()
         # Creation by passing a ready-made astrapy client:
-        from astrapy.db import AsyncAstraDB
-
         astra_db_client = AsyncAstraDB(
             **astradb_credentials,
         )
@@ -867,3 +866,188 @@ class TestAstraDBVectorStore:
                 vstore_euc.delete_collection()
             else:
                 vstore_euc.clear()
+
+    def test_astradb_vectorstore_indexing(self) -> None:
+        """
+        Test that the right errors/warnings are issued depending
+        on the compatibility of on-DB indexing settings and the requested ones.
+
+        We do NOT check for substrings in the warning messages: that would
+        be too brittle a test.
+        """
+        astra_db = LibAstraDB(
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        )
+
+        embe = SomeEmbeddings(dimension=2)
+
+        # creation of three collections to test warnings against
+        astra_db.create_collection("lc_legacy_coll", dimension=2, metric=None)
+        AstraDBVectorStore(
+            astra_db_client=astra_db,
+            collection_name="lc_default_idx",
+            embedding=embe,
+        )
+        AstraDBVectorStore(
+            astra_db_client=astra_db,
+            collection_name="lc_custom_idx",
+            embedding=embe,
+            metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+        )
+
+        # these invocations should just work without warnings
+        with pytest.warns() as rec_warnings:
+            AstraDBVectorStore(
+                astra_db_client=astra_db,
+                collection_name="lc_default_idx",
+                embedding=embe,
+            )
+            AstraDBVectorStore(
+                astra_db_client=astra_db,
+                collection_name="lc_custom_idx",
+                embedding=embe,
+                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+            )
+            assert len(rec_warnings) == 0
+
+        # some are to throw an error:
+        with pytest.raises(ValueError):
+            AstraDBVectorStore(
+                astra_db_client=astra_db,
+                collection_name="lc_default_idx",
+                embedding=embe,
+                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+            )
+
+        with pytest.raises(ValueError):
+            AstraDBVectorStore(
+                astra_db_client=astra_db,
+                collection_name="lc_custom_idx",
+                embedding=embe,
+                metadata_indexing_denylist={"changed_fields"},
+            )
+
+        with pytest.raises(ValueError):
+            AstraDBVectorStore(
+                astra_db_client=astra_db,
+                collection_name="lc_custom_idx",
+                embedding=embe,
+            )
+
+        with pytest.raises(ValueError):
+            AstraDBVectorStore(
+                astra_db_client=astra_db,
+                collection_name="lc_legacy_coll",
+                embedding=embe,
+                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+            )
+
+        # one case should result in just a warning:
+        with pytest.warns(UserWarning) as rec_warnings:
+            AstraDBVectorStore(
+                astra_db_client=astra_db,
+                collection_name="lc_legacy_coll",
+                embedding=embe,
+            )
+            assert len(rec_warnings) == 1
+
+        # cleanup
+        astra_db.delete_collection("lc_legacy_coll")
+        astra_db.delete_collection("lc_default_idx")
+        astra_db.delete_collection("lc_custom_idx")
+
+    async def test_astradb_vectorstore_indexing_async(self) -> None:
+        """
+        Async version of the same test on warnings/errors related
+        to incompatible indexing choices.
+        """
+        astra_db = AsyncAstraDB(
+            token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
+            api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
+            namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
+        )
+
+        embe = SomeEmbeddings(dimension=2)
+
+        # creation of three collections to test warnings against
+        await astra_db.create_collection("lc_legacy_coll", dimension=2, metric=None)
+        AstraDBVectorStore(
+            async_astra_db_client=astra_db,
+            collection_name="lc_default_idx",
+            embedding=embe,
+        )
+        AstraDBVectorStore(
+            async_astra_db_client=astra_db,
+            collection_name="lc_custom_idx",
+            embedding=embe,
+            metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+        )
+
+        # these invocations should just work without warnings
+        with pytest.warns() as rec_warnings:
+            def_store = AstraDBVectorStore(
+                async_astra_db_client=astra_db,
+                collection_name="lc_default_idx",
+                embedding=embe,
+            )
+            await def_store.aadd_texts(["All good."])
+            cus_store = AstraDBVectorStore(
+                async_astra_db_client=astra_db,
+                collection_name="lc_custom_idx",
+                embedding=embe,
+                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+            )
+            await cus_store.aadd_texts(["All good."])
+            assert len(rec_warnings) == 0
+
+        # some are to throw an error:
+        with pytest.raises(ValueError):
+            def_store = AstraDBVectorStore(
+                async_astra_db_client=astra_db,
+                collection_name="lc_default_idx",
+                embedding=embe,
+                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+            )
+            await def_store.aadd_texts(["Not working."])
+
+        with pytest.raises(ValueError):
+            cus_store = AstraDBVectorStore(
+                async_astra_db_client=astra_db,
+                collection_name="lc_custom_idx",
+                embedding=embe,
+                metadata_indexing_denylist={"changed_fields"},
+            )
+            await cus_store.aadd_texts(["Not working."])
+
+        with pytest.raises(ValueError):
+            cus_store = AstraDBVectorStore(
+                async_astra_db_client=astra_db,
+                collection_name="lc_custom_idx",
+                embedding=embe,
+            )
+            await cus_store.aadd_texts(["Not working."])
+
+        with pytest.raises(ValueError):
+            leg_store = AstraDBVectorStore(
+                async_astra_db_client=astra_db,
+                collection_name="lc_legacy_coll",
+                embedding=embe,
+                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+            )
+            await leg_store.aadd_texts(["Not working."])
+
+        # one case should result in just a warning:
+        with pytest.warns(UserWarning) as rec_warnings:
+            leg_store = AstraDBVectorStore(
+                async_astra_db_client=astra_db,
+                collection_name="lc_legacy_coll",
+                embedding=embe,
+            )
+            await leg_store.aadd_texts(["Triggering warning."])
+            assert len(rec_warnings) == 1
+
+        await astra_db.delete_collection("lc_legacy_coll")
+        await astra_db.delete_collection("lc_default_idx")
+        await astra_db.delete_collection("lc_custom_idx")

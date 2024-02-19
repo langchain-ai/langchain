@@ -1,9 +1,11 @@
 from typing import List
 from unittest.mock import Mock
 
+import pytest
 from langchain_core.embeddings import Embeddings
 
 from langchain_astradb.vectorstores import AstraDBVectorStore
+from langchain_astradb.vectorstores.astradb import DEFAULT_INDEXING_OPTIONS
 
 
 class SomeEmbeddings(Embeddings):
@@ -34,12 +36,74 @@ class SomeEmbeddings(Embeddings):
         return self.embed_query(text)
 
 
-def test_initialization() -> None:
-    """Test integration vectorstore initialization."""
-    mock_astra_db = Mock()
-    embedding = SomeEmbeddings(dimension=2)
-    AstraDBVectorStore(
-        embedding=embedding,
-        collection_name="mock_coll_name",
-        astra_db_client=mock_astra_db,
-    )
+class TestAstraDB:
+    def test_initialization(self) -> None:
+        """Test integration vectorstore initialization."""
+        mock_astra_db = Mock()
+        embedding = SomeEmbeddings(dimension=2)
+        AstraDBVectorStore(
+            embedding=embedding,
+            collection_name="mock_coll_name",
+            astra_db_client=mock_astra_db,
+        )
+
+    def test_astradb_vectorstore_unit_indexing_normalization(self) -> None:
+        """Unit test of the indexing policy normalization"""
+        n3_idx = AstraDBVectorStore._normalize_metadata_policy(
+            metadata_indexing_allowlist=None,
+            metadata_indexing_denylist=None,
+            collection_indexing_policy=None,
+        )
+        assert n3_idx == DEFAULT_INDEXING_OPTIONS
+
+        al_idx = AstraDBVectorStore._normalize_metadata_policy(
+            metadata_indexing_allowlist=["a1", "a2"],
+            metadata_indexing_denylist=None,
+            collection_indexing_policy=None,
+        )
+        assert al_idx == {"allow": ["metadata.a1", "metadata.a2"]}
+
+        dl_idx = AstraDBVectorStore._normalize_metadata_policy(
+            metadata_indexing_allowlist=None,
+            metadata_indexing_denylist=["d1", "d2"],
+            collection_indexing_policy=None,
+        )
+        assert dl_idx == {"deny": ["metadata.d1", "metadata.d2"]}
+
+        custom_policy = {
+            "deny": ["myfield", "other_field.subfield", "metadata.long_text"]
+        }
+        cip_idx = AstraDBVectorStore._normalize_metadata_policy(
+            metadata_indexing_allowlist=None,
+            metadata_indexing_denylist=None,
+            collection_indexing_policy=custom_policy,
+        )
+        assert cip_idx == custom_policy
+
+        with pytest.raises(ValueError):
+            AstraDBVectorStore._normalize_metadata_policy(
+                metadata_indexing_allowlist=["a"],
+                metadata_indexing_denylist=["b"],
+                collection_indexing_policy=None,
+            )
+
+        with pytest.raises(ValueError):
+            AstraDBVectorStore._normalize_metadata_policy(
+                metadata_indexing_allowlist=["a"],
+                metadata_indexing_denylist=None,
+                collection_indexing_policy={"a": "z"},
+            )
+
+        with pytest.raises(ValueError):
+            AstraDBVectorStore._normalize_metadata_policy(
+                metadata_indexing_allowlist=None,
+                metadata_indexing_denylist=["b"],
+                collection_indexing_policy={"a": "z"},
+            )
+
+        with pytest.raises(ValueError):
+            AstraDBVectorStore._normalize_metadata_policy(
+                metadata_indexing_allowlist=["a"],
+                metadata_indexing_denylist=["b"],
+                collection_indexing_policy={"a": "z"},
+            )

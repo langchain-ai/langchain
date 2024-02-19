@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import uuid
 import warnings
 from asyncio import Task
@@ -20,6 +21,7 @@ from typing import (
 )
 
 import numpy as np
+from astrapy.api import APIRequestError
 from astrapy.db import (
     AstraDB as AstraDBClient,
 )
@@ -53,6 +55,9 @@ DEFAULT_BULK_INSERT_BATCH_CONCURRENCY = 16
 DEFAULT_BULK_INSERT_OVERWRITE_CONCURRENCY = 10
 # Number of threads (for deleting multiple rows concurrently):
 DEFAULT_BULK_DELETE_CONCURRENCY = 20
+
+# indexing options when creating a collection
+DEFAULT_INDEXING_OPTIONS = {"allow": ["metadata"]}
 
 
 def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
@@ -107,6 +112,34 @@ class AstraDBVectorStore(VectorStore):
               available in Astra DB. If left out, it will use Astra DB API's
               defaults (i.e. "cosine" - but, for performance reasons,
               "dot_product" is suggested if embeddings are normalized to one).
+
+      Control over indexing:
+        By default, the class will index (i.e. make available to metadata-filter
+        searches) only and all the fields within the "metadata" dictionary.
+        There are *mutually exclusive* constructor parameters to alter this
+        to one's liking. Keep in mind that the indexing behaviour is set once
+        when the collection is built and cannot be changed later for the
+        collection.
+        The general principle is that it is useless, and somewhat wasteful,
+        to index a field that is a very long unique piece of text (such as the
+        text chunk itself) on which one will never run equality search filters.
+        Moreover, having a field not indexed opens the way to storing very
+        large strings (indexing imposes size constrains of a few KB per string.)
+            metadata_indexing_allowlist (List[str], optional):
+                only the supplied subfields of `metadata` are indexed.
+            metadata_indexing_denylist (List[str], optional):
+                all except the supplied subfields of `metadata` are indexed.
+            collection_indexing_policy (Dict[str, Any], optional):
+                the caller provides a full "indexing" dictionary conforming
+                to the API specifications (see docs.datastax.com/en/astra/
+                astra-db-vector/api-reference/data-api-commands.html
+                #advanced-feature-indexing-clause-on-createcollection)
+        Example values (only one can be passed):
+            metadata_indexing_allowlist=["source", "product_id", "product_category"]
+            metadata_indexing_denylist=["french_translation", "german_translation"]
+            collection_indexing_policy={
+                "deny": ["metadata.french_translation", "additional_top_field"]
+            }
 
       Advanced arguments (coming with sensible defaults):
           batch_size (Optional[int]): Size of batches for bulk insertions.
@@ -163,6 +196,52 @@ class AstraDBVectorStore(VectorStore):
 
             return metadata_filter
 
+    @staticmethod
+    def _normalize_metadata_policy(
+        metadata_indexing_allowlist: Optional[Iterable[str]],
+        metadata_indexing_denylist: Optional[Iterable[str]],
+        collection_indexing_policy: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Validate the constructor indexing parameters and normalize them
+        into a ready-to-use dict for the 'options' when creating a collection.
+        """
+        none_count = sum(
+            [
+                1 if var is None else 0
+                for var in [
+                    metadata_indexing_allowlist,
+                    metadata_indexing_denylist,
+                    collection_indexing_policy,
+                ]
+            ]
+        )
+        if none_count >= 2:
+            if metadata_indexing_allowlist is not None:
+                return {
+                    "allow": [
+                        f"metadata.{md_field}"
+                        for md_field in metadata_indexing_allowlist
+                    ]
+                }
+            elif metadata_indexing_denylist is not None:
+                return {
+                    "deny": [
+                        f"metadata.{md_field}"
+                        for md_field in metadata_indexing_denylist
+                    ]
+                }
+            elif collection_indexing_policy is not None:
+                return collection_indexing_policy
+            else:
+                return DEFAULT_INDEXING_OPTIONS
+        else:
+            raise ValueError(
+                "At most one of the parameters `metadata_indexing_allowlist`,"
+                " `metadata_indexing_denylist` and `collection_indexing_policy`"
+                " can be specified as non null."
+            )
+
     def __init__(
         self,
         *,
@@ -179,6 +258,9 @@ class AstraDBVectorStore(VectorStore):
         bulk_insert_overwrite_concurrency: Optional[int] = None,
         bulk_delete_concurrency: Optional[int] = None,
         pre_delete_collection: bool = False,
+        metadata_indexing_allowlist: Optional[Iterable[str]] = None,
+        metadata_indexing_denylist: Optional[Iterable[str]] = None,
+        collection_indexing_policy: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Create an AstraDBVectorStore vector store object. See class docstring for help.
@@ -212,6 +294,12 @@ class AstraDBVectorStore(VectorStore):
         # "vector-related" settings
         self._embedding_dimension: Optional[int] = None
         self.metric = metric
+        # indexing policy setting
+        self.indexing_policy: Dict[str, Any] = self._normalize_metadata_policy(
+            metadata_indexing_allowlist=metadata_indexing_allowlist,
+            metadata_indexing_denylist=metadata_indexing_denylist,
+            collection_indexing_policy=collection_indexing_policy,
+        )
 
         self.astra_db = astra_db_client
         self.async_astra_db = async_astra_db_client
@@ -284,6 +372,82 @@ class AstraDBVectorStore(VectorStore):
             )
         return self._embedding_dimension
 
+    @staticmethod
+    def _validate_create_collection_indexing(
+        collections: List[Dict[str, Any]],
+        collection_name: str,
+        requested_indexing_policy: Dict[str, Any],
+    ) -> bool:
+        """
+        Call this if APIRequestError detected when trying to create
+        the collection. It checks if the collection is already on DB,
+        checks the indexing options match, and takes action (errors, warnings).
+
+        Return True iff the error was related to indexing, i.e. if there is
+        *no* need to re-raise the originating exception outside of this call.
+        """
+        preexisting = [
+            collection
+            for collection in collections
+            if collection["name"] == collection_name
+        ]
+        if preexisting:
+            pre_collection = preexisting[0]
+            # if it has no "indexing", it is a legacy collection
+            pre_col_options = pre_collection.get("options") or {}
+            if "indexing" not in pre_col_options:
+                # legacy collection on DB
+                if requested_indexing_policy == DEFAULT_INDEXING_OPTIONS:
+                    warnings.warn(
+                        (
+                            f"Collection '{collection_name}' is "
+                            "detected as legacy and has indexing turned "
+                            "on for all fields. This implies stricter "
+                            "limitations on the amount of text each entry "
+                            "can store. Consider reindexing anew on a "
+                            "fresh collection to be able to store longer texts."
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                else:
+                    raise ValueError(
+                        f"Collection '{collection_name}' is "
+                        "detected as legacy and has indexing turned "
+                        "on for all fields. This is incompatible with "
+                        "the requested indexing policy for this Vector "
+                        "Store. Consider reindexing anew on a fresh "
+                        "collection with the requested indexing "
+                        "policy, or alternatively leave the indexing "
+                        "settings for this store to their defaults "
+                        "to keep using this collection."
+                    )
+            elif pre_col_options["indexing"] != requested_indexing_policy:
+                # collection on DB has indexing settings, but different
+                options_json = json.dumps(pre_col_options["indexing"])
+                if pre_col_options["indexing"] == DEFAULT_INDEXING_OPTIONS:
+                    default_desc = " (default setting)"
+                else:
+                    default_desc = ""
+                raise ValueError(
+                    f"Collection '{collection_name}' is "
+                    "detected as having the following indexing policy: "
+                    f"{options_json}{default_desc}. This is incompatible "
+                    "with the requested indexing policy for this Vector "
+                    "Store. Consider reindexing anew on a fresh "
+                    "collection with the requested indexing "
+                    "policy, or alternatively align the requested "
+                    "indexing settings to the collection to keep using it."
+                )
+            else:
+                # the discrepancies have to do with other settings than indexing
+                raise
+            # the original exception, related to indexing, was handled here
+            return True
+        else:
+            # foreign-origin for the original exception
+            return False
+
     def _provision_collection(self) -> None:
         """
         Run the API invocation to create the collection on the backend.
@@ -293,11 +457,28 @@ class AstraDBVectorStore(VectorStore):
         """
         self._ensure_astra_db_client()
         # self.astra_db is not None (by _ensure_astra_db_client)
-        self.astra_db.create_collection(  # type: ignore[union-attr]
-            dimension=self._get_embedding_dimension(),
-            collection_name=self.collection_name,
-            metric=self.metric,
-        )
+
+        try:
+            self.astra_db.create_collection(  # type: ignore[union-attr]
+                dimension=self._get_embedding_dimension(),
+                collection_name=self.collection_name,
+                metric=self.metric,
+                options={"indexing": self.indexing_policy},
+            )
+        except (APIRequestError, ValueError):
+            # possibly the collection is preexisting and may have legacy,
+            # or custom, indexing settings: verify
+            get_coll_response = self.astra_db.get_collections(  # type: ignore[union-attr]
+                options={"explain": True}
+            )
+            collections = (get_coll_response["status"] or {}).get("collections") or []
+            if not self._validate_create_collection_indexing(
+                collections=collections,
+                collection_name=self.collection_name,
+                requested_indexing_policy=self.indexing_policy,
+            ):
+                # other reasons for the exception
+                raise
 
     async def _aprovision_collection(self) -> None:
         """
@@ -309,11 +490,29 @@ class AstraDBVectorStore(VectorStore):
         if not self.async_astra_db:
             await run_in_executor(None, self._provision_collection)
         else:
-            await self.async_astra_db.create_collection(
-                dimension=self._get_embedding_dimension(),
-                collection_name=self.collection_name,
-                metric=self.metric,
-            )
+            try:
+                await self.async_astra_db.create_collection(  # type: ignore[union-attr]
+                    dimension=self._get_embedding_dimension(),
+                    collection_name=self.collection_name,
+                    metric=self.metric,
+                    options={"indexing": self.indexing_policy},
+                )
+            except (APIRequestError, ValueError):
+                # possibly the collection is preexisting and may have legacy,
+                # or custom, indexing settings: verify
+                get_coll_response = await self.async_astra_db.get_collections(  # type: ignore[union-attr]
+                    options={"explain": True}
+                )
+                collections = (get_coll_response["status"] or {}).get(
+                    "collections"
+                ) or []
+                if not self._validate_create_collection_indexing(
+                    collections=collections,
+                    collection_name=self.collection_name,
+                    requested_indexing_policy=self.indexing_policy,
+                ):
+                    # other reasons for the exception
+                    raise
 
     @property
     def embeddings(self) -> Embeddings:
