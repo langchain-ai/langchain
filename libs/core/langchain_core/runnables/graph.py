@@ -121,6 +121,8 @@ class Graph:
         self, data: Union[Type[BaseModel], RunnableType], id: Optional[str] = None
     ) -> Node:
         """Add a node to the graph and return it."""
+        if id is not None and id in self.nodes:
+            raise ValueError(f"Node with id {id} already exists")
         node = Node(id=id or self.next_id(), data=data)
         self.nodes[node.id] = node
         return node
