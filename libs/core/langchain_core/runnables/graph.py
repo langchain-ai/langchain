@@ -24,6 +24,7 @@ class Edge(NamedTuple):
 
     source: str
     target: str
+    data: Optional[str] = None
 
 
 class Node(NamedTuple):
@@ -104,6 +105,7 @@ class Graph:
                 {
                     "source": stable_node_ids[edge.source],
                     "target": stable_node_ids[edge.target],
+                    "data": edge.data,
                 }
                 for edge in self.edges
             ],
@@ -132,13 +134,13 @@ class Graph:
             if edge.source != node.id and edge.target != node.id
         ]
 
-    def add_edge(self, source: Node, target: Node) -> Edge:
+    def add_edge(self, source: Node, target: Node, data: Optional[str] = None) -> Edge:
         """Add an edge to the graph and return it."""
         if source.id not in self.nodes:
             raise ValueError(f"Source node {source.id} not in graph")
         if target.id not in self.nodes:
             raise ValueError(f"Target node {target.id} not in graph")
-        edge = Edge(source=source.id, target=target.id)
+        edge = Edge(source=source.id, target=target.id, data=data)
         self.edges.append(edge)
         return edge
 
