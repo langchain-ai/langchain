@@ -62,7 +62,7 @@ class Graph:
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
 
-    def to_json(self) -> Dict[str, List[Dict[str, str]]]:
+    def to_json(self) -> Dict[str, List[Dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format."""
         stable_node_ids = {node.id: i for i, node in enumerate(self.nodes.values())}
 

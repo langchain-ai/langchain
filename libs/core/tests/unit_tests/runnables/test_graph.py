@@ -191,7 +191,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "ChatMessage": {
                             "title": "ChatMessage",
-                            "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
+                            "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -226,7 +226,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "SystemMessage": {
                             "title": "SystemMessage",
-                            "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
+                            "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -260,7 +260,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "FunctionMessage": {
                             "title": "FunctionMessage",
-                            "description": "Message for passing the result of executing a function back to a model.",
+                            "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -294,7 +294,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "ToolMessage": {
                             "title": "ToolMessage",
-                            "description": "Message for passing the result of executing a tool back to a model.",
+                            "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "content": {

@@ -37,7 +37,11 @@ from typing_extensions import Literal, get_args
 
 from langchain_core._api import beta_decorator
 from langchain_core.load.dump import dumpd
-from langchain_core.load.serializable import Serializable, SerializedConstructor
+from langchain_core.load.serializable import (
+    Serializable,
+    SerializedConstructor,
+    SerializedNotImplemented,
+)
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -1630,7 +1634,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
 
-    def to_json(self) -> SerializedConstructor:
+    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         """Serialize the runnable to JSON."""
         dumped = super().to_json()
         try:

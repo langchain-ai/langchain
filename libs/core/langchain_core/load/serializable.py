@@ -1,5 +1,15 @@
 from abc import ABC
-from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    NotRequired,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
 
@@ -9,6 +19,7 @@ class BaseSerialized(TypedDict):
 
     lc: int
     id: List[str]
+    graph: NotRequired[Dict[str, Any]]
 
 
 class SerializedConstructor(BaseSerialized):
