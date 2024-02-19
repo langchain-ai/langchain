@@ -1,14 +1,14 @@
 from __future__ import annotations
-import os
 
+import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain_core.load.serializable import Serializable
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
+from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.utils.env import get_from_dict_or_env
@@ -19,13 +19,12 @@ PYDANTIC_V1 = get_pydantic_major_version() == 1
 
 
 def _stream_response_to_generation_chunk(
-    stream_response: Dict[str, Any]
+    stream_response: Dict[str, Any],
 ) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
     if stream_response["event"] == "token_sampled":
         return GenerationChunk(
-            text=stream_response["text"],
-            generation_info=stream_response["token"]
+            text=stream_response["text"], generation_info=stream_response["token"]
         )
     return GenerationChunk(text="")
 
@@ -43,7 +42,7 @@ class BaseFriendli(Serializable):
     friendli_token: Optional[SecretStr] = None
     # Friendli team ID to run as.
     friendli_team: Optional[str] = None
-    # Wheter to enable streaming mode.
+    # Whether to enable streaming mode.
     streaming: bool = False
     # Number between -2.0 and 2.0. Positive values penalizes tokens that have been
     # sampled, taking into account their frequency in the preceding text. This
@@ -79,7 +78,7 @@ class BaseFriendli(Serializable):
             import friendli
         except ImportError as e:
             raise ImportError(
-                "Could not import friendli-client python pacakge. "
+                "Could not import friendli-client python package. "
                 "Please install it with `pip install friendli-client`."
             ) from e
 
@@ -100,7 +99,7 @@ class BaseFriendli(Serializable):
 class Friendli(LLM, BaseFriendli):
     """Friendli LLM.
 
-    ``friendli-client`` package should be installed with `pip install friendli-client`. 
+    ``friendli-client`` package should be installed with `pip install friendli-client`.
     You must set ``FRIENDLI_TOKEN`` environment variable or provide the value of your
     personal access token for the ``friendli_token`` argument.
 
@@ -141,7 +140,7 @@ class Friendli(LLM, BaseFriendli):
         return "friendli"
 
     def _get_invocation_params(
-        self, stop: Optional[List[str]] = None, **kwargs
+        self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
         params = self._default_params
@@ -215,7 +214,7 @@ class Friendli(LLM, BaseFriendli):
         Example:
             .. code-block:: python
 
-                response = await frienldi("Give me a recipe for the Old Fashioned cocktail.")
+                response = await frienldi("Tell me a joke.")
         """
         params = self._get_invocation_params(stop=stop, **kwargs)
         completion = await self.async_client.completions.create(
@@ -286,9 +285,7 @@ class Friendli(LLM, BaseFriendli):
         Example:
             .. code-block:: python
 
-                response = frienldi.generate(
-                    ["Give me a recipe for the Old Fashioned cocktail."]
-                )
+                response = frienldi.generate(["Tell me a joke."])
         """
         llm_output = {"model": self.model}
         if self.streaming:

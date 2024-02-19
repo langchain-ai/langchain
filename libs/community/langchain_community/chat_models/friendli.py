@@ -49,7 +49,7 @@ def get_chat_request(messages: List[BaseMessage]) -> Dict[str, Any]:
     """Get a request of the Friendli chat API.
 
     Args:
-        messages (List[BaseMessage]): A list of messages comprising the conversation so far.
+        messages (List[BaseMessage]): Messages comprising the conversation so far.
 
     Returns:
         Dict[str, Any]: The request for the Friendli chat API.
@@ -65,7 +65,7 @@ def get_chat_request(messages: List[BaseMessage]) -> Dict[str, Any]:
 class ChatFriendli(BaseChatModel, BaseFriendli):
     """Friendli LLM for chat.
 
-    ``friendli-client`` package should be installed with `pip install friendli-client`. 
+    ``friendli-client`` package should be installed with `pip install friendli-client`.
     You must set ``FRIENDLI_TOKEN`` environment variable or provide the value of your
     personal access token for the ``friendli_token`` argument.
 
@@ -111,7 +111,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
         return "friendli-chat"
 
     def _get_invocation_params(
-        self, stop: Optional[List[str]] = None, **kwargs
+        self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
         params = self._default_params
