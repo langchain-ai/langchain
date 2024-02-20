@@ -476,7 +476,7 @@ def get_contributors(settings: Settings):
             score = _logistic(files_changed, 20) + _logistic(lines_changed, 100)
             contributor_scores[pr.author.login] += score
             three_months_ago = (datetime.now(timezone.utc) - timedelta(days=3*30))
-            if pr.createdAt is not None and datetime.fromisoformat(pr.createdAt) > three_months_ago:
+            if pr.createdAt > three_months_ago:
                 recent_contributor_scores[pr.author.login] += score
     return contributors, contributor_scores, recent_contributor_scores, reviewers, authors
 
