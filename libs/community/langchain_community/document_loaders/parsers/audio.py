@@ -13,10 +13,21 @@ logger = logging.getLogger(__name__)
 
 class OpenAIWhisperParser(BaseBlobParser):
     """Transcribe and parse audio files.
-    Audio transcription is with OpenAI Whisper model."""
+    Audio transcription is with OpenAI Whisper model.
 
-    def __init__(self, api_key: Optional[str] = None):
+    Parameters:
+    api_key - OpenAI API key
+    chunk_duration_threshold - minimum duration of a chunk in seconds
+        NOTE: According to the OpenAI API, the chunk duration should be at least 0.1
+        seconds. If the chunk duration is less or equal than the threshold,
+        it will be skipped.
+    """
+
+    def __init__(
+        self, api_key: Optional[str] = None, chunk_duration_threshold: float = 0.1
+    ):
         self.api_key = api_key
+        self.chunk_duration_threshold = chunk_duration_threshold
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -52,14 +63,13 @@ class OpenAIWhisperParser(BaseBlobParser):
         # Need to meet 25MB size limit for Whisper API
         chunk_duration = 20
         chunk_duration_ms = chunk_duration * 60 * 1000
-        chunk_duration_threshold = 0.1
 
         # Split the audio into chunk_duration_ms chunks
         for split_number, i in enumerate(range(0, len(audio), chunk_duration_ms)):
             # Audio chunk
             chunk = audio[i : i + chunk_duration_ms]
             # Skip chunks that are too short to transcribe
-            if chunk.duration_seconds <= chunk_duration_threshold:
+            if chunk.duration_seconds <= self.chunk_duration_threshold:
                 continue
             file_obj = io.BytesIO(chunk.export(format="mp3").read())
             if blob.source is not None:
