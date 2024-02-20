@@ -248,11 +248,14 @@ class PullRequestNode(BaseModel):
     number: int
     labels: Labels
     author: Union[Author, None] = None
+    changedFiles: int
+    additions: int
+    deletions: int
     title: str
     createdAt: datetime
     state: str
-    comments: Comments
     reviews: Reviews
+    # comments: Comments
 
 
 class PullRequestEdge(BaseModel):
