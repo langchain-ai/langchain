@@ -220,15 +220,13 @@ class AstraDBVectorStore(VectorStore):
             if metadata_indexing_include is not None:
                 return {
                     "allow": [
-                        f"metadata.{md_field}"
-                        for md_field in metadata_indexing_include
+                        f"metadata.{md_field}" for md_field in metadata_indexing_include
                     ]
                 }
             elif metadata_indexing_exclude is not None:
                 return {
                     "deny": [
-                        f"metadata.{md_field}"
-                        for md_field in metadata_indexing_exclude
+                        f"metadata.{md_field}" for md_field in metadata_indexing_exclude
                     ]
                 }
             elif collection_indexing_policy is not None:
