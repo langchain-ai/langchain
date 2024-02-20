@@ -1366,32 +1366,6 @@ ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 
 class AstraDBCache(BaseCache):
-    """
-    Cache that uses Astra DB as a backend.
-
-    It uses a single collection as a kv store
-    The lookup keys, combined in the _id of the documents, are:
-        - prompt, a string
-        - llm_string, a deterministic str representation of the model parameters.
-          (needed to prevent same-prompt-different-model collisions)
-
-    Args:
-        collection_name: name of the Astra DB collection to create/use.
-        token: API token for Astra DB usage.
-        api_endpoint: full URL to the API endpoint,
-            such as `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
-        astra_db_client: *alternative to token+api_endpoint*,
-            you can pass an already-created 'astrapy.db.AstraDB' instance.
-        async_astra_db_client: *alternative to token+api_endpoint*,
-            you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
-        namespace: namespace (aka keyspace) where the
-            collection is created. Defaults to the database's "default namespace".
-        setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or OFF).
-        pre_delete_collection: whether to delete the collection
-            before creating it. If False and the collection already exists,
-            the collection will be used as is.
-    """
-
     @staticmethod
     def _make_id(prompt: str, llm_string: str) -> str:
         return f"{_hash(prompt)}#{_hash(llm_string)}"
@@ -1408,6 +1382,32 @@ class AstraDBCache(BaseCache):
         pre_delete_collection: bool = False,
         setup_mode: SetupMode = SetupMode.SYNC,
     ):
+        """
+        Cache that uses Astra DB as a backend.
+
+        It uses a single collection as a kv store
+        The lookup keys, combined in the _id of the documents, are:
+            - prompt, a string
+            - llm_string, a deterministic str representation of the model parameters.
+              (needed to prevent same-prompt-different-model collisions)
+
+        Args:
+            collection_name: name of the Astra DB collection to create/use.
+            token: API token for Astra DB usage.
+            api_endpoint: full URL to the API endpoint,
+                such as `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
+            astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AstraDB' instance.
+            async_astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
+            namespace: namespace (aka keyspace) where the
+                collection is created. Defaults to the database's "default namespace".
+            setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or
+                OFF).
+            pre_delete_collection: whether to delete the collection
+                before creating it. If False and the collection already exists,
+                the collection will be used as is.
+        """
         self.astra_env = _AstraDBCollectionEnvironment(
             collection_name=collection_name,
             token=token,
@@ -1564,41 +1564,6 @@ def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
 
 
 class AstraDBSemanticCache(BaseCache):
-    """
-    Cache that uses Astra DB as a vector-store backend for semantic
-    (i.e. similarity-based) lookup.
-
-    It uses a single (vector) collection and can store
-    cached values from several LLMs, so the LLM's 'llm_string' is stored
-    in the document metadata.
-
-    You can choose the preferred similarity (or use the API default).
-    The default score threshold is tuned to the default metric.
-    Tune it carefully yourself if switching to another distance metric.
-
-    Args:
-        collection_name: name of the Astra DB collection to create/use.
-        token: API token for Astra DB usage.
-        api_endpoint: full URL to the API endpoint,
-            such as `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
-        astra_db_client: *alternative to token+api_endpoint*,
-            you can pass an already-created 'astrapy.db.AstraDB' instance.
-        async_astra_db_client: *alternative to token+api_endpoint*,
-            you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
-        namespace: namespace (aka keyspace) where the
-            collection is created. Defaults to the database's "default namespace".
-        setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or OFF).
-        pre_delete_collection: whether to delete the collection
-            before creating it. If False and the collection already exists,
-            the collection will be used as is.
-        embedding: Embedding provider for semantic
-                encoding and search.
-        metric: the function to use for evaluating similarity of text embeddings.
-            Defaults to 'cosine' (alternatives: 'euclidean', 'dot_product')
-        similarity_threshold: the minimum similarity
-            for accepting a (semantic-search) match.
-    """
-
     def __init__(
         self,
         *,
@@ -1614,6 +1579,40 @@ class AstraDBSemanticCache(BaseCache):
         metric: Optional[str] = None,
         similarity_threshold: float = ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD,
     ):
+        """
+        Cache that uses Astra DB as a vector-store backend for semantic
+        (i.e. similarity-based) lookup.
+
+        It uses a single (vector) collection and can store
+        cached values from several LLMs, so the LLM's 'llm_string' is stored
+        in the document metadata.
+
+        You can choose the preferred similarity (or use the API default).
+        The default score threshold is tuned to the default metric.
+        Tune it carefully yourself if switching to another distance metric.
+
+        Args:
+            collection_name: name of the Astra DB collection to create/use.
+            token: API token for Astra DB usage.
+            api_endpoint: full URL to the API endpoint,
+                such as `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
+            astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AstraDB' instance.
+            async_astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
+            namespace: namespace (aka keyspace) where the
+                collection is created. Defaults to the database's "default namespace".
+            setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or
+                OFF).
+            pre_delete_collection: whether to delete the collection
+                before creating it. If False and the collection already exists,
+                the collection will be used as is.
+            embedding: Embedding provider for semantic encoding and search.
+            metric: the function to use for evaluating similarity of text embeddings.
+                Defaults to 'cosine' (alternatives: 'euclidean', 'dot_product')
+            similarity_threshold: the minimum similarity for accepting a
+                (semantic-search) match.
+        """
         self.embedding = embedding
         self.metric = metric
         self.similarity_threshold = similarity_threshold
