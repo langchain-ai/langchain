@@ -1,5 +1,6 @@
 """Test Neo4j functionality."""
 import os
+from typing import List
 
 from langchain_community.vectorstores.neo4j_vector import (
     Neo4jVector,
@@ -57,7 +58,9 @@ def test_index_fetching() -> None:
     password = os.getenv("NEO4J_PASSWORD")
     embeddings = FakeEmbeddings()
 
-    def create_store(node_label, index, text_properties) -> Neo4jVector:
+    def create_store(
+        node_label: str, index: str, text_properties: List[str]
+    ) -> Neo4jVector:
         return Neo4jVector.from_existing_graph(
             embedding=embeddings,
             url=url,
@@ -69,7 +72,7 @@ def test_index_fetching() -> None:
             embedding_node_property="embedding",
         )
 
-    def fetch_store(index_name) -> Neo4jVector:
+    def fetch_store(index_name: str) -> Neo4jVector:
         store = Neo4jVector.from_existing_index(
             embedding=embeddings,
             url=url,
