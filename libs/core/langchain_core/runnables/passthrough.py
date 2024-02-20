@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, create_model
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -36,7 +36,11 @@ from langchain_core.runnables.config import (
     patch_config,
 )
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.utils import AddableDict, ConfigurableFieldSpec
+from langchain_core.runnables.utils import (
+    AddableDict,
+    ConfigurableFieldSpec,
+    create_model,
+)
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
 
