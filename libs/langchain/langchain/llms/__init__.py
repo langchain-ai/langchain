@@ -242,12 +242,6 @@ def _import_huggingface_pipeline() -> Any:
     return HuggingFacePipeline
 
 
-def _import_weight_only_pipeline() -> Any:
-    from langchain.llms.weight_only_quantization import WeightOnlyQuantPipeline
-
-    return WeightOnlyQuantPipeline
-
-
 def _import_huggingface_text_gen_inference() -> Any:
     from langchain_community.llms.huggingface_text_gen_inference import (
         HuggingFaceTextGenInference,
@@ -520,6 +514,14 @@ def _import_watsonxllm() -> Any:
     from langchain_community.llms.watsonxllm import WatsonxLLM
 
     return WatsonxLLM
+
+
+def _import_weight_only_pipeline() -> Any:
+    from langchain_community.llms.weight_only_quantization import (
+        WeightOnlyQuantPipeline
+    )
+
+    return WeightOnlyQuantPipeline
 
 
 def _import_writer() -> Any:
