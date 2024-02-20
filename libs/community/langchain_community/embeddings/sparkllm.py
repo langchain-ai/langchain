@@ -11,11 +11,11 @@ from wsgiref.handlers import format_date_time
 
 import numpy as np
 import requests
+from numpy import dtype, float_, ndarray
+
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from numpy import dtype, float_, floating, ndarray
-from numpy._typing import _64Bit
 
 # Used for document and knowledge embedding
 EMBEDDING_P_API_URL: str = "https://cn-huabei-1.xf-yun.com/v1/private/sa8a05c27"
