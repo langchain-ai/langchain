@@ -94,12 +94,12 @@ questions_category_id = "DIC_kwDOIPDwls4CS6Ve"
 # """
 
 prs_query = """
-query Q($after: String) {
-  repository(name: "langchain", owner: "langchain-ai") {
-    pullRequests(first: 100, after: $after, states: MERGED) {
-      edges {
-        cursor
-        node {
+query Q($after: String, $filter: String!) {
+  search(query: $filter, type: ISSUE, last: 100, after: $after) {
+    edges {
+      cursor
+      node {
+        ... on PullRequest {
           changedFiles
           additions
           deletions
@@ -263,20 +263,16 @@ class PullRequestEdge(BaseModel):
     node: PullRequestNode
 
 
-class PullRequests(BaseModel):
-    edges: List[PullRequestEdge]
+class PullRequestSearchResponse(BaseModel):
+    edges: PullRequestEdge
 
 
-class PRsRepository(BaseModel):
-    pullRequests: PullRequests
+class PullRequestSearchResponseData(BaseModel):
+    search: PullRequestSearchResponse
 
 
-class PRsResponseData(BaseModel):
-    repository: PRsRepository
-
-
-class PRsResponse(BaseModel):
-    data: PRsResponseData
+class PullRequestResponse(BaseModel):
+    data: PullRequestSearchResponseData
 
 
 class Settings(BaseSettings):
@@ -289,13 +285,14 @@ def get_graphql_response(
     *,
     settings: Settings,
     query: str,
+    filter: Union[str, None] = None,
     after: Union[str, None] = None,
     category_id: Union[str, None] = None,
 ) -> Dict[str, Any]:
     headers = {"Authorization": f"token {settings.input_token.get_secret_value()}"}
     # category_id is only used by one query, but GraphQL allows unused variables, so
     # keep it here for simplicity
-    variables = {"after": after, "category_id": category_id}
+    variables = {"after": after, "category_id": category_id, "filter": filter}
     response = httpx.post(
         github_graphql_url,
         headers=headers,
@@ -339,9 +336,15 @@ def get_graphql_response(
 
 
 def get_graphql_pr_edges(*, settings: Settings, after: Union[str, None] = None):
-    data = get_graphql_response(settings=settings, query=prs_query, after=after)
-    graphql_response = PRsResponse.model_validate(data)
-    return graphql_response.data.repository.pullRequests.edges
+    six_months_ago = (datetime.now() - timedelta(days=6*30)).strftime('%Y-%m-%d')
+    data = get_graphql_response(
+        settings=settings,
+        query=prs_query,
+        filter=f"repo:langchain-ai/langchain is:pr is:merged created:>{six_months_ago}",
+        after=after
+    )
+    graphql_response = PullRequestResponse.model_validate(data)
+    return graphql_response.data.search.edges
 
 
 # def get_issues_experts(settings: Settings):
