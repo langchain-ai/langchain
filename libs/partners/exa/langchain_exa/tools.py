@@ -7,7 +7,7 @@ from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: i
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.tools import BaseTool
 
 from langchain_exa._utilities import initialize_client
@@ -22,8 +22,8 @@ class ExaSearchResults(BaseTool):
         "Input should be an Exa-optimized query. "
         "Output is a JSON array of the query results"
     )
-    client: Exa
-    exa_api_key: SecretStr
+    client: Exa = Field(default=None)
+    exa_api_key: SecretStr = Field(default=None)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -51,8 +51,8 @@ class ExaSearchResults(BaseTool):
             return self.client.search_and_contents(
                 query,
                 num_results=num_results,
-                text=text_contents_options,
-                highlights=highlights,
+                text=text_contents_options,  # type: ignore
+                highlights=highlights,  # type: ignore
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
                 start_crawl_date=start_crawl_date,
@@ -60,7 +60,7 @@ class ExaSearchResults(BaseTool):
                 start_published_date=start_published_date,
                 end_published_date=end_published_date,
                 use_autoprompt=use_autoprompt,
-            )
+            )  # type: ignore
         except Exception as e:
             return repr(e)
 
@@ -74,8 +74,8 @@ class ExaFindSimilarResults(BaseTool):
         "Input should be an Exa-optimized query. "
         "Output is a JSON array of the query results"
     )
-    client: Exa
-    exa_api_key: SecretStr
+    client: Exa = Field(default=None)
+    exa_api_key: SecretStr = Field(default=None)
     exa_base_url: Optional[str] = None
 
     @root_validator(pre=True)
@@ -105,8 +105,8 @@ class ExaFindSimilarResults(BaseTool):
             return self.client.find_similar_and_contents(
                 url,
                 num_results=num_results,
-                text=text_contents_options,
-                highlights=highlights,
+                text=text_contents_options,  # type: ignore
+                highlights=highlights,  # type: ignore
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
                 start_crawl_date=start_crawl_date,
@@ -115,6 +115,6 @@ class ExaFindSimilarResults(BaseTool):
                 end_published_date=end_published_date,
                 exclude_source_domain=exclude_source_domain,
                 category=category,
-            )
+            )  # type: ignore
         except Exception as e:
             return repr(e)
