@@ -25,4 +25,18 @@ def collection() -> Collection:
 
 def test_initialization(collection: Collection, embedding_openai: Embeddings) -> None:
     """Test initialization of vector store class"""
-    MongoDBAtlasVectorSearch(collection, embedding_openai)
+    assert MongoDBAtlasVectorSearch(collection, embedding_openai)
+
+
+def test_init_from_connection_string(embedding_openai: Embeddings) -> None:
+    """Test initialization of vector store class"""
+    assert MongoDBAtlasVectorSearch.from_connection_string(
+        CONNECTION_STRING, NAMESPACE, embedding_openai
+    )
+
+
+def test_init_from_texts(collection: Collection, embedding_openai: Embeddings) -> None:
+    """Test from_texts operation on an empty list"""
+    assert MongoDBAtlasVectorSearch.from_texts(
+        [], embedding_openai, collection=collection
+    )
