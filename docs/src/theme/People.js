@@ -12,8 +12,12 @@ function renderPerson({ login, avatarUrl, url }) {
     );
 }
 
-export default function People({ type }) {
-    const html = (PeopleData[type] ?? []).map((person) => {
+export default function People({ type, count }) {
+    let people = PeopleData[type] ?? [];
+    if (count !== undefined) {
+      people = people.slice(0, parseInt(count, 10));
+    }
+    const html = people.map((person) => {
         return renderPerson(person);
     });
     return (

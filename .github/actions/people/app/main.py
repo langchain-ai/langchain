@@ -539,6 +539,7 @@ if __name__ == "__main__":
         "jacoblee93",
         "dqbd",
         "bracesproul",
+        "akira",
     }
     bot_names = {"dosubot", "github-actions", "CodiumAI-Agent"}
     maintainers = []
