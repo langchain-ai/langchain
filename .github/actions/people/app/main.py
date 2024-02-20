@@ -462,6 +462,7 @@ def get_contributors(settings: Settings):
         for reviewer in pr_reviewers:
             reviewers[reviewer] += 1
         if pr.author:
+            authors[pr.author.login] = pr.author
             contributors[pr.author.login] += 1
             files_changed = pr.changedFiles
             lines_changed = pr.additions + pr.deletions
