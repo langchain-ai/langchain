@@ -38,7 +38,7 @@ from typing_extensions import Literal, get_args
 from langchain_core._api import beta_decorator
 from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import BaseConfig, BaseModel, Field, create_model
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -65,6 +65,7 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_context,
     accepts_run_manager,
+    create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
     get_function_nonlocals,
@@ -93,10 +94,6 @@ if TYPE_CHECKING:
 
 
 Other = TypeVar("Other")
-
-
-class _SchemaConfig(BaseConfig):
-    arbitrary_types_allowed = True
 
 
 class Runnable(Generic[Input, Output], ABC):
@@ -186,7 +183,7 @@ class Runnable(Generic[Input, Output], ABC):
         def buggy_double(y: int) -> int:
             '''Buggy code that will fail 70% of the time'''
             if random.random() > 0.3:
-                print('This code failed, and will probably be retried!')
+                print('This code failed, and will probably be retried!')  # noqa: T201
                 raise ValueError('Triggered buggy code')
             return y * 2
 
@@ -301,7 +298,6 @@ class Runnable(Generic[Input, Output], ABC):
         return create_model(
             self.get_name("Input"),
             __root__=(root_type, None),
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -334,7 +330,6 @@ class Runnable(Generic[Input, Output], ABC):
         return create_model(
             self.get_name("Output"),
             __root__=(root_type, None),
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -371,7 +366,6 @@ class Runnable(Generic[Input, Output], ABC):
                     )
                     for spec in config_specs
                 },
-                __config__=_SchemaConfig,
             )
             if config_specs
             else None
@@ -379,7 +373,6 @@ class Runnable(Generic[Input, Output], ABC):
 
         return create_model(  # type: ignore[call-overload]
             self.get_name("Config"),
-            __config__=_SchemaConfig,
             **({"configurable": (configurable, None)} if configurable else {}),
             **{
                 field_name: (field_type, None)
@@ -1632,7 +1625,7 @@ class Runnable(Generic[Input, Output], ABC):
 
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
-    """A Runnable that can be serialized to JSON."""
+    """Runnable that can be serialized to JSON."""
 
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
@@ -1691,7 +1684,6 @@ def _seq_input_schema(
                     for k, v in next_input_schema.__fields__.items()
                     if k not in first.mapper.steps
                 },
-                __config__=_SchemaConfig,
             )
     elif isinstance(first, RunnablePick):
         return _seq_input_schema(steps[1:], config)
@@ -1724,7 +1716,6 @@ def _seq_output_schema(
                         for k, v in mapper_output_schema.__fields__.items()
                     },
                 },
-                __config__=_SchemaConfig,
             )
     elif isinstance(last, RunnablePick):
         prev_output_schema = _seq_output_schema(steps[:-1], config)
@@ -1738,21 +1729,19 @@ def _seq_output_schema(
                         for k, v in prev_output_schema.__fields__.items()
                         if k in last.keys
                     },
-                    __config__=_SchemaConfig,
                 )
             else:
                 field = prev_output_schema.__fields__[last.keys]
                 return create_model(  # type: ignore[call-overload]
                     "RunnableSequenceOutput",
                     __root__=(field.annotation, field.default),
-                    __config__=_SchemaConfig,
                 )
 
     return last.get_output_schema(config)
 
 
 class RunnableSequence(RunnableSerializable[Input, Output]):
-    """A sequence of runnables, where the output of each is the input of the next.
+    """Sequence of Runnables, where the output of each is the input of the next.
 
     RunnableSequence is the most important composition operator in LangChain as it is
     used in virtually every chain.
@@ -1764,7 +1753,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     The default implementations of `batch` and `abatch` utilize threadpools and
     asyncio gather and will be faster than naive invocation of invoke or ainvoke
-    for IO bound runnables.
+    for IO bound Runnables.
 
     Batching is implemented by invoking the batch method on each component of the
     RunnableSequence in order.
@@ -1826,8 +1815,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             chain = prompt | model | SimpleJsonOutputParser()
 
             async for chunk in chain.astream({'topic': 'colors'}):
-                print('-')
-                print(chunk, sep='', flush=True)
+                print('-')  # noqa: T201
+                print(chunk, sep='', flush=True)  # noqa: T201
     """
 
     # The steps are broken into first, middle and last, solely for type checking
@@ -2451,11 +2440,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
 
 class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
-    """A runnable that runs a mapping of runnables in parallel, and returns a mapping
+    """Runnable that runs a mapping of Runnables in parallel, and returns a mapping
     of their outputs.
 
     RunnableParallel is one of the two main composition primitives for the LCEL,
-    alongside RunnableSequence. It invokes runnables concurrently, providing the same
+    alongside RunnableSequence. It invokes Runnables concurrently, providing the same
     input to each.
 
     A RunnableParallel can be instantiated directly or by using a dict literal within a
@@ -2527,7 +2516,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             for chunk in runnable.stream({"topic": "bear"}):
                 for key in chunk:
                     output[key] = output[key] + chunk[key].content
-                print(output)
+                print(output)  # noqa: T201
     """
 
     steps: Mapping[str, Runnable[Input, Any]]
@@ -2598,7 +2587,6 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                     for k, v in step.get_input_schema(config).__fields__.items()
                     if k != "__root__"
                 },
-                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -2610,7 +2598,6 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return create_model(  # type: ignore[call-overload]
             self.get_name("Output"),
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -2882,7 +2869,7 @@ RunnableMap = RunnableParallel
 
 
 class RunnableGenerator(Runnable[Input, Output]):
-    """A runnable that runs a generator function.
+    """Runnable that runs a generator function.
 
     RunnableGenerators can be instantiated directly or by using a generator within
     a sequence.
@@ -3250,13 +3237,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 return create_model(
                     self.get_name("Input"),
                     **{item[1:-1]: (Any, None) for item in items},  # type: ignore
-                    __config__=_SchemaConfig,
                 )
             else:
                 return create_model(
                     self.get_name("Input"),
                     __root__=(List[Any], None),
-                    __config__=_SchemaConfig,
                 )
 
         if self.InputType != Any:
@@ -3266,7 +3251,6 @@ class RunnableLambda(Runnable[Input, Output]):
             return create_model(
                 self.get_name("Input"),
                 **{key: (Any, None) for key in dict_keys},  # type: ignore
-                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -3730,7 +3714,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
 
 class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
-    """A runnable that delegates calls to another runnable
+    """Runnable that delegates calls to another Runnable
     with each element of the input sequence.
 
     Use only if creating a new RunnableEach subclass with different __init__ args.
@@ -3756,7 +3740,6 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -3773,7 +3756,6 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[schema],  # type: ignore
                 None,
             ),
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -3838,13 +3820,13 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):
-    """A runnable that delegates calls to another runnable
+    """Runnable that delegates calls to another Runnable
     with each element of the input sequence.
 
     It allows you to call multiple inputs with the bounded Runnable.
 
     RunnableEach makes it easy to run multiple inputs for the runnable.
-    In the below example, we associate and run three three inputs
+    In the below example, we associate and run three inputs
     with a Runnable:
 
         .. code-block:: python
@@ -3862,7 +3844,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
             output = runnable_each.invoke([{'topic':'Computer Science'},
                                         {'topic':'Art'},
                                         {'topic':'Biology'}])
-            print(output)
+            print(output)  # noqa: T201
     """
 
     @classmethod
@@ -3910,7 +3892,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):
-    """A runnable that delegates calls to another runnable with a set of kwargs.
+    """Runnable that delegates calls to another Runnable with a set of kwargs.
 
     Use only if creating a new RunnableBinding subclass with different __init__ args.
 
@@ -4189,7 +4171,7 @@ RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
 
 
 class RunnableBinding(RunnableBindingBase[Input, Output]):
-    """Wrap a runnable with additional functionality.
+    """Wrap a Runnable with additional functionality.
 
     A RunnableBinding can be thought of as a "runnable decorator" that
     preserves the essential features of Runnable; i.e., batching, streaming,
@@ -4323,12 +4305,12 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             bound=self.bound,
             kwargs=self.kwargs,
             config=self.config,
-            custom_input_type=input_type
-            if input_type is not None
-            else self.custom_input_type,
-            custom_output_type=output_type
-            if output_type is not None
-            else self.custom_output_type,
+            custom_input_type=(
+                input_type if input_type is not None else self.custom_input_type
+            ),
+            custom_output_type=(
+                output_type if output_type is not None else self.custom_output_type
+            ),
         )
 
     def with_retry(self, **kwargs: Any) -> Runnable[Input, Output]:

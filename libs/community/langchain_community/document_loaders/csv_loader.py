@@ -90,7 +90,7 @@ class CSVLoader(BaseLoader):
     def __read_file(self, csvfile: TextIOWrapper) -> List[Document]:
         docs = []
 
-        csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
+        csv_reader = csv.DictReader(csvfile, **self.csv_args)
         for i, row in enumerate(csv_reader):
             try:
                 source = (
