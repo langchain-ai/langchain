@@ -2,7 +2,7 @@
 name = "rag-lancedb"
 version = "0.0.1"
 description = "RAG using LanceDB"
-authors = ["akash desai]
+authors = ['akash desai']
 readme = "README.md"
 
 [tool.poetry.dependencies]
