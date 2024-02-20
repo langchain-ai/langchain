@@ -8,7 +8,7 @@ import os
 import re
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast, Dict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 if TYPE_CHECKING:
     import gpudb
@@ -165,9 +165,17 @@ class _KineticaLlmFileContextParser:
     PARSER = re.compile(r"^<\|(?P<role>\w+)\|>\W*(?P<content>.*)$", re.DOTALL)
 
     @classmethod
+    def _removesuffix(cls, text: str, suffix: str) -> str:
+        if suffix and text.endswith(suffix):
+            return text[: -len(suffix)]
+        return text
+
+    @classmethod
     def parse_dialogue_file(cls, input_file: os.PathLike) -> Dict:
         path = Path(input_file)
-        schema = path.name.removesuffix(".txt")
+        # schema = path.name.removesuffix(".txt") python 3.9
+        schema = cls._removesuffix(path.name, ".txt")
+
         lines = open(input_file).read()
         return cls.parse_dialogue(lines, schema)
 
