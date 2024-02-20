@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock
 
-from langchain_community.tools.openai_dalle_image_generation import OpenAIDALLEImageGenerationTool
+from langchain_community.tools.openai_dalle_image_generation import (
+    OpenAIDALLEImageGenerationTool,
+)
 
 
 def test_generate_image() -> None:
