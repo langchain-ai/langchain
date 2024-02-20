@@ -13,40 +13,40 @@ def test_escaping_lucene() -> None:
     assert remove_lucene_chars("Hello+World") == "Hello World"
     assert remove_lucene_chars("Hello World\\") == "Hello World"
     assert (
-            remove_lucene_chars("It is the end of the world. Take shelter!")
-            == "It is the end of the world. Take shelter"
+        remove_lucene_chars("It is the end of the world. Take shelter!")
+        == "It is the end of the world. Take shelter"
     )
     assert (
-            remove_lucene_chars("It is the end of the world. Take shelter&&")
-            == "It is the end of the world. Take shelter"
+        remove_lucene_chars("It is the end of the world. Take shelter&&")
+        == "It is the end of the world. Take shelter"
     )
     assert (
-            remove_lucene_chars("Bill&&Melinda Gates Foundation")
-            == "Bill  Melinda Gates Foundation"
+        remove_lucene_chars("Bill&&Melinda Gates Foundation")
+        == "Bill  Melinda Gates Foundation"
     )
     assert (
-            remove_lucene_chars("It is the end of the world. Take shelter(&&)")
-            == "It is the end of the world. Take shelter"
+        remove_lucene_chars("It is the end of the world. Take shelter(&&)")
+        == "It is the end of the world. Take shelter"
     )
     assert (
-            remove_lucene_chars("It is the end of the world. Take shelter??")
-            == "It is the end of the world. Take shelter"
+        remove_lucene_chars("It is the end of the world. Take shelter??")
+        == "It is the end of the world. Take shelter"
     )
     assert (
-            remove_lucene_chars("It is the end of the world. Take shelter^")
-            == "It is the end of the world. Take shelter"
+        remove_lucene_chars("It is the end of the world. Take shelter^")
+        == "It is the end of the world. Take shelter"
     )
     assert (
-            remove_lucene_chars("It is the end of the world. Take shelter+")
-            == "It is the end of the world. Take shelter"
+        remove_lucene_chars("It is the end of the world. Take shelter+")
+        == "It is the end of the world. Take shelter"
     )
     assert (
-            remove_lucene_chars("It is the end of the world. Take shelter-")
-            == "It is the end of the world. Take shelter"
+        remove_lucene_chars("It is the end of the world. Take shelter-")
+        == "It is the end of the world. Take shelter"
     )
     assert (
-            remove_lucene_chars("It is the end of the world. Take shelter~")
-            == "It is the end of the world. Take shelter"
+        remove_lucene_chars("It is the end of the world. Take shelter~")
+        == "It is the end of the world. Take shelter"
     )
 
 
@@ -81,11 +81,11 @@ def test_index_fetching() -> None:
 
     # create index 0
     index_0_str = "index0"
-    create_store('label0', index_0_str, ['text'])
+    create_store("label0", index_0_str, ["text"])
 
     # create index 1
     index_1_str = "index1"
-    create_store('label1', index_1_str, ['text'])
+    create_store("label1", index_1_str, ["text"])
 
     index_1_store = fetch_store(index_1_str)
     assert index_1_store.index_name == index_1_str
