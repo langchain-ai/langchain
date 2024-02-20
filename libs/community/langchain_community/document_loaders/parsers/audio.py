@@ -24,7 +24,7 @@ class OpenAIWhisperParser(BaseBlobParser):
     """
 
     def __init__(
-        self, api_key: Optional[str] = None, chunk_duration_threshold: float = 0.1
+        self, api_key: Optional[str] = None, *, chunk_duration_threshold: float = 0.1
     ):
         self.api_key = api_key
         self.chunk_duration_threshold = chunk_duration_threshold
