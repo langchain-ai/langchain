@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime
 from time import mktime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 from wsgiref.handlers import format_date_time
 
@@ -14,6 +14,8 @@ import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from numpy import dtype, float_, floating, ndarray
+from numpy._typing import _64Bit
 
 # Used for document and knowledge embedding
 EMBEDDING_P_API_URL: str = "https://cn-huabei-1.xf-yun.com/v1/private/sa8a05c27"
@@ -33,6 +35,14 @@ EMBEDDING_Q_API_URL: str = "https://cn-huabei-1.xf-yun.com/v1/private/s50d55a16"
 logger = logging.getLogger(__name__)
 
 
+class Url:
+    def __init__(self, host: str, path: str, schema: str) -> None:
+        self.host = host
+        self.path = path
+        self.schema = schema
+        pass
+
+
 class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     """SparkLLM Text Embedding models."""
 
@@ -41,30 +51,34 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     spark_api_secret: SecretStr
 
     @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(self, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
-        cls.spark_app_id = convert_to_secret_str(
+        self.spark_app_id = convert_to_secret_str(
             get_from_dict_or_env(values, "spark_app_id", "SPARK_APP_ID")
         )
-        cls.spark_api_key = convert_to_secret_str(
+        self.spark_api_key = convert_to_secret_str(
             get_from_dict_or_env(values, "spark_api_key", "SPARK_API_KEY")
         )
-        cls.spark_api_secret = convert_to_secret_str(
+        self.spark_api_secret = convert_to_secret_str(
             get_from_dict_or_env(values, "spark_api_secret", "SPARK_API_SECRET")
         )
         return values
 
     def _embed(self, texts: List[str], host: str) -> Optional[List[List[float]]]:
         url = self._assemble_ws_auth_url(
+            request_url=host,
             method="POST",
             api_key=self.spark_api_key.get_secret_value(),
             api_secret=self.spark_api_secret.get_secret_value(),
         )
-        content = self._get_body(texts)
+        content = self._get_body(self.spark_app_id.get_secret_value(), texts)
         response = requests.post(
             url, json=content, headers={"content-type": "application/json"}
         ).text
-        return self._parser_message()
+        res_arr = self._parser_message(response)
+        if res_arr is not None:
+            return res_arr.tolist()
+        return None
 
     def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
         """Public method to get embeddings for a list of documents.
@@ -90,7 +104,9 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         return result[0] if result is not None else None
 
     @staticmethod
-    def _assemble_ws_auth_url(request_url, method="GET", api_key="", api_secret=""):
+    def _assemble_ws_auth_url(
+        request_url: str, method: str = "GET", api_key: str = "", api_secret: str = ""
+    ) -> str:
         u = SparkLLMTextEmbeddings._parse_url(request_url)
         host = u.host
         path = u.path
@@ -104,10 +120,10 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
             signature_origin.encode("utf-8"),
             digestmod=hashlib.sha256,
         ).digest()
-        signature_sha = base64.b64encode(signature_sha).decode(encoding="utf-8")
+        signature_sha_str = base64.b64encode(signature_sha).decode(encoding="utf-8")
         authorization_origin = (
             'api_key="%s", algorithm="%s", headers="%s", signature="%s"'
-            % (api_key, "hmac-sha256", "host date request-line", signature_sha)
+            % (api_key, "hmac-sha256", "host date request-line", signature_sha_str)
         )
         authorization = base64.b64encode(authorization_origin.encode("utf-8")).decode(
             encoding="utf-8"
@@ -117,7 +133,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         return request_url + "?" + urlencode(values)
 
     @staticmethod
-    def _parse_url(request_url):
+    def _parse_url(request_url: str) -> Url:
         stidx = request_url.index("://")
         host = request_url[stidx + 3 :]
         schema = request_url[: stidx + 3]
@@ -130,7 +146,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         return u
 
     @staticmethod
-    def _get_body(appid, text):
+    def _get_body(appid: str, text: List[str]) -> Dict[str, Any]:
         body = {
             "header": {"app_id": appid, "uid": "39769795890", "status": 3},
             "parameter": {"emb": {"feature": {"encoding": "utf8"}}},
@@ -143,7 +159,9 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         return body
 
     @staticmethod
-    def _parser_message(message):
+    def _parser_message(
+        message: str,
+    ) -> ndarray[Any, dtype[floating[_64Bit] | float_]] | None:
         data = json.loads(message)
         code = data["header"]["code"]
         if code != 0:
@@ -163,13 +181,5 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
 
 
 class AssembleHeaderException(Exception):
-    def __init__(self, msg):
+    def __init__(self, msg: str) -> None:
         self.message = msg
-
-
-class Url:
-    def __init__(self, host, path, schema):
-        self.host = host
-        self.path = path
-        self.schema = schema
-        pass
