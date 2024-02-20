@@ -36,9 +36,9 @@ logger = logging.getLogger(__name__)
 class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     """SparkLLM Text Embedding models."""
 
-    spark_app_id: Optional[SecretStr] = None
-    spark_api_key: Optional[SecretStr] = None
-    spark_api_secret: Optional[SecretStr] = None
+    spark_app_id: SecretStr
+    spark_api_key: SecretStr
+    spark_api_secret: SecretStr
 
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -55,17 +55,16 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         return values
 
     def _embed(self, texts: List[str], host: str) -> Optional[List[List[float]]]:
-        url = assemble_ws_auth_url(
-            host,
+        url = self._assemble_ws_auth_url(
             method="POST",
             api_key=self.spark_api_key.get_secret_value(),
             api_secret=self.spark_api_secret.get_secret_value(),
         )
-        content = get_body(self.spark_app_id.get_secret_value(), texts)
+        content = self._get_body(texts)
         response = requests.post(
             url, json=content, headers={"content-type": "application/json"}
         ).text
-        return parser_message(response)
+        return self._parser_message()
 
     def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
         """Public method to get embeddings for a list of documents.
@@ -90,53 +89,77 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         result = self._embed([text], EMBEDDING_Q_API_URL)
         return result[0] if result is not None else None
 
+    @staticmethod
+    def _assemble_ws_auth_url(request_url, method="GET", api_key="", api_secret=""):
+        u = SparkLLMTextEmbeddings._parse_url(request_url)
+        host = u.host
+        path = u.path
+        now = datetime.now()
+        date = format_date_time(mktime(now.timetuple()))
+        signature_origin = "host: {}\ndate: {}\n{} {} HTTP/1.1".format(
+            host, date, method, path
+        )
+        signature_sha = hmac.new(
+            api_secret.encode("utf-8"),
+            signature_origin.encode("utf-8"),
+            digestmod=hashlib.sha256,
+        ).digest()
+        signature_sha = base64.b64encode(signature_sha).decode(encoding="utf-8")
+        authorization_origin = (
+                'api_key="%s", algorithm="%s", headers="%s", signature="%s"'
+                % (api_key, "hmac-sha256", "host date request-line", signature_sha)
+        )
+        authorization = base64.b64encode(authorization_origin.encode("utf-8")).decode(
+            encoding="utf-8"
+        )
+        values = {"host": host, "date": date, "authorization": authorization}
 
-def assemble_ws_auth_url(request_url, method="GET", api_key="", api_secret=""):
-    u = parse_url(request_url)
-    host = u.host
-    path = u.path
-    now = datetime.now()
-    date = format_date_time(mktime(now.timetuple()))
-    signature_origin = "host: {}\ndate: {}\n{} {} HTTP/1.1".format(
-        host, date, method, path
-    )
-    signature_sha = hmac.new(
-        api_secret.encode("utf-8"),
-        signature_origin.encode("utf-8"),
-        digestmod=hashlib.sha256,
-    ).digest()
-    signature_sha = base64.b64encode(signature_sha).decode(encoding="utf-8")
-    authorization_origin = (
-        'api_key="%s", algorithm="%s", headers="%s", signature="%s"'
-        % (api_key, "hmac-sha256", "host date request-line", signature_sha)
-    )
-    authorization = base64.b64encode(authorization_origin.encode("utf-8")).decode(
-        encoding="utf-8"
-    )
-    values = {"host": host, "date": date, "authorization": authorization}
+        return request_url + "?" + urlencode(values)
 
-    return request_url + "?" + urlencode(values)
+    @staticmethod
+    def _parse_url(request_url):
+        stidx = request_url.index("://")
+        host = request_url[stidx + 3:]
+        schema = request_url[: stidx + 3]
+        edidx = host.index("/")
+        if edidx <= 0:
+            raise AssembleHeaderException("invalid request url:" + request_url)
+        path = host[edidx:]
+        host = host[:edidx]
+        u = Url(host, path, schema)
+        return u
 
+    @staticmethod
+    def _get_body(appid, text):
+        body = {
+            "header": {"app_id": appid, "uid": "39769795890", "status": 3},
+            "parameter": {"emb": {"feature": {"encoding": "utf8"}}},
+            "payload": {
+                "messages": {
+                    "text": base64.b64encode(json.dumps(text).encode("utf-8")).decode()
+                }
+            },
+        }
+        return body
 
-# calculate sha256 and encode to base64
-def sha256base64(data):
-    sha256 = hashlib.sha256()
-    sha256.update(data)
-    digest = base64.b64encode(sha256.digest()).decode(encoding="utf-8")
-    return digest
-
-
-def parse_url(request_url):
-    stidx = request_url.index("://")
-    host = request_url[stidx + 3 :]
-    schema = request_url[: stidx + 3]
-    edidx = host.index("/")
-    if edidx <= 0:
-        raise AssembleHeaderException("invalid request url:" + request_url)
-    path = host[edidx:]
-    host = host[:edidx]
-    u = Url(host, path, schema)
-    return u
+    @staticmethod
+    def _parser_message(message):
+        data = json.loads(message)
+        code = data["header"]["code"]
+        if code != 0:
+            logger.warning(f"Request error: {code}, {data}")
+            return None
+        else:
+            text_base = data["payload"]["feature"]["text"]
+            text_data = base64.b64decode(text_base)
+            dt = np.dtype(np.float32)
+            dt = dt.newbyteorder("<")
+            text = np.frombuffer(text_data, dtype=dt)
+            if len(text) > 2560:
+                array = text[:2560]
+            else:
+                array = text
+            return array
 
 
 class AssembleHeaderException(Exception):
@@ -145,40 +168,8 @@ class AssembleHeaderException(Exception):
 
 
 class Url:
-    def __init__(this, host, path, schema):
-        this.host = host
-        this.path = path
-        this.schema = schema
+    def __init__(self, host, path, schema):
+        self.host = host
+        self.path = path
+        self.schema = schema
         pass
-
-
-def get_body(appid, text):
-    body = {
-        "header": {"app_id": appid, "uid": "39769795890", "status": 3},
-        "parameter": {"emb": {"feature": {"encoding": "utf8"}}},
-        "payload": {
-            "messages": {
-                "text": base64.b64encode(json.dumps(text).encode("utf-8")).decode()
-            }
-        },
-    }
-    return body
-
-
-def parser_message(message):
-    data = json.loads(message)
-    code = data["header"]["code"]
-    if code != 0:
-        logger.warning(f"Request error: {code}, {data}")
-        return None
-    else:
-        text_base = data["payload"]["feature"]["text"]
-        text_data = base64.b64decode(text_base)
-        dt = np.dtype(np.float32)
-        dt = dt.newbyteorder("<")
-        text = np.frombuffer(text_data, dtype=dt)
-        if len(text) > 2560:
-            array = text[:2560]
-        else:
-            array = text
-        return array
