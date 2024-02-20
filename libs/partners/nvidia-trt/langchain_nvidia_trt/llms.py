@@ -218,7 +218,6 @@ class TritonTensorRTLLM(BaseLLM):
         result_queue = StreamingResponseGenerator(
             self,
             request_id,
-            signal_stop=False,
             stop_words=stop_words,
         )
 
@@ -302,32 +301,6 @@ class TritonTensorRTLLM(BaseLLM):
         ]
         return inputs
 
-    def _send_stop_signals(self, model_name: str, request_id: str) -> None:
-        """Send the stop signal to the Triton Inference server."""
-        stop_inputs = self._generate_stop_signals()
-        self.client.async_stream_infer(
-            model_name,
-            stop_inputs,
-            request_id=request_id,
-            parameters={"Streaming": True},
-        )
-
-    def _generate_stop_signals(
-        self,
-    ) -> List[grpcclient.InferInput]:
-        """Generate the signal to stop the stream."""
-        inputs = [
-            grpcclient.InferInput("input_ids", [1, 1], "INT32"),
-            grpcclient.InferInput("input_lengths", [1, 1], "INT32"),
-            grpcclient.InferInput("request_output_len", [1, 1], "UINT32"),
-            grpcclient.InferInput("stop", [1, 1], "BOOL"),
-        ]
-        inputs[0].set_data_from_numpy(np.empty([1, 1], dtype=np.int32))
-        inputs[1].set_data_from_numpy(np.zeros([1, 1], dtype=np.int32))
-        inputs[2].set_data_from_numpy(np.array([[0]], dtype=np.uint32))
-        inputs[3].set_data_from_numpy(np.array([[True]], dtype="bool"))
-        return inputs
-
     @staticmethod
     def _process_result(result: Dict[str, str]) -> str:
         """Post-process the result from the server."""
@@ -370,11 +343,9 @@ class TritonTensorRTLLM(BaseLLM):
                 result_queue.put(None)
 
     def stop_stream(
-        self, model_name: str, request_id: str, signal: bool = True
+        self, model_name: str, request_id: str
     ) -> None:
         """Close the streaming connection."""
-        if signal:
-            self._send_stop_signals(model_name, request_id)
         self.client.stop_stream()
 
 
@@ -385,14 +356,12 @@ class StreamingResponseGenerator(queue.Queue):
         self,
         llm: TritonTensorRTLLM,
         request_id: str,
-        signal_stop: bool,
         stop_words: Sequence[str],
     ) -> None:
         """Instantiate the generator class."""
         super().__init__()
         self.llm = llm
         self.request_id = request_id
-        self._signal_stop = signal_stop
         self._stop_words = stop_words
 
     def __iter__(self) -> StreamingResponseGenerator:
@@ -404,7 +373,7 @@ class StreamingResponseGenerator(queue.Queue):
         val = self.get()
         if val is None or val in self._stop_words:
             self.llm.stop_stream(
-                self.llm.model_name, self.request_id, signal=self._signal_stop
+                self.llm.model_name, self.request_id
             )
             raise StopIteration()
         return val
