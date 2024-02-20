@@ -1,6 +1,7 @@
 ##
 # Copyright (c) 2024, Chad Juliano, Kinetica DB Inc.
 ##
+"""Kinetica SQL generation LLM API."""
 
 import json
 import logging
@@ -12,7 +13,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 if TYPE_CHECKING:
     import gpudb
-    import pandas as pd
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -159,7 +159,7 @@ class _KdtCompletionResponse(BaseModel):
 
 
 class _KineticaLlmFileContextParser:
-    """Parse a Kinetica LLM context datafile."""
+    """Parser for Kinetica LLM context datafiles."""
 
     # parse line into a dict containing role and content
     PARSER = re.compile(r"^<\|(?P<role>\w+)\|>\W*(?P<content>.*)$", re.DOTALL)
@@ -222,20 +222,29 @@ class _KineticaLlmFileContextParser:
         return {"schema": schema, "system": system, "messages": messages}
 
 
-class KineticaChatLLM(BaseChatModel):
-    """Kinetica LLM Chat Model"""
-
-    kdbc: Any = None
-    """ Kinetica DB connection. """
+class KineticaUtil:
+    """Kinetica utility functions."""
 
     @classmethod
-    def _create_kdbc(
+    def create_kdbc(
         cls,
         url: Optional[str] = None,
         user: Optional[str] = None,
         passwd: Optional[str] = None,
     ) -> "gpudb.GPUdb":
-        """Create a Kinetica DB connection."""
+        """Create a connectica connection object and verify connectivity.
+
+        If None is passed for one or more of the parameters then an attempt will be made
+        to retrieve the value from the related environment variable.
+
+        Args:
+            url: The Kinetica URL or ``KINETICA_URL`` if None.
+            user: The Kinetica user or ``KINETICA_USER`` if None.
+            passwd: The Kinetica password or ``KINETICA_PASSWD`` if None.
+
+        Returns:
+            The Kinetica connection object.
+        """
 
         try:
             import gpudb
@@ -279,13 +288,63 @@ class KineticaChatLLM(BaseChatModel):
             f"Parameter was not passed and not found in the environment: {name}"
         )
 
+
+class KineticaChatLLM(BaseChatModel):
+    """Kinetica LLM Chat Model API.
+
+    Prerequisites for using this API:
+    * The ``gpudb`` and ``typeguard`` packages installed.
+    * A Kinetica DB instance.
+    * Kinetica host specified in ``KINETICA_URL``
+    * Kinetica login specified ``KINETICA_USER``, and ``KINETICA_PASSWD``.
+    * An LLM context that specifies the tables and samples to use for inferencing.
+
+    This API is intended to interact with the Kinetica SqlAssist LLM that supports
+    generation of SQL from natural language.
+
+    In the Kinetica LLM workflow you create an LLM context in the database that provides
+    information needed for infefencing that includes tables, annotations, rules, and
+    samples. Invoking ``load_messages_from_context()`` will retrieve the contxt
+    information from the database so that it can be used to create a chat prompt.
+
+    The chat prompt consists of a ``SystemMessage`` and pairs of
+    ``HumanMessage``/``AIMessage`` that contain the samples which are question/SQL
+    pairs. You can append pairs samples to this list but it is not intended to
+    facilitate a typical natural language conversation.
+
+    When you create a chain from the chat prompt and execute it, the Kinetica LLM will
+    generate SQL from the input. Optionally you can use ``KineticaSqlOutputParser`` to
+    execute the SQL and return the result as a dataframe.
+
+    The following example creates an LLM using the environment variables for the
+    Kinetica connection. This will fail if the API is unable to connect to the database.
+
+    Example:
+        .. code-block:: python
+            from langchain_community.chat_models.kinetica import KineticaChatLLM
+            kinetica_llm = KineticaChatLLM()
+
+    If you prefer to pass connection information directly then you can create a
+    connection using ``KineticaUtil.create_kdbc()``.
+
+    Example:
+        .. code-block:: python
+            from langchain_community.chat_models.kinetica import (
+                KineticaChatLLM, KineticaUtil)
+            kdbc = KineticaUtil._create_kdbc(url=url, user=user, passwd=passwd)
+            kinetica_llm = KineticaChatLLM(kdbc=kdbc)
+    """
+
+    kdbc: Any = Field(exclude=True)
+    """ Kinetica DB connection. """
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Pydantic object validator."""
 
         kdbc = values.get("kdbc", None)
         if kdbc is None:
-            kdbc = cls._create_kdbc()
+            kdbc = KineticaUtil.create_kdbc()
             values["kdbc"] = kdbc
         return values
 
@@ -329,7 +388,20 @@ class KineticaChatLLM(BaseChatModel):
         )
 
     def load_messages_from_context(self, context_name: str) -> List:
-        """Load a lanchain prompt from a Kinetica context."""
+        """Load a lanchain prompt from a Kinetica context.
+
+        A Kinetica Context is an object created with the Kinetica Workbench UI or with
+        SQL syntax. This function will convert the data in the context to a list of
+        messages that can be used as a prompt. The messages will contain a
+        ``SystemMessage`` followed by pairs of ``HumanMessage``/``AIMessage`` that
+        contain the samples.
+
+        Args:
+            context_name: The name of an LLM context in the databse.
+
+        Returns:
+            A list of messages containing the information from the context.
+        """
 
         # query kinetica for the prompt
         sql = f"GENERATE PROMPT WITH OPTIONS (CONTEXT_NAMES = '{context_name}')"
@@ -453,10 +525,18 @@ class KineticaChatLLM(BaseChatModel):
 
 
 class KineticaSqlResponse(BaseModel):
-    """Response containing SQL and the fetched data."""
+    """Response containing SQL and the fetched data.
 
-    sql: str = Field(description="Result SQL")
-    dataframe: "pd.DataFrame" = Field(description="Result Data")
+    This object is retuned by a chain with ``KineticaSqlOutputParser`` and it contains
+    the generated SQL and related Pandas Dataframe fetched from the database.
+    """
+
+    sql: str = Field(default=None)
+    """The generated SQL."""
+
+    # dataframe: "pd.DataFrame" = Field(default=None)
+    dataframe: Any = Field(default=None)
+    """The Pandas dataframe containing the fetched data."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -465,7 +545,35 @@ class KineticaSqlResponse(BaseModel):
 
 
 class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
-    """Fetch and return data from the Kinetica LLM."""
+    """Fetch and return data from the Kinetica LLM.
+
+    This object is used as the last element of a chain to execute generated SQL and it
+    will output a ``KineticaSqlResponse`` containing the SQL and a pandas dataframe with
+    the fetched data.
+
+    Example:
+        .. code-block:: python
+            from langchain_community.chat_models.kinetica import (
+                KineticaChatLLM, KineticaSqlOutputParser)
+            kinetica_llm = KineticaChatLLM()
+
+            # create chain
+            ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
+            ctx_messages.append(("human", "{input}"))
+            prompt_template = ChatPromptTemplate.from_messages(ctx_messages)
+            chain = (
+                prompt_template
+                | kinetica_llm
+                | KineticaSqlOutputParser(kdbc=kinetica_llm.kdbc)
+            )
+            sql_response: KineticaSqlResponse = chain.invoke(
+                {"input": "What are the female users ordered by username?"}
+            )
+
+            assert isinstance(sql_response, KineticaSqlResponse)
+            LOG.info(f"SQL Response: {sql_response.sql}")
+            assert isinstance(sql_response.dataframe, pd.DataFrame)
+    """
 
     kdbc: Any = Field(exclude=True)
     """ Kinetica DB connection. """

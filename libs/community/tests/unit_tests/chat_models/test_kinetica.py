@@ -6,7 +6,7 @@ from typing import Any
 
 from langchain_core.messages import AIMessage
 
-from langchain_community.chat_models.kinetica import KineticaChatLLM
+from langchain_community.chat_models.kinetica import KineticaChatLLM, KineticaUtil
 
 LOG = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class TestKineticaChatLLM:
         def patch_kdbc() -> None:
             return None
 
-        monkeypatch.setattr(KineticaChatLLM, "_create_kdbc", patch_kdbc)
+        monkeypatch.setattr(KineticaUtil, "create_kdbc", patch_kdbc)
 
         def patch_execute_sql(*args: Any, **kwargs: Any) -> dict:
             return dict(Prompt=self.test_ctx_json)

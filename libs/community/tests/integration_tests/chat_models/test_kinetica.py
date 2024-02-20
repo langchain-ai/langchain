@@ -16,6 +16,7 @@ from langchain_community.chat_models.kinetica import (
     KineticaChatLLM,
     KineticaSqlOutputParser,
     KineticaSqlResponse,
+    KineticaUtil,
 )
 
 if TYPE_CHECKING:
@@ -34,6 +35,20 @@ def vcr_config() -> dict:
 
 
 class TestKineticaChatLLM:
+    """Integration tests for `Kinetica` chat models.
+
+    You must have `gpudb`, `typeguard`, and `faker` packages installed to run these
+    tests. pytest-vcr cassettes are provided for offline testing.
+
+    For more information see https://docs.kinetica.com/7.1/sql-gpt/concepts/.
+
+    These integration tests follow a workflow: 1. The `test_setup()` will create a table
+    with fake user profiles and and a related LLM context for the table. 2. The LLM
+    context is retrieved from the DB and used to create a chat prompt template. 3. A
+    chain is constructed from the chat prompt template. 4. The chain is executed to
+    generate the SQL and execute the query.
+    """
+
     table_name = "demo.test_profiles"
     context_name = "demo.test_llm_ctx"
     num_records = 100
@@ -41,16 +56,16 @@ class TestKineticaChatLLM:
     @classmethod
     @pytest.mark.vcr()
     def test_setup(cls) -> "gpudb.GPUdb":
-        """Create the connection and test resources."""
+        """Create the connection, test table, and LLM context."""
 
-        kdbc = KineticaChatLLM._create_kdbc()
+        kdbc = KineticaUtil.create_kdbc()
         cls._create_test_table(kdbc, cls.table_name, cls.num_records)
         cls._create_llm_context(kdbc, cls.context_name)
         return kdbc
 
     @pytest.mark.vcr()
-    def test_connect_kdbc(self) -> None:
-        """Verify DB connection."""
+    def test_create_llm(self) -> None:
+        """Create an LLM instance."""
         import gpudb
 
         kinetica_llm = KineticaChatLLM()
@@ -61,7 +76,7 @@ class TestKineticaChatLLM:
 
     @pytest.mark.vcr()
     def test_load_context(self) -> None:
-        """Load the context from the DB."""
+        """Load the LLM context from the DB."""
         kinetica_llm = KineticaChatLLM()
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
 
@@ -91,7 +106,7 @@ class TestKineticaChatLLM:
 
     @pytest.mark.vcr()
     def test_full_chain(self) -> None:
-        """Generate SQL from a chain and return the resulting data."""
+        """Generate SQL from a chain and execute the query."""
         kinetica_llm = KineticaChatLLM()
 
         # create chain
@@ -107,9 +122,9 @@ class TestKineticaChatLLM:
             {"input": "What are the female users ordered by username?"}
         )
 
-        LOG.info(f"SQL Response: {sql_response.sql}")
         assert isinstance(sql_response, KineticaSqlResponse)
-
+        LOG.info(f"SQL Response: {sql_response.sql}")
+        assert isinstance(sql_response.dataframe, pd.DataFrame)
         users = sql_response.dataframe["username"]
         assert users[0] == "alexander40"
 
