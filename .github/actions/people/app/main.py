@@ -466,7 +466,7 @@ def get_contributors(settings: Settings):
             contributors[pr.author.login] += 1
             files_changed = pr.changedFiles
             lines_changed = pr.additions + pr.deletions
-            contributor_scores[pr.author.login] += _logistic(files_changed, 5) + _logistic(lines_changed, 100)
+            contributor_scores[pr.author.login] += _logistic(files_changed, 20) + _logistic(lines_changed, 100)
     return contributors, contributor_scores, reviewers, authors
 
 
