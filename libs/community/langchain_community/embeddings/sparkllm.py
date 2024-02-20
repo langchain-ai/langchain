@@ -106,8 +106,8 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         ).digest()
         signature_sha = base64.b64encode(signature_sha).decode(encoding="utf-8")
         authorization_origin = (
-                'api_key="%s", algorithm="%s", headers="%s", signature="%s"'
-                % (api_key, "hmac-sha256", "host date request-line", signature_sha)
+            'api_key="%s", algorithm="%s", headers="%s", signature="%s"'
+            % (api_key, "hmac-sha256", "host date request-line", signature_sha)
         )
         authorization = base64.b64encode(authorization_origin.encode("utf-8")).decode(
             encoding="utf-8"
@@ -119,7 +119,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     @staticmethod
     def _parse_url(request_url):
         stidx = request_url.index("://")
-        host = request_url[stidx + 3:]
+        host = request_url[stidx + 3 :]
         schema = request_url[: stidx + 3]
         edidx = host.index("/")
         if edidx <= 0:
