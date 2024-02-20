@@ -409,10 +409,6 @@
       "destination": "/docs/integrations/providers/"
     },
     {
-      "source": "/docs/integrations/platforms",
-      "destination": "/docs/integrations/providers/"
-    },
-    {
       "source": "/docs/integrations/platforms(/?)",
       "destination": "/docs/integrations/providers/"
     },
