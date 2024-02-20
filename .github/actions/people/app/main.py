@@ -491,7 +491,7 @@ def get_top_users(
     skip_users: Container[str],
 ):
     users = []
-    for commentor, count in counter.most_common(60):
+    for commentor, count in counter.most_common():
         if commentor in skip_users:
             continue
         if count >= min_count:
@@ -555,7 +555,6 @@ if __name__ == "__main__":
 
     # min_count_expert = 10
     # min_count_last_month = 3
-    min_count_contributor = 4
     min_score_contributor = 1
     min_count_reviewer = 4
     skip_users = maintainers_logins | bot_names | hidden_logins
@@ -576,7 +575,7 @@ if __name__ == "__main__":
         min_count=min_score_contributor,
         authors=authors,
         skip_users=skip_users,
-    )[:20]
+    )
     top_contributors = get_top_users(
         counter=contributor_scores,
         min_count=min_score_contributor,
