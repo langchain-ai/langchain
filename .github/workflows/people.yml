@@ -1,8 +1,8 @@
 name: LangChain People
 
 on:
-  # schedule:
-  #   - cron: "0 14 1 * *"
+  schedule:
+    - cron: "0 14 1 * *"
   push:
     branches: [jacob/people]
   workflow_dispatch:

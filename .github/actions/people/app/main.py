@@ -612,7 +612,7 @@ if __name__ == "__main__":
     message = "👥 Update LangChain people data"
     result = subprocess.run(["git", "commit", "-m", message], check=True)
     logging.info("Pushing branch")
-    subprocess.run(["git", "push", "origin", branch_name], check=True)
+    subprocess.run(["git", "push", "origin", branch_name, "-f"], check=True)
     logging.info("Creating PR")
     pr = repo.create_pull(title=message, body=message, base="master", head=branch_name)
     logging.info(f"Created PR: {pr.number}")
