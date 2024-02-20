@@ -31,6 +31,7 @@ _EXPECTED = [
     "FAISS",
     "HanaDB",
     "Hologres",
+    "InfinispanVS",
     "KDBAI",
     "Kinetica",
     "KineticaSettings",

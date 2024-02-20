@@ -240,6 +240,12 @@ def _import_hologres() -> Any:
     return Hologres
 
 
+def _import_infinispanvs() -> Any:
+    from langchain_community.vectorstores.infinispanvs import InfinispanVS
+
+    return InfinispanVS
+
+
 def _import_kdbai() -> Any:
     from langchain_community.vectorstores.kdbai import KDBAI
 
@@ -569,6 +575,8 @@ def __getattr__(name: str) -> Any:
         return _import_hanavector()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "InfinispanVS":
+        return _import_infinispanvs()
     elif name == "KDBAI":
         return _import_kdbai()
     elif name == "DistanceStrategy":
@@ -696,6 +704,7 @@ __all__ = [
     "FAISS",
     "HanaDB",
     "Hologres",
+    "InfinispanVS",
     "KDBAI",
     "DistanceStrategy",
     "Kinetica",
