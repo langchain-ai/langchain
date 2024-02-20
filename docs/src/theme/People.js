@@ -7,7 +7,7 @@ function renderPerson({ login, avatarUrl, url }) {
             <a href={url} target="_blank">
                 <img src={avatarUrl} style={{ borderRadius: "50%", width: "128px", height: "128px" }} />
             </a>
-            <a href={url} target="_blank" style={{ fontSize: "18px" }}>@{login}</a>
+            <a href={url} target="_blank" style={{ fontSize: "18px", fontWeight: "700" }}>@{login}</a>
         </div>
     );
 }
