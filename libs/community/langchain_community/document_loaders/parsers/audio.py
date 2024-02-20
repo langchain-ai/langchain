@@ -13,14 +13,15 @@ logger = logging.getLogger(__name__)
 
 class OpenAIWhisperParser(BaseBlobParser):
     """Transcribe and parse audio files.
+
     Audio transcription is with OpenAI Whisper model.
 
-    Parameters:
-    api_key - OpenAI API key
-    chunk_duration_threshold - minimum duration of a chunk in seconds
-        NOTE: According to the OpenAI API, the chunk duration should be at least 0.1
-        seconds. If the chunk duration is less or equal than the threshold,
-        it will be skipped.
+    Args:
+        api_key: OpenAI API key
+        chunk_duration_threshold: minimum duration of a chunk in seconds
+            NOTE: According to the OpenAI API, the chunk duration should be at least 0.1
+            seconds. If the chunk duration is less or equal than the threshold,
+            it will be skipped.
     """
 
     def __init__(
