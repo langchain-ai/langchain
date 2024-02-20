@@ -545,7 +545,7 @@ if __name__ == "__main__":
     # min_count_expert = 10
     # min_count_last_month = 3
     min_count_contributor = 4
-    min_score_contributor = 2
+    min_score_contributor = 1
     min_count_reviewer = 4
     skip_users = maintainers_logins | bot_names | hidden_logins
     # experts = get_top_users(
