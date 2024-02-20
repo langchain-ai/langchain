@@ -125,9 +125,9 @@ class AstraDBVectorStore(VectorStore):
         text chunk itself) on which one will never run equality search filters.
         Moreover, having a field not indexed opens the way to storing very
         large strings (indexing imposes size constrains of a few KB per string.)
-            metadata_indexing_allowlist (List[str], optional):
+            metadata_indexing_include (List[str], optional):
                 only the supplied subfields of `metadata` are indexed.
-            metadata_indexing_denylist (List[str], optional):
+            metadata_indexing_exclude (List[str], optional):
                 all except the supplied subfields of `metadata` are indexed.
             collection_indexing_policy (Dict[str, Any], optional):
                 the caller provides a full "indexing" dictionary conforming
@@ -135,8 +135,8 @@ class AstraDBVectorStore(VectorStore):
                 astra-db-vector/api-reference/data-api-commands.html
                 #advanced-feature-indexing-clause-on-createcollection)
         Example values (only one can be passed):
-            metadata_indexing_allowlist=["source", "product_id", "product_category"]
-            metadata_indexing_denylist=["french_translation", "german_translation"]
+            metadata_indexing_include=["source", "product_id", "product_category"]
+            metadata_indexing_exclude=["french_translation", "german_translation"]
             collection_indexing_policy={
                 "deny": ["metadata.french_translation", "additional_top_field"]
             }
@@ -198,8 +198,8 @@ class AstraDBVectorStore(VectorStore):
 
     @staticmethod
     def _normalize_metadata_policy(
-        metadata_indexing_allowlist: Optional[Iterable[str]],
-        metadata_indexing_denylist: Optional[Iterable[str]],
+        metadata_indexing_include: Optional[Iterable[str]],
+        metadata_indexing_exclude: Optional[Iterable[str]],
         collection_indexing_policy: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """
@@ -210,25 +210,25 @@ class AstraDBVectorStore(VectorStore):
             [
                 1 if var is None else 0
                 for var in [
-                    metadata_indexing_allowlist,
-                    metadata_indexing_denylist,
+                    metadata_indexing_include,
+                    metadata_indexing_exclude,
                     collection_indexing_policy,
                 ]
             ]
         )
         if none_count >= 2:
-            if metadata_indexing_allowlist is not None:
+            if metadata_indexing_include is not None:
                 return {
                     "allow": [
                         f"metadata.{md_field}"
-                        for md_field in metadata_indexing_allowlist
+                        for md_field in metadata_indexing_include
                     ]
                 }
-            elif metadata_indexing_denylist is not None:
+            elif metadata_indexing_exclude is not None:
                 return {
                     "deny": [
                         f"metadata.{md_field}"
-                        for md_field in metadata_indexing_denylist
+                        for md_field in metadata_indexing_exclude
                     ]
                 }
             elif collection_indexing_policy is not None:
@@ -237,8 +237,8 @@ class AstraDBVectorStore(VectorStore):
                 return DEFAULT_INDEXING_OPTIONS
         else:
             raise ValueError(
-                "At most one of the parameters `metadata_indexing_allowlist`,"
-                " `metadata_indexing_denylist` and `collection_indexing_policy`"
+                "At most one of the parameters `metadata_indexing_include`,"
+                " `metadata_indexing_exclude` and `collection_indexing_policy`"
                 " can be specified as non null."
             )
 
@@ -258,8 +258,8 @@ class AstraDBVectorStore(VectorStore):
         bulk_insert_overwrite_concurrency: Optional[int] = None,
         bulk_delete_concurrency: Optional[int] = None,
         pre_delete_collection: bool = False,
-        metadata_indexing_allowlist: Optional[Iterable[str]] = None,
-        metadata_indexing_denylist: Optional[Iterable[str]] = None,
+        metadata_indexing_include: Optional[Iterable[str]] = None,
+        metadata_indexing_exclude: Optional[Iterable[str]] = None,
         collection_indexing_policy: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
@@ -296,8 +296,8 @@ class AstraDBVectorStore(VectorStore):
         self.metric = metric
         # indexing policy setting
         self.indexing_policy: Dict[str, Any] = self._normalize_metadata_policy(
-            metadata_indexing_allowlist=metadata_indexing_allowlist,
-            metadata_indexing_denylist=metadata_indexing_denylist,
+            metadata_indexing_include=metadata_indexing_include,
+            metadata_indexing_exclude=metadata_indexing_exclude,
             collection_indexing_policy=collection_indexing_policy,
         )
 
@@ -383,8 +383,9 @@ class AstraDBVectorStore(VectorStore):
         the collection. It checks if the collection is already on DB,
         checks the indexing options match, and takes action (errors, warnings).
 
-        Return True iff the error was related to indexing, i.e. if there is
-        *no* need to re-raise the originating exception outside of this call.
+        Returns:
+            True if the error was related to indexing, i.e. if there is
+            *no* need to re-raise the original exception outside of this call.
         """
         preexisting = [
             collection
@@ -400,7 +401,7 @@ class AstraDBVectorStore(VectorStore):
                 if requested_indexing_policy == DEFAULT_INDEXING_OPTIONS:
                     warnings.warn(
                         (
-                            f"Collection '{collection_name}' is "
+                            f"Astra DB collection '{collection_name}' is "
                             "detected as legacy and has indexing turned "
                             "on for all fields. This implies stricter "
                             "limitations on the amount of text each entry "
@@ -412,14 +413,14 @@ class AstraDBVectorStore(VectorStore):
                     )
                 else:
                     raise ValueError(
-                        f"Collection '{collection_name}' is "
+                        f"Astra DB collection '{collection_name}' is "
                         "detected as legacy and has indexing turned "
                         "on for all fields. This is incompatible with "
-                        "the requested indexing policy for this Vector "
-                        "Store. Consider reindexing anew on a fresh "
+                        "the requested indexing policy for this object. "
+                        "Consider reindexing anew on a fresh "
                         "collection with the requested indexing "
                         "policy, or alternatively leave the indexing "
-                        "settings for this store to their defaults "
+                        "settings for this object to their defaults "
                         "to keep using this collection."
                     )
             elif pre_col_options["indexing"] != requested_indexing_policy:
@@ -430,18 +431,18 @@ class AstraDBVectorStore(VectorStore):
                 else:
                     default_desc = ""
                 raise ValueError(
-                    f"Collection '{collection_name}' is "
+                    f"Astra DB collection '{collection_name}' is "
                     "detected as having the following indexing policy: "
                     f"{options_json}{default_desc}. This is incompatible "
-                    "with the requested indexing policy for this Vector "
-                    "Store. Consider reindexing anew on a fresh "
+                    "with the requested indexing policy for this object. "
+                    "Consider reindexing anew on a fresh "
                     "collection with the requested indexing "
                     "policy, or alternatively align the requested "
                     "indexing settings to the collection to keep using it."
                 )
             else:
-                # the discrepancies have to do with other settings than indexing
-                raise
+                # the discrepancies have to do with options other than indexing
+                return False
             # the original exception, related to indexing, was handled here
             return True
         else:

@@ -16,6 +16,7 @@ Required to run this test:
 import json
 import math
 import os
+import warnings
 from typing import Iterable, List, Optional, TypedDict
 
 import pytest
@@ -894,11 +895,12 @@ class TestAstraDBVectorStore:
             astra_db_client=astra_db,
             collection_name="lc_custom_idx",
             embedding=embe,
-            metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+            metadata_indexing_exclude={"long_summary", "the_divine_comedy"},
         )
 
         # these invocations should just work without warnings
-        with pytest.warns() as rec_warnings:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             AstraDBVectorStore(
                 astra_db_client=astra_db,
                 collection_name="lc_default_idx",
@@ -908,9 +910,8 @@ class TestAstraDBVectorStore:
                 astra_db_client=astra_db,
                 collection_name="lc_custom_idx",
                 embedding=embe,
-                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+                metadata_indexing_exclude={"long_summary", "the_divine_comedy"},
             )
-            assert len(rec_warnings) == 0
 
         # some are to throw an error:
         with pytest.raises(ValueError):
@@ -918,7 +919,7 @@ class TestAstraDBVectorStore:
                 astra_db_client=astra_db,
                 collection_name="lc_default_idx",
                 embedding=embe,
-                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+                metadata_indexing_exclude={"long_summary", "the_divine_comedy"},
             )
 
         with pytest.raises(ValueError):
@@ -926,7 +927,7 @@ class TestAstraDBVectorStore:
                 astra_db_client=astra_db,
                 collection_name="lc_custom_idx",
                 embedding=embe,
-                metadata_indexing_denylist={"changed_fields"},
+                metadata_indexing_exclude={"changed_fields"},
             )
 
         with pytest.raises(ValueError):
@@ -941,7 +942,7 @@ class TestAstraDBVectorStore:
                 astra_db_client=astra_db,
                 collection_name="lc_legacy_coll",
                 embedding=embe,
-                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+                metadata_indexing_exclude={"long_summary", "the_divine_comedy"},
             )
 
         # one case should result in just a warning:
@@ -982,11 +983,12 @@ class TestAstraDBVectorStore:
             async_astra_db_client=astra_db,
             collection_name="lc_custom_idx",
             embedding=embe,
-            metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+            metadata_indexing_exclude={"long_summary", "the_divine_comedy"},
         )
 
         # these invocations should just work without warnings
-        with pytest.warns() as rec_warnings:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             def_store = AstraDBVectorStore(
                 async_astra_db_client=astra_db,
                 collection_name="lc_default_idx",
@@ -997,10 +999,9 @@ class TestAstraDBVectorStore:
                 async_astra_db_client=astra_db,
                 collection_name="lc_custom_idx",
                 embedding=embe,
-                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+                metadata_indexing_exclude={"long_summary", "the_divine_comedy"},
             )
             await cus_store.aadd_texts(["All good."])
-            assert len(rec_warnings) == 0
 
         # some are to throw an error:
         with pytest.raises(ValueError):
@@ -1008,7 +1009,7 @@ class TestAstraDBVectorStore:
                 async_astra_db_client=astra_db,
                 collection_name="lc_default_idx",
                 embedding=embe,
-                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+                metadata_indexing_exclude={"long_summary", "the_divine_comedy"},
             )
             await def_store.aadd_texts(["Not working."])
 
@@ -1017,7 +1018,7 @@ class TestAstraDBVectorStore:
                 async_astra_db_client=astra_db,
                 collection_name="lc_custom_idx",
                 embedding=embe,
-                metadata_indexing_denylist={"changed_fields"},
+                metadata_indexing_exclude={"changed_fields"},
             )
             await cus_store.aadd_texts(["Not working."])
 
@@ -1034,7 +1035,7 @@ class TestAstraDBVectorStore:
                 async_astra_db_client=astra_db,
                 collection_name="lc_legacy_coll",
                 embedding=embe,
-                metadata_indexing_denylist={"long_summary", "the_divine_comedy"},
+                metadata_indexing_exclude={"long_summary", "the_divine_comedy"},
             )
             await leg_store.aadd_texts(["Not working."])
 
