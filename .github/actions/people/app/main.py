@@ -336,6 +336,10 @@ def get_graphql_response(
 
 
 def get_graphql_pr_edges(*, settings: Settings, after: Union[str, None] = None):
+    if after is None:
+        print("Querying PRs...")
+    else:
+        print(f"Querying PRs with cursor {after}...")
     data = get_graphql_response(
         settings=settings,
         query=prs_query,
@@ -471,8 +475,8 @@ def get_contributors(settings: Settings):
             lines_changed = pr.additions + pr.deletions
             score = _logistic(files_changed, 20) + _logistic(lines_changed, 100)
             contributor_scores[pr.author.login] += score
-            three_months_ago = (datetime.now(timezone.utc) - timedelta(days=6*30))
-            if datetime.fromisoformat(pr.createdAt) > three_months_ago:
+            three_months_ago = (datetime.now(timezone.utc) - timedelta(days=3*30))
+            if pr.createdAt is not None and datetime.fromisoformat(pr.createdAt) > three_months_ago:
                 recent_contributor_scores[pr.author.login] += score
     return contributors, contributor_scores, recent_contributor_scores, reviewers, authors
 
