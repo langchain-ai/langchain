@@ -11,7 +11,7 @@ from wsgiref.handlers import format_date_time
 
 import numpy as np
 import requests
-from numpy import dtype, float_, ndarray
+from numpy import ndarray
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
