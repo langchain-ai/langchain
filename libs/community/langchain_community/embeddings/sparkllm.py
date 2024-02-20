@@ -161,12 +161,12 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     @staticmethod
     def _parser_message(
         message: str,
-    ) -> ndarray[Any, dtype[floating[_64Bit] | float_]] | None:
+    ) -> ndarray[Any, dtype[float_]]:
         data = json.loads(message)
         code = data["header"]["code"]
         if code != 0:
             logger.warning(f"Request error: {code}, {data}")
-            return None
+            return np.empty((2560, 2560))
         else:
             text_base = data["payload"]["feature"]["text"]
             text_data = base64.b64decode(text_base)
