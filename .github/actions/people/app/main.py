@@ -264,7 +264,7 @@ class PullRequestEdge(BaseModel):
 
 
 class PullRequestSearchResponse(BaseModel):
-    edges: PullRequestEdge
+    edges: PullRequestEdge[]
 
 
 class PullRequestSearchResponseData(BaseModel):
