@@ -84,6 +84,7 @@ from langchain_community.embeddings.sentence_transformer import (
     SentenceTransformerEmbeddings,
 )
 from langchain_community.embeddings.spacy_embeddings import SpacyEmbeddings
+from langchain_community.embeddings.sparkllm import SparkLLMTextEmbeddings
 from langchain_community.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.volcengine import VolcanoEmbeddings
@@ -152,6 +153,7 @@ __all__ = [
     "OCIGenAIEmbeddings",
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
+    "SparkLLMTextEmbeddings",
 ]
 
 
