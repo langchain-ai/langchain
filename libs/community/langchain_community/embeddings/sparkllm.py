@@ -2,9 +2,10 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 from datetime import datetime
 from time import mktime
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urlencode
 from wsgiref.handlers import format_date_time
 
@@ -19,21 +20,22 @@ EMBEDDING_P_API_URL: str = "https://cn-huabei-1.xf-yun.com/v1/private/sa8a05c27"
 # Used for user questions embedding
 EMBEDDING_Q_API_URL: str = "https://cn-huabei-1.xf-yun.com/v1/private/s50d55a16"
 
-
 # SparkLLMTextEmbeddings is an embedding model provided by iFLYTEK Co., Ltd.. (https://iflytek.com/en/).
 
 # Official Website: https://www.xfyun.cn/doc/spark/Embedding_new_api.html
 # Developers need to create an application in the console first, use the appid, APIKey,
-# and APISecret provided in the application for authentication, and generate an authentication URL for handshake.
+# and APISecret provided in the application for authentication,
+# and generate an authentication URL for handshake.
 # You can get one by registering at https://console.xfyun.cn/services/bm3.
 # SparkLLMTextEmbeddings support 2K token window and preduces vectors with
 # 2560 dimensions.
+
+logger = logging.getLogger(__name__)
 
 
 class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     """SparkLLM Text Embedding models."""
 
-    session: Any  #: :meta private:
     spark_app_id: Optional[SecretStr] = None
     spark_api_key: Optional[SecretStr] = None
     spark_api_secret: Optional[SecretStr] = None
@@ -167,7 +169,8 @@ def parser_message(message):
     data = json.loads(message)
     code = data["header"]["code"]
     if code != 0:
-        print(f"请求错误: {code}, {data}")
+        logger.warning(f"Request error: {code}, {data}")
+        return None
     else:
         text_base = data["payload"]["feature"]["text"]
         text_data = base64.b64decode(text_base)
