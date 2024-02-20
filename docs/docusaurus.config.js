@@ -177,15 +177,14 @@ const config = {
             position: "left",
           },
           {
-            to: "/docs/people/",
-            label: "People",
-            position: "left",
-          },
-          {
             type: "dropdown",
             label: "More",
             position: "left",
             items: [
+              {
+                to: "/docs/people/",
+                label: "People",
+              },
               {
                 to: "/docs/packages",
                 label: "Versioning",

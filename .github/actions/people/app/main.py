@@ -336,11 +336,10 @@ def get_graphql_response(
 
 
 def get_graphql_pr_edges(*, settings: Settings, after: Union[str, None] = None):
-    six_months_ago = (datetime.now() - timedelta(days=6*30)).strftime('%Y-%m-%d')
     data = get_graphql_response(
         settings=settings,
         query=prs_query,
-        filter=f"repo:langchain-ai/langchain is:pr is:merged created:>{six_months_ago}",
+        filter=f"repo:langchain-ai/langchain is:pr is:merged",
         after=after
     )
     graphql_response = PullRequestResponse.model_validate(data)
@@ -453,6 +452,7 @@ def get_contributors(settings: Settings):
 
     contributors = Counter()
     contributor_scores = Counter()
+    recent_contributor_scores = Counter()
     reviewers = Counter()
     authors: Dict[str, Author] = {}
 
@@ -469,8 +469,12 @@ def get_contributors(settings: Settings):
             contributors[pr.author.login] += 1
             files_changed = pr.changedFiles
             lines_changed = pr.additions + pr.deletions
-            contributor_scores[pr.author.login] += _logistic(files_changed, 20) + _logistic(lines_changed, 100)
-    return contributors, contributor_scores, reviewers, authors
+            score = _logistic(files_changed, 20) + _logistic(lines_changed, 100)
+            contributor_scores[pr.author.login] += score
+            three_months_ago = (datetime.now(timezone.utc) - timedelta(days=6*30))
+            if datetime.fromisoformat(pr.createdAt) > three_months_ago:
+                recent_contributor_scores[pr.author.login] += score
+    return contributors, contributor_scores, recent_contributor_scores, reviewers, authors
 
 
 def get_top_users(
@@ -506,7 +510,7 @@ if __name__ == "__main__":
     # question_commentors, question_last_month_commentors, question_authors = get_experts(
     #     settings=settings
     # )
-    contributors, contributor_scores, reviewers, pr_authors = get_contributors(
+    contributors, contributor_scores, recent_contributor_scores, reviewers, pr_authors = get_contributors(
         settings=settings
     )
     # authors = {**question_authors, **pr_authors}
@@ -527,7 +531,8 @@ if __name__ == "__main__":
         "obi1kenobi",
         "langchain-infra",
         "jacoblee93",
-        "dqbd"
+        "dqbd",
+        "bracesproul",
     }
     bot_names = {"dosubot", "github-actions", "CodiumAI-Agent"}
     maintainers = []
@@ -560,6 +565,12 @@ if __name__ == "__main__":
     #     authors=authors,
     #     skip_users=skip_users,
     # )
+    top_recent_contributors = get_top_users(
+        counter=recent_contributor_scores,
+        min_count=min_score_contributor,
+        authors=authors,
+        skip_users=skip_users,
+    )[:20]
     top_contributors = get_top_users(
         counter=contributor_scores,
         min_count=min_score_contributor,
@@ -577,6 +588,7 @@ if __name__ == "__main__":
         "maintainers": maintainers,
         # "experts": experts,
         # "last_month_active": last_month_active,
+        "top_recent_contributors": top_recent_contributors,
         "top_contributors": top_contributors,
         "top_reviewers": top_reviewers,
     }
