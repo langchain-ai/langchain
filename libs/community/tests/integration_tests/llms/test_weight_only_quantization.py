@@ -45,7 +45,9 @@ def test_init_with_pipeline() -> None:
     from transformers import AutoTokenizer, pipeline
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_id, load_in_4bit=True, use_llm_runtime=False)
+    model = AutoModelForSeq2SeqLM.from_pretrained(
+        model_id, load_in_4bit=True, use_llm_runtime=False
+    )
     pipe = pipeline("text2text-generation", model=model, tokenizer=tokenizer)
     llm = WeightOnlyQuantPipeline(pipeline=pipe)
     output = llm("Say foo:")
