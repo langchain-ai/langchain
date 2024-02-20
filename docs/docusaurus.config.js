@@ -59,6 +59,10 @@ const config = {
               },
             },
             {
+              test: /\.ya?ml$/,
+              use: 'yaml-loader'
+            },
+            {
               test: /\.ipynb$/,
               loader: "raw-loader",
               resolve: {
@@ -170,6 +174,11 @@ const config = {
           {
             href: "https://api.python.langchain.com",
             label: "API",
+            position: "left",
+          },
+          {
+            to: "/docs/people/",
+            label: "People",
             position: "left",
           },
           {

@@ -96,7 +96,7 @@ query Q($after: String) {
 prs_query = """
 query Q($after: String) {
   repository(name: "langchain", owner: "langchain-ai") {
-    pullRequests(first: 100, after: $after) {
+    pullRequests(first: 100, after: $after, states: MERGED) {
       edges {
         cursor
         node {
@@ -487,7 +487,7 @@ def get_top_users(
     skip_users: Container[str],
 ):
     users = []
-    for commentor, count in counter.most_common(50):
+    for commentor, count in counter.most_common(60):
         if commentor in skip_users:
             continue
         if count >= min_count:
@@ -524,15 +524,16 @@ if __name__ == "__main__":
         "nfcampos",
         "efriis",
         "eyurtsev",
-        "rlancemartin",
-        "jacoblee93",
-        "dqbd"
+        "rlancemartin"
     }
     hidden_logins = {
         "dev2049",
         "vowelparrot",
         "obi1kenobi",
-        "langchain-infra"
+        "langchain-infra",
+        "jacoblee93",
+        "dqbd",
+        "ShorthillsAI"
     }
     bot_names = {"dosubot", "github-actions", "CodiumAI-Agent"}
     maintainers = []
@@ -541,8 +542,7 @@ if __name__ == "__main__":
         maintainers.append(
             {
                 "login": login,
-                "answers": question_commentors[login],
-                "prs": contributors[login],
+                "count": contributors[login] + question_commentors[login],
                 "avatarUrl": user.avatarUrl,
                 "url": user.url,
             }
