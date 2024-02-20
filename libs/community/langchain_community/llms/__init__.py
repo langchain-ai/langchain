@@ -552,6 +552,14 @@ def _import_watsonxllm() -> Any:
     return WatsonxLLM
 
 
+def _import_weight_only_pipeline() -> Any:
+    from langchain_community.llms.weight_only_quantization import (
+        WeightOnlyQuantPipeline,
+    )
+
+    return WeightOnlyQuantPipeline
+
+
 def _import_writer() -> Any:
     from langchain_community.llms.writer import Writer
 
