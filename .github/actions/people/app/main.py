@@ -17,81 +17,81 @@ from pydantic_settings import BaseSettings
 github_graphql_url = "https://api.github.com/graphql"
 questions_category_id = "DIC_kwDOIPDwls4CS6Ve"
 
-discussions_query = """
-query Q($after: String, $category_id: ID) {
-  repository(name: "langchain", owner: "langchain-ai") {
-    discussions(first: 100, after: $after, categoryId: $category_id) {
-      edges {
-        cursor
-        node {
-          number
-          author {
-            login
-            avatarUrl
-            url
-          }
-          title
-          createdAt
-          comments(first: 100) {
-            nodes {
-              createdAt
-              author {
-                login
-                avatarUrl
-                url
-              }
-              isAnswer
-              replies(first: 10) {
-                nodes {
-                  createdAt
-                  author {
-                    login
-                    avatarUrl
-                    url
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-"""
+# discussions_query = """
+# query Q($after: String, $category_id: ID) {
+#   repository(name: "langchain", owner: "langchain-ai") {
+#     discussions(first: 100, after: $after, categoryId: $category_id) {
+#       edges {
+#         cursor
+#         node {
+#           number
+#           author {
+#             login
+#             avatarUrl
+#             url
+#           }
+#           title
+#           createdAt
+#           comments(first: 100) {
+#             nodes {
+#               createdAt
+#               author {
+#                 login
+#                 avatarUrl
+#                 url
+#               }
+#               isAnswer
+#               replies(first: 10) {
+#                 nodes {
+#                   createdAt
+#                   author {
+#                     login
+#                     avatarUrl
+#                     url
+#                   }
+#                 }
+#               }
+#             }
+#           }
+#         }
+#       }
+#     }
+#   }
+# }
+# """
 
-issues_query = """
-query Q($after: String) {
-  repository(name: "langchain", owner: "langchain-ai") {
-    issues(first: 100, after: $after) {
-      edges {
-        cursor
-        node {
-          number
-          author {
-            login
-            avatarUrl
-            url
-          }
-          title
-          createdAt
-          state
-          comments(first: 100) {
-            nodes {
-              createdAt
-              author {
-                login
-                avatarUrl
-                url
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-"""
+# issues_query = """
+# query Q($after: String) {
+#   repository(name: "langchain", owner: "langchain-ai") {
+#     issues(first: 100, after: $after) {
+#       edges {
+#         cursor
+#         node {
+#           number
+#           author {
+#             login
+#             avatarUrl
+#             url
+#           }
+#           title
+#           createdAt
+#           state
+#           comments(first: 100) {
+#             nodes {
+#               createdAt
+#               author {
+#                 login
+#                 avatarUrl
+#                 url
+#               }
+#             }
+#           }
+#         }
+#       }
+#     }
+#   }
+# }
+# """
 
 prs_query = """
 query Q($after: String) {
@@ -100,6 +100,9 @@ query Q($after: String) {
       edges {
         cursor
         node {
+          changedFiles
+          additions
+          deletions
           number
           labels(first: 100) {
             nodes {
@@ -114,16 +117,6 @@ query Q($after: String) {
           title
           createdAt
           state
-          comments(first: 100) {
-            nodes {
-              createdAt
-              author {
-                login
-                avatarUrl
-                url
-              }
-            }
-          }
           reviews(first:100) {
             nodes {
               author {
@@ -321,25 +314,25 @@ def get_graphql_response(
     return data
 
 
-def get_graphql_issue_edges(*, settings: Settings, after: Union[str, None] = None):
-    data = get_graphql_response(settings=settings, query=issues_query, after=after)
-    graphql_response = IssuesResponse.model_validate(data)
-    return graphql_response.data.repository.issues.edges
+# def get_graphql_issue_edges(*, settings: Settings, after: Union[str, None] = None):
+#     data = get_graphql_response(settings=settings, query=issues_query, after=after)
+#     graphql_response = IssuesResponse.model_validate(data)
+#     return graphql_response.data.repository.issues.edges
 
 
-def get_graphql_question_discussion_edges(
-    *,
-    settings: Settings,
-    after: Union[str, None] = None,
-):
-    data = get_graphql_response(
-        settings=settings,
-        query=discussions_query,
-        after=after,
-        category_id=questions_category_id,
-    )
-    graphql_response = DiscussionsResponse.model_validate(data)
-    return graphql_response.data.repository.discussions.edges
+# def get_graphql_question_discussion_edges(
+#     *,
+#     settings: Settings,
+#     after: Union[str, None] = None,
+# ):
+#     data = get_graphql_response(
+#         settings=settings,
+#         query=discussions_query,
+#         after=after,
+#         category_id=questions_category_id,
+#     )
+#     graphql_response = DiscussionsResponse.model_validate(data)
+#     return graphql_response.data.repository.discussions.edges
 
 
 def get_graphql_pr_edges(*, settings: Settings, after: Union[str, None] = None):
@@ -348,94 +341,98 @@ def get_graphql_pr_edges(*, settings: Settings, after: Union[str, None] = None):
     return graphql_response.data.repository.pullRequests.edges
 
 
-def get_issues_experts(settings: Settings):
-    issue_nodes: List[IssuesNode] = []
-    issue_edges = get_graphql_issue_edges(settings=settings)
+# def get_issues_experts(settings: Settings):
+#     issue_nodes: List[IssuesNode] = []
+#     issue_edges = get_graphql_issue_edges(settings=settings)
 
-    while issue_edges:
-        for edge in issue_edges:
-            issue_nodes.append(edge.node)
-        last_edge = issue_edges[-1]
-        issue_edges = get_graphql_issue_edges(settings=settings, after=last_edge.cursor)
+#     while issue_edges:
+#         for edge in issue_edges:
+#             issue_nodes.append(edge.node)
+#         last_edge = issue_edges[-1]
+#         issue_edges = get_graphql_issue_edges(settings=settings, after=last_edge.cursor)
 
-    commentors = Counter()
-    last_month_commentors = Counter()
-    authors: Dict[str, Author] = {}
+#     commentors = Counter()
+#     last_month_commentors = Counter()
+#     authors: Dict[str, Author] = {}
 
-    now = datetime.now(tz=timezone.utc)
-    one_month_ago = now - timedelta(days=30)
+#     now = datetime.now(tz=timezone.utc)
+#     one_month_ago = now - timedelta(days=30)
 
-    for issue in issue_nodes:
-        issue_author_name = None
-        if issue.author:
-            authors[issue.author.login] = issue.author
-            issue_author_name = issue.author.login
-        issue_commentors = set()
-        for comment in issue.comments.nodes:
-            if comment.author:
-                authors[comment.author.login] = comment.author
-                if comment.author.login != issue_author_name:
-                    issue_commentors.add(comment.author.login)
-        for author_name in issue_commentors:
-            commentors[author_name] += 1
-            if issue.createdAt > one_month_ago:
-                last_month_commentors[author_name] += 1
+#     for issue in issue_nodes:
+#         issue_author_name = None
+#         if issue.author:
+#             authors[issue.author.login] = issue.author
+#             issue_author_name = issue.author.login
+#         issue_commentors = set()
+#         for comment in issue.comments.nodes:
+#             if comment.author:
+#                 authors[comment.author.login] = comment.author
+#                 if comment.author.login != issue_author_name:
+#                     issue_commentors.add(comment.author.login)
+#         for author_name in issue_commentors:
+#             commentors[author_name] += 1
+#             if issue.createdAt > one_month_ago:
+#                 last_month_commentors[author_name] += 1
 
-    return commentors, last_month_commentors, authors
-
-
-def get_discussions_experts(settings: Settings):
-    discussion_nodes: List[DiscussionsNode] = []
-    discussion_edges = get_graphql_question_discussion_edges(settings=settings)
-
-    while discussion_edges:
-        for discussion_edge in discussion_edges:
-            discussion_nodes.append(discussion_edge.node)
-        last_edge = discussion_edges[-1]
-        discussion_edges = get_graphql_question_discussion_edges(
-            settings=settings, after=last_edge.cursor
-        )
-
-    commentors = Counter()
-    last_month_commentors = Counter()
-    authors: Dict[str, Author] = {}
-
-    now = datetime.now(tz=timezone.utc)
-    one_month_ago = now - timedelta(days=30)
-
-    for discussion in discussion_nodes:
-        discussion_author_name = None
-        if discussion.author:
-            authors[discussion.author.login] = discussion.author
-            discussion_author_name = discussion.author.login
-        discussion_commentors = set()
-        for comment in discussion.comments.nodes:
-            if comment.author:
-                authors[comment.author.login] = comment.author
-                if comment.author.login != discussion_author_name:
-                    discussion_commentors.add(comment.author.login)
-            for reply in comment.replies.nodes:
-                if reply.author:
-                    authors[reply.author.login] = reply.author
-                    if reply.author.login != discussion_author_name:
-                        discussion_commentors.add(reply.author.login)
-        for author_name in discussion_commentors:
-            commentors[author_name] += 1
-            if discussion.createdAt > one_month_ago:
-                last_month_commentors[author_name] += 1
-    return commentors, last_month_commentors, authors
+#     return commentors, last_month_commentors, authors
 
 
-def get_experts(settings: Settings):
-    (
-        discussions_commentors,
-        discussions_last_month_commentors,
-        discussions_authors,
-    ) = get_discussions_experts(settings=settings)
-    commentors = discussions_commentors
-    last_month_commentors = discussions_last_month_commentors
-    authors = {**discussions_authors}
-    return commentors, last_month_commentors, authors
+# def get_discussions_experts(settings: Settings):
+#     discussion_nodes: List[DiscussionsNode] = []
+#     discussion_edges = get_graphql_question_discussion_edges(settings=settings)
+
+#     while discussion_edges:
+#         for discussion_edge in discussion_edges:
+#             discussion_nodes.append(discussion_edge.node)
+#         last_edge = discussion_edges[-1]
+#         discussion_edges = get_graphql_question_discussion_edges(
+#             settings=settings, after=last_edge.cursor
+#         )
+
+#     commentors = Counter()
+#     last_month_commentors = Counter()
+#     authors: Dict[str, Author] = {}
+
+#     now = datetime.now(tz=timezone.utc)
+#     one_month_ago = now - timedelta(days=30)
+
+#     for discussion in discussion_nodes:
+#         discussion_author_name = None
+#         if discussion.author:
+#             authors[discussion.author.login] = discussion.author
+#             discussion_author_name = discussion.author.login
+#         discussion_commentors = set()
+#         for comment in discussion.comments.nodes:
+#             if comment.author:
+#                 authors[comment.author.login] = comment.author
+#                 if comment.author.login != discussion_author_name:
+#                     discussion_commentors.add(comment.author.login)
+#             for reply in comment.replies.nodes:
+#                 if reply.author:
+#                     authors[reply.author.login] = reply.author
+#                     if reply.author.login != discussion_author_name:
+#                         discussion_commentors.add(reply.author.login)
+#         for author_name in discussion_commentors:
+#             commentors[author_name] += 1
+#             if discussion.createdAt > one_month_ago:
+#                 last_month_commentors[author_name] += 1
+#     return commentors, last_month_commentors, authors
+
+
+# def get_experts(settings: Settings):
+#     (
+#         discussions_commentors,
+#         discussions_last_month_commentors,
+#         discussions_authors,
+#     ) = get_discussions_experts(settings=settings)
+#     commentors = discussions_commentors
+#     last_month_commentors = discussions_last_month_commentors
+#     authors = {**discussions_authors}
+#     return commentors, last_month_commentors, authors
+
+
+def _logistic(x, k):
+    return x / (x + k)
 
 
 def get_contributors(settings: Settings):
@@ -449,34 +446,24 @@ def get_contributors(settings: Settings):
         pr_edges = get_graphql_pr_edges(settings=settings, after=last_edge.cursor)
 
     contributors = Counter()
-    commentors = Counter()
+    contributor_scores = Counter()
     reviewers = Counter()
     authors: Dict[str, Author] = {}
 
     for pr in pr_nodes:
-        author_name = None
-        if pr.author:
-            authors[pr.author.login] = pr.author
-            author_name = pr.author.login
-        pr_commentors: Set[str] = set()
         pr_reviewers: Set[str] = set()
-        for comment in pr.comments.nodes:
-            if comment.author:
-                authors[comment.author.login] = comment.author
-                if comment.author.login == author_name:
-                    continue
-                pr_commentors.add(comment.author.login)
-        for author_name in pr_commentors:
-            commentors[author_name] += 1
         for review in pr.reviews.nodes:
             if review.author:
                 authors[review.author.login] = review.author
                 pr_reviewers.add(review.author.login)
         for reviewer in pr_reviewers:
             reviewers[reviewer] += 1
-        if pr.state == "MERGED" and pr.author:
+        if pr.author:
             contributors[pr.author.login] += 1
-    return contributors, commentors, reviewers, authors
+            files_changed = pr.node.changedFiles
+            lines_changed = pr.node.additions + pr.node.deletions
+            contributor_scores[pr.author.login] += _logistic(files_changed, 5) + _logistic(lines_changed, 100)
+    return contributors, contributor_scores, reviewers, authors
 
 
 def get_top_users(
@@ -509,13 +496,14 @@ if __name__ == "__main__":
     logging.info(f"Using config: {settings.model_dump_json()}")
     g = Github(settings.input_token.get_secret_value())
     repo = g.get_repo(settings.github_repository)
-    question_commentors, question_last_month_commentors, question_authors = get_experts(
+    # question_commentors, question_last_month_commentors, question_authors = get_experts(
+    #     settings=settings
+    # )
+    contributors, contributor_scores, reviewers, pr_authors = get_contributors(
         settings=settings
     )
-    contributors, pr_commentors, reviewers, pr_authors = get_contributors(
-        settings=settings
-    )
-    authors = {**question_authors, **pr_authors}
+    # authors = {**question_authors, **pr_authors}
+    authors = {**pr_authors}
     maintainers_logins = {
         "hwchase17",
         "agola11",
@@ -532,8 +520,7 @@ if __name__ == "__main__":
         "obi1kenobi",
         "langchain-infra",
         "jacoblee93",
-        "dqbd",
-        "ShorthillsAI"
+        "dqbd"
     }
     bot_names = {"dosubot", "github-actions", "CodiumAI-Agent"}
     maintainers = []
@@ -542,32 +529,33 @@ if __name__ == "__main__":
         maintainers.append(
             {
                 "login": login,
-                "count": contributors[login] + question_commentors[login],
+                "count": contributors[login], #+ question_commentors[login],
                 "avatarUrl": user.avatarUrl,
                 "url": user.url,
             }
         )
 
-    min_count_expert = 10
-    min_count_last_month = 3
+    # min_count_expert = 10
+    # min_count_last_month = 3
     min_count_contributor = 4
+    min_score_contributor = 2
     min_count_reviewer = 4
     skip_users = maintainers_logins | bot_names | hidden_logins
-    experts = get_top_users(
-        counter=question_commentors,
-        min_count=min_count_expert,
-        authors=authors,
-        skip_users=skip_users,
-    )
-    last_month_active = get_top_users(
-        counter=question_last_month_commentors,
-        min_count=min_count_last_month,
-        authors=authors,
-        skip_users=skip_users,
-    )
+    # experts = get_top_users(
+    #     counter=question_commentors,
+    #     min_count=min_count_expert,
+    #     authors=authors,
+    #     skip_users=skip_users,
+    # )
+    # last_month_active = get_top_users(
+    #     counter=question_last_month_commentors,
+    #     min_count=min_count_last_month,
+    #     authors=authors,
+    #     skip_users=skip_users,
+    # )
     top_contributors = get_top_users(
-        counter=contributors,
-        min_count=min_count_contributor,
+        counter=contributor_scores,
+        min_count=min_score_contributor,
         authors=authors,
         skip_users=skip_users,
     )
@@ -580,8 +568,8 @@ if __name__ == "__main__":
 
     people = {
         "maintainers": maintainers,
-        "experts": experts,
-        "last_month_active": last_month_active,
+        # "experts": experts,
+        # "last_month_active": last_month_active,
         "top_contributors": top_contributors,
         "top_reviewers": top_reviewers,
     }
