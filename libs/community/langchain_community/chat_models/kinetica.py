@@ -293,6 +293,7 @@ class KineticaChatLLM(BaseChatModel):
     """Kinetica LLM Chat Model API.
 
     Prerequisites for using this API:
+
     * The ``gpudb`` and ``typeguard`` packages installed.
     * A Kinetica DB instance.
     * Kinetica host specified in ``KINETICA_URL``

@@ -42,11 +42,17 @@ class TestKineticaChatLLM:
 
     For more information see https://docs.kinetica.com/7.1/sql-gpt/concepts/.
 
-    These integration tests follow a workflow: 1. The `test_setup()` will create a table
-    with fake user profiles and and a related LLM context for the table. 2. The LLM
-    context is retrieved from the DB and used to create a chat prompt template. 3. A
-    chain is constructed from the chat prompt template. 4. The chain is executed to
-    generate the SQL and execute the query.
+    These integration tests follow a workflow:
+
+    1. The `test_setup()` will create a table with fake user profiles and and a related
+       LLM context for the table.
+
+    2. The LLM context is retrieved from the DB and used to create a chat prompt
+       template.
+
+    3. A chain is constructed from the chat prompt template.
+
+    4. The chain is executed to generate the SQL and execute the query.
     """
 
     table_name = "demo.test_profiles"
