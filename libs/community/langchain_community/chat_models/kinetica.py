@@ -398,7 +398,7 @@ class KineticaChatLLM(BaseChatModel):
         contain the samples.
 
         Args:
-            context_name: The name of an LLM context in the databse.
+            context_name: The name of an LLM context in the database.
 
         Returns:
             A list of messages containing the information from the context.
@@ -528,7 +528,7 @@ class KineticaChatLLM(BaseChatModel):
 class KineticaSqlResponse(BaseModel):
     """Response containing SQL and the fetched data.
 
-    This object is retuned by a chain with ``KineticaSqlOutputParser`` and it contains
+    This object is returned by a chain with ``KineticaSqlOutputParser`` and it contains
     the generated SQL and related Pandas Dataframe fetched from the database.
     """
 
