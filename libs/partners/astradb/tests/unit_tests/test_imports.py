@@ -2,6 +2,8 @@ from langchain_astradb import __all__
 
 EXPECTED_ALL = [
     "AstraDBByteStore",
+    "AstraDBCache",
+    "AstraDBSemanticCache",
     "AstraDBStore",
     "AstraDBChatMessageHistory",
     "AstraDBVectorStore",
