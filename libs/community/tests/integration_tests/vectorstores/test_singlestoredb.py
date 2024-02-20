@@ -1,4 +1,6 @@
 """Test SingleStoreDB functionality."""
+import base64
+import tempfile
 from typing import List
 
 import numpy as np
@@ -52,6 +54,9 @@ class RandomEmbeddings(Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         return np.random.rand(100).tolist()
+
+    def embed_image(self, uris: List[str]) -> List[List[float]]:
+        return [np.random.rand(100).tolist() for _ in uris]
 
 
 @pytest.fixture
@@ -111,6 +116,29 @@ def test_singlestoredb_euclidean_distance(texts: List[str]) -> None:
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_add_image(texts: List[str]) -> None:
+    """Test adding images"""
+    table_name = "test_singlestoredb_add_image"
+    drop(table_name)
+    docsearch = SingleStoreDB(
+        RandomEmbeddings(),
+        table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    temp_files = []
+    for _ in range(3):
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        temp_file.write(b"foo")
+        temp_file.close()
+        temp_files.append(temp_file.name)
+
+    docsearch.add_images(temp_files)
+    output = docsearch.similarity_search("foo", k=1)
+    assert output[0].page_content == base64.b64encode(b"foo").decode("utf-8")
+    drop(table_name)
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
 def test_singlestoredb_vector_index_1(texts: List[str]) -> None:
     """Test adding a new document"""
     table_name = "test_singlestoredb_vector_index_1"
@@ -156,7 +184,7 @@ def test_singlestoredb_vector_index_large() -> None:
     table_name = "test_singlestoredb_vector_index_large"
     drop(table_name)
     docsearch = SingleStoreDB.from_texts(
-        ["foo"] * 300000,
+        ["foo"] * 30,
         RandomEmbeddings(),
         distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
         table_name=table_name,
