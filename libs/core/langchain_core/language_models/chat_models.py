@@ -794,7 +794,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
 
 class SimpleChatModel(BaseChatModel):
-    """Simple Chat Model."""
+    """A simplified implementation for a chat model to inherit from."""
 
     def _generate(
         self,
