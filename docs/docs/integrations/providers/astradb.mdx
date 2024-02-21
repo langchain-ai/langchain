@@ -40,7 +40,7 @@ message_history = AstraDBChatMessageHistory(
 
 ```python
 from langchain.globals import set_llm_cache
-from langchain_community.cache import AstraDBCache
+from langchain_astradb import AstraDBCache
 set_llm_cache(AstraDBCache(
     api_endpoint="...",
     token="...",
@@ -54,7 +54,7 @@ Learn more in the [example notebook](/docs/integrations/llms/llm_caching#astra-d
 
 ```python
 from langchain.globals import set_llm_cache
-from langchain_community.cache import AstraDBSemanticCache
+from langchain_astradb import AstraDBSemanticCache
 set_llm_cache(AstraDBSemanticCache(
     embedding=my_embedding,
     api_endpoint="...",
