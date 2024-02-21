@@ -215,7 +215,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
-            del res[self._embedding_key]
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
