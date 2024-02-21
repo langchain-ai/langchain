@@ -106,7 +106,7 @@ class KineticaVectorStore(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores 
+            from langchain_community.vectorstores
                 import KineticaVectorStore, KineticaSettings
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
