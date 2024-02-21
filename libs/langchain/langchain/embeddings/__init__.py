@@ -94,6 +94,9 @@ __all__ = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
+    "OptimizedHuggingFaceEmbeddings",
+    "OptimizedHuggingFaceBgeEmbeddings",
+    "OptimizedHuggingFaceInstructEmbeddings",
 ]
 
 
