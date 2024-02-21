@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
+_DEFAULT_PERSIST_DIR = './output'
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -795,3 +796,69 @@ class Chroma(VectorStore):
             ids: List of ids to delete.
         """
         self._collection.delete(ids=ids)
+
+    @classmethod
+    def build(
+            cls: Type[Chroma],
+            documents: List[Document],
+            embedding: Optional[Embeddings] = None,
+            metadatas: Optional[List[dict]] = None,
+            ids: Optional[List[str]] = None,
+            collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+            persist_directory: Optional[str] = None,
+            client_settings: Optional[chromadb.config.Settings] = None,
+            client: Optional[chromadb.Client] = None,
+            collection_metadata: Optional[Dict] = None,
+            **kwargs: Any,
+    ) -> Chroma:
+        if os.path.exists(persist_directory):
+            if bool(os.listdir(persist_directory)):
+                logging.info("Load the existing database!")
+                chroma_collection = cls(
+                    collection_name=collection_name,
+                    embedding_function=embedding,
+                    persist_directory=persist_directory,
+                    client_settings=client_settings,
+                    client=client,
+                    collection_metadata=collection_metadata,
+                    **kwargs,
+                )
+                return chroma_collection
+        else:
+            logging.info("Create a new knowledge base...")
+            chroma_collection = cls.from_documents(
+                documents=documents,
+                embedding=embedding,
+                ids=ids,
+                collection_name=collection_name,
+                persist_directory=persist_directory,
+                client_settings=client_settings,
+                client=client,
+                collection_metadata=collection_metadata,
+                **kwargs,
+            )
+            return chroma_collection
+
+    @classmethod
+    def reload(
+            cls: Type[Chroma],
+            collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+            embedding: Optional[Embeddings] = None,
+            persist_directory: Optional[str] = None,
+            client_settings: Optional[chromadb.config.Settings] = None,
+            collection_metadata: Optional[Dict] = None,
+            client: Optional[chromadb.Client] = None,
+            relevance_score_fn: Optional[Callable[[float], float]] = None,
+    ) -> Chroma:
+
+        if not persist_directory:
+            persist_directory = _DEFAULT_PERSIST_DIR
+        chroma_collection = cls(
+            collection_name=collection_name,
+            embedding_function=embedding,
+            persist_directory=persist_directory,
+            client_settings=client_settings,
+            client=client,
+            collection_metadata=collection_metadata,
+        )
+        return chroma_collection

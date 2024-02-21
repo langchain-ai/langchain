@@ -73,6 +73,8 @@ from langchain_community.retrievers.wikipedia import WikipediaRetriever
 from langchain_community.retrievers.you import YouRetriever
 from langchain_community.retrievers.zep import ZepRetriever
 from langchain_community.retrievers.zilliz import ZillizRetriever
+from langchain_community.retrievers.child_parent_retriever import ChildParentRetriever
+from langchain_community.retrievers.bge_reranker import BgeReranker
 
 __all__ = [
     "AmazonKendraRetriever",
@@ -112,4 +114,5 @@ __all__ = [
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
+    "ChildParentRetriever",
 ]

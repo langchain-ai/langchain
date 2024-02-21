@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     DictFilter = Dict[str, Union[str, int, bool, dict, list]]
     MetadataFilter = Union[DictFilter, common_types.Filter]
 
+_DEFAULT_PERSIST_DIR = './output'
 
 class QdrantException(Exception):
     """`Qdrant` related exceptions."""
@@ -2213,3 +2214,96 @@ class Qdrant(VectorStore):
             )
 
         return sync_client, async_client
+    
+    def is_local(
+        self,
+    ):
+        """Determine whether a client is local."""
+        if hasattr(self.client, "_client") and \
+            isinstance(self.client._client, qdrant_client.local.qdrant_local.QdrantLocal):
+            return True
+        else:
+            return False
+    
+    @classmethod
+    def build(
+        cls,
+        documents: List[Document],
+        embedding: Optional[Embeddings],
+        location: Optional[str] = None,
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        host: Optional[str]= None,
+        persist_directory: Optional[str] = None,
+        collection_name: Optional[str] = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        force_recreate: Optional[bool] = False,
+        **kwargs: Any,
+    ):
+        "Build a Qdrant vectorstore."
+        if sum([param is not None for param in (location, url, host, persist_directory)]) == 0:
+            # One of 'location', 'url', 'host' or 'persist_directory' should be specified.
+            persist_directory = _DEFAULT_PERSIST_DIR
+        if persist_directory and os.path.exists(persist_directory):
+            if bool(os.listdir(persist_directory)):
+                logging.info("Load the existing database!")
+                texts = [d.page_content for d in documents]
+                qdrant_collection = cls.construct_instance(
+                    texts=texts,
+                    embedding=embedding,
+                    location=location,
+                    url=url,
+                    api_key=api_key,
+                    host=host,
+                    path=persist_directory,
+                    collection_name=collection_name,
+                    force_recreate=force_recreate,
+                    **kwargs
+                )
+                return qdrant_collection
+        else:
+            logging.info("Create a new knowledge base...")
+            qdrant_collection = cls.from_documents(
+                documents=documents,
+                embedding=embedding,
+                location=location,
+                url=url,
+                api_key=api_key,
+                host=host,
+                persist_directory=persist_directory,
+                collection_name=collection_name,
+                force_recreate=force_recreate,
+                **kwargs,
+            )
+            return qdrant_collection
+
+    @classmethod
+    def reload(
+        cls,
+        embedding: Optional[Embeddings],
+        location: Optional[str] = None,
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        host: Optional[str]= None,
+        persist_directory: Optional[str] = None,
+        collection_name: Optional[str] = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        force_recreate: bool = False,
+        **kwargs: Any,
+    ):
+        "Reload a Qdrant vectorstore."
+        if sum([param is not None for param in (location, url, host, persist_directory)]) == 0:
+            # One of 'location', 'url', 'host' or 'persist_directory' should be specified.
+            persist_directory = _DEFAULT_PERSIST_DIR
+
+        qdrant_collection = cls.construct_instance(
+            texts=tmp_texts,
+            embedding=embedding,
+            location=location,
+            url=url,
+            api_key=api_key,
+            host=host,
+            path=persist_directory,
+            collection_name=collection_name,
+            force_recreate=force_recreate,
+            **kwargs
+        )
+        return qdrant_collection
