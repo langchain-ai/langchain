@@ -15,29 +15,30 @@ docker build -t tgi_gaudi . --build-arg https_proxy=$https_proxy --build-arg htt
 
 ## Launch a local server instance on 1 Gaudi card:
 ```bash
-model=meta-llama/Llama-2-70b-hf
+model=Intel/neural-chat-7b-v3-3
 volume=$PWD/data # share a volume with the Docker container to avoid downloading weights every run
 
-docker run -p 8080:80 -v $volume:/data --runtime=habana -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none --cap-add=sys_nice --ipc=host -e HUGGING_FACE_HUB_TOKEN=<token> tgi_gaudi --model-id $model
+docker run -p 8080:80 -v $volume:/data --runtime=habana -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none --cap-add=sys_nice --ipc=host tgi_gaudi --model-id $model
 ```
-
-## Launch a local server instance on 8 Gaudi cards:
-```bash
-model=meta-llama/Llama-2-70b-hf
-volume=$PWD/data # share a volume with the Docker container to avoid downloading weights every run
-
-docker run -p 8080:80 -v $volume:/data --runtime=habana -e PT_HPU_ENABLE_LAZY_COLLECTIVES=true -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none --cap-add=sys_nice --ipc=host -e HUGGING_FACE_HUB_TOKEN=<token> tgi_gaudi --model-id $model --sharded true --num-shard 8
-```
-
 
 If you need to set proxy settings, add `--build-arg https_proxy=$https_proxy --build-arg http_proxy=$http_proxy` like below.
 ```bash
-docker run -p 8080:80 -v $volume:/data --runtime=habana -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none --cap-add=sys_nice --ipc=host -e HUGGING_FACE_HUB_TOKEN=<token> -e HTTPS_PROXY=$https_proxy -e HTTP_PROXY=$https_proxy tgi_gaudi --model-id $model
+docker run -p 8080:80 -v $volume:/data --runtime=habana -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none --cap-add=sys_nice --ipc=host -e HTTPS_PROXY=$https_proxy -e HTTP_PROXY=$https_proxy tgi_gaudi --model-id $model
 ```
 
-> Set `LIMIT_HPU_GRAPH=True` for larger sequence/decoding lengths(e.g. 300/212).
+For gated models such as LLAMA-2, you will have to pass -e HUGGING_FACE_HUB_TOKEN=<token> to the docker run command above with a valid Hugging Face Hub read token.
 
-More details please refer to [README](https://github.com/huggingface/tgi-gaudi/blob/v1.2-release/README.md).
+Send a request to check if the endpoint is wokring:
+
+```bash
+curl localhost:8080/generate   -X POST   -d '{"inputs":"Which NFL team won the Super Bowl in the 2010 season?","parameters":{"max_new_tokens":128, "do_sample": true}}'   -H 'Content-Type: application/json'
+```
+The first call will be slower as the model is compiled.
+
+More details please refer to [tgi-gaudi](https://github.com/huggingface/tgi-gaudi/blob/v1.2-release/README.md).
+
+For more information and documentation about Text Generation Inference, checkout the [README](https://github.com/huggingface/text-generation-inference#text-generation-inference) of the original repo.
+
 
 ## Install intel optimized langchain
 ```bash
@@ -47,6 +48,7 @@ pip install -e .
 cd ../community/
 pip install -e .
 ```
+
 ## Install huggingface_hub
 ```bash
 pip install huggingface_hub
