@@ -14,6 +14,6 @@ all_documents = {
     "doc10": "The history of climate change activism.",
 }
 
-Pinecone.from_texts(
+PineconeVectorStore.from_texts(
     list(all_documents.values()), OpenAIEmbeddings(), index_name="rag-fusion"
 )

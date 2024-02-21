@@ -401,9 +401,9 @@ class Pinecone(VectorStore):
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
         **kwargs: Any,
-    ) -> Pinecone:
+    ) -> PineconeVectorStore:
         """
-        DEPRECATED: use langchain_pinecone.Pinecone.from_texts instead:
+        DEPRECATED: use langchain_pinecone.PineconeVectorStore.from_texts instead:
         Construct Pinecone wrapper from raw documents.
 
         This is a user friendly interface that:
@@ -451,7 +451,7 @@ class Pinecone(VectorStore):
         text_key: str = "text",
         namespace: Optional[str] = None,
         pool_threads: int = 4,
-    ) -> Pinecone:
+    ) -> PineconeVectorStore:
         """Load pinecone vectorstore from index name."""
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
         return cls(pinecone_index, embedding, text_key, namespace)

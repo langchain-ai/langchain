@@ -404,7 +404,7 @@ class PineconeVectorStore(VectorStore):
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
         **kwargs: Any,
-    ) -> Pinecone:
+    ) -> PineconeVectorStore:
         """Construct Pinecone wrapper from raw documents.
 
         This is a user friendly interface that:
@@ -425,7 +425,7 @@ class PineconeVectorStore(VectorStore):
 
                 embeddings = OpenAIEmbeddings()
                 index_name = "my-index"
-                vectorstore = Pinecone.from_texts(
+                vectorstore = PineconeVectorStore.from_texts(
                     texts,
                     index_name=index_name,
                     embedding=embedding,
@@ -454,7 +454,7 @@ class PineconeVectorStore(VectorStore):
         text_key: str = "text",
         namespace: Optional[str] = None,
         pool_threads: int = 4,
-    ) -> Pinecone:
+    ) -> PineconeVectorStore:
         """Load pinecone vectorstore from index name."""
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
         return cls(pinecone_index, embedding, text_key, namespace)

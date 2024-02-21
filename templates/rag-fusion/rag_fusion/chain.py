@@ -30,7 +30,7 @@ generate_queries = (
     prompt | ChatOpenAI(temperature=0) | StrOutputParser() | (lambda x: x.split("\n"))
 )
 
-vectorstore = Pinecone.from_existing_index("rag-fusion", OpenAIEmbeddings())
+vectorstore = PineconeVectorStore.from_existing_index("rag-fusion", OpenAIEmbeddings())
 retriever = vectorstore.as_retriever()
 
 chain = (

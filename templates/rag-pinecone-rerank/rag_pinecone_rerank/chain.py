@@ -30,12 +30,14 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 # all_splits = text_splitter.split_documents(data)
 
 # # Add to vectorDB
-# vectorstore = Pinecone.from_documents(
+# vectorstore = PineconeVectorStore.from_documents(
 #     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
 # )
 # retriever = vectorstore.as_retriever()
 
-vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
+vectorstore = PineconeVectorStore.from_existing_index(
+    PINECONE_INDEX_NAME, OpenAIEmbeddings()
+)
 
 # Get k=10 docs
 retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
