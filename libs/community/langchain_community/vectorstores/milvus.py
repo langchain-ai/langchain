@@ -154,6 +154,7 @@ class Milvus(VectorStore):
             "RHNSW_PQ": {"metric_type": "L2", "params": {"ef": 10}},
             "IVF_HNSW": {"metric_type": "L2", "params": {"nprobe": 10, "ef": 10}},
             "ANNOY": {"metric_type": "L2", "params": {"search_k": 10}},
+            "SCANN": {"metric_type": "L2", "params": {"search_k": 10}},
             "AUTOINDEX": {"metric_type": "L2", "params": {}},
         }
 
