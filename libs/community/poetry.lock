@@ -5386,24 +5386,22 @@ testing = ["google-api-core[grpc] (>=1.31.5)"]
 
 [[package]]
 name = "protobuf"
-version = "4.24.2"
+version = "4.25.2"
 description = ""
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "protobuf-4.24.2-cp310-abi3-win32.whl", hash = "sha256:58e12d2c1aa428ece2281cef09bbaa6938b083bcda606db3da4e02e991a0d924"},
-    {file = "protobuf-4.24.2-cp310-abi3-win_amd64.whl", hash = "sha256:77700b55ba41144fc64828e02afb41901b42497b8217b558e4a001f18a85f2e3"},
-    {file = "protobuf-4.24.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:237b9a50bd3b7307d0d834c1b0eb1a6cd47d3f4c2da840802cd03ea288ae8880"},
-    {file = "protobuf-4.24.2-cp37-abi3-manylinux2014_aarch64.whl", hash = "sha256:25ae91d21e3ce8d874211110c2f7edd6384816fb44e06b2867afe35139e1fd1c"},
-    {file = "protobuf-4.24.2-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:c00c3c7eb9ad3833806e21e86dca448f46035242a680f81c3fe068ff65e79c74"},
-    {file = "protobuf-4.24.2-cp37-cp37m-win32.whl", hash = "sha256:4e69965e7e54de4db989289a9b971a099e626f6167a9351e9d112221fc691bc1"},
-    {file = "protobuf-4.24.2-cp37-cp37m-win_amd64.whl", hash = "sha256:c5cdd486af081bf752225b26809d2d0a85e575b80a84cde5172a05bbb1990099"},
-    {file = "protobuf-4.24.2-cp38-cp38-win32.whl", hash = "sha256:6bd26c1fa9038b26c5c044ee77e0ecb18463e957fefbaeb81a3feb419313a54e"},
-    {file = "protobuf-4.24.2-cp38-cp38-win_amd64.whl", hash = "sha256:bb7aa97c252279da65584af0456f802bd4b2de429eb945bbc9b3d61a42a8cd16"},
-    {file = "protobuf-4.24.2-cp39-cp39-win32.whl", hash = "sha256:2b23bd6e06445699b12f525f3e92a916f2dcf45ffba441026357dea7fa46f42b"},
-    {file = "protobuf-4.24.2-cp39-cp39-win_amd64.whl", hash = "sha256:839952e759fc40b5d46be319a265cf94920174d88de31657d5622b5d8d6be5cd"},
-    {file = "protobuf-4.24.2-py3-none-any.whl", hash = "sha256:3b7b170d3491ceed33f723bbf2d5a260f8a4e23843799a3906f16ef736ef251e"},
-    {file = "protobuf-4.24.2.tar.gz", hash = "sha256:7fda70797ddec31ddfa3576cbdcc3ddbb6b3078b737a1a87ab9136af0570cd6e"},
+    {file = "protobuf-4.25.2-cp310-abi3-win32.whl", hash = "sha256:b50c949608682b12efb0b2717f53256f03636af5f60ac0c1d900df6213910fd6"},
+    {file = "protobuf-4.25.2-cp310-abi3-win_amd64.whl", hash = "sha256:8f62574857ee1de9f770baf04dde4165e30b15ad97ba03ceac65f760ff018ac9"},
+    {file = "protobuf-4.25.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:2db9f8fa64fbdcdc93767d3cf81e0f2aef176284071507e3ede160811502fd3d"},
+    {file = "protobuf-4.25.2-cp37-abi3-manylinux2014_aarch64.whl", hash = "sha256:10894a2885b7175d3984f2be8d9850712c57d5e7587a2410720af8be56cdaf62"},
+    {file = "protobuf-4.25.2-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:fc381d1dd0516343f1440019cedf08a7405f791cd49eef4ae1ea06520bc1c020"},
+    {file = "protobuf-4.25.2-cp38-cp38-win32.whl", hash = "sha256:33a1aeef4b1927431d1be780e87b641e322b88d654203a9e9d93f218ee359e61"},
+    {file = "protobuf-4.25.2-cp38-cp38-win_amd64.whl", hash = "sha256:47f3de503fe7c1245f6f03bea7e8d3ec11c6c4a2ea9ef910e3221c8a15516d62"},
+    {file = "protobuf-4.25.2-cp39-cp39-win32.whl", hash = "sha256:5e5c933b4c30a988b52e0b7c02641760a5ba046edc5e43d3b94a74c9fc57c1b3"},
+    {file = "protobuf-4.25.2-cp39-cp39-win_amd64.whl", hash = "sha256:d66a769b8d687df9024f2985d5137a337f957a0916cf5464d1513eee96a63ff0"},
+    {file = "protobuf-4.25.2-py3-none-any.whl", hash = "sha256:a8b7a98d4ce823303145bf3c1a8bdb0f2f4642a414b196f04ad9853ed0c8f830"},
+    {file = "protobuf-4.25.2.tar.gz", hash = "sha256:fe599e175cb347efc8ee524bcd4b902d11f7262c0e569ececcb89995c15f0a5e"},
 ]
 
 [[package]]
@@ -6510,6 +6508,7 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
+    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -8612,20 +8611,6 @@ yarl = "*"
 tests = ["Werkzeug (==2.0.3)", "aiohttp", "boto3", "httplib2", "httpx", "pytest", "pytest-aiohttp", "pytest-asyncio", "pytest-cov", "pytest-httpbin", "requests (>=2.22.0)", "tornado", "urllib3"]
 
 [[package]]
-name = "vdms"
-version = "0.0.20"
-description = "VDMS Client Module"
-optional = true
-python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4"
-files = [
-    {file = "vdms-0.0.20-py3-none-any.whl", hash = "sha256:7b81127f2981f2dabdcc5880ad7eb4bc2c7833a25aaf79a7b1a560e86bf7b5ec"},
-    {file = "vdms-0.0.20.tar.gz", hash = "sha256:746c21a96e420b9b034495537b42d70f2326b020a1c6907677f7851a926e8605"},
-]
-
-[package.dependencies]
-protobuf = "4.24.2"
-
-[[package]]
 name = "watchdog"
 version = "4.0.0"
 description = "Filesystem events monitoring"
@@ -9172,9 +9157,9 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 cli = ["typer"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "httpx", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "nvidia-riva-client", "oci", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "tree-sitter", "tree-sitter-languages", "upstash-redis", "vdms", "xata", "xmltodict", "zhipuai"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "httpx", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "nvidia-riva-client", "oci", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "tree-sitter", "tree-sitter-languages", "upstash-redis", "xata", "xmltodict", "zhipuai"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "59c3011e75bfbd9569630096f8d5b3454b1db98d36d420ac930d9cb20d6dd921"
+content-hash = "5fdd9b2eb766411463fa27e19433daf5d5325f2af01ddd93b6a594e3e02a31de"
