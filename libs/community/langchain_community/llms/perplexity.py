@@ -42,7 +42,6 @@ from langchain_core.outputs import (
 )
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
-from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +128,7 @@ class PerplexityLLM(BaseChatModel):
             values, "pplx_api_key", "PPLX_API_KEY"
         )
         try:
-            import openai  # noqa: F401
+            from openai import OpenAI  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
