@@ -251,7 +251,7 @@ class BaseOpenAI(BaseLLM):
         self.get_sub_prompts(params, [prompt], stop)  # this mutates params
         for stream_resp in self.client.create(prompt=prompt, **params):
             if not isinstance(stream_resp, dict):
-                stream_resp = stream_resp.dict()
+                stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -279,7 +279,7 @@ class BaseOpenAI(BaseLLM):
             prompt=prompt, **params
         ):
             if not isinstance(stream_resp, dict):
-                stream_resp = stream_resp.dict()
+                stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -357,7 +357,7 @@ class BaseOpenAI(BaseLLM):
                 if not isinstance(response, dict):
                     # V1 client returns the response in an PyDantic object instead of
                     # dict. For the transition period, we deep convert it to dict.
-                    response = response.dict()
+                    response = response.model_dump()
 
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
@@ -420,7 +420,7 @@ class BaseOpenAI(BaseLLM):
             else:
                 response = await self.async_client.create(prompt=_prompts, **params)
                 if not isinstance(response, dict):
-                    response = response.dict()
+                    response = response.model_dump()
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(

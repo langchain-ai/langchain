@@ -205,7 +205,7 @@ class KDBAI(VectorStore):
         filter: Optional[List] = [],
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return pinecone documents most similar to embedding, along with scores.
+        """Return documents most similar to embedding, along with scores.
 
         Args:
             embedding (List[float]): query vector.
