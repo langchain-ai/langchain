@@ -2231,16 +2231,6 @@ ssh = ["paramiko"]
 tqdm = ["tqdm"]
 
 [[package]]
-name = "future"
-version = "0.18.3"
-description = "Clean single-source support for Python 3 and 2"
-optional = true
-python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
-files = [
-    {file = "future-0.18.3.tar.gz", hash = "sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307"},
-]
-
-[[package]]
 name = "geomet"
 version = "0.2.1.post1"
 description = "GeoJSON <-> WKT/WKB conversion utilities"
@@ -2390,55 +2380,6 @@ protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.1 || >4.21.1,<4
 
 [package.extras]
 grpc = ["grpcio (>=1.44.0,<2.0.0.dev0)"]
-
-[[package]]
-name = "gpudb"
-version = "7.2.0.0"
-description = "Python client for Kinetica DB"
-optional = true
-python-versions = "*"
-files = [
-    {file = "gpudb-7.2.0.0-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:a992345e2531bb88fce37b1f4bb0294ebe62e8dea06d56deef3b673ffcbcfa05"},
-    {file = "gpudb-7.2.0.0-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:373efed5816a04130451db92e2ac927144392a16253972a242a945a3bf883c3d"},
-    {file = "gpudb-7.2.0.0-cp27-cp27m-win32.whl", hash = "sha256:af76ee5d50bbcb4fa736cd52cb65e8b8f2333c3d62752b3a6d028a1ffd314bdd"},
-    {file = "gpudb-7.2.0.0-cp27-cp27m-win_amd64.whl", hash = "sha256:6f7e55e8da432d7ce90910f982a80ad848547f7fb53d42269ebb4402782b0aa4"},
-    {file = "gpudb-7.2.0.0-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:c2af6e8260d298b8532fc1be9a797bff6ec1126b4abb6afebeaad14ad0ec3b46"},
-    {file = "gpudb-7.2.0.0-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:c7c9269e13846f0dbd6e989a0cbccce29cc3747e90d07349f516615bb019e53a"},
-    {file = "gpudb-7.2.0.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:a7b829187c078bcb8154f88cf5bb702becb0995ac5032b9211b78b3213cab441"},
-    {file = "gpudb-7.2.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ffedff929707cb8ec8543b060e78a23c148f37878b24f73ec6c5c744b8689b0f"},
-    {file = "gpudb-7.2.0.0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c131eee60d1d32e30aaf329e2c0d96e5e944bf213d2e1aef331296760d5ae847"},
-    {file = "gpudb-7.2.0.0-cp310-cp310-win32.whl", hash = "sha256:247dc75474b180eb9dc99750fa79e17dfe511068d80b64735fa9c7cc613f6864"},
-    {file = "gpudb-7.2.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:aa542d9ffb60707147b346b57f3050d84545ff47a04c0b24ae899259bae6e17e"},
-    {file = "gpudb-7.2.0.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:98c2be1a4a6e61020ffa13067146a0b15a9a0bce5932c5c188c71c5a060f6a93"},
-    {file = "gpudb-7.2.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:edae7b4429b6eb9122f22e0f7e5d4f2e189c6ab1c289936ebaff201daa6e9b6e"},
-    {file = "gpudb-7.2.0.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1ee7e6d7be7eb9e79d3024036a60013936c3119236a800d2f221e9e9a08b2d21"},
-    {file = "gpudb-7.2.0.0-cp34-cp34m-manylinux1_i686.whl", hash = "sha256:7f1e2b449c0fa4053773551f7dd2b28a722ae7efd09632e78db9d95bab787d4b"},
-    {file = "gpudb-7.2.0.0-cp34-cp34m-manylinux1_x86_64.whl", hash = "sha256:9895c6f0ff7af0d512b0ace8365beab9bc804b02bbf6c9961176e813d9b7b1b8"},
-    {file = "gpudb-7.2.0.0-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:302e7fcd792cb0d7a312aec3cbcb4728a9f4e7d2de6b8d4b14e3cf2e9bacd1fd"},
-    {file = "gpudb-7.2.0.0-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:d825e012674e018ef3a97c8840ae43ae4da2fecd8c08d24e5c5a38d365fd811d"},
-    {file = "gpudb-7.2.0.0-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5bf19368ea4a279158eea29332ff73a2d4bba3822d86e61198236a619054ff79"},
-    {file = "gpudb-7.2.0.0-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2f56e2c2f80953c2cbac224551c20f09c4ef1f89fb185d10cf0a00eb1a308bfa"},
-    {file = "gpudb-7.2.0.0-cp36-cp36m-win32.whl", hash = "sha256:dbd5ec1542b767235d6422438c3c81511507370eca758e22bd7efdb6553a9142"},
-    {file = "gpudb-7.2.0.0-cp36-cp36m-win_amd64.whl", hash = "sha256:d9797f2eb078a62050f76f9539cc1699bbe7dab824b18d10b6ca39af82a6f6a7"},
-    {file = "gpudb-7.2.0.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a1e4e974b39ebe271c62b7148b6e3a744e5559f1c4fc27916af462956ff7e02a"},
-    {file = "gpudb-7.2.0.0-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:cace15530ec5f0080c22ec878bbdca9018b53bbaeabb3be215c03ed95e02da93"},
-    {file = "gpudb-7.2.0.0-cp37-cp37m-win32.whl", hash = "sha256:50a1e01705b6d726ea24cb849de4f7d4cea8712b47ed92601a4e4b85e8a4e755"},
-    {file = "gpudb-7.2.0.0-cp37-cp37m-win_amd64.whl", hash = "sha256:3c674b99c01292edd1c8b754c23a8286c032da84055a02f24e0636a7af759cf4"},
-    {file = "gpudb-7.2.0.0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:a84253a498c42b38c830d24ab416eb2fdf1d29a2eef9a1e88c23b4113128c768"},
-    {file = "gpudb-7.2.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a8c5ae720cd73582174f483f03ae2f42068823535e16d0d14c4dfbbaf634cebe"},
-    {file = "gpudb-7.2.0.0-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c8960699d211ceae2958963aca6de2d274dc60c82a3f2b3f81ba5ad69276b73a"},
-    {file = "gpudb-7.2.0.0-cp38-cp38-win32.whl", hash = "sha256:650717751c125a92d7410fcd3a05388c519fcc18a988b7ed18fc5ba9aa6d532c"},
-    {file = "gpudb-7.2.0.0-cp38-cp38-win_amd64.whl", hash = "sha256:e80d12d458720d1febdebbb3d9908ebe19ad5bf916927803b3b1fce2e3055463"},
-    {file = "gpudb-7.2.0.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:d1a7042ba785c51cdb7c1bb82a7bb11201aa39bea35ae1cc3b50e8f1e631d45a"},
-    {file = "gpudb-7.2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5295743a20bbc9ce0ea27d9b9386e5fb0f84e9b785bed3b5ba95c3f24f4089d0"},
-    {file = "gpudb-7.2.0.0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:95453c96e051abaf86cd6ef84eda21b39a7edf71d145c68e51ad6797b50fc98f"},
-    {file = "gpudb-7.2.0.0-cp39-cp39-win32.whl", hash = "sha256:8f84153bb6c05f6a3e05a4547c5dee3c9ad3c673d632ecf82b5e15a709f23f06"},
-    {file = "gpudb-7.2.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:7b0595c877d512ba5fb38da71b1fb74b07547f4267285878d3e8562eb37a1ed0"},
-]
-
-[package.dependencies]
-future = "*"
-pyzmq = "*"
 
 [[package]]
 name = "gql"
@@ -3709,7 +3650,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.25"
+version = "0.1.24"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -8342,25 +8283,6 @@ files = [
 tree-sitter = "*"
 
 [[package]]
-name = "typeguard"
-version = "4.1.5"
-description = "Run-time type checker for Python"
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "typeguard-4.1.5-py3-none-any.whl", hash = "sha256:8923e55f8873caec136c892c3bed1f676eae7be57cdb94819281b3d3bc9c0953"},
-    {file = "typeguard-4.1.5.tar.gz", hash = "sha256:ea0a113bbc111bcffc90789ebb215625c963411f7096a7e9062d4e4630c155fd"},
-]
-
-[package.dependencies]
-importlib-metadata = {version = ">=3.6", markers = "python_version < \"3.10\""}
-typing-extensions = {version = ">=4.7.0", markers = "python_version < \"3.12\""}
-
-[package.extras]
-doc = ["Sphinx (>=7)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)"]
-test = ["coverage[toml] (>=7)", "mypy (>=1.2.0)", "pytest (>=7)"]
-
-[[package]]
 name = "typer"
 version = "0.9.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
@@ -9235,9 +9157,9 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 cli = ["typer"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gpudb", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "httpx", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "nvidia-riva-client", "oci", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "tree-sitter", "tree-sitter-languages", "typeguard", "upstash-redis", "xata", "xmltodict", "zhipuai"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cohere", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "httpx", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "nvidia-riva-client", "oci", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "timescale-vector", "tqdm", "tree-sitter", "tree-sitter-languages", "upstash-redis", "xata", "xmltodict", "zhipuai"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "4932b632e610a0d80b29a4b4585d1bfa6c4bb9b65cc7279556ffcf942b61c855"
+content-hash = "5fdd9b2eb766411463fa27e19433daf5d5325f2af01ddd93b6a594e3e02a31de"
