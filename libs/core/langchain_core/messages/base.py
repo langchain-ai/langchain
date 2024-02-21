@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from uuid import uuid4
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
@@ -26,6 +27,8 @@ class BaseMessage(Serializable):
     type: str
 
     name: Optional[str] = None
+
+    id: str = Field(default_factory=lambda: uuid4().hex)
 
     class Config:
         extra = Extra.allow
@@ -161,6 +164,7 @@ class BaseMessageChunk(BaseMessage):
             # concat into a single BaseMessageChunk
 
             return self.__class__(
+                id=self.id,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs
