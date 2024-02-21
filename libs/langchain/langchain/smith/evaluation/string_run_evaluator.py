@@ -4,6 +4,10 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from langchain_core.load.dump import dumpd
+from langchain_core.load.load import load
+from langchain_core.load.serializable import Serializable
+from langchain_core.messages import BaseMessage, get_buffer_string, messages_from_dict
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run
 
@@ -13,11 +17,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
-from langchain.load.dump import dumpd
-from langchain.load.load import load
-from langchain.load.serializable import Serializable
-from langchain.schema import RUN_KEY, messages_from_dict
-from langchain.schema.messages import BaseMessage, get_buffer_string
+from langchain.schema import RUN_KEY
 
 
 def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
@@ -226,7 +226,7 @@ class StringExampleMapper(Serializable):
         return {
             "reference": self.serialize_chat_messages([output])
             if isinstance(output, dict) and output.get("type") and output.get("data")
-            else str(output)
+            else output
         }
 
     def __call__(self, example: Example) -> Dict[str, str]:
@@ -304,7 +304,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     async def _acall(
         self,
         inputs: Dict[str, str],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Call the evaluation chain."""
         evaluate_strings_inputs = self._prepare_input(inputs)

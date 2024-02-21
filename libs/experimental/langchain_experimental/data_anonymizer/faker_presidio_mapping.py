@@ -38,4 +38,23 @@ def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callab
         "US_ITIN": lambda _: fake.bothify(text="9##-7#-####"),
         "US_PASSPORT": lambda _: fake.bothify(text="#####??").upper(),
         "US_SSN": lambda _: fake.ssn(),
+        # UK-specific entities
+        "UK_NHS": lambda _: str(fake.random_number(digits=10, fix_len=True)),
+        # Spain-specific entities
+        "ES_NIF": lambda _: fake.bothify(text="########?").upper(),
+        # Italy-specific entities
+        "IT_FISCAL_CODE": lambda _: fake.bothify(text="??????##?##?###?").upper(),
+        "IT_DRIVER_LICENSE": lambda _: fake.bothify(text="?A#######?").upper(),
+        "IT_VAT_CODE": lambda _: fake.bothify(text="IT???????????"),
+        "IT_PASSPORT": lambda _: str(fake.random_number(digits=9, fix_len=True)),
+        "IT_IDENTITY_CARD": lambda _: lambda _: str(
+            fake.random_number(digits=7, fix_len=True)
+        ),
+        # Singapore-specific entities
+        "SG_NRIC_FIN": lambda _: fake.bothify(text="????####?").upper(),
+        # Australia-specific entities
+        "AU_ABN": lambda _: str(fake.random_number(digits=11, fix_len=True)),
+        "AU_ACN": lambda _: str(fake.random_number(digits=9, fix_len=True)),
+        "AU_TFN": lambda _: str(fake.random_number(digits=9, fix_len=True)),
+        "AU_MEDICARE": lambda _: str(fake.random_number(digits=10, fix_len=True)),
     }

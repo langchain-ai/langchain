@@ -6,9 +6,9 @@ from typing import Type
 from unittest import mock
 
 import pytest
-from langchain.llms import OpenAI
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
+from langchain_community.llms import OpenAI
 
 from langchain_experimental import pydantic_v1 as pydantic
 from langchain_experimental.cpal.base import (
@@ -39,14 +39,14 @@ from langchain_experimental.cpal.templates.univariate.narrative import (
 from langchain_experimental.cpal.templates.univariate.query import (
     template as query_template,
 )
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from tests.unit_tests.fake_llm import FakeLLM
 
 
 class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
     """Unit Test the CPAL chain and its component chains on math word problems.
 
     These tests can't run in the standard unit test directory because of
-    this issue, https://github.com/hwchase17/langchain/issues/7451
+    this issue, https://github.com/langchain-ai/langchain/issues/7451
 
     """
 
@@ -398,7 +398,7 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         """
         Test CPAL chain against the first example in the PAL chain notebook doc:
 
-        https://github.com/hwchase17/langchain/blob/master/docs/extras/modules/chains/additional/pal.ipynb
+        https://github.com/langchain-ai/langchain/blob/master/docs/extras/modules/chains/additional/pal.ipynb
         """
 
         narrative_input = (
@@ -516,7 +516,7 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         llm = OpenAI(temperature=0, max_tokens=512)
         cpal_chain = CPALChain.from_univariate_prompt(llm=llm, verbose=True)
         with pytest.raises(Exception) as e_info:
-            print(e_info)
+            print(e_info)  # noqa: T201
             cpal_chain.run(narrative_input)
 
     def test_causal_mediator(self) -> None:

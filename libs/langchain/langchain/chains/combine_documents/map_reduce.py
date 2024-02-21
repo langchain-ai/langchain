@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type
 
-from langchain.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.runnables.config import RunnableConfig
+from langchain_core.runnables.utils import create_model
+
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
-from langchain.pydantic_v1 import BaseModel, Extra, create_model, root_validator
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
@@ -30,8 +33,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 ReduceDocumentsChain,
                 MapReduceDocumentsChain,
             )
-            from langchain.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_core.prompts import PromptTemplate
+            from langchain_community.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
             # it will be passed to `format_document` - see that function for more
@@ -98,8 +101,9 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     return_intermediate_steps: bool = False
     """Return the results of the map steps in the output."""
 
-    @property
-    def output_schema(self) -> type[BaseModel]:
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
         if self.return_intermediate_steps:
             return create_model(
                 "MapReduceDocumentsOutput",
@@ -109,7 +113,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 },  # type: ignore[call-overload]
             )
 
-        return super().output_schema
+        return super().get_output_schema(config)
 
     @property
     def output_keys(self) -> List[str]:

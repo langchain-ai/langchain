@@ -20,8 +20,15 @@ from langchain.output_parsers.fix import OutputFixingParser
 from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,
+    MarkdownListOutputParser,
     NumberedListOutputParser,
 )
+from langchain.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    JsonOutputToolsParser,
+    PydanticToolsParser,
+)
+from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.output_parsers.rail_parser import GuardrailsOutputParser
 from langchain.output_parsers.regex import RegexParser
@@ -29,6 +36,7 @@ from langchain.output_parsers.regex_dict import RegexDictParser
 from langchain.output_parsers.retry import RetryOutputParser, RetryWithErrorOutputParser
 from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
 from langchain.output_parsers.xml import XMLOutputParser
+from langchain.output_parsers.yaml import YamlOutputParser
 
 __all__ = [
     "BooleanOutputParser",
@@ -38,8 +46,10 @@ __all__ = [
     "EnumOutputParser",
     "GuardrailsOutputParser",
     "ListOutputParser",
+    "MarkdownListOutputParser",
     "NumberedListOutputParser",
     "OutputFixingParser",
+    "PandasDataFrameOutputParser",
     "PydanticOutputParser",
     "RegexDictParser",
     "RegexParser",
@@ -48,4 +58,8 @@ __all__ = [
     "RetryWithErrorOutputParser",
     "StructuredOutputParser",
     "XMLOutputParser",
+    "JsonOutputToolsParser",
+    "PydanticToolsParser",
+    "JsonOutputKeyToolsParser",
+    "YamlOutputParser",
 ]
