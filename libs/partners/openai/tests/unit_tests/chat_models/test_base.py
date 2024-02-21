@@ -45,6 +45,13 @@ def test__convert_dict_to_message_human() -> None:
     assert result == expected_output
 
 
+def test__convert_dict_to_message_human_with_name() -> None:
+    message = {"role": "user", "content": "foo", "name": "test"}
+    result = _convert_dict_to_message(message)
+    expected_output = HumanMessage(content="foo", name="test")
+    assert result == expected_output
+
+
 def test__convert_dict_to_message_ai() -> None:
     message = {"role": "assistant", "content": "foo"}
     result = _convert_dict_to_message(message)
@@ -55,7 +62,7 @@ def test__convert_dict_to_message_ai() -> None:
 def test__convert_dict_to_message_ai_with_name() -> None:
     message = {"role": "assistant", "content": "foo", "name": "test"}
     result = _convert_dict_to_message(message)
-    expected_output = AIMessage(content="foo", additional_kwargs={"name": "test"})
+    expected_output = AIMessage(content="foo", name="test")
     assert result == expected_output
 
 
@@ -63,6 +70,13 @@ def test__convert_dict_to_message_system() -> None:
     message = {"role": "system", "content": "foo"}
     result = _convert_dict_to_message(message)
     expected_output = SystemMessage(content="foo")
+    assert result == expected_output
+
+
+def test__convert_dict_to_message_system_with_name() -> None:
+    message = {"role": "system", "content": "foo", "name": "test"}
+    result = _convert_dict_to_message(message)
+    expected_output = SystemMessage(content="foo", name="test")
     assert result == expected_output
 
 
