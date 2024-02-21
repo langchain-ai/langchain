@@ -1,5 +1,5 @@
 import unittest
-from typing import List
+from typing import List, Type
 
 import pytest
 
@@ -183,6 +183,21 @@ def test_multiple_msg() -> None:
     human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
     ai_msg = AIMessage(content="ai")
     sys_msg = SystemMessage(content="sys")
+
+    msgs = [
+        human_msg,
+        ai_msg,
+        sys_msg,
+    ]
+    assert messages_from_dict(messages_to_dict(msgs)) == msgs
+
+
+def test_multiple_msg_with_name() -> None:
+    human_msg = HumanMessage(
+        content="human", additional_kwargs={"key": "value"}, name="human erick"
+    )
+    ai_msg = AIMessage(content="ai", name="ai erick")
+    sys_msg = SystemMessage(content="sys", name="sys erick")
 
     msgs = [
         human_msg,
@@ -480,3 +495,49 @@ def test_convert_to_messages() -> None:
         HumanMessage(content="Hello!"),
         AIMessage(content="Hi!"),
     ]
+
+
+@pytest.mark.parametrize(
+    "MessageClass",
+    [
+        AIMessage,
+        AIMessageChunk,
+        HumanMessage,
+        HumanMessageChunk,
+        SystemMessage,
+    ],
+)
+def test_message_name(MessageClass: Type) -> None:
+    msg = MessageClass(content="foo", name="bar")
+    assert msg.name == "bar"
+
+    msg2 = MessageClass(content="foo", name=None)
+    assert msg2.name is None
+
+    msg3 = MessageClass(content="foo")
+    assert msg3.name is None
+
+
+@pytest.mark.parametrize(
+    "MessageClass",
+    [FunctionMessage, FunctionMessageChunk],
+)
+def test_message_name_function(MessageClass: Type) -> None:
+    # functionmessage doesn't support name=None
+    msg = MessageClass(name="foo", content="bar")
+    assert msg.name == "foo"
+
+
+@pytest.mark.parametrize(
+    "MessageClass",
+    [ChatMessage, ChatMessageChunk],
+)
+def test_message_name_chat(MessageClass: Type) -> None:
+    msg = MessageClass(content="foo", role="user", name="bar")
+    assert msg.name == "bar"
+
+    msg2 = MessageClass(content="foo", role="user", name=None)
+    assert msg2.name is None
+
+    msg3 = MessageClass(content="foo", role="user")
+    assert msg3.name is None

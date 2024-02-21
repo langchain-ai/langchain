@@ -52,6 +52,7 @@ jobs:
       - name: Run integration tests
         shell: bash
         env:
+          AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
@@ -62,8 +63,13 @@ jobs:
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
+          WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
+          WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
           PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
           PINECONE_ENVIRONMENT: ${{ secrets.PINECONE_ENVIRONMENT }}
+          ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
+          ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+          ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
         run: |
           make integration_tests
 

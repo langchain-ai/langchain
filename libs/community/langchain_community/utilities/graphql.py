@@ -37,7 +37,10 @@ class GraphQLAPIWrapper(BaseModel):
             url=values["graphql_endpoint"],
             headers=headers,
         )
-        client = Client(transport=transport, fetch_schema_from_transport=True)
+        fetch_schema_from_transport = values.get("fetch_schema_from_transport", True)
+        client = Client(
+            transport=transport, fetch_schema_from_transport=fetch_schema_from_transport
+        )
         values["gql_client"] = client
         values["gql_function"] = gql
         return values
