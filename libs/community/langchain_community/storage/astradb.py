@@ -15,6 +15,7 @@ from typing import (
     TypeVar,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.stores import BaseStore, ByteStore
 
 from langchain_community.utilities.astradb import (
@@ -124,6 +125,11 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
                 yield key
 
 
+@deprecated(
+    since="0.0.22",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBStore",
+)
 class AstraDBStore(AstraDBBaseStore[Any]):
     """BaseStore implementation using DataStax AstraDB as the underlying store.
 
@@ -143,6 +149,11 @@ class AstraDBStore(AstraDBBaseStore[Any]):
         return value
 
 
+@deprecated(
+    since="0.0.22",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBByteStore",
+)
 class AstraDBByteStore(AstraDBBaseStore[bytes], ByteStore):
     """ByteStore implementation using DataStax AstraDB as the underlying store.
 
