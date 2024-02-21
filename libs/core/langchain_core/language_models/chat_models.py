@@ -17,6 +17,7 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -47,7 +48,6 @@ from langchain_core.outputs import (
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables.config import ensure_config, run_in_executor
-from langchain_core.caches import BaseCache
 
 if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
@@ -118,8 +118,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
-    callback_manager: Optional[BaseCallbackManager] = Field(
-        default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
     tags: Optional[List[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
@@ -215,8 +214,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if type(self)._stream == BaseChatModel._stream:
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                BaseMessageChunk, self.invoke(
-                    input, config=config, stop=stop, **kwargs)
+                BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
             )
         else:
             config = ensure_config(config)
@@ -415,15 +413,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             except BaseException as e:
                 if run_managers:
-                    run_managers[i].on_llm_error(
-                        e, response=LLMResult(generations=[]))
+                    run_managers[i].on_llm_error(e, response=LLMResult(generations=[]))
                 raise e
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)
             for res in results
         ]
-        llm_output = self._combine_llm_outputs(
-            [res.llm_output for res in results])
+        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
         if run_managers:
@@ -517,8 +513,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     *[
                         run_manager.on_llm_end(
                             LLMResult(
-                                generations=[
-                                    res.generations], llm_output=res.llm_output
+                                generations=[res.generations], llm_output=res.llm_output
                             )
                         )
                         for run_manager, res in zip(run_managers, results)
@@ -530,8 +525,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             LLMResult(generations=[res.generations], llm_output=res.llm_output)
             for res in results
         ]
-        llm_output = self._combine_llm_outputs(
-            [res.llm_output for res in results])
+        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)
         await asyncio.gather(
@@ -836,8 +830,7 @@ class SimpleChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        output_str = self._call(messages, stop=stop,
-                                run_manager=run_manager, **kwargs)
+        output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
