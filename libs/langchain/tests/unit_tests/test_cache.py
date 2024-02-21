@@ -16,10 +16,25 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from langchain.cache import (
+    BaseCache,
     InMemoryCache,
     SQLAlchemyCache,
 )
 from langchain.globals import get_llm_cache, set_llm_cache
+
+
+class MockCache(BaseCache):
+    def __init__(self):
+        self.store = {}
+
+    def get(self, key):
+        return self.store.get(key)
+
+    def set(self, key, value):
+        self.store[key] = value
+
+    def clear(self):
+        self.store.clear()
 
 
 def get_sqlite_cache() -> SQLAlchemyCache:
@@ -33,6 +48,7 @@ def get_sqlite_cache() -> SQLAlchemyCache:
 CACHE_OPTIONS = [
     InMemoryCache,
     get_sqlite_cache,
+    MockCache,
 ]
 
 
