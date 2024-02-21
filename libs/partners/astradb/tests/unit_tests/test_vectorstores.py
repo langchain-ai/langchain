@@ -4,8 +4,10 @@ from unittest.mock import Mock
 import pytest
 from langchain_core.embeddings import Embeddings
 
-from langchain_astradb.vectorstores import AstraDBVectorStore
-from langchain_astradb.vectorstores.astradb import DEFAULT_INDEXING_OPTIONS
+from langchain_astradb.vectorstores import (
+    DEFAULT_INDEXING_OPTIONS,
+    AstraDBVectorStore,
+)
 
 
 class SomeEmbeddings(Embeddings):
