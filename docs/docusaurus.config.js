@@ -59,6 +59,10 @@ const config = {
               },
             },
             {
+              test: /\.ya?ml$/,
+              use: 'yaml-loader'
+            },
+            {
               test: /\.ipynb$/,
               loader: "raw-loader",
               resolve: {
@@ -178,6 +182,10 @@ const config = {
             position: "left",
             items: [
               {
+                to: "/docs/people/",
+                label: "People",
+              },
+              {
                 to: "/docs/packages",
                 label: "Versioning",
               },
@@ -188,7 +196,7 @@ const config = {
               },
               {
                 to: "/docs/contributing",
-                label: "Developer's guide",
+                label: "Contributing",
               },
               {
                 type: "docSidebar",

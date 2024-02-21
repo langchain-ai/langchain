@@ -123,9 +123,10 @@ class ChatLiteLLMRouter(ChatLiteLLM):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            cg_chunk = ChatGenerationChunk(message=chunk)
+            yield cg_chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content, **params)
+                run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk, **params)
 
     async def _astream(
         self,
@@ -148,9 +149,12 @@ class ChatLiteLLMRouter(ChatLiteLLM):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            cg_chunk = ChatGenerationChunk(message=chunk)
+            yield cg_chunk
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content, **params)
+                await run_manager.on_llm_new_token(
+                    chunk.content, chunk=cg_chunk, **params
+                )
 
     async def _agenerate(
         self,
