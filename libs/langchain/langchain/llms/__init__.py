@@ -518,7 +518,7 @@ def _import_watsonxllm() -> Any:
 
 def _import_weight_only_pipeline() -> Any:
     from langchain_community.llms.weight_only_quantization import (
-        WeightOnlyQuantPipeline
+        WeightOnlyQuantPipeline,
     )
 
     return WeightOnlyQuantPipeline
