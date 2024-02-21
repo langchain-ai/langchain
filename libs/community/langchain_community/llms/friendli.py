@@ -10,21 +10,17 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils.env import get_from_dict_or_env
-from langchain_core.utils.pydantic import get_pydantic_major_version
 from langchain_core.utils.utils import convert_to_secret_str
 
-PYDANTIC_V1 = get_pydantic_major_version() == 1
 
-
-def _stream_response_to_generation_chunk(
-    stream_response: Dict[str, Any],
-) -> GenerationChunk:
+def _stream_response_to_generation_chunk(stream_response: Any) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
-    if stream_response["event"] == "token_sampled":
+    if stream_response.event == "token_sampled":
         return GenerationChunk(
-            text=stream_response["text"], generation_info=stream_response["token"]
+            text=stream_response.text,
+            generation_info={"token": str(stream_response.token)},
         )
     return GenerationChunk(text="")
 
@@ -33,9 +29,9 @@ class BaseFriendli(Serializable):
     """Base class of Friendli."""
 
     # Friendli client.
-    client: Any
+    client: Any = Field(default=None, exclude=True)
     # Friendli Async client.
-    async_client: Any
+    async_client: Any = Field(default=None, exclude=True)
     # Model name to use.
     model: str = "mixtral-8x7b-instruct-v0-1"
     # Friendli personal access token to run as.
@@ -85,12 +81,14 @@ class BaseFriendli(Serializable):
         friendli_token = convert_to_secret_str(
             get_from_dict_or_env(values, "friendli_token", "FRIENDLI_TOKEN")
         )
+        values["friendli_token"] = friendli_token
         friendli_token_str = friendli_token.get_secret_value()
         friendli_team = values["friendli_team"] or os.getenv("FRIENDLI_TEAM")
-        values["client"] = friendli.Friendli(
+        values["friendli_team"] = friendli_team
+        values["client"] = values["client"] or friendli.Friendli(
             token=friendli_token_str, team_id=friendli_team
         )
-        values["async_client"] = friendli.AsyncFriendli(
+        values["async_client"] = values["async_client"] or friendli.AsyncFriendli(
             token=friendli_token_str, team_id=friendli_team
         )
         return values
@@ -234,8 +232,7 @@ class Friendli(LLM, BaseFriendli):
             model=self.model, prompt=prompt, stream=True, **params
         )
         for line in stream:
-            stream_resp = line.dict() if PYDANTIC_V1 else line.model_dump()
-            chunk = _stream_response_to_generation_chunk(stream_resp)
+            chunk = _stream_response_to_generation_chunk(line)
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(line.text, chunk=chunk)
@@ -248,12 +245,11 @@ class Friendli(LLM, BaseFriendli):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         params = self._get_invocation_params(stop=stop, **kwargs)
-        stream = await self.client.completions.acreate(
+        stream = await self.async_client.completions.create(
             model=self.model, prompt=prompt, stream=True, **params
         )
         async for line in stream:
-            stream_resp = line.dict() if PYDANTIC_V1 else line.model_dump()
-            chunk = _stream_response_to_generation_chunk(stream_resp)
+            chunk = _stream_response_to_generation_chunk(line)
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(line.text, chunk=chunk)

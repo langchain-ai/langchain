@@ -132,7 +132,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
     ) -> Iterator[ChatGenerationChunk]:
         params = self._get_invocation_params(stop=stop, **kwargs)
         stream = self.client.chat.completions.create(
-            messages=get_chat_request(messages), stream=True, model=self.model, **params
+            **get_chat_request(messages), stream=True, model=self.model, **params
         )
         for chunk in stream:
             delta = chunk.choices[0].delta.content
@@ -150,7 +150,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._get_invocation_params(stop=stop, **kwargs)
         stream = await self.async_client.chat.completions.create(
-            messages=get_chat_request(messages), stream=True, model=self.model, **params
+            **get_chat_request(messages), stream=True, model=self.model, **params
         )
         async for chunk in stream:
             delta = chunk.choices[0].delta.content
@@ -172,6 +172,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
             )
             return generate_from_stream(stream_iter)
 
+        params = self._get_invocation_params(stop=stop, **kwargs)
         response = self.client.chat.completions.create(
             messages=[
                 {
@@ -180,8 +181,9 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
                 }
                 for message in messages
             ],
-            stream=True,
+            stream=False,
             model=self.model,
+            **params,
         )
 
         message = AIMessage(content=response.choices[0].text)
@@ -200,6 +202,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
             )
             return await agenerate_from_stream(stream_iter)
 
+        params = self._get_invocation_params(stop=stop, **kwargs)
         response = await self.async_client.chat.completions.create(
             messages=[
                 {
@@ -208,8 +211,9 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
                 }
                 for message in messages
             ],
-            stream=True,
+            stream=False,
             model=self.model,
+            **params,
         )
 
         message = AIMessage(content=response.choices[0].text)
