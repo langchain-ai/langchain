@@ -1,24 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2023 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import logging
 from typing import Any, Dict, List, Optional
-from .optimized_instructor_embedding import OptimizedInstructor
-from .optimized_sentence_transformers import OptimizedSentenceTransformer
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
@@ -74,15 +55,26 @@ class OptimizedHuggingFaceEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        # check sentence_transformers python package
         try:
             import sentence_transformers
-
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence-transformers`."
             ) from exc
 
+        # check intel_extension_for_transformers python package
+        try:
+            import intel_extension_for_transformers
+        except ImportError as exc:
+            raise ImportError(
+                "Could not import intel_extension_for_transformers python package. "
+                "Please install it with `pip install intel-extension-for-transformers`."
+            ) from exc
+
+        from .optimized_sentence_transformers import OptimizedSentenceTransformer
         self.client = OptimizedSentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
@@ -124,7 +116,6 @@ class OptimizedHuggingFaceEmbeddings(BaseModel, Embeddings):
         """
         return self.embed_documents([text])[0]
 
-
 class OptimizedHuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """HuggingFace BGE sentence_transformers embedding models.
 
@@ -161,15 +152,26 @@ class OptimizedHuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        # check sentence_transformers python package
         try:
             import sentence_transformers
-
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence_transformers`."
             ) from exc
 
+        # check intel_extension_for_transformers python package
+        try:
+            import intel_extension_for_transformers
+        except ImportError as exc:
+            raise ImportError(
+                "Could not import intel_extension_for_transformers python package. "
+                "Please install it with `pip install intel-extension-for-transformers`."
+            ) from exc
+
+        from .optimized_sentence_transformers import OptimizedSentenceTransformer
         self.client = OptimizedSentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
@@ -252,7 +254,6 @@ class OptimizedHuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         # check sentence_transformers python package
         try:
             import sentence_transformers
-
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
@@ -262,13 +263,22 @@ class OptimizedHuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         # check InstructorEmbedding python package
         try:
             import InstructorEmbedding
-
         except ImportError as exc:
             raise ImportError(
                 "Could not import InstructorEmbedding python package. "
                 "Please install it with `pip install InstructorEmbedding`."
             ) from exc
 
+        # check intel_extension_for_transformers python package
+        try:
+            import intel_extension_for_transformers
+        except ImportError as exc:
+            raise ImportError(
+                "Could not import intel_extension_for_transformers python package. "
+                "Please install it with `pip install intel-extension-for-transformers`."
+            ) from exc
+
+        from .optimized_instructor_embedding import OptimizedInstructor
         self.client = OptimizedInstructor(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )

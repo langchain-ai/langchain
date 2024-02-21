@@ -1,30 +1,10 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2023 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-import os
 import json
 import logging
-import torch
-from intel_extension_for_transformers.transformers import OptimizedModel
-from intel_extension_for_transformers.transformers.utils.utility import LazyImport
 from collections import OrderedDict
 from transformers import T5Config, MT5Config
 from typing import Union, Optional
 
+from .utils import LazyImport
 sentence_transformers = LazyImport("sentence_transformers")
 
 WEIGHTS_NAME = "pytorch_model.bin"
@@ -43,6 +23,7 @@ class OptimzedTransformer(sentence_transformers.models.Transformer):
         elif isinstance(config, MT5Config): # pragma: no cover
             self._load_mt5_model(model_name_or_path, config, cache_dir, **model_args)
         else:
+            from intel_extension_for_transformers.transformers import OptimizedModel
             self.auto_model = OptimizedModel.from_pretrained(model_name_or_path,
                                                              config=config,
                                                              cache_dir=cache_dir,
