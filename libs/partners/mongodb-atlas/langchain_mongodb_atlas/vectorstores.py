@@ -30,7 +30,7 @@ VST = TypeVar("VST", bound=VectorStore)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_INSERT_BATCH_SIZE = 1000
+DEFAULT_INSERT_BATCH_SIZE = 100
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
