@@ -381,7 +381,7 @@ class WatsonxLLM(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()
             chunk = self._stream_response_to_generation_chunk(stream_resp)
-            yield chunk
 
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk

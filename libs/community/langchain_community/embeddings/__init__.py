@@ -71,6 +71,7 @@ from langchain_community.embeddings.oci_generative_ai import OCIGenAIEmbeddings
 from langchain_community.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_community.embeddings.optimum_intel import QuantizedBiEncoderEmbeddings
 from langchain_community.embeddings.sagemaker_endpoint import (
     SagemakerEndpointEmbeddings,
 )
@@ -83,6 +84,7 @@ from langchain_community.embeddings.sentence_transformer import (
     SentenceTransformerEmbeddings,
 )
 from langchain_community.embeddings.spacy_embeddings import SpacyEmbeddings
+from langchain_community.embeddings.sparkllm import SparkLLMTextEmbeddings
 from langchain_community.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.volcengine import VolcanoEmbeddings
@@ -149,7 +151,9 @@ __all__ = [
     "BookendEmbeddings",
     "VolcanoEmbeddings",
     "OCIGenAIEmbeddings",
+    "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
+    "SparkLLMTextEmbeddings",
 ]
 
 
