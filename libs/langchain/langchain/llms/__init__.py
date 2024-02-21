@@ -516,7 +516,7 @@ def _import_watsonxllm() -> Any:
     return WatsonxLLM
 
 
-def _import_weight_only_pipeline() -> Any:
+def _import_weight_only_quantization() -> Any:
     from langchain_community.llms.weight_only_quantization import (
         WeightOnlyQuantPipeline,
     )
@@ -733,7 +733,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "watsonxllm": _import_watsonxllm,
-        "weight_only_quantization": _import_weight_only_pipeline,
+        "weight_only_quantization": _import_weight_only_quantization,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
