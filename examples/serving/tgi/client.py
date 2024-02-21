@@ -15,13 +15,12 @@ long_prompt = PromptTemplate(template=multi_template, input_variables=["question
 ENDPOINT_URL = "127.0.0.1:8080"
 llm = HuggingFaceEndpoint(
     endpoint_url=ENDPOINT_URL,
-    task="text-generation",
-    model_kwargs={
-        "max_new_tokens": 512,
-        "top_k": 50,
-        "temperature": 0.1,
-        "repetition_penalty": 1.03,
-    },
+    max_new_tokens=512,
+    top_k=10,
+    top_p=0.95,
+    typical_p=0.95,
+    temperature=0.01,
+    repetition_penalty=1.03,
 )
 
 
