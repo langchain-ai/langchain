@@ -12,7 +12,7 @@ Answers:
 long_prompt = PromptTemplate(template=multi_template, input_variables=["questions"])
 
 
-ENDPOINT_URL = "127.0.0.1:8080"
+ENDPOINT_URL = "http://localhost:8080"
 llm = HuggingFaceEndpoint(
     endpoint_url=ENDPOINT_URL,
     max_new_tokens=512,
@@ -36,5 +36,5 @@ qs_str = (
     "How many eyes does a blade of grass have?"
 )
 
-print(llm_chain.run(qs_str))
+print(llm_chain.invoke(qs_str))
 

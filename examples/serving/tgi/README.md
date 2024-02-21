@@ -12,6 +12,7 @@ docker build -t tgi_gaudi .
 If you need to set proxy settings, add `--build-arg https_proxy=$https_proxy --build-arg http_proxy=$http_proxy` like below.
 ```bash
 docker build -t tgi_gaudi . --build-arg https_proxy=$https_proxy --build-arg http_proxy=$http_proxy
+```
 
 ## Launch a local server instance on 1 Gaudi card:
 ```bash
@@ -26,7 +27,7 @@ If you need to set proxy settings, add `--build-arg https_proxy=$https_proxy --b
 docker run -p 8080:80 -v $volume:/data --runtime=habana -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none --cap-add=sys_nice --ipc=host -e HTTPS_PROXY=$https_proxy -e HTTP_PROXY=$https_proxy tgi_gaudi --model-id $model
 ```
 
-For gated models such as LLAMA-2, you will have to pass -e HUGGING_FACE_HUB_TOKEN=<token> to the docker run command above with a valid Hugging Face Hub read token.
+For gated models such as `LLAMA-2`, you will have to pass -e HUGGING_FACE_HUB_TOKEN=\<token\> to the docker run command above with a valid Hugging Face Hub read token.
 
 Send a request to check if the endpoint is wokring:
 
