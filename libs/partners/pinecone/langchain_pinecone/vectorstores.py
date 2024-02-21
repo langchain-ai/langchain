@@ -35,6 +35,8 @@ VST = TypeVar("VST", bound=VectorStore)
 class PineconeVectorStore(VectorStore):
     """`Pinecone` vector store.
 
+    Setup: set the `PINECONE_API_KEY` environment variable to your Pinecone API key.
+
     Example:
         .. code-block:: python
 
@@ -412,21 +414,22 @@ class PineconeVectorStore(VectorStore):
         This is intended to be a quick way to get started.
 
         The `pool_threads` affects the speed of the upsert operations.
+
+        Setup: set the `PINECONE_API_KEY` environment variable to your Pinecone API key.
+
         Example:
             .. code-block:: python
 
                 from langchain_pinecone import PineconeVectorStore
-                from langchain_community.embeddings import OpenAIEmbeddings
-                import pinecone
+                from langchain_openai import OpenAIEmbeddings
 
-                # The environment should be the one specified next to the API key
-                # in your Pinecone console
-                pinecone.init(api_key="***", environment="...")
                 embeddings = OpenAIEmbeddings()
-                pinecone = Pinecone.from_texts(
+                index_name = "my-index"
+                vectorstore = Pinecone.from_texts(
                     texts,
-                    embeddings,
-                    index_name="langchain-demo"
+                    index_name=index_name,
+                    embedding=embedding,
+                    namespace=namespace,
                 )
         """
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
