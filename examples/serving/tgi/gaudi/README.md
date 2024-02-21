@@ -2,8 +2,10 @@
 
 To use [🤗 text-generation-inference](https://github.com/huggingface/text-generation-inference) on Habana Gaudi/Gaudi2, please follow these steps:
 
-## Build the Docker image located in this folder with:
+## Build the Docker image located in the tgi-gaudi repo:
    ```bash
+   git clone https://github.com/huggingface/tgi-gaudi.git
+   cd tgi-gaudi/
    docker build -t tgi_gaudi .
    ```
 
