@@ -73,14 +73,11 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
         .. code-block:: python
 
             from langchain_community.chat_models import FriendliChat
-            from langchain_core.messages import HumanMessage
 
             chat = Friendli(
                 model="llama-2-13b-chat", friendli_token="YOUR FRIENDLI TOKEN"
             )
-
-            messages = [HumanMessage(content="What is generative AI?")]
-            chat.invoke(messages)
+            chat.invoke("What is generative AI?")
     """
 
     model: str = "llama-2-13b-chat"
@@ -186,7 +183,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
             **params,
         )
 
-        message = AIMessage(content=response.choices[0].text)
+        message = AIMessage(content=response.choices[0].message.content)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     async def _agenerate(
@@ -216,5 +213,5 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
             **params,
         )
 
-        message = AIMessage(content=response.choices[0].text)
+        message = AIMessage(content=response.choices[0].message.content)
         return ChatResult(generations=[ChatGeneration(message=message)])

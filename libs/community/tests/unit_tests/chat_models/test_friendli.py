@@ -67,10 +67,12 @@ def test_friendli_invoke(
 ) -> None:
     """Test invocation with friendli."""
     mock_message = Mock()
-    mock_message.text = "Hello Friendli"
+    mock_message.content = "Hello Friendli"
     mock_message.role = "assistant"
+    mock_choice = Mock()
+    mock_choice.message = mock_message
     mock_response = Mock()
-    mock_response.choices = [mock_message]
+    mock_response.choices = [mock_choice]
     mock_friendli_client.chat.completions.create.return_value = mock_response
 
     result = chat_friendli.invoke("Hello langchain")
@@ -94,10 +96,12 @@ async def test_friendli_ainvoke(
 ) -> None:
     """Test async invocation with friendli."""
     mock_message = Mock()
-    mock_message.text = "Hello Friendli"
+    mock_message.content = "Hello Friendli"
     mock_message.role = "assistant"
+    mock_choice = Mock()
+    mock_choice.message = mock_message
     mock_response = Mock()
-    mock_response.choices = [mock_message]
+    mock_response.choices = [mock_choice]
     mock_friendli_async_client.chat.completions.create.return_value = mock_response
 
     result = await chat_friendli.ainvoke("Hello langchain")
