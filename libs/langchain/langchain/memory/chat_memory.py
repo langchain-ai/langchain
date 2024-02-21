@@ -37,7 +37,7 @@ class BaseChatMemory(BaseMemory, ABC):
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_messages(
-            [HumanMessage(content=input_str), AIMessage(content=output_str)]
+            [HumanMessage(content=input_str), output_str]
         )
 
     async def asave_context(
@@ -46,7 +46,7 @@ class BaseChatMemory(BaseMemory, ABC):
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         await self.chat_memory.aadd_messages(
-            [HumanMessage(content=input_str), AIMessage(content=output_str)]
+            [HumanMessage(content=input_str), output_str]
         )
 
     def clear(self) -> None:
