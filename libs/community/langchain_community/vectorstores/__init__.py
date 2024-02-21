@@ -217,9 +217,9 @@ def _import_hanavector() -> Any:
 
 
 def _import_kinetica() -> Any:
-    from langchain_community.vectorstores.kinetica import Kinetica
+    from langchain_community.vectorstores.kinetica import KineticaVectorStore
 
-    return Kinetica
+    return KineticaVectorStore
 
 
 def _import_kinetica_settings() -> Any:
@@ -575,7 +575,7 @@ def __getattr__(name: str) -> Any:
         return _import_distance_strategy()
     elif name == "KineticaSettings":
         return _import_kinetica_settings()
-    elif name == "Kinetica":
+    elif name == "KineticaVectorStore":
         return _import_kinetica()
     elif name == "LanceDB":
         return _import_lancedb()

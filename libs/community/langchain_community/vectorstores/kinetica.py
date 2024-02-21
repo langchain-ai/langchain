@@ -48,7 +48,7 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = (
 
 
 class KineticaSettings(BaseSettings):
-    """`Kinetica` client configuration.
+    """`KineticaVectorStore` client configuration.
 
     Attribute:
         host (str) : An URL to connect to MyScale backend.
@@ -85,7 +85,7 @@ class KineticaSettings(BaseSettings):
         env_file_encoding = "utf-8"
 
 
-class Kinetica(VectorStore):
+class KineticaVectorStore(VectorStore):
     """`Kinetica` vector store.
 
     To use, you should have the ``gpudb`` python package installed.
@@ -106,7 +106,8 @@ class Kinetica(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import Kinetica, KineticaSettings
+            from langchain_community.vectorstores 
+                import KineticaVectorStore, KineticaSettings
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             kinetica_settings = KineticaSettings(
@@ -114,7 +115,7 @@ class Kinetica(VectorStore):
                 )
             COLLECTION_NAME = "kinetica_store"
             embeddings = OpenAIEmbeddings()
-            vectorstore = Kinetica.from_documents(
+            vectorstore = KineticaVectorStore.from_documents(
                 documents=docs,
                 embedding=embeddings,
                 collection_name=COLLECTION_NAME,
@@ -133,7 +134,7 @@ class Kinetica(VectorStore):
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
-        """Constructor for the Kinetica class
+        """Constructor for the KineticaVectorStore class
 
         Args:
             config (KineticaSettings): a `KineticaSettings` instance
@@ -225,8 +226,8 @@ class Kinetica(VectorStore):
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         **kwargs: Any,
-    ) -> Kinetica:
-        """Class method to assist in constructing the `Kinetica` store instance
+    ) -> KineticaVectorStore:
+        """Class method to assist in constructing the `KineticaVectorStore` store instance
             using different combinations of parameters
 
         Args:
@@ -249,7 +250,7 @@ class Kinetica(VectorStore):
                         different levels. Defaults to None.
 
         Returns:
-            Kinetica: An instance of Kinetica class
+            KineticaVectorStore: An instance of `KineticaVectorStore` class
         """
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
@@ -261,7 +262,6 @@ class Kinetica(VectorStore):
             config=config,
             collection_name=collection_name,
             embedding_function=embedding,
-            # dimensions=dimensions,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
             logger=logger,
@@ -489,7 +489,7 @@ class Kinetica(VectorStore):
             raise ValueError(
                 "No supported normalization function"
                 f" for distance_strategy of {self._distance_strategy}."
-                "Consider providing relevance_score_fn to Kinetica constructor."
+                "Consider providing relevance_score_fn to KineticaVectorStore constructor."
             )
 
     @property
@@ -751,7 +751,7 @@ class Kinetica(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[Kinetica],
+        cls: Type[KineticaVectorStore],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -761,11 +761,11 @@ class Kinetica(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> Kinetica:
+    ) -> KineticaVectorStore:
         """Adds the texts passed in to the vector store and returns it
 
         Args:
-            cls (Type[Kinetica]): Kinetica class
+            cls (Type[KineticaVectorStore]): KineticaVectorStore class
             texts (List[str]): A list of texts for which the embeddings are generated
             embedding (Embeddings): List of embeddings
             metadatas (Optional[List[dict]], optional): List of dicts, JSON
@@ -781,7 +781,7 @@ class Kinetica(VectorStore):
                         schema is to be deleted or not. Defaults to False.
 
         Returns:
-            Kinetica: a `Kinetica` instance
+            KineticaVectorStore: a `KineticaVectorStore` instance
         """
 
         if len(texts) == 0:
@@ -813,7 +813,7 @@ class Kinetica(VectorStore):
 
     @classmethod
     def from_embeddings(
-        cls: Type[Kinetica],
+        cls: Type[KineticaVectorStore],
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -824,11 +824,11 @@ class Kinetica(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> Kinetica:
+    ) -> KineticaVectorStore:
         """Adds the embeddings passed in to the vector store and returns it
 
         Args:
-            cls (Type[Kinetica]): Kinetica class
+            cls (Type[KineticaVectorStore]): KineticaVectorStore class
             text_embeddings (List[Tuple[str, List[float]]]): A list of texts
                             and the embeddings
             embedding (Embeddings): List of embeddings
@@ -847,7 +847,7 @@ class Kinetica(VectorStore):
                         Kinetica schema is to be deleted or not. Defaults to False.
 
         Returns:
-            Kinetica: a `Kinetica` instance
+            KineticaVectorStore: a `KineticaVectorStore` instance
         """
 
         texts = [t[0] for t in text_embeddings]
@@ -870,7 +870,7 @@ class Kinetica(VectorStore):
 
     @classmethod
     def from_documents(
-        cls: Type[Kinetica],
+        cls: Type[KineticaVectorStore],
         documents: List[Document],
         embedding: Embeddings,
         config: KineticaSettings = KineticaSettings(),
@@ -880,11 +880,11 @@ class Kinetica(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> Kinetica:
+    ) -> KineticaVectorStore:
         """Adds the list of `Document` passed in to the vector store and returns it
 
         Args:
-            cls (Type[Kinetica]): Kinetica class
+            cls (Type[KineticaVectorStore]): KineticaVectorStore class
             texts (List[str]): A list of texts for which the embeddings are generated
             embedding (Embeddings): List of embeddings
             config (KineticaSettings): a `KineticaSettings` instance
@@ -900,7 +900,7 @@ class Kinetica(VectorStore):
                         schema is to be deleted or not. Defaults to False.
 
         Returns:
-            Kinetica: a `Kinetica` instance
+            KineticaVectorStore: a `KineticaVectorStore` instance
         """
 
         texts = [d.page_content for d in documents]
