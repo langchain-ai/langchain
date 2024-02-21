@@ -91,7 +91,7 @@ class TestPinecone:
         needs = f"foobuu {unique_id} booo"
         texts.insert(0, needs)
 
-        docsearch = PineconeVectorStore.from_texts(
+        docsearch = Pinecone.from_texts(
             texts=texts,
             embedding=embedding_openai,
             index_name=index_name,
@@ -111,7 +111,7 @@ class TestPinecone:
         texts.insert(0, needs)
 
         metadatas = [{"page": i} for i in range(len(texts))]
-        docsearch = PineconeVectorStore.from_texts(
+        docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
             index_name=index_name,
@@ -128,7 +128,7 @@ class TestPinecone:
         """Test end to end construction and search with scores and IDs."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
-        docsearch = PineconeVectorStore.from_texts(
+        docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
             index_name=index_name,
@@ -157,7 +157,7 @@ class TestPinecone:
         # Create two indexes with the same name but different namespaces
         texts_1 = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts_1))]
-        PineconeVectorStore.from_texts(
+        Pinecone.from_texts(
             texts_1,
             embedding_openai,
             index_name=index_name,
@@ -168,7 +168,7 @@ class TestPinecone:
         texts_2 = ["foo2", "bar2", "baz2"]
         metadatas = [{"page": i} for i in range(len(texts_2))]
 
-        PineconeVectorStore.from_texts(
+        Pinecone.from_texts(
             texts_2,
             embedding_openai,
             index_name=index_name,
@@ -177,7 +177,7 @@ class TestPinecone:
         )
 
         # Search with namespace
-        docsearch = PineconeVectorStore.from_existing_index(
+        docsearch = Pinecone.from_existing_index(
             index_name=index_name,
             embedding=embedding_openai,
             namespace=f"{index_name}-1",
@@ -192,7 +192,7 @@ class TestPinecone:
         self, texts: List[str], embedding_openai: OpenAIEmbeddings
     ) -> None:
         ids = [uuid.uuid4().hex for _ in range(len(texts))]
-        PineconeVectorStore.from_texts(
+        Pinecone.from_texts(
             texts=texts,
             ids=ids,
             embedding=embedding_openai,
@@ -203,7 +203,7 @@ class TestPinecone:
         assert index_stats["namespaces"][index_name]["vector_count"] == len(texts)
 
         ids_1 = [uuid.uuid4().hex for _ in range(len(texts))]
-        PineconeVectorStore.from_texts(
+        Pinecone.from_texts(
             texts=texts,
             ids=ids_1,
             embedding=embedding_openai,
@@ -219,7 +219,7 @@ class TestPinecone:
         """Ensures all relevance scores are between 0 and 1."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
-        docsearch = PineconeVectorStore.from_texts(
+        docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
             index_name=index_name,
@@ -271,7 +271,7 @@ class TestPinecone:
         texts = [document.page_content for document in documents] * data_multiplier
         uuids = [uuid.uuid4().hex for _ in range(len(texts))]
         metadatas = [{"page": i} for i in range(len(texts))]
-        docsearch = PineconeVectorStore.from_texts(
+        docsearch = Pinecone.from_texts(
             texts,
             embedding_openai,
             ids=uuids,
