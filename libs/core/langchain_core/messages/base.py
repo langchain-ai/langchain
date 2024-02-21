@@ -28,7 +28,7 @@ class BaseMessage(Serializable):
 
     name: Optional[str] = None
 
-    id: str = Field(default_factory=lambda: uuid4().hex)
+    id: str = Field(default_factory=lambda: uuid4().hex, exclude=True)
 
     class Config:
         extra = Extra.allow
