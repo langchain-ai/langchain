@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import json
 import re
 from typing import (
@@ -304,11 +303,6 @@ class SingleStoreDB(VectorStore):
         finally:
             conn.close()
 
-    def encode_image(self, uri: str) -> str:
-        """Get base64 string from image URI."""
-        with open(uri, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
-
     def add_images(
         self,
         uris: List[str],
@@ -316,10 +310,11 @@ class SingleStoreDB(VectorStore):
         embeddings: Optional[List[List[float]]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more images through the embeddings and add to the vectorstore.
+        """Run images through the embeddings and add to the vectorstore.
 
         Args:
             uris List[str]: File path to images.
+                Each URI will be added to the vectorstore as document content.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
                 Defaults to None.
             embeddings (Optional[List[List[float]]], optional): Optional pre-generated
@@ -328,8 +323,6 @@ class SingleStoreDB(VectorStore):
         Returns:
             List[str]: empty list
         """
-        # Map from uris to b64 encoded strings
-        b64_texts = [self.encode_image(uri=uri) for uri in uris]
         # Set embeddings
         if (
             embeddings is None
@@ -337,7 +330,7 @@ class SingleStoreDB(VectorStore):
             and hasattr(self.embedding, "embed_image")
         ):
             embeddings = self.embedding.embed_image(uris=uris)
-        return self.add_texts(b64_texts, metadatas, embeddings, **kwargs)
+        return self.add_texts(uris, metadatas, embeddings, **kwargs)
 
     def add_texts(
         self,
