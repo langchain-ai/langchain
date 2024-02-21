@@ -248,7 +248,7 @@ class KineticaUtil:
 
         try:
             import gpudb
-        except ImportError:
+        except ModuleNotFoundError:
             raise ImportError(
                 "Could not import Kinetica python package. "
                 "Please install it with `pip install gpudb`."
