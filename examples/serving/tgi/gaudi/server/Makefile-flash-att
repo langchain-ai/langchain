@@ -1,0 +1,16 @@
+flash_att_commit := 3a9bfd076f98746c73362328958dbc68d145fbec
+
+flash-attention:
+    # Clone flash attention
+	pip install -U packaging ninja  --no-cache-dir
+	git clone https://github.com/HazyResearch/flash-attention.git
+
+build-flash-attention: flash-attention
+	cd flash-attention && git fetch && git checkout $(flash_att_commit)
+	cd flash-attention && python setup.py build
+	cd flash-attention/csrc/rotary && python setup.py build
+	cd flash-attention/csrc/layer_norm && python setup.py build
+
+install-flash-attention: build-flash-attention
+	pip uninstall flash_attn rotary_emb dropout_layer_norm -y || true
+	cd flash-attention && python setup.py install && cd csrc/layer_norm && python setup.py install && cd ../rotary && python setup.py install

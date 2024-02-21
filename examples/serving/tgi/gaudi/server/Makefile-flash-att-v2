@@ -1,0 +1,29 @@
+flash_att_v2_commit_cuda := 02ac572f3ffc4f402e4183aaa6824b45859d3ed3
+flash_att_v2_commit_rocm := 8736558c287ff2ef28b24878e42828c595ac3e69
+
+
+flash-attention-v2-cuda:
+  # Clone flash attention
+	pip install -U packaging ninja  --no-cache-dir
+	git clone https://github.com/HazyResearch/flash-attention.git flash-attention-v2
+
+build-flash-attention-v2-cuda: flash-attention-v2-cuda
+	cd flash-attention-v2 && git fetch && git checkout $(flash_att_v2_commit_cuda)
+	cd flash-attention-v2 && git submodule update --init --recursive
+	cd flash-attention-v2 && python setup.py build
+
+install-flash-attention-v2-cuda: build-flash-attention-v2-cuda
+	cd flash-attention-v2 && git submodule update --init --recursive && python setup.py install
+
+flash-attention-v2-rocm:
+  # Clone flash attention
+	pip install -U packaging ninja  --no-cache-dir
+	git clone https://github.com/fxmarty/flash-attention-rocm flash-attention-v2
+
+build-flash-attention-v2-rocm: flash-attention-v2-rocm
+	cd flash-attention-v2 && git fetch && git checkout $(flash_att_v2_commit_rocm)
+	cd flash-attention-v2 && git submodule update --init --recursive
+	cd flash-attention-v2 && PYTORCH_ROCM_ARCH=gfx90a python setup.py build
+
+install-flash-attention-v2-rocm: build-flash-attention-v2-rocm
+	cd flash-attention-v2 && git submodule update --init --recursive && python setup.py install

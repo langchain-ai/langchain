@@ -1,0 +1,13 @@
+eetq_commit := 323827dd471458a84e9c840f614e4592b157a4b1
+
+eetq:
+    # Clone eetq
+	pip install packaging
+	git clone https://github.com/NetEase-FuXi/EETQ.git eetq
+
+build-eetq: eetq
+	cd eetq && git fetch && git checkout $(eetq_commit)
+	cd eetq && python setup.py build
+
+install-eetq: build-eetq
+	cd eetq && python setup.py install

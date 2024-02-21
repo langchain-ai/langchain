@@ -1,0 +1,22 @@
+build-vllm-cuda: REPOSITORY=https://github.com/vllm-project/vllm.git
+build-vllm-cuda: VLLM_COMMIT=f8a1e39fae05ca610be8d5a78be9d40f5274e5fc
+build-vllm-cuda: BRANCH=main
+build-vllm-cuda: build-vllm
+
+build-vllm-rocm: REPOSITORY=https://github.com/fxmarty/vllm-public.git
+build-vllm-rocm: VLLM_COMMIT=ad9b7c4095ef54419a0533d254f2ad84bd2dfcae
+build-vllm-rocm: BRANCH=rotary-no-positions-split-cos-sin
+build-vllm-rocm: build-vllm
+
+vllm:
+    # Clone vllm
+	pip install -U ninja packaging --no-cache-dir
+	git clone --single-branch --branch $(BRANCH) $(REPOSITORY) vllm
+
+build-vllm: vllm
+	cd vllm && git fetch && git checkout $(VLLM_COMMIT)
+	cd vllm && python setup.py build
+
+install-vllm: build-vllm
+	pip uninstall vllm -y || true
+	cd vllm && python setup.py install
