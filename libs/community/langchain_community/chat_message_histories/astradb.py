@@ -26,16 +26,16 @@ DEFAULT_COLLECTION_NAME = "langchain_message_store"
 class AstraDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in Astra DB.
 
-    Args (only keyword-arguments accepted):
+    Args:
         session_id: arbitrary key that is used to store the messages
             of a single chat session.
-        collection_name (str): name of the Astra DB collection to create/use.
-        token (Optional[str]): API token for Astra DB usage.
-        api_endpoint (Optional[str]): full URL to the API endpoint,
+        collection_name: name of the Astra DB collection to create/use.
+        token: API token for Astra DB usage.
+        api_endpoint: full URL to the API endpoint,
             such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-        astra_db_client (Optional[Any]): *alternative to token+api_endpoint*,
+        astra_db_client: *alternative to token+api_endpoint*,
             you can pass an already-created 'astrapy.db.AstraDB' instance.
-        namespace (Optional[str]): namespace (aka keyspace) where the
+        namespace: namespace (aka keyspace) where the
             collection is created. Defaults to the database's "default namespace".
     """
 
@@ -51,7 +51,6 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         setup_mode: SetupMode = SetupMode.SYNC,
         pre_delete_collection: bool = False,
     ) -> None:
-        """Create an Astra DB chat message history."""
         self.astra_env = _AstraDBCollectionEnvironment(
             collection_name=collection_name,
             token=token,
@@ -96,7 +95,6 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         raise NotImplementedError("Use add_messages instead")
 
     async def aget_messages(self) -> List[BaseMessage]:
-        """Retrieve all session messages from DB"""
         await self.astra_env.aensure_db_setup()
         docs = self.async_collection.paginated_find(
             filter={
@@ -117,7 +115,6 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         return messages
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
-        """Write a message to the table"""
         self.astra_env.ensure_db_setup()
         docs = [
             {
@@ -130,7 +127,6 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         self.collection.chunked_insert_many(docs)
 
     async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
-        """Write a message to the table"""
         await self.astra_env.aensure_db_setup()
         docs = [
             {
@@ -143,11 +139,9 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         await self.async_collection.chunked_insert_many(docs)
 
     def clear(self) -> None:
-        """Clear session memory from DB"""
         self.astra_env.ensure_db_setup()
         self.collection.delete_many(filter={"session_id": self.session_id})
 
     async def aclear(self) -> None:
-        """Clear session memory from DB"""
         await self.astra_env.aensure_db_setup()
         await self.async_collection.delete_many(filter={"session_id": self.session_id})
