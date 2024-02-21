@@ -106,7 +106,7 @@ class Comparison(FilterDirective):
     def __init__(
         self, comparator: Comparator, attribute: str, value: Any, **kwargs: Any
     ) -> None:
-        return super().__init__(
+        super().__init__(
             comparator=comparator, attribute=attribute, value=value, **kwargs
         )
 
@@ -120,7 +120,7 @@ class Operation(FilterDirective):
     def __init__(
         self, operator: Operator, arguments: List[FilterDirective], **kwargs: Any
     ):
-        return super().__init__(operator=operator, arguments=arguments, **kwargs)
+        super().__init__(operator=operator, arguments=arguments, **kwargs)
 
 
 class StructuredQuery(Expr):
@@ -137,7 +137,7 @@ class StructuredQuery(Expr):
         self,
         query: str,
         filter: Optional[FilterDirective],
-        limit: Optional[int],
+        limit: Optional[int] = None,
         **kwargs: Any,
     ):
-        return super().__init__(query=query, filter=filter, limit=limit, **kwargs)
+        super().__init__(query=query, filter=filter, limit=limit, **kwargs)
