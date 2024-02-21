@@ -286,7 +286,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
-        for chunk in async_client.chat.completions.create(messages=message_dicts, **params):
+        async for chunk in await async_client.chat.completions.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
@@ -306,7 +306,9 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
                 message=chunk, generation_info=generation_info or None
             )
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+                await run_manager.on_llm_new_token(
+                    token=chunk.text, chunk=chunk, logprobs=logprobs
+                )
             yield chunk
 
 def _convert_delta_to_message_chunk(
