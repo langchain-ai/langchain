@@ -174,3 +174,29 @@ class TestAstraDBStore:
             assert result["data"]["document"]["value"] == "dmFsdWUy"
         finally:
             astra_db.delete_collection(collection_name)
+
+    def test_indexing_detection(self, astra_db: AstraDB) -> None:
+        """Test the behaviour against preexisting legacy collections."""
+        astra_db.create_collection("lc_test_legacy_store")
+        astra_db.create_collection(
+            "lc_test_custom_store", options={"indexing": {"allow": ["my_field"]}}
+        )
+        AstraDBStore(collection_name="lc_test_regular_store", astra_db_client=astra_db)
+
+        # repeated instantiation must work
+        AstraDBStore(collection_name="lc_test_regular_store", astra_db_client=astra_db)
+        # on a legacy collection must just give a warning
+        with pytest.warns(UserWarning) as rec_warnings:
+            AstraDBStore(
+                collection_name="lc_test_legacy_store", astra_db_client=astra_db
+            )
+            assert len(rec_warnings) == 1
+        # on a custom collection must error
+        with pytest.raises(ValueError):
+            AstraDBStore(
+                collection_name="lc_test_custom_store", astra_db_client=astra_db
+            )
+
+        astra_db.delete_collection("lc_test_legacy_store")
+        astra_db.delete_collection("lc_test_custom_store")
+        astra_db.delete_collection("lc_test_regular_store")

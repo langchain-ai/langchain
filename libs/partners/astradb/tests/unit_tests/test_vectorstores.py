@@ -51,21 +51,21 @@ class TestAstraDB:
 
     def test_astradb_vectorstore_unit_indexing_normalization(self) -> None:
         """Unit test of the indexing policy normalization"""
-        n3_idx = AstraDBVectorStore._normalize_metadata_policy(
+        n3_idx = AstraDBVectorStore._normalize_metadata_indexing_policy(
             metadata_indexing_include=None,
             metadata_indexing_exclude=None,
             collection_indexing_policy=None,
         )
         assert n3_idx == DEFAULT_INDEXING_OPTIONS
 
-        al_idx = AstraDBVectorStore._normalize_metadata_policy(
+        al_idx = AstraDBVectorStore._normalize_metadata_indexing_policy(
             metadata_indexing_include=["a1", "a2"],
             metadata_indexing_exclude=None,
             collection_indexing_policy=None,
         )
         assert al_idx == {"allow": ["metadata.a1", "metadata.a2"]}
 
-        dl_idx = AstraDBVectorStore._normalize_metadata_policy(
+        dl_idx = AstraDBVectorStore._normalize_metadata_indexing_policy(
             metadata_indexing_include=None,
             metadata_indexing_exclude=["d1", "d2"],
             collection_indexing_policy=None,
@@ -75,7 +75,7 @@ class TestAstraDB:
         custom_policy = {
             "deny": ["myfield", "other_field.subfield", "metadata.long_text"]
         }
-        cip_idx = AstraDBVectorStore._normalize_metadata_policy(
+        cip_idx = AstraDBVectorStore._normalize_metadata_indexing_policy(
             metadata_indexing_include=None,
             metadata_indexing_exclude=None,
             collection_indexing_policy=custom_policy,
@@ -83,28 +83,28 @@ class TestAstraDB:
         assert cip_idx == custom_policy
 
         with pytest.raises(ValueError):
-            AstraDBVectorStore._normalize_metadata_policy(
+            AstraDBVectorStore._normalize_metadata_indexing_policy(
                 metadata_indexing_include=["a"],
                 metadata_indexing_exclude=["b"],
                 collection_indexing_policy=None,
             )
 
         with pytest.raises(ValueError):
-            AstraDBVectorStore._normalize_metadata_policy(
+            AstraDBVectorStore._normalize_metadata_indexing_policy(
                 metadata_indexing_include=["a"],
                 metadata_indexing_exclude=None,
                 collection_indexing_policy={"a": "z"},
             )
 
         with pytest.raises(ValueError):
-            AstraDBVectorStore._normalize_metadata_policy(
+            AstraDBVectorStore._normalize_metadata_indexing_policy(
                 metadata_indexing_include=None,
                 metadata_indexing_exclude=["b"],
                 collection_indexing_policy={"a": "z"},
             )
 
         with pytest.raises(ValueError):
-            AstraDBVectorStore._normalize_metadata_policy(
+            AstraDBVectorStore._normalize_metadata_indexing_policy(
                 metadata_indexing_include=["a"],
                 metadata_indexing_exclude=["b"],
                 collection_indexing_policy={"a": "z"},

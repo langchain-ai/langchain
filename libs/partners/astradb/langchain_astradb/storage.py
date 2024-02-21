@@ -29,7 +29,20 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
     """Base class for the DataStax AstraDB data store."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.astra_env = _AstraDBCollectionEnvironment(*args, **kwargs)
+        if "requested_indexing_policy" in kwargs:
+            raise ValueError(
+                "Do not pass 'requested_indexing_policy' to AstraDBBaseStore init"
+            )
+        if "default_indexing_policy" in kwargs:
+            raise ValueError(
+                "Do not pass 'default_indexing_policy' to AstraDBBaseStore init"
+            )
+        kwargs["requested_indexing_policy"] = {"allow": ["_id"]}
+        kwargs["default_indexing_policy"] = {"allow": ["_id"]}
+        self.astra_env = _AstraDBCollectionEnvironment(
+            *args,
+            **kwargs,
+        )
         self.collection = self.astra_env.collection
         self.async_collection = self.astra_env.async_collection
 
