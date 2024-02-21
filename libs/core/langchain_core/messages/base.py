@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
-from uuid import uuid4
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
@@ -28,7 +27,7 @@ class BaseMessage(Serializable):
 
     name: Optional[str] = None
 
-    id: str = Field(default_factory=lambda: uuid4().hex, exclude=True)
+    id: Optional[str] = None
 
     class Config:
         extra = Extra.allow
