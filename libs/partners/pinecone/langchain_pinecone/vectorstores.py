@@ -15,6 +15,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
@@ -31,13 +32,13 @@ logger = logging.getLogger(__name__)
 VST = TypeVar("VST", bound=VectorStore)
 
 
-class Pinecone(VectorStore):
+class PineconeVectorStore(VectorStore):
     """`Pinecone` vector store.
 
     Example:
         .. code-block:: python
 
-            from langchain_pinecone import Pinecone
+            from langchain_pinecone import PineconeVectorStore
             from langchain_openai import OpenAIEmbeddings
 
             embeddings = OpenAIEmbeddings()
@@ -414,7 +415,7 @@ class Pinecone(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain_community.vectorstores import Pinecone
+                from langchain_pinecone import PineconeVectorStore
                 from langchain_community.embeddings import OpenAIEmbeddings
                 import pinecone
 
@@ -485,3 +486,10 @@ class Pinecone(VectorStore):
             raise ValueError("Either ids, delete_all, or filter must be provided.")
 
         return None
+
+
+@deprecated(since="0.0.3", removal="0.2.0", alternative="PineconeVectorStore")
+class Pinecone(PineconeVectorStore):
+    """Deprecated. Use PineconeVectorStore instead."""
+
+    pass

@@ -1,5 +1,5 @@
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Pinecone
+from langchain_pinecone import PineconeVectorStore
 
 all_documents = {
     "doc1": "Climate change and economic impact.",

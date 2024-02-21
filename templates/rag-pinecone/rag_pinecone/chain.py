@@ -2,11 +2,11 @@ import os
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_pinecone import PineconeVectorStore
 
 if os.environ.get("PINECONE_API_KEY", None) is None:
     raise Exception("Missing `PINECONE_API_KEY` environment variable.")

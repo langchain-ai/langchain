@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from pinecone import PodSpec
 
-from langchain_pinecone import Pinecone
+from langchain_pinecone import PineconeVectorStore
 
 INDEX_NAME = "langchain-test-index"  # name of the index
 NAMESPACE_NAME = "langchain-test-namespace"  # name of the namespace
