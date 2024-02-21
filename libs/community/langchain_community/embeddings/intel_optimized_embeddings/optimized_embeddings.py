@@ -27,12 +27,12 @@ class OptimizedHuggingFaceEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from intel_extension_for_transformers.langchain.embeddings import HuggingFaceEmbeddings
+            from langchain_community.embeddings import OptimizedHuggingFaceEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': False}
-            hf = HuggingFaceEmbeddings(
+            hf = OptimizedHuggingFaceEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
@@ -124,12 +124,12 @@ class OptimizedHuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from intel_extension_for_transformers.langchain.embeddings import HuggingFaceBgeEmbeddings
+            from langchain_community.embeddings import OptimizedHuggingFaceBgeEmbeddings
 
             model_name = "BAAI/bge-large-en"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': True}
-            hf = HuggingFaceBgeEmbeddings(
+            hf = OptimizedHuggingFaceBgeEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
@@ -220,12 +220,12 @@ class OptimizedHuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from intel_extension_for_transformers.langchain.embeddings import HuggingFaceInstructEmbeddings
+            from langchain_community.embeddings import OptimizedHuggingFaceInstructEmbeddings
 
             model_name = "hkunlp/instructor-large"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': True}
-            hf = HuggingFaceInstructEmbeddings(
+            hf = OptimizedHuggingFaceInstructEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
