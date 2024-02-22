@@ -248,15 +248,14 @@ class AzureCosmosDBVectorSearch(VectorStore):
         # check the kind of vector search to be performed
         # prepare the command accordingly
         create_index_commands = {}
-        match kind:
-            case CosmosDBVectorSearchType.VECTOR_IVF:
-                create_index_commands = self.get_vector_index_ivf(
-                    kind, num_lists, similarity, dimensions
-                )
-            case CosmosDBVectorSearchType.VECTOR_HNSW:
-                create_index_commands = self.get_vector_index_hnsw(
-                    kind, m, ef_construction, similarity, dimensions
-                )
+        if kind == CosmosDBVectorSearchType.VECTOR_IVF:
+            create_index_commands = self.get_vector_index_ivf(
+                kind, num_lists, similarity, dimensions
+            )
+        elif kind == CosmosDBVectorSearchType.VECTOR_HNSW:
+            create_index_commands = self.get_vector_index_hnsw(
+                kind, m, ef_construction, similarity, dimensions
+            )
 
         # retrieve the database object
         current_database = self._collection.database
