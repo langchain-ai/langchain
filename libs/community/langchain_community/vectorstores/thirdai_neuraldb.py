@@ -26,7 +26,7 @@ class NeuralDBVectorStore(VectorStore):
             vectorstore = NeuralDBVectorStore(db=db)
     """
 
-    def __init__(self, db):
+    def __init__(self, db: Any) -> None:
         self.db = db
 
     db: Any = None  #: :meta private:
