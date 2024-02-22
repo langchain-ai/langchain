@@ -10,27 +10,30 @@ class HuggingFaceModelLoader(BaseLoader):
     """
     Load model information from `Hugging Face Hub`, including README content.
 
-    This loader interfaces with the Hugging Face Models API to fetch and load model metadata and README files.
-    The API allows you to search and filter models based on specific criteria such as model tags, authors, and more.
+    This loader interfaces with the Hugging Face Models API to fetch and load
+    model metadata and README files.
+    The API allows you to search and filter models based on specific criteria
+    such as model tags, authors, and more.
 
     API URL: https://huggingface.co/api/models
     DOC URL: https://huggingface.co/docs/hub/en/api
 
-    Usage Example:
-    ```python
-    from langchain_community.document_loaders import HuggingFaceModelLoader
+    Examples:
 
-    # Initialize the loader with search criteria
-    loader = HuggingFaceModelLoader(search="bert", limit=10)
+        .. code-block:: python
 
-    # Load models
-    documents = loader.load()
+            from langchain_community.document_loaders import HuggingFaceModelLoader
 
-    # Iterate through the fetched documents
-    for doc in documents:
-        print(doc.page_content)  # README content of the model
-        print(doc.metadata)      # Metadata of the model
-    ```
+            # Initialize the loader with search criteria
+            loader = HuggingFaceModelLoader(search="bert", limit=10)
+
+            # Load models
+            documents = loader.load()
+
+            # Iterate through the fetched documents
+            for doc in documents:
+                print(doc.page_content)  # README content of the model
+                print(doc.metadata)      # Metadata of the model
     """
 
     BASE_URL = "https://huggingface.co/api/models"

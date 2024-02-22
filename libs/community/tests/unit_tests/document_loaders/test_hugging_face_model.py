@@ -1,9 +1,9 @@
 import json
+from typing import Tuple
 
-import pytest
 import responses
-
 from langchain_community.document_loaders import HuggingFaceModelLoader
+from requests import Request
 
 # Mocked model data to simulate an API response
 MOCKED_MODELS_RESPONSE = [
@@ -43,7 +43,7 @@ MOCKED_README_CONTENT = {
 }
 
 
-def response_callback(request):
+def response_callback(request: Request) -> Tuple[int, dict, str]:
     if "/api/models" in request.url:
         return (200, {}, json.dumps(MOCKED_MODELS_RESPONSE))
     elif "README.md" in request.url:
@@ -56,7 +56,7 @@ def response_callback(request):
 
 
 @responses.activate
-def test_load_models_with_readme():
+def test_load_models_with_readme() -> None:
     """Tests loading models along with their README content."""
     responses.add_callback(
         responses.GET,
@@ -66,7 +66,8 @@ def test_load_models_with_readme():
     )
     responses.add_callback(
         responses.GET,
-        "https://huggingface.co/microsoft/phi-2/raw/main/README.md",  # Use a regex or update this placeholder
+        # Use a regex or update this placeholder
+        "https://huggingface.co/microsoft/phi-2/raw/main/README.md",
         callback=response_callback,
         content_type="text/plain",
     )
