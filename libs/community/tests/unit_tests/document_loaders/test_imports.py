@@ -144,6 +144,7 @@ EXPECTED_ALL = [
     "TencentCOSDirectoryLoader",
     "TencentCOSFileLoader",
     "TextLoader",
+    "TiDBLoader",
     "ToMarkdownLoader",
     "TomlLoader",
     "TrelloLoader",
