@@ -69,8 +69,8 @@ class BigdlLLM(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import transformers python package. "
-                "Please install it with `pip install transformers`."
+                "Could not import bigdl-llm or transformers. "
+                "Please install it with `pip install --pre --upgrade bigdl-llm[all]`."
             )
 
         _model_kwargs = model_kwargs or {}
@@ -128,9 +128,7 @@ class BigdlLLM(LLM):
         except ImportError:
             raise ValueError(
                 "Could not import bigdl-llm or transformers. "
-                "Please install it with "
-                "`pip install --pre --upgrade bigdl-llm[all]` (for CPU), "
-                "or `pip install --pre --upgrade bigdl-llm[xpu] -f https://developer.intel.com/ipex-whl-stable-xpu` (for GPU)."
+                "Please install it with `pip install --pre --upgrade bigdl-llm[all]`"
             )
 
         _model_kwargs = model_kwargs or {}
