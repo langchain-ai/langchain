@@ -2,6 +2,7 @@ import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple
 
 import anthropic
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -50,7 +51,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
     return system, formatted_messages
 
 
-class ChatAnthropicMessages(BaseChatModel):
+class ChatAnthropic(BaseChatModel):
     """ChatAnthropicMessages chat model.
 
     Example:
@@ -60,6 +61,11 @@ class ChatAnthropicMessages(BaseChatModel):
 
             model = ChatAnthropicMessages()
     """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     _client: anthropic.Client = Field(default_factory=anthropic.Client)
     _async_client: anthropic.AsyncClient = Field(default_factory=anthropic.AsyncClient)
@@ -87,11 +93,6 @@ class ChatAnthropicMessages(BaseChatModel):
     anthropic_api_key: Optional[SecretStr] = None
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
 
     @property
     def _llm_type(self) -> str:
@@ -190,3 +191,8 @@ class ChatAnthropicMessages(BaseChatModel):
             ],
             llm_output=data,
         )
+
+
+@deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")
+class ChatAnthropicMessages(ChatAnthropic):
+    pass

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-anthropic"
-version = "0.0.2"
+version = "0.1.0"
 description = "An integration package connecting AnthropicMessages and LangChain"
 authors = []
 readme = "README.md"
@@ -37,10 +37,10 @@ codespell = "^2.2.0"
 optional = true
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = ">=0.2.2,<1"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1"
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
