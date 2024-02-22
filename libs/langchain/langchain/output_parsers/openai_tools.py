@@ -22,8 +22,16 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
     """
     return_id: bool = False
     """Whether to return the tool call id."""
-    return_single: bool = False
-    """Whether to return only the first tool call."""
+    first_tool_only: bool = False
+    """Whether to return only the first tool call.
+    
+    If False, the result will be a list of tool calls, or an empty list 
+    if no tool calls are found.
+    
+    If true, and multiple tool calls are found, only the first one will be returned,
+    and the other tool calls will be ignored. 
+    If no tool calls are found, None will be returned. 
+    """
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         generation = result[0]
@@ -67,7 +75,7 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
             final_tools.append(parsed)
         if exceptions:
             raise OutputParserException("\n\n".join(exceptions))
-        if self.return_single:
+        if self.first_tool_only:
             return final_tools[0] if final_tools else None
         return final_tools
 
@@ -84,7 +92,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         parsed_result = super().parse_result(result, partial=partial)
-        if self.return_single:
+        if self.first_tool_only:
             single_result = (
                 parsed_result
                 if parsed_result and parsed_result["type"] == self.key_name
@@ -110,7 +118,7 @@ class PydanticToolsParser(JsonOutputToolsParser):
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         parsed_result = super().parse_result(result, partial=partial)
         name_dict = {tool.__name__: tool for tool in self.tools}
-        if self.return_single:
+        if self.first_tool_only:
             return (
                 name_dict[parsed_result["type"]](**parsed_result["args"])
                 if parsed_result

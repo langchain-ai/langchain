@@ -33,7 +33,7 @@ def create_openai_fn_runnable(
     *,
     enforce_single_function_usage: bool = True,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
-    **kwargs: Any,
+    **llm_kwargs: Any,
 ) -> Runnable:
     """Create a runnable sequence that uses OpenAI functions.
 
@@ -60,6 +60,7 @@ def create_openai_fn_runnable(
             passed in and they are not pydantic.BaseModels, the chain output will
             include both the name of the function that was returned and the arguments
             to pass to the function.
+        **llm_kwargs: Additional named arguments to pass to the language model.
 
     Returns:
         A runnable sequence that will pass in the given functions to the model when run.
@@ -106,7 +107,7 @@ def create_openai_fn_runnable(
     if not functions:
         raise ValueError("Need to pass in at least one function. Received zero.")
     openai_functions = [convert_to_openai_function(f) for f in functions]
-    llm_kwargs: Dict[str, Any] = {"functions": openai_functions, **kwargs}
+    llm_kwargs: Dict[str, Any] = {"functions": openai_functions, **llm_kwargs}
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
     output_parser = output_parser or get_openai_output_parser(functions)
@@ -181,6 +182,12 @@ def create_structured_output_runnable(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        ("system", "You are an extraction algorithm. Please extract every possible instance"), 
+                        ('human', '{input}')
+                    ]
+                )
                 structured_llm = create_structured_output_runnable(
                     RecordDog, 
                     llm, 
@@ -188,7 +195,7 @@ def create_structured_output_runnable(
                     enforce_function_usage=True, 
                     return_single=True
                 )
-                structured_llm.invoke("Harry was a chubby brown beagle who loved chicken")
+                structured_llm.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
                 
     OpenAI tools example with dict schema (mode="openai-tools"):
@@ -299,33 +306,46 @@ def create_structured_output_runnable(
                 chain = create_structured_output_runnable(Dog, llm, prompt, mode="openai-json")
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
     """  # noqa: E501
+    # for backwards compatibility
+    force_function_usage = kwargs.get(
+        "enforce_single_function_usage", enforce_function_usage
+    )
+
     if mode == "openai-tools":
+        # Protect against typos in kwargs
+        keys_in_kwargs = set(kwargs.keys())
+        # Backwards compatibility keys
+        unrecognized_keys = keys_in_kwargs - {"enforce_single_function_usage"}
+        if unrecognized_keys:
+            raise TypeError(
+                f"Got an unexpected keyword argument(s): {unrecognized_keys}."
+            )
+
         return _create_openai_tools_runnable(
             output_schema,
             llm,
             prompt=prompt,
             output_parser=output_parser,
-            enforce_tool_usage=enforce_function_usage,
-            return_single=return_single,
+            enforce_tool_usage=force_function_usage,
+            first_tool_only=return_single,
         )
 
     elif mode == "openai-functions":
-        # for backwards compatibility
-        enforce_single_function_usage = kwargs.get(
-            "enforce_single_function_usage", enforce_function_usage
-        )
-
         return _create_openai_functions_structured_output_runnable(
             output_schema,
             llm,
             prompt,
             output_parser=output_parser,
-            enforce_single_function_usage=enforce_single_function_usage,
-            **kwargs,
+            enforce_single_function_usage=force_function_usage,
+            **kwargs,  # llm-specific kwargs
         )
     elif mode == "openai-json":
+        if force_function_usage:
+            raise ValueError(
+                "enforce_single_function_usage is not supported for mode='openai-json'."
+            )
         return _create_openai_json_runnable(
-            output_schema, llm, prompt, output_parser=output_parser, **kwargs
+            output_schema, llm, prompt, output_parser=output_parser
         )
     else:
         raise ValueError(
@@ -341,7 +361,7 @@ def _create_openai_tools_runnable(
     prompt: Optional[BasePromptTemplate],
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]],
     enforce_tool_usage: bool,
-    return_single: bool,
+    first_tool_only: bool,
 ) -> Runnable:
     oai_tool = convert_to_openai_tool(tool)
     llm_kwargs: Dict[str, Any] = {"tools": [oai_tool]}
@@ -351,7 +371,7 @@ def _create_openai_tools_runnable(
             "function": {"name": oai_tool["function"]["name"]},
         }
     output_parser = output_parser or _get_openai_tool_output_parser(
-        tool, return_single=return_single
+        tool, first_tool_only=first_tool_only
     )
     if prompt:
         return prompt | llm.bind(**llm_kwargs) | output_parser
@@ -360,16 +380,18 @@ def _create_openai_tools_runnable(
 
 
 def _get_openai_tool_output_parser(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable], return_single: bool = False
+    tool: Union[Dict[str, Any], Type[BaseModel], Callable],
+    *,
+    first_tool_only: bool = False,
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
     if isinstance(tool, type) and issubclass(tool, BaseModel):
         output_parser: Union[
             BaseOutputParser, BaseGenerationOutputParser
-        ] = PydanticToolsParser(tools=[tool], return_single=return_single)
+        ] = PydanticToolsParser(tools=[tool], first_tool_only=first_tool_only)
     else:
         key_name = convert_to_openai_tool(tool)["function"]["name"]
         output_parser = JsonOutputKeyToolsParser(
-            return_single=return_single, key_name=key_name
+            first_tool_only=first_tool_only, key_name=key_name
         )
     return output_parser
 
@@ -435,7 +457,7 @@ def _create_openai_functions_structured_output_runnable(
     prompt: BasePromptTemplate,
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
-    **kwargs: Any,
+    **llm_kwargs: Any,
 ) -> Runnable:
     if isinstance(output_schema, dict):
         function: Any = {
@@ -462,5 +484,5 @@ def _create_openai_functions_structured_output_runnable(
         llm,
         prompt,
         output_parser=output_parser,
-        **kwargs,
+        **llm_kwargs,
     )
