@@ -146,7 +146,7 @@ const config = {
       },
       image: "img/brand/theme-image.png",
       navbar: {
-        logo: {src: "img/brand/wordmark.png"},
+        logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
           {
             to: "/docs/get_started/introduction",
