@@ -105,7 +105,7 @@ Learn more in the [example notebook](/docs/integrations/retrievers/self_query/as
 ## Store
 
 ```python
-from langchain_community.storage import AstraDBStore
+from langchain_astradb import AstraDBStore
 store = AstraDBStore(
     collection_name="my_kv_store",
     api_endpoint="...",
@@ -118,7 +118,7 @@ Learn more in the [example notebook](/docs/integrations/stores/astradb#astradbst
 ## Byte Store
 
 ```python
-from langchain_community.storage import AstraDBByteStore
+from langchain_astradb import AstraDBByteStore
 store = AstraDBByteStore(
     collection_name="my_kv_store",
     api_endpoint="...",
