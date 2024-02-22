@@ -68,110 +68,6 @@ def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
 
 
 class AstraDBVectorStore(VectorStore):
-    """Wrapper around DataStax Astra DB for vector-store workloads.
-
-    For quickstart and details, visit:
-        docs.datastax.com/en/astra/home/astra.html
-
-    Example:
-        .. code-block:: python
-
-                from langchain_astradb.vectorstores import AstraDBVectorStore
-                from langchain_openai.embeddings import OpenAIEmbeddings
-
-                embeddings = OpenAIEmbeddings()
-                vectorstore = AstraDBVectorStore(
-                  embedding=embeddings,
-                  collection_name="my_store",
-                  token="AstraCS:...",
-                  api_endpoint="https://<DB-ID>-<REGION>.apps.astra.datastax.com"
-                )
-
-                vectorstore.add_texts(["Giraffes", "All good here"])
-                results = vectorstore.similarity_search("Everything's ok", k=1)
-
-      Constructor Args (only keyword-arguments accepted):
-          embedding (Embeddings): embedding function to use.
-          collection_name (str): name of the Astra DB collection to create/use.
-          token (Optional[str]): API token for Astra DB usage.
-          api_endpoint (Optional[str]): full URL to the API endpoint,
-              such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-          astra_db_client (Optional[astrapy.db.AstraDB]):
-              *alternative to token+api_endpoint*,
-              you can pass an already-created 'astrapy.db.AstraDB' instance.
-          async_astra_db_client (Optional[astrapy.db.AsyncAstraDB]):
-              same as `astra_db_client`, but the basis for the async API
-              of the vector store.
-          namespace (Optional[str]): namespace (aka keyspace) where the
-              collection is created. Defaults to the database's "default namespace".
-          metric (Optional[str]): similarity function to use out of those
-              available in Astra DB. If left out, it will use Astra DB API's
-              defaults (i.e. "cosine" - but, for performance reasons,
-              "dot_product" is suggested if embeddings are normalized to one).
-
-      Control over indexing:
-        By default, the class will index (i.e. make available to metadata-filter
-        searches) only and all the fields within the "metadata" dictionary.
-        There are *mutually exclusive* constructor parameters to alter this
-        to one's liking. Keep in mind that the indexing behaviour is set once
-        when the collection is built and cannot be changed later for the
-        collection.
-        The general principle is that it is useless, and somewhat wasteful,
-        to index a field that is a very long unique piece of text (such as the
-        text chunk itself) on which one will never run equality search filters.
-        Moreover, having a field not indexed opens the way to storing very
-        large strings (indexing imposes size constrains of a few KB per string.)
-            metadata_indexing_include (List[str], optional):
-                only the supplied subfields of `metadata` are indexed.
-            metadata_indexing_exclude (List[str], optional):
-                all except the supplied subfields of `metadata` are indexed.
-            collection_indexing_policy (Dict[str, Any], optional):
-                the caller provides a full "indexing" dictionary conforming
-                to the API specifications (see docs.datastax.com/en/astra/
-                astra-db-vector/api-reference/data-api-commands.html
-                #advanced-feature-indexing-clause-on-createcollection)
-        Example values (only one can be passed):
-            metadata_indexing_include=["source", "product_id", "product_category"]
-            metadata_indexing_exclude=["french_translation", "german_translation"]
-            collection_indexing_policy={
-                "deny": ["metadata.french_translation", "additional_top_field"]
-            }
-
-      Advanced arguments (coming with sensible defaults):
-          batch_size (Optional[int]): Size of batches for bulk insertions.
-          bulk_insert_batch_concurrency (Optional[int]): Number of threads
-              to insert batches concurrently.
-          bulk_insert_overwrite_concurrency (Optional[int]): Number of
-              threads in a batch to insert pre-existing entries.
-          bulk_delete_concurrency (Optional[int]): Number of threads
-              (for deleting multiple rows concurrently).
-          pre_delete_collection (Optional[bool]): whether to delete the collection
-              before creating it. If False and the collection already exists,
-              the collection will be used as is. (Flag main purpose: testing)
-
-      A note on concurrency: as a rule of thumb, on a typical client machine
-      it is suggested to keep the quantity
-          bulk_insert_batch_concurrency * bulk_insert_overwrite_concurrency
-      much below 1000 to avoid exhausting the client multithreading/networking
-      resources. The hardcoded defaults are somewhat conservative to meet
-      most machines' specs, but a sensible choice to test may be:
-          bulk_insert_batch_concurrency = 80
-          bulk_insert_overwrite_concurrency = 10
-      A bit of experimentation is required to nail the best results here,
-      depending on both the machine/network specs and the expected workload
-      (specifically, how often a write is an update of an existing id).
-      Remember you can pass concurrency settings to individual calls to
-      add_texts and add_documents as well.
-
-      A note on passing astra_db_client and/or async_astra_db_client instead
-      of the credentials (token, api_endpoint):
-      - if you pass only the async client when creating the store,
-        the sync methods will error when called.
-      - conversely, if you pass only the sync client, the async methods will
-        still be available, but will be wrapping its sync counterpart
-        in a `run_in_executor` construct instead of using the native async.
-    """
-
     @staticmethod
     def _filter_to_metadata(filter_dict: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         if filter_dict is None:
@@ -257,6 +153,80 @@ class AstraDBVectorStore(VectorStore):
         metadata_indexing_exclude: Optional[Iterable[str]] = None,
         collection_indexing_policy: Optional[Dict[str, Any]] = None,
     ) -> None:
+        """Wrapper around DataStax Astra DB for vector-store workloads.
+
+        For quickstart and details, visit
+        https://docs.datastax.com/en/astra/astra-db-vector/
+
+        Example:
+            .. code-block:: python
+
+                from langchain_astradb.vectorstores import AstraDBVectorStore
+                from langchain_openai.embeddings import OpenAIEmbeddings
+                embeddings = OpenAIEmbeddings()
+                vectorstore = AstraDBVectorStore(
+                    embedding=embeddings,
+                    collection_name="my_store",
+                    token="AstraCS:...",
+                    api_endpoint="https://<DB-ID>-<REGION>.apps.astra.datastax.com"
+                )
+
+                vectorstore.add_texts(["Giraffes", "All good here"])
+                results = vectorstore.similarity_search("Everything's ok", k=1)
+
+        Args:
+            embedding: embedding function to use.
+            collection_name: name of the Astra DB collection to create/use.
+            token: API token for Astra DB usage.
+            api_endpoint: full URL to the API endpoint, such as
+                `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
+            astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AstraDB' instance.
+            async_astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
+            namespace: namespace (aka keyspace) where the collection is created.
+                Defaults to the database's "default namespace".
+            metric: similarity function to use out of those available in Astra DB.
+                If left out, it will use Astra DB API's defaults (i.e. "cosine" - but,
+                for performance reasons, "dot_product" is suggested if embeddings are
+                normalized to one).
+            batch_size: Size of batches for bulk insertions.
+            bulk_insert_batch_concurrency: Number of threads or coroutines to insert
+                batches concurrently.
+            bulk_insert_overwrite_concurrency: Number of threads  or coroutines in a
+                batch to insert pre-existing entries.
+            bulk_delete_concurrency: Number of threads (for deleting multiple rows
+                concurrently).
+            pre_delete_collection: whether to delete the collection before creating it.
+                If False and the collection already exists, the collection will be used
+                as is.
+            metadata_indexing_include: an allowlist of the specific metadata subfields
+                that should be indexed for later filtering in searches.
+            metadata_indexing_exclude: a denylist of the specific metadata subfields
+                that should not be indexed for later filtering in searches.
+            collection_indexing_policy: a full "indexing" specification for
+                what fields should be indexed for later filtering in searches.
+                This dict must conform to to the API specifications
+                (see docs.datastax.com/en/astra/astra-db-vector/api-reference/
+                data-api-commands.html#advanced-feature-indexing-clause-on-createcollection)
+
+        Note:
+            For concurrency in synchronous :meth:`~add_texts`:, as a rule of thumb, on a
+            typical client machine it is suggested to keep the quantity
+            bulk_insert_batch_concurrency * bulk_insert_overwrite_concurrency
+            much below 1000 to avoid exhausting the client multithreading/networking
+            resources. The hardcoded defaults are somewhat conservative to meet
+            most machines' specs, but a sensible choice to test may be:
+
+            - bulk_insert_batch_concurrency = 80
+            - bulk_insert_overwrite_concurrency = 10
+
+            A bit of experimentation is required to nail the best results here,
+            depending on both the machine/network specs and the expected workload
+            (specifically, how often a write is an update of an existing id).
+            Remember you can pass concurrency settings to individual calls to
+            :meth:`~add_texts` and :meth:`~add_documents` as well.
+        """
         self.embedding_dimension: Optional[int] = None
         self.embedding = embedding
         self.collection_name = collection_name
@@ -352,8 +322,13 @@ class AstraDBVectorStore(VectorStore):
 
     def delete_by_document_id(self, document_id: str) -> bool:
         """
-        Remove a single document from the store, given its document_id (str).
-        Return True if a document has indeed been deleted, False if ID not found.
+        Remove a single document from the store, given its document ID.
+
+        Args:
+            document_id: The document ID
+
+        Returns
+            True if a document has indeed been deleted, False if ID not found.
         """
         self.astra_env.ensure_db_setup()
         # self.collection is not None (by _ensure_astra_db_client)
@@ -364,8 +339,13 @@ class AstraDBVectorStore(VectorStore):
 
     async def adelete_by_document_id(self, document_id: str) -> bool:
         """
-        Remove a single document from the store, given its document_id (str).
-        Return True if a document has indeed been deleted, False if ID not found.
+        Remove a single document from the store, given its document ID.
+
+        Args:
+            document_id: The document ID
+
+        Returns
+            True if a document has indeed been deleted, False if ID not found.
         """
         await self.astra_env.aensure_db_setup()
         deletion_response = await self.async_collection.delete_one(document_id)
@@ -382,13 +362,12 @@ class AstraDBVectorStore(VectorStore):
         """Delete by vector ids.
 
         Args:
-            ids (Optional[List[str]]): List of ids to delete.
-            concurrency (Optional[int]): max number of threads issuing
-                single-doc delete requests. Defaults to instance-level setting.
+            ids: List of ids to delete.
+            concurrency: max number of threads issuing single-doc delete requests.
+                Defaults to instance-level setting.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
-                False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise.
         """
 
         if kwargs:
@@ -417,17 +396,15 @@ class AstraDBVectorStore(VectorStore):
         concurrency: Optional[int] = None,
         **kwargs: Any,
     ) -> Optional[bool]:
-        """Delete by vector ID or other criteria.
+        """Delete by vector ids.
 
         Args:
             ids: List of ids to delete.
-            concurrency (Optional[int]): max number of concurrent delete queries.
+            concurrency: max concurrency of single-doc delete requests.
                 Defaults to instance-level setting.
-            **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
-            False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise.
         """
         if kwargs:
             warnings.warn(
@@ -448,7 +425,7 @@ class AstraDBVectorStore(VectorStore):
     def delete_collection(self) -> None:
         """
         Completely delete the collection from the database (as opposed
-        to 'clear()', which empties it only).
+        to :meth:`~clear`, which empties it only).
         Stored data is lost and unrecoverable, resources are freed.
         Use with caution.
         """
@@ -460,7 +437,7 @@ class AstraDBVectorStore(VectorStore):
     async def adelete_collection(self) -> None:
         """
         Completely delete the collection from the database (as opposed
-        to 'clear()', which empties it only).
+        to :meth:`~aclear`, which empties it only).
         Stored data is lost and unrecoverable, resources are freed.
         Use with caution.
         """
@@ -550,28 +527,29 @@ class AstraDBVectorStore(VectorStore):
         will be replaced.
 
         Args:
-            texts (Iterable[str]): Texts to add to the vectorstore.
-            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
-            ids (Optional[List[str]], optional): Optional list of ids.
-            batch_size (Optional[int]): Number of documents in each API call.
+            texts: Texts to add to the vectorstore.
+            metadatas: Optional list of metadatas.
+            ids: Optional list of ids.
+            batch_size: Number of documents in each API call.
                 Check the underlying Astra DB HTTP API specs for the max value
                 (20 at the time of writing this). If not provided, defaults
                 to the instance-level setting.
-            batch_concurrency (Optional[int]): number of threads to process
+            batch_concurrency: number of threads to process
                 insertion batches concurrently. Defaults to instance-level
                 setting if not provided.
-            overwrite_concurrency (Optional[int]):  number of threads to process
+            overwrite_concurrency:  number of threads to process
                 pre-existing documents in each batch (which require individual
                 API calls). Defaults to instance-level setting if not provided.
 
-        A note on metadata: there are constraints on the allowed field names
-        in this dictionary, coming from the underlying Astra DB API.
-        For instance, the `$` (dollar sign) cannot be used in the dict keys.
-        See this document for details:
-            docs.datastax.com/en/astra-serverless/docs/develop/dev-with-json.html
+        Note:
+            There are constraints on the allowed field names
+            in the metadata dictionaries, coming from the underlying Astra DB API.
+            For instance, the `$` (dollar sign) cannot be used in the dict keys.
+            See this document for details:
+            https://docs.datastax.com/en/astra/astra-db-vector/api-reference/data-api.html
 
         Returns:
-            List[str]: List of ids of the added texts.
+            The list of ids of the added texts.
         """
 
         if kwargs:
@@ -646,27 +624,29 @@ class AstraDBVectorStore(VectorStore):
         will be replaced.
 
         Args:
-            texts (Iterable[str]): Texts to add to the vectorstore.
-            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
-            ids (Optional[List[str]], optional): Optional list of ids.
-            batch_size (Optional[int]): Number of documents in each API call.
+            texts: Texts to add to the vectorstore.
+            metadatas: Optional list of metadatas.
+            ids: Optional list of ids.
+            batch_size: Number of documents in each API call.
                 Check the underlying Astra DB HTTP API specs for the max value
                 (20 at the time of writing this). If not provided, defaults
                 to the instance-level setting.
-            batch_concurrency (Optional[int]): number of concurrent batch insertions.
-                Defaults to instance-level setting if not provided.
-            overwrite_concurrency (Optional[int]): number of concurrent API calls to
-                process pre-existing documents in each batch.
-                Defaults to instance-level setting if not provided.
+            batch_concurrency: number of threads to process
+                insertion batches concurrently. Defaults to instance-level
+                setting if not provided.
+            overwrite_concurrency:  number of threads to process
+                pre-existing documents in each batch (which require individual
+                API calls). Defaults to instance-level setting if not provided.
 
-        A note on metadata: there are constraints on the allowed field names
-        in this dictionary, coming from the underlying Astra DB API.
-        For instance, the `$` (dollar sign) cannot be used in the dict keys.
-        See this document for details:
-            docs.datastax.com/en/astra-serverless/docs/develop/dev-with-json.html
+        Note:
+            There are constraints on the allowed field names
+            in the metadata dictionaries, coming from the underlying Astra DB API.
+            For instance, the `$` (dollar sign) cannot be used in the dict keys.
+            See this document for details:
+            https://docs.datastax.com/en/astra/astra-db-vector/api-reference/data-api.html
 
         Returns:
-            List[str]: List of ids of the added texts.
+            The list of ids of the added texts.
         """
         if kwargs:
             warnings.warn(
@@ -729,13 +709,15 @@ class AstraDBVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float, str]]:
-        """Return docs most similar to embedding vector.
+        """Return docs most similar to embedding vector with score and id.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
         Returns:
-            List of (Document, score, id), the most similar to the query vector.
+            The list of (Document, score, id), the most similar to the query vector.
         """
         self.astra_env.ensure_db_setup()
         metadata_parameter = self._filter_to_metadata(filter)
@@ -772,13 +754,15 @@ class AstraDBVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float, str]]:
-        """Return docs most similar to embedding vector.
+        """Return docs most similar to embedding vector with score and id.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
         Returns:
-            List of (Document, score, id), the most similar to the query vector.
+            The list of (Document, score, id), the most similar to the query vector.
         """
         await self.astra_env.aensure_db_setup()
         metadata_parameter = self._filter_to_metadata(filter)
@@ -810,6 +794,16 @@ class AstraDBVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float, str]]:
+        """Return docs most similar to the query with score and id.
+
+        Args:
+            query: Query to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
+        Returns:
+            The list of (Document, score, id), the most similar to the query.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
             embedding=embedding_vector,
@@ -823,6 +817,16 @@ class AstraDBVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float, str]]:
+        """Return docs most similar to the query with score and id.
+
+        Args:
+            query: Query to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
+        Returns:
+            The list of (Document, score, id), the most similar to the query.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_id_by_vector(
             embedding=embedding_vector,
@@ -836,13 +840,15 @@ class AstraDBVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to embedding vector.
+        """Return docs most similar to embedding vector with score.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
         Returns:
-            List of (Document, score), the most similar to the query vector.
+            The list of (Document, score), the most similar to the query vector.
         """
         return [
             (doc, score)
@@ -859,13 +865,15 @@ class AstraDBVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to embedding vector.
+        """Return docs most similar to embedding vector with score.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
         Returns:
-            List of (Document, score), the most similar to the query vector.
+            The list of (Document, score), the most similar to the query vector.
         """
         return [
             (doc, score)
@@ -887,6 +895,16 @@ class AstraDBVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Query to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
+        Returns:
+            The list of Documents most similar to the query.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_by_vector(
             embedding_vector,
@@ -901,6 +919,16 @@ class AstraDBVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Query to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
+        Returns:
+            The list of Documents most similar to the query.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_by_vector(
             embedding_vector,
@@ -915,6 +943,16 @@ class AstraDBVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
+        Returns:
+            The list of Documents most similar to the query vector.
+        """
         return [
             doc
             for doc, _ in self.similarity_search_with_score_by_vector(
@@ -931,6 +969,16 @@ class AstraDBVectorStore(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
+        Returns:
+            The list of Documents most similar to the query vector.
+        """
         return [
             doc
             for doc, _ in await self.asimilarity_search_with_score_by_vector(
@@ -946,6 +994,16 @@ class AstraDBVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query with score.
+
+        Args:
+            query: Query to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
+        Returns:
+            The list of (Document, score), the most similar to the query vector.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding_vector,
@@ -959,6 +1017,16 @@ class AstraDBVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query with score.
+
+        Args:
+            query: Query to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+
+        Returns:
+            The list of (Document, score), the most similar to the query vector.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
             embedding_vector,
@@ -999,17 +1067,21 @@ class AstraDBVectorStore(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+            filter: Filter on the metadata to apply.
+
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            The list of Documents selected by maximal marginal relevance.
         """
         self.astra_env.ensure_db_setup()
         metadata_parameter = self._filter_to_metadata(filter)
@@ -1041,17 +1113,21 @@ class AstraDBVectorStore(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+            filter: Filter on the metadata to apply.
+
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            The list of Documents selected by maximal marginal relevance.
         """
         await self.astra_env.aensure_db_setup()
         metadata_parameter = self._filter_to_metadata(filter)
@@ -1083,18 +1159,21 @@ class AstraDBVectorStore(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
-            query (str): Text to look up documents similar to.
-            k (int = 4): Number of Documents to return.
-            fetch_k (int = 20): Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult (float = 0.5): Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Optional.
+            query: Query to look up documents similar to.
+            k: Number of Documents to return.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+            filter: Filter on the metadata to apply.
+
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            The list of Documents selected by maximal marginal relevance.
         """
         embedding_vector = self.embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
@@ -1115,18 +1194,21 @@ class AstraDBVectorStore(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
-            query (str): Text to look up documents similar to.
-            k (int = 4): Number of Documents to return.
-            fetch_k (int = 20): Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult (float = 0.5): Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Optional.
+            query: Query to look up documents similar to.
+            k: Number of Documents to return.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+            filter: Filter on the metadata to apply.
+
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            The list of Documents selected by maximal marginal relevance.
         """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
@@ -1205,12 +1287,12 @@ class AstraDBVectorStore(VectorStore):
         """Create an Astra DB vectorstore from raw texts.
 
         Args:
-            texts (List[str]): the texts to insert.
-            embedding (Embeddings): the embedding function to use in the store.
-            metadatas (Optional[List[dict]]): metadata dicts for the texts.
-            ids (Optional[List[str]]): ids to associate to the texts.
-            *Additional arguments*: you can pass any argument that you would
-                to 'add_texts' and/or to the 'AstraDBVectorStore' constructor
+            texts: the texts to insert.
+            embedding: the embedding function to use in the store.
+            metadatas: metadata dicts for the texts.
+            ids: ids to associate to the texts.
+            **kwargs: you can pass any argument that you would
+                to :meth:`~add_texts` and/or to the 'AstraDBVectorStore' constructor
                 (see these methods for details). These arguments will be
                 routed to the respective methods as they are.
 
@@ -1240,12 +1322,12 @@ class AstraDBVectorStore(VectorStore):
         """Create an Astra DB vectorstore from raw texts.
 
         Args:
-            texts (List[str]): the texts to insert.
-            embedding (Embeddings): the embedding function to use in the store.
-            metadatas (Optional[List[dict]]): metadata dicts for the texts.
-            ids (Optional[List[str]]): ids to associate to the texts.
-            *Additional arguments*: you can pass any argument that you would
-                to 'add_texts' and/or to the 'AstraDBVectorStore' constructor
+            texts: the texts to insert.
+            embedding: the embedding function to use in the store.
+            metadatas: metadata dicts for the texts.
+            ids: ids to associate to the texts.
+            **kwargs: you can pass any argument that you would
+                to :meth:`~add_texts` and/or to the 'AstraDBVectorStore' constructor
                 (see these methods for details). These arguments will be
                 routed to the respective methods as they are.
 
