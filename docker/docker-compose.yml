@@ -15,3 +15,7 @@ services:
       - "6020:6379"
     volumes:
       - ./redis-volume:/data
+  graphdb:
+    image: graphdb
+    ports:
+      - "6021:7200"

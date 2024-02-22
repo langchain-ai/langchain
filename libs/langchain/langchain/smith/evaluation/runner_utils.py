@@ -999,7 +999,7 @@ run_on_dataset(
             f"\n\n{example_msg}"
         )
     comparison_url = dataset.url + f"/compare?selectedSessions={project.id}"
-    print(
+    print(  # noqa: T201
         f"View the evaluation results for project '{project_name}'"
         f" at:\n{comparison_url}\n\n"
         f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
@@ -1190,8 +1190,8 @@ def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
         formatted_string = aggregate_results.to_string(
             float_format=lambda x: f"{x:.2f}", justify="right"
         )
-        print("\n Experiment Results:")
-        print(formatted_string)
+        print("\n Experiment Results:")  # noqa: T201
+        print(formatted_string)  # noqa: T201
 
 
 _INPUT_MAPPER_DEP_WARNING = (
