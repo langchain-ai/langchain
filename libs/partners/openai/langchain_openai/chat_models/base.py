@@ -820,7 +820,7 @@ class ChatOpenAI(BaseChatModel):
 
                 If schema is a dict then _DictOrPydantic is a dict.
 
-        Function-calling, Pydantic schema example (method="function_calling", return_type="parsed"):
+        Example: Function-calling, Pydantic schema (method="function_calling", return_type="parsed"):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -841,7 +841,7 @@ class ChatOpenAI(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Function-calling, Pydantic schema example (method="function_calling", return_type="all"):
+        Example: Function-calling, Pydantic schema (method="function_calling", return_type="all"):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -862,7 +862,7 @@ class ChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Function-calling, dict schema example (method="function_calling", return_type="parsed"):
+        Example: Function-calling, dict schema (method="function_calling", return_type="parsed"):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -892,12 +892,12 @@ class ChatOpenAI(BaseChatModel):
             llm = self.bind_tools([schema], tool_choice=True)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], return_single=True
+                    tools=[schema], first_tool_only=True
                 )
             else:
                 key_name = convert_to_openai_tool(schema)["function"]["name"]
                 output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, return_single=True
+                    key_name=key_name, first_tool_only=True
                 )
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
