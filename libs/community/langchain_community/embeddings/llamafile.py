@@ -69,7 +69,8 @@ class LlamafileEmbeddings(BaseModel, Embeddings):
         contents = response.json()
         if "embedding" not in contents:
             raise KeyError(
-                "Unexpected output from /embedding endpoint, output dict missing 'embedding' key."
+                "Unexpected output from /embedding endpoint, output dict "
+                "missing 'embedding' key."
             )
 
         embedding = contents["embedding"]
