@@ -50,9 +50,9 @@ cd ../community/
 pip install -e .
 ```
 
-## Install huggingface_hub
+## Install Other Dependencies
 ```bash
-pip install huggingface_hub
+pip install -r requirements.txt
 ```
 
 ## Access Service
@@ -60,4 +60,15 @@ pip install huggingface_hub
 cd ../examples/serving/tgi/
 export HUGGINGFACEHUB_API_TOKEN=<token>
 python client.py
+```
+
+## Create Embedding Database
+```bash
+python vectordb.py
+```
+
+## Start the frontend
+```bash
+export HUGGINGFACEHUB_API_TOKEN=<token>
+python gradio_app.py
 ```

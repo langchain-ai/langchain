@@ -1,0 +1,5 @@
+intel-extension-for-transformers
+intel_extension_for_pytorch==2.1.0
+fschat
+gradio==3.36.0
+huggingface_hub
