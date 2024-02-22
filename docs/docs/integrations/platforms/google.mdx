@@ -239,6 +239,23 @@ documents = docai_wh_retriever.get_relevant_documents(
 
 ## Document Loaders
 
+### Firestore in Datastore Mode
+
+> [Firestore in Datastore mode](https://cloud.google.com/datastore/docs) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+> Firestore is the newest version of Datastore and introduces several improvements over Datastore.
+
+Install the python package:
+
+```bash
+pip install langchain-google-datastore
+```
+
+See [usage example](docs/docs/integrations/document_loaders/datastore).
+
+```python
+from langchain_google_datastore import DatastoreLoader
+```
+
 ### BigQuery
 
 > [BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
@@ -520,6 +537,23 @@ from langchain_community.agent_toolkits import GmailToolkit
 ```
 
 ## Memory
+
+### Firestore in Datastore Mode
+
+> [Firestore in Datastore mode](https://cloud.google.com/datastore/docs) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+> Firestore is the newest version of Datastore and introduces several improvements over Datastore.
+
+Install the python package:
+
+```bash
+pip install langchain-google-datastore
+```
+
+See [usage example](docs/docs/integrations/memory/datastore).
+
+```python
+from langchain_google_datastore import DatastoreChatMessageHistory
+```
 
 ### Firestore
 
