@@ -30,7 +30,7 @@ class GremlinGraph(GraphStore):
 
         See https://python.langchain.com/docs/security for more information.
 
-    *Implementation detais*:
+    *Implementation details*:
         The Gremlin queries are designed to work with Azure CosmosDB limitations
     """
 
@@ -96,7 +96,7 @@ class GremlinGraph(GraphStore):
                 ",".join(vertex_schema),
                 "Edge labes are the following:",
                 ",".join(edge_schema),
-                f"Vertexes have following properties:\n{vertex_properties}",
+                f"Vertices have following properties:\n{vertex_properties}",
             ]
         )
 
@@ -121,7 +121,7 @@ class GremlinGraph(GraphStore):
                 doc_id = hashlib.md5(document.source.page_content.encode()).hexdigest()
                 doc_node = self.add_node("Document", doc_id, doc_props, node_cache)
 
-            # Import nodes to vertexes
+            # Import nodes to vertices
             for el in document.nodes:
                 node = self.add_node(el)
                 if include_source:
