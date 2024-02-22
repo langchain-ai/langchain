@@ -128,13 +128,13 @@ class _AstraDBCollectionEnvironment(_AstraDBEnvironment):
                 except (APIRequestError, ValueError):
                     # possibly the collection is preexisting and may have legacy,
                     # or custom, indexing settings: verify
-                    get_coll_response = await async_astra_db.get_collections(  # type: ignore[union-attr]
+                    get_coll_response = await async_astra_db.get_collections(
                         options={"explain": True}
                     )
                     collections = (get_coll_response["status"] or {}).get(
                         "collections"
                     ) or []
-                    if not _AstraDBCollectionEnvironment.validate_indexing_policy(
+                    if not self._validate_indexing_policy(
                         detected_collections=collections,
                         collection_name=self.collection_name,
                         requested_indexing_policy=requested_indexing_policy,
@@ -152,34 +152,34 @@ class _AstraDBCollectionEnvironment(_AstraDBEnvironment):
                     "Cannot use an awaitable embedding_dimension with async_setup "
                     "set to False"
                 )
-
-            try:
-                self.astra_db.create_collection(
-                    collection_name,
-                    dimension=embedding_dimension,  # type: ignore[arg-type]
-                    metric=metric,
-                    options=_options,
-                )
-            except (APIRequestError, ValueError):
-                # possibly the collection is preexisting and may have legacy,
-                # or custom, indexing settings: verify
-                get_coll_response = self.astra_db.get_collections(  # type: ignore[union-attr]
-                    options={"explain": True}
-                )
-                collections = (get_coll_response["status"] or {}).get(
-                    "collections"
-                ) or []
-                if not self.validate_indexing_policy(
-                    detected_collections=collections,
-                    collection_name=self.collection_name,
-                    requested_indexing_policy=requested_indexing_policy,
-                    default_indexing_policy=default_indexing_policy,
-                ):
-                    # other reasons for the exception
-                    raise
+            else:
+                try:
+                    self.astra_db.create_collection(
+                        collection_name,
+                        dimension=embedding_dimension,  # type: ignore[arg-type]
+                        metric=metric,
+                        options=_options,
+                    )
+                except (APIRequestError, ValueError):
+                    # possibly the collection is preexisting and may have legacy,
+                    # or custom, indexing settings: verify
+                    get_coll_response = self.astra_db.get_collections(  # type: ignore[union-attr]
+                        options={"explain": True}
+                    )
+                    collections = (get_coll_response["status"] or {}).get(
+                        "collections"
+                    ) or []
+                    if not self._validate_indexing_policy(
+                        detected_collections=collections,
+                        collection_name=self.collection_name,
+                        requested_indexing_policy=requested_indexing_policy,
+                        default_indexing_policy=default_indexing_policy,
+                    ):
+                        # other reasons for the exception
+                        raise
 
     @staticmethod
-    def validate_indexing_policy(
+    def _validate_indexing_policy(
         detected_collections: List[Dict[str, Any]],
         collection_name: str,
         requested_indexing_policy: Optional[Dict[str, Any]],

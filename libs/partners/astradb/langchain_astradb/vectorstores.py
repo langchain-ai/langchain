@@ -257,6 +257,7 @@ class AstraDBVectorStore(VectorStore):
         metadata_indexing_exclude: Optional[Iterable[str]] = None,
         collection_indexing_policy: Optional[Dict[str, Any]] = None,
     ) -> None:
+        self.embedding_dimension: Optional[int] = None
         self.embedding = embedding
         self.collection_name = collection_name
         self.token = token
@@ -307,18 +308,19 @@ class AstraDBVectorStore(VectorStore):
         self.async_astra_db = self.astra_env.async_astra_db
         self.collection = self.astra_env.collection
         self.async_collection = self.astra_env.async_collection
-        self.embedding_dimension: Optional[int] = None
 
     def _get_embedding_dimension(self) -> int:
-        self.embedding_dimension = len(
-            self.embedding.embed_query(text="This is a sample sentence.")
-        )
+        if self.embedding_dimension is None:
+            self.embedding_dimension = len(
+                self.embedding.embed_query(text="This is a sample sentence.")
+            )
         return self.embedding_dimension
 
     async def _aget_embedding_dimension(self) -> int:
-        self.embedding_dimension = len(
-            await self.embedding.aembed_query(text="This is a sample sentence.")
-        )
+        if self.embedding_dimension is None:
+            self.embedding_dimension = len(
+                await self.embedding.aembed_query(text="This is a sample sentence.")
+            )
         return self.embedding_dimension
 
     @property
@@ -346,7 +348,7 @@ class AstraDBVectorStore(VectorStore):
     async def aclear(self) -> None:
         """Empty the collection of all its stored entries."""
         await self.astra_env.aensure_db_setup()
-        await self.async_collection.delete_many({})  # type: ignore[union-attr]
+        await self.async_collection.delete_many({})
 
     def delete_by_document_id(self, document_id: str) -> bool:
         """
@@ -355,7 +357,7 @@ class AstraDBVectorStore(VectorStore):
         """
         self.astra_env.ensure_db_setup()
         # self.collection is not None (by _ensure_astra_db_client)
-        deletion_response = self.collection.delete_one(document_id)  # type: ignore[union-attr]
+        deletion_response = self.collection.delete_one(document_id)
         return ((deletion_response or {}).get("status") or {}).get(
             "deletedCount", 0
         ) == 1
@@ -681,7 +683,7 @@ class AstraDBVectorStore(VectorStore):
 
         async def _handle_batch(document_batch: List[DocDict]) -> List[str]:
             # self.async_collection is not None here for sure
-            im_result = await self.async_collection.insert_many(  # type: ignore[union-attr]
+            im_result = await self.async_collection.insert_many(
                 documents=document_batch,
                 options={"ordered": False},
                 partial_failures_allowed=True,
@@ -692,7 +694,7 @@ class AstraDBVectorStore(VectorStore):
 
             async def _handle_missing_document(missing_document: DocDict) -> str:
                 # self.async_collection is not None here for sure
-                replacement_result = await self.async_collection.find_one_and_replace(  # type: ignore[union-attr]
+                replacement_result = await self.async_collection.find_one_and_replace(
                     filter={"_id": missing_document["_id"]},
                     replacement=missing_document,
                 )

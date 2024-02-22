@@ -20,8 +20,7 @@ import warnings
 from typing import Iterable, List, Optional, TypedDict
 
 import pytest
-from astrapy.db import AstraDB as LibAstraDB
-from astrapy.db import AsyncAstraDB
+from astrapy.db import AstraDB, AsyncAstraDB
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -181,7 +180,7 @@ class TestAstraDBVectorStore:
             v_store.clear()
 
         # Creation by passing a ready-made astrapy client:
-        astra_db_client = LibAstraDB(
+        astra_db_client = AstraDB(
             **astradb_credentials,
         )
         v_store_2 = AstraDBVectorStore(
@@ -875,7 +874,7 @@ class TestAstraDBVectorStore:
         We do NOT check for substrings in the warning messages: that would
         be too brittle a test.
         """
-        astra_db = LibAstraDB(
+        astra_db = AstraDB(
             token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
             api_endpoint=os.environ["ASTRA_DB_API_ENDPOINT"],
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
