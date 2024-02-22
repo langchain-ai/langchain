@@ -11,6 +11,7 @@ from typing import (
     Optional,
 )
 
+import anthropic
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -22,7 +23,6 @@ from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
-    check_package_version,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
@@ -88,31 +88,21 @@ class _AnthropicCommon(BaseLanguageModel):
             default="https://api.anthropic.com",
         )
 
-        try:
-            import anthropic
-
-            check_package_version("anthropic", gte_version="0.3")
-            values["client"] = anthropic.Anthropic(
-                base_url=values["anthropic_api_url"],
-                api_key=values["anthropic_api_key"].get_secret_value(),
-                timeout=values["default_request_timeout"],
-                max_retries=values["max_retries"],
-            )
-            values["async_client"] = anthropic.AsyncAnthropic(
-                base_url=values["anthropic_api_url"],
-                api_key=values["anthropic_api_key"].get_secret_value(),
-                timeout=values["default_request_timeout"],
-                max_retries=values["max_retries"],
-            )
-            values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
-            values["AI_PROMPT"] = anthropic.AI_PROMPT
-            values["count_tokens"] = values["client"].count_tokens
-
-        except ImportError:
-            raise ImportError(
-                "Could not import anthropic python package. "
-                "Please it install it with `pip install anthropic`."
-            )
+        values["client"] = anthropic.Anthropic(
+            base_url=values["anthropic_api_url"],
+            api_key=values["anthropic_api_key"].get_secret_value(),
+            timeout=values["default_request_timeout"],
+            max_retries=values["max_retries"],
+        )
+        values["async_client"] = anthropic.AsyncAnthropic(
+            base_url=values["anthropic_api_url"],
+            api_key=values["anthropic_api_key"].get_secret_value(),
+            timeout=values["default_request_timeout"],
+            max_retries=values["max_retries"],
+        )
+        values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
+        values["AI_PROMPT"] = anthropic.AI_PROMPT
+        values["count_tokens"] = values["client"].count_tokens
         return values
 
     @property
