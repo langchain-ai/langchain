@@ -3,13 +3,12 @@
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from langchain.retrievers.document_compressors.base import (
+    BaseDocumentCompressor,
+)
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
-
-from langchain_community.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
-)
 
 DEFAULT_LLM_LINGUA_INSTRUCTION = (
     "Given this documents, please answer the final question"
