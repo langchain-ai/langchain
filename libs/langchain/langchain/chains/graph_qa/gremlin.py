@@ -30,7 +30,10 @@ def extract_gremlin(text: str) -> str:
     Returns:
         Gremlin code extracted from the text.
     """
-    return text.replace("`", "").removeprefix("gremlin").replace("\n", "")
+    text = text.replace("`", "")
+    if text.startswith("gremlin"):
+        text = text[len("gremlin") :]
+    return text.replace("\n", "")
 
 
 class GremlinQAChain(Chain):
