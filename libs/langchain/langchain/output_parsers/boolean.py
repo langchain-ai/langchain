@@ -20,7 +20,15 @@ class BooleanOutputParser(BaseOutputParser[bool]):
 
         """
         cleaned_upper_text = text.strip().upper()
-        if self.true_val.upper() in cleaned_upper_text:
+        if (
+            self.true_val.upper() in cleaned_upper_text
+            and self.false_val.upper() in cleaned_upper_text
+        ):
+            raise ValueError(
+                f"Ambigous response. Both {self.true_val} and {self.false_val} in "
+                f"received: {text}."
+            )
+        elif self.true_val.upper() in cleaned_upper_text:
             return True
         elif self.false_val.upper() in cleaned_upper_text:
             return False
