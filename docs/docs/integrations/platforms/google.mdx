@@ -121,6 +121,22 @@ from langchain_google_vertexai import VertexAIModelGarden
 
 ## Vector Stores
 
+### AlloyDB for PostgreSQL
+
+> [AlloyDB](https://cloud.google.com/alloydb) is a fully managed relational database service that offers high performance, seamless integration, and impressive scalability on Google Cloud. AlloyDB is 100% compatible with PostgreSQL.
+
+Install the python package:
+
+```bash
+pip install langchain-google-alloydb-pg
+```
+
+See [usage example](/docs/integrations/vectorstores/alloydb).
+
+```python
+from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBVectorStore
+```
+
 ### Vertex AI Vector Search
 
 > [Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview) from Google Cloud,
@@ -138,22 +154,6 @@ See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_se
 
 ```python
 from langchain_community.vectorstores import MatchingEngine
-```
-
-### AlloyDB for PostgreSQL
-
-> [AlloyDB](https://cloud.google.com/alloydb) is a fully managed relational database service that offers high performance, seamless integration, and impressive scalability on Google Cloud. AlloyDB is 100% compatible with PostgreSQL.
-
-Install the python package:
-
-```bash
-pip install langchain-google-alloydb-pg
-```
-
-See [usage example](/docs/integrations/memory/alloydb).
-
-```python
-from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBVectorStore
 ```
 
 ### BigQuery
@@ -265,7 +265,7 @@ Install the python package:
 pip install langchain-google-alloydb-pg
 ```
 
-See [usage example](/docs/integrations/memory/alloydb).
+See [usage example](/docs/integrations/document_loaders/alloydb).
 
 ```python
 from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBLoader
