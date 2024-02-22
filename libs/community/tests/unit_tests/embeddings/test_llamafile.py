@@ -2,18 +2,16 @@ import json
 from collections import deque
 from typing import Any, Dict
 
+import numpy as np
 import pytest
 import requests
 from pytest import MonkeyPatch
-import numpy as np
 
 from langchain_community.embeddings import LlamafileEmbeddings
 
 
 def mock_response() -> requests.Response:
-    contents = json.dumps({
-        "embedding": np.random.randn(512).tolist()
-    })
+    contents = json.dumps({"embedding": np.random.randn(512).tolist()})
     response = requests.Response()
     response.status_code = 200
     response._content = str.encode(contents)
