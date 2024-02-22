@@ -53,7 +53,6 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
 from langchain_community.vectorstores.azure_cosmos_db import (
-    CosmosDBDocumentType,
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
 )
@@ -70,11 +69,12 @@ from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
-from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+
 from langchain_community.utilities.astradb import (
     SetupMode,
     _AstraDBCollectionEnvironment,
 )
+from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
@@ -1887,8 +1887,9 @@ class AzureCosmosDBSemanticCache(BaseCache):
                             better index quality and higher accuracy, but it will
                             also increase the time required to build the index.
                             ef_construction has to be at least 2 * m
-            ef_search: The size of the dynamic candidate list for search (40 by default).
-                      A higher value provides better recall at the cost of speed.
+            ef_search: The size of the dynamic candidate list for search
+                       (40 by default). A higher value provides better
+                       recall at the cost of speed.
             score_threshold: Maximum score used to filter the vector search documents.
         """
 
@@ -1918,14 +1919,6 @@ class AzureCosmosDBSemanticCache(BaseCache):
         return f"cache:{hashed_index}"
 
     def _get_llm_cache(self, llm_string: str):
-        try:
-            from pymongo import MongoClient
-        except ImportError:
-            raise ImportError(
-                "Could not import pymongo, please install it with "
-                "`pip install pymongo`."
-            )
-
         index_name = self._index_name(llm_string)
 
         namespace = self.database_name + "." + self.collection_name

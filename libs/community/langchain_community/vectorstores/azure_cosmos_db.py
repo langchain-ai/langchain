@@ -18,11 +18,6 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStore
-from libs.core.langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
-from libs.core.langchain_core.retrievers import BaseRetriever
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -394,11 +389,6 @@ class AzureCosmosDBVectorSearch(VectorStore):
 
         self._collection.delete_one({"_id": ObjectId(document_id)})
 
-    def as_retriever(self, **kwargs: Any) -> AzureCosmosDBVectorSearchRetriever:
-        tags = kwargs.pop("tags", None) or []
-        tags.extend(self._get_retriever_tags())
-        return AzureCosmosDBVectorSearchRetriever(vectorstore=self, **kwargs, tags=tags)
-
     def _similarity_search_with_score(
         self,
         embeddings: List[float],
@@ -417,8 +407,9 @@ class AzureCosmosDBVectorSearch(VectorStore):
                     - vector-ivf
                     - vector-hnsw: available as a preview feature only,
                                    to enable visit https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/preview-features
-            ef_search: The size of the dynamic candidate list for search (40 by default).
-                      A higher value provides better recall at the cost of speed.
+            ef_search: The size of the dynamic candidate list for search
+                       (40 by default). A higher value provides better
+                       recall at the cost of speed.
             score_threshold: (Optional[float], optional): Maximum vector distance
                 between selected documents and the query vector. Defaults to None.
                 Only vector-ivf search supports this for now.
@@ -427,11 +418,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
             A list of documents closest to the query vector
         """
         pipeline: List[dict[str, Any]] = []
-        match kind:
-            case CosmosDBVectorSearchType.VECTOR_IVF:
-                pipeline = self.get_pipeline_vector_ivf(embeddings, k)
-            case CosmosDBVectorSearchType.VECTOR_HNSW:
-                pipeline = self.get_pipeline_vector_hnsw(embeddings, k, ef_search)
+        if kind == CosmosDBVectorSearchType.VECTOR_IVF:
+            pipeline = self.get_pipeline_vector_ivf(embeddings, k)
+        elif kind == CosmosDBVectorSearchType.VECTOR_HNSW:
+            pipeline = self.get_pipeline_vector_hnsw(embeddings, k, ef_search)
 
         cursor = self._collection.aggregate(pipeline)
 
