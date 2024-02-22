@@ -1837,11 +1837,11 @@ class AzureCosmosDBSemanticCache(BaseCache):
     def __init__(
         self,
         cosmosdb_connection_string: str,
+        database_name: str,
+        collection_name: str,
         embedding: Embeddings,
         *,
         cosmosdb_client: Optional[Any] = None,
-        database_name: str = None,
-        collection_name: str = None,
         num_lists: int = 100,
         similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
         kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
