@@ -1,25 +1,9 @@
-import time
-from typing import Optional, List, Any, Dict, Iterator
+from typing import Any, Dict, Iterator, List, Optional
 
-import pydantic
-import torch
-from exllamav2.generator import (
-    ExLlamaV2StreamingGenerator,
-    ExLlamaV2BaseGenerator,
-)
-
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.outputs import GenerationChunk
-
-pydantic_version = str(pydantic.__version__)
-
-if pydantic_version.startswith("1."):
-    from pydantic import root_validator, Field
-else:
-    from pydantic.v1 import root_validator, Field
+from langchain_core.pydantic_v1 import Field, root_validator
 
 
 class ExLlamaV2(LLM):
@@ -34,8 +18,10 @@ class ExLlamaV2(LLM):
 
     Example:
         .. code-block:: python
-        from langchain_community.llms import Exllamav2
-        llm = Exllamav2(model_path="/path/to/llama/model")
+
+            from langchain_community.llms import Exllamav2
+
+            llm = Exllamav2(model_path="/path/to/llama/model")
 
     #TODO:
     - Add loras support
@@ -49,7 +35,9 @@ class ExLlamaV2(LLM):
     config: Any = None
     generator: Any = None
     tokenizer: Any = None
-    settings: Any = None  # If not None, it will be used as the default settings for the model. All other parameters won't be used.
+    # If settings is None, it will be used as the default settings for the model.
+    # All other parameters won't be used.
+    settings: Any = None
 
     # Langchain parameters
     logfunc = print
@@ -72,15 +60,25 @@ class ExLlamaV2(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            import torch
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import torch, please install with `pip install torch`."
+            ) from e
         # check if cuda is available
         if not torch.cuda.is_available():
             raise EnvironmentError("CUDA is not available. ExllamaV2 requires CUDA.")
         try:
             from exllamav2 import (
                 ExLlamaV2,
-                ExLlamaV2Config,
                 ExLlamaV2Cache,
+                ExLlamaV2Config,
                 ExLlamaV2Tokenizer,
+            )
+            from exllamav2.generator import (
+                ExLlamaV2BaseGenerator,
+                ExLlamaV2StreamingGenerator,
             )
         except ImportError:
             raise ImportError(
@@ -109,7 +107,6 @@ class ExLlamaV2(LLM):
         config.prepare()
 
         model = ExLlamaV2(config)
-        print("Loading model: " + values["model_path"])
 
         exllama_cache = ExLlamaV2Cache(model, lazy=True)
         model.load_autosplit(exllama_cache)
@@ -128,7 +125,6 @@ class ExLlamaV2(LLM):
         disallowed = values.get("disallowed_tokens")
         if disallowed:
             settings.disallow_tokens(tokenizer, disallowed)
-            print(f"Disallowed Tokens: {settings.disallowed_tokens}")
 
         values["client"] = model
         values["generator"] = generator
@@ -148,18 +144,18 @@ class ExLlamaV2(LLM):
         return self.generator.tokenizer.num_tokens(text)
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         generator = self.generator
 
         if self.streaming:
             combined_text_output = ""
             for chunk in self._stream(
-                    prompt=prompt, stop=stop, run_manager=run_manager, kwargs=kwargs
+                prompt=prompt, stop=stop, run_manager=run_manager, kwargs=kwargs
             ):
                 combined_text_output += chunk
             return combined_text_output
@@ -170,26 +166,21 @@ class ExLlamaV2(LLM):
                 num_tokens=self.max_new_tokens,
             )
             # subtract subtext from output
-            output = output[len(prompt):]
+            output = output[len(prompt) :]
             return output
 
     def _stream(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         input_ids = self.tokenizer.encode(prompt)
-        prompt_tokens = input_ids.shape[-1]
         self.generator.warmup()
-
-        time_begin_prompt = time.time()
-
         self.generator.set_stop_conditions([])
         self.generator.begin_stream(input_ids, self.settings)
 
-        time_begin_stream = time.time()
         generated_tokens = 0
 
         while True:
@@ -205,11 +196,4 @@ class ExLlamaV2(LLM):
             if eos or generated_tokens == self.max_new_tokens:
                 break
 
-        time_end = time.time()
-        time_prompt = time_begin_stream - time_begin_prompt
-        time_tokens = time_end - time_begin_stream
-        print(
-            f"\n\nPrompt processed in {time_prompt:.2f} seconds, {prompt_tokens} tokens, {prompt_tokens / time_prompt:.2f} tokens/second"
-            f"\nResponse generated in {time_tokens:.2f} seconds, {generated_tokens} tokens, {generated_tokens / time_tokens:.2f} tokens/second"
-        )
         return

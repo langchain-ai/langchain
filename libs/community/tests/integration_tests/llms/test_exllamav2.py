@@ -5,20 +5,24 @@ import pytest
 import torch.cuda
 from exllamav2.generator import ExLlamaV2Sampler
 from huggingface_hub import snapshot_download
-
-from langchain_community.llms.exllamav2 import ExLlamaV2
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
 from langchain_core.prompts import PromptTemplate
 from libs.langchain.langchain.chains.llm import LLMChain
+
+from langchain_community.llms.exllamav2 import ExLlamaV2
 
 
 def download_GPTQ_model(model_name: str, models_dir: str = "./models/") -> str:
     """Download the model from hugging face repository.
 
     Params:
-    model_name: str: the model name to download (repository name). Example: "TheBloke/CapybaraHermes-2.5-Mistral-7B-GPTQ"
+        model_name: str: the model name to download (repository name).
+
+    Example: "TheBloke/CapybaraHermes-2.5-Mistral-7B-GPTQ"
     """
-    # Split the model name and create a directory name. Example: "TheBloke/CapybaraHermes-2.5-Mistral-7B-GPTQ" -> "TheBloke_CapybaraHermes-2.5-Mistral-7B-GPTQ"
+    # Split the model name and create a directory name. Example:
+    # "TheBloke/CapybaraHermes-2.5-Mistral-7B-GPTQ" ->
+    # "TheBloke_CapybaraHermes-2.5-Mistral-7B-GPTQ"
     _model_name = model_name.split("/")
     _model_name = "_".join(_model_name)
     model_path = os.path.join(models_dir, _model_name)
@@ -27,14 +31,15 @@ def download_GPTQ_model(model_name: str, models_dir: str = "./models/") -> str:
         snapshot_download(
             repo_id=model_name, local_dir=model_path, local_dir_use_symlinks=False
         )
-    else:
-        print(f"{model_name} already exists in the models directory")
 
     return model_path
 
 
 @pytest.mark.requires("exllamav2")
-@pytest.mark.skipif(condition=not torch.cuda.is_available(), reason="CUDA is not available. ExllamaV2 requires CUDA.")
+@pytest.mark.skipif(
+    condition=not torch.cuda.is_available(),
+    reason="CUDA is not available. ExllamaV2 requires CUDA.",
+)
 def test_exllamav2_inference():
     model_path = download_GPTQ_model("TheBloke/Mistral-7B-Instruct-v0.2-GPTQ")
 
@@ -68,7 +73,10 @@ def test_exllamav2_inference():
 
 
 @pytest.mark.requires("exllamav2")
-@pytest.mark.skipif(condition=not torch.cuda.is_available(), reason="CUDA is not available. ExllamaV2 requires CUDA.")
+@pytest.mark.skipif(
+    condition=not torch.cuda.is_available(),
+    reason="CUDA is not available. ExllamaV2 requires CUDA.",
+)
 def test_exllamav2_streaming():
     model_path = download_GPTQ_model("TheBloke/Mistral-7B-Instruct-v0.2-GPTQ")
 
@@ -97,7 +105,10 @@ def test_exllamav2_streaming():
     )
     llm_chain = LLMChain(prompt=prompt, llm=llm)
 
-    question = "What Football team won the UEFA Champions League in the year the iphone 6s was released?"
+    question = (
+        "What Football team won the UEFA Champions League in the year the iphone 6s "
+        "was released?"
+    )
 
     out = llm_chain.invoke({"question": question})
     assert out is not None
