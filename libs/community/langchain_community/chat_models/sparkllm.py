@@ -224,9 +224,10 @@ class ChatSparkLLM(BaseChatModel):
                 continue
             delta = content["data"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            yield ChatGenerationChunk(message=chunk)
+            cg_chunk = ChatGenerationChunk(message=chunk)
+            yield cg_chunk
             if run_manager:
-                run_manager.on_llm_new_token(str(chunk.content))
+                run_manager.on_llm_new_token(str(chunk.content), chunk=cg_chunk)
 
     def _generate(
         self,
