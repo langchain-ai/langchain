@@ -85,6 +85,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 
     key_name: str
     """The type of tools to return."""
+
     def __init__(self, key_name: str, **kwargs: Any) -> None:
         """Allow init with positional args."""
         # Backwards compatibility for old argument name.
