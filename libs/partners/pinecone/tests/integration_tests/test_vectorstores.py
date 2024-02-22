@@ -32,11 +32,13 @@ class TestPinecone:
             if i["name"] == INDEX_NAME:
                 client.delete_index(INDEX_NAME)
                 break
+        if len(index_list) > 0:
+            time.sleep(DEFAULT_SLEEP)  # prevent race with creation
         client.create_index(
             name=INDEX_NAME,
             dimension=DIMENSION,
             metric="cosine",
-            spec=PodSpec(environment=os.environ["PINECONE_ENVIRONMENT"]),
+            spec=PodSpec(environment="gcp-starter"),
         )
 
         cls.index = client.Index(INDEX_NAME)
@@ -57,12 +59,12 @@ class TestPinecone:
     def setup(self) -> None:
         # delete all the vectors in the index
         print("called")  # noqa: T201
-        self.index.delete(delete_all=True, namespace=NAMESPACE_NAME)
-        # index_stats = self.index.describe_index_stats()
-        # for _namespace_name in index_stats["namespaces"].keys():
-        #     self.index.delete(delete_all=True, namespace=_namespace_name)
-        time.sleep(DEFAULT_SLEEP)  # prevent race condition with previous step
-        # index_stats = self.index.describe_index_stats
+        try:
+            self.index.delete(delete_all=True, namespace=NAMESPACE_NAME)
+            time.sleep(DEFAULT_SLEEP)  # prevent race condition with previous step
+        except Exception:
+            # if namespace not found
+            pass
 
     @pytest.fixture
     def embedding_openai(self) -> OpenAIEmbeddings:
