@@ -22,8 +22,6 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
     """
     return_id: bool = False
     """Whether to return the tool call id."""
-    return_single: bool = False
-    """Whether to return only the first tool call."""
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         generation = result[0]
@@ -67,8 +65,6 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
             final_tools.append(parsed)
         if exceptions:
             raise OutputParserException("\n\n".join(exceptions))
-        if self.return_single:
-            return final_tools[0] if final_tools else None
         return final_tools
 
 
@@ -77,29 +73,21 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 
     key_name: str
     """The type of tools to return."""
+    return_single: bool = False
+    """Whether to return only the first tool call."""
 
     def __init__(self, key_name: str, **kwargs: Any) -> None:
         """Allow init with positional args."""
         super().__init__(key_name=key_name, **kwargs)
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
-        parsed_result = super().parse_result(result, partial=partial)
-        if self.return_single:
-            single_result = (
-                parsed_result
-                if parsed_result and parsed_result["type"] == self.key_name
-                else None
-            )
-            if self.return_id:
-                return single_result
-            elif single_result:
-                return single_result["args"]
-            else:
-                return None
-        parsed_result = [res for res in parsed_result if res["type"] == self.key_name]
+        results = super().parse_result(result, partial=partial)
+        results = [res for res in results if res["type"] == self.key_name]
         if not self.return_id:
-            parsed_result = [res["args"] for res in parsed_result]
-        return parsed_result
+            results = [res["args"] for res in results]
+        if self.return_single:
+            return results[0] if results else None
+        return results
 
 
 class PydanticToolsParser(JsonOutputToolsParser):
@@ -108,12 +96,6 @@ class PydanticToolsParser(JsonOutputToolsParser):
     tools: List[Type[BaseModel]]
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
-        parsed_result = super().parse_result(result, partial=partial)
+        results = super().parse_result(result, partial=partial)
         name_dict = {tool.__name__: tool for tool in self.tools}
-        if self.return_single:
-            return (
-                name_dict[parsed_result["type"]](**parsed_result["args"])
-                if parsed_result
-                else None
-            )
-        return [name_dict[res["type"]](**res["args"]) for res in parsed_result]
+        return [name_dict[res["type"]](**res["args"]) for res in results]
