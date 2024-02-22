@@ -193,7 +193,7 @@ After that, we can import and use WebBaseLoader.
 
 ```python
 from langchain_community.document_loaders import WebBaseLoader
-loader = WebBaseLoader("https://docs.smith.langchain.com/overview")
+loader = WebBaseLoader("https://docs.smith.langchain.com")
 
 docs = loader.load()
 ```
@@ -374,7 +374,7 @@ The final thing we will create is an agent - where the LLM decides what steps to
 **NOTE: for this example we will only show how to create an agent using OpenAI models, as local models are not reliable enough yet.**
 
 One of the first things to do when building an agent is to decide what tools it should have access to.
-For this example, we will give the agent access two tools:
+For this example, we will give the agent access to two tools:
 
 1. The retriever we just created. This will let it easily answer questions about LangSmith
 2. A search tool. This will let it easily answer questions that require up to date information.
