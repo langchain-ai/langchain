@@ -140,6 +140,22 @@ See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_se
 from langchain_community.vectorstores import MatchingEngine
 ```
 
+### Spanner
+
+> [Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
+Install the python package:
+
+```bash
+pip install langchain-google-spanner
+```
+
+See [usage example](docs/docs/integrations/vectorstores/spanner).
+
+```python
+from langchain_google_spanner import SpannerVectorStore
+```
+
 ### BigQuery
 
 > [BigQuery](https://cloud.google.com/bigquery),
@@ -238,6 +254,22 @@ documents = docai_wh_retriever.get_relevant_documents(
 ```
 
 ## Document Loaders
+
+### Spanner
+
+> [Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
+Install the python package:
+
+```bash
+pip install langchain-google-spanner
+```
+
+See [usage example](docs/docs/integrations/document_loaders/spanner).
+
+```python
+from langchain_google_spanner import SpannerLoader
+```
 
 ### BigQuery
 
@@ -520,6 +552,22 @@ from langchain_community.agent_toolkits import GmailToolkit
 ```
 
 ## Memory
+
+### Spanner
+
+> [Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
+Install the python package:
+
+```bash
+pip install langchain-google-spanner
+```
+
+See [usage example](docs/docs/integrations/memory/spanner).
+
+```python
+from langchain_google_spanner import SpannerChatMessageHistory
+```
 
 ### Firestore
 
