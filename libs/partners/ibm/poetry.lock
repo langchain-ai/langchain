@@ -245,13 +245,13 @@ ibm-cos-sdk-core = "2.13.4"
 
 [[package]]
 name = "ibm-watson-machine-learning"
-version = "1.0.345"
+version = "1.0.347"
 description = "IBM Watson Machine Learning API Client"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ibm_watson_machine_learning-1.0.345-py3-none-any.whl", hash = "sha256:b6c85c7f7c955af813a056f42cc3b0ec112e8a943e8922e2620129c7af680527"},
-    {file = "ibm_watson_machine_learning-1.0.345.tar.gz", hash = "sha256:f5fa7f4f082c4a2fe0b2bef1106e7dd86f112db2f5678615c2c4a396ecdaecb9"},
+    {file = "ibm_watson_machine_learning-1.0.347-py3-none-any.whl", hash = "sha256:5ac0b6ec9a08adaf1c2a2b414bbf0aed8d8f3d77adef29bda725c8483580169b"},
+    {file = "ibm_watson_machine_learning-1.0.347.tar.gz", hash = "sha256:62ef043ddf6c093b2d7b1f6fe68ebbe4e79db5a4d9852d651a1192ad2e2ad723"},
 ]
 
 [package.dependencies]
@@ -274,13 +274,13 @@ fl-rt23-1-py3-10 = ["GPUtil", "cloudpickle (==1.3.0)", "cryptography (==39.0.1)"
 
 [[package]]
 name = "ibm-watsonx-ai"
-version = "0.1.7"
+version = "0.1.8"
 description = "IBM watsonx.ai API Client"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ibm_watsonx_ai-0.1.7-py3-none-any.whl", hash = "sha256:8f4329686d7b1d367bef210441fd8903de904cea83b32b165a4c2eb8d11a7242"},
-    {file = "ibm_watsonx_ai-0.1.7.tar.gz", hash = "sha256:07ed5604f4825bc4d19c387f8587eaf5c54208bf6a1f81f26a3c2d823f632857"},
+    {file = "ibm_watsonx_ai-0.1.8-py3-none-any.whl", hash = "sha256:85536b00aa3c495540480e53a17b56a0990d1340e47fae0e7ea778dcd717e5dc"},
+    {file = "ibm_watsonx_ai-0.1.8.tar.gz", hash = "sha256:ba4e60091165cb755985f85ef0ece1db76ad1d351dd515a55d739467196dace3"},
 ]
 
 [package.dependencies]
@@ -372,7 +372,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.22"
+version = "0.1.23"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -382,7 +382,7 @@ develop = true
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
-langsmith = "^0.0.87"
+langsmith = "^0.1.0"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -398,13 +398,13 @@ url = "../../core"
 
 [[package]]
 name = "langsmith"
-version = "0.0.87"
+version = "0.1.1"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.87-py3-none-any.whl", hash = "sha256:8903d3811b9fc89eb18f5961c8e6935fbd2d0f119884fbf30dc70b8f8f4121fc"},
-    {file = "langsmith-0.0.87.tar.gz", hash = "sha256:36c4cc47e5b54be57d038036a30fb19ce6e4c73048cd7a464b8f25b459694d34"},
+    {file = "langsmith-0.1.1-py3-none-any.whl", hash = "sha256:10ff2b977a41e3f6351d1a4239d9bd57af0547aa909e839d2791e16cc197a6f9"},
+    {file = "langsmith-0.1.1.tar.gz", hash = "sha256:09df0c2ca9085105f97a4e4f281b083e312c99d162f3fe2b2d5eefd5c3692e60"},
 ]
 
 [package.dependencies]

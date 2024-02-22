@@ -37,8 +37,12 @@ from typing_extensions import Literal, get_args
 
 from langchain_core._api import beta_decorator
 from langchain_core.load.dump import dumpd
-from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import BaseConfig, BaseModel, Field, create_model
+from langchain_core.load.serializable import (
+    Serializable,
+    SerializedConstructor,
+    SerializedNotImplemented,
+)
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -65,6 +69,7 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_context,
     accepts_run_manager,
+    create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
     get_function_nonlocals,
@@ -93,10 +98,6 @@ if TYPE_CHECKING:
 
 
 Other = TypeVar("Other")
-
-
-class _SchemaConfig(BaseConfig):
-    arbitrary_types_allowed = True
 
 
 class Runnable(Generic[Input, Output], ABC):
@@ -301,7 +302,6 @@ class Runnable(Generic[Input, Output], ABC):
         return create_model(
             self.get_name("Input"),
             __root__=(root_type, None),
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -334,7 +334,6 @@ class Runnable(Generic[Input, Output], ABC):
         return create_model(
             self.get_name("Output"),
             __root__=(root_type, None),
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -371,7 +370,6 @@ class Runnable(Generic[Input, Output], ABC):
                     )
                     for spec in config_specs
                 },
-                __config__=_SchemaConfig,
             )
             if config_specs
             else None
@@ -379,7 +377,6 @@ class Runnable(Generic[Input, Output], ABC):
 
         return create_model(  # type: ignore[call-overload]
             self.get_name("Config"),
-            __config__=_SchemaConfig,
             **({"configurable": (configurable, None)} if configurable else {}),
             **{
                 field_name: (field_type, None)
@@ -1637,6 +1634,16 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
 
+    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
+        """Serialize the runnable to JSON."""
+        dumped = super().to_json()
+        try:
+            dumped["name"] = self.get_name()
+            dumped["graph"] = self.get_graph().to_json()
+        except Exception:
+            pass
+        return dumped
+
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
@@ -1691,7 +1698,6 @@ def _seq_input_schema(
                     for k, v in next_input_schema.__fields__.items()
                     if k not in first.mapper.steps
                 },
-                __config__=_SchemaConfig,
             )
     elif isinstance(first, RunnablePick):
         return _seq_input_schema(steps[1:], config)
@@ -1724,7 +1730,6 @@ def _seq_output_schema(
                         for k, v in mapper_output_schema.__fields__.items()
                     },
                 },
-                __config__=_SchemaConfig,
             )
     elif isinstance(last, RunnablePick):
         prev_output_schema = _seq_output_schema(steps[:-1], config)
@@ -1738,14 +1743,12 @@ def _seq_output_schema(
                         for k, v in prev_output_schema.__fields__.items()
                         if k in last.keys
                     },
-                    __config__=_SchemaConfig,
                 )
             else:
                 field = prev_output_schema.__fields__[last.keys]
                 return create_model(  # type: ignore[call-overload]
                     "RunnableSequenceOutput",
                     __root__=(field.annotation, field.default),
-                    __config__=_SchemaConfig,
                 )
 
     return last.get_output_schema(config)
@@ -2598,7 +2601,6 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                     for k, v in step.get_input_schema(config).__fields__.items()
                     if k != "__root__"
                 },
-                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -2610,7 +2612,6 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return create_model(  # type: ignore[call-overload]
             self.get_name("Output"),
             **{k: (v.OutputType, None) for k, v in self.steps.items()},
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -3250,13 +3251,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 return create_model(
                     self.get_name("Input"),
                     **{item[1:-1]: (Any, None) for item in items},  # type: ignore
-                    __config__=_SchemaConfig,
                 )
             else:
                 return create_model(
                     self.get_name("Input"),
                     __root__=(List[Any], None),
-                    __config__=_SchemaConfig,
                 )
 
         if self.InputType != Any:
@@ -3266,7 +3265,6 @@ class RunnableLambda(Runnable[Input, Output]):
             return create_model(
                 self.get_name("Input"),
                 **{key: (Any, None) for key in dict_keys},  # type: ignore
-                __config__=_SchemaConfig,
             )
 
         return super().get_input_schema(config)
@@ -3416,6 +3414,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     input: Input,
                     run_manager: AsyncCallbackManagerForChainRun,
                     config: RunnableConfig,
+                    **kwargs: Any,
                 ) -> Output:
                     output: Optional[Output] = None
                     for chunk in call_func_with_variable_args(
@@ -3440,6 +3439,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     input: Input,
                     run_manager: AsyncCallbackManagerForChainRun,
                     config: RunnableConfig,
+                    **kwargs: Any,
                 ) -> Output:
                     return call_func_with_variable_args(
                         self.func, input, config, run_manager.get_sync(), **kwargs
@@ -3645,6 +3645,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 input: Input,
                 run_manager: AsyncCallbackManagerForChainRun,
                 config: RunnableConfig,
+                **kwargs: Any,
             ) -> Output:
                 return call_func_with_variable_args(
                     self.func, input, config, run_manager.get_sync(), **kwargs
@@ -3756,7 +3757,6 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
-            __config__=_SchemaConfig,
         )
 
     @property
@@ -3773,7 +3773,6 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
                 List[schema],  # type: ignore
                 None,
             ),
-            __config__=_SchemaConfig,
         )
 
     @property
