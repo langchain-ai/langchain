@@ -269,12 +269,13 @@ class ChatYuan2(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(
+            cg_chunk = ChatGenerationChunk(
                 message=chunk,
                 generation_info=generation_info,
             )
+            yield cg_chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
 
     def _generate(
         self,
@@ -351,12 +352,13 @@ class ChatYuan2(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(
+            cg_chunk = ChatGenerationChunk(
                 message=chunk,
                 generation_info=generation_info,
             )
+            yield cg_chunk
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
 
     async def _agenerate(
         self,

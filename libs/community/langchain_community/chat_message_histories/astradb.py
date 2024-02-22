@@ -11,7 +11,7 @@ from langchain_community.utilities.astradb import (
 )
 
 if TYPE_CHECKING:
-    from astrapy.db import AstraDB
+    from astrapy.db import AstraDB, AsyncAstraDB
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -24,21 +24,6 @@ DEFAULT_COLLECTION_NAME = "langchain_message_store"
 
 
 class AstraDBChatMessageHistory(BaseChatMessageHistory):
-    """Chat message history that stores history in Astra DB.
-
-    Args:
-        session_id: arbitrary key that is used to store the messages
-            of a single chat session.
-        collection_name: name of the Astra DB collection to create/use.
-        token: API token for Astra DB usage.
-        api_endpoint: full URL to the API endpoint,
-            such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-        astra_db_client: *alternative to token+api_endpoint*,
-            you can pass an already-created 'astrapy.db.AstraDB' instance.
-        namespace: namespace (aka keyspace) where the
-            collection is created. Defaults to the database's "default namespace".
-    """
-
     def __init__(
         self,
         *,
@@ -47,15 +32,38 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
         astra_db_client: Optional[AstraDB] = None,
+        async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
         pre_delete_collection: bool = False,
     ) -> None:
+        """Chat message history that stores history in Astra DB.
+
+        Args:
+            session_id: arbitrary key that is used to store the messages
+                of a single chat session.
+            collection_name: name of the Astra DB collection to create/use.
+            token: API token for Astra DB usage.
+            api_endpoint: full URL to the API endpoint,
+                such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
+            astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AstraDB' instance.
+            async_astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
+            namespace: namespace (aka keyspace) where the
+                collection is created. Defaults to the database's "default namespace".
+            setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or
+                OFF).
+            pre_delete_collection: whether to delete the collection
+                before creating it. If False and the collection already exists,
+                the collection will be used as is.
+        """
         self.astra_env = _AstraDBCollectionEnvironment(
             collection_name=collection_name,
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
+            async_astra_db_client=async_astra_db_client,
             namespace=namespace,
             setup_mode=setup_mode,
             pre_delete_collection=pre_delete_collection,
