@@ -34,6 +34,7 @@ LLM_TRACE_HEADER = "X-action-trace"
 
 class RunDetailsCallbackHandler(BaseCallbackHandler):
     """Callback handler to add run details to the run."""
+
     def __init__(self, run_details: dict) -> None:
         """Initialize the callback handler.
 
@@ -57,11 +58,13 @@ class RunDetailsCallbackHandler(BaseCallbackHandler):
 
 class ToolInputSchema(BaseModel):
     """Tool input schema."""
+
     question: str = Field(...)
 
 
 class ToolArgs(TypedDict):
     """Tool arguments."""
+
     name: str
     description: str
     callback_manager: CallbackManager
