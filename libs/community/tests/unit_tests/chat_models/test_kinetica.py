@@ -6,12 +6,12 @@ from typing import Any
 
 from langchain_core.messages import AIMessage
 
-from langchain_community.chat_models.kinetica import KineticaChatLLM, KineticaUtil
+from langchain_community.chat_models.kinetica import ChatKinetica, KineticaUtil
 
 LOG = logging.getLogger(__name__)
 
 
-class TestKineticaChatLLM:
+class TestChatKinetica:
     test_ctx_json = """
     {
         "payload":{
@@ -53,9 +53,9 @@ class TestKineticaChatLLM:
         def patch_execute_sql(*args: Any, **kwargs: Any) -> dict:
             return dict(Prompt=self.test_ctx_json)
 
-        monkeypatch.setattr(KineticaChatLLM, "_execute_sql", patch_execute_sql)
+        monkeypatch.setattr(ChatKinetica, "_execute_sql", patch_execute_sql)
 
-        kinetica_llm = KineticaChatLLM()
+        kinetica_llm = ChatKinetica()
 
         test_messages = kinetica_llm.load_messages_from_context("test")
         LOG.info(f"test_messages: {test_messages}")

@@ -13,7 +13,7 @@ from langchain_core.messages import (
 from langchain_core.prompts import ChatPromptTemplate
 
 from langchain_community.chat_models.kinetica import (
-    KineticaChatLLM,
+    ChatKinetica,
     KineticaSqlOutputParser,
     KineticaSqlResponse,
     KineticaUtil,
@@ -34,7 +34,7 @@ def vcr_config() -> dict:
     }
 
 
-class TestKineticaChatLLM:
+class TestChatKinetica:
     """Integration tests for `Kinetica` chat models.
 
     You must have `gpudb`, `typeguard`, and `faker` packages installed to run these
@@ -74,7 +74,7 @@ class TestKineticaChatLLM:
         """Create an LLM instance."""
         import gpudb
 
-        kinetica_llm = KineticaChatLLM()
+        kinetica_llm = ChatKinetica()
         LOG.info(kinetica_llm._identifying_params)
 
         assert isinstance(kinetica_llm.kdbc, gpudb.GPUdb)
@@ -83,7 +83,7 @@ class TestKineticaChatLLM:
     @pytest.mark.vcr()
     def test_load_context(self) -> None:
         """Load the LLM context from the DB."""
-        kinetica_llm = KineticaChatLLM()
+        kinetica_llm = ChatKinetica()
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
 
         system_message = ctx_messages[0]
@@ -96,7 +96,7 @@ class TestKineticaChatLLM:
     @pytest.mark.vcr()
     def test_generate(self) -> None:
         """Generate SQL from a chain."""
-        kinetica_llm = KineticaChatLLM()
+        kinetica_llm = ChatKinetica()
 
         # create chain
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
@@ -113,7 +113,7 @@ class TestKineticaChatLLM:
     @pytest.mark.vcr()
     def test_full_chain(self) -> None:
         """Generate SQL from a chain and execute the query."""
-        kinetica_llm = KineticaChatLLM()
+        kinetica_llm = ChatKinetica()
 
         # create chain
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)

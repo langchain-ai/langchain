@@ -40,7 +40,7 @@ EXPECTED_ALL = [
     "GPTRouter",
     "ChatYuan2",
     "ChatZhipuAI",
-    "KineticaChatLLM",
+    "ChatKinetica",
 ]
 
 

@@ -289,7 +289,7 @@ class KineticaUtil:
         )
 
 
-class KineticaChatLLM(BaseChatModel):
+class ChatKinetica(BaseChatModel):
     """Kinetica LLM Chat Model API.
 
     Prerequisites for using this API:
@@ -322,6 +322,7 @@ class KineticaChatLLM(BaseChatModel):
 
     Example:
         .. code-block:: python
+
             from langchain_community.chat_models.kinetica import KineticaChatLLM
             kinetica_llm = KineticaChatLLM()
 
@@ -330,6 +331,7 @@ class KineticaChatLLM(BaseChatModel):
 
     Example:
         .. code-block:: python
+
             from langchain_community.chat_models.kinetica import (
                 KineticaChatLLM, KineticaUtil)
             kdbc = KineticaUtil._create_kdbc(url=url, user=user, passwd=passwd)
@@ -554,6 +556,7 @@ class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
 
     Example:
         .. code-block:: python
+
             from langchain_community.chat_models.kinetica import (
                 KineticaChatLLM, KineticaSqlOutputParser)
             kinetica_llm = KineticaChatLLM()
