@@ -275,9 +275,10 @@ class ChatHunyuan(BaseChatModel):
                     choice["delta"], default_chunk_class
                 )
                 default_chunk_class = chunk.__class__
-                yield ChatGenerationChunk(message=chunk)
+                cg_chunk = ChatGenerationChunk(message=chunk)
+                yield cg_chunk
                 if run_manager:
-                    run_manager.on_llm_new_token(chunk.content)
+                    run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
         if self.hunyuan_secret_key is None:
