@@ -139,6 +139,9 @@ class Cohere(LLM, BaseCohere):
     """Specify how the client handles inputs longer than the maximum token
     length: Truncate from START, END or NONE"""
 
+    raw_prompting: bool = False
+    """When enabled, the user's prompt will be sent to the model without any pre-processing."""
+
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
@@ -158,6 +161,7 @@ class Cohere(LLM, BaseCohere):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "truncate": self.truncate,
+            "raw_prompting": self.raw_prompting,
         }
 
     @property
