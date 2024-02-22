@@ -154,9 +154,10 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         for chunk in self._client.stream(payload):
             if chunk.choices:
                 content = chunk.choices[0].delta.content
-                yield ChatGenerationChunk(message=AIMessageChunk(content=content))
+                cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
+                yield cg_chunk
                 if run_manager:
-                    run_manager.on_llm_new_token(content)
+                    run_manager.on_llm_new_token(content, chunk=cg_chunk)
 
     async def _astream(
         self,
@@ -170,9 +171,10 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         async for chunk in self._client.astream(payload):
             if chunk.choices:
                 content = chunk.choices[0].delta.content
-                yield ChatGenerationChunk(message=AIMessageChunk(content=content))
+                cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
+                yield cg_chunk
                 if run_manager:
-                    await run_manager.on_llm_new_token(content)
+                    await run_manager.on_llm_new_token(content, chunk=cg_chunk)
 
     def get_num_tokens(self, text: str) -> int:
         """Count approximate number of tokens"""

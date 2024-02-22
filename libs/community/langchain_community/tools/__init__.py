@@ -510,6 +510,12 @@ def _import_polygon_tool_PolygonLastQuote() -> Any:
     return PolygonLastQuote
 
 
+def _import_polygon_tool_PolygonTickerNews() -> Any:
+    from langchain_community.tools.polygon.ticker_news import PolygonTickerNews
+
+    return PolygonTickerNews
+
+
 def _import_powerbi_tool_InfoPowerBITool() -> Any:
     from langchain_community.tools.powerbi.tool import InfoPowerBITool
 
@@ -957,6 +963,8 @@ def __getattr__(name: str) -> Any:
         return _import_plugin()
     elif name == "PolygonLastQuote":
         return _import_polygon_tool_PolygonLastQuote()
+    elif name == "PolygonTickerNews":
+        return _import_polygon_tool_PolygonTickerNews()
     elif name == "InfoPowerBITool":
         return _import_powerbi_tool_InfoPowerBITool()
     elif name == "ListPowerBITool":
@@ -1141,6 +1149,7 @@ __all__ = [
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
     "PolygonLastQuote",
+    "PolygonTickerNews",
     "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
