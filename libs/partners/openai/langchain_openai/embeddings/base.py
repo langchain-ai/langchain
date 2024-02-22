@@ -324,7 +324,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size], **self._invocation_params
             )
             if not isinstance(response, dict):
-                response = response.dict()
+                response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
@@ -343,7 +343,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
-                    average_embedded = average_embedded.dict()
+                    average_embedded = average_embedded.model_dump()
                 average = average_embedded["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
@@ -436,7 +436,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
 
             if not isinstance(response, dict):
-                response = response.dict()
+                response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
@@ -453,7 +453,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
-                    average_embedded = average_embedded.dict()
+                    average_embedded = average_embedded.model_dump()
                 average = average_embedded["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])

@@ -147,9 +147,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
         for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                yield chunk
                 if run_manager:
-                    run_manager.on_llm_new_token(delta)
+                    run_manager.on_llm_new_token(delta, chunk=chunk)
 
     async def _astream(
         self,
@@ -164,9 +165,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
         async for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                yield chunk
                 if run_manager:
-                    await run_manager.on_llm_new_token(delta)
+                    await run_manager.on_llm_new_token(delta, chunk=chunk)
 
     def _get_generation_info(self, response: Any) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""
