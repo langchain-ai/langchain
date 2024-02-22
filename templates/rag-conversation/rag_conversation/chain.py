@@ -5,7 +5,6 @@ from typing import List, Tuple
 from langchain.schema import AIMessage, HumanMessage, format_document
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.prompts.prompt import PromptTemplate
@@ -16,6 +15,7 @@ from langchain_core.runnables import (
     RunnableParallel,
     RunnablePassthrough,
 )
+from langchain_pinecone import PineconeVectorStore
 
 if os.environ.get("PINECONE_API_KEY", None) is None:
     raise Exception("Missing `PINECONE_API_KEY` environment variable.")
@@ -37,12 +37,14 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 # all_splits = text_splitter.split_documents(data)
 
 # # Add to vectorDB
-# vectorstore = Pinecone.from_documents(
+# vectorstore = PineconeVectorStore.from_documents(
 #     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
 # )
 # retriever = vectorstore.as_retriever()
 
-vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
+vectorstore = PineconeVectorStore.from_existing_index(
+    PINECONE_INDEX_NAME, OpenAIEmbeddings()
+)
 retriever = vectorstore.as_retriever()
 
 # Condense a chat history and follow-up question into a standalone question
