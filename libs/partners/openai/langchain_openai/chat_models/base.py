@@ -28,6 +28,7 @@ from typing import (
 
 import openai
 import tiktoken
+from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -38,7 +39,6 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.language_models.structured_output import StructuredOutputMixin
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -214,7 +214,7 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
+class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
     To use, you should have the
@@ -773,6 +773,7 @@ class ChatOpenAI(BaseChatModel, StructuredOutputMixin[_DictOrPydanticClass]):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
+    @beta()
     def with_structured_output(
         self,
         schema: _DictOrPydanticClass,
