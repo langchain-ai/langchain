@@ -288,6 +288,12 @@ def _import_llamacpp() -> Any:
     return LlamaCpp
 
 
+def _import_llamafile() -> Any:
+    from langchain_community.llms.llamafile import Llamafile
+
+    return Llamafile
+
+
 def _import_manifest() -> Any:
     from langchain_community.llms.manifest import ManifestWrapper
 
