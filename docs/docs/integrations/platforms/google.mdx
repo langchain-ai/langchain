@@ -239,6 +239,22 @@ documents = docai_wh_retriever.get_relevant_documents(
 
 ## Document Loaders
 
+## Firestore (Native Mode)
+
+> [Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+
+Install the python package:
+
+```bash
+pip install langchain-google-firestore
+```
+
+See [usage example](docs/docs/integrations/document_loader/firestore).
+
+```python
+from langchain_google_firestore import FirestoreLoader
+```
+
 ### BigQuery
 
 > [BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
@@ -521,20 +537,20 @@ from langchain_community.agent_toolkits import GmailToolkit
 
 ## Memory
 
-### Firestore
+## Firestore (Native Mode)
 
-> [`Firestore`](https://cloud.google.com/firestore) is a NoSQL document database built for automatic scaling, high performance, and ease of application development in Google Cloud.
+> [Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
 
-First, we need to install the python package.
+Install the python package:
 
 ```bash
-pip install firebase-admin
+pip install langchain-google-firestore
 ```
 
-See a [usage example and authorization instructions](/docs/integrations/memory/firestore_chat_message_history).
+See [usage example](docs/docs/integrations/memory/firestore).
 
 ```python
-from langchain_community.chat_message_histories.firestore import  FirestoreChatMessageHistory
+from langchain_google_firestore import FirestoreChatMessageHistory
 ```
 
 ## Chat Loaders
