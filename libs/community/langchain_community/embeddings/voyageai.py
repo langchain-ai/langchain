@@ -75,7 +75,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
             query_result = voyage.embed_query(text)
     """
 
-    model: str
+    model: str = "voyage-default"
     voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
     voyage_api_key: Optional[SecretStr] = None
     batch_size: Optional[int] = None
@@ -112,7 +112,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
             get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")
         )
         if "batch_size" not in values:
-            values["batch_size"] = 72 if values["model"] in ["voyage-2", "voyage-02"] else 7
+            values["batch_size"] = 72 if "model" not in values or (values["model"] in ["voyage-2", "voyage-02"]) else 7
 
         return values
 

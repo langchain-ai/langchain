@@ -14,6 +14,15 @@ def test_voyagi_embedding_documents() -> None:
     assert len(output[0]) == 1024
 
 
+def test_voyagi_with_default_model() -> None:
+    """Test voyage embeddings."""
+    documents = ["foo bar"]
+    embedding = VoyageEmbeddings()
+    output = embedding.embed_documents(documents)
+    assert len(output) == 1
+    assert len(output[0]) == 1024
+
+
 def test_voyage_embedding_documents_multiple() -> None:
     """Test voyage embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
