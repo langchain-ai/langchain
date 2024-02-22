@@ -239,6 +239,21 @@ documents = docai_wh_retriever.get_relevant_documents(
 
 ## Document Loaders
 
+### Cloud SQL for SQL Server
+
+> [Cloud SQL for SQL Server](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your SQL Server databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mssql
+```
+
+See [usage example](docs/docs/integrations/document_loaders/cloud_sql_mssql).
+
+```python
+from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLLoader
+```
+
 ### BigQuery
 
 > [BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
@@ -520,6 +535,21 @@ from langchain_community.agent_toolkits import GmailToolkit
 ```
 
 ## Memory
+
+### Cloud SQL for SQL Server
+
+> [Cloud SQL for SQL Server](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your SQL Server databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mssql
+```
+
+See [usage example](docs/docs/integrations/memory/cloud_sql_mssql).
+
+```python
+from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLChatMessageHistory
+```
 
 ### Firestore
 
