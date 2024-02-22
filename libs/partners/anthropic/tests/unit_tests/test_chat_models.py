@@ -4,8 +4,7 @@ import os
 
 import pytest
 
-from langchain_anthropic import ChatAnthropic
-from langchain_anthropic.chat_models import ChatAnthropicMessages
+from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 

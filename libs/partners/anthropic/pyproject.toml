@@ -40,7 +40,7 @@ optional = true
 ruff = ">=0.2.2,<1"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1"
+mypy = "^0.991"
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
