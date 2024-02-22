@@ -99,14 +99,14 @@ def create_openai_fn_runnable(
     if not functions:
         raise ValueError("Need to pass in at least one function. Received zero.")
     openai_functions = [convert_to_openai_function(f) for f in functions]
-    llm_kwargs: Dict[str, Any] = {"functions": openai_functions, **llm_kwargs}
+    llm_kwargs_: Dict[str, Any] = {"functions": openai_functions, **llm_kwargs}
     if len(openai_functions) == 1 and enforce_single_function_usage:
-        llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
+        llm_kwargs_["function_call"] = {"name": openai_functions[0]["name"]}
     output_parser = output_parser or get_openai_output_parser(functions)
     if prompt:
-        return prompt | llm.bind(**llm_kwargs) | output_parser
+        return prompt | llm.bind(**llm_kwargs_) | output_parser
     else:
-        return llm.bind(**llm_kwargs) | output_parser
+        return llm.bind(**llm_kwargs_) | output_parser
 
 
 def create_structured_output_runnable(
