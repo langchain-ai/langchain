@@ -1,9 +1,6 @@
 import json
-from collections import deque
-from typing import Any, Dict
 
 import numpy as np
-import pytest
 import requests
 from pytest import MonkeyPatch
 
