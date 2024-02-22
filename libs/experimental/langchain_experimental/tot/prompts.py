@@ -3,7 +3,7 @@ from textwrap import dedent
 from typing import List
 
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser
 
 from langchain_experimental.tot.thought import ThoughtValidity
 
