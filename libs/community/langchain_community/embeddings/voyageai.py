@@ -16,6 +16,7 @@ from typing import (
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from pydantic import model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
@@ -87,6 +88,18 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     """Whether to show a progress bar when embedding. Must have tqdm installed if set 
         to True."""
 
+    def __init__(self, /, **data: Any) -> None:
+        super().__init__(**data)
+        if "model" in data:
+            self.model = data['model']
+        else:
+            logger.warning(
+                "model will become a required arg for VoyageAIEmbeddings "
+                "starting from Apr-01-2024. Currently the default is set to "
+                "voyage-2"
+            )
+            self.model = "voyage-2"
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -98,6 +111,9 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         values["voyage_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")
         )
+        if "batch_size" not in values:
+            values["batch_size"] = 72 if values["model"] in ["voyage-2", "voyage-02"] else 7
+
         return values
 
     def _invocation_params(
