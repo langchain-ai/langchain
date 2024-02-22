@@ -239,6 +239,22 @@ documents = docai_wh_retriever.get_relevant_documents(
 
 ## Document Loaders
 
+### Bigtable
+
+> [Bigtable](https://cloud.google.com/bigtable/docs) is Google's fully managed NoSQL Big Data database service in Google Cloud.
+
+Install the python package:
+
+```bash
+pip install langchain-google-bigtable
+```
+
+See [usage example](docs/docs/integrations/document_loaders/bigtable).
+
+```python
+from langchain_google_bigtable import BigtableLoader
+```
+
 ### BigQuery
 
 > [BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
@@ -520,6 +536,22 @@ from langchain_community.agent_toolkits import GmailToolkit
 ```
 
 ## Memory
+
+## Bigtable
+
+> [Bigtable](https://cloud.google.com/bigtable/docs) is Google's fully managed NoSQL Big Data database service in Google Cloud.
+
+Install the python package:
+
+```bash
+pip install langchain-google-bigtable
+```
+
+See [usage example](docs/docs/integrations/memory/bigtable).
+
+```python
+from langchain_google_bigtable import BigtableChatMessageHistory
+```
 
 ### Firestore
 
