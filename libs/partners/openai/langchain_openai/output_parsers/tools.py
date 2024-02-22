@@ -24,10 +24,10 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
     """Whether to return the tool call id."""
     first_tool_only: bool = False
     """Whether to return only the first tool call.
-    
+
     If False, the result will be a list of tool calls, or an empty list 
     if no tool calls are found.
-    
+
     If true, and multiple tool calls are found, only the first one will be returned,
     and the other tool calls will be ignored. 
     If no tool calls are found, None will be returned. 
@@ -85,18 +85,6 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 
     key_name: str
     """The type of tools to return."""
-
-    def __init__(self, key_name: str, **kwargs: Any) -> None:
-        """Allow init with positional args."""
-        # Backwards compatibility for old argument name.
-        if "return_single" in kwargs:
-            if not kwargs.get("first_tool_only"):
-                kwargs["first_tool_only"] = kwargs.pop("return_single")
-            else:
-                raise ValueError(
-                    "Cannot use both 'return_single' and 'first_tool_only' arguments."
-                )
-        super().__init__(key_name=key_name, **kwargs)
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         parsed_result = super().parse_result(result, partial=partial)
