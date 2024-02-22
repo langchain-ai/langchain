@@ -1,4 +1,5 @@
 """Loads data from OneNote Notebooks"""
+
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional
 
@@ -164,8 +165,8 @@ class OneNoteLoader(BaseLoader, BaseModel):
             authorization_request_url = client_instance.get_authorization_request_url(
                 self._scopes
             )
-            print("Visit the following url to give consent:")
-            print(authorization_request_url)
+            print("Visit the following url to give consent:")  # noqa: T201
+            print(authorization_request_url)  # noqa: T201
             authorization_url = input("Paste the authenticated url here:\n")
 
             authorization_code = authorization_url.split("code=")[1].split("&")[0]

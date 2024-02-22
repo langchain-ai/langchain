@@ -32,7 +32,8 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 
 
 def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
-    """
+    """Sanitize the input dictionary.
+
     Sanitizes the input dictionary by removing embedding-like values,
     lists with more than 128 elements, that are mostly irrelevant for
     generating answers in a LLM context. These properties, if left in
@@ -63,7 +64,8 @@ def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class Neo4jGraph(GraphStore):
-    """Provides a connection to a Neo4j database for various graph operations.
+    """Neo4j database wrapper for various graph operations.
+
     Parameters:
     url (Optional[str]): The URL of the Neo4j database server.
     username (Optional[str]): The username for database authentication.
