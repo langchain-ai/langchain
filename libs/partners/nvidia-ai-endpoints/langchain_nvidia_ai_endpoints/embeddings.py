@@ -13,7 +13,7 @@ class NVIDIAEmbeddings(_NVIDIAClient, Embeddings):
     max_length: int = Field(2048, ge=1, le=2048)
     max_batch_size: int = Field(default=50)
     model_type: Optional[Literal["passage", "query"]] = Field(
-        "passage", description="The type of text to be embedded."
+        None, description="The type of text to be embedded."
     )
 
     def _embed(

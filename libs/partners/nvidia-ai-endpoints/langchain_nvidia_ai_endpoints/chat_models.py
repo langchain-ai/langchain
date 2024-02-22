@@ -20,14 +20,25 @@ from typing import (
 )
 
 import requests
+from langchain.chat_models.base import BaseChatModel
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import SimpleChatModel
-from langchain_core.messages import BaseMessage, ChatMessage, ChatMessageChunk
-from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    ChatMessageChunk,
+)
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+)
 from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables.config import run_in_executor
 
 from langchain_nvidia_ai_endpoints import _common as nvidia_ai_endpoints
 
@@ -41,10 +52,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def _is_openai_parts_format(part: dict) -> bool:
-    return "type" in part
-
-
 def _is_url(s: str) -> bool:
     try:
         result = urllib.parse.urlparse(s)
@@ -52,10 +59,6 @@ def _is_url(s: str) -> bool:
     except Exception as e:
         logger.debug(f"Unable to parse URL: {e}")
         return False
-
-
-def _is_b64(s: str) -> bool:
-    return s.startswith("data:image")
 
 
 def _resize_image(img_data: bytes, max_dim: int = 1024) -> str:
@@ -90,7 +93,7 @@ def _url_to_b64_string(image_source: str) -> str:
                 ## (VK) Temporary fix. NVIDIA API has a limit of 250KB for the input.
                 encoded = _resize_image(response.content)
             return b64_template.format(b64_string=encoded)
-        elif _is_b64(image_source):
+        elif image_source.startswith("data:image"):
             return image_source
         elif os.path.exists(image_source):
             with open(image_source, "rb") as f:
@@ -104,7 +107,7 @@ def _url_to_b64_string(image_source: str) -> str:
         raise ValueError(f"Unable to process the provided image source: {e}")
 
 
-class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
+class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
     """NVIDIA chat model.
 
     Example:
@@ -130,13 +133,43 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         """Return type of NVIDIA AI Foundation Model Interface."""
         return "chat-nvidia-ai-playground"
 
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        responses = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
+        outputs = self.custom_postprocess(responses)
+        message = AIMessage(content=outputs)
+        generation = ChatGeneration(message=message)
+        print(ChatResult(generations=[generation], llm_output=responses))
+        return ChatResult(generations=[generation], llm_output=responses)
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return await run_in_executor(
+            None,
+            self._generate,
+            messages,
+            stop=stop,
+            run_manager=run_manager.get_sync() if run_manager else None,
+            **kwargs,
+        )
+
     def _call(
         self,
         messages: List[BaseMessage],
         stop: Optional[Sequence[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> dict:
         """Invoke on a single list of chat messages."""
         inputs = self.custom_preprocess(messages)
         responses = self.get_generation(inputs=inputs, stop=stop, **kwargs)
@@ -193,7 +226,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
                 string_array.append(part)
             elif isinstance(part, Mapping):
                 # OpenAI Format
-                if _is_openai_parts_format(part):
+                if "type" in part:
                     if part["type"] == "text":
                         string_array.append(str(part["text"]))
                     elif part["type"] == "image_url":
