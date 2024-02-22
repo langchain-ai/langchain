@@ -19,48 +19,16 @@ To use, you should have an Anthropic API key configured. Initialize the model as
 ```
 from langchain_anthropic import ChatAnthropicMessages
 from langchain_core.messages import AIMessage, HumanMessage
+
 model = ChatAnthropicMessages(model="claude-2.1", temperature=0, max_tokens=1024)
 ```
 
-# Define the input message
+### Define the input message
 
-`input_message = HumanMessage(content="What is the capital of France?")`
+`message = HumanMessage(content="What is the capital of France?")`
 
-# Generate a response using the model
+### Generate a response using the model
 
-`response = model.invoke([input_messages])`
+`response = model.invoke([message])`
 
-# Using Messages
-
-You can also use a list of messages to generate a response. This is useful for multi-turn conversations.
-
-```
-model = ChatAnthropicMessages(
-    model="claude-2.1",
-    temperature=0,
-    max_tokens=1024
-    )
-```
-
-# Define the input messages
-
-```
-messages = [
-{"role": "system", "content": "You are a helpful assistant."},
-{"role": "user", "content": "What is the capital of France?"},
-]
-
-```
-
-### Generate responses using the model
-
-`responses = model.generate(input_messages)`
-
-# Embeddings
-
-Anthropic does not offer its own embedding model. However their documentation offers solutions using Voyage AI.
-[Anthropic Embeddings Documentation](https://docs.anthropic.com/claude/docs/embeddings)
-
-## Multimodal inputs
-
-Currently, Anthropic models do not support direct multimodal inputs through this package.
+For a more detailed walkthrough see [here](https://python.langchain.com/docs/integrations/chat/anthropic).
