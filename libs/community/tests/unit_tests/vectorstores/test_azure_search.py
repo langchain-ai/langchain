@@ -134,12 +134,11 @@ def create_vector_store() -> AzureSearch:
 def test_init_existing_index():
     from azure.search.documents.indexes import SearchIndexClient
 
-    def create_index(self, index, **kwargs):
+    def mock_create_index(self, index, **kwargs):
         pytest.fail("Should not create index in this test")
 
-    with (
-        patch.object(SearchIndexClient, "get_index", mock_default_index),
-        patch.object(SearchIndexClient, "create_index", create_index),
+    with patch.multiple(
+        SearchIndexClient, get_index=mock_default_index, create_index=mock_create_index
     ):
         vector_store = create_vector_store()
         assert vector_store.client is not None
@@ -155,13 +154,12 @@ def test_init_new_index():
 
     created_index = None
 
-    def create_index(self, index, **kwargs):
+    def mock_create_index(self, index, **kwargs):
         nonlocal created_index
         created_index = index
 
-    with (
-        patch.object(SearchIndexClient, "get_index", no_index),
-        patch.object(SearchIndexClient, "create_index", create_index),
+    with patch.multiple(
+        SearchIndexClient, get_index=no_index, create_index=mock_create_index
     ):
         vector_store = create_vector_store()
         assert vector_store.client is not None
