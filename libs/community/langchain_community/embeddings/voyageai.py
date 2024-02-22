@@ -16,7 +16,6 @@ from typing import (
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from pydantic import model_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
@@ -75,7 +74,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
             query_result = voyage.embed_query(text)
     """
 
-    model: str = "voyage-default"
+    model: str = "voyage-2"
     voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
     voyage_api_key: Optional[SecretStr] = None
     batch_size: Optional[int] = None
@@ -88,18 +87,6 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     """Whether to show a progress bar when embedding. Must have tqdm installed if set 
         to True."""
 
-    def __init__(self, /, **data: Any) -> None:
-        super().__init__(**data)
-        if "model" in data:
-            self.model = data['model']
-        else:
-            logger.warning(
-                "model will become a required arg for VoyageAIEmbeddings "
-                "starting from Apr-01-2024. Currently the default is set to "
-                "voyage-2"
-            )
-            self.model = "voyage-2"
-
     class Config:
         """Configuration for this pydantic object."""
 
@@ -111,8 +98,21 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         values["voyage_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")
         )
+
+        if "model" not in values:
+            logger.warning(
+                "model will become a required arg for VoyageAIEmbeddings, "
+                "we recommend to specify it when using this class."
+                "Currently the default is set to voyage-2."
+            )
+
         if "batch_size" not in values:
-            values["batch_size"] = 72 if "model" not in values or (values["model"] in ["voyage-2", "voyage-02"]) else 7
+            values["batch_size"] = (
+                72
+                if "model" not in values
+                or (values["model"] in ["voyage-2", "voyage-02"])
+                else 7
+            )
 
         return values
 
