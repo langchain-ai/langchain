@@ -7,7 +7,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseGenerationOutputParser
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
@@ -85,9 +85,16 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 
     key_name: str
     """The type of tools to return."""
-
     def __init__(self, key_name: str, **kwargs: Any) -> None:
         """Allow init with positional args."""
+        # Backwards compatibility for old argument name.
+        if "return_single" in kwargs:
+            if not kwargs.get("first_tool_only"):
+                kwargs["first_tool_only"] = kwargs.pop("return_single")
+            else:
+                raise ValueError(
+                    "Cannot use both 'return_single' and 'first_tool_only' arguments."
+                )
         super().__init__(key_name=key_name, **kwargs)
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
