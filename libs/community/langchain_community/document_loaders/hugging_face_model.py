@@ -1,14 +1,16 @@
-import requests
 from typing import Iterator, List, Optional
 
+import requests
 from langchain_core.documents import Document
+
 from langchain_community.document_loaders.base import BaseLoader
+
 
 class HuggingFaceModelLoader(BaseLoader):
     """
     Load model information from `Hugging Face Hub`, including README content.
 
-    This loader interfaces with the Hugging Face Models API to fetch and load model metadata and README files. 
+    This loader interfaces with the Hugging Face Models API to fetch and load model metadata and README files.
     The API allows you to search and filter models based on specific criteria such as model tags, authors, and more.
 
     API URL: https://huggingface.co/api/models
@@ -72,7 +74,10 @@ class HuggingFaceModelLoader(BaseLoader):
 
     def fetch_models(self) -> List[dict]:
         """Fetch model information from Hugging Face Hub."""
-        response = requests.get(self.BASE_URL, params={k: v for k, v in self.params.items() if v is not None})
+        response = requests.get(
+            self.BASE_URL,
+            params={k: v for k, v in self.params.items() if v is not None},
+        )
         response.raise_for_status()
         return response.json()
 
@@ -93,7 +98,7 @@ class HuggingFaceModelLoader(BaseLoader):
         for model in models:
             model_id = model.get("modelId", "")
             readme_content = self.fetch_readme_content(model_id)
-            
+
             yield Document(
                 page_content=readme_content,
                 metadata=model,
@@ -102,6 +107,3 @@ class HuggingFaceModelLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load model information, including README content."""
         return list(self.lazy_load())
-
-
-

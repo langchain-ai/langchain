@@ -1,7 +1,10 @@
+import json
+
 import pytest
 import responses
+
 from langchain_community.document_loaders import HuggingFaceModelLoader
-import json
+
 # Mocked model data to simulate an API response
 MOCKED_MODELS_RESPONSE = [
     {
@@ -23,12 +26,12 @@ MOCKED_MODELS_RESPONSE = [
             "autotrain_compatible",
             "endpoints_compatible",
             "has_space",
-            "region:us"
+            "region:us",
         ],
         "pipeline_tag": "text-generation",
         "library_name": "transformers",
         "createdAt": "2023-12-13T21:19:59.000Z",
-        "modelId": "microsoft/phi-2"
+        "modelId": "microsoft/phi-2",
     },
     # Add additional models as needed
 ]
@@ -39,26 +42,30 @@ MOCKED_README_CONTENT = {
     "openai/gpt-3": "README content for openai/gpt-3",
 }
 
+
 def response_callback(request):
     if "/api/models" in request.url:
         return (200, {}, json.dumps(MOCKED_MODELS_RESPONSE))
     elif "README.md" in request.url:
-        model_id = request.url.split('/')[3] + '/' + request.url.split('/')[4]  # Extract model_id
+        model_id = (
+            request.url.split("/")[3] + "/" + request.url.split("/")[4]
+        )  # Extract model_id
         content = MOCKED_README_CONTENT.get(model_id, "")
         return (200, {}, content)
     return (404, {}, "Not Found")
+
 
 @responses.activate
 def test_load_models_with_readme():
     """Tests loading models along with their README content."""
     responses.add_callback(
-        responses.GET, 
+        responses.GET,
         "https://huggingface.co/api/models",
         callback=response_callback,
         content_type="application/json",
     )
     responses.add_callback(
-        responses.GET, 
+        responses.GET,
         "https://huggingface.co/microsoft/phi-2/raw/main/README.md",  # Use a regex or update this placeholder
         callback=response_callback,
         content_type="text/plain",

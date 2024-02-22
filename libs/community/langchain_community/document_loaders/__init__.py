@@ -117,7 +117,9 @@ from langchain_community.document_loaders.html_bs import BSHTMLLoader
 from langchain_community.document_loaders.hugging_face_dataset import (
     HuggingFaceDatasetLoader,
 )
-from langchain_community.document_loaders.hugging_face_model import HuggingFaceModelLoader
+from langchain_community.document_loaders.hugging_face_model import (
+    HuggingFaceModelLoader,
+)
 from langchain_community.document_loaders.ifixit import IFixitLoader
 from langchain_community.document_loaders.image import UnstructuredImageLoader
 from langchain_community.document_loaders.image_captions import ImageCaptionLoader
