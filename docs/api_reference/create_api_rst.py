@@ -351,7 +351,7 @@ def main() -> None:
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base
         # e.g., .pytest_cache from running tests from the wrong location.
-        if not dir.startswith("."):
+        if dir.startswith("."):
             print("Skipping dir:", dir)
             continue
 
