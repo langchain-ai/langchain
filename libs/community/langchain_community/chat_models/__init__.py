@@ -98,5 +98,5 @@ __all__ = [
     "GPTRouter",
     "ChatYuan2",
     "ChatZhipuAI",
-    "ChatMaritalk"
+    "ChatMaritalk",
 ]
