@@ -18,7 +18,7 @@ To use, you should have an Anthropic API key configured. Initialize the model as
 
 ```
 from langchain_anthropic import ChatAnthropicMessages
-from langchain_core.messages  import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 model = ChatAnthropicMessages(model="claude-2.1", temperature=0, max_tokens=1024)
 ```
 
@@ -28,7 +28,7 @@ model = ChatAnthropicMessages(model="claude-2.1", temperature=0, max_tokens=1024
 
 # Generate a response using the model
 
-`response = model.invoke(input_message)`
+`response = model.invoke([input_messages])`
 
 # Using Messages
 
