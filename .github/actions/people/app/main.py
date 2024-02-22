@@ -113,6 +113,9 @@ query Q($after: String) {
             login
             avatarUrl
             url
+            ... on User {
+              twitterUsername
+            }
           }
           title
           createdAt
@@ -123,6 +126,9 @@ query Q($after: String) {
                 login
                 avatarUrl
                 url
+                ... on User {
+                  twitterUsername
+                }
               }
               state
             }
@@ -139,6 +145,7 @@ class Author(BaseModel):
     login: str
     avatarUrl: str
     url: str
+    twitterUsername: Union[str, None] = None
 
 
 # Issues and Discussions
@@ -501,6 +508,7 @@ def get_top_users(
                     "login": commentor,
                     "count": count,
                     "avatarUrl": author.avatarUrl,
+                    "twitterUsername": author.twitterUsername,
                     "url": author.url,
                 }
             )
@@ -550,6 +558,7 @@ if __name__ == "__main__":
                 "login": login,
                 "count": contributors[login], #+ question_commentors[login],
                 "avatarUrl": user.avatarUrl,
+                "twitterUsername": user.twitterUsername,
                 "url": user.url,
             }
         )
