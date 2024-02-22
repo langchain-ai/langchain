@@ -69,29 +69,7 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 from langchain_google_vertexai import ChatVertexAI
 ```
 
-<<<<<<< HEAD
 ## LLMs
-=======
-## Document Loaders
-
-### Cloud SQL for PostgreSQL
-
-> [Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
-
-Install the python package:
-
-```bash
-pip install langchain-google-cloud-sql-pg
-```
-
-See [usage example](docs/docs/integrations/document_loader/cloud_sql_pg).
-
-```python
-from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLLoader
-```
-
-### Google BigQuery
->>>>>>> d4e70752 (docs: Add documentation for Cloud SQL for PostgreSQL Google Cloud Integrations)
 
 ### Google Generative AI
 
@@ -276,6 +254,22 @@ documents = docai_wh_retriever.get_relevant_documents(
 ```
 
 ## Document Loaders
+
+### Cloud SQL for PostgreSQL
+
+> [Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-pg
+```
+
+See [usage example](docs/docs/integrations/document_loaders/cloud_sql_pg).
+
+```python
+from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLLoader
+```
 
 ### BigQuery
 
