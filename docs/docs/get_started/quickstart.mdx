@@ -501,7 +501,7 @@ from langchain_core.messages import BaseMessage
 from langserve import add_routes
 
 # 1. Load Retriever
-loader = WebBaseLoader("https://docs.smith.langchain.com/overview")
+loader = WebBaseLoader("https://docs.smith.langchain.com")
 docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
