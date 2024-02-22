@@ -9,7 +9,7 @@ This template demonstrates how to perform private visual search and question-ans
 
 It uses OpenCLIP embeddings to embed all of the photos and stores them in Chroma.
  
-Given a question, relevat photos are retrieved and passed to an open source multi-modal LLM of your choice for answer synthesis.
+Given a question, relevant photos are retrieved and passed to an open source multi-modal LLM of your choice for answer synthesis.
  
 ![Diagram illustrating the visual search process with OpenCLIP embeddings and multi-modal LLM for question-answering, featuring example food pictures and a matcha soft serve answer trace.](https://github.com/langchain-ai/langchain/assets/122662504/da543b21-052c-4c43-939e-d4f882a45d75 "Visual Search Process Diagram")
 

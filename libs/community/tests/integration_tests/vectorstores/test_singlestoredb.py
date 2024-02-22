@@ -1,4 +1,6 @@
 """Test SingleStoreDB functionality."""
+import os
+import tempfile
 from typing import List
 
 import numpy as np
@@ -14,6 +16,7 @@ TEST_SINGLESTOREDB_URL = "root:pass@localhost:3306/db"
 TEST_SINGLE_RESULT = [Document(page_content="foo")]
 TEST_SINGLE_WITH_METADATA_RESULT = [Document(page_content="foo", metadata={"a": "b"})]
 TEST_RESULT = [Document(page_content="foo"), Document(page_content="foo")]
+TEST_IMAGES_DIR = ""
 
 try:
     import singlestoredb as s2
@@ -21,6 +24,13 @@ try:
     singlestoredb_installed = True
 except ImportError:
     singlestoredb_installed = False
+
+try:
+    from langchain_experimental.open_clip import OpenCLIPEmbeddings
+
+    langchain_experimental_installed = True
+except ImportError:
+    langchain_experimental_installed = False
 
 
 def drop(table_name: str) -> None:
@@ -52,6 +62,9 @@ class RandomEmbeddings(Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         return np.random.rand(100).tolist()
+
+    def embed_image(self, uris: List[str]) -> List[List[float]]:
+        return [np.random.rand(100).tolist() for _ in uris]
 
 
 @pytest.fixture
@@ -156,7 +169,7 @@ def test_singlestoredb_vector_index_large() -> None:
     table_name = "test_singlestoredb_vector_index_large"
     drop(table_name)
     docsearch = SingleStoreDB.from_texts(
-        ["foo"] * 300000,
+        ["foo"] * 30,
         RandomEmbeddings(),
         distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
         table_name=table_name,
@@ -443,4 +456,52 @@ def test_singlestoredb_as_retriever(texts: List[str]) -> None:
             page_content="bar",
         ),
     ]
+    drop(table_name)
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_add_image(texts: List[str]) -> None:
+    """Test adding images"""
+    table_name = "test_singlestoredb_add_image"
+    drop(table_name)
+    docsearch = SingleStoreDB(
+        RandomEmbeddings(),
+        table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    temp_files = []
+    for _ in range(3):
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        temp_file.write(b"foo")
+        temp_file.close()
+        temp_files.append(temp_file.name)
+
+    docsearch.add_images(temp_files)
+    output = docsearch.similarity_search("foo", k=1)
+    assert output[0].page_content in temp_files
+    drop(table_name)
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+@pytest.mark.skipif(
+    not langchain_experimental_installed, reason="langchain_experimental not installed"
+)
+def test_singestoredb_add_image2() -> None:
+    table_name = "test_singlestoredb_add_images"
+    drop(table_name)
+    docsearch = SingleStoreDB(
+        OpenCLIPEmbeddings(),
+        table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    image_uris = sorted(
+        [
+            os.path.join(TEST_IMAGES_DIR, image_name)
+            for image_name in os.listdir(TEST_IMAGES_DIR)
+            if image_name.endswith(".jpg")
+        ]
+    )
+    docsearch.add_images(image_uris)
+    output = docsearch.similarity_search("horse", k=1)
+    assert "horse" in output[0].page_content
     drop(table_name)
