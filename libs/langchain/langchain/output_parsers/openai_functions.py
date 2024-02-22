@@ -12,6 +12,8 @@ from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
+from gigachat.models.function_call import FunctionCall
+
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     """Parse an output that is one of sets of values."""
@@ -94,9 +96,12 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             else:
                 if self.args_only:
                     try:
-                        return json.loads(
-                            function_call["arguments"], strict=self.strict
-                        )
+                        if isinstance(function_call, FunctionCall):
+                            return function_call.arguments
+                        else:
+                            return json.loads(
+                                function_call["arguments"], strict=self.strict
+                            )
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"

@@ -31,14 +31,14 @@ def _get_extraction_function(entity_schema: dict) -> dict:
     }
 
 
-_EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned \
-in the following passage together with their properties.
+_EXTRACTION_TEMPLATE = """Извлеките и сохраните соответствующие упомянутые сущности \
+вместе с их свойствами из текста.
 
-Only extract the properties mentioned in the 'information_extraction' function.
+Извлекайте только свойства, указанные в функции 'information_extraction'.
 
-If a property is not present and is not required in the function parameters, do not include it in the output.
+Если свойство отсутствует и не требуется в параметрах функции, не включайте его в вывод.
 
-Passage:
+Текст из которого нужно извлечь сущности:
 {input}
 """  # noqa: E501
 

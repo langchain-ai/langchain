@@ -174,7 +174,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             payload.max_tokens = self.max_tokens
 
         if self.verbose:
-            logger.info("Giga request: %s", payload.dict())
+            logger.warning("Giga request: %s", payload.dict())
 
         return payload
 
@@ -194,7 +194,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
                     finish_reason,
                 )
             if self.verbose:
-                logger.info("Giga response: %s", message.content)
+                logger.warning("Giga response: %s", message.content)
         llm_output = {"token_usage": response.usage, "model_name": response.model}
         return ChatResult(generations=generations, llm_output=llm_output)
 

@@ -767,8 +767,12 @@ class StructuredTool(BaseTool):
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
-        sig = signature(source_function)
-        description = f"{name}{sig} - {description.strip()}"
+        
+        # This is old openai format
+        # sig = signature(source_function)
+        # description = f"{name}{sig} - {description.strip()}"
+        # This version works better!
+        description = f"{description.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
             # schema name is appended within function

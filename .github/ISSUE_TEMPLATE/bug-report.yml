@@ -52,11 +52,11 @@ body:
         - label: "Официальных примеров (*notebooks*)/скриптов"
         - label: "Собственных или доработанных скриптов"
 
-        Write a short description telling what you are doing, what you expect to happen, and what is currently happening.
+        Напишите короткое описание того, что вы делаете, какое поведение наблюдаете и какого поведения ожидали.
       placeholder: |
-        * I'm trying to use the `langchain` library to do X.
-        * I expect to see Y.
-        * Instead, it does Z.
+        * Я пытаюсь использовать `gigachain` чтобы сделать X.
+        * Я ожидаю получить Y.
+        * Вместо этого происходит Z.
     validations:
       required: true
   - type: textarea
