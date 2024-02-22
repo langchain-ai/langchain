@@ -1,17 +1,14 @@
 import logging
 from typing import Any, List, Mapping, Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
 
 logger = logging.getLogger(__name__)
+
 
 class BigdlLLM(LLM):
     """Wrapper around the BigDL-LLM Transformer-INT4 model
@@ -48,13 +45,12 @@ class BigdlLLM(LLM):
     ) -> LLM:
         """
         Construct object from model_id
-        
+
         Args:
-        
             model_id: Path for the huggingface repo id to be downloaded or
                       the huggingface checkpoint folder.
-            model_kwargs: Keyword arguments that will be passed to the model and tokenizer.
-            kwargs: Extra arguments that will be passed to the model and tokenizer.
+            model_kwargs: Keyword arguments to pass to the model and tokenizer.
+            kwargs: Extra arguments to pass to the model and tokenizer.
 
         Returns:
             An object of TransformersLLM.
@@ -63,7 +59,6 @@ class BigdlLLM(LLM):
             from bigdl.llm.transformers import (
                 AutoModel,
                 AutoModelForCausalLM,
-                # AutoModelForSeq2SeqLM,
             )
             from transformers import AutoTokenizer, LlamaTokenizer
 
@@ -74,17 +69,20 @@ class BigdlLLM(LLM):
             )
 
         _model_kwargs = model_kwargs or {}
-        # TODO: may refactore this code in the future
+
         try:
             tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
-        except:
+        except Exception:
             tokenizer = LlamaTokenizer.from_pretrained(model_id, **_model_kwargs)
 
-        # TODO: may refactore this code in the future
         try:
-            model = AutoModelForCausalLM.from_pretrained(model_id, load_in_4bit=True, **_model_kwargs)
-        except:
-            model = AutoModel.from_pretrained(model_id, load_in_4bit=True, **_model_kwargs)
+            model = AutoModelForCausalLM.from_pretrained(
+                model_id, load_in_4bit=True, **_model_kwargs
+            )
+        except Exception:
+            model = AutoModel.from_pretrained(
+                model_id, load_in_4bit=True, **_model_kwargs
+            )
 
         if "trust_remote_code" in _model_kwargs:
             _model_kwargs = {
@@ -108,12 +106,12 @@ class BigdlLLM(LLM):
     ) -> LLM:
         """
         Construct low_bit object from model_id
-        
+
         Args:
-        
+
             model_id: Path for the bigdl transformers low-bit model checkpoint folder.
-            model_kwargs: Keyword arguments that will be passed to the model and tokenizer.
-            kwargs: Extra arguments that will be passed to the model and tokenizer.
+            model_kwargs: Keyword arguments to pass to the model and tokenizer.
+            kwargs: Extra arguments to pass to the model and tokenizer.
 
         Returns:
             An object of TransformersLLM.
@@ -134,12 +132,12 @@ class BigdlLLM(LLM):
         _model_kwargs = model_kwargs or {}
         try:
             tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
-        except:
+        except Exception:
             tokenizer = LlamaTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         try:
             model = AutoModelForCausalLM.load_low_bit(model_id, **_model_kwargs)
-        except:
+        except Exception:
             model = AutoModel.load_low_bit(model_id, **_model_kwargs)
 
         if "trust_remote_code" in _model_kwargs:
@@ -176,30 +174,49 @@ class BigdlLLM(LLM):
     ) -> str:
         if self.streaming:
             from transformers import TextStreamer
+
             input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
-            streamer = TextStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True)
+            streamer = TextStreamer(
+                self.tokenizer, skip_prompt=True, skip_special_tokens=True
+            )
             if stop is not None:
-                from transformers.generation.stopping_criteria import StoppingCriteriaList
+                from transformers.generation.stopping_criteria import (
+                    StoppingCriteriaList,
+                )
                 from transformers.tools.agents import StopSequenceCriteria
+
                 # stop generation when stop words are encountered
                 # TODO: stop generation when the following one is stop word
-                stopping_criteria = StoppingCriteriaList([StopSequenceCriteria(stop,
-                                                                               self.tokenizer)])
+                stopping_criteria = StoppingCriteriaList(
+                    [StopSequenceCriteria(stop, self.tokenizer)]
+                )
             else:
                 stopping_criteria = None
-            output = self.model.generate(input_ids, streamer=streamer,
-                                         stopping_criteria=stopping_criteria, **kwargs)
+            output = self.model.generate(
+                input_ids,
+                streamer=streamer,
+                stopping_criteria=stopping_criteria,
+                **kwargs,
+            )
             text = self.tokenizer.decode(output[0], skip_special_tokens=True)
             return text
         else:
             input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
             if stop is not None:
-                from transformers.generation.stopping_criteria import StoppingCriteriaList
+                from transformers.generation.stopping_criteria import (
+                    StoppingCriteriaList,
+                )
                 from transformers.tools.agents import StopSequenceCriteria
-                stopping_criteria = StoppingCriteriaList([StopSequenceCriteria(stop,
-                                                                               self.tokenizer)])
+
+                stopping_criteria = StoppingCriteriaList(
+                    [StopSequenceCriteria(stop, self.tokenizer)]
+                )
             else:
                 stopping_criteria = None
-            output = self.model.generate(input_ids, stopping_criteria=stopping_criteria, **kwargs)
-            text = self.tokenizer.decode(output[0], skip_special_tokens=True)[len(prompt) :]
+            output = self.model.generate(
+                input_ids, stopping_criteria=stopping_criteria, **kwargs
+            )
+            text = self.tokenizer.decode(output[0], skip_special_tokens=True)[
+                len(prompt) :
+            ]
             return text
