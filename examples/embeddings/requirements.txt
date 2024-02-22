@@ -1,0 +1,6 @@
+intel-extension-for-transformers
+intel-extension-for-pytorch
+accelerate
+transformers==4.35.2
+mteb==1.1.1
+mteb[beir]

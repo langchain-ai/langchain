@@ -91,6 +91,11 @@ from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.volcengine import VolcanoEmbeddings
 from langchain_community.embeddings.voyageai import VoyageEmbeddings
 from langchain_community.embeddings.xinference import XinferenceEmbeddings
+from langchain_community.embeddings.intel_optimized_embeddings import (
+    OptimizedHuggingFaceEmbeddings,
+    OptimizedHuggingFaceBgeEmbeddings,
+    OptimizedHuggingFaceInstructEmbeddings,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +161,9 @@ __all__ = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
+    "OptimizedHuggingFaceEmbeddings",
+    "OptimizedHuggingFaceBgeEmbeddings",
+    "OptimizedHuggingFaceInstructEmbeddings",
 ]
 
 
