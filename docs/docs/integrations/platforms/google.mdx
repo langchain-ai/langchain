@@ -239,6 +239,22 @@ documents = docai_wh_retriever.get_relevant_documents(
 
 ## Document Loaders
 
+### Cloud SQL for MySQL
+
+> [Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mysql
+```
+
+See [usage example](docs/docs/integrations/document_loader/cloud_sql_mysql).
+
+```python
+from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLDocumentLoader
+```
+
 ### BigQuery
 
 > [BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
@@ -521,7 +537,23 @@ from langchain_community.agent_toolkits import GmailToolkit
 
 ## Memory
 
-### Firestore
+### Cloud SQL for MySQL
+
+> [Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mysql
+```
+
+See [usage example](docs/docs/integrations/memory/cloud_sql_mysql).
+
+```python
+from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLChatMessageHistory
+```
+
+### Cloud Firestore
 
 > [`Firestore`](https://cloud.google.com/firestore) is a NoSQL document database built for automatic scaling, high performance, and ease of application development in Google Cloud.
 
