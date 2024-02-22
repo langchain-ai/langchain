@@ -739,8 +739,8 @@ class Milvus(VectorStore):
         if param is None:
             param = self.search_params
 
-        # Determine result metadata fields.
-        output_fields = [x for x in self.fields if x != self._primary_field]
+        # Determine result metadata fields with PK.
+        output_fields = self.fields[:]
         output_fields.remove(self._vector_field)
 
         # Perform the search.
