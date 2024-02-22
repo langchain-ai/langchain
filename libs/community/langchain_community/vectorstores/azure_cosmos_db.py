@@ -535,7 +535,11 @@ class AzureCosmosDBVectorSearch(VectorStore):
         # Retrieves the docs with similarity scores
         # sorted by similarity scores in DESC order
         docs = self._similarity_search_with_score(
-            embedding, k=fetch_k, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            embedding,
+            k=fetch_k,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold
         )
 
         # Re-ranks the docs using MMR
