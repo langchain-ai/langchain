@@ -140,6 +140,22 @@ See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_se
 from langchain_community.vectorstores import MatchingEngine
 ```
 
+### Memorystore for Redis
+
+> [Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
+Install the python package:
+
+```bash
+pip install langchain-google-memorystore-redis
+```
+
+See [usage example](docs/docs/integrations/vectorstores/memorystore_redis).
+
+```python
+from langchain_google_memorystore_redis import RedisVectorStore
+```
+
 ### BigQuery
 
 > [BigQuery](https://cloud.google.com/bigquery),
@@ -238,6 +254,22 @@ documents = docai_wh_retriever.get_relevant_documents(
 ```
 
 ## Document Loaders
+
+### Memorystore for Redis
+
+> [Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
+Install the python package:
+
+```bash
+pip install langchain-google-memorystore-redis
+```
+
+See [usage example](docs/docs/integrations/document_loaders/memorystore_redis).
+
+```python
+from langchain_google_memorystore_redis import MemorystoreLoader
+```
 
 ### BigQuery
 
@@ -520,6 +552,22 @@ from langchain_community.agent_toolkits import GmailToolkit
 ```
 
 ## Memory
+
+### Memorystore for Redis
+
+> [Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
+Install the python package:
+
+```bash
+pip install langchain-google-memorystore-redis
+```
+
+See [usage example](docs/docs/integrations/document_loaders/memorystore_redis).
+
+```python
+from langchain_google_memorystore_redis import MemorystoreChatMessageHistory
+```
 
 ### Firestore
 
