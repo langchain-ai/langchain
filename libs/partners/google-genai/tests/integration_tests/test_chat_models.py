@@ -1,11 +1,16 @@
 """Test ChatGoogleGenerativeAI chat model."""
+
+from typing import Generator
+
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from langchain_google_genai.chat_models import (
+from langchain_google_genai import (
     ChatGoogleGenerativeAI,
-    ChatGoogleGenerativeAIError,
+    HarmBlockThreshold,
+    HarmCategory,
 )
+from langchain_google_genai.chat_models import ChatGoogleGenerativeAIError
 
 _MODEL = "gemini-pro"  # TODO: Use nano when it's available.
 _VISION_MODEL = "gemini-pro-vision"
@@ -102,7 +107,7 @@ def test_chat_google_genai_invoke_multimodal() -> None:
 
     # Try streaming
     for chunk in llm.stream(messages):
-        print(chunk)
+        print(chunk)  # noqa: T201
         assert isinstance(chunk.content, str)
         assert len(chunk.content.strip()) > 0
 
@@ -192,3 +197,32 @@ def test_generativeai_get_num_tokens_gemini() -> None:
     llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-pro")
     output = llm.get_num_tokens("How are you?")
     assert output == 4
+
+
+def test_safety_settings_gemini() -> None:
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    }
+    # test with safety filters on bind
+    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-pro").bind(
+        safety_settings=safety_settings
+    )
+    output = llm.invoke("how to make a bomb?")
+    assert isinstance(output, AIMessage)
+    assert len(output.content) > 0
+
+    # test direct to stream
+    streamed_messages = []
+    output_stream = llm.stream("how to make a bomb?", safety_settings=safety_settings)
+    assert isinstance(output_stream, Generator)
+    for message in output_stream:
+        streamed_messages.append(message)
+    assert len(streamed_messages) > 0
+
+    # test as init param
+    llm = ChatGoogleGenerativeAI(
+        temperature=0, model="gemini-pro", safety_settings=safety_settings
+    )
+    out2 = llm.invoke("how to make a bomb")
+    assert isinstance(out2, AIMessage)
+    assert len(out2.content) > 0

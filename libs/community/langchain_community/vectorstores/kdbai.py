@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class KDBAI(VectorStore):
-    """`KDB.AI` vector store [https://kdb.ai](https://kdb.ai)
+    """`KDB.AI` vector store.
+
+     See [https://kdb.ai](https://kdb.ai)
 
     To use, you should have the `kdbai_client` python package installed.
 
@@ -203,7 +205,7 @@ class KDBAI(VectorStore):
         filter: Optional[List] = [],
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return pinecone documents most similar to embedding, along with scores.
+        """Return documents most similar to embedding, along with scores.
 
         Args:
             embedding (List[float]): query vector.
