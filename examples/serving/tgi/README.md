@@ -41,34 +41,55 @@ More details please refer to [tgi-gaudi](https://github.com/huggingface/tgi-gaud
 For more information and documentation about Text Generation Inference, checkout the [README](https://github.com/huggingface/text-generation-inference#text-generation-inference) of the original repo.
 
 
-## Install intel optimized langchain
+## Install Intel langchain extension
+
+We provide a comprehensive suite of Langchain-based extension APIs, including advanced retrievers, embedding models, and vector stores. These enhancements are carefully crafted to expand the capabilities of the original Langchain API, ultimately boosting overall performance. To get the better performance, install the extension using the below commands:
 ```bash
 git clone https://github.com/lvliang-intel/intel_genai_kit_langchain.git
 cd intel_genai_kit_langchain/libs/langchain/
 pip install -e .
-cd ../community/
-pip install -e .
 ```
 
 ## Install Other Dependencies
+
+To install the additional dependencies required for the project, use the following command:
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Access Service
+
+To interact with the TGI endpoint and perform Large Language Model (LLM) inference, use the following commands:
+
 ```bash
 cd ../examples/serving/tgi/
 export HUGGINGFACEHUB_API_TOKEN=<token>
 python client.py
 ```
 
+Ensure that the Hugging Face Hub API token is properly set for authentication.
+
 ## Create Embedding Database
+
+To generate the embedding database, use the following command:
 ```bash
 python vectordb.py
 ```
 
+This command creates the embedding database for a PDF file 'Intel_AR_WR.pdf'. The Gradio application utilizes this pre-built embedding database to build langchain application. Ensure that the embedding database is generated before starting the Gradio frontend application.
+
 ## Start the frontend
+
+To initiate the frontend, follow these steps:
 ```bash
 export HUGGINGFACEHUB_API_TOKEN=<token>
 python gradio_app.py
 ```
+
+This command starts the Gradio application, providing a URL for interacting with the chat UI.
+
+## Chat in the UI
+
+Open the URL generated after launching the Gradio application, and you can start interacting with the chat UI.
+
+![Frontend UI](https://i.imgur.com/O0QWEsS.png)

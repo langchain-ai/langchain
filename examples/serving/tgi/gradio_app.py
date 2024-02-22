@@ -33,8 +33,7 @@ from fastchat.utils import (
 
 
 from langchain_community.llms import HuggingFaceEndpoint
-from langchain import PromptTemplate
-from langchain_community.callbacks import streaming_stdout
+from langchain.callbacks import streaming_stdout
 from langchain.chains import RetrievalQA
 from langchain_core.vectorstores import VectorStoreRetriever
 from intel_extension_for_transformers.langchain.embeddings import HuggingFaceBgeEmbeddings
@@ -569,9 +568,9 @@ def build_single_model_ui(models):
 <div class="title">
 <div style="
     color: #fff;
-">Large Language Model <p style="
+">Large Language Model (Intel/neural-chat-7b-v3-3) <p style="
     font-size: 0.8rem;
-">Future Gen Intel® Xeon® (codenamed Granite Rapids) with Intel® AMX</p></div>
+">Unleash the extraordinary LLM performance boost on the Intel® Gaudi® 2 AI accelerator</p></div>
 
 </div>
 """
