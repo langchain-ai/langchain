@@ -113,7 +113,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            num_lists, dimensions, similarity_algorithm, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -152,7 +152,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, CosmosDBSimilarityType.IP, dimensions, m, ef_construction
+            num_lists, dimensions, CosmosDBSimilarityType.IP, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -188,7 +188,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, CosmosDBSimilarityType.IP, dimensions, m, ef_construction
+            num_lists, dimensions, CosmosDBSimilarityType.IP, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -224,7 +224,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            num_lists, dimensions, similarity_algorithm, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -262,7 +262,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            num_lists, dimensions, similarity_algorithm, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -316,7 +316,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            num_lists, dimensions, similarity_algorithm, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -375,7 +375,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, CosmosDBSimilarityType.IP, dimensions, m, ef_construction
+            num_lists, dimensions, CosmosDBSimilarityType.IP, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -413,7 +413,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, CosmosDBSimilarityType.L2, dimensions, m, ef_construction
+            num_lists, dimensions, CosmosDBSimilarityType.L2, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -444,7 +444,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, similarity_algorithm, dimensions, m, ef_construction
+            num_lists, dimensions, similarity_algorithm, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -472,7 +472,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            kind, num_lists, CosmosDBSimilarityType.IP, dimensions, m, ef_construction
+            num_lists, dimensions, CosmosDBSimilarityType.IP, kind, m, ef_construction
         )
         sleep(2)  # waits for the index to be set up
 
@@ -512,10 +512,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            similarity_algorithm,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )
@@ -556,10 +556,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            CosmosDBSimilarityType.IP,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )
@@ -597,10 +597,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            CosmosDBSimilarityType.IP,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )
@@ -638,10 +638,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            similarity_algorithm,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )
@@ -681,10 +681,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            similarity_algorithm,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )
@@ -740,10 +740,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            similarity_algorithm,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )
@@ -804,10 +804,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            CosmosDBSimilarityType.IP,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )
@@ -840,10 +840,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            similarity_algorithm,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )
@@ -877,10 +877,10 @@ class TestAzureCosmosDBVectorSearch:
 
         # Create the IVF index that will be leveraged later for vector search
         vectorstore.create_index(
-            CosmosDBVectorSearchType.VECTOR_HNSW,
             num_lists,
-            CosmosDBSimilarityType.IP,
             dimensions,
+            similarity_algorithm,
+            CosmosDBVectorSearchType.VECTOR_HNSW,
             m,
             ef_construction,
         )

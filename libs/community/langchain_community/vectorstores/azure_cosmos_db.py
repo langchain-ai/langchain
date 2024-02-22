@@ -177,10 +177,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
 
     def create_index(
         self,
-        kind: str = "vector-ivf",
         num_lists: int = 100,
-        similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
         dimensions: int = 1536,
+        similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
+        kind: str = "vector-ivf",
         m: int = 16,
         ef_construction: int = 64,
     ) -> dict[str, Any]:

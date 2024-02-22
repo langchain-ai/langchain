@@ -1956,10 +1956,10 @@ class AzureCosmosDBSemanticCache(BaseCache):
         vectorstore = self._cache_dict[index_name]
         if not vectorstore.index_exists():
             vectorstore.create_index(
-                self.kind,
                 self.num_lists,
-                self.similarity,
                 self.dimensions,
+                self.similarity,
+                self.kind,
                 self.m,
                 self.ef_construction,
             )
