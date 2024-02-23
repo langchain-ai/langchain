@@ -78,3 +78,29 @@ def test_sparql_insert() -> None:
         os.remove(_local_copy)
     except OSError:
         pass
+
+
+def test_sparql_select_return_query() -> None:
+    """
+    Test for generating and executing simple SPARQL SELECT query
+    and returning the generated SPARQL query.
+    """
+    berners_lee_card = "http://www.w3.org/People/Berners-Lee/card"
+
+    graph = RdfGraph(
+        source_file=berners_lee_card,
+        standard="rdf",
+    )
+
+    chain = GraphSparqlQAChain.from_llm(
+        OpenAI(temperature=0), graph=graph, return_sparql_query=True
+    )
+    output = chain("What is Tim Berners-Lee's work homepage?")
+
+    # Verify the expected answer
+    expected_output = (
+        " The work homepage of Tim Berners-Lee is "
+        "http://www.w3.org/People/Berners-Lee/."
+    )
+    assert output["result"] == expected_output
+    assert "sparql_query" in output
