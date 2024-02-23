@@ -10,11 +10,6 @@ def test_bilibili_loader() -> None:
         ]
     )
     docs = loader.load()
-
     assert len(docs) == 2
-
-    assert len(docs[0].page_content) > 0
-    assert docs[1].metadata["owner"]["mid"] == 398095160
-
-    assert docs[1].page_content == ""
-    assert docs[1].metadata["owner"]["mid"] == 398095160
+    assert docs[0].metadata["aid"] == 34218168
+    assert docs[1].metadata["videos"] == 1
