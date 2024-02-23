@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-google-genai"
-version = "0.0.7"
+version = "0.0.9"
 description = "An integration package connecting Google's genai package and LangChain"
 authors = []
 readme = "README.md"
@@ -68,11 +68,12 @@ types-requests = "^2.31.0.10"
 types-pillow = "^10.1.0.2"
 types-google-cloud-ndb = "^2.2.0.1"
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
-  "E", # pycodestyle
-  "F", # pyflakes
-  "I", # isort
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
+  "T201", # print
 ]
 
 [tool.mypy]
