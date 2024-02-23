@@ -126,7 +126,12 @@ class Anyscale(BaseOpenAI):
                     # "default_query": values["default_query"],
                     # "http_client": values["http_client"],
                 }
-                values["client"] = openai.OpenAI(**client_params).completions
+                if not values.get("client"):
+                    values["client"] = openai.OpenAI(**client_params).completions
+                if not values.get("async_client"):
+                    values["async_client"] = openai.AsyncOpenAI(
+                        **client_params
+                    ).completions
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
