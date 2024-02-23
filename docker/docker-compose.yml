@@ -15,3 +15,13 @@ services:
       - "6020:6379"
     volumes:
       - ./redis-volume:/data
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo_container
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
