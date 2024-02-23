@@ -240,7 +240,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     query_instruction: str = DEFAULT_QUERY_BGE_INSTRUCTION_EN
     """Instruction to use for embedding query."""
     embed_instruction: str = ""
-    """Instruction to use for embedding ducument."""
+    """Instruction to use for embedding document."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
