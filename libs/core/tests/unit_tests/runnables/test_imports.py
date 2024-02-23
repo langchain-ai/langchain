@@ -13,6 +13,7 @@ EXPECTED_ALL = [
     "RouterInput",
     "RouterRunnable",
     "Runnable",
+    "RunnableFactory",
     "RunnableSerializable",
     "RunnableBinding",
     "RunnableBranch",
