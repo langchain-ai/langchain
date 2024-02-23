@@ -199,6 +199,58 @@ pprint(data)
 
 </CodeOutputBlock>
 
+### JSON file with jq schema `content_key`
+
+To load documents from a JSON file using the content_key within the jq schema, set is_content_key_jq_parsable=True. 
+Ensure that content_key is compatible and can be parsed using the jq schema.
+
+```python
+file_path = './sample.json'
+pprint(Path(file_path).read_text())
+```
+
+<CodeOutputBlock lang="python">
+
+```json
+    {"data": [
+        {"attributes": {
+            "message": "message1",
+            "tags": [
+            "tag1"]},
+        "id": "1"},
+        {"attributes": {
+            "message": "message2",
+            "tags": [
+            "tag2"]},
+        "id": "2"}]}
+```
+
+</CodeOutputBlock>
+
+
+```python
+loader = JSONLoader(
+    file_path=file_path,
+    jq_schema=".data[]",
+    content_key=".attributes.message",
+    is_content_key_jq_parsable=True,
+)
+
+data = loader.load()
+```
+
+```python
+pprint(data)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='message1', metadata={'source': '/path/to/sample.json', 'seq_num': 1}),
+     Document(page_content='message2', metadata={'source': '/path/to/sample.json', 'seq_num': 2})]
+```
+
+</CodeOutputBlock>
 
 ## Extracting metadata
 
