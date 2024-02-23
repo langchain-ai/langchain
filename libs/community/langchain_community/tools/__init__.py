@@ -1052,9 +1052,9 @@ def __getattr__(name: str) -> Any:
     elif name == "WolframAlphaQueryRun":
         return _import_wolfram_alpha_tool()
     elif name == "YahooFinanceNewsTool":
-        return _import_you_tool()
+        return _import_yahoo_finance_news()
     elif name == "YouSearchTool":
-        return _import_youtube_search()
+        return _import_you_tool()
     elif name == "YouTubeSearchTool":
         return _import_youtube_search()
     elif name == "ZapierNLAListActions":
