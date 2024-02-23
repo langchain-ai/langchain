@@ -39,6 +39,7 @@ from langchain_community.chat_models.human import HumanInputChatModel
 from langchain_community.chat_models.hunyuan import ChatHunyuan
 from langchain_community.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
 from langchain_community.chat_models.jinachat import JinaChat
+from langchain_community.chat_models.kinetica import ChatKinetica
 from langchain_community.chat_models.konko import ChatKonko
 from langchain_community.chat_models.litellm import ChatLiteLLM
 from langchain_community.chat_models.litellm_router import ChatLiteLLMRouter
@@ -99,4 +100,5 @@ __all__ = [
     "GPTRouter",
     "ChatYuan2",
     "ChatZhipuAI",
+    "ChatKinetica",
 ]

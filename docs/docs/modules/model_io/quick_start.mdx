@@ -77,7 +77,7 @@ For a deeper conceptual explanation of this difference please see [this document
 We can see the difference between an LLM and a ChatModel when we invoke it.
 
 ```python
-from langchain.schema import HumanMessage
+from langchain_core.messages import HumanMessage
 
 text = "What would be a good company name for a company that makes colorful socks?"
 messages = [HumanMessage(content=text)]

@@ -15,7 +15,6 @@ def friendli_chat() -> ChatFriendli:
     return ChatFriendli(temperature=0, max_tokens=10)
 
 
-@pytest.mark.scheduled
 def test_friendli_call(friendli_chat: ChatFriendli) -> None:
     """Test call."""
     message = HumanMessage(content="What is generative AI?")
@@ -24,7 +23,6 @@ def test_friendli_call(friendli_chat: ChatFriendli) -> None:
     assert isinstance(output.content, str)
 
 
-@pytest.mark.scheduled
 def test_friendli_invoke(friendli_chat: ChatFriendli) -> None:
     """Test invoke."""
     output = friendli_chat.invoke("What is generative AI?")
@@ -32,7 +30,6 @@ def test_friendli_invoke(friendli_chat: ChatFriendli) -> None:
     assert isinstance(output.content, str)
 
 
-@pytest.mark.scheduled
 async def test_friendli_ainvoke(friendli_chat: ChatFriendli) -> None:
     """Test async invoke."""
     output = await friendli_chat.ainvoke("What is generative AI?")
@@ -40,7 +37,6 @@ async def test_friendli_ainvoke(friendli_chat: ChatFriendli) -> None:
     assert isinstance(output.content, str)
 
 
-@pytest.mark.scheduled
 def test_friendli_batch(friendli_chat: ChatFriendli) -> None:
     """Test batch."""
     outputs = friendli_chat.batch(["What is generative AI?", "What is generative AI?"])
@@ -49,7 +45,6 @@ def test_friendli_batch(friendli_chat: ChatFriendli) -> None:
         assert isinstance(output.content, str)
 
 
-@pytest.mark.scheduled
 async def test_friendli_abatch(friendli_chat: ChatFriendli) -> None:
     """Test async batch."""
     outputs = await friendli_chat.abatch(
@@ -60,7 +55,6 @@ async def test_friendli_abatch(friendli_chat: ChatFriendli) -> None:
         assert isinstance(output.content, str)
 
 
-@pytest.mark.scheduled
 def test_friendli_generate(friendli_chat: ChatFriendli) -> None:
     """Test generate."""
     message = HumanMessage(content="What is generative AI?")
@@ -78,7 +72,6 @@ def test_friendli_generate(friendli_chat: ChatFriendli) -> None:
             assert "token" in generation_info
 
 
-@pytest.mark.scheduled
 async def test_friendli_agenerate(friendli_chat: ChatFriendli) -> None:
     """Test async generate."""
     message = HumanMessage(content="What is generative AI?")
@@ -96,7 +89,6 @@ async def test_friendli_agenerate(friendli_chat: ChatFriendli) -> None:
             assert "token" in generation_info
 
 
-@pytest.mark.scheduled
 def test_friendli_stream(friendli_chat: ChatFriendli) -> None:
     """Test stream."""
     stream = friendli_chat.stream("Say hello world.")
@@ -105,7 +97,6 @@ def test_friendli_stream(friendli_chat: ChatFriendli) -> None:
         assert isinstance(chunk.content, str)
 
 
-@pytest.mark.scheduled
 async def test_friendli_astream(friendli_chat: ChatFriendli) -> None:
     """Test async stream."""
     stream = friendli_chat.astream("Say hello world.")

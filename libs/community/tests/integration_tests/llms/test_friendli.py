@@ -13,28 +13,24 @@ def friendli_llm() -> Friendli:
     return Friendli(temperature=0, max_tokens=10)
 
 
-@pytest.mark.scheduled
 def test_friendli_call(friendli_llm: Friendli) -> None:
     """Test call."""
     output = friendli_llm("Say hello world.")
     assert isinstance(output, str)
 
 
-@pytest.mark.scheduled
 def test_friendli_invoke(friendli_llm: Friendli) -> None:
     """Test invoke."""
     output = friendli_llm.invoke("Say hello world.")
     assert isinstance(output, str)
 
 
-@pytest.mark.scheduled
 async def test_friendli_ainvoke(friendli_llm: Friendli) -> None:
     """Test async invoke."""
     output = await friendli_llm.ainvoke("Say hello world.")
     assert isinstance(output, str)
 
 
-@pytest.mark.scheduled
 def test_friendli_batch(friendli_llm: Friendli) -> None:
     """Test batch."""
     outputs = friendli_llm.batch(["Say hello world.", "Say bye world."])
@@ -42,7 +38,6 @@ def test_friendli_batch(friendli_llm: Friendli) -> None:
         assert isinstance(output, str)
 
 
-@pytest.mark.scheduled
 async def test_friendli_abatch(friendli_llm: Friendli) -> None:
     """Test async batch."""
     outputs = await friendli_llm.abatch(["Say hello world.", "Say bye world."])
@@ -50,7 +45,6 @@ async def test_friendli_abatch(friendli_llm: Friendli) -> None:
         assert isinstance(output, str)
 
 
-@pytest.mark.scheduled
 def test_friendli_generate(friendli_llm: Friendli) -> None:
     """Test generate."""
     result = friendli_llm.generate(["Say hello world.", "Say bye world."])
@@ -67,7 +61,6 @@ def test_friendli_generate(friendli_llm: Friendli) -> None:
             assert "token" in generation_info
 
 
-@pytest.mark.scheduled
 async def test_friendli_agenerate(friendli_llm: Friendli) -> None:
     """Test async generate."""
     result = await friendli_llm.agenerate(["Say hello world.", "Say bye world."])
@@ -84,7 +77,6 @@ async def test_friendli_agenerate(friendli_llm: Friendli) -> None:
             assert "token" in generation_info
 
 
-@pytest.mark.scheduled
 def test_friendli_stream(friendli_llm: Friendli) -> None:
     """Test stream."""
     stream = friendli_llm.stream("Say hello world.")
@@ -92,7 +84,6 @@ def test_friendli_stream(friendli_llm: Friendli) -> None:
         assert isinstance(chunk, str)
 
 
-@pytest.mark.scheduled
 async def test_friendli_astream(friendli_llm: Friendli) -> None:
     """Test async stream."""
     stream = friendli_llm.astream("Say hello world.")
