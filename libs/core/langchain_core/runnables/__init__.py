@@ -33,6 +33,7 @@ from langchain_core.runnables.config import (
     patch_config,
     run_in_executor,
 )
+from langchain_core.runnables.factory import RunnableFactory
 from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 from langchain_core.runnables.passthrough import (
     RunnableAssign,
@@ -63,6 +64,7 @@ __all__ = [
     "RouterInput",
     "RouterRunnable",
     "Runnable",
+    "RunnableFactory",
     "RunnableSerializable",
     "RunnableBinding",
     "RunnableBranch",
