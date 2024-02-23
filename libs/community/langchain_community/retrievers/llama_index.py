@@ -22,8 +22,8 @@ class LlamaIndexRetriever(BaseRetriever):
     ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
-            from llama_index.core.indices.base import BaseGPTIndex
             from llama_index.core.base.response.schema import Response
+            from llama_index.core.indices.base import BaseGPTIndex
         except ImportError:
             raise ImportError(
                 "You need to install `pip install llama-index` to use this retriever."
@@ -58,11 +58,11 @@ class LlamaIndexGraphRetriever(BaseRetriever):
     ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
+            from llama_index.core.base.response.schema import Response
             from llama_index.core.composability.base import (
                 QUERY_CONFIG_TYPE,
                 ComposableGraph,
             )
-            from llama_index.core.base.response.schema import Response
         except ImportError:
             raise ImportError(
                 "You need to install `pip install llama-index` to use this retriever."
