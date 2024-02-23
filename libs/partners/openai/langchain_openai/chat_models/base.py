@@ -438,7 +438,9 @@ class ChatOpenAI(BaseChatModel):
                     message=chunk, generation_info=generation_info or None
                 )
                 if run_manager:
-                    run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+                    run_manager.on_llm_new_token(
+                        chunk.text, chunk=chunk, logprobs=logprobs
+                    )
                 yield chunk
 
     def _generate(
@@ -510,8 +512,9 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        async with await self.async_client.create(messages=message_dicts, **params) as sse:
-            async for chunk in sse:
+        response = await self.async_client.create(messages=message_dicts, **params)
+        async with response:
+            async for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
