@@ -44,8 +44,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
 
     doc_embed_type: Literal["default", "passage"] = "default"
     """Type of embedding to use for documents
-    "default": Uses FastEmbed's default embedding method
-    "passage": Prefixes the text with "passage" before embedding.
+    The available options are: "default" and "passage"
     """
 
     _model: Any  # : :meta private:
@@ -59,13 +58,13 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that FastEmbed has been installed."""
         try:
-            from fastembed.embedding import FlagEmbedding
+            from fastembed import TextEmbedding
 
             model_name = values.get("model_name")
             max_length = values.get("max_length")
             cache_dir = values.get("cache_dir")
             threads = values.get("threads")
-            values["_model"] = FlagEmbedding(
+            values["_model"] = TextEmbedding(
                 model_name=model_name,
                 max_length=max_length,
                 cache_dir=cache_dir,
