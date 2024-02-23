@@ -330,8 +330,10 @@ class NVEModel(BaseModel):
         """Dig out relevant details of aggregated message"""
         content_buffer: Dict[str, Any] = dict()
         content_holder: Dict[Any, Any] = dict()
+        usage_holder: Dict[Any, Any] = dict()   ####
         is_stopped = False
         for msg in msg_list:
+            usage_holder = msg.get("usage", {}) ####
             if "choices" in msg:
                 ## Tease out ['choices'][0]...['delta'/'message']
                 msg = msg.get("choices", [{}])[0]
@@ -349,6 +351,7 @@ class NVEModel(BaseModel):
             if is_stopped:
                 break
         content_holder = {**content_holder, **content_buffer}
+        content_holder.update(token_usage = usage_holder) ####
         return content_holder, is_stopped
 
     def _early_stop_msg(

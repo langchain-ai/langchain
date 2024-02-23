@@ -8,24 +8,31 @@ import logging
 import os
 import sys
 import urllib.parse
+from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
+    Type,
     Union,
 )
 
 import requests
 from langchain.chat_models.base import BaseChatModel
+from langchain.output_parsers import PydanticOutputParser
 from langchain_core.callbacks.manager import (
+    BaseCallbackHandler,
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -38,10 +45,27 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field
+from langchain_core.output_parsers import (
+    JsonOutputParser,
+    BaseGenerationOutputParser,
+)
+from langchain.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+    convert_to_openai_tool,
+)
 
 from langchain_nvidia_ai_endpoints import _common as nvidia_ai_endpoints
+
+_DictOrPydanticClass = Union[Dict[str, Any], Type[BaseModel]]
+_DictOrPydantic = Union[Dict, BaseModel]
 
 try:
     import PIL.Image
@@ -128,6 +152,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
     bad: Optional[Sequence[str]] = Field(description="Bad words to avoid (cased)")
     stop: Optional[Sequence[str]] = Field(description="Stop words (cased)")
     labels: Optional[Dict[str, float]] = Field(description="Steering parameters")
+    streaming: bool = Field(True)
 
     @property
     def _llm_type(self) -> str:
@@ -142,10 +167,10 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         responses = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
+        self._set_callback_outputs(responses, run_manager)
         outputs = self.custom_postprocess(responses)
         message = AIMessage(content=outputs)
         generation = ChatGeneration(message=message)
-        print(ChatResult(generations=[generation], llm_output=responses))
         return ChatResult(generations=[generation], llm_output=responses)
 
     async def _agenerate(
@@ -174,8 +199,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
         """Invoke on a single list of chat messages."""
         inputs = self.custom_preprocess(messages)
         responses = self.get_generation(inputs=inputs, stop=stop, **kwargs)
-        outputs = self.custom_postprocess(responses)
-        return outputs
+        return responses
 
     def _get_filled_chunk(
         self, text: str, role: Optional[str] = "assistant"
@@ -193,6 +217,7 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
         """Allows streaming to model!"""
         inputs = self.custom_preprocess(messages)
         for response in self.get_stream(inputs=inputs, stop=stop, **kwargs):
+            self._set_callback_outputs(response, run_manager)
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
@@ -207,10 +232,17 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         inputs = self.custom_preprocess(messages)
         async for response in self.get_astream(inputs=inputs, stop=stop, **kwargs):
+            self._set_callback_outputs(response, run_manager)
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
             yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+    
+    def _set_callback_outputs(self, results: dict, run_manager: BaseCallbackHandler) -> None:
+        results.update({"model_name" : self.model})
+        for cb in run_manager.handlers:
+            if hasattr(cb, "llm_output"):
+                cb.llm_output = results
 
     def custom_preprocess(
         self, msg_list: Sequence[BaseMessage]
@@ -338,3 +370,196 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
                 raise ValueError(f"Message {msg} has no content")
             return msg
         raise ValueError(f"Unknown message received: {msg} of type {type(msg)}")
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any), or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+
+        See ChatOpenAI.bind_tools. This served as preemptive support
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice is not None and tool_choice:
+            if len(formatted_tools) != 1:
+                raise ValueError(
+                    "When specifying `tool_choice`, you must provide exactly one "
+                    f"tool. Received {len(formatted_tools)} tools."
+                )
+            if isinstance(tool_choice, str):
+                if tool_choice not in ("auto", "none"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+            elif isinstance(tool_choice, bool):
+                tool_choice = formatted_tools[0]
+            elif isinstance(tool_choice, dict):
+                if (
+                    formatted_tools[0]["function"]["name"]
+                    != tool_choice["function"]["name"]
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tool was {formatted_tools[0]['function']['name']}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
+
+
+    def bind_functions(
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        function_call: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind functions (and other objects) to this chat model.
+
+        Args:
+            functions: A list of function definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, or callable. Pydantic
+                models and callables will be automatically converted to
+                their schema dictionary representation.
+            function_call: Which function to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any).
+            kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+
+        See ChatOpenAI.bind_functions. This served as preemptive support
+        """
+        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        if function_call is not None:
+            if len(formatted_functions) != 1:
+                raise ValueError(
+                    "When specifying `function_call`, you must provide exactly one "
+                    "function."
+                )
+            if formatted_functions[0]["name"] != function_call:
+                raise ValueError(
+                    f"Function call {function_call} was specified, but the only "
+                    f"provided function was {formatted_functions[0]['name']}."
+                )
+            function_call_ = {"name": function_call}
+            kwargs = {**kwargs, "function_call": function_call_}
+        return super().bind(
+            functions=formatted_functions,
+            **kwargs,
+        )
+
+    def with_structured_output(
+        self,
+        schema: _DictOrPydanticClass,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        return_type: Literal["parsed", "all"] = "parsed",
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec.
+            method: The method for steering model generation, either "function_calling"
+                or "json_mode". If "function_calling" then the schema will be converted
+                to an OpenAI function and the returned model will make use of the
+                function-calling API. If "json_mode" then OpenAI's JSON mode will be
+                used.
+            return_type: The wrapped model's return type, either "parsed" or "all". If
+                "parsed" then only the parsed structured output is returned. If an
+                error occurs during model output parsing it will be raised. If "all"
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If return_type == "all" then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_DictOrPydantic]
+                    parsing_error: Optional[BaseException]
+
+                If return_type == "parsed" then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
+
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
+                    class.
+
+                If schema is a dict then _DictOrPydantic is a dict.
+
+        Example: See ChatOpenAI.with_structured_output
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        if method == "function_calling":
+            llm = self.bind_tools([schema], tool_choice=True)
+            if is_pydantic_schema:
+                output_parser: BaseGenerationOutputParser = PydanticToolsParser(
+                    tools=[schema], first_tool_only=True
+                )
+            else:
+                key_name = convert_to_openai_tool(schema)["function"]["name"]
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=key_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self.bind(response_format={"type": "json_object"})
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_format'. Received: '{method}'"
+            )
+
+        if return_type == "parsed":
+            return llm | output_parser
+        elif return_type == "all":
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            raise ValueError(
+                f"Unrecognized return_type argument. Expected one of 'parsed' or "
+                f"'all'. Received: '{return_type}'"
+            )
