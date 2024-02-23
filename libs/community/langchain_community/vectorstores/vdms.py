@@ -283,8 +283,8 @@ class VDMS(VectorStore):
         response, response_array = self.__run_vdms_query(all_queries, all_blobs)
 
         self.__update_properties(
-                    collection_name, orig_props, self.collection_properties
-                )
+            collection_name, orig_props, self.collection_properties
+        )
         # return inserted_ids
 
     def __add_set(
@@ -298,7 +298,7 @@ class VDMS(VectorStore):
             collection_name,
             self.embedding_dimension,
             engine=getattr(engine, "value", engine),
-            metric=getattr(metric, "value", metric)
+            metric=getattr(metric, "value", metric),
         )
 
         response, _ = self.__run_vdms_query([query])
@@ -358,7 +358,6 @@ class VDMS(VectorStore):
         id: Optional[str] = None,
         # collection_properties: Optional[list] = []
     ) -> Tuple[Dict[str, Dict[str, Any]], Union[bytes, None]]:
-
         props = {} if id is None else {"id": id}
         if metadata:
             # Validate properties (no arrays accepted)
@@ -403,7 +402,10 @@ class VDMS(VectorStore):
 
         blob = embedding2bytes(embedding)
 
-        return query, blob, #collection_properties
+        return (
+            query,
+            blob,
+        )  # collection_properties
 
     def __get_properties(
         self,
@@ -425,9 +427,9 @@ class VDMS(VectorStore):
         self,
         all_queries: Iterable[str],
         all_blobs: Optional[Iterable] = [],
-        print_last_response: Optional[bool] = False
+        print_last_response: Optional[bool] = False,
     ):
-        response, response_array =  self._client.query(all_queries, all_blobs)
+        response, response_array = self._client.query(all_queries, all_blobs)
 
         if print_last_response:
             self.print_last_response()
@@ -479,7 +481,11 @@ class VDMS(VectorStore):
             response, response_array = self.__run_vdms_query([query])
 
             query, blob = self.__get_add_query(
-                collection_name, metadata=meta, embedding=emb, document=doc, id=id,
+                collection_name,
+                metadata=meta,
+                embedding=emb,
+                document=doc,
+                id=id,
                 # collection_properties=collection_properties
             )
             if blob is not None:
@@ -561,7 +567,8 @@ class VDMS(VectorStore):
             embeddings=embeddings,
             ids=ids,
             metadatas=metadatas,
-            batch_size=batch_size)
+            batch_size=batch_size,
+        )
         return ids
 
     def add_texts(
@@ -614,7 +621,8 @@ class VDMS(VectorStore):
             embeddings=embeddings,
             ids=ids,
             metadatas=metadatas,
-            batch_size=batch_size)
+            batch_size=batch_size,
+        )
         return ids
 
     def __from(
@@ -623,15 +631,15 @@ class VDMS(VectorStore):
         embeddings: Iterable[List[float]],
         ids: List[str],
         metadatas: Iterable[dict],
-        batch_size: int
+        batch_size: int,
     ) -> None:
         for start_idx in range(0, len(texts), batch_size):
             end_idx = min(start_idx + batch_size, len(texts))
 
-            batch_texts = texts[start_idx : end_idx]
-            batch_embedding_vectors = embeddings[start_idx : end_idx]
-            batch_ids = ids[start_idx : end_idx]
-            batch_metadatas = metadatas[start_idx : end_idx]
+            batch_texts = texts[start_idx:end_idx]
+            batch_embedding_vectors = embeddings[start_idx:end_idx]
+            batch_ids = ids[start_idx:end_idx]
+            batch_metadatas = metadatas[start_idx:end_idx]
 
             self.__add(
                 self._collection_name,
@@ -657,9 +665,7 @@ class VDMS(VectorStore):
         if self.embedding_function is None:
             raise ValueError("Must provide embedding function")
 
-        self.embedding_dimension = len(
-            self._embed_query("This is a sample sentence.")
-        )
+        self.embedding_dimension = len(self._embed_query("This is a sample sentence."))
 
         # Check for properties
         current_props = self.__get_properties(collection_name)
@@ -673,7 +679,7 @@ class VDMS(VectorStore):
         all_blobs: List[Any] = []
 
         # collection_properties = self.__get_properties(collection_name)
-        results = {"count": "", "list": ["id"]}  #collection_properties}
+        results = {"count": "", "list": ["id"]}  # collection_properties}
         query = add_descriptor(
             "FindDescriptor",
             collection_name,
@@ -787,8 +793,9 @@ class VDMS(VectorStore):
         )
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
-        vdms_collection.add_texts(texts=texts, metadatas=metadatas,
-                                  ids=ids, batch_size=batch_size)
+        vdms_collection.add_texts(
+            texts=texts, metadatas=metadatas, ids=ids, batch_size=batch_size
+        )
         return vdms_collection
 
     def get(
@@ -1075,7 +1082,10 @@ class VDMS(VectorStore):
         include = kwargs.get("include", ["metadatas"])
         if results is None and "metadatas" in include:
             # collection_properties = self.__get_properties(collection_name)
-            results = {"list": self.collection_properties, "blob": "embeddings" in include}
+            results = {
+                "list": self.collection_properties,
+                "blob": "embeddings" in include,
+            }
 
         for qemb in query_embeddings:
             all_queries = []
@@ -1275,10 +1285,7 @@ class VDMS(VectorStore):
         return _results_to_docs_and_scores(results)
 
     def update_document(
-        self,
-        collection_name: str,
-        document_id: str,
-        document: Document
+        self, collection_name: str, document_id: str, document: Document
     ) -> None:
         """Update a document in the collection.
 
@@ -1289,10 +1296,7 @@ class VDMS(VectorStore):
         return self.update_documents(collection_name, [document_id], [document])
 
     def update_documents(
-        self,
-        collection_name: str,
-        ids: List[str],
-        documents: List[Document]
+        self, collection_name: str, ids: List[str], documents: List[Document]
     ) -> None:
         """Update a document in the collection.
 
@@ -1301,7 +1305,9 @@ class VDMS(VectorStore):
             documents (List[Document]): List of documents to update.
         """
         text = [document.page_content for document in documents]
-        metadata = [validate_vdms_properties(document.metadata) for document in documents]
+        metadata = [
+            validate_vdms_properties(document.metadata) for document in documents
+        ]
         embeddings = self._embed_documents(text)
 
         updated_ids = self.__update(
@@ -1542,7 +1548,7 @@ def check_vdms_then_adddescriptor(
     )
 
     props_as_constraints = (
-        None if props is None else {k: ["==", v] for k, v in props.items() if k=='id'}
+        None if props is None else {k: ["==", v] for k, v in props.items() if k == "id"}
     )
     results = (
         None
