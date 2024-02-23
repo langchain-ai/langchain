@@ -15,7 +15,11 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str
+from langchain_core.utils import (
+    build_extra_kwargs,
+    convert_to_secret_str,
+    get_pydantic_field_names,
+)
 
 _message_type_lookups = {"human": "user", "ai": "assistant"}
 
@@ -73,7 +77,7 @@ class ChatAnthropic(BaseChatModel):
     model: str = Field(alias="model_name")
     """Model name to use."""
 
-    max_tokens: int = Field(default=256)
+    max_tokens: int = Field(default=256, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -98,6 +102,15 @@ class ChatAnthropic(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "chat-anthropic-messages"
+
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict) -> Dict:
+        extra = values.get("model_kwargs", {})
+        all_required_field_names = get_pydantic_field_names(cls)
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
+        return values
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -131,6 +144,7 @@ class ChatAnthropic(BaseChatModel):
             "top_p": self.top_p,
             "stop_sequences": stop,
             "system": system,
+            **self.model_kwargs,
         }
         rtn = {k: v for k, v in rtn.items() if v is not None}
 

@@ -29,20 +29,20 @@ def test_anthropic_model_param() -> None:
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_kwargs() -> None:
-    llm = ChatAnthropic(model_kwargs={"foo": "bar"})
+    llm = ChatAnthropic(model_name="foo", model_kwargs={"foo": "bar"})
     assert llm.model_kwargs == {"foo": "bar"}
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_invalid_model_kwargs() -> None:
     with pytest.raises(ValueError):
-        ChatAnthropic(model_kwargs={"max_tokens_to_sample": 5})
+        ChatAnthropic(model="foo", model_kwargs={"max_tokens_to_sample": 5})
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = ChatAnthropic(foo="bar")
+        llm = ChatAnthropic(model="foo", foo="bar")
     assert llm.model_kwargs == {"foo": "bar"}
 
 
