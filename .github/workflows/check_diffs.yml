@@ -16,6 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  POETRY_VERSION: "1.7.1"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,14 +34,115 @@ jobs:
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
       dirs-to-run: ${{ steps.set-matrix.outputs.dirs-to-run }}
-  ci:
+      dirs-to-run-extended: ${{ steps.set-matrix.outputs.dirs-to-run-extended }}
+  lint:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
     strategy:
       matrix:
         working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
-    uses: ./.github/workflows/_all_ci.yml
+    uses: ./.github/workflows/_lint.yml
     with:
       working-directory: ${{ matrix.working-directory }}
+    secrets: inherit
 
+  test:
+    name: cd ${{ matrix.working-directory }}
+    needs: [ build ]
+    strategy:
+      matrix:
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
+    uses: ./.github/workflows/_test.yml
+    with:
+      working-directory: ${{ matrix.working-directory }}
+    secrets: inherit
 
+  compile-integration-tests:
+    name: cd ${{ matrix.working-directory }}
+    needs: [ build ]
+    strategy:
+      matrix:
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
+    uses: ./.github/workflows/_compile_integration_test.yml
+    with:
+      working-directory: ${{ matrix.working-directory }}
+    secrets: inherit
+
+  dependencies:
+    name: cd ${{ matrix.working-directory }}
+    needs: [ build ]
+    strategy:
+      matrix:
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
+    uses: ./.github/workflows/_dependencies.yml
+    with:
+      working-directory: ${{ matrix.working-directory }}
+    secrets: inherit
+
+  extended-tests:
+    name: "cd ${{ matrix.working-directory }} / make extended_tests #${{ matrix.python-version }}"
+    needs: [ build ]
+    strategy:
+      matrix:
+        # note different variable for extended test dirs
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run-extended) }}
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ matrix.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ matrix.working-directory }}
+          cache-key: extended
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "Running extended tests, installing dependencies with poetry..."
+          poetry install -E extended_testing --with test
+
+      - name: Run extended tests
+        run: make extended_tests
+
+      - name: Ensure the tests did not create any additional files
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'
+  ci_success:
+    name: "CI Success"
+    needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: "CI Success"
+        run: |
+          echo "Success"
+          exit 0
+  # this one is just for visibility, where CI success step gets skipped
+  ci_failure:
+    name: "CI Failure"
+    needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests]
+    if: ${{ !success() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "CI Failure"
+        run: |
+          echo "Failure"
+          exit 1
