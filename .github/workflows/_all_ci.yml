@@ -108,3 +108,19 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
+  ci_end:
+    name: "CI Success"
+    needs: [lint, test, compile-integration-tests, dependencies, extended-tests]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "CI Success"
+        if: ${{ !failure() }}
+        run: |
+          echo "Success"
+          exit 0
+      - name: "CI Failure"
+        if: ${{ failure() }}
+        run: |
+          echo "Failure"
+          exit 1
