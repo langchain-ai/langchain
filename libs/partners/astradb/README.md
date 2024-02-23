@@ -30,6 +30,28 @@ my_store = AstraDBVectorStore(
 )
 ```
 
+### Store
+
+```python
+from langchain_astradb import AstraDBStore
+store = AstraDBStore(
+    collection_name="my_kv_store",
+    api_endpoint="...",
+    token="..."
+)
+```
+
+### Byte Store
+
+```python
+from langchain_astradb import AstraDBByteStore
+store = AstraDBByteStore(
+    collection_name="my_kv_store",
+    api_endpoint="...",
+    token="..."
+)
+```
+
 ## Reference
 
 See the [LangChain docs page](https://python.langchain.com/docs/integrations/providers/astradb) for a more detailed listing.

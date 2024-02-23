@@ -58,7 +58,7 @@ LangChain enables building application that connect external sources of data and
 In this quickstart, we will walk through a few different ways of doing that.
 We will start with a simple LLM chain, which just relies on information in the prompt template to respond.
 Next, we will build a retrieval chain, which fetches data from a separate database and passes that into the prompt template.
-We will then add in chat history, to create a conversation retrieval chain. This allows you interact in a chat manner with this LLM, so it remembers previous questions.
+We will then add in chat history, to create a conversation retrieval chain. This allows you to interact in a chat manner with this LLM, so it remembers previous questions.
 Finally, we will build an agent - which utilizes an LLM to determine whether or not it needs to fetch data to answer questions.
 We will cover these at a high level, but there are lot of details to all of these!
 We will link to relevant docs.
@@ -374,7 +374,7 @@ The final thing we will create is an agent - where the LLM decides what steps to
 **NOTE: for this example we will only show how to create an agent using OpenAI models, as local models are not reliable enough yet.**
 
 One of the first things to do when building an agent is to decide what tools it should have access to.
-For this example, we will give the agent access two tools:
+For this example, we will give the agent access to two tools:
 
 1. The retriever we just created. This will let it easily answer questions about LangSmith
 2. A search tool. This will let it easily answer questions that require up to date information.
