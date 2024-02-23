@@ -37,7 +37,11 @@ from typing_extensions import Literal, get_args
 
 from langchain_core._api import beta_decorator
 from langchain_core.load.dump import dumpd
-from langchain_core.load.serializable import Serializable
+from langchain_core.load.serializable import (
+    Serializable,
+    SerializedConstructor,
+    SerializedNotImplemented,
+)
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -1630,6 +1634,16 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
 
+    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
+        """Serialize the runnable to JSON."""
+        dumped = super().to_json()
+        try:
+            dumped["name"] = self.get_name()
+            dumped["graph"] = self.get_graph().to_json()
+        except Exception:
+            pass
+        return dumped
+
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
@@ -2920,7 +2934,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             from langchain_core.prompts import ChatPromptTemplate
             from langchain_core.runnables import RunnableGenerator, RunnableLambda
             from langchain_openai import ChatOpenAI
-            from langchain.schema import StrOutputParser
+            from langchain_core.output_parsers import StrOutputParser
 
 
             model = ChatOpenAI()
@@ -3400,6 +3414,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     input: Input,
                     run_manager: AsyncCallbackManagerForChainRun,
                     config: RunnableConfig,
+                    **kwargs: Any,
                 ) -> Output:
                     output: Optional[Output] = None
                     for chunk in call_func_with_variable_args(
@@ -3424,6 +3439,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     input: Input,
                     run_manager: AsyncCallbackManagerForChainRun,
                     config: RunnableConfig,
+                    **kwargs: Any,
                 ) -> Output:
                     return call_func_with_variable_args(
                         self.func, input, config, run_manager.get_sync(), **kwargs
@@ -3629,6 +3645,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 input: Input,
                 run_manager: AsyncCallbackManagerForChainRun,
                 config: RunnableConfig,
+                **kwargs: Any,
             ) -> Output:
                 return call_func_with_variable_args(
                     self.func, input, config, run_manager.get_sync(), **kwargs

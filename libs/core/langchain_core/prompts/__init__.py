@@ -1,7 +1,7 @@
 """**Prompt** is the input to the model.
 
 Prompt is often constructed
-from multiple components. Prompt classes and functions make constructing
+from multiple components and prompt values. Prompt classes and functions make constructing
  and working with prompts easy.
 
 **Class hierarchy:**
