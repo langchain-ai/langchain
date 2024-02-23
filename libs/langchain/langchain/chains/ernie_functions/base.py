@@ -310,31 +310,31 @@ def create_structured_output_runnable(
     Example:
         .. code-block:: python
 
-                from typing import Optional
+            from typing import Optional
 
-                from langchain.chains.ernie_functions import create_structured_output_chain
-                from langchain_community.chat_models import ErnieBotChat
-                from langchain.prompts import ChatPromptTemplate
-                from langchain.pydantic_v1 import BaseModel, Field
+            from langchain.chains.ernie_functions import create_structured_output_chain
+            from langchain_community.chat_models import ErnieBotChat
+            from langchain.prompts import ChatPromptTemplate
+            from langchain.pydantic_v1 import BaseModel, Field
 
-                class Dog(BaseModel):
-                    \"\"\"Identifying information about a dog.\"\"\"
+            class Dog(BaseModel):
+                \"\"\"Identifying information about a dog.\"\"\"
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                name: str = Field(..., description="The dog's name")
+                color: str = Field(..., description="The dog's color")
+                fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
-                llm = ErnieBotChat(model_name="ERNIE-Bot-4")
-                prompt = ChatPromptTemplate.from_messages(
-                    [
-                        ("user", "Use the given format to extract information from the following input: {input}"),
-                        ("assistant", "OK!"),
-                        ("user", "Tip: Make sure to answer in the correct format"),
-                    ]
-                )
-                chain = create_structured_output_chain(Dog, llm, prompt)
-                chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
-                # -> Dog(name="Harry", color="brown", fav_food="chicken")
+            llm = ErnieBotChat(model_name="ERNIE-Bot-4")
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("user", "Use the given format to extract information from the following input: {input}"),
+                    ("assistant", "OK!"),
+                    ("user", "Tip: Make sure to answer in the correct format"),
+                ]
+            )
+            chain = create_structured_output_chain(Dog, llm, prompt)
+            chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+            # -> Dog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if isinstance(output_schema, dict):
         function: Any = {
