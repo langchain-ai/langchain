@@ -145,7 +145,7 @@ class UsageCallbackHandler(BaseCallbackHandler):
     llm_output: dict = {}
     price_map: dict = {k: v for k, v in DEFAULT_MODEL_COST_PER_1K_TOKENS.items()}
 
-    ## Aggregate statistics, compatable with OpenAICallbackHandler
+    ## Aggregate statistics, compatible with OpenAICallbackHandler
     @property
     def total_tokens(self) -> int:
         """Total tokens used."""
