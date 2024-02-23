@@ -19,7 +19,7 @@ docker-compose -f vdms.yml up -d
 
 By default runs against local docker instance of VDMS using port (VDMS_DBPORT) 55555.
 Use the following to specify different port:
-docker-compose -f vdms.yml up -d
+VDMS_DBPORT=<port> docker-compose -f vdms.yml up -d
 """
 
 connection_args = {"host": "localhost", "port": os.getenv("VDMS_DBPORT", 55555)}
