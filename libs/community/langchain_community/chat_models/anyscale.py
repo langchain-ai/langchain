@@ -181,7 +181,7 @@ class ChatAnyscale(ChatOpenAI):
         return values
 
     def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
-        toktoken_ = _import_tiktoken()
+        tiktoken_ = _import_tiktoken()
         if self.tiktoken_model_name is not None:
             model = self.tiktoken_model_name
         else:
