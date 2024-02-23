@@ -1,53 +1,60 @@
 """Callback Handler that prints to std out."""
 from __future__ import annotations
 
+import logging
 import threading
-from typing import Any, Dict, List
+from collections import defaultdict
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Any, Dict, Generator, List, Optional
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.tracers.context import register_configure_hook
 
-## Directly inspired by the OpenAI callback handler. Code duplication for self-containment.
+logger = logging.getLogger(__name__)
+
+## This module contains output parsers for OpenAI tools. Set here for version control
 
 try:
-    from langchain_community.callbacks.openai_info import (
-        MODEL_COST_PER_1K_TOKENS,
-        standardize_model_name
-    )
+    from langchain_community.callbacks.openai_info import MODEL_COST_PER_1K_TOKENS
+
     DEFAULT_MODEL_COST_PER_1K_TOKENS = MODEL_COST_PER_1K_TOKENS
-except: 
+except ImportError:
     DEFAULT_MODEL_COST_PER_1K_TOKENS = {}
 
 ## Mostly pulled from Together.ai as representative pricing. Can be changed by user.
 ## https://www.together.ai/pricing
-DEFAULT_MODEL_COST_PER_1K_TOKENS.update({
-    ## Mixtral 8x7B
-    "mixtral_8x7b": 0.00060,
-    ## Llama - 13b
-    "llama2_code_13b": 0.000225,
-    "llama2_13b": 0.000225,
-    ## Llama - 34b
-    "llama2_code_34b": 0.000776,
-    "yi_34b": 0.000776,
-    ## Llama - 70b
-    "llama2_70b": 0.0009,
-    "llama2_code_70b": 0.0009,
-    "nv_llama2_rlhf_70b": 0.0009,
-    "steerlm_llama_70b": 0.0009,
-    ## 0B-4B
-    "gemma_2b": 0.0001,
-    "mamba_chat": 0.0001,
-    ## 4B-8B
-    "gemma_7b": 0.0002,
-    "mistral_7b": 0.0002,
-    "llama_guard": 0.0002,
-    "fuyu_8b": 0.0002,
-    "nemotron_qa_8b": 0.0002,
-    "nemotron_steerlm_8b": 0.0002,
-    ## 21B - 41B
-    "neva_22b": 0.0008,
-    "nvolveqa_40k" : 0.000016,
-})
+DEFAULT_MODEL_COST_PER_1K_TOKENS.update(
+    {
+        ## Mixtral 8x7B
+        "mixtral_8x7b": 0.00060,
+        ## Llama - 13b
+        "llama2_code_13b": 0.000225,
+        "llama2_13b": 0.000225,
+        ## Llama - 34b
+        "llama2_code_34b": 0.000776,
+        "yi_34b": 0.000776,
+        ## Llama - 70b
+        "llama2_70b": 0.0009,
+        "llama2_code_70b": 0.0009,
+        "nv_llama2_rlhf_70b": 0.0009,
+        "steerlm_llama_70b": 0.0009,
+        ## 0B-4B
+        "gemma_2b": 0.0001,
+        "mamba_chat": 0.0001,
+        ## 4B-8B
+        "gemma_7b": 0.0002,
+        "mistral_7b": 0.0002,
+        "llama_guard": 0.0002,
+        "fuyu_8b": 0.0002,
+        "nemotron_qa_8b": 0.0002,
+        "nemotron_steerlm_8b": 0.0002,
+        ## 21B - 41B
+        "neva_22b": 0.0008,
+        "nvolveqa_40k": 0.000016,
+    }
+)
 
 
 def standardize_model_name(
@@ -76,11 +83,15 @@ def standardize_model_name(
         model_name = model_name.split(":")[1] + "-finetuned"
     if model_name.startswith("playground_"):
         model_name = model_name.replace("playground_", "")
-    if is_completion and model_name + "-completion" in price_map and (
-        model_name.startswith("gpt-4")
-        or model_name.startswith("gpt-3.5")
-        or model_name.startswith("gpt-35")
-        or ("finetuned" in model_name and "legacy" not in model_name)
+    if (
+        is_completion
+        and model_name + "-completion" in price_map
+        and (
+            model_name.startswith("gpt-4")
+            or model_name.startswith("gpt-3.5")
+            or model_name.startswith("gpt-35")
+            or ("finetuned" in model_name and "legacy" not in model_name)
+        )
     ):
         return model_name + "-completion"
     else:
@@ -96,7 +107,7 @@ def get_token_cost_for_model(
     Args:
         model_name: Name of the model
         num_tokens: Number of tokens.
-        price_map: Map of model names to cost per 1000 tokens. 
+        price_map: Map of model names to cost per 1000 tokens.
             Defaults to AI Foundation Endpoint pricing per https://www.together.ai/pricing.
         is_completion: Whether the model is used for completion or not.
             Defaults to False.
@@ -104,7 +115,11 @@ def get_token_cost_for_model(
     Returns:
         Cost in USD.
     """
-    model_name = standardize_model_name(model_name, price_map, is_completion=is_completion)
+    model_name = standardize_model_name(
+        model_name,
+        price_map,
+        is_completion=is_completion,
+    )
     if model_name not in price_map:
         raise ValueError(
             f"Unknown model: {model_name}. Please provide a valid model name."
@@ -113,23 +128,22 @@ def get_token_cost_for_model(
     return price_map[model_name] * (num_tokens / 1000)
 
 
-from collections import defaultdict
-
-
 class UsageCallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks OpenAI info."""
 
     ## Per-model statistics
-    _model_usage: defaultdict = defaultdict(lambda: {
-        "total_tokens": 0,
-        "prompt_tokens": 0,
-        "completion_tokens": 0,
-        "successful_requests": 0,
-        "total_cost": 0.0,
-    })
+    _model_usage: defaultdict = defaultdict(
+        lambda: {
+            "total_tokens": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "successful_requests": 0,
+            "total_cost": 0.0,
+        }
+    )
 
     llm_output: dict = {}
-    price_map: dict = {k:v for k,v in DEFAULT_MODEL_COST_PER_1K_TOKENS.items()}
+    price_map: dict = {k: v for k, v in DEFAULT_MODEL_COST_PER_1K_TOKENS.items()}
 
     ## Aggregate statistics, compatable with OpenAICallbackHandler
     @property
@@ -141,23 +155,23 @@ class UsageCallbackHandler(BaseCallbackHandler):
     def prompt_tokens(self) -> int:
         """Prompt tokens used."""
         return self._model_usage["total"]["prompt_tokens"]
-    
+
     @property
     def completion_tokens(self) -> int:
         """Completion tokens used."""
         return self._model_usage["total"]["completion_tokens"]
-    
+
     @property
     def successful_requests(self) -> int:
         """Total successful requests."""
         return self._model_usage["total"]["successful_requests"]
-    
+
     @property
     def total_cost(self) -> float:
         """Total cost in USD."""
         return self._model_usage["total"]["total_cost"]
 
-    def __init__(self, other: BaseCallbackHandler = None) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self._lock = threading.Lock()
 
@@ -171,10 +185,10 @@ class UsageCallbackHandler(BaseCallbackHandler):
         )
 
     @property
-    def model_usage(self) -> bool:
+    def model_usage(self) -> dict:
         """Whether to call verbose callbacks even if verbose is False."""
         return dict(self._model_usage)
-    
+
     def reset(self) -> None:
         """Reset the model usage."""
         with self._lock:
@@ -201,13 +215,13 @@ class UsageCallbackHandler(BaseCallbackHandler):
 
         response.llm_output = {**self.llm_output, **response.llm_output}
         self.llm_output = {}
-                
+
         if not response.llm_output:
             return None
-    
+
         # compute tokens and cost for this request
-        token_usage = response.llm_output.get("token_usage",
-            response.llm_output.get("usage", {})
+        token_usage = response.llm_output.get(
+            "token_usage", response.llm_output.get("usage", {})
         )
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
@@ -226,14 +240,14 @@ class UsageCallbackHandler(BaseCallbackHandler):
         # update shared state behind lock
         with self._lock:
             for base in (self._model_usage["total"], self._model_usage[model_name]):
-                base['total_tokens'] += token_usage.get("total_tokens", 0)
-                base['prompt_tokens'] += prompt_tokens
-                base['completion_tokens'] += completion_tokens
-                base['total_cost'] += prompt_cost + completion_cost
-                base['successful_requests'] += 1
+                base["total_tokens"] += token_usage.get("total_tokens", 0)
+                base["prompt_tokens"] += prompt_tokens
+                base["completion_tokens"] += completion_tokens
+                base["total_cost"] += prompt_cost + completion_cost
+                base["successful_requests"] += 1
                 for key in base.keys():
                     base[key] = round(base[key], 10)
-    
+
     def __copy__(self) -> "UsageCallbackHandler":
         """Return a copy of the callback handler."""
         return self
@@ -243,29 +257,20 @@ class UsageCallbackHandler(BaseCallbackHandler):
         return self
 
 
-import logging
-from contextlib import contextmanager
-from contextvars import ContextVar
-from typing import (
-    Generator,
-    Optional,
-)
+## get_usage_callack variable construction, registration, management
 
-from langchain_core.tracers.context import register_configure_hook
-
-logger = logging.getLogger(__name__)
-
-usage_callback_var: ContextVar[Optional[UsageCallbackHandler]] = ContextVar(
+usage_callback_var: ContextVar[Optional[BaseCallbackHandler]] = ContextVar(
     "usage_callback", default=None
 )
 
 register_configure_hook(usage_callback_var, True)
 
+
 @contextmanager
 def get_usage_callback(
     price_map: dict = {},
     callback: Optional[BaseCallbackHandler] = None,
-) -> Generator[UsageCallbackHandler, None, None]:
+) -> Generator[BaseCallbackHandler, None, None]:
     """Get the OpenAI callback handler in a context manager.
     which conveniently exposes token and cost information.
 
@@ -279,7 +284,10 @@ def get_usage_callback(
     if not callback:
         callback = UsageCallbackHandler()
     if hasattr(callback, "price_map"):
-        with callback._lock:
+        if hasattr(callback, "_lock"):
+            with callback._lock:
+                callback.price_map.update(price_map)
+        else:
             callback.price_map.update(price_map)
     usage_callback_var.set(callback)
     yield callback

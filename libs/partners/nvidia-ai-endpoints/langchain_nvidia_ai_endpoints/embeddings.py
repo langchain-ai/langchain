@@ -1,13 +1,13 @@
 """Embeddings Components Derived from NVEModel/Embeddings"""
 from typing import List, Literal, Optional
 
+from langchain_community.callbacks.manager import openai_callback_var
 from langchain_core.embeddings import Embeddings
+from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.pydantic_v1 import Field
 
 from langchain_nvidia_ai_endpoints._common import _NVIDIAClient
 from langchain_nvidia_ai_endpoints.callbacks import usage_callback_var
-from langchain_community.callbacks.manager import openai_callback_var
-from langchain_core.outputs.llm_result import LLMResult
 
 
 class NVIDIAEmbeddings(_NVIDIAClient, Embeddings):
@@ -62,7 +62,7 @@ class NVIDIAEmbeddings(_NVIDIAClient, Embeddings):
             )
         return all_embeddings
 
-    def _invoke_callback_vars(self, response):
+    def _invoke_callback_vars(self, response: dict) -> None:
         """Invoke the callback context variables if there are any."""
         callback_vars = [
             usage_callback_var.get(),
