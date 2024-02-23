@@ -47,6 +47,20 @@ if __name__ == "__main__":
         help="Prompt string",
     )
     parser.add_argument(
+        "--request_id",
+        type=str,
+        required=False,
+        default="111",
+        help="Your request ID",
+    )
+    parser.add_argument(
+        "--kb_id",
+        type=str,
+        required=False,
+        default="default",
+        help="The knowledge base ID",
+    )
+    parser.add_argument(
         "--url",
         type=str,
         required=False,
@@ -73,16 +87,27 @@ if __name__ == "__main__":
         print(json.dumps(triton_client.get_model_config(args.model_name), indent=4))
 
     inputs = []
-    inputs.append(httpclient.InferInput('INPUT0', [1], "BYTES"))
+    inputs.append(httpclient.InferInput('prompt', [1], "BYTES"))
+    inputs.append(httpclient.InferInput('request_id', [1], "BYTES"))
+    inputs.append(httpclient.InferInput('kb_id', [1], "BYTES"))
     input_data0 = args.prompt
     input_data0 = np.array([input_data0.encode("utf-8")],dtype=np.object_)
     inputs[0].set_data_from_numpy(input_data0)
+    input_data1 = args.request_id
+    input_data1 = np.array([input_data1.encode("utf-8")],dtype=np.object_)
+    inputs[1].set_data_from_numpy(input_data1)
+    input_data2 = args.kb_id
+    input_data2 = np.array([input_data2.encode("utf-8")],dtype=np.object_)
+    inputs[2].set_data_from_numpy(input_data0)
     outputs = []
     outputs.append(httpclient.InferRequestedOutput('OUTPUT0', binary_data=False))
+    outputs.append(httpclient.InferRequestedOutput('request_id', binary_data=False))
 
     results = triton_client.infer(model_name=args.model_name, inputs=inputs, outputs=outputs)
     output_data0 = results.as_numpy('OUTPUT0')
 
-    print("input:",input_data0)
+    print("input prompt:",input_data0)
+    print("input reqeuest id:",input_data1)
+    print("input kb_id:",input_data2)
     print("output:",output_data0)
 

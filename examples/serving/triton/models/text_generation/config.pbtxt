@@ -17,14 +17,29 @@ backend: "python"
 
 input [
   {
-    name: "INPUT0"
+    name: "prompt"
     data_type: TYPE_STRING
     dims: [ 1 ]
+  },
+  {
+    name: "kb_id"
+    data_type: TYPE_STRING
+    dims: [1]
+  },
+  {
+    name: "request_id"
+    data_type: TYPE_STRING
+    dims: [1]
   }
 ]
 output [
   {
     name: "OUTPUT0"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  },
+  {
+    name: "request_id"
     data_type: TYPE_STRING
     dims: [ 1 ]
   }

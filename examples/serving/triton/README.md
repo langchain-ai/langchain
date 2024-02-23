@@ -100,3 +100,21 @@ Send a request using `client.py`. The `${your_port}` is the triton server port.
 ```bash
 python /models/text_generation/1/client.py --prompt="Tell me about Intel Xeon Scalable Processors." --url=localhost:${your_port}
 ```
+
+## Consume the HTTP API
+
+Besides the triton client, you can consume the triton HTTP API directly like below.
+```bash
+curl -X POST localhost:8021/v2/models/text_generation/infer -d '{"prompt":"Tell me about Intel.","kb_id":"default","request_id":"your_request_id"}'
+```
+
+Then you will receive the following response:
+```bash
+{
+    "OUTPUT0": "Intel Corporation is an American multinational corporation and technology company headquartered in Santa Clara, California. It is the world's largest semiconductor chip manufacturer by revenue, known for its advancements in microprocessors, motherboards, and other computing devices. Founded in 1968 by Gordon Moore and Robert Noyce, Intel has played a significant role in the development of modern computing and continues to innovate in various fields such as artificial intelligence, cloud computing, and internet of things.",
+    "model_name": "text_generation",
+    "model_version": "1",
+    "request_id": "111"
+}
+```
+Note that since Triton does not specifically serve for LLM inference, it does not implement the function of streamingly LLM inference with HTTP APIs. So we only suppor the non-stream mode of model inferencing here.
