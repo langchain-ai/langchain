@@ -4,7 +4,7 @@ All functionality related to [Google Cloud Platform](https://cloud.google.com/) 
 
 ## Chat models
 
-### Google AI
+### Google Generative AI
 
 Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `ChatGoogleGenerativeAI` class.
 
@@ -25,14 +25,14 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro")
 llm.invoke("Sing a ballad of LangChain.")
 ```
 
-Gemini vision model supports image inputs when providing a single chat message. Example:
+Gemini vision model supports image inputs when providing a single chat message.
 
 ```python
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
-# example
+
 message = HumanMessage(
     content=[
         {
@@ -69,29 +69,27 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 from langchain_google_vertexai import ChatVertexAI
 ```
 
-## Document Loaders
-### Google BigQuery
+## LLMs
 
-> [Google BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data.
-`BigQuery` is a part of the `Google Cloud Platform`.
+### Google Generative AI
 
-We need to install `google-cloud-bigquery` python package.
+Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
+
+Install python package.
 
 ```bash
-pip install google-cloud-bigquery
+pip install langchain-google-genai
 ```
 
-See a [usage example](/docs/integrations/document_loaders/google_bigquery).
+See a [usage example](/docs/integrations/llms/google_ai).
 
 ```python
-from langchain_community.document_loaders import BigQueryLoader
+from langchain_google_genai import GoogleGenerativeAI
 ```
-
-## LLMs
 
 ### Vertex AI
 
-Access to `Gemini` and `PaLM` LLMs (like `text-bison` and `code-bison`) via `Google Vertex AI`.
+Access to `Gemini` and `PaLM` LLMs (like `text-bison` and `code-bison`) via `Vertex AI` on Google Cloud.
 
 We need to install `langchain-google-vertexai` python package.
 
@@ -107,7 +105,7 @@ from langchain_google_vertexai import VertexAI
 
 ### Model Garden
 
-Access PaLM and hundreds of OSS models via `Vertex AI Model Garden`.
+Access PaLM and hundreds of OSS models via `Vertex AI Model Garden` on Google Cloud.
 
 We need to install `langchain-google-vertexai` python package.
 
@@ -121,71 +119,11 @@ See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model
 from langchain_google_vertexai import VertexAIModelGarden
 ```
 
-
-### Google Cloud Storage
-
->[Google Cloud Storage](https://en.wikipedia.org/wiki/Google_Cloud_Storage) is a managed service for storing unstructured data.
-
-We need to install `google-cloud-storage` python package.
-
-```bash
-pip install google-cloud-storage
-```
-
-There are two loaders for the `Google Cloud Storage`: the `Directory` and the `File` loaders.
-
-See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_directory).
-
-```python
-from langchain_community.document_loaders import GCSDirectoryLoader
-```
-See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_file).
-
-```python
-from langchain_community.document_loaders import GCSFileLoader
-```
-
-### Google Drive
-
->[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
-
-Currently, only `Google Docs` are supported.
-
-We need to install several python packages.
-
-```bash
-pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
-```
-
-See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
-
-```python
-from langchain_community.document_loaders import GoogleDriveLoader
-```
-
-### Speech-to-Text
-
-> [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text) is an audio transcription API powered by Google's speech recognition models.
-
-This document loader transcribes audio files and outputs the text results as Documents.
-
-First, we need to install the python package.
-
-```bash
-pip install google-cloud-speech
-```
-
-See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
-
-```python
-from langchain_community.document_loaders import GoogleSpeechToTextLoader
-```
-
 ## Vector Stores
 
-### Google Vertex AI Vector Search
+### Vertex AI Vector Search
 
-> [Google Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview),
+> [Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview) from Google Cloud,
 > formerly known as `Vertex AI Matching Engine`, provides the industry's leading high-scale
 > low latency vector database. These vector databases are commonly
 > referred to as vector similarity-matching or an approximate nearest neighbor (ANN) service.
@@ -202,12 +140,12 @@ See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_se
 from langchain_community.vectorstores import MatchingEngine
 ```
 
-### Google BigQuery Vector Search
+### BigQuery
 
-> [Google BigQuery](https://cloud.google.com/bigquery),
+> [BigQuery](https://cloud.google.com/bigquery),
 > BigQuery is a serverless and cost-effective enterprise data warehouse in Google Cloud.
 >
-> [Google BigQuery Vector Search](https://cloud.google.com/bigquery/docs/vector-search-intro)
+> [BigQuery Vector Search](https://cloud.google.com/bigquery/docs/vector-search-intro)
 > BigQuery vector search lets you use GoogleSQL to do semantic search, using vector indexes for fast but approximate results, or using brute force for exact results.
 
 > It can calculate Euclidean or Cosine distance. With LangChain, we default to use Euclidean distance.
@@ -265,11 +203,10 @@ See a [usage example and authorization instructions](/docs/integrations/retrieve
 from langchain_googledrive.retrievers import GoogleDriveRetriever
 ```
 
-
 ### Vertex AI Search
 
-> [Google Cloud Vertex AI Search](https://cloud.google.com/generative-ai-app-builder/docs/introduction)
-> allows developers to quickly build generative AI powered search engines for customers and employees.
+> [Vertex AI Search](https://cloud.google.com/generative-ai-app-builder/docs/introduction)
+> from Google Cloud allows developers to quickly build generative AI powered search engines for customers and employees.
 
 We need to install the `google-cloud-discoveryengine` python package.
 
@@ -284,10 +221,10 @@ from langchain.retrievers import GoogleVertexAISearchRetriever
 ```
 
 ### Document AI Warehouse
-> [Google Cloud Document AI Warehouse](https://cloud.google.com/document-ai-warehouse)
-> allows enterprises to search, store, govern, and manage documents and their AI-extracted
+
+> [Document AI Warehouse](https://cloud.google.com/document-ai-warehouse)
+> from Google Cloud allows enterprises to search, store, govern, and manage documents and their AI-extracted
 > data and metadata in a single platform.
->
 
 ```python
 from langchain.retrievers import GoogleDocumentAIWarehouseRetriever
@@ -300,11 +237,136 @@ documents = docai_wh_retriever.get_relevant_documents(
 )
 ```
 
+## Document Loaders
+
+### BigQuery
+
+> [BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
+
+We need to install `google-cloud-bigquery` python package.
+
+```bash
+pip install google-cloud-bigquery
+```
+
+See a [usage example](/docs/integrations/document_loaders/google_bigquery).
+
+```python
+from langchain_community.document_loaders import BigQueryLoader
+```
+
+### Cloud Storage
+
+>[Cloud Storage](https://en.wikipedia.org/wiki/Google_Cloud_Storage) is a managed service for storing unstructured data in Google Cloud.
+
+We need to install `google-cloud-storage` python package.
+
+```bash
+pip install google-cloud-storage
+```
+
+There are two loaders for the `Google Cloud Storage`: the `Directory` and the `File` loaders.
+
+See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_directory).
+
+```python
+from langchain_community.document_loaders import GCSDirectoryLoader
+```
+See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_file).
+
+```python
+from langchain_community.document_loaders import GCSFileLoader
+```
+
+### Google Drive
+
+>[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
+
+Currently, only `Google Docs` are supported.
+
+We need to install several python packages.
+
+```bash
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
+
+```python
+from langchain_community.document_loaders import GoogleDriveLoader
+```
+
+### Speech-to-Text
+
+> [Speech-to-Text](https://cloud.google.com/speech-to-text) is an audio transcription API powered by Google's speech recognition models in Google Cloud.
+
+This document loader transcribes audio files and outputs the text results as Documents.
+
+First, we need to install the python package.
+
+```bash
+pip install google-cloud-speech
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
+
+```python
+from langchain_community.document_loaders import GoogleSpeechToTextLoader
+```
+
+## Document Transformers
+
+### Document AI
+
+>[Document AI](https://cloud.google.com/document-ai/docs/overview) is a Google Cloud
+> service that transforms unstructured data from documents into structured data, making it easier
+> to understand, analyze, and consume.
+
+We need to set up a [`GCS` bucket and create your own OCR processor](https://cloud.google.com/document-ai/docs/create-processor)
+The `GCS_OUTPUT_PATH` should be a path to a folder on GCS (starting with `gs://`)
+and a processor name should look like `projects/PROJECT_NUMBER/locations/LOCATION/processors/PROCESSOR_ID`.
+We can get it either programmatically or copy from the `Prediction endpoint` section of the `Processor details`
+tab in the Google Cloud Console.
+
+```bash
+pip install google-cloud-documentai
+pip install google-cloud-documentai-toolbox
+```
+
+See a [usage example](/docs/integrations/document_transformers/docai).
+
+```python
+from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.parsers import DocAIParser
+```
+
+### Google Translate
+
+> [Google Translate](https://translate.google.com/) is a multilingual neural machine
+> translation service developed by Google to translate text, documents and websites
+> from one language into another.
+
+The `GoogleTranslateTransformer` allows you to translate text and HTML with the [Google Cloud Translation API](https://cloud.google.com/translate).
+
+To use it, you should have the `google-cloud-translate` python package installed, and a Google Cloud project with the [Translation API enabled](https://cloud.google.com/translate/docs/setup). This transformer uses the [Advanced edition (v3)](https://cloud.google.com/translate/docs/intro-to-v3).
+
+First, we need to install the python package.
+
+```bash
+pip install google-cloud-translate
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
+
+```python
+from langchain_community.document_transformers import GoogleTranslateTransformer
+```
+
 ## Tools
 
-### Google Cloud Text-to-Speech
+### Text-to-Speech
 
->[Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech) enables developers to
+>[Text-to-Speech](https://cloud.google.com/text-to-speech) is a Google Cloud service that enables developers to
 > synthesize natural-sounding speech with 100+ voices, available in multiple languages and variants.
 > It applies DeepMind’s groundbreaking research in WaveNet and Google’s powerful neural networks
 > to deliver the highest fidelity possible.
@@ -320,7 +382,6 @@ See a [usage example and authorization instructions](/docs/integrations/tools/go
 ```python
 from langchain.tools import GoogleCloudTextToSpeechTool
 ```
-
 
 ### Google Drive
 
@@ -439,55 +500,6 @@ from langchain_community.tools.google_trends import GoogleTrendsQueryRun
 from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
 ```
 
-
-## Document Transformers
-
-### Google Document AI
-
->[Document AI](https://cloud.google.com/document-ai/docs/overview) is a `Google Cloud Platform`
-> service that transforms unstructured data from documents into structured data, making it easier
-> to understand, analyze, and consume.
-
-We need to set up a [`GCS` bucket and create your own OCR processor](https://cloud.google.com/document-ai/docs/create-processor)
-The `GCS_OUTPUT_PATH` should be a path to a folder on GCS (starting with `gs://`)
-and a processor name should look like `projects/PROJECT_NUMBER/locations/LOCATION/processors/PROCESSOR_ID`.
-We can get it either programmatically or copy from the `Prediction endpoint` section of the `Processor details`
-tab in the Google Cloud Console.
-
-```bash
-pip install google-cloud-documentai
-pip install google-cloud-documentai-toolbox
-```
-
-See a [usage example](/docs/integrations/document_transformers/docai).
-
-```python
-from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers import DocAIParser
-```
-
-### Google Translate
-
-> [Google Translate](https://translate.google.com/) is a multilingual neural machine
-> translation service developed by Google to translate text, documents and websites
-> from one language into another.
-
-The `GoogleTranslateTransformer` allows you to translate text and HTML with the [Google Cloud Translation API](https://cloud.google.com/translate).
-
-To use it, you should have the `google-cloud-translate` python package installed, and a Google Cloud project with the [Translation API enabled](https://cloud.google.com/translate/docs/setup). This transformer uses the [Advanced edition (v3)](https://cloud.google.com/translate/docs/intro-to-v3).
-
-First, we need to install the python package.
-
-```bash
-pip install google-cloud-translate
-```
-
-See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
-
-```python
-from langchain_community.document_transformers import GoogleTranslateTransformer
-```
-
 ## Toolkits
 
 ### GMail
@@ -509,9 +521,9 @@ from langchain_community.agent_toolkits import GmailToolkit
 
 ## Memory
 
-### Cloud Firestore
+### Firestore
 
-> [`Cloud Firestore`](https://cloud.google.com/firestore) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+> [`Firestore`](https://cloud.google.com/firestore) is a NoSQL document database built for automatic scaling, high performance, and ease of application development in Google Cloud.
 
 First, we need to install the python package.
 
@@ -556,7 +568,7 @@ See [usage examples and authorization instructions](/docs/integrations/tools/sea
 from langchain_community.utilities import SearchApiAPIWrapper
 ```
 
-### SerpAPI
+### SerpApi
 
 >[SerpApi](https://serpapi.com/) provides a 3rd-party API to access Google search results.
 
