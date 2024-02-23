@@ -160,7 +160,10 @@ class ChatAnthropic(BaseChatModel):
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         with self._client.messages.stream(**params) as stream:
             for text in stream.text_stream:
-                yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
+                if run_manager:
+                    run_manager.on_llm_new_token(text, chunk=chunk)
+                yield chunk
 
     async def _astream(
         self,
@@ -172,7 +175,10 @@ class ChatAnthropic(BaseChatModel):
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         async with self._async_client.messages.stream(**params) as stream:
             async for text in stream.text_stream:
-                yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
+                if run_manager:
+                    await run_manager.on_llm_new_token(text, chunk=chunk)
+                yield chunk
 
     def _generate(
         self,
