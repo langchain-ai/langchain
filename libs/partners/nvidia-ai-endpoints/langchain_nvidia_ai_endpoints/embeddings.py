@@ -71,4 +71,4 @@ class NVIDIAEmbeddings(_NVIDIAClient, Embeddings):
         result = LLMResult(generations=[[]], llm_output=llm_output)
         for cb_var in callback_vars:
             if cb_var:
-                cb_var.on_llm_end(result, uuid4())
+                cb_var.on_llm_end(result)
