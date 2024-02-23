@@ -12,6 +12,7 @@ EXPECTED_ALL = [
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "InfinityEmbeddings",
+    "InfinityEmbeddingsLocal",
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
@@ -58,6 +59,9 @@ EXPECTED_ALL = [
     "BookendEmbeddings",
     "VolcanoEmbeddings",
     "OCIGenAIEmbeddings",
+    "QuantizedBiEncoderEmbeddings",
+    "NeMoEmbeddings",
+    "SparkLLMTextEmbeddings",
 ]
 
 

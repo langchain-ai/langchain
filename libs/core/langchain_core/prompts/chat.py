@@ -1,4 +1,5 @@
 """Chat prompt template."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -79,7 +80,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         raise NotImplementedError
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
@@ -543,7 +544,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         raise NotImplementedError
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
 MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate]
@@ -556,7 +557,7 @@ MessageLikeRepresentation = Union[
 
 
 class ChatPromptTemplate(BaseChatPromptTemplate):
-    """A prompt template for chat models.
+    """Prompt template for chat models.
 
     Use to create flexible templated prompts for chat models.
 
