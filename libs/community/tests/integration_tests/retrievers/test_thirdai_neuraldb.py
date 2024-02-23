@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Generator
 
 import pytest
 
@@ -7,7 +8,7 @@ from langchain_community.retrievers import NeuralDBRetriever
 
 
 @pytest.fixture(scope="session")
-def test_csv():
+def test_csv() -> Generator[str, None, None]:
     csv = "thirdai-test.csv"
     with open(csv, "w") as o:
         o.write("column_1,column_2\n")
@@ -16,13 +17,13 @@ def test_csv():
     os.remove(csv)
 
 
-def assert_result_correctness(documents):
+def assert_result_correctness(documents: list) -> None:
     assert len(documents) == 1
     assert documents[0].page_content == "column_1: column one\n\ncolumn_2: column two"
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_scratch(test_csv):
+def test_neuraldb_retriever_from_scratch(test_csv: str) -> None:
     retriever = NeuralDBRetriever.from_scratch()
     retriever.insert([test_csv])
     documents = retriever.get_relevant_documents("column")
@@ -30,7 +31,7 @@ def test_neuraldb_retriever_from_scratch(test_csv):
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_checkpoint(test_csv):
+def test_neuraldb_retriever_from_checkpoint(test_csv: str) -> None:
     checkpoint = "thirdai-test-save.ndb"
     if os.path.exists(checkpoint):
         shutil.rmtree(checkpoint)
@@ -47,7 +48,7 @@ def test_neuraldb_retriever_from_checkpoint(test_csv):
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_other_methods(test_csv):
+def test_neuraldb_retriever_other_methods(test_csv: str) -> None:
     retriever = NeuralDBRetriever.from_scratch()
     retriever.insert([test_csv])
     # Make sure they don't throw an error.
