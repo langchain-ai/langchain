@@ -15,8 +15,6 @@ services:
       - "6020:6379"
     volumes:
       - ./redis-volume:/data
-
-services:
   mongo:
     image: mongo:latest
     container_name: mongo_container
