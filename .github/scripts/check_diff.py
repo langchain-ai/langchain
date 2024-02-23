@@ -48,3 +48,7 @@ if __name__ == "__main__":
             pass
     json_output = json.dumps(list(dirs_to_run))
     print(f"dirs-to-run={json_output}")  # noqa: T201
+
+    extended_test_dirs = [d for d in dirs_to_run if not d.startswith("libs/partners")]
+    json_output_extended = json.dumps(extended_test_dirs)
+    print(f"dirs-to-run-extended={json_output_extended}")  # noqa: T201
