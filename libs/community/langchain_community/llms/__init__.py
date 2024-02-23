@@ -17,8 +17,10 @@ access to the large language model (**LLM**) APIs and services.
     CallbackManager, AsyncCallbackManager,
     AIMessage, BaseMessage
 """  # noqa: E501
+
 from typing import Any, Callable, Dict, Type
 
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.language_models.llms import BaseLLM
 
 
@@ -160,7 +162,12 @@ def _import_databricks() -> Type[BaseLLM]:
     return Databricks
 
 
-def _import_databricks_chat() -> Type[BaseLLM]:
+def _import_databricks_chat() -> Any:
+    warn_deprecated(
+        since="0.0.22",
+        removal="0.2",
+        alternative_import="langchain_community.chat_models.ChatDatabricks",
+    )
     from langchain_community.chat_models.databricks import ChatDatabricks
 
     return ChatDatabricks
@@ -306,7 +313,12 @@ def _import_mlflow() -> Type[BaseLLM]:
     return Mlflow
 
 
-def _import_mlflow_chat() -> Type[BaseLLM]:
+def _import_mlflow_chat() -> Any:
+    warn_deprecated(
+        since="0.0.22",
+        removal="0.2",
+        alternative_import="langchain_community.chat_models.ChatMlflow",
+    )
     from langchain_community.chat_models.mlflow import ChatMlflow
 
     return ChatMlflow
