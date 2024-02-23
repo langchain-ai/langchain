@@ -58,9 +58,8 @@ class BaseFriendli(Serializable):
     # generation. Before checking whether a stop phrase is included in the result, the
     # phrase is converted into tokens.
     stop: Optional[List[str]] = None
-    # Sampling temperature. Non-zero positive numbers are allowed. Smaller temperature
-    # makes the generation result closer to greedy, argmax (i.e., `top_k = 1`) sampling.
-    # If it is `None`, then 1.0 is used by default.
+    # Sampling temperature. Smaller temperature makes the generation result closer to
+    # greedy, argmax (i.e., `top_k = 1`) sampling. If it is `None`, then 1.0 is used.
     temperature: Optional[float] = None
     # Tokens comprising the top `top_p` probability mass are kept for sampling. Numbers
     # between 0.0 (exclusive) and 1.0 (inclusive) are allowed. If it is `None`, then 1.0
