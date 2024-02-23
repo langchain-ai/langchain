@@ -16,12 +16,7 @@ logger = logging.getLogger(__name__)
 
 ## This module contains output parsers for OpenAI tools. Set here for version control
 
-try:
-    from langchain_community.callbacks.openai_info import MODEL_COST_PER_1K_TOKENS
-
-    DEFAULT_MODEL_COST_PER_1K_TOKENS = MODEL_COST_PER_1K_TOKENS
-except ImportError:
-    DEFAULT_MODEL_COST_PER_1K_TOKENS = {}
+DEFAULT_MODEL_COST_PER_1K_TOKENS = {}
 
 ## Mostly pulled from Together.ai as representative pricing. Can be changed by user.
 ## https://www.together.ai/pricing

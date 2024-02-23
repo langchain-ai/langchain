@@ -1,7 +1,6 @@
 """Embeddings Components Derived from NVEModel/Embeddings"""
 from typing import List, Literal, Optional
 
-from langchain_community.callbacks.manager import openai_callback_var
 from langchain_core.embeddings import Embeddings
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.pydantic_v1 import Field
@@ -66,7 +65,6 @@ class NVIDIAEmbeddings(_NVIDIAClient, Embeddings):
         """Invoke the callback context variables if there are any."""
         callback_vars = [
             usage_callback_var.get(),
-            openai_callback_var.get(),
         ]
         llm_output = {**response, "model_name": self.model}
         result = LLMResult(generations=[[]], llm_output=llm_output)
