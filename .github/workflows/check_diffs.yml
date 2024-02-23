@@ -129,7 +129,6 @@ jobs:
   ci_success:
     name: "CI Success"
     needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests]
-    if: ${{ !failure() }}
     runs-on: ubuntu-latest
     steps:
       - name: "CI Success"
@@ -140,7 +139,7 @@ jobs:
   ci_failure:
     name: "CI Failure"
     needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests]
-    if: ${{ failure() }}
+    if: ${{ !success() }}
     runs-on: ubuntu-latest
     steps:
       - name: "CI Failure"
