@@ -1,5 +1,6 @@
 """Embeddings Components Derived from NVEModel/Embeddings"""
 from typing import List, Literal, Optional
+from uuid import uuid4
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.outputs.llm_result import LLMResult
@@ -70,4 +71,4 @@ class NVIDIAEmbeddings(_NVIDIAClient, Embeddings):
         result = LLMResult(generations=[[]], llm_output=llm_output)
         for cb_var in callback_vars:
             if cb_var:
-                cb_var.on_llm_end(result)
+                cb_var.on_llm_end(result, uuid4())
