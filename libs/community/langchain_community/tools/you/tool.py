@@ -1,9 +1,10 @@
-from typing import Optional, Type
+from typing import List, Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
@@ -29,7 +30,7 @@ class YouSearchTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> List[Document]:
         """Use the you.com tool."""
         return self.api_wrapper.results(query)
 
@@ -37,6 +38,6 @@ class YouSearchTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> List[Document]:
         """Use the you.com tool asynchronously."""
         return await self.api_wrapper.results_async(query)
