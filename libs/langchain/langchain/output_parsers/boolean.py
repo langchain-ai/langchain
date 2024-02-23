@@ -25,7 +25,7 @@ class BooleanOutputParser(BaseOutputParser[bool]):
             and self.false_val.upper() in cleaned_upper_text
         ):
             raise ValueError(
-                f"Ambigous response. Both {self.true_val} and {self.false_val} in "
+                f"Ambiguous response. Both {self.true_val} and {self.false_val} in "
                 f"received: {text}."
             )
         elif self.true_val.upper() in cleaned_upper_text:
