@@ -329,9 +329,9 @@ class ChatDeepInfra(BaseChatModel):
             chunk = _handle_sse_line(line)
             if chunk:
                 cg_chunk = ChatGenerationChunk(message=chunk, generation_info=None)
-                yield cg_chunk
                 if run_manager:
                     run_manager.on_llm_new_token(str(chunk.content), chunk=cg_chunk)
+                yield cg_chunk
 
     async def _astream(
         self,
@@ -352,11 +352,11 @@ class ChatDeepInfra(BaseChatModel):
                 chunk = _handle_sse_line(line)
                 if chunk:
                     cg_chunk = ChatGenerationChunk(message=chunk, generation_info=None)
-                    yield cg_chunk
                     if run_manager:
                         await run_manager.on_llm_new_token(
                             str(chunk.content), chunk=cg_chunk
                         )
+                    yield cg_chunk
 
     async def _agenerate(
         self,
