@@ -66,7 +66,7 @@ def _stream_response_to_generation_chunk(
 
 
 class BaseOpenAI(BaseLLM):
-    """Base OpenAI large language model class."""
+    """The base OpenAI large language model class."""
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
