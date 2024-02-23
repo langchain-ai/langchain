@@ -82,6 +82,7 @@ jobs:
   extended-tests:
     name: "cd ${{ matrix.working-directory }} / make extended_tests #${{ matrix.python-version }}"
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-run-extended != '[]' }}
     strategy:
       matrix:
         # note different variable for extended test dirs
