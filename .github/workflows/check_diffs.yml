@@ -135,5 +135,6 @@ jobs:
     steps:
       - name: "CI Success"
         run: |
-          echo ${{ needs.*.result }}
+          echo ${{ toJson(needs.*) }}
+          echo ${{ toJson(needs.*.result) }}
           exit ${{!contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && '0' || '1'}}
