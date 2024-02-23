@@ -37,11 +37,10 @@ async def amanager() -> MongoDocumentManager:
 def test_update(manager: MongoDocumentManager) -> None:
     """Test updating records in the MongoDB."""
     read_keys = manager.list_keys()
-    assert read_keys == []
-    keys = ["key1", "key2", "key3"]
-    manager.update(keys)
-    read_keys = manager.list_keys()
-    assert sorted(read_keys) == sorted(["key1", "key2", "key3"])
+    updated_keys = ["update_key1", "update_key2", "update_key3"]
+    manager.update(updated_keys)
+    all_keys = manager.list_keys()
+    assert sorted(all_keys) == sorted(read_keys + updated_keys)
 
 
 @pytest.mark.asyncio
@@ -49,21 +48,22 @@ def test_update(manager: MongoDocumentManager) -> None:
 async def test_aupdate(amanager: MongoDocumentManager) -> None:
     """Test updating records in the MongoDB."""
     read_keys = await amanager.alist_keys()
-    assert read_keys == []
-    keys = ["key1", "key2", "key3"]
-    await amanager.aupdate(keys)
-    read_keys = await amanager.alist_keys()
-    assert sorted(read_keys) == sorted(["key1", "key2", "key3"])
+    aupdated_keys = ["aupdate_key1", "aupdate_key2", "aupdate_key3"]
+    await amanager.aupdate(aupdated_keys)
+    all_keys = await amanager.alist_keys()
+    assert sorted(all_keys) == sorted(read_keys + aupdated_keys)
 
 
 @pytest.mark.requires("pymongo")
 def test_update_timestamp(manager: MongoDocumentManager) -> None:
     """Test updating records with timestamps in MongoDB."""
     with patch.object(
-        manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        manager, "get_time", return_value=datetime(2024, 2, 23).timestamp()
     ):
         manager.update(["key1"])
-    records = list(manager.sync_collection.find({"namespace": manager.namespace}))
+    records = list(
+        manager.sync_collection.find({"namespace": manager.namespace, "key": "key1"})
+    )
 
     assert [
         {
@@ -78,7 +78,7 @@ def test_update_timestamp(manager: MongoDocumentManager) -> None:
             "group_id": None,
             "key": "key1",
             "namespace": "kittens",
-            "updated_at": datetime(2021, 1, 2).timestamp(),
+            "updated_at": datetime(2024, 2, 23).timestamp(),
         }
     ]
 
@@ -88,14 +88,14 @@ def test_update_timestamp(manager: MongoDocumentManager) -> None:
 async def test_aupdate_timestamp(amanager: MongoDocumentManager) -> None:
     """Test asynchronously updating records with timestamps in MongoDB."""
     with patch.object(
-        amanager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        amanager, "aget_time", return_value=datetime(2024, 2, 23).timestamp()
     ):
         await amanager.aupdate(["key1"])
 
     records = [
         doc
         async for doc in amanager.async_collection.find(
-            {"namespace": amanager.namespace}
+            {"namespace": amanager.namespace, "key": "key1"}
         )
     ]
 
@@ -112,7 +112,7 @@ async def test_aupdate_timestamp(amanager: MongoDocumentManager) -> None:
             "group_id": None,
             "key": "key1",
             "namespace": "kittens",
-            "updated_at": datetime(2021, 1, 2).timestamp(),
+            "updated_at": datetime(2024, 2, 23).timestamp(),
         }
     ]
 

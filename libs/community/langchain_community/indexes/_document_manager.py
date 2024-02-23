@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence
 
-from langchain_community.indexes.base import DocumentManager
+from langchain_community.indexes.base import RecordManager
 
 IMPORT_PYMONGO_ERROR = (
     "Could not import MongoClient. Please install it with `pip install pymongo`."
@@ -55,7 +55,7 @@ def _get_motor_client(mongodb_url: str, **kwargs: Any) -> Any:
     return client
 
 
-class MongoDocumentManager(DocumentManager):
+class MongoDocumentManager(RecordManager):
     """A MongoDB based implementation of the document manager."""
 
     def __init__(
@@ -84,6 +84,14 @@ class MongoDocumentManager(DocumentManager):
         self.async_client = _get_motor_client(mongodb_url)
         self.async_db = self.async_client[db_name]
         self.async_collection = self.async_db[collection_name]
+
+    def create_schema(self) -> None:
+        """Create the database schema for the document manager."""
+        pass
+
+    async def acreate_schema(self) -> None:
+        """Create the database schema for the document manager."""
+        pass
 
     def update(
         self,
