@@ -291,9 +291,12 @@ class PaiEasChatEndpoint(BaseChatModel):
 
                 # yield text, if any
                 if text:
+                    cg_chunk = ChatGenerationChunk(message=content)
                     if run_manager:
-                        await run_manager.on_llm_new_token(cast(str, content.content))
-                    yield ChatGenerationChunk(message=content)
+                        await run_manager.on_llm_new_token(
+                            cast(str, content.content), chunk=cg_chunk
+                        )
+                    yield cg_chunk
 
                 # break if stop sequence found
                 if stop_seq_found:

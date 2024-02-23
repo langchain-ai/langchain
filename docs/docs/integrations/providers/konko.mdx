@@ -55,7 +55,7 @@ See a usage [example](/docs/integrations/chat/konko).
 - **ChatCompletion with Mistral-7B:**
 
   ```python
-  from langchain.schema import HumanMessage
+  from langchain_core.messages import HumanMessage
   from langchain_community.chat_models import ChatKonko
   chat_instance = ChatKonko(max_tokens=10, model = 'mistralai/mistral-7b-instruct-v0.1')
   msg = HumanMessage(content="Hi")

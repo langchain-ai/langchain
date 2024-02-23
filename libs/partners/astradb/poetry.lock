@@ -16,13 +16,13 @@ typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "anyio"
-version = "4.2.0"
+version = "4.3.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "anyio-4.2.0-py3-none-any.whl", hash = "sha256:745843b39e829e108e518c489b31dc757de7d2131d53fac32bd8df268227bfee"},
-    {file = "anyio-4.2.0.tar.gz", hash = "sha256:e1875bb4b4e2de1669f4bc7869b6d3f54231cdced71605e6e64c9be77e3be50f"},
+    {file = "anyio-4.3.0-py3-none-any.whl", hash = "sha256:048e05d0f6caeed70d731f3db756d35dcc1f35747c8c403364a8332c630441b8"},
+    {file = "anyio-4.3.0.tar.gz", hash = "sha256:f75253795a87df48568485fd18cdd2a3fa5c4f7c5be8e5e36637733fce06fed6"},
 ]
 
 [package.dependencies]
@@ -38,19 +38,19 @@ trio = ["trio (>=0.23)"]
 
 [[package]]
 name = "astrapy"
-version = "0.7.5"
+version = "0.7.6"
 description = "AstraPy is a Pythonic SDK for DataStax Astra"
 optional = false
 python-versions = ">=3.8.0,<4.0.0"
 files = [
-    {file = "astrapy-0.7.5-py3-none-any.whl", hash = "sha256:51daabbc59ed56f023233296e42372cd2a7468282f978c36ccc33a2e211beddc"},
-    {file = "astrapy-0.7.5.tar.gz", hash = "sha256:72a31538c5fd06cbf91a235924bee81007d03b8c0feff1d7cf811e64a2adc7a8"},
+    {file = "astrapy-0.7.6-py3-none-any.whl", hash = "sha256:294a9580ac9c1e61e692a76ad53374def2928c267a362099c67e2a0e32573290"},
+    {file = "astrapy-0.7.6.tar.gz", hash = "sha256:881c335efdcd528bf58caf6a38f98c03998cb56e5b4c7cf744d10bc3dbf7667a"},
 ]
 
 [package.dependencies]
 cassio = ">=0.1.4,<0.2.0"
 deprecation = ">=2.1.0,<2.2.0"
-httpx = {version = ">=0.26.0,<0.27.0", extras = ["http2"]}
+httpx = {version = ">=0.25.2,<1", extras = ["http2"]}
 toml = ">=0.10.2,<0.11.0"
 
 [[package]]
@@ -107,13 +107,13 @@ graph = ["gremlinpython (==3.4.6)"]
 
 [[package]]
 name = "cassio"
-version = "0.1.4"
+version = "0.1.5"
 description = "A framework-agnostic Python library to seamlessly integrate Apache Cassandra(R) with ML/LLM/genAI workloads."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "cassio-0.1.4-py3-none-any.whl", hash = "sha256:ab997879c36807ff5b9771ff35941f104c0f0e60e1595118279869b5b95c146f"},
-    {file = "cassio-0.1.4.tar.gz", hash = "sha256:df495c459ee5e9194e4780ac3ea1aaf79a4443e6d06f0eeb67aac6e3cd8c47aa"},
+    {file = "cassio-0.1.5-py3-none-any.whl", hash = "sha256:cf1d11f255c040bc0aede4963ca020840133377aa54f7f15d2f819d6553d52ce"},
+    {file = "cassio-0.1.5.tar.gz", hash = "sha256:88c50c34d46a1bfffca1e0b600318a6efef45e6c18a56ddabe208cbede8dcc27"},
 ]
 
 [package.dependencies]
@@ -473,7 +473,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.23"
+version = "0.1.24"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -499,13 +499,13 @@ url = "../../core"
 
 [[package]]
 name = "langsmith"
-version = "0.1.1"
+version = "0.1.3"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.1.1-py3-none-any.whl", hash = "sha256:10ff2b977a41e3f6351d1a4239d9bd57af0547aa909e839d2791e16cc197a6f9"},
-    {file = "langsmith-0.1.1.tar.gz", hash = "sha256:09df0c2ca9085105f97a4e4f281b083e312c99d162f3fe2b2d5eefd5c3692e60"},
+    {file = "langsmith-0.1.3-py3-none-any.whl", hash = "sha256:b290f951d1ebff9abe2b52cc09d63acea75a9ca6e003a617310fb024eaf00f63"},
+    {file = "langsmith-0.1.3.tar.gz", hash = "sha256:197bd1f5baa83db69a0eab644bab1eba8dcdf0c2d8b7c900a45916f7b3dd50ab"},
 ]
 
 [package.dependencies]
@@ -886,6 +886,7 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
+    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -1052,13 +1053,13 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.2.0"
+version = "2.2.1"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "urllib3-2.2.0-py3-none-any.whl", hash = "sha256:ce3711610ddce217e6d113a2732fafad960a03fd0318c91faa79481e35c11224"},
-    {file = "urllib3-2.2.0.tar.gz", hash = "sha256:051d961ad0c62a94e50ecf1af379c3aba230c66c710493493560c0c223c49f20"},
+    {file = "urllib3-2.2.1-py3-none-any.whl", hash = "sha256:450b20ec296a467077128bff42b73080516e71b56ff59a60a02bef2232c4fa9d"},
+    {file = "urllib3-2.2.1.tar.gz", hash = "sha256:d0570876c61ab9e520d776c38acbbb5b05a776d3f9ff98a5c8fd5162a444cf19"},
 ]
 
 [package.extras]
