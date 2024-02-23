@@ -7,6 +7,9 @@ from langchain_core.messages.base import (
 )
 
 
+ERROR
+
+
 class AIMessage(BaseMessage):
     """Message from an AI."""
 
