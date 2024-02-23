@@ -130,9 +130,7 @@ jobs:
     name: "CI Success"
     needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests]
     if: |
-      always() &&
-      ! contains(needs.*.result, 'failure') &&
-      ! contains(needs.*.result, 'cancelled')
+      always()
     runs-on: ubuntu-latest
     steps:
       - name: "CI Success"
