@@ -1,101 +1,59 @@
 """Chain that combines documents by stuffing into context."""
-from typing import Any, Dict, List, Optional, Tuple
 
-from langchain_core.documents import Document
-from langchain_core.language_models import LanguageModelLike
-from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
-from langchain_core.prompts import BasePromptTemplate, format_document
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.runnables import Runnable, RunnablePassthrough
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
-    DEFAULT_DOCUMENT_PROMPT,
-    DEFAULT_DOCUMENT_SEPARATOR,
-    DOCUMENTS_KEY,
     BaseCombineDocumentsChain,
-    _validate_prompt,
 )
 from langchain.chains.llm import LLMChain
+from langchain.docstore.document import Document
+from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain.schema import BasePromptTemplate, format_document
+from collections import Counter
+import re
+
+# Define the Unicode space regex pattern
+unicode_space_pattern = re.compile(r'[\u00A0\u2000-\u200B\u202F\u205F\u3000]+')
+
+# Example Unicode string with different space characters
+unicode_string = "This\u00A0is\u0020a\u2003test\u3000string"
 
 
-def create_stuff_documents_chain(
-    llm: LanguageModelLike,
-    prompt: BasePromptTemplate,
-    *,
-    output_parser: Optional[BaseOutputParser] = None,
-    document_prompt: Optional[BasePromptTemplate] = None,
-    document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
-) -> Runnable[Dict[str, Any], Any]:
-    """Create a chain for passing a list of Documents to a model.
 
-    Args:
-        llm: Language model.
-        prompt: Prompt template. Must contain input variable "context", which will be
-            used for passing in the formatted documents.
-        output_parser: Output parser. Defaults to StrOutputParser.
-        document_prompt: Prompt used for formatting each document into a string. Input
-            variables can be "page_content" or any metadata keys that are in all
-            documents. "page_content" will automatically retrieve the
-            `Document.page_content`, and all other inputs variables will be
-            automatically retrieved from the `Document.metadata` dictionary. Default to
-            a prompt that only contains `Document.page_content`.
-        document_separator: String separator to use between formatted document strings.
+def _get_default_document_prompt() -> PromptTemplate:
+    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
-    Returns:
-        An LCEL Runnable. The input is a dictionary that must have a "context" key that
-        maps to a List[Document], and any other input variables expected in the prompt.
-        The Runnable return type depends on output_parser used.
+def find_odd_one_out(lst):
+    counter = Counter(lst)
+    return counter.most_common()
 
-    Example:
-        .. code-block:: python
-
-            # pip install -U langchain langchain-community
-
-            from langchain_community.chat_models import ChatOpenAI
-            from langchain_core.documents import Document
-            from langchain_core.prompts import ChatPromptTemplate
-            from langchain.chains.combine_documents import create_stuff_documents_chain
-
-            prompt = ChatPromptTemplate.from_messages(
-                [("system", "What are everyone's favorite colors:\n\n{context}")]
-            )
-            llm = ChatOpenAI(model_name="gpt-3.5-turbo")
-            chain = create_stuff_documents_chain(llm, prompt)
-
-            docs = [
-                Document(page_content="Jesse loves red but not yellow"),
-                Document(page_content = "Jamal loves green but not as much as he loves orange")
-            ]
-
-            chain.invoke({"context": docs})
-    """  # noqa: E501
-
-    _validate_prompt(prompt)
-    _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
-    _output_parser = output_parser or StrOutputParser()
-
-    def format_docs(inputs: dict) -> str:
-        return document_separator.join(
-            format_document(doc, _document_prompt) for doc in inputs[DOCUMENTS_KEY]
-        )
-
-    return (
-        RunnablePassthrough.assign(**{DOCUMENTS_KEY: format_docs}).with_config(
-            run_name="format_inputs"
-        )
-        | prompt
-        | llm
-        | _output_parser
-    ).with_config(run_name="stuff_documents_chain")
-
-def _extract_page_number(s:Document)->int:
+def _extract_page_number(s: Document) -> int:
     # Use regex to find the page number in the string
     import re
     match = re.search(r'page (\d+) of \d+', s.page_content.lower())
     if match:
         # If a page number is found, return it as an integer
         return int(match.group(1))
+    else:
+        # If no page number is found, return a large number to sort this item last
+        return float('inf')
+
+def replace_sep_text(doc:Document, sep=';', oksep='|') -> Document:
+    doc.page_content = doc.page_content.replace(sep, oksep)
+    # Replace all Unicode space characters with ASCII space using compiled regex pattern
+    ascii_string = unicode_space_pattern.sub(' ', doc.page_content)
+    doc.page_content = ascii_string
+    return doc
+
+
+def _extract_page_number_meta(s: Document) -> int:
+    # Use regex to find the page number in the string
+    page = s.metadata.get('page', None)
+    if isinstance(page, int) or (isinstance(page, str) and page.isdigit()):
+        # If a page number is found, return it as an integer
+        return int(page)+1
     else:
         # If no page number is found, return a large number to sort this item last
         return float('inf')
@@ -113,15 +71,15 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         .. code-block:: python
 
             from langchain.chains import StuffDocumentsChain, LLMChain
-            from langchain_core.prompts import PromptTemplate
-            from langchain_community.llms import OpenAI
+            from langchain.prompts import PromptTemplate
+            from langchain.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
             # it will be passed to `format_document` - see that function for more
             # details.
             document_prompt = PromptTemplate(
                 input_variables=["page_content"],
-                template="{page_content}"
+                 template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
@@ -142,7 +100,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     """LLM chain which is called with the formatted document string,
     along with any other inputs."""
     document_prompt: BasePromptTemplate = Field(
-        default_factory=lambda: DEFAULT_DOCUMENT_PROMPT
+        default_factory=_get_default_document_prompt
     )
     """Prompt to use to format each document, gets passed to `format_document`."""
     document_variable_name: str
@@ -192,8 +150,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
         """Construct inputs from kwargs and docs.
 
-        Format and then join all the documents together into one input with name
-        `self.document_variable_name`. Also pluck any additional variables
+        Format and the join all the documents together into one input with name
+        `self.document_variable_name`. The pluck any additional variables
         from **kwargs.
 
         Args:
@@ -233,7 +191,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         """
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain._get_num_tokens(prompt)
+        return self.llm_chain.llm.get_num_tokens(prompt)
 
     def apply_predict_docs_input(self, partial_doc, **kwargs: Any):
         inputs = self._get_inputs(partial_doc, **kwargs)
@@ -242,14 +200,12 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
 
     def count_semicolons(self, s):
         lines = s.split('\n')
-        
-        return (any( set([line.count(';SEN') for line in lines]) ),
-        [line.count(';') for line in lines ])
 
-
+        return (any(set([line.count(';SEN') for line in lines])),
+                [line.count(';') for line in lines], lines)
 
     def combine_docs(
-        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+            self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM.
 
@@ -262,34 +218,77 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             The first element returned is the single string output. The second
             element returned is a dictionary of other keys to return.
         """
+        if not docs:
+            return '', {}
         sizedocs = len(docs)
         predict2 = ''
         print('sorting by page no')
-        if callbacks and callbacks.metadata.get('sortByPage', True):
-            docs = docs = sorted(docs, key=_extract_page_number)
-        if (not callbacks or callbacks.metadata.get('splitData', True)) and sizedocs>=2:
-            splitEnd = int(sizedocs/2)
-            splitStart = splitEnd
-            docs2 =   docs[splitStart:]
-            docs = docs[:splitEnd]
-            inputs2 = self._get_inputs(docs2, **kwargs)
-            predict2 = self.llm_chain.predict(callbacks=callbacks, **inputs2)
-            hasSENField, c_semi = self.count_semicolons(predict2)
-            if len(set(c_semi))>1 or hasSENField:
+        if callbacks:
+            predict_function = callbacks.metadata.get('callback_oneshot', None)
+
+            if callbacks.metadata.get('sortByPage', True):
+                docs = sorted(docs, key=_extract_page_number_meta)
+                list(map(replace_sep_text, docs))
+            # replace_sep_text(docs)
+        split_data_to_pages = 2
+        if callbacks:
+            split_data_to_pages = callbacks.metadata.get('splitData', 0)
+            if split_data_to_pages>len(docs):
+                split_data_to_pages = len(docs)
+        origdocs = docs
+        if split_data_to_pages>1 and sizedocs >= 2:
+            splitEnd = int(sizedocs / split_data_to_pages)
+            splitStart = 0
+            total_semi = []
+            while splitStart<sizedocs:
+                docs2 = docs[splitStart:splitStart +splitEnd]
+                splitStart+=splitEnd
+                if not docs2:
+                    break
+                inputs2 = self._get_inputs(docs2, **kwargs)
+                predict_temp = self.llm_chain.predict(callbacks=callbacks, **inputs2)
+                hasSENField, c_semi, slines = self.count_semicolons(predict_temp)
+
+                if not any([c>10 for c in c_semi]) and len(set(c_semi))==1:
+                    total_semi += c_semi
+                    predict2+='\n'+predict_temp
+
+            if len(set(total_semi)) > 1 or hasSENField:
                 print('processing in one go')
-                predict2=''
-                docs = docs + docs2
-        inputs = self._get_inputs(docs, **kwargs)
-        # Call predict on the LLM.
-        predict1 = self.llm_chain.predict(callbacks=callbacks, **inputs)
-        predict2 = predict2.strip()
-        if predict2 and predict2.startswith('Answer'):
-            print('halucination answer')
-            predict2=''
-        return predict1.strip() +'\n\n|;|'+predict2, {}
+                predict2 = ''
+                docs = origdocs
+            else:
+                docs = []
+        if docs:
+            inputs = self._get_inputs(docs, **kwargs)
+            # Call predict on the LLM.
+            if predict_function:
+                predict1 = predict_function(inputs['question']+'\n\n\''+inputs['context']+"\n A:'")
+            else:
+                predict1 = self.llm_chain.predict(callbacks=callbacks, **inputs)
+            hasSENField, c_semi, slines = self.count_semicolons(predict1)
+            count_list = find_odd_one_out(c_semi)
+            if len(count_list)!=1:
+                odd_one = count_list[-1][0]
+                idxm = c_semi.index(odd_one)
+                alt_idx = idxm +1 if idxm < len(c_semi)-1 else idxm-1
+                if odd_one == count_list[0][0] -1:
+                    if hasSENField:
+                        slines[idxm]+=';ERROR'
+                    else:
+                        slines[idxm] += ';'
+                    # semi_pos = [i for i, char in enumerate(lines[idxm]) if char == ';']
+                    # semi_pos_Alt = [i for i, char in enumerate(lines[alt_idx]) if char == ';']
+                    predict1 = '\n'.join(slines)
+
+            predict2 = predict2.strip()
+
+            return predict1.strip(), {}
+            # + '\n\n|;|' + predict2, {}
+        return predict2, {}
 
     async def acombine_docs(
-        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+            self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
         """Async stuff all documents into one prompt and pass to LLM.
 
