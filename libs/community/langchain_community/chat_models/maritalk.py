@@ -1,6 +1,7 @@
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import Field
@@ -45,7 +46,9 @@ class ChatMaritalk(SimpleChatModel):
         """Identifies the LLM type as 'maritalk'."""
         return "maritalk"
 
-    def parse_messages_for_model(self, messages: List[BaseMessage]):
+    def parse_messages_for_model(
+        self, messages: List[BaseMessage]
+    ) -> List[Dict[str, str]]:
         """
         Parses messages from LangChain's format to the format expected by
         the MariTalk API.
@@ -78,6 +81,7 @@ class ChatMaritalk(SimpleChatModel):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         """
@@ -101,32 +105,37 @@ class ChatMaritalk(SimpleChatModel):
                  If an error occurs (e.g., rate limiting), returns a string
                  describing the error.
         """
-        url = "https://chat.maritaca.ai/api/chat/inference"
-        headers = {"authorization": f"Key {self.api_key}"}
-        stopping_tokens = stop if stop is not None else []
+        try:
+            url = "https://chat.maritaca.ai/api/chat/inference"
+            headers = {"authorization": f"Key {self.api_key}"}
+            stopping_tokens = stop if stop is not None else []
 
-        parsed_messages = self.parse_messages_for_model(messages)
+            parsed_messages = self.parse_messages_for_model(messages)
 
-        data = {
-            "messages": parsed_messages,
-            "do_sample": self.do_sample,
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "stopping_tokens": stopping_tokens,
-        }
+            data = {
+                "messages": parsed_messages,
+                "do_sample": self.do_sample,
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+                "stopping_tokens": stopping_tokens,
+                **kwargs,
+            }
 
-        response = requests.post(url, json=data, headers=headers)
-        if response.status_code == 429:
-            return "Rate limited, please try again soon"
-        elif response.ok:
-            return response.json()["answer"]
-        else:
-            # This will raise an HTTPError if the request is unsuccessful
-            response.raise_for_status()
+            response = requests.post(url, json=data, headers=headers)
+            if response.status_code == 429:
+                return "Rate limited, please try again soon"
+            elif response.ok:
+                return response.json().get("answer", "No answer found")
+
+        except requests.exceptions.RequestException as e:
+            return f"An error occurred: {str(e)}"
+
+        # Fallback return statement, in case of unexpected code paths
+        return "An unexpected error occurred"
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """
         Identifies the key parameters of the chat model for logging
         or tracking purposes.
