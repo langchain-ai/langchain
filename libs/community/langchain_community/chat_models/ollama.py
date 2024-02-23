@@ -318,6 +318,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                     if run_manager:
                         run_manager.on_llm_new_token(
                             chunk.text,
+                            chunk=chunk,
                             verbose=self.verbose,
                         )
                     yield chunk
@@ -337,6 +338,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         chunk.text,
+                        chunk=chunk,
                         verbose=self.verbose,
                     )
                 yield chunk
@@ -356,6 +358,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text,
+                        chunk=chunk,
                         verbose=self.verbose,
                     )
                 yield chunk
