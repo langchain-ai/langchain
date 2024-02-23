@@ -13,7 +13,7 @@ def manager() -> MongoDocumentManager:
     """Initialize the test MongoDB and yield the DocumentManager instance."""
     document_manager = MongoDocumentManager(
         namespace="kittens",
-        mongodb_url="mongodb://localhost:27017/",
+        mongodb_url="mongodb://localhost:6022/",
         db_name="test_db",
         collection_name="test_collection",
     )
@@ -26,7 +26,7 @@ async def amanager() -> MongoDocumentManager:
     """Initialize the test MongoDB and yield the DocumentManager instance."""
     document_manager = MongoDocumentManager(
         namespace="kittens",
-        mongodb_url="mongodb://localhost:27017/",
+        mongodb_url="mongodb://localhost:6022/",
         db_name="test_db",
         collection_name="test_collection",
     )
@@ -83,7 +83,6 @@ def test_update_timestamp(manager: MongoDocumentManager) -> None:
     ]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("motor")
 async def test_aupdate_timestamp(amanager: MongoDocumentManager) -> None:
     """Test asynchronously updating records with timestamps in MongoDB."""
@@ -131,7 +130,6 @@ def test_exists(manager: MongoDocumentManager) -> None:
     assert exists == [True, False]
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("motor")
 async def test_aexists(amanager: MongoDocumentManager) -> None:
     """Test asynchronously checking if keys exist in MongoDB."""
@@ -173,7 +171,6 @@ def test_list_keys(manager: MongoDocumentManager) -> None:
     assert sorted(manager.list_keys(group_ids=["group1", "group2"])) == sorted(["key4"])
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("motor")
 async def test_alist_keys(amanager: MongoDocumentManager) -> None:
     """Test asynchronously listing keys in MongoDB."""
@@ -228,7 +225,6 @@ def test_namespace_is_used(manager: MongoDocumentManager) -> None:
     )
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("motor")
 async def test_anamespace_is_used(amanager: MongoDocumentManager) -> None:
     """
@@ -263,7 +259,6 @@ def test_delete_keys(manager: MongoDocumentManager) -> None:
     assert sorted(remaining_keys) == sorted(["key3"])
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("motor")
 async def test_adelete_keys(amanager: MongoDocumentManager) -> None:
     """Test asynchronously deleting keys from MongoDB."""
