@@ -1,7 +1,9 @@
 """Test azure openai embeddings."""
+
 import os
 from typing import Any
 
+import numpy as np
 import openai
 import pytest
 
