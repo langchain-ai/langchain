@@ -1,7 +1,5 @@
 import typing
 
-ERROR
-
 # It's currently impossible to support mypy for both pydantic v1 and v2 at once:
 # https://github.com/pydantic/pydantic/issues/6022
 #
