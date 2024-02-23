@@ -22,8 +22,18 @@ import numpy as np
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    SecretStr,
+    root_validator,
+)
+from langchain_core.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +80,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
@@ -152,8 +162,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
+        openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
+        )
+        values["openai_api_key"] = (
+            convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
@@ -196,7 +209,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "please use the `AzureOpenAIEmbeddings` class."
             )
         client_params = {
-            "api_key": values["openai_api_key"],
+            "api_key": values["openai_api_key"].get_secret_value()
+            if values["openai_api_key"]
+            else None,
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
@@ -274,9 +289,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 encoding = tiktoken.encoding_for_model(model_name)
             except KeyError:
-                logger.warning("Warning: model not found. Using cl100k_base encoding.")
-                model = "cl100k_base"
-                encoding = tiktoken.get_encoding(model)
+                encoding = tiktoken.get_encoding("cl100k_base")
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
                     # See: https://github.com/openai/openai-python/
@@ -311,7 +324,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size], **self._invocation_params
             )
             if not isinstance(response, dict):
-                response = response.dict()
+                response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
@@ -330,7 +343,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
-                    average_embedded = average_embedded.dict()
+                    average_embedded = average_embedded.model_dump()
                 average = average_embedded["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
@@ -423,7 +436,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
 
             if not isinstance(response, dict):
-                response = response.dict()
+                response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
@@ -440,7 +453,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
-                    average_embedded = average_embedded.dict()
+                    average_embedded = average_embedded.model_dump()
                 average = average_embedded["data"][0]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])

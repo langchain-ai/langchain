@@ -85,6 +85,12 @@ class SemanticChunker(BaseDocumentTransformer):
         """Split text into multiple components."""
         # Splitting the essay on '.', '?', and '!'
         single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
+
+        # having len(single_sentences_list) == 1 would cause the following
+        # np.percentile to fail.
+        if len(single_sentences_list) == 1:
+            return single_sentences_list
+
         sentences = [
             {"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)
         ]

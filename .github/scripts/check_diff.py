@@ -36,13 +36,7 @@ if __name__ == "__main__":
         elif "libs/partners" in file:
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}"):
-                dirs_to_run.update(
-                    (
-                        f"libs/partners/{partner_dir}",
-                        "libs/langchain",
-                        "libs/experimental",
-                    )
-                )
+                dirs_to_run.add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted
         elif "libs/langchain" in file:
             dirs_to_run.update(("libs/langchain", "libs/experimental"))
@@ -53,4 +47,8 @@ if __name__ == "__main__":
         else:
             pass
     json_output = json.dumps(list(dirs_to_run))
-    print(f"dirs-to-run={json_output}")
+    print(f"dirs-to-run={json_output}")  # noqa: T201
+
+    extended_test_dirs = [d for d in dirs_to_run if not d.startswith("libs/partners")]
+    json_output_extended = json.dumps(extended_test_dirs)
+    print(f"dirs-to-run-extended={json_output_extended}")  # noqa: T201

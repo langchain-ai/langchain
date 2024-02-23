@@ -143,6 +143,61 @@ def test_sparql_insert(tmp_path: pathlib.Path) -> None:
     assert len(output) == 2
 
 
+def test_sparql_select_return_query() -> None:
+    """
+    Test for generating and executing simple SPARQL SELECT query
+    and returning the generated SPARQL query.
+    """
+    from langchain_openai import ChatOpenAI
+
+    berners_lee_card = "http://www.w3.org/People/Berners-Lee/card"
+
+    graph = RdfGraph(
+        source_file=berners_lee_card,
+        standard="rdf",
+    )
+
+    question = "What is Tim Berners-Lee's work homepage?"
+    answer = "Tim Berners-Lee's work homepage is http://www.w3.org/People/Berners-Lee/."
+
+    chain = GraphSparqlQAChain.from_llm(
+        Mock(ChatOpenAI),
+        graph=graph,
+        return_sparql_query=True,
+    )
+    chain.sparql_intent_chain = Mock(LLMChain)
+    chain.sparql_generation_select_chain = Mock(LLMChain)
+    chain.sparql_generation_update_chain = Mock(LLMChain)
+
+    chain.sparql_intent_chain.run = Mock(return_value="SELECT")
+    chain.sparql_generation_select_chain.run = Mock(
+        return_value="""PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                        SELECT ?workHomepage
+                        WHERE {
+                            ?person rdfs:label "Tim Berners-Lee" .
+                            ?person foaf:workplaceHomepage ?workHomepage .
+                        }"""
+    )
+    chain.qa_chain = MagicMock(
+        return_value={
+            "text": answer,
+            "prompt": question,
+            "context": [],
+        }
+    )
+    chain.qa_chain.output_key = "text"
+
+    output = chain.invoke({chain.input_key: question})
+    assert output[chain.output_key] == answer
+    assert "sparql_query" in output
+
+    assert chain.sparql_intent_chain.run.call_count == 1
+    assert chain.sparql_generation_select_chain.run.call_count == 1
+    assert chain.sparql_generation_update_chain.run.call_count == 0
+    assert chain.qa_chain.call_count == 1
+
+
 def test_loading_schema_from_ontotext_graphdb() -> None:
     graph = RdfGraph(
         query_endpoint="http://localhost:7200/repositories/langchain",

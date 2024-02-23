@@ -1,3 +1,19 @@
+"""**Messages** are objects used in prompts and chat conversations.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseMessage --> SystemMessage, AIMessage, HumanMessage, ChatMessage, FunctionMessage, ToolMessage
+                --> BaseMessageChunk --> SystemMessageChunk, AIMessageChunk, HumanMessageChunk, ChatMessageChunk, FunctionMessageChunk, ToolMessageChunk
+
+**Main helpers:**
+
+.. code-block::
+
+    ChatPromptTemplate
+
+"""  # noqa: E501
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
@@ -22,7 +38,7 @@ AnyMessage = Union[
 def get_buffer_string(
     messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
 ) -> str:
-    """Convert sequence of Messages to strings and concatenate them into one string.
+    """Convert a sequence of Messages to strings and concatenate them into one string.
 
     Args:
         messages: Messages to be converted to strings.
@@ -92,6 +108,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return ToolMessageChunk(**message["data"])
     elif _type == "SystemMessageChunk":
         return SystemMessageChunk(**message["data"])
+    elif _type == "ChatMessageChunk":
+        return ChatMessageChunk(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 
@@ -109,6 +127,14 @@ def messages_from_dict(messages: Sequence[dict]) -> List[BaseMessage]:
 
 
 def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
+    """Convert a message chunk to a message.
+
+    Args:
+        chunk: Message chunk to convert.
+
+    Returns:
+        Message.
+    """
     if not isinstance(chunk, BaseMessageChunk):
         return chunk
     # chunk classes always have the equivalent non-chunk class as their first parent
