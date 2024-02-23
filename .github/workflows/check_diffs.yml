@@ -38,6 +38,7 @@ jobs:
   lint:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-run != '[]' }}
     strategy:
       matrix:
         working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
@@ -49,6 +50,7 @@ jobs:
   test:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-run != '[]' }}
     strategy:
       matrix:
         working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
@@ -60,6 +62,7 @@ jobs:
   compile-integration-tests:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-run != '[]' }}
     strategy:
       matrix:
         working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
@@ -71,6 +74,7 @@ jobs:
   dependencies:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-run != '[]' }}
     strategy:
       matrix:
         working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
