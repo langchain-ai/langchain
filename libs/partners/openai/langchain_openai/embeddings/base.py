@@ -359,7 +359,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     for embedding in zip(*_result)
                 ]
 
-            # should be same as embeddings[i] = (average / np.linalg.norm(average)).tolist()
+            # should be same as
+            #  embeddings[i] = (average / np.linalg.norm(average)).tolist()
             magnitude = sum(val**2 for val in average) ** 0.5
             embeddings[i] = [val / magnitude for val in average]
 
@@ -470,8 +471,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     average_embedded = average_embedded.model_dump()
                 average = average_embedded["data"][0]["embedding"]
             else:
-                average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
-            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+                # should be same as
+                # average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
+                total_weight = sum(num_tokens_in_batch[i])
+                average = [
+                    sum(
+                        val * weight
+                        for val, weight in zip(embedding, num_tokens_in_batch[i])
+                    )
+                    / total_weight
+                    for embedding in zip(*_result)
+                ]
+            # should be same as
+            # embeddings[i] = (average / np.linalg.norm(average)).tolist()
+            magnitude = sum(val**2 for val in average) ** 0.5
+            embeddings[i] = [val / magnitude for val in average]
 
         return embeddings
 
