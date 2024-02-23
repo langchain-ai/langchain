@@ -7,7 +7,7 @@ from langchain_core.callbacks import (
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
-from langchain_community.retrievers.you import YouSearchAPIWrapper
+from langchain_community.utilities.you import YouSearchAPIWrapper
 
 
 class YouInput(BaseModel):
