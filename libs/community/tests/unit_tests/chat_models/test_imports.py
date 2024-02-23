@@ -41,6 +41,7 @@ EXPECTED_ALL = [
     "ChatYuan2",
     "ChatZhipuAI",
     "ChatPerplexity",
+    "ChatKinetica",
 ]
 
 

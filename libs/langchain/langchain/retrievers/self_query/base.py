@@ -76,6 +76,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         OpenSearchVectorSearch: OpenSearchTranslator,
         MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
+
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
@@ -85,6 +86,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     elif vectorstore.__class__ in BUILTIN_TRANSLATORS:
         return BUILTIN_TRANSLATORS[vectorstore.__class__]()
     else:
+        try:
+            from langchain_astradb.vectorstores import AstraDBVectorStore
+
+            if isinstance(vectorstore, AstraDBVectorStore):
+                return AstraDBTranslator()
+        except ImportError:
+            pass
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
