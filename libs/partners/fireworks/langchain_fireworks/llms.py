@@ -39,7 +39,7 @@ class Fireworks(LLM):
 
     base_url: str = "https://api.fireworks.ai/inference/v1/completions"
     """Base inference API URL."""
-    fireworks_api_key: SecretStr
+    fireworks_api_key: SecretStr = Field(default=None, alias="api_key")
     """Fireworks AI API key. Get it here: https://fireworks.ai"""
     model: str
     """Model name. Available models listed here: 
@@ -78,6 +78,7 @@ class Fireworks(LLM):
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str
 from openai import OpenAI  # type: ignore
 
@@ -20,7 +20,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    _client: OpenAI
+    _client: OpenAI = Field(default=None)
     fireworks_api_key: SecretStr = convert_to_secret_str("")
     model: str = "nomic-ai/nomic-embed-text-v1.5"
 

@@ -22,7 +22,7 @@ from typing import (
     cast,
 )
 
-from fireworks.client import AsyncFireworks, Fireworks
+from fireworks.client import AsyncFireworks, Fireworks  # type: ignore
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -243,7 +243,7 @@ class ChatFireworks(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    fireworks_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    fireworks_api_key: SecretStr = Field(default=None, alias="api_key")
     """Automatically inferred from env var `FIREWORKS_API_KEY` if not provided."""
     fireworks_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
