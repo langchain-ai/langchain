@@ -1,6 +1,5 @@
 """Embeddings Components Derived from NVEModel/Embeddings"""
 from typing import List, Literal, Optional
-from uuid import uuid4
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.outputs.llm_result import LLMResult

@@ -254,7 +254,7 @@ class UsageCallbackHandler(BaseCallbackHandler):
 
 ## get_usage_callack variable construction, registration, management
 
-usage_callback_var: ContextVar[Optional[BaseCallbackHandler]] = ContextVar(
+usage_callback_var: ContextVar[Optional[UsageCallbackHandler]] = ContextVar(
     "usage_callback", default=None
 )
 
@@ -264,8 +264,8 @@ register_configure_hook(usage_callback_var, True)
 @contextmanager
 def get_usage_callback(
     price_map: dict = {},
-    callback: Optional[BaseCallbackHandler] = None,
-) -> Generator[BaseCallbackHandler, None, None]:
+    callback: Optional[UsageCallbackHandler] = None,
+) -> Generator[UsageCallbackHandler, None, None]:
     """Get the OpenAI callback handler in a context manager.
     which conveniently exposes token and cost information.
 
