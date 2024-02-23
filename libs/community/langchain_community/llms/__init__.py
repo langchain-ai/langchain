@@ -959,5 +959,5 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "yandex_gpt": _import_yandex_gpt,
         "yuan2": _import_yuan2,
         "VolcEngineMaasLLM": _import_volcengine_maas,
-        "SparkLLM": _import_sparkllm(),
+        "SparkLLM": _import_sparkllm,
     }
