@@ -23,6 +23,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
     overload,
 )
 
@@ -887,12 +889,18 @@ class ChatOpenAI(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = _is_pydantic_class(schema)
+        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        is_list_type = get_origin(schema) is list
+        tool_schema = schema if not is_list_type else get_args(schema)[0]
         if method == "function_calling":
-            llm = self.bind_tools([schema], tool_choice=True)
-            if is_pydantic_schema:
+            llm = self.bind_tools([tool_schema], tool_choice=not is_list_type)
+            if is_list_type:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[tool_schema],
+                )
+            elif is_pydantic_schema:
+                output_parser = PydanticToolsParser(
+                    tools=[tool_schema], first_tool_only=True
                 )
             else:
                 key_name = convert_to_openai_tool(schema)["function"]["name"]
@@ -901,11 +909,16 @@ class ChatOpenAI(BaseChatModel):
                 )
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
+            if is_list_type:
+
+                class ListSchema(BaseModel):
+                    __root__: schema
+
+                output_parser = PydanticOutputParser(pydantic_object=ListSchema)
+            elif is_pydantic_schema:
+                output_parser = PydanticOutputParser(pydantic_object=tool_schema)
+            else:
+                output_parser = JsonOutputParser()
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
