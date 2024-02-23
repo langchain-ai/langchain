@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, AsyncIterator, Iterator, Optional, Sequence
+from typing import Any, AsyncIterator, Iterator, List, Optional, Sequence, Type, Union
 
 from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
 from langchain_core.runnables import (
@@ -93,33 +93,33 @@ class RunnableFactory(RunnableSerializable[Input, Output]):
         return True
 
     @property
-    def InputType(self) -> type[Input]:
+    def InputType(self) -> Type[Input]:
         return self._runnable.InputType
 
     @property
-    def OutputType(self) -> type[Output]:
+    def OutputType(self) -> Type[Output]:
         return self._runnable.OutputType
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    ) -> Type[BaseModel]:
         return self._runnable.get_input_schema(config)
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    ) -> Type[BaseModel]:
         return self._runnable.get_output_schema(config)
 
     @property
-    def config_specs(self) -> list[ConfigurableFieldSpec]:
+    def config_specs(self) -> List[ConfigurableFieldSpec]:
         return self._runnable.config_specs
 
     def config_schema(
         self, *, include: Optional[Sequence[str]] = None
-    ) -> type[BaseModel]:
+    ) -> Type[BaseModel]:
         return self._runnable.config_schema(include=include)
 
-    def get_graph(self, config: RunnableConfig | None = None) -> Graph:
+    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         return self._runnable.get_graph(config)
 
     def transform(
@@ -158,24 +158,24 @@ class RunnableFactory(RunnableSerializable[Input, Output]):
 
     def batch(
         self,
-        inputs: list[Input],
-        config: Optional[RunnableConfig | list[RunnableConfig]] = None,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> list[Output]:
+    ) -> List[Output]:
         return self._runnable.batch(
             inputs, config, return_exceptions=return_exceptions, **kwargs
         )
 
     async def abatch(
         self,
-        inputs: list[Input],
-        config: Optional[RunnableConfig | list[RunnableConfig]] = None,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> list[Output]:
+    ) -> List[Output]:
         return await self._runnable.abatch(
             inputs, config, return_exceptions=return_exceptions, **kwargs
         )
