@@ -67,8 +67,8 @@ class ChatAnthropic(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    _client: anthropic.Client = Field(default_factory=anthropic.Client)
-    _async_client: anthropic.AsyncClient = Field(default_factory=anthropic.AsyncClient)
+    _client: anthropic.Client = Field(default=None)
+    _async_client: anthropic.AsyncClient = Field(default=None)
 
     model: str = Field(alias="model_name")
     """Model name to use."""
