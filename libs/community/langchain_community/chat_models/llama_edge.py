@@ -188,12 +188,12 @@ class LlamaEdgeChatService(BaseChatModel):
                     else None
                 )
                 default_chunk_class = chunk.__class__
-                chunk = ChatGenerationChunk(
+                cg_chunk = ChatGenerationChunk(
                     message=chunk, generation_info=generation_info
                 )
-                yield chunk
                 if run_manager:
-                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    run_manager.on_llm_new_token(chunk.text, chunk=cg_chunk)
+                yield cg_chunk
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
         if self.service_url is None:
