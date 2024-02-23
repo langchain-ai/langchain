@@ -29,7 +29,7 @@ vector_search = MongoDBAtlasVectorSearch.from_connection_string(
     index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME,
 )
 
-# initialize MongoDB python client
+# Initialize MongoDB python client
 client = MongoClient(MONGODB_ATLAS_CLUSTER_URI)
 # Create the vector search via instantiation
 vector_search_2 = MongoDBAtlasVectorSearch(
