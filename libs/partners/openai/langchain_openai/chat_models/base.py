@@ -63,7 +63,13 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    create_model,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -910,10 +916,7 @@ class ChatOpenAI(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             if is_list_type:
-
-                class ListSchema(BaseModel):
-                    __root__: schema
-
+                ListSchema = create_model("ListSchema", __root__=(schema, []))
                 output_parser = PydanticOutputParser(pydantic_object=ListSchema)
             elif is_pydantic_schema:
                 output_parser = PydanticOutputParser(pydantic_object=tool_schema)
