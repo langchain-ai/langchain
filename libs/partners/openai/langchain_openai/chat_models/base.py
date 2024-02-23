@@ -917,7 +917,10 @@ class ChatOpenAI(BaseChatModel):
             llm = self.bind(response_format={"type": "json_object"})
             if is_list_type:
                 ListSchema = create_model("ListSchema", __root__=(schema, []))
-                output_parser = PydanticOutputParser(pydantic_object=ListSchema)
+                # Handle case where array is nested under a key.
+                output_parser = PydanticOutputParser(
+                    pydantic_object=ListSchema
+                ).with_fallbacks([JsonOutputParser() | (lambda x: list(x.values())[0])])
             elif is_pydantic_schema:
                 output_parser = PydanticOutputParser(pydantic_object=tool_schema)
             else:
