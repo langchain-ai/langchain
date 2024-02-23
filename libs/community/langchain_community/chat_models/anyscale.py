@@ -10,13 +10,9 @@ import requests
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_openai import ChatOpenAI
 
 from langchain_community.adapters.openai import convert_message_to_dict
-from langchain_openai import ChatOpenAI
-# from langchain_community.chat_models.openai import (
-#     ChatOpenAI,
-#     _import_tiktoken,
-# )
 from langchain_community.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
@@ -148,7 +144,9 @@ class ChatAnyscale(ChatOpenAI):
                 if not values.get("client"):
                     values["client"] = openai.OpenAI(**client_params).chat.completions
                 if not values.get("async_client"):
-                    values["async_client"] = openai.AsyncOpenAI(**client_params).chat.completions
+                    values["async_client"] = openai.AsyncOpenAI(
+                        **client_params
+                    ).chat.completions
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
@@ -181,6 +179,7 @@ class ChatAnyscale(ChatOpenAI):
 
     def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
         import tiktoken as tiktoken_
+
         if self.tiktoken_model_name is not None:
             model = self.tiktoken_model_name
         else:
