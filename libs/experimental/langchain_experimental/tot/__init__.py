@@ -1,4 +1,4 @@
-"""Implementatin of a Tree of Thought (ToT) chain based on the paper
+"""Implementation of a Tree of Thought (ToT) chain based on the paper
 "Large Language Model Guided Tree-of-Thought"
 
 https://arxiv.org/pdf/2305.08291.pdf
