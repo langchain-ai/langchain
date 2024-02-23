@@ -5,10 +5,10 @@ Langchain.
 
 ## Installation and setup
 
-- Install the Fireworks client library.
+- Install the Fireworks integration package.
 
   ```
-  pip install fireworks-ai
+  pip install langchain-fireworks
   ```
 
 - Get a Fireworks API key by signing up at [fireworks.ai](https://fireworks.ai).
