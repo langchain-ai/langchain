@@ -1,6 +1,6 @@
 import hashlib
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.utils import get_from_env
 
@@ -36,7 +36,7 @@ class GremlinGraph(GraphStore):
 
     @property
     def get_structured_schema(self) -> Dict[str, Any]:
-        pass
+        return self.structured_schema
 
     def __init__(
         self,
@@ -85,11 +85,18 @@ class GremlinGraph(GraphStore):
         edge_schema = self.client.submit("g.E().label().dedup()").all().result()
         vertex_properties = (
             self.client.submit(
-                "g.V().group().by(label).by(properties().label(). dedup(). fold())"
+                "g.V().group().by(label).by(properties().label().dedup().fold())"
             )
             .all()
             .result()[0]
         )
+
+        self.structured_schema = {
+            "vertex_labels": vertex_schema,
+            "edge_labels": edge_schema,
+            "vertice_props": vertex_properties,
+        }
+
         self.schema = "\n".join(
             [
                 "Vertex labels are the following:",
@@ -100,7 +107,7 @@ class GremlinGraph(GraphStore):
             ]
         )
 
-    def query(self, query: str) -> List[Dict[str, Any]]:
+    def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         q = self.client.submit(query)
         return q.all().result()
 
@@ -110,7 +117,7 @@ class GremlinGraph(GraphStore):
         """
         Take GraphDocument as input as uses it to construct a graph.
         """
-        node_cache = {}
+        node_cache: Dict[Union[str, int], Node] = {}
         for document in graph_documents:
             if include_source:
                 # Create document vertex
@@ -119,15 +126,31 @@ class GremlinGraph(GraphStore):
                     "metadata": document.source.metadata,
                 }
                 doc_id = hashlib.md5(document.source.page_content.encode()).hexdigest()
-                doc_node = self.add_node("Document", doc_id, doc_props, node_cache)
+                doc_node = self.add_node(
+                    Node(id=doc_id, type="Document", properties=doc_props), node_cache
+                )
 
             # Import nodes to vertices
-            for el in document.nodes:
-                node = self.add_node(el)
+            for n in document.nodes:
+                node = self.add_node(n)
                 if include_source:
                     # Add Edge to document for each node
-                    self.add_edge("source", doc_node, node, {})
-                    self.add_edge("document", node, doc_node, {})
+                    self.add_edge(
+                        Relationship(
+                            type="contains information about",
+                            source=doc_node,
+                            target=node,
+                            properties={},
+                        )
+                    )
+                    self.add_edge(
+                        Relationship(
+                            type="is extracted from",
+                            source=node,
+                            target=doc_node,
+                            properties={},
+                        )
+                    )
 
             # Edges
             for el in document.relationships:
@@ -138,7 +161,7 @@ class GremlinGraph(GraphStore):
                 # Find or create the edge
                 self.add_edge(el)
 
-    def build_vertex_query(self, node: Node):
+    def build_vertex_query(self, node: Node) -> str:
         base_query = (
             f"g.V().has('id','{node.id}').fold()"
             + f".coalesce(unfold(),addV('{node.type}')"
@@ -150,7 +173,7 @@ class GremlinGraph(GraphStore):
 
         return base_query + ")"
 
-    def build_edge_query(self, relationship: Relationship):
+    def build_edge_query(self, relationship: Relationship) -> str:
         source_query = f".has('id','{relationship.source.id}')"
         target_query = f".has('id','{relationship.target.id}')"
 
@@ -167,7 +190,7 @@ class GremlinGraph(GraphStore):
 
         return base_query
 
-    def add_node(self, node: Node, node_cache: dict = {}):
+    def add_node(self, node: Node, node_cache: dict = {}) -> Node:
         # if properties does not have label, add type as label
         if "label" not in node.properties:
             node.properties["label"] = node.type
@@ -179,6 +202,6 @@ class GremlinGraph(GraphStore):
             node_cache[node.id] = node
             return node
 
-    def add_edge(self, relationship: Relationship):
+    def add_edge(self, relationship: Relationship) -> Any:
         query = self.build_edge_query(relationship)
-        return self.client.submit(query).all().result()[0]
+        return self.client.submit(query).all().result()
