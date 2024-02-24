@@ -36,14 +36,20 @@ class LocalFileStore(ByteStore):
 
     """
 
-    def __init__(self, root_path: Union[str, Path]) -> None:
+    def __init__(
+            self,
+            root_path: Union[str, Path],
+            umask: Union[int, None] = None,
+        ) -> None:
         """Implement the BaseStore interface for the local file system.
 
         Args:
             root_path (Union[str, Path]): The root path of the file store. All keys are
                 interpreted as paths relative to this root.
+            umask (Union[int, None]): The umask to use when creating directories/files.
         """
         self.root_path = Path(root_path).absolute()
+        self.umask = umask
 
     def _get_full_path(self, key: str) -> Path:
         """Get the full path for a given key relative to the root path.
@@ -95,10 +101,15 @@ class LocalFileStore(ByteStore):
         Returns:
             None
         """
-        for key, value in key_value_pairs:
-            full_path = self._get_full_path(key)
-            full_path.parent.mkdir(parents=True, exist_ok=True)
-            full_path.write_bytes(value)
+        orig_umask = os.umask(0)
+        os.umask(orig_umask if self.umask is None else self.umask)
+        try:
+            for key, value in key_value_pairs:
+                full_path = self._get_full_path(key)
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                full_path.write_bytes(value)
+        finally:
+            os.umask(orig_umask)
 
     def mdelete(self, keys: Sequence[str]) -> None:
         """Delete the given keys and their associated values.
