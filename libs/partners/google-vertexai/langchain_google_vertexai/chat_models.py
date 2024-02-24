@@ -6,7 +6,8 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional, Type, Union, cast
+from operator import itemgetter
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Type, Union, cast
 from urllib.parse import urlparse
 
 import proto  # type: ignore[import-untyped]
@@ -36,7 +37,7 @@ from langchain_core.output_parsers.openai_functions import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnablePassthrough
 from vertexai.language_models import (  # type: ignore
     ChatMessage,
     ChatModel,
@@ -65,12 +66,11 @@ from langchain_google_vertexai._utils import (
     is_gemini_model,
     load_image_from_gcs,
 )
-from langchain_google_vertexai.functions_utils import (
-    _format_tools_to_vertex_tool,
-)
-from langchain_google_vertexai.llms import (
-    _VertexAICommon,
-)
+from langchain_google_vertexai.functions_utils import _format_tools_to_vertex_tool
+from langchain_google_vertexai.llms import _VertexAICommon
+
+if TYPE_CHECKING:
+    from langchain_core.output_parsers.base import OutputParserLike
 
 logger = logging.getLogger(__name__)
 
@@ -558,18 +558,20 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         if isinstance(schema, type) and issubclass(schema, BaseModel):
-            parser = PydanticOutputFunctionsParser(pydantic_schema=schema)
+            parser: OutputParserLike = PydanticOutputFunctionsParser(
+                pydantic_schema=schema
+            )
         else:
             parser = JsonOutputFunctionsParser()
         llm = self.bind(functions=[schema])
         if include_raw:
-            parser = RunnableMap(
-                parsed=parser, parsing_error=lambda _: None
+            parser_with_fallback = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | parser, parsing_error=lambda _: None
             ).with_fallbacks(
                 [RunnablePassthrough.assign(parsed=lambda _: None)],
                 exception_key="parsing_error",
             )
-            return {"raw": llm} | parser
+            return {"raw": llm} | parser_with_fallback
         else:
             return llm | parser
 
