@@ -27,7 +27,7 @@ def cache_embeddings() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace"
+        embeddings, store, batch_size=50, namespace="test_namespace"
     )
 
 
