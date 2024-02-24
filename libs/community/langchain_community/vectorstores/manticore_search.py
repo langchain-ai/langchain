@@ -341,8 +341,8 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         try:
             return [
                 Document(
-                    page_content=r[self.config.column_map["document"]],
-                    metadata=r[self.config.column_map["metadata"]],
+                    page_content=r['_source'][self.config.column_map["document"]],
+                    metadata=r['_source'][self.config.column_map["metadata"]],
                 )
                 for r in self.client["search"].search(request, **kwargs).hits.hits
             ]
