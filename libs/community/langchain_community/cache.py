@@ -1053,18 +1053,18 @@ class CassandraCache(BaseCache):
         - llm_string, a deterministic str representation of the model parameters.
           (needed to prevent same-prompt-different-model collisions)
 
-    Constructor arguments:
-        table_name (str, optional): name of the Cassandra table to use as cache
-        session (cassandra.cluster.Session, None): an open Cassandra session.
+    Args:
+        table_name: name of the Cassandra table to use as cache
+        session: an open Cassandra session.
             Leave unspecified to use the global cassio init (see below)
-        keyspace (str, None): the keyspace to use for storing the cache.
+        keyspace: the keyspace to use for storing the cache.
             Leave unspecified to use the global cassio init (see below)
-        ttl_seconds (optional int): time-to-live for cache entries
+        ttl_seconds: time-to-live for cache entries
             (default: None, i.e. forever)
-        skip_provisioning (bool, False): you can pass True if the Cassandra
+        skip_provisioning: you can pass True if the Cassandra
             table is guaranteed to exist already for a faster initialization.
 
-    On using the global cassio.init():
+    Note:
         The session and keyspace parameters, when left out (or passed as None),
         fall back to the globally-available cassio settings if are available.
         In other words, if a previously-run 'cassio.init(...)' has been
@@ -1204,27 +1204,27 @@ class CassandraSemanticCache(BaseCache):
     Choosing another one ("cos", "l2") almost certain requires threshold tuning.
     (which may be required nevertheless even if sticking to "dot").
 
-    Constructor arguments:
-        embedding (Embedding): Embedding provider for semantic
+    Args:
+        embedding: Embedding provider for semantic
             encoding and search.
-        table_name (str): name of the Cassandra (vector) table
+        table_name: name of the Cassandra (vector) table
             to use as cache. There is a default for "simple" usage, but
             remember to explicitly specify different tables if several embedding
             models coexist in your app (they cannot share one cache table).
-        session (cassandra.cluster.Session, None): an open Cassandra session.
+        session: an open Cassandra session.
             Leave unspecified to use the global cassio init (see below)
-        keyspace (str, None): the keyspace to use for storing the cache.
+        keyspace: the keyspace to use for storing the cache.
             Leave unspecified to use the global cassio init (see below)
-        similarity_measure (str, 'dot'): which measure to adopt for
+        similarity_measure: which measure to adopt for
             similarity searches
-        score_threshold (optional float): numeric value to use as
+        score_threshold: numeric value to use as
             cutoff for the similarity searches
-        ttl_seconds (optional int): time-to-live for cache entries
+        ttl_seconds: time-to-live for cache entries
             (default: None, i.e. forever)
-        skip_provisioning (bool, False): you can pass True if the Cassandra
+        skip_provisioning: you can pass True if the Cassandra
             table is guaranteed to exist already for a faster initialization.
 
-    On using the global cassio.init():
+    Note:
         The session and keyspace parameters, when left out (or passed as None),
         fall back to the globally-available cassio settings if are available.
         In other words, if a previously-run 'cassio.init(...)' has been
