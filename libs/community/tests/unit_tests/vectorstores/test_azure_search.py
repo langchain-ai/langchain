@@ -35,7 +35,7 @@ DEFAULT_KEY = "mykey"
 DEFAULT_EMBEDDING_MODEL = FakeEmbeddingsWithDimension()
 
 
-def mock_default_index(*args, **kwargs):
+def mock_default_index(*args, **kwargs) -> any:
     from azure.search.documents.indexes.models import (
         ExhaustiveKnnAlgorithmConfiguration,
         ExhaustiveKnnParameters,
@@ -131,10 +131,10 @@ def create_vector_store() -> AzureSearch:
 
 
 @pytest.mark.requires("azure.search.documents")
-def test_init_existing_index():
+def test_init_existing_index() -> None:
     from azure.search.documents.indexes import SearchIndexClient
 
-    def mock_create_index(self, index, **kwargs):
+    def mock_create_index(self, index, **kwargs) -> None:
         pytest.fail("Should not create index in this test")
 
     with patch.multiple(
@@ -145,16 +145,16 @@ def test_init_existing_index():
 
 
 @pytest.mark.requires("azure.search.documents")
-def test_init_new_index():
+def test_init_new_index() -> None:
     from azure.core.exceptions import ResourceNotFoundError
     from azure.search.documents.indexes import SearchIndexClient
 
-    def no_index(*args, **kwargs):
+    def no_index(*args, **kwargs) -> None:
         raise ResourceNotFoundError
 
     created_index = None
 
-    def mock_create_index(self, index, **kwargs):
+    def mock_create_index(self, index, **kwargs) -> None:
         nonlocal created_index
         created_index = index
 
