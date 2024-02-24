@@ -50,15 +50,12 @@ lint lint_package lint_tests:
 	poetry run ruff docs templates cookbook
 	poetry run ruff format docs templates cookbook --diff
 	poetry run ruff --select I docs templates cookbook
+	git grep 'from langchain import' {docs/docs,templates,cookbook} | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
 format format_diff:
 	poetry run ruff format docs templates cookbook
 	poetry run ruff --select I --fix docs templates cookbook
 
-# We should not encourage imports directly from main init file
-# Expect for hub
-check_imports:
-	git grep 'from langchain import' {docs/docs,templates,cookbook} | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
 ######################
 # HELP
