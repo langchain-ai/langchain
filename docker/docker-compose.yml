@@ -1,5 +1,10 @@
 # docker-compose to make it easier to spin up integration tests.
 # Services should use NON standard ports to avoid collision with
+# any existing services that might be used for development.
+# ATTENTION: When adding a service below use a non-standard port
+# increment by one from the preceding port.
+# For credentials always use `langchain` and `langchain` for the
+# username and password. 
 version: "3"
 name: langchain-tests
 
@@ -19,3 +24,11 @@ services:
     image: graphdb
     ports:
       - "6021:7200"
+  mongo:
+    image: mongo:latest
+    container_name: mongo_container
+    ports:
+      - "6022:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: langchain
+      MONGO_INITDB_ROOT_PASSWORD: langchain
