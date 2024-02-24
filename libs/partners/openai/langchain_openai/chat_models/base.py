@@ -932,8 +932,6 @@ class ChatOpenAI(BaseChatModel):
                 #     },
                 #     'parsing_error': None
                 # }
-
-
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")

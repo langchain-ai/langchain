@@ -557,6 +557,95 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input. If include_raw is True then a
+            dict with keys — raw: BaseMessage, parsed: Optional[_DictOrPydantic],
+            parsing_error: Optional[BaseException]. If include_raw is False then just
+            _DictOrPydantic is returned, where _DictOrPydantic depends on the schema.
+            If schema is a Pydantic class then _DictOrPydantic is the Pydantic class.
+            If schema is a dict then _DictOrPydantic is a dict.
+
+        Example: Pydantic schema, exclude raw:
+            .. code-block:: python
+
+                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_google_vertexai import ChatVertexAI
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatVertexAI(model="gemini-pro", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same.', justification='A pound is a pound.'
+                # )
+
+        Example: Pydantic schema, include raw:
+            .. code-block:: python
+
+                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_google_vertexai import ChatVertexAI
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatVertexAI(model="gemini-pro", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+                #     'parsing_error': None
+                # }
+
+        Example: Dict schema, exclude raw:
+            .. code-block:: python
+
+                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_core.utils.function_calling import convert_to_openai_tool
+                from langchain_google_vertexai import ChatVertexAI
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                dict_schema = convert_to_openai_tool(AnswerWithJustification)
+                llm = ChatVertexAI(model="gemini-pro", temperature=0)
+                structured_llm = llm.with_structured_output(dict_schema)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
         if isinstance(schema, type) and issubclass(schema, BaseModel):
             parser: OutputParserLike = PydanticOutputFunctionsParser(
                 pydantic_schema=schema
