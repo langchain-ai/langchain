@@ -65,7 +65,6 @@ class MongoDocumentManager(RecordManager):
         mongodb_url: str,
         db_name: str,
         collection_name: str = "documentMetadata",
-        client_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize the MongoDocumentManager.
 
@@ -73,9 +72,7 @@ class MongoDocumentManager(RecordManager):
             namespace: The namespace associated with this document manager.
             db_name: The name of the database to use.
             collection_name: The name of the collection to use.
-            Default is 'documentMetadata'.
-            client_kwargs: Additional keyword arguments to be passed
-            when creating the client.
+                Default is 'documentMetadata'.
         """
         super().__init__(namespace=namespace)
         self.sync_client = _get_pymongo_client(mongodb_url)

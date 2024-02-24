@@ -13,7 +13,7 @@ def manager() -> MongoDocumentManager:
     """Initialize the test MongoDB and yield the DocumentManager instance."""
     document_manager = MongoDocumentManager(
         namespace="kittens",
-        mongodb_url="mongodb://localhost:6022/",
+        mongodb_url="mongodb://langchain:langchain@localhost:6022/",
         db_name="test_db",
         collection_name="test_collection",
     )
@@ -26,7 +26,7 @@ async def amanager() -> MongoDocumentManager:
     """Initialize the test MongoDB and yield the DocumentManager instance."""
     document_manager = MongoDocumentManager(
         namespace="kittens",
-        mongodb_url="mongodb://localhost:6022/",
+        mongodb_url="mongodb://langchain:langchain@localhost:6022/",
         db_name="test_db",
         collection_name="test_collection",
     )
