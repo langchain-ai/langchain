@@ -6,7 +6,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Type, Union, cast
 from urllib.parse import urlparse
 
 import proto  # type: ignore[import-untyped]
@@ -17,6 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
@@ -29,8 +30,13 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.output_parsers.openai_functions import (
+    JsonOutputFunctionsParser,
+    PydanticOutputFunctionsParser,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from vertexai.language_models import (  # type: ignore
     ChatMessage,
     ChatModel,
@@ -543,6 +549,29 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
                 message=AIMessageChunk(content=response.text),
                 generation_info=get_generation_info(response, self._is_gemini_model),
             )
+
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]],
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        if isinstance(schema, type) and issubclass(schema, BaseModel):
+            parser = PydanticOutputFunctionsParser(pydantic_schema=schema)
+        else:
+            parser = JsonOutputFunctionsParser()
+        llm = self.bind(functions=[schema])
+        if include_raw:
+            parser = RunnableMap(
+                parsed=parser, parsing_error=lambda _: None
+            ).with_fallbacks(
+                [RunnablePassthrough.assign(parsed=lambda _: None)],
+                exception_key="parsing_error",
+            )
+            return {"raw": llm} | parser
+        else:
+            return llm | parser
 
     def _start_chat(
         self, history: _ChatHistory, **kwargs: Any

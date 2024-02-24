@@ -6,15 +6,11 @@ from typing import (
     Union,
 )
 
-from langchain_core.output_parsers import (
-    BaseGenerationOutputParser,
-    BaseOutputParser,
-)
+from langchain_core.output_parsers import BaseGenerationOutputParser, BaseOutputParser
+from langchain_core.output_parsers.openai_functions import PydanticOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
-
-from langchain_google_vertexai.functions_utils import PydanticFunctionsOutputParser
 
 
 def get_output_parser(
@@ -39,7 +35,7 @@ def get_output_parser(
         pydantic_schema = functions[0]
     output_parser: Union[
         BaseOutputParser, BaseGenerationOutputParser
-    ] = PydanticFunctionsOutputParser(pydantic_schema=pydantic_schema)
+    ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
     return output_parser
 
 
