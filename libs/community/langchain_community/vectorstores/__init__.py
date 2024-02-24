@@ -240,6 +240,18 @@ def _import_llm_rails() -> Any:
     return LLMRails
 
 
+def _import_manticore_search() -> Any:
+    from langchain_community.vectorstores.manticore_search import ManticoreSearch
+
+    return ManticoreSearch
+
+
+def _import_manticore_search_settings() -> Any:
+    from langchain_community.vectorstores.manticore_search import ManticoreSearchSettings
+
+    return ManticoreSearchSettings
+
+
 def _import_marqo() -> Any:
     from langchain_community.vectorstores.marqo import Marqo
 
@@ -557,6 +569,10 @@ def __getattr__(name: str) -> Any:
         return _import_lancedb()
     elif name == "LLMRails":
         return _import_llm_rails()
+    elif name == "ManticoreSearchSettings":
+        return _import_manticore_search_settings()
+    elif name == "ManticoreSearch":
+        return _import_manticore_search()
     elif name == "Marqo":
         return _import_marqo()
     elif name == "MatchingEngine":
@@ -675,6 +691,8 @@ __all__ = [
     "KDBAI",
     "LanceDB",
     "LLMRails",
+    "ManticoreSearch",
+    "ManticoreSearchSettings",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
