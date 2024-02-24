@@ -48,6 +48,9 @@ class CassandraReaderPromptTemplate(ConverterPromptTemplate):
 
             from langchain_community.prompts import CassandraReaderPromptTemplate
 
+            import cassio
+            cassio.init(auto=True)  # Requires env. variables, see CassIO docs
+
             prompt_fstring = (
               "Please write a {adj} greeting for {user_name} "
               "(you may use the informal name '{short_name}' where appropriate)"
@@ -93,6 +96,7 @@ class CassandraReaderPromptTemplate(ConverterPromptTemplate):
         executed previously anywhere in the code, Cassandra-based objects
         need not specify the connection parameters at all.
     """
+
     session: Optional[Any] = None  # Session
 
     keyspace: Optional[str] = None
