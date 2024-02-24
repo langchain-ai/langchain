@@ -1,6 +1,6 @@
 # NVIDIA
 
->NVIDIA provides two integration packages for LangChain: `langchain-nvidia-ai-endpoints` and `langchain-nvidia-trt`.
+>NVIDIA provides an integration package for LangChain: `langchain-nvidia-ai-endpoints`.
 
 ## NVIDIA AI Foundation Endpoints
 
@@ -56,33 +56,4 @@ See a [usage example](/docs/integrations/text_embedding/nvidia_ai_endpoints).
 
 ```python
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
-```
-
-
-## NVIDIA Triton Inference Server
-
->[NVIDIA Triton™ Inference Server](https://developer.nvidia.com/triton-inference-server), 
-> part of the `NVIDIA AI` platform and available with `NVIDIA AI Enterprise`, is 
-> open-source software that standardizes AI model deployment and execution across every workload.
- 
-### Setting up
-
-See the installation guide for [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver).
-
-See the [client package documentation](https://github.com/triton-inference-server/client).
-
-- Install a package:
-
-```bash
-pip install tritonclient
-pip install -U langchain-nvidia-trt
-```
-
-### LLMs
-
-See a [usage example](/docs/integrations/llms/nvidia_trt).
-
-
-```python
-from langchain_nvidia_trt import TritonTensorRTLLM
 ```
