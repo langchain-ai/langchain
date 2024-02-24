@@ -1,11 +1,12 @@
 """Test Cassandra prompt template."""
+import os
 from typing import Iterable, Tuple
 
 import cassio
 import pytest
 from cassandra.cluster import Cluster, Session
 
-from langchain.prompts.database import CassandraReaderPromptTemplate
+from langchain_community.prompts import CassandraReaderPromptTemplate
 
 KEYSPACE = "reader_test_x"
 P_TABLE_NAME = "people_x"
@@ -15,7 +16,12 @@ C_TABLE_NAME = "nicknames_x"
 @pytest.fixture(scope="module")
 def extractor_tables() -> Iterable[Tuple[Session, str, str, str]]:
     # get db connection
-    cluster = Cluster()
+    if "CASSANDRA_CONTACT_POINTS" in os.environ:
+        contact_points = os.environ["CASSANDRA_CONTACT_POINTS"].split(",")
+        cluster = Cluster(contact_points)
+    else:
+        cluster = Cluster()
+    #
     session = cluster.connect()
     # prepare DB
     session.execute(
@@ -47,7 +53,7 @@ def extractor_tables() -> Iterable[Tuple[Session, str, str, str]]:
 
 @pytest.mark.usefixtures("extractor_tables")
 def test_cassandra_reader_prompt_template(
-    extractor_tables: Tuple[Session, str, str, str]
+    extractor_tables: Tuple[Session, str, str, str],
 ) -> None:
     session, keyspace, p_table, c_table = extractor_tables
     #
@@ -83,7 +89,7 @@ def test_cassandra_reader_prompt_template(
 
 @pytest.mark.usefixtures("extractor_tables")
 def test_cassandra_reader_prompt_template_admitnulls(
-    extractor_tables: Tuple[Session, str, str, str]
+    extractor_tables: Tuple[Session, str, str, str],
 ) -> None:
     session, keyspace, p_table, c_table = extractor_tables
     #
@@ -120,7 +126,7 @@ def test_cassandra_reader_prompt_template_admitnulls(
 
 @pytest.mark.usefixtures("extractor_tables")
 def test_cassandra_reader_prompt_template_cassioinit(
-    extractor_tables: Tuple[Session, str, str, str]
+    extractor_tables: Tuple[Session, str, str, str],
 ) -> None:
     session, keyspace, p_table, _ = extractor_tables
     cassio.init(session=session, keyspace=keyspace)

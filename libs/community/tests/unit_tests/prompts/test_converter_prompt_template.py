@@ -3,7 +3,9 @@ from typing import Any, Dict
 
 from langchain_core.prompt_values import StringPromptValue
 
-from langchain.prompts.database.converter_prompt_template import ConverterPromptTemplate
+from langchain_community.prompts.converter_prompt_template import (
+    ConverterPromptTemplate,
+)
 
 
 def test_values() -> None:

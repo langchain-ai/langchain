@@ -12,8 +12,11 @@ if typing.TYPE_CHECKING:
     from feast.feature_store import FeatureStore
     from feast.feature_view import FeatureView
 
-from langchain.prompts.database.converter_prompt_template import ConverterPromptTemplate
-from langchain.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import root_validator
+
+from langchain_community.prompts.converter_prompt_template import (
+    ConverterPromptTemplate,
+)
 
 FeatureRetrievalPrescriptionType = Union[
     Tuple[str, str], Tuple[str, str, bool], Tuple[str, str, bool, Any]

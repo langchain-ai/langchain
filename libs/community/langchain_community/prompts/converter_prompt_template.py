@@ -9,8 +9,7 @@ from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
 )
-
-from langchain.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 
 ConverterType = Callable[[Dict[str, Any]], Dict[str, Any]]
 
