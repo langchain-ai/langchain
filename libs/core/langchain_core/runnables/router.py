@@ -34,7 +34,7 @@ from langchain_core.runnables.utils import (
 
 
 class RouterInput(TypedDict):
-    """A Router input.
+    """Router input.
 
     Attributes:
         key: The key to route on.
@@ -47,8 +47,8 @@ class RouterInput(TypedDict):
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     """
-    A runnable that routes to a set of runnables based on Input['key'].
-    Returns the output of the selected runnable.
+    Runnable that routes to a set of Runnables based on Input['key'].
+    Returns the output of the selected Runnable.
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
@@ -77,7 +77,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def invoke(
         self, input: RouterInput, config: Optional[RunnableConfig] = None

@@ -54,13 +54,18 @@ class PromptTemplate(StringPromptTemplate):
             "template_format": self.template_format,
         }
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "prompt"]
+
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
 
     template: str
     """The prompt template."""
 
-    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
+    template_format: Literal["f-string", "jinja2"] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     validate_template: bool = False

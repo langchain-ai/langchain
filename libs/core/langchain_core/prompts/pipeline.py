@@ -11,7 +11,7 @@ def _get_inputs(inputs: dict, input_variables: List[str]) -> dict:
 
 
 class PipelinePromptTemplate(BasePromptTemplate):
-    """A prompt template for composing multiple prompt templates together.
+    """Prompt template for composing multiple prompt templates together.
 
     This can be useful when you want to reuse parts of prompts.
     A PipelinePrompt consists of two main parts:
@@ -27,6 +27,11 @@ class PipelinePromptTemplate(BasePromptTemplate):
     """The final prompt that is returned."""
     pipeline_prompts: List[Tuple[str, BasePromptTemplate]]
     """A list of tuples, consisting of a string (`name`) and a Prompt Template."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "pipeline"]
 
     @root_validator(pre=True)
     def get_input_variables(cls, values: Dict) -> Dict:

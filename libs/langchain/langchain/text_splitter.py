@@ -21,15 +21,14 @@ Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive 
 
 from __future__ import annotations
 
-import asyncio
 import copy
+import json
 import logging
 import pathlib
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from functools import partial
 from io import BytesIO, StringIO
 from typing import (
     AbstractSet,
@@ -143,12 +142,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            index = -1
+            index = 0
+            previous_chunk_len = 0
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    index = text.find(chunk, index + 1)
+                    offset = index + previous_chunk_len - self._chunk_overlap
+                    index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
+                    previous_chunk_len = len(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
@@ -283,14 +285,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Transform sequence of documents by splitting them."""
         return self.split_documents(list(documents))
 
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Asynchronously transform a sequence of documents by splitting them."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.transform_documents, **kwargs), documents
-        )
-
 
 class CharacterTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
@@ -333,13 +327,17 @@ class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
     def __init__(
-        self, headers_to_split_on: List[Tuple[str, str]], return_each_line: bool = False
+        self,
+        headers_to_split_on: List[Tuple[str, str]],
+        return_each_line: bool = False,
+        strip_headers: bool = True,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
         Args:
             headers_to_split_on: Headers we want to track
             return_each_line: Return each line w/ associated headers
+            strip_headers: Strip split headers from the content of the chunk
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -348,6 +346,8 @@ class MarkdownHeaderTextSplitter:
         self.headers_to_split_on = sorted(
             headers_to_split_on, key=lambda split: len(split[0]), reverse=True
         )
+        # Strip headers split headers from the content of the chunk
+        self.strip_headers = strip_headers
 
     def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
         """Combine lines with common metadata into chunks
@@ -365,6 +365,23 @@ class MarkdownHeaderTextSplitter:
                 # has the same metadata as the current line,
                 # append the current content to the last lines's content
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
+            elif (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] != line["metadata"]
+                # may be issues if other metadata is present
+                and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
+                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and not self.strip_headers
+            ):
+                # If the last line in the aggregated list
+                # has different metadata as the current line,
+                # and has shallower header level than the current line,
+                # and the last line is a header,
+                # and we are not stripping headers,
+                # append the current content to the last line's content
+                aggregated_chunks[-1]["content"] += "  \n" + line["content"]
+                # and update the last line's metadata
+                aggregated_chunks[-1]["metadata"] = line["metadata"]
             else:
                 # Otherwise, append the current line to the aggregated list
                 aggregated_chunks.append(line)
@@ -460,6 +477,9 @@ class MarkdownHeaderTextSplitter:
                             }
                         )
                         current_content.clear()
+
+                    if not self.strip_headers:
+                        current_content.append(stripped_line)
 
                     break
             else:
@@ -582,7 +602,9 @@ class HTMLHeaderTextSplitter:
                 "Unable to import lxml, please install with `pip install lxml`."
             ) from e
         # use lxml library to parse html document and return xml ElementTree
-        parser = etree.HTMLParser()
+        # Explicitly encoding in utf-8 allows non-English
+        # html files to be processed without garbled characters
+        parser = etree.HTMLParser(encoding="utf-8")
         tree = etree.parse(file, parser)
 
         # document transformation for "structure-aware" chunking is handled with xsl.
@@ -670,6 +692,8 @@ def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
     chunk_ids = input_ids[start_idx:cur_idx]
     while start_idx < len(input_ids):
         splits.append(tokenizer.decode(chunk_ids))
+        if cur_idx == len(input_ids):
+            break
         start_idx += tokenizer.tokens_per_chunk - tokenizer.chunk_overlap
         cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
         chunk_ids = input_ids[start_idx:cur_idx]
@@ -819,6 +843,9 @@ class Language(str, Enum):
     SOL = "sol"
     CSHARP = "csharp"
     COBOL = "cobol"
+    C = "c"
+    LUA = "lua"
+    PERL = "perl"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -1409,6 +1436,37 @@ class SpacyTextSplitter(TextSplitter):
         return self._merge_splits(splits, self._separator)
 
 
+class KonlpyTextSplitter(TextSplitter):
+    """Splitting text using Konlpy package.
+
+    It is good for splitting Korean text.
+    """
+
+    def __init__(
+        self,
+        separator: str = "\n\n",
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the Konlpy text splitter."""
+        super().__init__(**kwargs)
+        self._separator = separator
+        try:
+            from konlpy.tag import Kkma
+        except ImportError:
+            raise ImportError(
+                """
+                Konlpy is not installed, please install it with 
+                `pip install konlpy`
+                """
+            )
+        self.kkma = Kkma()
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        splits = self.kkma.sentences(text)
+        return self._merge_splits(splits, self._separator)
+
+
 # For backwards compatibility
 class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Python syntax."""
@@ -1435,3 +1493,116 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
         """Initialize a LatexTextSplitter."""
         separators = self.get_separators_for_language(Language.LATEX)
         super().__init__(separators=separators, **kwargs)
+
+
+class RecursiveJsonSplitter:
+    def __init__(
+        self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
+    ):
+        super().__init__()
+        self.max_chunk_size = max_chunk_size
+        self.min_chunk_size = (
+            min_chunk_size
+            if min_chunk_size is not None
+            else max(max_chunk_size - 200, 50)
+        )
+
+    @staticmethod
+    def _json_size(data: Dict) -> int:
+        """Calculate the size of the serialized JSON object."""
+        return len(json.dumps(data))
+
+    @staticmethod
+    def _set_nested_dict(d: Dict, path: List[str], value: Any) -> None:
+        """Set a value in a nested dictionary based on the given path."""
+        for key in path[:-1]:
+            d = d.setdefault(key, {})
+        d[path[-1]] = value
+
+    def _list_to_dict_preprocessing(self, data: Any) -> Any:
+        if isinstance(data, dict):
+            # Process each key-value pair in the dictionary
+            return {k: self._list_to_dict_preprocessing(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            # Convert the list to a dictionary with index-based keys
+            return {
+                str(i): self._list_to_dict_preprocessing(item)
+                for i, item in enumerate(data)
+            }
+        else:
+            # Base case: the item is neither a dict nor a list, so return it unchanged
+            return data
+
+    def _json_split(
+        self,
+        data: Dict[str, Any],
+        current_path: List[str] = [],
+        chunks: List[Dict] = [{}],
+    ) -> List[Dict]:
+        """
+        Split json into maximum size dictionaries while preserving structure.
+        """
+        if isinstance(data, dict):
+            for key, value in data.items():
+                new_path = current_path + [key]
+                chunk_size = self._json_size(chunks[-1])
+                size = self._json_size({key: value})
+                remaining = self.max_chunk_size - chunk_size
+
+                if size < remaining:
+                    # Add item to current chunk
+                    self._set_nested_dict(chunks[-1], new_path, value)
+                else:
+                    if chunk_size >= self.min_chunk_size:
+                        # Chunk is big enough, start a new chunk
+                        chunks.append({})
+
+                    # Iterate
+                    self._json_split(value, new_path, chunks)
+        else:
+            # handle single item
+            self._set_nested_dict(chunks[-1], current_path, data)
+        return chunks
+
+    def split_json(
+        self,
+        json_data: Dict[str, Any],
+        convert_lists: bool = False,
+    ) -> List[Dict]:
+        """Splits JSON into a list of JSON chunks"""
+
+        if convert_lists:
+            chunks = self._json_split(self._list_to_dict_preprocessing(json_data))
+        else:
+            chunks = self._json_split(json_data)
+
+        # Remove the last chunk if it's empty
+        if not chunks[-1]:
+            chunks.pop()
+        return chunks
+
+    def split_text(
+        self, json_data: Dict[str, Any], convert_lists: bool = False
+    ) -> List[str]:
+        """Splits JSON into a list of JSON formatted strings"""
+
+        chunks = self.split_json(json_data=json_data, convert_lists=convert_lists)
+
+        # Convert to string
+        return [json.dumps(chunk) for chunk in chunks]
+
+    def create_documents(
+        self,
+        texts: List[Dict],
+        convert_lists: bool = False,
+        metadatas: Optional[List[dict]] = None,
+    ) -> List[Document]:
+        """Create documents from a list of json objects (Dict)."""
+        _metadatas = metadatas or [{}] * len(texts)
+        documents = []
+        for i, text in enumerate(texts):
+            for chunk in self.split_text(json_data=text, convert_lists=convert_lists):
+                metadata = copy.deepcopy(_metadatas[i])
+                new_doc = Document(page_content=chunk, metadata=metadata)
+                documents.append(new_doc)
+        return documents

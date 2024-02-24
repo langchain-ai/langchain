@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.utils import get_bolded_text
+from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
 class BaseMessage(Serializable):
-    """The base abstract Message class.
+    """Base abstract Message class.
 
     Messages are the inputs and outputs of ChatModels.
     """
@@ -23,13 +25,26 @@ class BaseMessage(Serializable):
 
     type: str
 
+    name: Optional[str] = None
+
     class Config:
         extra = Extra.allow
+
+    def __init__(
+        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+    ) -> None:
+        """Pass in content as positional arg."""
+        return super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable."""
         return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         from langchain_core.prompts.chat import ChatPromptTemplate
@@ -37,11 +52,30 @@ class BaseMessage(Serializable):
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
+    def pretty_repr(self, html: bool = False) -> str:
+        title = get_msg_title_repr(self.type.title() + " Message", bold=html)
+        # TODO: handle non-string content.
+        if self.name is not None:
+            title += f"\nName: {self.name}"
+        return f"{title}\n\n{self.content}"
+
+    def pretty_print(self) -> None:
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
+
 
 def merge_content(
     first_content: Union[str, List[Union[str, Dict]]],
     second_content: Union[str, List[Union[str, Dict]]],
 ) -> Union[str, List[Union[str, Dict]]]:
+    """Merge two message contents.
+
+    Args:
+        first_content: The first content.
+        second_content: The second content.
+
+    Returns:
+        The merged content.
+    """
     # If first chunk is a string
     if isinstance(first_content, str):
         # If the second chunk is also a string, then merge them naively
@@ -66,7 +100,12 @@ def merge_content(
 
 
 class BaseMessageChunk(BaseMessage):
-    """A Message chunk, which can be concatenated with other Message chunks."""
+    """Message chunk, which can be concatenated with other Message chunks."""
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
 
     def _merge_kwargs_dict(
         self, left: Dict[str, Any], right: Dict[str, Any]
@@ -88,8 +127,12 @@ class BaseMessageChunk(BaseMessage):
                 merged[k] = v
             elif merged[k] is None and v:
                 merged[k] = v
+            elif v is None:
+                continue
+            elif merged[k] == v:
+                continue
             elif type(merged[k]) != type(v):
-                raise ValueError(
+                raise TypeError(
                     f'additional_kwargs["{k}"] already exists in this message,'
                     " but with a different type."
                 )
@@ -97,8 +140,17 @@ class BaseMessageChunk(BaseMessage):
                 merged[k] += v
             elif isinstance(merged[k], dict):
                 merged[k] = self._merge_kwargs_dict(merged[k], v)
+            elif isinstance(merged[k], list):
+                merged[k] = merged[k].copy()
+                for i, e in enumerate(v):
+                    if isinstance(e, dict) and isinstance(e.get("index"), int):
+                        i = e["index"]
+                    if i < len(merged[k]):
+                        merged[k][i] = self._merge_kwargs_dict(merged[k][i], e)
+                    else:
+                        merged[k] = merged[k] + [e]
             else:
-                raise ValueError(
+                raise TypeError(
                     f"Additional kwargs key {k} already exists in this message."
                 )
         return merged
@@ -123,6 +175,14 @@ class BaseMessageChunk(BaseMessage):
 
 
 def message_to_dict(message: BaseMessage) -> dict:
+    """Convert a Message to a dictionary.
+
+    Args:
+        message: Message to convert.
+
+    Returns:
+        Message as a dict.
+    """
     return {"type": message.type, "data": message.dict()}
 
 
@@ -136,3 +196,22 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
         List of messages as dicts.
     """
     return [message_to_dict(m) for m in messages]
+
+
+def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
+    """Get a title representation for a message.
+
+    Args:
+        title: The title.
+        bold: Whether to bold the title.
+
+    Returns:
+        The title representation.
+    """
+    padded = " " + title + " "
+    sep_len = (80 - len(padded)) // 2
+    sep = "=" * sep_len
+    second_sep = sep + "=" if len(padded) % 2 else sep
+    if bold:
+        padded = get_bolded_text(padded)
+    return f"{sep}{padded}{second_sep}"

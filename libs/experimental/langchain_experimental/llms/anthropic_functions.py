@@ -6,13 +6,13 @@ from typing import Any, DefaultDict, Dict, List, Optional, cast
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.anthropic import ChatAnthropic
-from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
-from langchain.schema.messages import (
+from langchain_community.chat_models.anthropic import ChatAnthropic
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     SystemMessage,
@@ -41,6 +41,8 @@ for the weather in SF you would respond:
 
 
 class TagParser(HTMLParser):
+    """Parser for the tool tags."""
+
     def __init__(self) -> None:
         """A heavy-handed solution, but it's fast for prototyping.
 
@@ -122,6 +124,8 @@ def _destrip(tool_input: Any) -> Any:
 
 
 class AnthropicFunctions(BaseChatModel):
+    """Chat model for interacting with Anthropic functions."""
+
     llm: BaseChatModel
 
     @root_validator(pre=True)

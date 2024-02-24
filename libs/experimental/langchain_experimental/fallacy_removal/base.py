@@ -7,7 +7,7 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.fallacy_removal.fallacies import FALLACIES
 from langchain_experimental.fallacy_removal.models import LogicalFallacy
@@ -18,14 +18,15 @@ from langchain_experimental.fallacy_removal.prompts import (
 
 
 class FallacyChain(Chain):
-    """Chain for applying logical fallacy evaluations, modeled after Constitutional AI \
-    and in same format, but applying logical fallacies as generalized rules to remove \
-    in output
+    """Chain for applying logical fallacy evaluations.
+
+    It is modeled after Constitutional AI and in same format, but
+    applying logical fallacies as generalized rules to remove in output.
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from langchain.chains import LLMChain
             from langchain_experimental.fallacy import FallacyChain
             from langchain_experimental.fallacy_removal.models import LogicalFallacy

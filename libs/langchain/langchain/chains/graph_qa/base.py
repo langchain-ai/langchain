@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from langchain_community.graphs.networkx_graph import NetworkxEntityGraph, get_entities
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
@@ -11,7 +12,6 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import ENTITY_EXTRACTION_PROMPT, GRAPH_QA_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.graphs.networkx_graph import NetworkxEntityGraph, get_entities
 
 
 class GraphQAChain(Chain):

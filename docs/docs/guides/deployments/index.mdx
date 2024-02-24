@@ -20,11 +20,11 @@ This guide aims to provide a comprehensive overview of the requirements for depl
 
 Understanding these components is crucial when assessing serving systems. LangChain integrates with several open-source projects designed to tackle these issues, providing a robust framework for productionizing your LLM applications. Some notable frameworks include:
 
-- [Ray Serve](/docs/ecosystem/integrations/ray_serve)
+- [Ray Serve](/docs/integrations/providers/ray_serve)
 - [BentoML](https://github.com/bentoml/BentoML)
-- [OpenLLM](/docs/ecosystem/integrations/openllm)
-- [Modal](/docs/ecosystem/integrations/modal)
-- [Jina](/docs/ecosystem/integrations/jina#deployment)
+- [OpenLLM](/docs/integrations/providers/openllm)
+- [Modal](/docs/integrations/providers/modal)
+- [Jina](/docs/integrations/providers/jina)
 
 These links will provide further information on each ecosystem, assisting you in finding the best fit for your LLM deployment needs.
 
@@ -98,7 +98,7 @@ The LLM landscape is evolving at an unprecedented pace, with new libraries and m
 
 ### Model composition
 
-Deploying systems like LangChain demands the ability to piece together different models and connect them via logic. Take the example of building a natural language input SQL query engine. Querying an LLM and obtaining the SQL command is only part of the system. You need to extract metadata from the connected database, construct a prompt for the LLM, run the SQL query on an engine, collect and feed back the response to the LLM as the query runs, and present the results to the user. This demonstrates the need to seamlessly integrate various complex components built in Python into a dynamic chain of logical blocks that can be served together.
+Deploying systems like LangChain demands the ability to piece together different models and connect them via logic. Take the example of building a natural language input SQL query engine. Querying an LLM and obtaining the SQL command is only part of the system. You need to extract metadata from the connected database, construct a prompt for the LLM, run the SQL query on an engine, collect and feedback the response to the LLM as the query runs, and present the results to the user. This demonstrates the need to seamlessly integrate various complex components built in Python into a dynamic chain of logical blocks that can be served together.
 
 ## Cloud providers
 
