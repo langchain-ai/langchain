@@ -610,18 +610,18 @@ class FAISS(VectorStore):
             k=k,
             lambda_mult=lambda_mult,
         )
-        selected_indices = [indices[0][i] for i in mmr_selected]
-        selected_scores = [scores[0][i] for i in mmr_selected]
+
         docs_and_scores = []
-        for i, score in zip(selected_indices, selected_scores):
-            if i == -1:
+        for i in mmr_selected:
+            if indices[0][i] == -1:
                 # This happens when not enough docs are returned.
                 continue
-            _id = self.index_to_docstore_id[i]
+            _id = self.index_to_docstore_id[indices[0][i]]
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs_and_scores.append((doc, score))
+            docs_and_scores.append((doc, scores[0][i]))
+
         return docs_and_scores
 
     async def amax_marginal_relevance_search_with_score_by_vector(
@@ -821,9 +821,9 @@ class FAISS(VectorStore):
             )
 
         reversed_index = {id_: idx for idx, id_ in self.index_to_docstore_id.items()}
-        index_to_delete = [reversed_index[id_] for id_ in ids]
+        index_to_delete = {reversed_index[id_] for id_ in ids}
 
-        self.index.remove_ids(np.array(index_to_delete, dtype=np.int64))
+        self.index.remove_ids(np.fromiter(index_to_delete, dtype=np.int64))
         self.docstore.delete(ids)
 
         remaining_ids = [
