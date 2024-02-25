@@ -18,8 +18,9 @@ from langchain_experimental.pydantic_v1 import Extra, root_validator
 
 
 class SmartLLMChain(Chain):
-    """
-    Generalized implementation of SmartGPT (origin: https://youtu.be/wVzuvf9D9BU)
+    """Chain for applying self-critique using the SmartGPT workflow.
+
+    See details at https://youtu.be/wVzuvf9D9BU
 
     A SmartLLMChain is an LLMChain that instead of simply passing the prompt to the LLM
     performs these 3 steps:
