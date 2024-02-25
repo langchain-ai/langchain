@@ -119,9 +119,7 @@ class FAISS(VectorStore):
             and self._normalize_L2
         ):
             warnings.warn(
-                "Normalizing L2 is not applicable for metric type: {strategy}".format(
-                    strategy=self.distance_strategy
-                )
+                f"Normalizing L2 is not applicable for metric type: {self.distance_strategy}"
             )
 
     @property
@@ -1079,12 +1077,10 @@ class FAISS(VectorStore):
 
         # save index separately since it is not picklable
         faiss = dependable_faiss_import()
-        faiss.write_index(
-            self.index, str(path / "{index_name}.faiss".format(index_name=index_name))
-        )
+        faiss.write_index(self.index, str(path / f"{index_name}.faiss"))
 
         # save docstore and index_to_docstore_id
-        with open(path / "{index_name}.pkl".format(index_name=index_name), "wb") as f:
+        with open(path / f"{index_name}.pkl", "wb") as f:
             pickle.dump((self.docstore, self.index_to_docstore_id), f)
 
     @classmethod
@@ -1107,12 +1103,10 @@ class FAISS(VectorStore):
         path = Path(folder_path)
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()
-        index = faiss.read_index(
-            str(path / "{index_name}.faiss".format(index_name=index_name))
-        )
+        index = faiss.read_index(str(path / f"{index_name}.faiss"))
 
         # load docstore and index_to_docstore_id
-        with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
+        with open(path / f"{index_name}.pkl", "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
         return cls(embeddings, index, docstore, index_to_docstore_id, **kwargs)
 
