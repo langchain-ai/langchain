@@ -19,7 +19,8 @@ from langchain_experimental.sql.base import INTERMEDIATE_STEPS_KEY, SQLDatabaseC
 
 
 class VectorSQLOutputParser(BaseOutputParser[str]):
-    """Output Parser for Vector SQL
+    """Output Parser for Vector SQL.
+
     1. finds for `NeuralArray()` and replace it with the embedding
     2. finds for `DISTANCE()` and replace it with the distance name in backend SQL
     """
@@ -61,8 +62,8 @@ class VectorSQLOutputParser(BaseOutputParser[str]):
 
 
 class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
-    """Based on VectorSQLOutputParser
-    It also modify the SQL to get all columns
+    """Parser based on VectorSQLOutputParser.
+    It also modifies the SQL to get all columns.
     """
 
     @property
@@ -79,6 +80,8 @@ class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
 
 
 def get_result_from_sqldb(db: SQLDatabase, cmd: str) -> Sequence[Dict[str, Any]]:
+    """Get result from SQL Database."""
+
     result = db._execute(cmd, fetch="all")
     assert isinstance(result, Sequence)
     return result
