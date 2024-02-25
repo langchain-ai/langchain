@@ -304,24 +304,7 @@ class FAISS(VectorStore):
         docs = []
 
         if filter is not None:
-            if isinstance(filter, dict):
-
-                def filter_func(metadata):  # type: ignore[no-untyped-def]
-                    if all(
-                        metadata.get(key) in value
-                        if isinstance(value, list)
-                        else metadata.get(key) == value
-                        for key, value in filter.items()
-                    ):
-                        return True
-                    return False
-            elif callable(filter):
-                filter_func = filter
-            else:
-                raise ValueError(
-                    "filter must be a dict of metadata or "
-                    f"a callable, not {type(filter)}"
-                )
+            filter_func = self._create_filter_func(filter)
 
         for j, i in enumerate(indices[0]):
             if i == -1:
@@ -606,25 +589,8 @@ class FAISS(VectorStore):
             fetch_k if filter is None else fetch_k * 2,
         )
         if filter is not None:
+            filter_func = self._create_filter_func(filter)
             filtered_indices = []
-            if isinstance(filter, dict):
-
-                def filter_func(metadata):  # type: ignore[no-untyped-def]
-                    if all(
-                        metadata.get(key) in value
-                        if isinstance(value, list)
-                        else metadata.get(key) == value
-                        for key, value in filter.items()
-                    ):
-                        return True
-                    return False
-            elif callable(filter):
-                filter_func = filter
-            else:
-                raise ValueError(
-                    "filter must be a dict of metadata or "
-                    f"a callable, not {type(filter)}"
-                )
             for i in indices[0]:
                 if i == -1:
                     # This happens when not enough docs are returned.
@@ -1209,3 +1175,35 @@ class FAISS(VectorStore):
             (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
         ]
         return docs_and_rel_scores
+
+    @staticmethod
+    def _create_filter_func(
+        filter: Optional[Union[Callable, Dict[str, Any]]],
+    ) -> Callable[[Dict[str, Any]], bool]:
+        """
+        Create a filter function based on the provided filter.
+
+        Args:
+            filter: A callable or a dictionary representing the filter conditions for documents.
+
+        Returns:
+            Callable[[Dict[str, Any]], bool]: A function that takes Document's metadata
+            and returns True if it satisfies the filter conditions, otherwise False.
+        """
+        if callable(filter):
+            return filter
+
+        if not isinstance(filter, dict):
+            raise ValueError(
+                f"filter must be a dict of metadata or a callable, not {type(filter)}"
+            )
+
+        def filter_func(metadata: Dict[str, Any]) -> bool:
+            return all(
+                metadata.get(key) in value
+                if isinstance(value, list)
+                else metadata.get(key) == value
+                for key, value in filter.items()
+            )
+
+        return filter_func
