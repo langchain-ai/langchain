@@ -754,10 +754,10 @@ class ChatOpenAI(BaseChatModel):
     @overload
     def with_structured_output(
         self,
-        schema: _DictOrPydanticClass,
+        schema: Optional[_DictOrPydanticClass] = None,
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
-        return_type: Literal["all"] = "all",
+        include_raw: Literal[True] = True,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _AllReturnType]:
         ...
@@ -765,10 +765,10 @@ class ChatOpenAI(BaseChatModel):
     @overload
     def with_structured_output(
         self,
-        schema: _DictOrPydanticClass,
+        schema: Optional[_DictOrPydanticClass] = None,
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
-        return_type: Literal["parsed"] = "parsed",
+        include_raw: Literal[False] = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
@@ -776,10 +776,10 @@ class ChatOpenAI(BaseChatModel):
     @beta()
     def with_structured_output(
         self,
-        schema: _DictOrPydanticClass,
+        schema: Optional[_DictOrPydanticClass] = None,
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
-        return_type: Literal["parsed", "all"] = "parsed",
+        include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -795,10 +795,10 @@ class ChatOpenAI(BaseChatModel):
                 or "json_mode". If "function_calling" then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If "json_mode" then OpenAI's JSON mode will be
-                used.
-            return_type: The wrapped model's return type, either "parsed" or "all". If
-                "parsed" then only the parsed structured output is returned. If an
-                error occurs during model output parsing it will be raised. If "all"
+                used. Note that if using "json_mode" then you must include instructions
+                for formatting the output into the desired schema into the model call.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
@@ -807,12 +807,12 @@ class ChatOpenAI(BaseChatModel):
         Returns:
             A Runnable that takes any ChatModel input and returns as output:
 
-                If return_type == "all" then a dict with keys:
+                If include_raw is True then a dict with keys:
                     raw: BaseMessage
                     parsed: Optional[_DictOrPydantic]
                     parsing_error: Optional[BaseException]
 
-                If return_type == "parsed" then just _DictOrPydantic is returned,
+                If include_raw is False then just _DictOrPydantic is returned,
                 where _DictOrPydantic depends on the schema:
 
                 If schema is a Pydantic class then _DictOrPydantic is the Pydantic
@@ -820,7 +820,7 @@ class ChatOpenAI(BaseChatModel):
 
                 If schema is a dict then _DictOrPydantic is a dict.
 
-        Example: Function-calling, Pydantic schema (method="function_calling", return_type="parsed"):
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -841,7 +841,7 @@ class ChatOpenAI(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: Function-calling, Pydantic schema (method="function_calling", return_type="all"):
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -853,7 +853,7 @@ class ChatOpenAI(BaseChatModel):
                     justification: str
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, return_type="all")
+                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
@@ -862,7 +862,7 @@ class ChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: Function-calling, dict schema (method="function_calling", return_type="parsed"):
+        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -884,11 +884,66 @@ class ChatOpenAI(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
+        Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
+            .. code-block::
+
+                from langchain_openai import ChatOpenAI
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    answer: str
+                    justification: str
+
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification,
+                    method="json_mode",
+                    include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+                #     'parsing_error': None
+                # }
+
+        Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
+            .. code-block::
+
+                from langchain_openai import ChatOpenAI
+
+                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'parsed': {
+                #         'answer': 'They are both the same weight.',
+                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
+                #     },
+                #     'parsing_error': None
+                # }
+
+
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
             llm = self.bind_tools([schema], tool_choice=True)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
@@ -912,9 +967,7 @@ class ChatOpenAI(BaseChatModel):
                 f"'json_format'. Received: '{method}'"
             )
 
-        if return_type == "parsed":
-            return llm | output_parser
-        elif return_type == "all":
+        if include_raw:
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
             )
@@ -924,10 +977,7 @@ class ChatOpenAI(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
-            raise ValueError(
-                f"Unrecognized return_type argument. Expected one of 'parsed' or "
-                f"'all'. Received: '{return_type}'"
-            )
+            return llm | output_parser
 
 
 def _is_pydantic_class(obj: Any) -> bool:

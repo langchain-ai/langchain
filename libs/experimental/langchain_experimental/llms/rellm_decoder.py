@@ -20,7 +20,7 @@ else:
 
 
 def import_rellm() -> rellm:
-    """Lazily import rellm."""
+    """Lazily import of the rellm package."""
     try:
         import rellm
     except ImportError:
