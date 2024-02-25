@@ -91,6 +91,7 @@ def _get_search_client(
         SemanticField,
         SemanticPrioritizedFields,
         SemanticSearch,
+        VectorSearch,
         VectorSearchAlgorithmKind,
         VectorSearchAlgorithmMetric,
         VectorSearchProfile,
@@ -255,7 +256,7 @@ class AzureSearch(VectorStore):
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
                 vector_search_dimensions=len(self.embed_query("Text")),
-                vector_search_configuration="default",
+                vector_search_profile_name="myHnswProfile",
             ),
             SearchableField(
                 name=FIELDS_METADATA,

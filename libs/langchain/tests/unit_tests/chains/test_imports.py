@@ -62,6 +62,7 @@ EXPECTED_ALL = [
     "create_history_aware_retriever",
     "create_retrieval_chain",
     "load_summarize_chain",
+    "create_structured_output_runnable",
 ]
 
 

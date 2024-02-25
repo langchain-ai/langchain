@@ -29,21 +29,24 @@ import uuid
 import warnings
 from abc import ABC
 from datetime import timedelta
-from functools import lru_cache
+from functools import lru_cache, wraps
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
     Dict,
+    Generator,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
     cast,
 )
 
-from sqlalchemy import Column, Integer, String, create_engine, select
+from sqlalchemy import Column, Integer, String, create_engine, delete, select
 from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
@@ -55,20 +58,23 @@ except ImportError:
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.embeddings import Embeddings
-from langchain_core.language_models.llms import LLM, get_prompts
+from langchain_core.language_models.llms import LLM, aget_prompts, get_prompts
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
 
-from langchain_community.utilities.astradb import AstraDBEnvironment
+from langchain_community.utilities.astradb import (
+    SetupMode,
+    _AstraDBCollectionEnvironment,
+)
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
 
 if TYPE_CHECKING:
     import momento
-    from astrapy.db import AstraDB
+    from astrapy.db import AstraDB, AsyncAstraDB
     from cassandra.cluster import Session as CassandraSession
 
 
@@ -455,22 +461,31 @@ class RedisCache(_RedisCacheBase):
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         # Read from a Redis HASH
-        results = self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)  # type: ignore[arg-type]
+        try:
+            results = self.redis.hgetall(self._key(prompt, llm_string))
+            return self._get_generations(results)  # type: ignore[arg-type]
+        except Exception as e:
+            logger.error(f"Redis lookup failed: {e}")
+            return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         self._ensure_generation_type(return_val)
         key = self._key(prompt, llm_string)
-
-        with self.redis.pipeline() as pipe:
-            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-            pipe.execute()
+        try:
+            with self.redis.pipeline() as pipe:
+                self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
+                pipe.execute()
+        except Exception as e:
+            logger.error(f"Redis update failed: {e}")
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
-        asynchronous = kwargs.get("asynchronous", False)
-        self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        try:
+            asynchronous = kwargs.get("asynchronous", False)
+            self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        except Exception as e:
+            logger.error(f"Redis clear failed: {e}")
 
 
 class AsyncRedisCache(_RedisCacheBase):
@@ -519,8 +534,12 @@ class AsyncRedisCache(_RedisCacheBase):
 
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string. Async version."""
-        results = await self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)  # type: ignore[arg-type]
+        try:
+            results = await self.redis.hgetall(self._key(prompt, llm_string))
+            return self._get_generations(results)  # type: ignore[arg-type]
+        except Exception as e:
+            logger.error(f"Redis async lookup failed: {e}")
+            return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
@@ -535,10 +554,12 @@ class AsyncRedisCache(_RedisCacheBase):
         """Update cache based on prompt and llm_string. Async version."""
         self._ensure_generation_type(return_val)
         key = self._key(prompt, llm_string)
-
-        async with self.redis.pipeline() as pipe:
-            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-            await pipe.execute()  # type: ignore[attr-defined]
+        try:
+            async with self.redis.pipeline() as pipe:
+                self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
+                await pipe.execute()  # type: ignore[attr-defined]
+        except Exception as e:
+            logger.error(f"Redis async update failed: {e}")
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
@@ -552,8 +573,11 @@ class AsyncRedisCache(_RedisCacheBase):
         Clear cache. If `asynchronous` is True, flush asynchronously.
         Async version.
         """
-        asynchronous = kwargs.get("asynchronous", False)
-        await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        try:
+            asynchronous = kwargs.get("asynchronous", False)
+            await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        except Exception as e:
+            logger.error(f"Redis async clear failed: {e}")
 
 
 class RedisSemanticCache(BaseCache):
@@ -1308,37 +1332,33 @@ class SQLAlchemyMd5Cache(BaseCache):
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update based on prompt and llm_string."""
-        self._delete_previous(prompt, llm_string)
-        prompt_md5 = self.get_md5(prompt)
-        items = [
-            self.cache_schema(
-                id=str(uuid.uuid1()),
-                prompt=prompt,
-                prompt_md5=prompt_md5,
-                llm=llm_string,
-                response=dumps(gen),
-                idx=i,
-            )
-            for i, gen in enumerate(return_val)
-        ]
         with Session(self.engine) as session, session.begin():
+            self._delete_previous(session, prompt, llm_string)
+            prompt_md5 = self.get_md5(prompt)
+            items = [
+                self.cache_schema(
+                    id=str(uuid.uuid1()),
+                    prompt=prompt,
+                    prompt_md5=prompt_md5,
+                    llm=llm_string,
+                    response=dumps(gen),
+                    idx=i,
+                )
+                for i, gen in enumerate(return_val)
+            ]
             for item in items:
                 session.merge(item)
 
-    def _delete_previous(self, prompt: str, llm_string: str) -> None:
+    def _delete_previous(self, session: Session, prompt: str, llm_string: str) -> None:
         stmt = (
-            select(self.cache_schema.response)
+            delete(self.cache_schema)
             .where(self.cache_schema.prompt_md5 == self.get_md5(prompt))  # type: ignore
             .where(self.cache_schema.llm == llm_string)
             .where(self.cache_schema.prompt == prompt)
-            .order_by(self.cache_schema.idx)
         )
-        with Session(self.engine) as session, session.begin():
-            rows = session.execute(stmt).fetchall()
-            for item in rows:
-                session.delete(item)
+        session.execute(stmt)
 
-    def _search_rows(self, prompt: str, llm_string: str) -> List[Row]:
+    def _search_rows(self, prompt: str, llm_string: str) -> Sequence[Row]:
         prompt_pd5 = self.get_md5(prompt)
         stmt = (
             select(self.cache_schema.response)
@@ -1364,15 +1384,9 @@ ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 
 class AstraDBCache(BaseCache):
-    """
-    Cache that uses Astra DB as a backend.
-
-    It uses a single collection as a kv store
-    The lookup keys, combined in the _id of the documents, are:
-        - prompt, a string
-        - llm_string, a deterministic str representation of the model parameters.
-          (needed to prevent same-prompt-different-model collisions)
-    """
+    @staticmethod
+    def _make_id(prompt: str, llm_string: str) -> str:
+        return f"{_hash(prompt)}#{_hash(llm_string)}"
 
     def __init__(
         self,
@@ -1381,39 +1395,52 @@ class AstraDBCache(BaseCache):
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
         astra_db_client: Optional[AstraDB] = None,
+        async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
+        pre_delete_collection: bool = False,
+        setup_mode: SetupMode = SetupMode.SYNC,
     ):
         """
-        Create an AstraDB cache using a collection for storage.
+        Cache that uses Astra DB as a backend.
 
-        Args (only keyword-arguments accepted):
-            collection_name (str): name of the Astra DB collection to create/use.
-            token (Optional[str]): API token for Astra DB usage.
-            api_endpoint (Optional[str]): full URL to the API endpoint,
-                such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-            astra_db_client (Optional[Any]): *alternative to token+api_endpoint*,
+        It uses a single collection as a kv store
+        The lookup keys, combined in the _id of the documents, are:
+            - prompt, a string
+            - llm_string, a deterministic str representation of the model parameters.
+              (needed to prevent same-prompt-different-model collisions)
+
+        Args:
+            collection_name: name of the Astra DB collection to create/use.
+            token: API token for Astra DB usage.
+            api_endpoint: full URL to the API endpoint,
+                such as `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
+            astra_db_client: *alternative to token+api_endpoint*,
                 you can pass an already-created 'astrapy.db.AstraDB' instance.
-            namespace (Optional[str]): namespace (aka keyspace) where the
+            async_astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
+            namespace: namespace (aka keyspace) where the
                 collection is created. Defaults to the database's "default namespace".
+            setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or
+                OFF).
+            pre_delete_collection: whether to delete the collection
+                before creating it. If False and the collection already exists,
+                the collection will be used as is.
         """
-        astra_env = AstraDBEnvironment(
+        self.astra_env = _AstraDBCollectionEnvironment(
+            collection_name=collection_name,
             token=token,
             api_endpoint=api_endpoint,
             astra_db_client=astra_db_client,
+            async_astra_db_client=async_astra_db_client,
             namespace=namespace,
+            setup_mode=setup_mode,
+            pre_delete_collection=pre_delete_collection,
         )
-        self.astra_db = astra_env.astra_db
-        self.collection = self.astra_db.create_collection(
-            collection_name=collection_name,
-        )
-        self.collection_name = collection_name
-
-    @staticmethod
-    def _make_id(prompt: str, llm_string: str) -> str:
-        return f"{_hash(prompt)}#{_hash(llm_string)}"
+        self.collection = self.astra_env.collection
+        self.async_collection = self.astra_env.async_collection
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
+        self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         item = self.collection.find_one(
             filter={
@@ -1423,21 +1450,41 @@ class AstraDBCache(BaseCache):
                 "body_blob": 1,
             },
         )["data"]["document"]
-        if item is not None:
-            generations = _loads_generations(item["body_blob"])
-            # this protects against malformed cached items:
-            if generations is not None:
-                return generations
-            else:
-                return None
-        else:
-            return None
+        return _loads_generations(item["body_blob"]) if item is not None else None
+
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        await self.astra_env.aensure_db_setup()
+        doc_id = self._make_id(prompt, llm_string)
+        item = (
+            await self.async_collection.find_one(
+                filter={
+                    "_id": doc_id,
+                },
+                projection={
+                    "body_blob": 1,
+                },
+            )
+        )["data"]["document"]
+        return _loads_generations(item["body_blob"]) if item is not None else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
+        self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         blob = _dumps_generations(return_val)
         self.collection.upsert(
+            {
+                "_id": doc_id,
+                "body_blob": blob,
+            },
+        )
+
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
+        await self.astra_env.aensure_db_setup()
+        doc_id = self._make_id(prompt, llm_string)
+        blob = _dumps_generations(return_val)
+        await self.async_collection.upsert(
             {
                 "_id": doc_id,
                 "body_blob": blob,
@@ -1457,14 +1504,40 @@ class AstraDBCache(BaseCache):
         )[1]
         return self.delete(prompt, llm_string=llm_string)
 
+    async def adelete_through_llm(
+        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+    ) -> None:
+        """
+        A wrapper around `adelete` with the LLM being passed.
+        In case the llm(prompt) calls have a `stop` param, you should pass it here
+        """
+        llm_string = (
+            await aget_prompts(
+                {**llm.dict(), **{"stop": stop}},
+                [],
+            )
+        )[1]
+        return await self.adelete(prompt, llm_string=llm_string)
+
     def delete(self, prompt: str, llm_string: str) -> None:
         """Evict from cache if there's an entry."""
+        self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         self.collection.delete_one(doc_id)
 
+    async def adelete(self, prompt: str, llm_string: str) -> None:
+        """Evict from cache if there's an entry."""
+        await self.astra_env.aensure_db_setup()
+        doc_id = self._make_id(prompt, llm_string)
+        await self.async_collection.delete_one(doc_id)
+
     def clear(self, **kwargs: Any) -> None:
-        """Clear cache. This is for all LLMs at once."""
-        self.astra_db.truncate_collection(self.collection_name)
+        self.astra_env.ensure_db_setup()
+        self.collection.clear()
+
+    async def aclear(self, **kwargs: Any) -> None:
+        await self.astra_env.aensure_db_setup()
+        await self.async_collection.clear()
 
 
 ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD = 0.85
@@ -1472,19 +1545,43 @@ ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_semantic_cache"
 ASTRA_DB_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE = 16
 
 
+_unset = ["unset"]
+
+
+class _CachedAwaitable:
+    """Caches the result of an awaitable so it can be awaited multiple times"""
+
+    def __init__(self, awaitable: Awaitable[Any]):
+        self.awaitable = awaitable
+        self.result = _unset
+
+    def __await__(self) -> Generator:
+        if self.result is _unset:
+            self.result = yield from self.awaitable.__await__()
+        return self.result
+
+
+def _reawaitable(func: Callable) -> Callable:
+    """Makes an async function result awaitable multiple times"""
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> _CachedAwaitable:
+        return _CachedAwaitable(func(*args, **kwargs))
+
+    return wrapper
+
+
+def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
+    """Least-recently-used async cache decorator.
+    Equivalent to functools.lru_cache for async functions"""
+
+    def decorating_function(user_function: Callable) -> Callable:
+        return lru_cache(maxsize, typed)(_reawaitable(user_function))
+
+    return decorating_function
+
+
 class AstraDBSemanticCache(BaseCache):
-    """
-    Cache that uses Astra DB as a vector-store backend for semantic
-    (i.e. similarity-based) lookup.
-
-    It uses a single (vector) collection and can store
-    cached values from several LLMs, so the LLM's 'llm_string' is stored
-    in the document metadata.
-
-    You can choose the preferred similarity (or use the API default) --
-    remember the threshold might require metric-dependend tuning.
-    """
-
     def __init__(
         self,
         *,
@@ -1492,44 +1589,52 @@ class AstraDBSemanticCache(BaseCache):
         token: Optional[str] = None,
         api_endpoint: Optional[str] = None,
         astra_db_client: Optional[AstraDB] = None,
+        async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
+        setup_mode: SetupMode = SetupMode.SYNC,
+        pre_delete_collection: bool = False,
         embedding: Embeddings,
         metric: Optional[str] = None,
         similarity_threshold: float = ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD,
     ):
         """
-        Initialize the cache with all relevant parameters.
-        Args:
+        Cache that uses Astra DB as a vector-store backend for semantic
+        (i.e. similarity-based) lookup.
 
-            collection_name (str): name of the Astra DB collection to create/use.
-            token (Optional[str]): API token for Astra DB usage.
-            api_endpoint (Optional[str]): full URL to the API endpoint,
-                such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-            astra_db_client (Optional[Any]): *alternative to token+api_endpoint*,
-                you can pass an already-created 'astrapy.db.AstraDB' instance.
-            namespace (Optional[str]): namespace (aka keyspace) where the
-                collection is created. Defaults to the database's "default namespace".
-            embedding (Embedding): Embedding provider for semantic
-                encoding and search.
-            metric: the function to use for evaluating similarity of text embeddings.
-                Defaults to 'cosine' (alternatives: 'euclidean', 'dot_product')
-            similarity_threshold (float, optional): the minimum similarity
-                for accepting a (semantic-search) match.
+        It uses a single (vector) collection and can store
+        cached values from several LLMs, so the LLM's 'llm_string' is stored
+        in the document metadata.
 
+        You can choose the preferred similarity (or use the API default).
         The default score threshold is tuned to the default metric.
         Tune it carefully yourself if switching to another distance metric.
-        """
-        astra_env = AstraDBEnvironment(
-            token=token,
-            api_endpoint=api_endpoint,
-            astra_db_client=astra_db_client,
-            namespace=namespace,
-        )
-        self.astra_db = astra_env.astra_db
 
+        Args:
+            collection_name: name of the Astra DB collection to create/use.
+            token: API token for Astra DB usage.
+            api_endpoint: full URL to the API endpoint,
+                such as `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
+            astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AstraDB' instance.
+            async_astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
+            namespace: namespace (aka keyspace) where the
+                collection is created. Defaults to the database's "default namespace".
+            setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or
+                OFF).
+            pre_delete_collection: whether to delete the collection
+                before creating it. If False and the collection already exists,
+                the collection will be used as is.
+            embedding: Embedding provider for semantic encoding and search.
+            metric: the function to use for evaluating similarity of text embeddings.
+                Defaults to 'cosine' (alternatives: 'euclidean', 'dot_product')
+            similarity_threshold: the minimum similarity for accepting a
+                (semantic-search) match.
+        """
         self.embedding = embedding
         self.metric = metric
         self.similarity_threshold = similarity_threshold
+        self.collection_name = collection_name
 
         # The contract for this class has separate lookup and update:
         # in order to spare some embedding calculations we cache them between
@@ -1541,25 +1646,46 @@ class AstraDBSemanticCache(BaseCache):
             return self.embedding.embed_query(text=text)
 
         self._get_embedding = _cache_embedding
-        self.embedding_dimension = self._get_embedding_dimension()
 
-        self.collection_name = collection_name
+        @_async_lru_cache(maxsize=ASTRA_DB_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE)
+        async def _acache_embedding(text: str) -> List[float]:
+            return await self.embedding.aembed_query(text=text)
 
-        self.collection = self.astra_db.create_collection(
-            collection_name=self.collection_name,
-            dimension=self.embedding_dimension,
-            metric=self.metric,
+        self._aget_embedding = _acache_embedding
+
+        embedding_dimension: Union[int, Awaitable[int], None] = None
+        if setup_mode == SetupMode.ASYNC:
+            embedding_dimension = self._aget_embedding_dimension()
+        elif setup_mode == SetupMode.SYNC:
+            embedding_dimension = self._get_embedding_dimension()
+
+        self.astra_env = _AstraDBCollectionEnvironment(
+            collection_name=collection_name,
+            token=token,
+            api_endpoint=api_endpoint,
+            astra_db_client=astra_db_client,
+            async_astra_db_client=async_astra_db_client,
+            namespace=namespace,
+            setup_mode=setup_mode,
+            pre_delete_collection=pre_delete_collection,
+            embedding_dimension=embedding_dimension,
+            metric=metric,
         )
+        self.collection = self.astra_env.collection
+        self.async_collection = self.astra_env.async_collection
 
     def _get_embedding_dimension(self) -> int:
         return len(self._get_embedding(text="This is a sample sentence."))
+
+    async def _aget_embedding_dimension(self) -> int:
+        return len(await self._aget_embedding(text="This is a sample sentence."))
 
     @staticmethod
     def _make_id(prompt: str, llm_string: str) -> str:
         return f"{_hash(prompt)}#{_hash(llm_string)}"
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
+        self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         llm_string_hash = _hash(llm_string)
         embedding_vector = self._get_embedding(text=prompt)
@@ -1574,9 +1700,33 @@ class AstraDBSemanticCache(BaseCache):
             }
         )
 
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
+        await self.astra_env.aensure_db_setup()
+        doc_id = self._make_id(prompt, llm_string)
+        llm_string_hash = _hash(llm_string)
+        embedding_vector = await self._aget_embedding(text=prompt)
+        body = _dumps_generations(return_val)
+        #
+        await self.async_collection.upsert(
+            {
+                "_id": doc_id,
+                "body_blob": body,
+                "llm_string_hash": llm_string_hash,
+                "$vector": embedding_vector,
+            }
+        )
+
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         hit_with_id = self.lookup_with_id(prompt, llm_string)
+        if hit_with_id is not None:
+            return hit_with_id[1]
+        else:
+            return None
+
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        hit_with_id = await self.alookup_with_id(prompt, llm_string)
         if hit_with_id is not None:
             return hit_with_id[1]
         else:
@@ -1589,6 +1739,7 @@ class AstraDBSemanticCache(BaseCache):
         Look up based on prompt and llm_string.
         If there are hits, return (document_id, cached_entry) for the top hit
         """
+        self.astra_env.ensure_db_setup()
         prompt_embedding: List[float] = self._get_embedding(text=prompt)
         llm_string_hash = _hash(llm_string)
 
@@ -1607,7 +1758,37 @@ class AstraDBSemanticCache(BaseCache):
             generations = _loads_generations(hit["body_blob"])
             if generations is not None:
                 # this protects against malformed cached items:
-                return (hit["_id"], generations)
+                return hit["_id"], generations
+            else:
+                return None
+
+    async def alookup_with_id(
+        self, prompt: str, llm_string: str
+    ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
+        """
+        Look up based on prompt and llm_string.
+        If there are hits, return (document_id, cached_entry) for the top hit
+        """
+        await self.astra_env.aensure_db_setup()
+        prompt_embedding: List[float] = await self._aget_embedding(text=prompt)
+        llm_string_hash = _hash(llm_string)
+
+        hit = await self.async_collection.vector_find_one(
+            vector=prompt_embedding,
+            filter={
+                "llm_string_hash": llm_string_hash,
+            },
+            fields=["body_blob", "_id"],
+            include_similarity=True,
+        )
+
+        if hit is None or hit["$similarity"] < self.similarity_threshold:
+            return None
+        else:
+            generations = _loads_generations(hit["body_blob"])
+            if generations is not None:
+                # this protects against malformed cached items:
+                return hit["_id"], generations
             else:
                 return None
 
@@ -1620,14 +1801,39 @@ class AstraDBSemanticCache(BaseCache):
         )[1]
         return self.lookup_with_id(prompt, llm_string=llm_string)
 
+    async def alookup_with_id_through_llm(
+        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+    ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
+        llm_string = (
+            await aget_prompts(
+                {**llm.dict(), **{"stop": stop}},
+                [],
+            )
+        )[1]
+        return await self.alookup_with_id(prompt, llm_string=llm_string)
+
     def delete_by_document_id(self, document_id: str) -> None:
         """
         Given this is a "similarity search" cache, an invalidation pattern
         that makes sense is first a lookup to get an ID, and then deleting
         with that ID. This is for the second step.
         """
+        self.astra_env.ensure_db_setup()
         self.collection.delete_one(document_id)
 
+    async def adelete_by_document_id(self, document_id: str) -> None:
+        """
+        Given this is a "similarity search" cache, an invalidation pattern
+        that makes sense is first a lookup to get an ID, and then deleting
+        with that ID. This is for the second step.
+        """
+        await self.astra_env.aensure_db_setup()
+        await self.async_collection.delete_one(document_id)
+
     def clear(self, **kwargs: Any) -> None:
-        """Clear the *whole* semantic cache."""
-        self.astra_db.truncate_collection(self.collection_name)
+        self.astra_env.ensure_db_setup()
+        self.collection.clear()
+
+    async def aclear(self, **kwargs: Any) -> None:
+        await self.astra_env.aensure_db_setup()
+        await self.async_collection.clear()

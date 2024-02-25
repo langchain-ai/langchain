@@ -5,7 +5,8 @@ import re
 from typing import List
 
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.exceptions import OutputParserException
 
 _PROMPT_TEMPLATE = """If someone asks you to perform a task, your job is to come up with a series of bash commands that will perform the task. There is no need to put "#!/bin/bash" in your answer. Make sure to reason step by step, using this format:
 
@@ -30,6 +31,8 @@ class BashOutputParser(BaseOutputParser):
     """Parser for bash output."""
 
     def parse(self, text: str) -> List[str]:
+        """Parse the output of a bash command."""
+
         if "```bash" in text:
             return self.get_code_blocks(text)
         else:

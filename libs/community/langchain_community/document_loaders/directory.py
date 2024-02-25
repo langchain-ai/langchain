@@ -2,7 +2,7 @@ import concurrent
 import logging
 import random
 from pathlib import Path
-from typing import Any, List, Optional, Type, Union
+from typing import Any, List, Optional, Sequence, Type, Union
 
 from langchain_core.documents import Document
 
@@ -41,6 +41,7 @@ class DirectoryLoader(BaseLoader):
         use_multithreading: bool = False,
         max_concurrency: int = 4,
         *,
+        exclude: Union[Sequence[str], str] = (),
         sample_size: int = 0,
         randomize_sample: bool = False,
         sample_seed: Union[int, None] = None,
@@ -51,6 +52,8 @@ class DirectoryLoader(BaseLoader):
             path: Path to directory.
             glob: Glob pattern to use to find files. Defaults to "**/[!.]*"
                (all files except hidden).
+            exclude: A pattern or list of patterns to exclude from results.
+                Use glob syntax.
             silent_errors: Whether to silently ignore errors. Defaults to False.
             load_hidden: Whether to load hidden files. Defaults to False.
             loader_cls: Loader class to use for loading files.
@@ -64,11 +67,38 @@ class DirectoryLoader(BaseLoader):
                 directory.
             randomize_sample: Shuffle the files to get a random sample.
             sample_seed: set the seed of the random shuffle for reproducibility.
+
+        Examples:
+
+            .. code-block:: python
+                from langchain_community.document_loaders import DirectoryLoader
+
+                # Load all non-hidden files in a directory.
+                loader = DirectoryLoader("/path/to/directory")
+
+                # Load all text files in a directory without recursion.
+                loader = DirectoryLoader("/path/to/directory", glob="*.txt")
+
+                # Recursively load all text files in a directory.
+                loader = DirectoryLoader(
+                    "/path/to/directory", glob="*.txt", recursive=True
+                )
+
+                # Load all files in a directory, except for py files.
+                loader = DirectoryLoader("/path/to/directory", exclude="*.py")
+
+                # Load all files in a directory, except for py or pyc files.
+                loader = DirectoryLoader(
+                    "/path/to/directory", exclude=["*.py", "*.pyc"]
+                )
         """
         if loader_kwargs is None:
             loader_kwargs = {}
+        if isinstance(exclude, str):
+            exclude = (exclude,)
         self.path = path
         self.glob = glob
+        self.exclude = exclude
         self.load_hidden = load_hidden
         self.loader_cls = loader_cls
         self.loader_kwargs = loader_kwargs
@@ -118,7 +148,13 @@ class DirectoryLoader(BaseLoader):
             raise ValueError(f"Expected directory, got file: '{self.path}'")
 
         docs: List[Document] = []
-        items = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
+
+        paths = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
+        items = [
+            path
+            for path in paths
+            if not (self.exclude and any(path.match(glob) for glob in self.exclude))
+        ]
 
         if self.sample_size > 0:
             if self.randomize_sample:
