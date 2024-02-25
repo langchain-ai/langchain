@@ -34,6 +34,8 @@ COMMAND_EXECUTION_ATTRIBUTES = [
 
 
 class PALValidation:
+    """Validation for PAL generated code."""
+
     SOLUTION_EXPRESSION_TYPE_FUNCTION = ast.FunctionDef
     SOLUTION_EXPRESSION_TYPE_VARIABLE = ast.Name
 
@@ -95,7 +97,7 @@ class PALValidation:
 
 
 class PALChain(Chain):
-    """Implements Program-Aided Language Models (PAL).
+    """Chain that implements Program-Aided Language Models (PAL).
 
     This class implements the Program-Aided Language Models (PAL) for generating code
     solutions. PAL is a technique described in the paper "Program-Aided Language Models"

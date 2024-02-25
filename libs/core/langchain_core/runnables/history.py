@@ -97,9 +97,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             messages: List[BaseMessage] = Field(default_factory=list)
 
-            def add_message(self, message: BaseMessage) -> None:
-                \"\"\"Add a self-created message to the store\"\"\"
-                self.messages.append(message)
+            def add_messages(self, messages: List[BaseMessage]) -> None:
+                \"\"\"Add a list of messages to the store\"\"\"
+                self.messages.extend(messages)
 
             def clear(self) -> None:
                 self.messages = []
@@ -420,7 +420,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         return await run_in_executor(config, self._enter_history, input, config)
 
     def _exit_history(self, run: Run, config: RunnableConfig) -> None:
-        hist = config["configurable"]["message_history"]
+        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
         inputs = load(run.inputs)
@@ -436,9 +436,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # Get the output messages
         output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
-
-        for m in input_messages + output_messages:
-            hist.add_message(m)
+        hist.add_messages(input_messages + output_messages)
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = super()._merge_configs(*configs)
