@@ -8,9 +8,9 @@ from langchain.retrievers import (
     PubMedRetriever,
     WikipediaRetriever,
 )
-from langchain.schema import StrOutputParser
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from langchain_community.chat_models import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import (
