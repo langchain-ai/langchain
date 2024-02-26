@@ -49,7 +49,7 @@ class ExampleLinksDirective(SphinxDirective):
         class_or_func_name = self.arguments[0]
         links = imported_classes.get(class_or_func_name, {})
         list_node = nodes.bullet_list()
-        for doc_name, link in links.items():
+        for doc_name, link in sorted(links.items()):
             item_node = nodes.list_item()
             para_node = nodes.paragraph()
             link_node = nodes.reference()
@@ -114,8 +114,8 @@ autodoc_pydantic_field_signature_prefix = "param"
 autodoc_member_order = "groupwise"
 autoclass_content = "both"
 autodoc_typehints_format = "short"
+autodoc_typehints = "both"
 
-# autodoc_typehints = "description"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
 

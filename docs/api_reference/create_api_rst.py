@@ -3,6 +3,7 @@
 import importlib
 import inspect
 import os
+import sys
 import typing
 from enum import Enum
 from pathlib import Path
@@ -13,7 +14,6 @@ from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
-
 
 ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
 
@@ -218,8 +218,8 @@ def _construct_doc(
 
     for module in namespaces:
         _members = members_by_namespace[module]
-        classes = _members["classes_"]
-        functions = _members["functions"]
+        classes = [el for el in _members["classes_"] if el["is_public"]]
+        functions = [el for el in _members["functions"] if el["is_public"]]
         if not (classes or functions):
             continue
         section = f":mod:`{package_namespace}.{module}`"
@@ -245,9 +245,6 @@ Classes
 """
 
             for class_ in sorted(classes, key=lambda c: c["qualified_name"]):
-                if not class_["is_public"]:
-                    continue
-
                 if class_["kind"] == "TypedDict":
                     template = "typeddict.rst"
                 elif class_["kind"] == "enum":
@@ -265,7 +262,7 @@ Classes
 """
 
         if functions:
-            _functions = [f["qualified_name"] for f in functions if f["is_public"]]
+            _functions = [f["qualified_name"] for f in functions]
             fstring = "\n    ".join(sorted(_functions))
             full_doc += f"""\
 Functions
@@ -323,31 +320,54 @@ def _package_dir(package_name: str = "langchain") -> Path:
 
 
 def _get_package_version(package_dir: Path) -> str:
-    with open(package_dir.parent / "pyproject.toml", "r") as f:
-        pyproject = toml.load(f)
+    """Return the version of the package."""
+    try:
+        with open(package_dir.parent / "pyproject.toml", "r") as f:
+            pyproject = toml.load(f)
+    except FileNotFoundError as e:
+        print(
+            f"pyproject.toml not found in {package_dir.parent}.\n"
+            "You are either attempting to build a directory which is not a package or "
+            "the package is missing a pyproject.toml file which should be added."
+            "Aborting the build."
+        )
+        exit(1)
     return pyproject["tool"]["poetry"]["version"]
 
 
-def _out_file_path(package_name: str = "langchain") -> Path:
+def _out_file_path(package_name: str) -> Path:
     """Return the path to the file containing the documentation."""
     return HERE / f"{package_name.replace('-', '_')}_api_reference.rst"
 
 
-def _doc_first_line(package_name: str = "langchain") -> str:
+def _doc_first_line(package_name: str) -> str:
     """Return the path to the file containing the documentation."""
     return f".. {package_name.replace('-', '_')}_api_reference:\n\n"
 
 
-def main() -> None:
+def main(dirs: Optional[list] = None) -> None:
     """Generate the api_reference.rst file for each package."""
-    for dir in os.listdir(ROOT_DIR / "libs"):
-        if dir in ("cli", "partners"):
+    print("Starting to build API reference files.")
+    if not dirs:
+        dirs = [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs")
+            if dir_ not in ("cli", "partners")
+        ]
+        dirs += os.listdir(ROOT_DIR / "libs" / "partners")
+    for dir_ in dirs:
+        # Skip any hidden directories
+        # Some of these could be present by mistake in the code base
+        # e.g., .pytest_cache from running tests from the wrong location.
+        if dir_.startswith("."):
+            print("Skipping dir:", dir_)
             continue
         else:
-            _build_rst_file(package_name=dir)
-    for dir in os.listdir(ROOT_DIR / "libs" / "partners"):
-        _build_rst_file(package_name=dir)
+            print("Building package:", dir_)
+            _build_rst_file(package_name=dir_)
+    print("API reference files built.")
 
 
 if __name__ == "__main__":
-    main()
+    dirs = sys.argv[1:] or None
+    main(dirs=dirs)
