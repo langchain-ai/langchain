@@ -1,4 +1,3 @@
-import re
 import sys
 from functools import partial
 from operator import itemgetter
@@ -730,26 +729,29 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert RunnableLambda(
-        aget_values_typed  # type: ignore[arg-type]
-    ).input_schema.schema() == {
-        "title": "aget_values_typed_input",
-        "$ref": "#/definitions/InputType",
-        "definitions": {
-            "InputType": {
-                "properties": {
-                    "variable_name": {
-                        "title": "Variable " "Name",
-                        "type": "string",
+    assert (
+        RunnableLambda(
+            aget_values_typed  # type: ignore[arg-type]
+        ).input_schema.schema()
+        == {
+            "title": "aget_values_typed_input",
+            "$ref": "#/definitions/InputType",
+            "definitions": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable " "Name",
+                            "type": "string",
+                        },
+                        "yo": {"title": "Yo", "type": "integer"},
                     },
-                    "yo": {"title": "Yo", "type": "integer"},
-                },
-                "required": ["variable_name", "yo"],
-                "title": "InputType",
-                "type": "object",
-            }
-        },
-    }
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+        }
+    )
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
         "title": "aget_values_typed_output",
