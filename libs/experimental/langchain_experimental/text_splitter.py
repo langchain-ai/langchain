@@ -11,6 +11,16 @@ from langchain_core.embeddings import Embeddings
 
 
 def combine_sentences(sentences: List[dict], buffer_size: int = 1) -> List[dict]:
+    """Combine sentences based on buffer size.
+
+    Args:
+        sentences: List of sentences to combine.
+        buffer_size: Number of sentences to combine. Defaults to 1.
+
+    Returns:
+        List of sentences with combined sentences.
+    """
+
     # Go through each sentence dict
     for i in range(len(sentences)):
         # Create a string that will hold the sentences which are joined
@@ -42,6 +52,14 @@ def combine_sentences(sentences: List[dict], buffer_size: int = 1) -> List[dict]
 
 
 def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List[dict]]:
+    """Calculate cosine distances between sentences.
+
+    Args:
+        sentences: List of sentences to calculate distances for.
+
+    Returns:
+        Tuple of distances and sentences.
+    """
     distances = []
     for i in range(len(sentences) - 1):
         embedding_current = sentences[i]["combined_sentence_embedding"]
@@ -66,12 +84,12 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
 
 
 class SemanticChunker(BaseDocumentTransformer):
-    """Splits the text based on semantic similarity.
+    """Split the text based on semantic similarity.
 
     Taken from Greg Kamradt's wonderful notebook:
     https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/5_Levels_Of_Text_Splitting.ipynb
 
-    All credit to him.
+    All credits to him.
 
     At a high level, this splits into sentences, then groups into groups of 3
     sentences, and then merges one that are similar in the embedding space.
