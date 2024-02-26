@@ -323,9 +323,6 @@ class Neo4jGraph(GraphStore):
         - baseEntityLabel (bool, optional): If True, each newly created node
         gets a secondary __Entity__ label, which is indexed and improves import
         speed and performance. Defaults to False.
-
-        Returns:
-        None: This method does not return any value but updates the graph database with the provided GraphDocument objects.
         """
         if baseEntityLabel:  # Check if constraint already exists
             constraint_exists = any(
