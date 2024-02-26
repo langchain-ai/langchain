@@ -16,6 +16,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from langchain_core._api import beta
@@ -45,6 +46,10 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -91,21 +96,22 @@ def _convert_mistral_chat_message_to_message(
     _message: MistralChatMessage,
 ) -> BaseMessage:
     role = _message.role
+    content = cast(Union[str, List], _message.content)
     if role == "user":
-        return HumanMessage(content=_message.content)
+        return HumanMessage(content=content)
     elif role == "assistant":
         additional_kwargs: Dict = {}
         if _message.tool_calls:
             additional_kwargs["tool_calls"] = [
                 tc.model_dump() for tc in _message.tool_calls
             ]
-        return AIMessage(content=_message.content, additional_kwargs=additional_kwargs)
+        return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
-        return SystemMessage(content=_message.content)
+        return SystemMessage(content=content)
     elif role == "tool":
-        return ToolMessage(content=_message.content, name=_message.name)
+        return ToolMessage(content=content, name=_message.name)
     else:
-        return ChatMessage(content=_message.content, role=role)
+        return ChatMessage(content=content, role=role)
 
 
 async def acompletion_with_retry(
@@ -398,8 +404,6 @@ class ChatMistralAI(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -421,35 +425,6 @@ class ChatMistralAI(BaseChatModel):
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if tool_choice is not None and tool_choice:
-            if len(formatted_tools) != 1:
-                raise ValueError(
-                    "When specifying `tool_choice`, you must provide exactly one "
-                    f"tool. Received {len(formatted_tools)} tools."
-                )
-            if isinstance(tool_choice, str):
-                if tool_choice not in ("auto", "none"):
-                    tool_choice = {
-                        "type": "function",
-                        "function": {"name": tool_choice},
-                    }
-            elif isinstance(tool_choice, bool):
-                tool_choice = formatted_tools[0]
-            elif isinstance(tool_choice, dict):
-                if (
-                    formatted_tools[0]["function"]["name"]
-                    != tool_choice["function"]["name"]
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice} was specified, but the only "
-                        f"provided tool was {formatted_tools[0]['function']['name']}."
-                    )
-            else:
-                raise ValueError(
-                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
-                    f"Received: {tool_choice}"
-                )
-            kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
     @beta()
@@ -502,7 +477,7 @@ class ChatMistralAI(BaseChatModel):
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_mistralai import ChatMistralAI
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -510,7 +485,7 @@ class ChatMistralAI(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -523,7 +498,7 @@ class ChatMistralAI(BaseChatModel):
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_mistralai import ChatMistralAI
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -531,7 +506,7 @@ class ChatMistralAI(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -544,7 +519,7 @@ class ChatMistralAI(BaseChatModel):
         Example: Function-calling, dict schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_mistralai import ChatMistralAI
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
@@ -554,7 +529,7 @@ class ChatMistralAI(BaseChatModel):
                     justification: str
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -566,14 +541,14 @@ class ChatMistralAI(BaseChatModel):
         Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_openai import ChatOpenAI
+                from langchain_mistralai import ChatMistralAI
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str
                     justification: str
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -594,7 +569,7 @@ class ChatMistralAI(BaseChatModel):
         Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_openai import ChatOpenAI
+                from langchain_mistralai import ChatMistralAI
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
 
@@ -623,7 +598,7 @@ class ChatMistralAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True)
+            llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
