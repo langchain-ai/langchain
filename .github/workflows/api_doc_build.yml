@@ -43,6 +43,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
           cache-key: api-docs
+          working-directory: langchain
 
       - name: Install dependencies
         working-directory: langchain
