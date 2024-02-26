@@ -46,7 +46,7 @@ llm = ChatOpenAI(openai_api_key="...")
 ```
 
   </TabItem>
-  <TabItem value="local" label="Local">
+  <TabItem value="local" label="Local (using Ollama)">
 
 [Ollama](https://ollama.ai/) allows you to run open-source large language models, such as Llama 2, locally.
 
@@ -62,6 +62,37 @@ from langchain_community.chat_models import ChatOllama
 
 llm = Ollama(model="llama2")
 chat_model = ChatOllama()
+```
+
+  </TabItem>
+  <TabItem value="cohere" label="Cohere">
+
+First we'll need to install their partner package:
+
+```shell
+pip install cohere
+```
+
+Accessing the API requires an API key, which you can get by creating an account and heading [here](https://dashboard.cohere.com/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+
+```shell
+export COHERE_API_KEY="..."
+```
+
+We can then initialize the model:
+
+```python
+from langchain_community.chat_models import ChatCohere
+
+llm = ChatCohere()
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `cohere_api_key` named parameter when initiating the Cohere LLM class:
+
+```python
+from langchain_community.chat_models import ChatCohere
+
+llm = ChatCohere(cohere_api_key="...")
 ```
 
   </TabItem>
