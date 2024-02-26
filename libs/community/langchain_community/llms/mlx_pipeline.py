@@ -6,25 +6,13 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra
-
-try:
-    import mlx.nn as nn
-
-except ImportError:
-    raise ValueError(
-        "Could not import mlx python package. "
-        "Please install it with `pip install mlx`."
-    )
-
-
+import mlx.nn as nn
 from transformers import PreTrainedTokenizerBase
 
-
-
-
-DEFAULT_MODEL_ID = "mlx-community/quantized-gemma-2b-it"
+DEFAULT_MODEL_ID = "mlx-community/quantized-gemma-2b"
 
 logger = logging.getLogger(__name__)
+
 
 class MLXPipeline(LLM):
     """MLX Pipeline API.
@@ -36,7 +24,7 @@ class MLXPipeline(LLM):
 
             from langchain_community.llms import MLXPipeline
             pipe = MLXPipeline.from_model_id(
-                model_id="mlx-community/quantized-gemma-2b-it",
+                model_id="mlx-community/quantized-gemma-2b",
                 pipeline_kwargs={"max_new_tokens": 10},
             )
     Example passing model and tokenizer in directly:
@@ -44,7 +32,7 @@ class MLXPipeline(LLM):
 
             from langchain_community.llms import MLXPipeline
             from mlx_lm import load
-            model_id="mlx-community/quantized-gemma-2b-it"
+            model_id="mlx-community/quantized-gemma-2b"
             model, tokenizer = load(model_id)
             pipe = MLXPipeline(model=model, tokenizer=tokenizer)
     """
@@ -60,7 +48,7 @@ class MLXPipeline(LLM):
         Configuration parameters specifically for the tokenizer.
         Defaults to an empty dictionary.
     """
-    adapter_file:  Optional[dict] = None
+    adapter_file: Optional[dict] = None
     """
         Path to the adapter file. If provided, applies LoRA layers to the model.
         Defaults to None.
@@ -99,7 +87,6 @@ class MLXPipeline(LLM):
                 "Please install it with `pip install mlx_lm`."
             )
 
-
         tokenizer_config = tokenizer_config or {}
         model, tokenizer = load(model_id, tokenizer_config, adapter_file, lazy)
         _pipeline_kwargs = pipeline_kwargs or {}
@@ -122,42 +109,12 @@ class MLXPipeline(LLM):
             "tokenizer_config": self.tokenizer_config,
             "adapter_file": self.adapter_file,
             "lazy": self.lazy,
-            "pipeline_kwargs": self.pipeline_kwargs
+            "pipeline_kwargs": self.pipeline_kwargs,
         }
 
     @property
     def _llm_type(self) -> str:
         return "mlx_pipeline"
-
-    def _convert_prompt(self, prompt):
-        """Convert langchain prompt to dict with keys `role` and `content`."""
-
-        # Create a dictionary to store role and message pairs
-        conversation_list = []
-
-        # Process each line
-        for line in prompt.split('\n'):
-            # Split each line into role and message
-            if ': ' in line:
-                role, content = line.split(': ', 1)
-            else:
-                role, content = 'user', line
-
-            role = role.lower()
-
-            # Map roles
-            if role == "human":
-                role = "user"
-            elif role == "ai":
-                role = "assistant"
-
-            # Create a dictionary for the current line
-            line_dict = {'content': content, 'role': role}
-
-            # Append the dictionary to the list
-            conversation_list.append(line_dict)
-
-        return conversation_list
 
     def _call(
         self,
@@ -169,26 +126,9 @@ class MLXPipeline(LLM):
 
         from mlx_lm import generate
 
-        prompt = self._convert_prompt(prompt)
-
-        if hasattr(self.tokenizer, "apply_chat_template") and self.tokenizer.chat_template:
-            prompt = self.tokenizer.apply_chat_template(
-                prompt,
-                tokenize=False,
-                add_generation_prompt=True,
-                return_tensors="np",
-                **kwargs
-            )
-        else:
-            prompt = prompt[0]['content']
-
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
 
-        return generate(
-            self.model, self.tokenizer,
-            prompt=prompt,
-            **pipeline_kwargs
-        )
+        return generate(self.model, self.tokenizer, prompt=prompt, **pipeline_kwargs)
 
     def _stream(
         self,
@@ -211,27 +151,22 @@ class MLXPipeline(LLM):
                 "Please install it with `pip install mlx_lm`."
             )
 
-        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", self.pipeline_kwargs)
 
-        temp: float =  pipeline_kwargs.get("temp", 0.0)
+        temp: float = pipeline_kwargs.get("temp", 0.0)
         max_new_tokens: int = pipeline_kwargs.get("max_new_tokens", 100)
-        repetition_penalty: Optional[float] = pipeline_kwargs.get("repetition_penalty", None)
-        repetition_context_size: Optional[float] = pipeline_kwargs.get("repetition_context_size", None)
+        repetition_penalty: Optional[float] = pipeline_kwargs.get(
+            "repetition_penalty", None
+        )
+        repetition_context_size: Optional[float] = pipeline_kwargs.get(
+            "repetition_context_size", None
+        )
 
-        prompt = self._convert_prompt(prompt)
-
-        eos_token_id = self.tokenizer.eos_token_id
-        if hasattr(self.tokenizer, "apply_chat_template") and self.tokenizer.chat_template:
-            prompt = self.tokenizer.apply_chat_template(
-                prompt,
-                add_generation_prompt=True,
-                return_tensors="np",
-                **kwargs
-            )
-        else:
-            prompt = self.tokenizer.encode(prompt[0]['content'], return_tensors="np")
+        prompt = self.tokenizer.encode(prompt, return_tensors="np")
 
         prompt_tokens = mx.array(prompt[0])
+
+        eos_token_id = self.tokenizer.eos_token_id
 
         for (token, prob), n in zip(
             generate_step(
@@ -240,11 +175,9 @@ class MLXPipeline(LLM):
                 temp,
                 repetition_penalty,
                 repetition_context_size,
-                **kwargs
             ),
-            range(max_new_tokens)
+            range(max_new_tokens),
         ):
-
             # identify text to yield
             text: Optional[str] = None
             text = self.tokenizer.decode(token.item())
@@ -259,4 +192,3 @@ class MLXPipeline(LLM):
             # break if stop sequence found
             if token == eos_token_id:
                 break
-
