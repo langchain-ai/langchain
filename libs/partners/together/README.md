@@ -51,7 +51,7 @@ You can use Together's generative AI models as Langchain LLMs:
 
 ```py
 from langchain_together import Together
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 llm = Together(
     model="togethercomputer/RedPajama-INCITE-7B-Base",
