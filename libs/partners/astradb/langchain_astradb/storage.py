@@ -60,12 +60,12 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
     def mset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
         self.astra_env.ensure_db_setup()
         for k, v in key_value_pairs:
-            self.collection.upsert({"_id": k, "value": self.encode_value(v)})
+            self.collection.upsert_one({"_id": k, "value": self.encode_value(v)})
 
     async def amset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
         await self.astra_env.aensure_db_setup()
         for k, v in key_value_pairs:
-            await self.async_collection.upsert(
+            await self.async_collection.upsert_one(
                 {"_id": k, "value": self.encode_value(v)}
             )
 
