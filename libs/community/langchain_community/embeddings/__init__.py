@@ -26,6 +26,7 @@ from langchain_community.embeddings.baidu_qianfan_endpoint import (
 )
 from langchain_community.embeddings.bedrock import BedrockEmbeddings
 from langchain_community.embeddings.bookend import BookendEmbeddings
+from langchain_community.embeddings.cache import CacheBackedEmbeddings
 from langchain_community.embeddings.clarifai import ClarifaiEmbeddings
 from langchain_community.embeddings.cohere import CohereEmbeddings
 from langchain_community.embeddings.dashscope import DashScopeEmbeddings
@@ -99,6 +100,7 @@ __all__ = [
     "OpenAIEmbeddings",
     "AzureOpenAIEmbeddings",
     "BaichuanTextEmbeddings",
+    "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
