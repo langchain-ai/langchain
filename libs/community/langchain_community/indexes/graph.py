@@ -1,7 +1,6 @@
 """Graph Index Creator."""
 from typing import Optional, Type
 
-from langchain.chains.llm import LLMChain
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
@@ -22,6 +21,8 @@ class GraphIndexCreator(BaseModel):
         self, text: str, prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     ) -> NetworkxEntityGraph:
         """Create graph index from text."""
+        from langchain.chains.llm import LLMChain
+
         if self.llm is None:
             raise ValueError("llm should not be None")
         graph = self.graph_type()
@@ -36,6 +37,8 @@ class GraphIndexCreator(BaseModel):
         self, text: str, prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     ) -> NetworkxEntityGraph:
         """Create graph index from text asynchronously."""
+        from langchain.chains.llm import LLMChain
+
         if self.llm is None:
             raise ValueError("llm should not be None")
         graph = self.graph_type()

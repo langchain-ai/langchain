@@ -1,8 +1,5 @@
-from typing import Any, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
-from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
-from langchain.chains.retrieval_qa.base import RetrievalQA
-from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
@@ -14,8 +11,13 @@ from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.llms.openai import OpenAI
 from langchain_community.vectorstores.chroma import Chroma
 
+if TYPE_CHECKING:
+    from langchain.text_splitter import TextSplitter
+
 
 def _get_default_text_splitter() -> TextSplitter:
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+
     return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
 
@@ -38,6 +40,8 @@ class VectorStoreIndexWrapper(BaseModel):
         **kwargs: Any,
     ) -> str:
         """Query the vectorstore."""
+        from langchain.chains.retrieval_qa.base import RetrievalQA
+
         llm = llm or OpenAI(temperature=0)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQA.from_chain_type(
@@ -53,6 +57,10 @@ class VectorStoreIndexWrapper(BaseModel):
         **kwargs: Any,
     ) -> dict:
         """Query the vectorstore and get back sources."""
+        from langchain.chains.qa_with_sources.retrieval import (
+            RetrievalQAWithSourcesChain,
+        )
+
         llm = llm or OpenAI(temperature=0)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQAWithSourcesChain.from_chain_type(
