@@ -1,8 +1,9 @@
 import concurrent
 import logging
 import random
-from pathlib import Path
 from typing import Any, List, Optional, Sequence, Type, Union
+from wcmatch import glob
+from wcmatch.pathlib import Path
 
 from langchain_core.documents import Document
 
@@ -31,7 +32,7 @@ class DirectoryLoader(BaseLoader):
     def __init__(
         self,
         path: str,
-        glob: str = "**/[!.]*",
+        glob: Union[str, Sequence[str]] = "**/[!.]*",
         silent_errors: bool = False,
         load_hidden: bool = False,
         loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
@@ -149,12 +150,12 @@ class DirectoryLoader(BaseLoader):
 
         docs: List[Document] = []
 
-        paths = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
-        items = [
-            path
-            for path in paths
-            if not (self.exclude and any(path.match(glob) for glob in self.exclude))
-        ]
+        glob_func = p.rglob if self.recursive else p.glob
+        items = glob_func(
+            self.glob,
+            flags=glob.GLOBSTAR | glob.DOTGLOB | glob.EXTGLOB,
+            exclude=self.exclude
+        )
 
         if self.sample_size > 0:
             if self.randomize_sample:

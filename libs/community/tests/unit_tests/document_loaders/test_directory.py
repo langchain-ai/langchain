@@ -53,3 +53,32 @@ def test_exclude_ignores_matching_files(tmp_path: Path) -> None:
 def test_exclude_as_string_converts_to_sequence() -> None:
     loader = DirectoryLoader("./some_directory", exclude="*.py")
     assert loader.exclude == ("*.py",)
+
+
+def test_glob_patterns(tmp_path: Path) -> None:
+    txt_file = tmp_path / "test.txt"
+    py_file = tmp_path / "test.py"
+    md_file = tmp_path / "test.md"
+    mdx_file = tmp_path / "test.mdx"
+    txt_file.touch()
+    py_file.touch()
+    md_file.touch()
+    mdx_file.touch()
+
+    loader = DirectoryLoader(
+        str(tmp_path), glob="*.md?(x)", loader_cls=CustomLoader  # type: ignore
+    )
+    data = loader.load()
+    assert len(data) == 2
+
+    loader = DirectoryLoader(
+        str(tmp_path), glob="*.@(txt|py|md)", loader_cls=CustomLoader  # type: ignore
+    )
+    data = loader.load()
+    assert len(data) == 3
+
+    loader = DirectoryLoader(
+        str(tmp_path), glob=["*.txt", "*.md?(x)"], loader_cls=CustomLoader  # type: ignore
+    )
+    data = loader.load()
+    assert len(data) == 3
