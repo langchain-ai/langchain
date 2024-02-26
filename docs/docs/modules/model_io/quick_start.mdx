@@ -46,7 +46,26 @@ llm = ChatOpenAI(openai_api_key="...")
 ```
 
   </TabItem>
-    <TabItem value="cohere" label="Cohere" default>
+  <TabItem value="local" label="Local (using Ollama)">
+
+[Ollama](https://ollama.ai/) allows you to run open-source large language models, such as Llama 2, locally.
+
+First, follow [these instructions](https://github.com/jmorganca/ollama) to set up and run a local Ollama instance:
+
+* [Download](https://ollama.ai/download)
+* Fetch a model via `ollama pull llama2`
+
+Then, make sure the Ollama server is running. After that, you can do:
+```python
+from langchain_community.llms import Ollama
+from langchain_community.chat_models import ChatOllama
+
+llm = Ollama(model="llama2")
+chat_model = ChatOllama()
+```
+
+  </TabItem>
+  <TabItem value="cohere" label="Cohere">
 
 First we'll need to install their partner package:
 
@@ -74,25 +93,6 @@ If you'd prefer not to set an environment variable you can pass the key in direc
 from langchain_community.chat_models import ChatCohere
 
 llm = ChatCohere(cohere_api_key="...")
-```
-
-  </TabItem>
-  <TabItem value="local" label="Local">
-
-[Ollama](https://ollama.ai/) allows you to run open-source large language models, such as Llama 2, locally.
-
-First, follow [these instructions](https://github.com/jmorganca/ollama) to set up and run a local Ollama instance:
-
-* [Download](https://ollama.ai/download)
-* Fetch a model via `ollama pull llama2`
-
-Then, make sure the Ollama server is running. After that, you can do:
-```python
-from langchain_community.llms import Ollama
-from langchain_community.chat_models import ChatOllama
-
-llm = Ollama(model="llama2")
-chat_model = ChatOllama()
 ```
 
   </TabItem>
