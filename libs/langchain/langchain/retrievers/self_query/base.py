@@ -208,6 +208,7 @@ class SelfQueryRetriever(BaseRetriever):
         chain_kwargs: Optional[Dict] = None,
         enable_limit: bool = False,
         use_original_query: bool = False,
+        *,
         query_constructor_run_name: str = "query_constructor",
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
