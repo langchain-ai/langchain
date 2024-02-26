@@ -29,7 +29,7 @@ CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
-WITH * WHERE NOT label IN [$BASE_ENTITY_LABEL] AND NOT property IN [$BASE_ENTITY_LABEL]
+WITH * WHERE NOT label IN [$BASE_ENTITY_LABEL] AND NOT other_node IN [$BASE_ENTITY_LABEL]
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
