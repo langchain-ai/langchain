@@ -203,8 +203,7 @@ langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
 
 [tool.poetry.extras]
-llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers",
-  "intel-extension-for-transformers"]
+llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
