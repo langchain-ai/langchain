@@ -31,6 +31,8 @@ class BashOutputParser(BaseOutputParser):
     """Parser for bash output."""
 
     def parse(self, text: str) -> List[str]:
+        """Parse the output of a bash command."""
+
         if "```bash" in text:
             return self.get_code_blocks(text)
         else:

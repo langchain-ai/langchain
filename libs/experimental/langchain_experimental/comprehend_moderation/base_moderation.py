@@ -13,6 +13,8 @@ from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxi
 
 
 class BaseModeration:
+    """Base class for moderation."""
+
     def __init__(
         self,
         client: Any,
@@ -109,6 +111,8 @@ class BaseModeration:
             self.run_manager.on_text(message)
 
     def moderate(self, prompt: Any) -> str:
+        """Moderate the input prompt."""
+
         from langchain_experimental.comprehend_moderation.base_moderation_config import (  # noqa: E501
             ModerationPiiConfig,
             ModerationPromptSafetyConfig,
