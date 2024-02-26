@@ -6,7 +6,7 @@ from asyncio import InvalidStateError, Task
 from enum import Enum
 from typing import Awaitable, Optional, Union
 
-from astrapy.db import AstraDB, AsyncAstraDB
+from astrapy.db import AstraDB, AstraDBCollection, AsyncAstraDB, AsyncAstraDBCollection
 
 
 class SetupMode(Enum):
@@ -80,8 +80,6 @@ class _AstraDBCollectionEnvironment(_AstraDBEnvironment):
         embedding_dimension: Union[int, Awaitable[int], None] = None,
         metric: Optional[str] = None,
     ) -> None:
-        from astrapy.db import AstraDBCollection, AsyncAstraDBCollection
-
         super().__init__(
             token, api_endpoint, astra_db_client, async_astra_db_client, namespace
         )
