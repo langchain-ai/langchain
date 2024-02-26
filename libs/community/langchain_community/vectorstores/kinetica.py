@@ -168,7 +168,7 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.0b`."
+                "Please install it with `pip install gpudb==7.2.0.1`."
             )
 
         self.dimensions = dimensions
@@ -197,7 +197,7 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.0b`."
+                "Please install it with `pip install gpudb==7.2.0.1`."
             )
 
         options = GPUdb.Options()
@@ -284,7 +284,7 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.0b`."
+                "Please install it with `pip install gpudb==7.2.0.1`."
             )
         return GPUdbTable(
             _type=self.table_schema,
