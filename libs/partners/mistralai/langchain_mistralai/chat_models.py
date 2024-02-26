@@ -161,8 +161,8 @@ def _convert_message_to_mistral_chat_message(
         mistral_message = MistralChatMessage(role="user", content=message.content)
     elif isinstance(message, AIMessage):
         if "tool_calls" in message.additional_kwargs:
-            from mistralai.models.chat_completion import (
-                ToolCall as MistralToolCall,  # type: ignore[attr-defined]
+            from mistralai.models.chat_completion import (  # type: ignore[attr-defined]
+                ToolCall as MistralToolCall,
             )
 
             tool_calls = [
