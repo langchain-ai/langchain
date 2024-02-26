@@ -880,7 +880,7 @@ OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
     ),
 }
 
-_JS_SERIALIZABLE_MAPPING = {
+_JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
     ("langchain_core", "messages", "AIMessage"): (
         "langchain_core",
         "messages",
