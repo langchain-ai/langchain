@@ -46,6 +46,7 @@ from langchain_community.chat_models.llama_edge import LlamaEdgeChatService
 from langchain_community.chat_models.minimax import MiniMaxChat
 from langchain_community.chat_models.mlflow import ChatMlflow
 from langchain_community.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
+from langchain_community.chat_models.mlx import ChatMLX
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
@@ -73,6 +74,7 @@ __all__ = [
     "ChatGooglePalm",
     "ChatMlflow",
     "ChatMLflowAIGateway",
+    "ChatMLX",
     "ChatOllama",
     "ChatVertexAI",
     "JinaChat",
