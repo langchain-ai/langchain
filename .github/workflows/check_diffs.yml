@@ -33,14 +33,16 @@ jobs:
         run: |
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
-      dirs-to-run: ${{ steps.set-matrix.outputs.dirs-to-run }}
-      dirs-to-run-extended: ${{ steps.set-matrix.outputs.dirs-to-run-extended }}
+      dirs-to-lint: ${{ steps.set-matrix.outputs.dirs-to-lint }}
+      dirs-to-test: ${{ steps.set-matrix.outputs.dirs-to-test }}
+      dirs-to-extended-test: ${{ steps.set-matrix.outputs.dirs-to-extended-test }}
   lint:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-lint != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-lint) }}
     uses: ./.github/workflows/_lint.yml
     with:
       working-directory: ${{ matrix.working-directory }}
@@ -49,9 +51,10 @@ jobs:
   test:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
     uses: ./.github/workflows/_test.yml
     with:
       working-directory: ${{ matrix.working-directory }}
@@ -60,9 +63,10 @@ jobs:
   compile-integration-tests:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
     uses: ./.github/workflows/_compile_integration_test.yml
     with:
       working-directory: ${{ matrix.working-directory }}
@@ -71,9 +75,10 @@ jobs:
   dependencies:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run) }}
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
     uses: ./.github/workflows/_dependencies.yml
     with:
       working-directory: ${{ matrix.working-directory }}
@@ -82,10 +87,11 @@ jobs:
   extended-tests:
     name: "cd ${{ matrix.working-directory }} / make extended_tests #${{ matrix.python-version }}"
     needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-extended-test != '[]' }}
     strategy:
       matrix:
         # note different variable for extended test dirs
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-run-extended) }}
+        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-extended-test) }}
         python-version:
           - "3.8"
           - "3.9"
@@ -129,20 +135,17 @@ jobs:
   ci_success:
     name: "CI Success"
     needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests]
+    if: |
+      always()
     runs-on: ubuntu-latest
+    env:
+      JOBS_JSON: ${{ toJSON(needs) }}
+      RESULTS_JSON: ${{ toJSON(needs.*.result) }}
+      EXIT_CODE: ${{!contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && '0' || '1'}}
     steps:
       - name: "CI Success"
         run: |
-          echo "Success"
-          exit 0
-  # this one is just for visibility, where CI success step gets skipped
-  ci_failure:
-    name: "CI Failure"
-    needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests]
-    if: ${{ !success() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: "CI Failure"
-        run: |
-          echo "Failure"
-          exit 1
+          echo $JOBS_JSON
+          echo $RESULTS_JSON
+          echo "Exiting with $EXIT_CODE"
+          exit $EXIT_CODE
