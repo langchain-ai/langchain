@@ -441,6 +441,8 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             which=self.which,
             default=self.default.configurable_fields(**kwargs),
             alternatives=self.alternatives,
+            default_key=self.default_key,
+            prefix_keys=self.prefix_keys,
         )
 
     def _prepare(
