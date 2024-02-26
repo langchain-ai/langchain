@@ -119,7 +119,8 @@ class FAISS(VectorStore):
             and self._normalize_L2
         ):
             warnings.warn(
-                f"Normalizing L2 is not applicable for metric type: {self.distance_strategy}"
+                "Normalizing L2 is not applicable for "
+                f"metric type: {self.distance_strategy}"
             )
 
     @property
@@ -1184,7 +1185,8 @@ class FAISS(VectorStore):
         Create a filter function based on the provided filter.
 
         Args:
-            filter: A callable or a dictionary representing the filter conditions for documents.
+            filter: A callable or a dictionary representing the filter
+            conditions for documents.
 
         Returns:
             Callable[[Dict[str, Any]], bool]: A function that takes Document's metadata
