@@ -10,7 +10,8 @@ BASE_ENTITY_LABEL = "__Entity__"
 node_properties_query = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
-WHERE NOT type = "RELATIONSHIP" AND elementType = "node" AND NOT label IN [$BASE_ENTITY_LABEL]
+WHERE NOT type = "RELATIONSHIP" AND elementType = "node" 
+  AND NOT label IN [$BASE_ENTITY_LABEL]
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {labels: nodeLabels, properties: properties} AS output
 
@@ -29,7 +30,8 @@ CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
-WITH * WHERE NOT label IN [$BASE_ENTITY_LABEL] AND NOT other_node IN [$BASE_ENTITY_LABEL]
+WITH * WHERE NOT label IN [$BASE_ENTITY_LABEL] 
+    AND NOT other_node IN [$BASE_ENTITY_LABEL]
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
@@ -307,17 +309,19 @@ class Neo4jGraph(GraphStore):
         baseEntityLabel: bool = False,
     ) -> None:
         """
-        Adds a list of GraphDocument objects to the graph database. This method constructs nodes and relationships in the graph
-        based on the provided GraphDocument objects.
+        Adds a list of GraphDocument objects to the graph database. This method constructs
+        nodes and relationships in the graph based on the provided GraphDocument objects.
 
         Parameters:
-        - graph_documents (List[GraphDocument]): A list of GraphDocument objects that contain the nodes and relationships to be
-        added to the graph. Each GraphDocument should encapsulate the structure of part of the graph, including nodes, relationships,
+        - graph_documents (List[GraphDocument]): A list of GraphDocument objects that
+        contain the nodes and relationships to be added to the graph. Each GraphDocument
+        should encapsulate the structure of part of the graph, including nodes, relationships,
         and optionally, the source document information.
-        - include_source (bool, optional): If True, stores the source document and links it to nodes in the graph using the MENTIONS
-        relationship. This is useful for tracing back the origin of data. Defaults to False.
-        - baseEntityLabel (bool, optional): If True, each node gets a secondary __Entity__ label, which is indexed and greatly
-        improves import speed and performance. Defaults to False.
+        - include_source (bool, optional): If True, stores the source document and links it to
+        nodes in the graph using the MENTIONS relationship. This is useful for tracing back the
+        origin of data. Defaults to False.
+        - baseEntityLabel (bool, optional): If True, each node gets a secondary __Entity__ label,
+        which is indexed and improves import speed and performance. Defaults to False.
 
         Returns:
         None: This method does not return any value but updates the graph database with the provided GraphDocument objects.

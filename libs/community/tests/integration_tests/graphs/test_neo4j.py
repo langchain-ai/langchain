@@ -212,7 +212,8 @@ def test_neo4j_add_data_base() -> None:
     # Create two nodes and a relationship
     graph.add_graph_documents(test_data, baseEntityLabel=True)
     output = graph.query(
-        "MATCH (n) RETURN apoc.coll.sort(labels(n)) AS label, count(*) AS count ORDER BY label"
+        "MATCH (n) RETURN apoc.coll.sort(labels(n)) AS label, "
+        "count(*) AS count ORDER BY label"
     )
     assert output == [
         {"label": [BASE_ENTITY_LABEL, "bar"], "count": 1},
@@ -239,7 +240,8 @@ def test_neo4j_add_data_base_source() -> None:
     # Create two nodes and a relationship
     graph.add_graph_documents(test_data, baseEntityLabel=True, include_source=True)
     output = graph.query(
-        "MATCH (n) RETURN apoc.coll.sort(labels(n)) AS label, count(*) AS count ORDER BY label"
+        "MATCH (n) RETURN apoc.coll.sort(labels(n)) AS label, "
+        "count(*) AS count ORDER BY label"
     )
     assert output == [
         {"label": ["Document"], "count": 1},
