@@ -38,7 +38,7 @@ jobs:
           git merge origin/master -m "Merge master" --allow-unrelated-histories -X theirs
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+        uses: "./langchain/.github/actions/poetry_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
