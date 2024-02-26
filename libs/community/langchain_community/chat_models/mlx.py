@@ -1,6 +1,6 @@
 """MLX Chat Wrapper."""
 
-from typing import Any, List, Optional, Iterator, Union
+from typing import Any, Iterator, List, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -20,8 +20,8 @@ from langchain_core.outputs import (
     ChatResult,
     LLMResult,
 )
+
 from langchain_community.llms.mlx_pipeline import MLXPipeline
-import mlx.nn as nn
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
@@ -142,7 +142,6 @@ class ChatMLX(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-
         import mlx.core as mx
         from mlx_lm.utils import generate_step
 
@@ -157,7 +156,7 @@ class ChatMLX(BaseChatModel):
             )
         model_kwargs = kwargs.get("model_kwargs", self.llm.pipeline_kwargs)
         temp: float = model_kwargs.get("temp", 0.0)
-        max_new_tokens: int = model_kwargs.get("max_new_tokens", 100)
+        max_new_tokens: int = model_kwargs.get("max_tokens", 100)
         repetition_penalty: Optional[float] = model_kwargs.get(
             "repetition_penalty", None
         )
@@ -181,7 +180,6 @@ class ChatMLX(BaseChatModel):
             ),
             range(max_new_tokens),
         ):
-
             # identify text to yield
             text: Optional[str] = None
             text = self.tokenizer.decode(token.item())

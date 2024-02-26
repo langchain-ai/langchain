@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Mapping, Optional, Iterator, Dict, Union, Sequence
+from typing import Any, Iterator, List, Mapping, Optional
+
+import mlx.nn as nn
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra
-import mlx.nn as nn
 from transformers import PreTrainedTokenizerBase
 
 DEFAULT_MODEL_ID = "mlx-community/quantized-gemma-2b"
@@ -25,7 +26,7 @@ class MLXPipeline(LLM):
             from langchain_community.llms import MLXPipeline
             pipe = MLXPipeline.from_model_id(
                 model_id="mlx-community/quantized-gemma-2b",
-                pipeline_kwargs={"max_new_tokens": 10},
+                pipeline_kwargs={"max_tokens": 10},
             )
     Example passing model and tokenizer in directly:
         .. code-block:: python
@@ -123,7 +124,6 @@ class MLXPipeline(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-
         from mlx_lm import generate
 
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
@@ -137,7 +137,6 @@ class MLXPipeline(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-
         import mlx.core as mx
         from mlx_lm.utils import generate_step
 
@@ -154,7 +153,7 @@ class MLXPipeline(LLM):
         pipeline_kwargs = kwargs.get("pipeline_kwargs", self.pipeline_kwargs)
 
         temp: float = pipeline_kwargs.get("temp", 0.0)
-        max_new_tokens: int = pipeline_kwargs.get("max_new_tokens", 100)
+        max_new_tokens: int = pipeline_kwargs.get("max_tokens", 100)
         repetition_penalty: Optional[float] = pipeline_kwargs.get(
             "repetition_penalty", None
         )
