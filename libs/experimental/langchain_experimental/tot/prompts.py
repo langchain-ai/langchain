@@ -9,6 +9,8 @@ from langchain_experimental.tot.thought import ThoughtValidity
 
 
 def get_cot_prompt() -> PromptTemplate:
+    """Get the prompt for the Chain of Thought (CoT) chain."""
+
     return PromptTemplate(
         template_format="jinja2",
         input_variables=["problem_description", "thoughts"],
@@ -36,7 +38,7 @@ def get_cot_prompt() -> PromptTemplate:
 
 
 class JSONListOutputParser(BaseOutputParser):
-    """Class to parse the output of a PROPOSE_PROMPT response."""
+    """Parse the output of a PROPOSE_PROMPT response."""
 
     @property
     def _type(self) -> str:
@@ -53,6 +55,8 @@ class JSONListOutputParser(BaseOutputParser):
 
 
 def get_propose_prompt() -> PromptTemplate:
+    """Get the prompt for the PROPOSE_PROMPT chain."""
+
     return PromptTemplate(
         template_format="jinja2",
         input_variables=["problem_description", "thoughts", "n"],
@@ -95,6 +99,8 @@ def get_propose_prompt() -> PromptTemplate:
 
 
 class CheckerOutputParser(BaseOutputParser):
+    """Parse and check the output of the language model."""
+
     def parse(self, text: str) -> ThoughtValidity:
         """Parse the output of the language model."""
         text = text.upper()
