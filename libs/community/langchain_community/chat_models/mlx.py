@@ -194,5 +194,5 @@ class ChatMLX(BaseChatModel):
                     run_manager.on_llm_new_token(chunk.message)
 
             # break if stop sequence found
-            if token == eos_token_id:
+            if token == eos_token_id or text in stop:
                 break
