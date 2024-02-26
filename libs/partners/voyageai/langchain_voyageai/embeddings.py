@@ -1,6 +1,11 @@
-from typing import List
+import logging
+from typing import List, Optional
 
 from langchain_core.embeddings import Embeddings
+from pydantic import PrivateAttr
+from voyageai import Client
+
+logger = logging.getLogger(__name__)
 
 
 class VoyageAIEmbeddings(Embeddings):
@@ -13,22 +18,38 @@ class VoyageAIEmbeddings(Embeddings):
 
             model = VoyageAIEmbeddings()
     """
+    client: Client = PrivateAttr()
+    model: str = "voyage-01"
+    batch_size: int = 7
+
+    def __init__(
+        self,
+        model: Optional[str] = "voyage-01",
+        voyage_api_key: Optional[str] = None,
+        embed_batch_size: Optional[int] = None,
+    ):
+        if model == "voyage-01":
+            logger.warning(
+                "voyage-01 is not the latest model by Voyage AI. Please note that `model_name` "
+                "will be a required argument in the future. We recommend setting it explicitly. Please see "
+                "https://docs.voyageai.com/docs/embeddings for the latest models offered by Voyage AI."
+            )
+        self.model = model
+
+        if embed_batch_size is None:
+            embed_batch_size = 72 if self.model in ["voyage-2", "voyage-02"] else 7
+
+        self.batch_size = embed_batch_size
+        self.client = Client(api_key=voyage_api_key)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        raise NotImplementedError
+        return self.client.embed(
+            texts, model=self.model, input_type="document"
+        ).embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        raise NotImplementedError
-
-    # only keep aembed_documents and aembed_query if they're implemented!
-    # delete them otherwise to use the base class' default
-    # implementation, which calls the sync version in an executor
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronous Embed search docs."""
-        raise NotImplementedError
-
-    async def aembed_query(self, text: str) -> List[float]:
-        """Asynchronous Embed query text."""
-        raise NotImplementedError
+        return self.client.embed(
+            [text], model=self.model, input_type="query"
+        ).embeddings[0]

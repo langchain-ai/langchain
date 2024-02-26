@@ -1,9 +1,6 @@
 from langchain_voyageai import __all__
 
 EXPECTED_ALL = [
-    "VoyageAILLM",
-    "ChatVoyageAI",
-    "VoyageAIVectorStore",
     "VoyageAIEmbeddings",
 ]
 
