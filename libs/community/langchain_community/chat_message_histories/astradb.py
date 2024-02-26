@@ -25,7 +25,7 @@ DEFAULT_COLLECTION_NAME = "langchain_message_store"
 
 
 @deprecated(
-    since="0.0.22",
+    since="0.0.25",
     removal="0.2.0",
     alternative_import="langchain_astradb.AstraDBChatMessageHistory",
 )
