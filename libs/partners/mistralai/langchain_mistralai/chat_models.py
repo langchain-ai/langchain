@@ -98,9 +98,9 @@ def _convert_mistral_chat_message_to_message(
         return HumanMessage(content=content)
     elif role == "assistant":
         additional_kwargs: Dict = {}
-        if _message.tool_calls:
+        if hasattr(_message, "tool_calls") and getattr(_message, "tool_calls"):
             additional_kwargs["tool_calls"] = [
-                tc.model_dump() for tc in _message.tool_calls
+                tc.model_dump() for tc in getattr(_message, "tool_calls")
             ]
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
@@ -139,9 +139,9 @@ def _convert_delta_to_message_chunk(
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
-        if _delta.tool_calls:
+        if hasattr(_delta, "tool_calls") and getattr(_delta, "tool_calls"):
             additional_kwargs["tool_calls"] = [
-                tc.model_dump() for tc in _delta.tool_calls
+                tc.model_dump() for tc in getattr(_delta, "tool_calls")
             ]
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     elif role == "system" or default_class == SystemMessageChunk:
