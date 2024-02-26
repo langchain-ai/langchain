@@ -48,10 +48,14 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         # add include_columns as valid args for db.run_no_throw
         valid_kwargs = {}
         if self.metadata:
-            valid_kwargs = {key: value for key, value in self.metadata.items() if key in ['include_columns']}
+            valid_kwargs = {
+                key: value
+                for key, value in self.metadata.items()
+                if key in ["include_columns"]
+            }
         
         """Execute the query, return the results or an error message."""
-        return self.db.run_no_throw(query,**valid_kwargs)
+        return self.db.run_no_throw(query, **valid_kwargs)
 
 
 class _InfoSQLDatabaseToolInput(BaseModel):
