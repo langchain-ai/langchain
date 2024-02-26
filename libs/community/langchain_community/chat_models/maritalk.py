@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -48,7 +48,7 @@ class ChatMaritalk(SimpleChatModel):
 
     def parse_messages_for_model(
         self, messages: List[BaseMessage]
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Union[str, List[Union[str, Dict[Any, Any]]]]]]:
         """
         Parses messages from LangChain's format to the format expected by
         the MariTalk API.
