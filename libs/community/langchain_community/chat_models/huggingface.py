@@ -1,4 +1,5 @@
 """Hugging Face Chat Wrapper."""
+
 from typing import Any, List, Optional, Union
 
 from langchain_core.callbacks.manager import (
@@ -52,6 +53,7 @@ class ChatHuggingFace(BaseChatModel):
         from transformers import AutoTokenizer
 
         self._resolve_model_id()
+
         self.tokenizer = (
             AutoTokenizer.from_pretrained(self.model_id)
             if self.tokenizer is None
@@ -90,10 +92,10 @@ class ChatHuggingFace(BaseChatModel):
     ) -> str:
         """Convert a list of messages into a prompt format expected by wrapped LLM."""
         if not messages:
-            raise ValueError("at least one HumanMessage must be provided")
+            raise ValueError("At least one HumanMessage must be provided!")
 
         if not isinstance(messages[-1], HumanMessage):
-            raise ValueError("last message must be a HumanMessage")
+            raise ValueError("Last message must be a HumanMessage!")
 
         messages_dicts = [self._to_chatml_format(m) for m in messages]
 
@@ -135,20 +137,15 @@ class ChatHuggingFace(BaseChatModel):
         from huggingface_hub import list_inference_endpoints
 
         available_endpoints = list_inference_endpoints("*")
-
-        if isinstance(self.llm, HuggingFaceTextGenInference):
-            endpoint_url = self.llm.inference_server_url
-
-        elif isinstance(self.llm, HuggingFaceEndpoint):
-            endpoint_url = self.llm.endpoint_url
-
-        elif isinstance(self.llm, HuggingFaceHub):
-            # no need to look up model_id for HuggingFaceHub LLM
+        if isinstance(self.llm, HuggingFaceHub) or (
+            hasattr(self.llm, "repo_id") and self.llm.repo_id
+        ):
             self.model_id = self.llm.repo_id
             return
-
+        elif isinstance(self.llm, HuggingFaceTextGenInference):
+            endpoint_url: Optional[str] = self.llm.inference_server_url
         else:
-            raise ValueError(f"Unknown LLM type: {type(self.llm)}")
+            endpoint_url = self.llm.endpoint_url
 
         for endpoint in available_endpoints:
             if endpoint.url == endpoint_url:
@@ -156,8 +153,8 @@ class ChatHuggingFace(BaseChatModel):
 
         if not self.model_id:
             raise ValueError(
-                "Failed to resolve model_id"
-                f"Could not find model id for inference server provided: {endpoint_url}"
+                "Failed to resolve model_id:"
+                f"Could not find model id for inference server: {endpoint_url}"
                 "Make sure that your Hugging Face token has access to the endpoint."
             )
 
