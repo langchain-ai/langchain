@@ -1205,7 +1205,7 @@ class FAISS(VectorStore):
                 metadata.get(key) in value
                 if isinstance(value, list)
                 else metadata.get(key) == value
-                for key, value in filter.items()
+                for key, value in filter.items()  # type: ignore
             )
 
         return filter_func
