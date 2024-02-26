@@ -3,17 +3,9 @@ from __future__ import annotations
 
 import json
 import time
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import List, Optional, Sequence
 
-from langchain_community.utilities.astradb import (
-    SetupMode,
-    _AstraDBCollectionEnvironment,
-)
-
-if TYPE_CHECKING:
-    from astrapy.db import AstraDB, AsyncAstraDB
-
-from langchain_core._api.deprecation import deprecated
+from astrapy.db import AstraDB, AsyncAstraDB
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
@@ -21,14 +13,14 @@ from langchain_core.messages import (
     messages_from_dict,
 )
 
+from langchain_astradb.utils.astradb import (
+    SetupMode,
+    _AstraDBCollectionEnvironment,
+)
+
 DEFAULT_COLLECTION_NAME = "langchain_message_store"
 
 
-@deprecated(
-    since="0.0.25",
-    removal="0.2.0",
-    alternative_import="langchain_astradb.AstraDBChatMessageHistory",
-)
 class AstraDBChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
@@ -58,11 +50,6 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
                 you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
             namespace: namespace (aka keyspace) where the
                 collection is created. Defaults to the database's "default namespace".
-            setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or
-                OFF).
-            pre_delete_collection: whether to delete the collection
-                before creating it. If False and the collection already exists,
-                the collection will be used as is.
         """
         self.astra_env = _AstraDBCollectionEnvironment(
             collection_name=collection_name,
