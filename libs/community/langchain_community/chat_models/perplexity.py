@@ -62,7 +62,7 @@ class ChatPerplexity(BaseChatModel):
     """
 
     client: Any  #: :meta private:
-    model: str = ("pplx-70b-online",)
+    model: str = "pplx-70b-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -210,7 +210,7 @@ class ChatPerplexity(BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[GenerationChunk]:
+    ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         default_chunk_class = AIMessageChunk
