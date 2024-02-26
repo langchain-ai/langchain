@@ -208,6 +208,7 @@ class SelfQueryRetriever(BaseRetriever):
         chain_kwargs: Optional[Dict] = None,
         enable_limit: bool = False,
         use_original_query: bool = False,
+        query_constructor_run_name: str = "query_constructor",
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
         if structured_query_translator is None:
@@ -234,6 +235,9 @@ class SelfQueryRetriever(BaseRetriever):
             metadata_field_info,
             enable_limit=enable_limit,
             **chain_kwargs,
+        )
+        query_constructor = query_constructor.with_config(
+            run_name=query_constructor_run_name
         )
         return cls(
             query_constructor=query_constructor,
