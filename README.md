@@ -267,7 +267,7 @@ pip list
 ```shell
 pip uninstall langchain_core
 pip uninstall langchain_community
-pip uninstall langchain_expiremental
+pip uninstall langchain_experimental
 #Модуль langchain_openai содержит зависимости от langchain_core
 pip uninstall langchain_openai
 pip uninstall langchain
@@ -281,7 +281,7 @@ pip uninstall langchain
 ```shell
 pip install -U gigachain_core
 pip install -U gigachain_community
-pip install -U gigachain_expiremental
+pip install -U gigachain_experimental
 pip install -U gigahain_openai
 pip install -U gigachain
 ```
