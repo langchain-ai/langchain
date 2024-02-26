@@ -38,13 +38,13 @@ from langchain_core.runnables.utils import (
 
 
 class RunnableBranch(RunnableSerializable[Input, Output]):
-    """A Runnable that selects which branch to run based on a condition.
+    """Runnable that selects which branch to run based on a condition.
 
-    The runnable is initialized with a list of (condition, runnable) pairs and
+    The Runnable is initialized with a list of (condition, Runnable) pairs and
     a default branch.
 
     When operating on an input, the first condition that evaluates to True is
-    selected, and the corresponding runnable is run on the input.
+    selected, and the corresponding Runnable is run on the input.
 
     If no condition evaluates to True, the default branch is run on the input.
 
