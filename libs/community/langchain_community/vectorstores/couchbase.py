@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import uuid
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-# import httpx
 
 # Default batch size
 DEFAULT_BATCH_SIZE = 100
@@ -25,9 +25,9 @@ class CouchbaseVectorStore(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import CouchbaseVectorStore
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_openai import OpenAIEmbeddings
 
-            from couchbase import Cluster
+            from couchbase.cluster import Cluster
             from couchbase.auth import PasswordAuthenticator
             from couchbase.options import ClusterOptions
             from datetime import timedelta
@@ -79,9 +79,6 @@ class CouchbaseVectorStore(VectorStore):
         text_key: Optional[str] = "text",
         embedding_key: Optional[str] = None,
         scoped_index: bool = True,
-        # db_host: Optional[str] = None,
-        # db_username: Optional[str] = None,
-        # db_password: Optional[str] = None,
     ) -> None:
         try:
             from couchbase.cluster import Cluster
@@ -116,10 +113,6 @@ class CouchbaseVectorStore(VectorStore):
         self._index_name = index_name
         self._scoped_index = scoped_index
 
-        # self._connection_string = db_host
-        # self._db_username = db_username
-        # self._db_password = db_password
-
         if not isinstance(cluster, Cluster):
             raise ValueError(
                 f"cluster should be an instance of couchbase.Cluster, "
@@ -129,7 +122,7 @@ class CouchbaseVectorStore(VectorStore):
         self._cluster = cluster
 
         # Wait until the cluster is ready for use.
-        # self._cluster.wait_until_ready(timedelta(seconds=5))
+        self._cluster.wait_until_ready(timedelta(seconds=5))
 
         self._bucket = self._cluster.bucket(self._bucket_name)
         self._scope = self._bucket.scope(self._scope_name)
@@ -277,7 +270,7 @@ class CouchbaseVectorStore(VectorStore):
         fields = kwargs.get("fields", [])
         # print(fields)
 
-        if fields is None:
+        if not fields:
             fields = [self._text_key, self._metadata_key]
 
         search_req = search.SearchRequest.create(
@@ -306,7 +299,7 @@ class CouchbaseVectorStore(VectorStore):
             # print(search_iter._request)
 
             for row in search_iter.rows():
-                print(f"row: {row}")
+                # print(f"row: {row}")
                 text = row.fields.pop(self._text_key)
                 metadata = row.fields
                 score = row.score
@@ -315,42 +308,6 @@ class CouchbaseVectorStore(VectorStore):
 
         except Exception as e:
             raise ValueError(f"Search failed with error: {e}")
-
-        # db_host = self._connection_string.split("//")[-1].strip("/")
-        # docs_with_score = []
-
-        # search_query = {
-        #     "fields": fields,
-        #     "sort": ["-_score"],
-        #     "limit": k,
-        #     "query": {"match_none": {}},
-        #     "knn": [{"k": fetch_k, "field": self._embedding_key, "vector": embedding}],
-        # }
-
-        # print(f"{search_query=}")
-
-        # search_result = httpx.post(
-        #     f"http://{db_host}:8094/api/bucket/{self._bucket_name}/scope/{self._scope_name}/index/{self._index_name}/query",
-        #     json=search_query,
-        #     auth=(self._db_username, self._db_password),
-        #     headers={"Content-Type": "application/json"},
-        # )
-
-        # if search_result.status_code == 200:
-        #     response_json = search_result.json()
-        #     print(f"{response_json=}")
-        #     results = response_json["hits"]
-
-        #     for result in results:
-        #         text = result["fields"].pop(self._text_key)
-        #         score = result["score"]
-        #         doc = Document(page_content=text, metadata=result["fields"])
-        #         docs_with_score.append((doc, score))
-        # else:
-        #     raise ValueError(
-        #         f"Request failed with status code {search_result.status_code}"
-        #         " and error message: {search_result.text}"
-        #     )
 
         return docs_with_score
 
