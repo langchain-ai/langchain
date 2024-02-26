@@ -1,3 +1,4 @@
+import re
 import sys
 from functools import partial
 from operator import itemgetter
@@ -22,6 +23,7 @@ from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 from typing_extensions import TypedDict
 
+from langchain_core._api.deprecation import LangChainDeprecationWarning
 from langchain_core.callbacks.manager import (
     Callbacks,
     atrace_as_chain_group,
@@ -69,7 +71,7 @@ from langchain_core.runnables import (
     add,
     chain,
 )
-from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.base import RunnableSerializable, coerce_to_runnable
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -728,29 +730,26 @@ def test_lambda_schemas() -> None:
             "byebye": input["yo"],
         }
 
-    assert (
-        RunnableLambda(
-            aget_values_typed  # type: ignore[arg-type]
-        ).input_schema.schema()
-        == {
-            "title": "aget_values_typed_input",
-            "$ref": "#/definitions/InputType",
-            "definitions": {
-                "InputType": {
-                    "properties": {
-                        "variable_name": {
-                            "title": "Variable " "Name",
-                            "type": "string",
-                        },
-                        "yo": {"title": "Yo", "type": "integer"},
+    assert RunnableLambda(
+        aget_values_typed  # type: ignore[arg-type]
+    ).input_schema.schema() == {
+        "title": "aget_values_typed_input",
+        "$ref": "#/definitions/InputType",
+        "definitions": {
+            "InputType": {
+                "properties": {
+                    "variable_name": {
+                        "title": "Variable " "Name",
+                        "type": "string",
                     },
-                    "required": ["variable_name", "yo"],
-                    "title": "InputType",
-                    "type": "object",
-                }
-            },
-        }
-    )
+                    "yo": {"title": "Yo", "type": "integer"},
+                },
+                "required": ["variable_name", "yo"],
+                "title": "InputType",
+                "type": "object",
+            }
+        },
+    }
 
     assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
         "title": "aget_values_typed_output",
@@ -5186,3 +5185,28 @@ async def test_astream_log_deep_copies() -> None:
         "name": "add_one",
         "type": "chain",
     }
+
+
+def test_coerce_to_runnable() -> None:
+    """Test that a callable can be coerced to a runnable."""
+
+    def add_one(x: int) -> int:
+        """Add one."""
+        return x + 1
+
+    runnable = coerce_to_runnable(add_one)
+    assert runnable.invoke(1) == 2
+    assert isinstance(runnable, RunnableLambda)
+
+    def some_generator(x: Any) -> Iterator[int]:
+        """Return 1."""
+        yield 1
+
+    # Assert that a warning is raised when trying to coerce a generator
+    with pytest.warns(
+        LangChainDeprecationWarning,
+    ):
+        runnable = coerce_to_runnable(some_generator)
+    assert runnable.invoke(1) == 1
+    # To change in 0.2.0
+    assert isinstance(runnable, RunnableGenerator)

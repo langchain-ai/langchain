@@ -36,6 +36,7 @@ from typing import (
 from typing_extensions import Literal, get_args
 
 from langchain_core._api import beta_decorator
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import (
     Serializable,
@@ -4360,7 +4361,21 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     if isinstance(thing, Runnable):
         return thing
     elif inspect.isasyncgenfunction(thing) or inspect.isgeneratorfunction(thing):
-        return RunnableGenerator(thing)
+        result = RunnableGenerator(thing)
+        message = (
+            "Implicit coercion of custom functions to a "
+            "RunnableGenerator will be deprecated, and all implicit function coercion"
+            " will convert to a RunnableLambda."
+            " Please explicitly convert to a RunnableGenerator using:\n"
+            "from langchain_core.runnable import RunnableGenerator\n\n"
+            "runnable = (\n    ...\n"
+            f"    | RunnableGenerator({thing.__name__})\n"
+            ")\n"
+        )
+
+        warn_deprecated("0.1.26", message=message, removal="0.2.0")
+        return result
+
     elif callable(thing):
         return RunnableLambda(cast(Callable[[Input], Output], thing))
     elif isinstance(thing, dict):
