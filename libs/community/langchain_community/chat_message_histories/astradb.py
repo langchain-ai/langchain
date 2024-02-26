@@ -13,6 +13,7 @@ from langchain_community.utilities.astradb import (
 if TYPE_CHECKING:
     from astrapy.db import AstraDB, AsyncAstraDB
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
@@ -23,6 +24,11 @@ from langchain_core.messages import (
 DEFAULT_COLLECTION_NAME = "langchain_message_store"
 
 
+@deprecated(
+    since="0.0.25",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBChatMessageHistory",
+)
 class AstraDBChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,

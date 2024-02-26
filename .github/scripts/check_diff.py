@@ -1,17 +1,23 @@
 import json
 import sys
 import os
+from typing import Dict
 
-LANGCHAIN_DIRS = {
+LANGCHAIN_DIRS = [
     "libs/core",
     "libs/langchain",
     "libs/experimental",
     "libs/community",
-}
+]
 
 if __name__ == "__main__":
     files = sys.argv[1:]
-    dirs_to_run = set()
+
+    dirs_to_run: Dict[str, set] = {
+        "lint": set(),
+        "test": set(),
+        "extended-test": set(),
+    }
 
     if len(files) == 300:
         # max diff length is 300 files - there are likely files missing
@@ -24,31 +30,42 @@ if __name__ == "__main__":
                 ".github/workflows",
                 ".github/tools",
                 ".github/actions",
-                "libs/core",
                 ".github/scripts/check_diff.py",
             )
         ):
-            dirs_to_run.update(LANGCHAIN_DIRS)
-        elif "libs/community" in file:
-            dirs_to_run.update(
-                ("libs/community", "libs/langchain", "libs/experimental")
-            )
-        elif "libs/partners" in file:
+            # add all LANGCHAIN_DIRS for infra changes
+            dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
+            dirs_to_run["lint"].add(".")
+
+        if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
+            # add that dir and all dirs after in LANGCHAIN_DIRS
+            # for extended testing
+            found = False
+            for dir_ in LANGCHAIN_DIRS:
+                if file.startswith(dir_):
+                    found = True
+                if found:
+                    dirs_to_run["extended-test"].add(dir_)
+        elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}"):
-                dirs_to_run.add(f"libs/partners/{partner_dir}")
+                dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted
-        elif "libs/langchain" in file:
-            dirs_to_run.update(("libs/langchain", "libs/experimental"))
-        elif "libs/experimental" in file:
-            dirs_to_run.add("libs/experimental")
         elif file.startswith("libs/"):
-            dirs_to_run.update(LANGCHAIN_DIRS)
-        else:
-            pass
-    json_output = json.dumps(list(dirs_to_run))
-    print(f"dirs-to-run={json_output}")  # noqa: T201
+            raise ValueError(
+                f"Unknown lib: {file}. check_diff.py likely needs "
+                "an update for this new library!"
+            )
+        elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/"]):
+            dirs_to_run["lint"].add(".")
 
-    extended_test_dirs = [d for d in dirs_to_run if not d.startswith("libs/partners")]
-    json_output_extended = json.dumps(extended_test_dirs)
-    print(f"dirs-to-run-extended={json_output_extended}")  # noqa: T201
+    outputs = {
+        "dirs-to-lint": list(
+            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"]
+        ),
+        "dirs-to-test": list(dirs_to_run["test"] | dirs_to_run["extended-test"]),
+        "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
+    }
+    for key, value in outputs.items():
+        json_output = json.dumps(value)
+        print(f"{key}={json_output}")  # noqa: T201

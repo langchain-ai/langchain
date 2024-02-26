@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 
 class ModerationPiiConfig(BaseModel):
+    """Configuration for PII moderation filter."""
+
     threshold: float = 0.5
     """Threshold for PII confidence score, defaults to 0.5 i.e. 50%"""
 
@@ -21,6 +23,8 @@ class ModerationPiiConfig(BaseModel):
 
 
 class ModerationToxicityConfig(BaseModel):
+    """Configuration for Toxicity moderation filter."""
+
     threshold: float = 0.5
     """Threshold for Toxic label confidence score, defaults to 0.5 i.e. 50%"""
 
@@ -29,6 +33,8 @@ class ModerationToxicityConfig(BaseModel):
 
 
 class ModerationPromptSafetyConfig(BaseModel):
+    """Configuration for Prompt Safety moderation filter."""
+
     threshold: float = 0.5
     """
     Threshold for Prompt Safety classification
@@ -37,6 +43,8 @@ class ModerationPromptSafetyConfig(BaseModel):
 
 
 class BaseModerationConfig(BaseModel):
+    """Base configuration settings for moderation."""
+
     filters: List[
         Union[
             ModerationPiiConfig, ModerationToxicityConfig, ModerationPromptSafetyConfig
