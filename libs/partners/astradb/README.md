@@ -20,13 +20,46 @@ pip install langchain-astradb
 ### Vector Store
 
 ```python
-from langchain_astradb.vectorstores import AstraDBVectorStore
+from langchain_astradb import AstraDBVectorStore
 
 my_store = AstraDBVectorStore(
   embedding=my_embeddings,
   collection_name="my_store",
   api_endpoint="https://...",
   token="AstraCS:...",
+)
+```
+
+### Chat message history
+
+```python
+from langchain_astradb import AstraDBChatMessageHistory
+message_history = AstraDBChatMessageHistory(
+    session_id="test-session",
+    api_endpoint="...",
+    token="...",
+)
+```
+
+### Store
+
+```python
+from langchain_astradb import AstraDBStore
+store = AstraDBStore(
+    collection_name="my_kv_store",
+    api_endpoint="...",
+    token="..."
+)
+```
+
+### Byte Store
+
+```python
+from langchain_astradb import AstraDBByteStore
+store = AstraDBByteStore(
+    collection_name="my_kv_store",
+    api_endpoint="...",
+    token="..."
 )
 ```
 
