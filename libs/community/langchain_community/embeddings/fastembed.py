@@ -72,7 +72,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
             )
         except ImportError as ie:
             raise ImportError(
-                "Could not import 'fastembed' Python package. "
+                "'FastEmbedEmbeddings' requires 'fastembed==v0.2.0' or above. "
                 "Please install it with `pip install fastembed`."
             ) from ie
         return values
