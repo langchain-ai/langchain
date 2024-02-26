@@ -49,7 +49,7 @@ class MLXPipeline(LLM):
         Configuration parameters specifically for the tokenizer.
         Defaults to an empty dictionary.
     """
-    adapter_file: Optional[dict] = None
+    adapter_file: Optional[str] = None
     """
         Path to the adapter file. If provided, applies LoRA layers to the model.
         Defaults to None.
@@ -73,7 +73,7 @@ class MLXPipeline(LLM):
         cls,
         model_id: str,
         tokenizer_config: Optional[dict] = None,
-        adapter_file: str = None,
+        adapter_file: Optional[str] = None,
         lazy: bool = False,
         pipeline_kwargs: Optional[dict] = None,
         **kwargs: Any,
@@ -89,7 +89,11 @@ class MLXPipeline(LLM):
             )
 
         tokenizer_config = tokenizer_config or {}
-        model, tokenizer = load(model_id, tokenizer_config, adapter_file, lazy)
+        if adapter_file:
+            model, tokenizer = load(model_id, tokenizer_config, adapter_file, lazy)
+        else:
+            model, tokenizer = load(model_id, tokenizer_config, lazy=lazy)
+
         _pipeline_kwargs = pipeline_kwargs or {}
         return cls(
             model_id=model_id,
@@ -157,7 +161,7 @@ class MLXPipeline(LLM):
         repetition_penalty: Optional[float] = pipeline_kwargs.get(
             "repetition_penalty", None
         )
-        repetition_context_size: Optional[float] = pipeline_kwargs.get(
+        repetition_context_size: Optional[int] = pipeline_kwargs.get(
             "repetition_context_size", None
         )
 
@@ -189,5 +193,5 @@ class MLXPipeline(LLM):
                     run_manager.on_llm_new_token(chunk.text)
 
             # break if stop sequence found
-            if token == eos_token_id or text in stop:
+            if token == eos_token_id or (stop is not None and text in stop):
                 break

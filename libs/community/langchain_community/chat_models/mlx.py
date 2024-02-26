@@ -85,7 +85,7 @@ class ChatMLX(BaseChatModel):
         self,
         messages: List[BaseMessage],
         tokenize: bool = False,
-        return_tensors: str = None,
+        return_tensors: Optional[str] = None,
     ) -> str:
         """Convert a list of messages into a prompt format expected by wrapped LLM."""
         if not messages:
@@ -160,7 +160,7 @@ class ChatMLX(BaseChatModel):
         repetition_penalty: Optional[float] = model_kwargs.get(
             "repetition_penalty", None
         )
-        repetition_context_size: Optional[float] = model_kwargs.get(
+        repetition_context_size: Optional[int] = model_kwargs.get(
             "repetition_context_size", None
         )
 
@@ -189,8 +189,8 @@ class ChatMLX(BaseChatModel):
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
                 yield chunk
                 if run_manager:
-                    run_manager.on_llm_new_token(chunk.message)
+                    run_manager.on_llm_new_token(text, chunk=chunk)
 
             # break if stop sequence found
-            if token == eos_token_id or text in stop:
+            if token == eos_token_id or (stop is not None and text in stop):
                 break
