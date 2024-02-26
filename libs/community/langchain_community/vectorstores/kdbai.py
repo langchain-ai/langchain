@@ -218,7 +218,7 @@ class KDBAI(VectorStore):
         if "n" in kwargs:
             k = kwargs.pop("n")
         matches = self._table.search(vectors=[embedding], n=k, filter=filter, **kwargs)
-        docs = []
+        docs: list = []
         if isinstance(matches, list):
             matches = matches[0]
         else:
