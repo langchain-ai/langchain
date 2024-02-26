@@ -3,6 +3,7 @@
 import importlib
 import inspect
 import os
+import sys
 import typing
 from enum import Enum
 from pathlib import Path
@@ -348,7 +349,11 @@ def main(dirs: Optional[list] = None) -> None:
     """Generate the api_reference.rst file for each package."""
     print("Starting to build API reference files.")
     if not dirs:
-        dirs = [dir_ for dir_ in os.listdir(ROOT_DIR / "libs") if dir_ not in ("cli", "partners")]
+        dirs = [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs")
+            if dir_ not in ("cli", "partners")
+        ]
         dirs += os.listdir(ROOT_DIR / "libs" / "partners")
     for dir_ in dirs:
         # Skip any hidden directories
@@ -364,6 +369,5 @@ def main(dirs: Optional[list] = None) -> None:
 
 
 if __name__ == "__main__":
-    import sys
     dirs = sys.argv[1:] or None
     main(dirs=dirs)
