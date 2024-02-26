@@ -646,11 +646,11 @@ class ChatFireworks(BaseChatModel):
                 the model output will be a dict. With a Pydantic class the returned
                 attributes will be validated, whereas with a dict they will not be. If
                 `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec.
+                must match the Fireworks function-calling spec.
             method: The method for steering model generation, either "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
-                to an OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then OpenAI's JSON mode will be
+                to a Fireworks function and the returned model will make use of the
+                function-calling API. If "json_mode" then Fireworks's JSON mode will be
                 used. Note that if using "json_mode" then you must include instructions
                 for formatting the output into the desired schema into the model call.
             include_raw: If False then only the parsed structured output is returned. If
