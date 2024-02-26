@@ -16,9 +16,12 @@ if TYPE_CHECKING:
 
 
 def _get_default_text_splitter() -> TextSplitter:
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
-    return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    text_splitter: TextSplitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=0
+    )
+    return text_splitter
 
 
 class VectorStoreIndexWrapper(BaseModel):
