@@ -5,15 +5,24 @@ from langchain_core.utils import get_from_env
 
 from langchain_elasticsearch.embeddings import ElasticsearchEmbeddings
 
+# deployed with
+# https://www.elastic.co/guide/en/machine-learning/current/ml-nlp-text-emb-vector-search-example.html
+DEFAULT_MODEL = "sentence-transformers__msmarco-minilm-l-12-v3"
+DEFAULT_NUM_DIMENSIONS = "384"
+
 
 @pytest.fixture
 def model_id() -> str:
-    return get_from_env("model_id", "MODEL_ID")
+    return get_from_env("model_id", "MODEL_ID", DEFAULT_MODEL)
 
 
 @pytest.fixture
 def expected_num_dimensions() -> int:
-    return int(get_from_env("expected_num_dimensions", "EXPECTED_NUM_DIMENSIONS"))
+    return int(
+        get_from_env(
+            "expected_num_dimensions", "EXPECTED_NUM_DIMENSIONS", DEFAULT_NUM_DIMENSIONS
+        )
+    )
 
 
 def test_elasticsearch_embedding_documents(
