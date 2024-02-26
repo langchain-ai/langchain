@@ -106,7 +106,7 @@ def _convert_mistral_chat_message_to_message(
     elif role == "system":
         return SystemMessage(content=content)
     elif role == "tool":
-        return ToolMessage(content=content, name=_message.name)
+        return ToolMessage(content=content, name=_message.name)  # type: ignore[attr-defined]
     else:
         return ChatMessage(content=content, role=role)
 
@@ -161,7 +161,9 @@ def _convert_message_to_mistral_chat_message(
         mistral_message = MistralChatMessage(role="user", content=message.content)
     elif isinstance(message, AIMessage):
         if "tool_calls" in message.additional_kwargs:
-            from mistralai.models.chat_completion import ToolCall as MistralToolCall
+            from mistralai.models.chat_completion import (
+                ToolCall as MistralToolCall,  # type: ignore[attr-defined]
+            )
 
             tool_calls = [
                 MistralToolCall.model_validate(tc)
