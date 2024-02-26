@@ -26,9 +26,12 @@ class BaseChatMemory(BaseMemory, ABC):
         else:
             prompt_input_key = self.input_key
         if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
+            if len(outputs) == 1:
+                output_key = list(outputs.keys())[0]
+            elif "output" in outputs:
+                output_key = "output"
+            else:
+                raise ValueError("Could not determine output key.")
         else:
             output_key = self.output_key
         return inputs[prompt_input_key], outputs[output_key]
