@@ -13,7 +13,7 @@ from langchain_experimental.sql.vector_sql import VectorSQLDatabaseChain
 
 
 class VectorSQLDatabaseChainRetriever(BaseRetriever):
-    """Retriever that uses SQLDatabase as Retriever"""
+    """Retriever that uses Vector SQL Database."""
 
     sql_db_chain: VectorSQLDatabaseChain
     """SQL Database Chain"""

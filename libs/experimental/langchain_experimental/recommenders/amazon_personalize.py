@@ -84,7 +84,9 @@ class AmazonPersonalize:
         metadata_columns: Optional[Mapping[str, Sequence[str]]] = None,
         **kwargs: Any,
     ) -> Mapping[str, Any]:
-        """Get recommendations from Amazon Personalize:
+        """Get recommendations from Amazon Personalize service.
+
+        See more details at:
         https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html
 
         Args:
@@ -151,6 +153,7 @@ class AmazonPersonalize:
         **kwargs: Any,
     ) -> Mapping[str, Any]:
         """Re-ranks a list of recommended items for the given user.
+
         https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html
 
         Args:
