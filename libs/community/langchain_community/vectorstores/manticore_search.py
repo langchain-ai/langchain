@@ -49,7 +49,7 @@ class ManticoreSearchSettings(BaseSettings):
     hnsw_m: int = 16  # The default is 16.
 
     # An optional setting that defines a construction time/accuracy trade-off.
-    hnsw_ef_construction = 0
+    hnsw_ef_construction = 100
 
     def get_connection_string(self) -> str:
         return 'http://' + self.host + ':' + str(self.port)
@@ -147,7 +147,7 @@ class ManticoreSearch(VectorStore):
 CREATE TABLE IF NOT EXISTS {self.config.table}(
     {self.config.column_map['id']} bigint,
     {self.config.column_map['document']} text indexed stored,
-    {self.config.column_map['embedding']} float_vector knn_type='{self.config.knn_type}' knn_dims='{self.dim}' hnsw_similarity='{self.config.hnsw_similarity}',
+    {self.config.column_map['embedding']} float_vector knn_type='{self.config.knn_type}' knn_dims='{self.dim}' hnsw_similarity='{self.config.hnsw_similarity}' hnsw_m='{self.config.hnsw_m}' hnsw_ef_construction='{self.config.hnsw_ef_construction}',
     {self.config.column_map['metadata']} json,
     {self.config.column_map['uuid']} text indexed stored
 )\
@@ -179,8 +179,8 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
             self,
             texts: Iterable[str],
             metadatas: Optional[List[dict]] = None,
-            batch_size: int = 100,
-            ids: Optional[Iterable[str]] = None,
+            batch_size: int = 32,
+            text_ids: Optional[Iterable[str]] = None,
             **kwargs: Any,
     ) -> List[str]:
         """
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
             List of ids from adding the texts into the VectorStore.
         """
         # Embed and create the documents
-        ids = ids or [
+        ids = text_ids or [
             # See https://stackoverflow.com/questions/67219691/python-hash-function-that-returns-32-or-64-bits
             int(sha1(t.encode('utf-8')).hexdigest()[:15], 16)
             for t in texts
@@ -245,7 +245,7 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         ctx.add_texts(
             texts=texts,
             embedding=embedding,
-            ids=text_ids,
+            text_ids=text_ids,
             batch_size=batch_size,
             metadatas=metadatas,
             **kwargs,
@@ -293,7 +293,8 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         return _repr
 
     def similarity_search(
-            self, query: str,
+            self,
+            query: str,
             k: int = DEFAULT_K,
             **kwargs: Any
     ) -> List[Document]:
@@ -324,18 +325,15 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
             List[Document]: List of documents
         """
 
-        # Build kNN-request
-        request_knn = dict(
-            field=self.config.column_map['embedding'],
-            k=k,
-            query_vector=embedding
-        )
-
         # Build search request
-        request = dict(
-            index=self.config.table,
-            knn=request_knn
-        )
+        request = {
+            "index": self.config.table,
+            "knn": {
+                "field": self.config.column_map['embedding'],
+                "k": k,
+                "query_vector": embedding,
+            }
+        }
 
         # Execute request and convert response to langchain.Document format
         try:
@@ -344,7 +342,7 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
                     page_content=r['_source'][self.config.column_map["document"]],
                     metadata=r['_source'][self.config.column_map["metadata"]],
                 )
-                for r in self.client["search"].search(request, **kwargs).hits.hits
+                for r in self.client["search"].search(request, **kwargs).hits.hits[:k]
             ]
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
