@@ -16,10 +16,12 @@ def test_voyagi_embedding_documents() -> None:
 
 def test_voyagi_with_default_model() -> None:
     """Test voyage embeddings."""
-    documents = ["foo bar"]
     embedding = VoyageEmbeddings()
+    assert embedding.model == "voyage-01"
+    assert embedding.batch_size == 7
+    documents = [f"foo bar {i}" for i in range(72)]
     output = embedding.embed_documents(documents)
-    assert len(output) == 1
+    assert len(output) == 72
     assert len(output[0]) == 1024
 
 
@@ -27,6 +29,7 @@ def test_voyage_embedding_documents_multiple() -> None:
     """Test voyage embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
     embedding = VoyageEmbeddings(model=MODEL, batch_size=2)
+    assert embedding.model == MODEL
     output = embedding.embed_documents(documents)
     assert len(output) == 3
     assert len(output[0]) == 1024
