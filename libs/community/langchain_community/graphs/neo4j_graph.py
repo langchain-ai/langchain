@@ -309,19 +309,20 @@ class Neo4jGraph(GraphStore):
         baseEntityLabel: bool = False,
     ) -> None:
         """
-        Adds a list of GraphDocument objects to the graph database. This method constructs
-        nodes and relationships in the graph based on the provided GraphDocument objects.
+        This method constructs nodes and relationships in the graph based on the
+        provided GraphDocument objects.
 
         Parameters:
-        - graph_documents (List[GraphDocument]): A list of GraphDocument objects that
-        contain the nodes and relationships to be added to the graph. Each GraphDocument
-        should encapsulate the structure of part of the graph, including nodes, relationships,
-        and optionally, the source document information.
-        - include_source (bool, optional): If True, stores the source document and links it to
-        nodes in the graph using the MENTIONS relationship. This is useful for tracing back the
-        origin of data. Defaults to False.
-        - baseEntityLabel (bool, optional): If True, each node gets a secondary __Entity__ label,
-        which is indexed and improves import speed and performance. Defaults to False.
+        - graph_documents (List[GraphDocument]): A list of GraphDocument objects
+        that contain the nodes and relationships to be added to the graph. Each
+        GraphDocument should encapsulate the structure of part of the graph,
+        including nodes, relationships, and the source document information.
+        - include_source (bool, optional): If True, stores the source document
+        and links it to nodes in the graph using the MENTIONS relationship.
+        This is useful for tracing back the origin of data. Defaults to False.
+        - baseEntityLabel (bool, optional): If True, each newly created node
+        gets a secondary __Entity__ label, which is indexed and improves import
+        speed and performance. Defaults to False.
 
         Returns:
         None: This method does not return any value but updates the graph database with the provided GraphDocument objects.
@@ -337,7 +338,8 @@ class Neo4jGraph(GraphStore):
             if not constraint_exists:
                 # Create constraint
                 self.query(
-                    f"CREATE CONSTRAINT IF NOT EXISTS FOR (b:{BASE_ENTITY_LABEL}) REQUIRE b.id IS UNIQUE;"
+                    f"CREATE CONSTRAINT IF NOT EXISTS FOR (b:{BASE_ENTITY_LABEL}) "
+                    "REQUIRE b.id IS UNIQUE;"
                 )
                 self.refresh_schema()  # Refresh constraint information
 
