@@ -23,9 +23,9 @@ class MockEmbeddings(Embeddings):
 @pytest.fixture
 def cache_embeddings() -> CacheBackedEmbeddings:
     """Create a cache backed embeddings."""
-    from langchain.storage.in_memory import InMemoryStore
+    from langchain.storage.in_memory import InMemoryBaseStore
 
-    store = InMemoryStore()
+    store = InMemoryBaseStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
         embeddings, store, namespace="test_namespace"
