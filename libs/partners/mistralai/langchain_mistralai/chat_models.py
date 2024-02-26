@@ -67,7 +67,6 @@ from mistralai.models.chat_completion import (
 )
 from mistralai.models.chat_completion import ChatMessage as MistralChatMessage
 from mistralai.models.chat_completion import DeltaMessage as MistralDeltaMessage
-from mistralai.models.chat_completion import ToolCall as MistralToolCall
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +161,8 @@ def _convert_message_to_mistral_chat_message(
         mistral_message = MistralChatMessage(role="user", content=message.content)
     elif isinstance(message, AIMessage):
         if "tool_calls" in message.additional_kwargs:
+            from mistralai.models.chat_completion import ToolCall as MistralToolCall
+
             tool_calls = [
                 MistralToolCall.model_validate(tc)
                 for tc in message.additional_kwargs["tool_calls"]
