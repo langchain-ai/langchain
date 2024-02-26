@@ -217,8 +217,8 @@ def _construct_doc(
 
     for module in namespaces:
         _members = members_by_namespace[module]
-        classes = _members["classes_"]
-        functions = _members["functions"]
+        classes = [el for el in _members["classes_"] if el["is_public"]]
+        functions = [el for el in _members["functions"] if el["is_public"]]
         if not (classes or functions):
             continue
         section = f":mod:`{package_namespace}.{module}`"
@@ -244,9 +244,6 @@ Classes
 """
 
             for class_ in sorted(classes, key=lambda c: c["qualified_name"]):
-                if not class_["is_public"]:
-                    continue
-
                 if class_["kind"] == "TypedDict":
                     template = "typeddict.rst"
                 elif class_["kind"] == "enum":
@@ -264,7 +261,7 @@ Classes
 """
 
         if functions:
-            _functions = [f["qualified_name"] for f in functions if f["is_public"]]
+            _functions = [f["qualified_name"] for f in functions]
             fstring = "\n    ".join(sorted(_functions))
             full_doc += f"""\
 Functions
@@ -354,7 +351,7 @@ def main() -> None:
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base
         # e.g., .pytest_cache from running tests from the wrong location.
-        if not dir.startswith("."):
+        if dir.startswith("."):
             print("Skipping dir:", dir)
             continue
 
