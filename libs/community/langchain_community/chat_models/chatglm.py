@@ -19,7 +19,6 @@ class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
     """
     Example:
         .. code-block:: python
-
             from langchain_community.chat_models.chatglm import ChatGLM_ChatModel
             llm = ChatGLM_ChatModel(temperature=1, top_p=0.9)
     """
