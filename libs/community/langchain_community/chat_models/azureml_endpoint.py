@@ -34,11 +34,11 @@ class OpenAIStyleContentFormatter(ContentFormatterBase):
     def __init__(self) -> None:
         raise TypeError(
             "`OpenAIStyleContentFormatter` is deprecated for chat models. Use "
-            "`OpenAIStyleChatContentFormatter` instead."
+            "`CustomOpenAIContentFormatter` instead."
         )
 
 
-class OpenAIStyleChatContentFormatter(ContentFormatterBase):
+class CustomOpenAIContentFormatter(ContentFormatterBase):
     """Content formatter for `LLaMA`."""
 
     SUPPORTED_ROLES: List[str] = ["user", "assistant", "system"]
@@ -64,7 +64,7 @@ class OpenAIStyleChatContentFormatter(ContentFormatterBase):
             }
         elif (
             isinstance(message, ChatMessage)
-            and message.role in OpenAIStyleChatContentFormatter.SUPPORTED_ROLES
+            and message.role in CustomOpenAIContentFormatter.SUPPORTED_ROLES
         ):
             return {
                 "role": message.role,
@@ -72,7 +72,7 @@ class OpenAIStyleChatContentFormatter(ContentFormatterBase):
             }
         else:
             supported = ",".join(
-                [role for role in OpenAIStyleChatContentFormatter.SUPPORTED_ROLES]
+                [role for role in CustomOpenAIContentFormatter.SUPPORTED_ROLES]
             )
             raise ValueError(
                 f"""Received unsupported role. 
@@ -91,10 +91,10 @@ class OpenAIStyleChatContentFormatter(ContentFormatterBase):
     ) -> bytes:
         """Formats the request according to the chosen api"""
         chat_messages = [
-            OpenAIStyleChatContentFormatter._convert_message_to_dict(message)
+            CustomOpenAIContentFormatter._convert_message_to_dict(message)
             for message in messages
         ]
-        if api_type == AzureMLEndpointApiType.dedicated:
+        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:
             request_payload = json.dumps(
                 {
                     "input_data": {
@@ -117,7 +117,7 @@ class OpenAIStyleChatContentFormatter(ContentFormatterBase):
         api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.dedicated,
     ) -> ChatGeneration:
         """Formats response"""
-        if api_type == AzureMLEndpointApiType.dedicated:
+        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:
             try:
                 choice = json.loads(output)["output"]
             except (KeyError, IndexError, TypeError) as e:
@@ -233,7 +233,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         }
         
         client = openai.OpenAI(**client_params)
-        message_dicts = [OpenAIStyleChatContentFormatter._convert_message_to_dict(m) for m in messages]
+        message_dicts = [CustomOpenAIContentFormatter._convert_message_to_dict(m) for m in messages]
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
@@ -282,7 +282,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         }
         
         async_client = openai.AsyncOpenAI(**client_params)
-        message_dicts = [OpenAIStyleChatContentFormatter._convert_message_to_dict(m) for m in messages]
+        message_dicts = [CustomOpenAIContentFormatter._convert_message_to_dict(m) for m in messages]
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk

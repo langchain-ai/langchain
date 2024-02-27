@@ -59,6 +59,7 @@ class AzureMLEndpointApiType(str, Enum):
     """
 
     dedicated = "dedicated"
+    realtime = "realtime" #: Deprecated
     serverless = "serverless"
 
 
@@ -267,7 +268,7 @@ class OpenAIStyleContentFormatter(ContentFormatterBase):
     ) -> bytes:
         """Formats the request according to the chosen api"""
         prompt = ContentFormatterBase.escape_special_characters(prompt)
-        if api_type == AzureMLEndpointApiType.dedicated:
+        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:
             request_payload = json.dumps(
                 {
                     "input_data": {
@@ -288,8 +289,7 @@ class OpenAIStyleContentFormatter(ContentFormatterBase):
         self, output: bytes, api_type: AzureMLEndpointApiType
     ) -> Generation:
         """Formats response"""
-        if api_type == AzureMLEndpointApiType.dedicated:
-            try:
+        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:            try:
                 choice = json.loads(output)[0]["0"]
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
@@ -399,7 +399,7 @@ class AzureMLBaseEndpoint(BaseModel):
     ) -> AzureMLEndpointApiType:
         """Validate that endpoint api type is compatible with the URL format."""
         endpoint_url = values.get("endpoint_url")
-        if field_value == AzureMLEndpointApiType.dedicated and not endpoint_url.endswith(  # type: ignore[union-attr]
+        if (field_value == AzureMLEndpointApiType.dedicated or field_value == AzureMLEndpointApiType.realtime)  and not endpoint_url.endswith(  # type: ignore[union-attr]
             "/score"
         ):
             raise ValueError(
