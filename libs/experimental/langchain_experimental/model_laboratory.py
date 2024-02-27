@@ -1,4 +1,8 @@
-"""Experiment with different models."""
+"""**Experiments** with different models.
+
+Compare the outputs of different models on the same input text. This is useful for
+comparing different models and understanding their strengths and weaknesses.
+"""
 
 from __future__ import annotations
 
