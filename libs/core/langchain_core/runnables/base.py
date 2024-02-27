@@ -228,7 +228,7 @@ class Runnable(Generic[Input, Output], ABC):
             )
 
     For a UI (and much more) checkout LangSmith: https://docs.smith.langchain.com/
-    """
+    """  # noqa: E501
 
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
@@ -774,7 +774,7 @@ class Runnable(Generic[Input, Output], ABC):
         `format_docs`:
 
         .. code-block:: python
-        
+
             def format_docs(docs: List[Document]) -> str:
                 '''Format the docs.'''
                 return ", ".join([doc.page_content for doc in docs])
@@ -782,22 +782,22 @@ class Runnable(Generic[Input, Output], ABC):
             format_docs = RunnableLambda(format_docs)
 
         `some_tool`:
-        
+
         .. code-block:: python
-        
+
             @tool
             def some_tool(x: int, y: str) -> dict:
                 '''Some_tool.'''
                 return {"x": x, "y": y}
 
         `prompt`:
-        
+
         .. code-block:: python
-        
+
             template = ChatPromptTemplate.from_messages(
                 [("system", "You are Cat Agent 007"), ("human", "{question}")]
             ).with_config({"run_name": "my_template", "tags": ["my_template"]})
-        
+
 
         Example:
 
