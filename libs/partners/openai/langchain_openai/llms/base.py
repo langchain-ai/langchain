@@ -198,9 +198,11 @@ class BaseOpenAI(BaseLLM):
         )
 
         client_params = {
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
-            else None,
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
@@ -249,7 +251,7 @@ class BaseOpenAI(BaseLLM):
         self.get_sub_prompts(params, [prompt], stop)  # this mutates params
         for stream_resp in self.client.create(prompt=prompt, **params):
             if not isinstance(stream_resp, dict):
-                stream_resp = stream_resp.dict()
+                stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -257,9 +259,11 @@ class BaseOpenAI(BaseLLM):
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
-                    logprobs=chunk.generation_info["logprobs"]
-                    if chunk.generation_info
-                    else None,
+                    logprobs=(
+                        chunk.generation_info["logprobs"]
+                        if chunk.generation_info
+                        else None
+                    ),
                 )
 
     async def _astream(
@@ -275,7 +279,7 @@ class BaseOpenAI(BaseLLM):
             prompt=prompt, **params
         ):
             if not isinstance(stream_resp, dict):
-                stream_resp = stream_resp.dict()
+                stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -283,9 +287,11 @@ class BaseOpenAI(BaseLLM):
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
-                    logprobs=chunk.generation_info["logprobs"]
-                    if chunk.generation_info
-                    else None,
+                    logprobs=(
+                        chunk.generation_info["logprobs"]
+                        if chunk.generation_info
+                        else None
+                    ),
                 )
 
     def _generate(
@@ -334,12 +340,16 @@ class BaseOpenAI(BaseLLM):
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:
@@ -347,7 +357,7 @@ class BaseOpenAI(BaseLLM):
                 if not isinstance(response, dict):
                     # V1 client returns the response in an PyDantic object instead of
                     # dict. For the transition period, we deep convert it to dict.
-                    response = response.dict()
+                    response = response.model_dump()
 
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
@@ -395,18 +405,22 @@ class BaseOpenAI(BaseLLM):
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:
                 response = await self.async_client.create(prompt=_prompts, **params)
                 if not isinstance(response, dict):
-                    response = response.dict()
+                    response = response.model_dump()
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(

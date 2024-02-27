@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING,
+    Dict,
     List,
     Optional,
 )
@@ -115,6 +116,7 @@ class RdfGraph:
         update_endpoint: Optional[str] = None,
         standard: Optional[str] = "rdf",
         local_copy: Optional[str] = None,
+        graph_kwargs: Optional[Dict] = None,
     ) -> None:
         """
         Set up the RDFlib graph
@@ -125,6 +127,9 @@ class RdfGraph:
         :param update_endpoint: SPARQL endpoint for UPDATE queries, write access
         :param standard: RDF, RDFS, or OWL
         :param local_copy: new local copy for storing changes
+        :param graph_kwargs: Additional rdflib.Graph specific kwargs
+        that will be used to initialize it,
+        if query_endpoint is provided.
         """
         self.source_file = source_file
         self.serialization = serialization
@@ -135,7 +140,6 @@ class RdfGraph:
 
         try:
             import rdflib
-            from rdflib.graph import DATASET_DEFAULT_GRAPH_ID as default
             from rdflib.plugins.stores import sparqlstore
         except ImportError:
             raise ValueError(
@@ -177,7 +181,8 @@ class RdfGraph:
             else:
                 self._store = sparqlstore.SPARQLUpdateStore()
                 self._store.open((query_endpoint, update_endpoint))
-            self.graph = rdflib.Graph(self._store, identifier=default)
+            graph_kwargs = graph_kwargs or {}
+            self.graph = rdflib.Graph(self._store, **graph_kwargs)
 
         # Verify that the graph was loaded
         if not len(self.graph):

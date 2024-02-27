@@ -16,6 +16,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
+from langchain_community.utils.google import get_client_info
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
     maximal_marginal_relevance,
@@ -30,7 +31,6 @@ DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
 
 _MIN_INDEX_ROWS = 5000  # minimal number of rows for creating an index
 _INDEX_CHECK_PERIOD_SECONDS = 60  # Do not check for index more often that this.
-
 _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
 
 
@@ -90,8 +90,12 @@ class BigQueryVectorSearch(VectorStore):
         try:
             from google.cloud import bigquery
 
+            client_info = get_client_info(module="bigquery-vector-search")
             self.bq_client = bigquery.Client(
-                project=project_id, location=location, credentials=credentials
+                project=project_id,
+                location=location,
+                credentials=credentials,
+                client_info=client_info,
             )
         except ModuleNotFoundError:
             raise ImportError(

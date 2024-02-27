@@ -484,8 +484,8 @@ class ElasticsearchStore(VectorStore):
             from langchain_community.vectorstores.utils import DistanceStrategy
 
             vectorstore = ElasticsearchStore(
+                "langchain-demo",
                 embedding=OpenAIEmbeddings(),
-                index_name="langchain-demo",
                 es_url="http://localhost:9200",
                 distance_strategy="DOT_PRODUCT"
             )
@@ -528,9 +528,9 @@ class ElasticsearchStore(VectorStore):
         self.strategy = strategy
 
         if es_connection is not None:
-            self.client = es_connection.options(
-                headers={"user-agent": self.get_user_agent()}
-            )
+            headers = dict(es_connection._headers)
+            headers.update({"user-agent": self.get_user_agent()})
+            self.client = es_connection.options(headers=headers)
         elif es_url is not None or es_cloud_id is not None:
             self.client = ElasticsearchStore.connect_to_elasticsearch(
                 es_url=es_url,
