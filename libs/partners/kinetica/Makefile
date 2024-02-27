@@ -1,16 +1,23 @@
-.PHONY: all format lint test tests integration_tests docker_tests help extended_tests
+.PHONY: all format lint test tests test_watch integration_tests docker_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+integration_tests: TEST_FILE = tests/integration_tests/
 
-test:
+# Run unit tests and generate a coverage report.
+coverage:
+	poetry run pytest --cov \
+		--cov-config=.coveragerc \
+		--cov-report xml \
+		--cov-report term-missing:skip-covered \
+		$(TEST_FILE)
+
+test tests integration_tests:
 	poetry run pytest $(TEST_FILE)
 
-tests:
-	poetry run pytest $(TEST_FILE)
 
 
 ######################
@@ -27,10 +34,12 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
+	./scripts/check_pydantic.sh .
+	./scripts/lint_imports.sh
 	poetry run ruff .
-	poetry run ruff format $(PYTHON_FILES) --diff
-	poetry run ruff --select I $(PYTHON_FILES)
-	mkdir $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)
