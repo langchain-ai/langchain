@@ -707,7 +707,7 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> AsyncIterator[StreamEvent]:
         """Generate a stream of events.
 
-        Use to create an iterator ove StreamEvents that provide real-time information
+        Use to create an iterator over StreamEvents that provide real-time information
         about the progress of the runnable, including StreamEvents from intermediate
         results.
 
