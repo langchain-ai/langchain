@@ -7,7 +7,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseGenerationOutputParser
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import Field
 
 
 class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
@@ -109,15 +109,20 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
-    tools: List[Type[BaseModel]]
+    tools: List[Type]
+    context: dict = Field(default_factory=dict)
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         parsed_result = super().parse_result(result, partial=partial)
-        name_dict = {tool.__name__: tool for tool in self.tools}
         if self.first_tool_only:
-            return (
-                name_dict[parsed_result["type"]](**parsed_result["args"])
-                if parsed_result
-                else None
-            )
-        return [name_dict[res["type"]](**res["args"]) for res in parsed_result]
+            return self._parse_tool_call(parsed_result) if parsed_result else None
+        else:
+            return [self._parse_tool_call(tool_call) for tool_call in parsed_result]
+
+    def _parse_tool_call(self, tool_call: dict) -> Any:
+        name_dict = {tool.__name__: tool for tool in self.tools}
+        pydantic_cls = name_dict[tool_call["type"]]
+        if hasattr(pydantic_cls, "model_validate"):
+            return pydantic_cls.model_validate(tool_call["args"], context=self.context)
+        else:
+            return pydantic_cls.parse_obj(tool_call["args"])

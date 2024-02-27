@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import jsonpatch  # type: ignore[import]
 
@@ -11,7 +11,7 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -177,21 +177,19 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             result = parser.parse_result([chat_generation])
     """
 
-    pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
+    pydantic_schema: Union[Type, Dict[str, Type]]
     """The pydantic schema to parse the output with.
     
     If multiple schemas are provided, then the function name will be used to
     determine which schema to use.
     """
+    context: dict = Field(default_factory=dict)
 
     @root_validator(pre=True)
     def validate_schema(cls, values: Dict) -> Dict:
         schema = values["pydantic_schema"]
-        if "args_only" not in values:
-            values["args_only"] = isinstance(schema, type) and issubclass(
-                schema, BaseModel
-            )
-        elif values["args_only"] and isinstance(schema, Dict):
+        values["args_only"] = values.get("args_only", not isinstance(schema, Dict))
+        if values["args_only"] and isinstance(schema, Dict):
             raise ValueError(
                 "If multiple pydantic schemas are provided then args_only should be"
                 " False."
@@ -201,12 +199,17 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         _result = super().parse_result(result)
         if self.args_only:
-            pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
+            pydantic_cls = cast(Type, self.pydantic_schema)
+            args = _result
         else:
             fn_name = _result["name"]
-            _args = _result["arguments"]
-            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore  # noqa: E501
-        return pydantic_args
+            pydantic_cls = cast(Dict, self.pydantic_schema)[fn_name]
+            args = _result["arguments"]
+
+        if hasattr(pydantic_cls, "model_validate_json"):
+            return pydantic_cls.model_validate_json(args, context=self.context)
+        else:
+            return pydantic_cls.parse_raw(args)
 
 
 class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):

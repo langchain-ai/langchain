@@ -4,23 +4,29 @@ from typing import Any, List, Type
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import Field, ValidationError
 
 
 class PydanticOutputParser(JsonOutputParser):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Type[BaseModel]
+    pydantic_object: Type
     """The pydantic model to parse.
     
     Attention: To avoid potential compatibility issues, it's recommended to use
         pydantic <2 or leverage the v1 namespace in pydantic >= 2.
     """
+    context: dict = Field(default_factory=dict)
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         json_object = super().parse_result(result)
         try:
-            return self.pydantic_object.parse_obj(json_object)
+            if hasattr(self.pydantic_object, "model_validate"):
+                return self.pydantic_object.model_validate(
+                    json_object, context=self.context
+                )
+            else:
+                return self.pydantic_object.parse_obj(json_object)
         except ValidationError as e:
             name = self.pydantic_object.__name__
             msg = f"Failed to parse {name} from completion {json_object}. Got: {e}"
@@ -46,7 +52,7 @@ class PydanticOutputParser(JsonOutputParser):
         return "pydantic"
 
     @property
-    def OutputType(self) -> Type[BaseModel]:
+    def OutputType(self) -> Type:
         """Return the pydantic model."""
         return self.pydantic_object
 
