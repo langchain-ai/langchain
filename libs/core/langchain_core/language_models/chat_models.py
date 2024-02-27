@@ -565,6 +565,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
+        parameters = inspect.signature(llm_cache.update).parameters.values()
+        can_cache_accept_kwargs = any(param.kind == param.VAR_KEYWORD for param in parameters)
         disregard_cache = self.cache is not None and not self.cache
         llm_cache = get_llm_cache()
         if llm_cache is None or disregard_cache:
@@ -582,7 +584,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
-            cache_val = llm_cache.lookup(prompt, llm_string, **kwargs)
+            if can_cache_accept_kwargs:
+                cache_val = llm_cache.lookup(prompt, llm_string, **kwargs)
+            else:
+                cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
             else:
@@ -592,7 +597,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 else:
                     result = self._generate(messages, stop=stop, **kwargs)
-                llm_cache.update(prompt, llm_string, result.generations, **kwargs)
+                if can_cache_accept_kwargs:
+                    llm_cache.update(prompt, llm_string, result.generations, **kwargs)
+                else:
+                    llm_cache.update(prompt, llm_string, result.generations)
                 return result
 
     async def _agenerate_with_cache(
@@ -605,6 +613,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
+        parameters = inspect.signature(llm_cache.update).parameters.values()
+        can_cache_accept_kwargs = any(param.kind == param.VAR_KEYWORD for param in parameters)
         disregard_cache = self.cache is not None and not self.cache
         llm_cache = get_llm_cache()
         if llm_cache is None or disregard_cache:
@@ -622,7 +632,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
-            cache_val = await llm_cache.alookup(prompt, llm_string, **kwargs)
+            if can_cache_accept_kwargs:
+                cache_val = await llm_cache.alookup(prompt, llm_string, **kwargs)
+            else:
+                cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
             else:
@@ -632,7 +645,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 else:
                     result = await self._agenerate(messages, stop=stop, **kwargs)
-                await llm_cache.aupdate(prompt, llm_string, result.generations, **kwargs)
+                if can_cache_accept_kwargs:
+                    await llm_cache.aupdate(prompt, llm_string, result.generations, **kwargs)
+                else:
+                    await llm_cache.aupdate(prompt, llm_string, result.generations)
                 return result
 
     @abstractmethod
