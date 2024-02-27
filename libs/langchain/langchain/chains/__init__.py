@@ -157,7 +157,8 @@ _module_lookup = {entry["name"]: entry["module"] for entry in _exports}
 
 def __getattr__(name: str) -> Any:
     if name in _module_lookup:
-        return importlib.import_module(_module_lookup[name], name)
+        module = importlib.import_module(_module_lookup[name])
+        return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
