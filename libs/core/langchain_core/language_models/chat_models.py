@@ -565,10 +565,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
-        parameters = inspect.signature(llm_cache.update).parameters.values()
-        can_cache_accept_kwargs = any(param.kind == param.VAR_KEYWORD for param in parameters)
+
         disregard_cache = self.cache is not None and not self.cache
         llm_cache = get_llm_cache()
+        parameters = inspect.signature(llm_cache.update).parameters.values()
+        can_cache_accept_kwargs = any(param.kind == param.VAR_KEYWORD for param in parameters)
         if llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
             if self.cache is not None and self.cache:
@@ -613,10 +614,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
-        parameters = inspect.signature(llm_cache.update).parameters.values()
-        can_cache_accept_kwargs = any(param.kind == param.VAR_KEYWORD for param in parameters)
         disregard_cache = self.cache is not None and not self.cache
         llm_cache = get_llm_cache()
+        parameters = inspect.signature(llm_cache.update).parameters.values()
+        can_cache_accept_kwargs = any(param.kind == param.VAR_KEYWORD for param in parameters)
         if llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
             if self.cache is not None and self.cache:
