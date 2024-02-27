@@ -140,7 +140,11 @@ _exports = [
     {"name": "MultiRouteChain", "module": "langchain.chains.router"},
     {"name": "RouterChain", "module": "langchain.chains.router"},
     {
-        "name": "SequentialChain, SimpleSequentialChain",
+        "name": "SequentialChain",
+        "module": "langchain.chains.sequential",
+    },
+    {
+        "name": "SimpleSequentialChain",
         "module": "langchain.chains.sequential",
     },
     {"name": "create_sql_query_chain", "module": "langchain.chains.sql_database.query"},
