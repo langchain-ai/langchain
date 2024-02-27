@@ -11,10 +11,19 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
+
 from langchain_community.llms.chatglm import ChatGLM
 
-class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
 
+class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
+    """
+    Example:
+        .. code-block:: python
+
+            from langchain_community.chat_models.chatglm import ChatGLM_ChatModel
+            llm = ChatGLM_ChatModel(temperature=1, top_p=0.9)
+    """
+    
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
