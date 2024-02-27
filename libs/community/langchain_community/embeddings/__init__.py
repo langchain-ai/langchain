@@ -53,8 +53,8 @@ from langchain_community.embeddings.huggingface_hub import HuggingFaceHubEmbeddi
 from langchain_community.embeddings.infinity import InfinityEmbeddings
 from langchain_community.embeddings.infinity_local import InfinityEmbeddingsLocal
 from langchain_community.embeddings.itrex import (
-    ItrexHuggingFaceEmbeddings,
     ItrexHuggingFaceBgeEmbeddings,
+    ItrexHuggingFaceEmbeddings,
     ItrexHuggingFaceInstructEmbeddings,
 )
 from langchain_community.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings

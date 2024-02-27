@@ -1,18 +1,9 @@
-from typing import Any, Dict, List, Optional, Union
-
-import sys
-import json
-import logging
 import importlib.util
-from collections import OrderedDict
-from transformers import T5Config, MT5Config
+from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 
-DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
-DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
-DEFAULT_BGE_MODEL = "BAAI/bge-large-en"
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
 DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
@@ -22,11 +13,11 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
 )
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
 
-logger = logging.getLogger(__name__)
 
 class ItrexHuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
-    To use, you should have the ``sentence_transformers`` python package installed.
+    To use, you should have the ``sentence_transformers``
+    and ``intel_extension_for_transformers`` python package installed.
     Example:
         .. code-block:: python
             from langchain_community.embeddings import ItrexHuggingFaceEmbeddings
@@ -39,7 +30,7 @@ class ItrexHuggingFaceEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-    model_name: str = DEFAULT_MODEL_NAME
+    model_name: str
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models.
@@ -56,27 +47,22 @@ class ItrexHuggingFaceEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         # check sentence_transformers python package
-        try:
-            global sentence_transformers
-            import sentence_transformers
-        except ImportError as exc:
+        if importlib.util.find_spec("sentence_transformers") is None:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence-transformers`."
-            ) from exc
+            )
 
         # check intel_extension_for_transformers python package
-        try:
-            import intel_extension_for_transformers
-        except ImportError as exc:
+        if importlib.util.find_spec("intel_extension_for_transformers") is None:
             raise ImportError(
                 "Could not import intel_extension_for_transformers python package. "
                 "Please install it with `pip install intel-extension-for-transformers`."
-            ) from exc
+            )
 
-        self.sentence_transformers = sentence_transformers
-        from .util import _OptimizedSentenceTransformer
-        self.client = _OptimizedSentenceTransformer(
+        from .util import OptimizedSentenceTransformer
+
+        self.client = OptimizedSentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
 
@@ -113,9 +99,11 @@ class ItrexHuggingFaceEmbeddings(BaseModel, Embeddings):
         """
         return self.embed_documents([text])[0]
 
+
 class ItrexHuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """HuggingFace BGE sentence_transformers embedding models.
-    To use, you should have the ``sentence_transformers`` python package installed.
+    To use, you should have the ``sentence_transformers``
+    and ``intel_extension_for_transformers`` python package installed.
     Example:
         .. code-block:: python
             from langchain_community.embeddings import ItrexHuggingFaceBgeEmbeddings
@@ -130,7 +118,7 @@ class ItrexHuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-    model_name: str = DEFAULT_BGE_MODEL
+    model_name: str
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models.
@@ -147,25 +135,22 @@ class ItrexHuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         # check sentence_transformers python package
-        try:
-            import sentence_transformers
-        except ImportError as exc:
+        if importlib.util.find_spec("sentence_transformers") is None:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
-            ) from exc
+                "Please install it with `pip install sentence-transformers`."
+            )
 
         # check intel_extension_for_transformers python package
-        try:
-            import intel_extension_for_transformers
-        except ImportError as exc:
+        if importlib.util.find_spec("intel_extension_for_transformers") is None:
             raise ImportError(
                 "Could not import intel_extension_for_transformers python package. "
                 "Please install it with `pip install intel-extension-for-transformers`."
-            ) from exc
+            )
 
-        from .util import _OptimizedSentenceTransformer
-        self.client = _OptimizedSentenceTransformer(
+        from .util import OptimizedSentenceTransformer
+
+        self.client = OptimizedSentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
         if "-zh" in self.model_name:
@@ -200,13 +185,17 @@ class ItrexHuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         )
         return embedding.tolist()
 
+
 class ItrexHuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     """Wrapper around sentence_transformers embedding models.
-    To use, you should have the ``sentence_transformers``
-    and ``InstructorEmbedding`` python packages installed.
+    To use, you should have the ``sentence_transformers``,
+    ``intel_extension_for_transformers`` and ``InstructorEmbedding`` python packages
+    installed.
     Example:
         .. code-block:: python
-            from langchain_community.embeddings import ItrexHuggingFaceInstructEmbeddings
+            from langchain_community.embeddings import (
+                ItrexHuggingFaceInstructEmbeddings
+            )
             model_name = "hkunlp/instructor-large"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': True}
@@ -218,7 +207,7 @@ class ItrexHuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-    model_name: str = DEFAULT_INSTRUCT_MODEL
+    model_name: str
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models.
@@ -237,34 +226,29 @@ class ItrexHuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         # check sentence_transformers python package
-        try:
-            import sentence_transformers
-        except ImportError as exc:
+        if importlib.util.find_spec("sentence_transformers") is None:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
-            ) from exc
-
-        # check InstructorEmbedding python package
-        try:
-            import InstructorEmbedding
-        except ImportError as exc:
-            raise ImportError(
-                "Could not import InstructorEmbedding python package. "
-                "Please install it with `pip install InstructorEmbedding`."
-            ) from exc
+                "Please install it with `pip install sentence-transformers`."
+            )
 
         # check intel_extension_for_transformers python package
-        try:
-            import intel_extension_for_transformers
-        except ImportError as exc:
+        if importlib.util.find_spec("intel_extension_for_transformers") is None:
             raise ImportError(
                 "Could not import intel_extension_for_transformers python package. "
                 "Please install it with `pip install intel-extension-for-transformers`."
-            ) from exc
+            )
 
-        from .util import _OptimizedInstructor
-        self.client = _OptimizedInstructor(
+        # check InstructorEmbedding python package
+        if importlib.util.find_spec("InstructorEmbedding") is None:
+            raise ImportError(
+                "Could not import InstructorEmbedding python package. "
+                "Please install it with `pip install InstructorEmbedding`."
+            )
+
+        from .util import OptimizedInstructor
+
+        self.client = OptimizedInstructor(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
 

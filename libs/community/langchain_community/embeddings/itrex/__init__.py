@@ -1,6 +1,6 @@
 from .base import (
-    ItrexHuggingFaceEmbeddings,
     ItrexHuggingFaceBgeEmbeddings,
+    ItrexHuggingFaceEmbeddings,
     ItrexHuggingFaceInstructEmbeddings,
 )
 
