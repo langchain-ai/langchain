@@ -3036,12 +3036,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             return False
 
     def __repr__(self) -> str:
-        if hasattr(self, "_transform"):
-            return f"RunnableGenerator({self._transform.__name__})"
-        elif hasattr(self, "_atransform"):
-            return f"RunnableGenerator({self._atransform.__name__})"
-        else:
-            return "RunnableGenerator(...)"
+        return f"RunnableGenerator({self.name})"
 
     def transform(
         self,
@@ -3049,6 +3044,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[Output]:
+        if not hasattr(self, "_transform"):
+            raise NotImplementedError(f"{repr(self)} only supports async methods.")
         return self._transform_stream_with_config(
             input, self._transform, config, **kwargs
         )
@@ -3079,7 +3076,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         if not hasattr(self, "_atransform"):
-            raise NotImplementedError("This runnable does not support async methods.")
+            raise NotImplementedError(f"{repr(self)} only supports sync methods.")
 
         return self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
