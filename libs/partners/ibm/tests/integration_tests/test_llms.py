@@ -5,7 +5,7 @@ You'll need to set WATSONX_APIKEY and WATSONX_PROJECT_ID environment variables.
 
 import os
 
-from ibm_watsonx_ai.foundation_models import ModelInference, Model  # type: ignore
+from ibm_watsonx_ai.foundation_models import Model, ModelInference  # type: ignore
 from ibm_watsonx_ai.metanames import GenTextParamsMetaNames  # type: ignore
 from langchain_core.outputs import LLMResult
 
