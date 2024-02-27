@@ -137,6 +137,51 @@ See [usage example](/docs/integrations/vectorstores/alloydb).
 from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBVectorStore
 ```
 
+### Cloud SQL for PostgreSQL
+
+> [Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-pg
+```
+
+See [usage example](docs/docs/integrations/vectorstores/cloud_sql_pg).
+
+```python
+from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgresVectorStore
+```
+
+### Spanner
+
+> [Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+Install the python package:
+
+```bash
+pip install langchain-google-spanner
+```
+
+See [usage example](docs/docs/integrations/vectorstores/spanner).
+
+```python
+from langchain_google_spanner import SpannerVectorStore
+```
+
+### Memorystore for Redis
+
+> [Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+Install the python package:
+
+```bash
+pip install langchain-google-memorystore-redis
+```
+
+See [usage example](docs/docs/integrations/vectorstores/memorystore_redis).
+
+```python
+from langchain_google_memorystore_redis import RedisVectorStore
+```
+
 ### Vertex AI Vector Search
 
 > [Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview) from Google Cloud,
@@ -269,6 +314,127 @@ See [usage example](/docs/integrations/document_loaders/alloydb).
 
 ```python
 from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBLoader
+```
+
+### Cloud SQL for PostgreSQL
+
+> [Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-pg
+```
+
+See [usage example](docs/docs/integrations/document_loaders/cloud_sql_pg).
+
+```python
+from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLLoader
+```
+
+### Cloud SQL for MySQL
+
+> [Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mysql
+```
+
+See [usage example](docs/docs/integrations/document_loader/cloud_sql_mysql).
+
+```python
+from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLDocumentLoader
+```
+
+### Cloud SQL for SQL Server
+
+> [Cloud SQL for SQL Server](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your SQL Server databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mssql
+```
+
+See [usage example](docs/docs/integrations/document_loaders/cloud_sql_mssql).
+
+```python
+from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLLoader
+```
+
+### Bigtable
+
+> [Bigtable](https://cloud.google.com/bigtable/docs) is Google's fully managed NoSQL Big Data database service in Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-bigtable
+```
+
+See [usage example](docs/docs/integrations/document_loaders/bigtable).
+
+```python
+from langchain_google_bigtable import BigtableLoader
+```
+
+### Spanner
+
+> [Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+Install the python package:
+
+```bash
+pip install langchain-google-spanner
+```
+
+See [usage example](docs/docs/integrations/document_loaders/spanner).
+
+```python
+from langchain_google_spanner import SpannerLoader
+```
+
+### Memorystore for Redis
+
+> [Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+Install the python package:
+
+```bash
+pip install langchain-google-memorystore-redis
+```
+
+See [usage example](docs/docs/integrations/document_loaders/memorystore_redis).
+
+```python
+from langchain_google_memorystore_redis import MemorystoreLoader
+```
+
+### Firestore (Native Mode)
+
+> [Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+Install the python package:
+
+```bash
+pip install langchain-google-firestore
+```
+
+See [usage example](docs/docs/integrations/document_loader/firestore).
+
+```python
+from langchain_google_firestore import FirestoreLoader
+```
+
+### Firestore in Datastore Mode
+
+> [Firestore in Datastore mode](https://cloud.google.com/datastore/docs) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+> Firestore is the newest version of Datastore and introduces several improvements over Datastore.
+Install the python package:
+
+```bash
+pip install langchain-google-datastore
+```
+
+See [usage example](docs/docs/integrations/document_loaders/datastore).
+
+```python
+from langchain_google_datastore import DatastoreLoader
 ```
 
 ### BigQuery
@@ -569,10 +735,100 @@ See [usage example](/docs/integrations/memory/alloydb).
 from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBChatMessageHistory
 ```
 
-### Firestore
+### Cloud SQL for PostgreSQL
+
+> [Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-pg
+```
+
+See [usage example](docs/docs/integrations/memory/cloud_sql_pg).
+
+
+```python
+from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLChatMessageHistory
+```
+
+### Cloud SQL for MySQL
+
+> [Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mysql
+```
+
+See [usage example](docs/docs/integrations/memory/cloud_sql_mysql).
+
+```python
+from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLChatMessageHistory
+```
+
+### Cloud SQL for SQL Server
+
+> [Cloud SQL for SQL Server](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your SQL Server databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mssql
+```
+
+See [usage example](docs/docs/integrations/memory/cloud_sql_mssql).
+
+```python
+from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLChatMessageHistory
+```
+
+### Spanner
+
+> [Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+Install the python package:
+
+```bash
+pip install langchain-google-spanner
+```
+
+See [usage example](docs/docs/integrations/memory/spanner).
+
+```python
+from langchain_google_spanner import SpannerChatMessageHistory
+```
+
+### Memorystore for Redis
+
+> [Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+Install the python package:
+
+```bash
+pip install langchain-google-memorystore-redis
+```
+
+See [usage example](docs/docs/integrations/document_loaders/memorystore_redis).
+
+```python
+from langchain_google_memorystore_redis import MemorystoreChatMessageHistory
+```
+
+### Bigtable
+
+> [Bigtable](https://cloud.google.com/bigtable/docs) is Google's fully managed NoSQL Big Data database service in Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-bigtable
+```
+
+See [usage example](docs/docs/integrations/memory/bigtable).
+
+```python
+from langchain_google_bigtable import BigtableChatMessageHistory
+```
+
+### Firestore (Native Mode)
 
 > [Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
-
 Install the python package:
 
 ```bash
@@ -583,6 +839,22 @@ See [usage example](docs/docs/integrations/memory/firestore).
 
 ```python
 from langchain_google_firestore import FirestoreChatMessageHistory
+```
+
+### Firestore in Datastore Mode
+
+> [Firestore in Datastore mode](https://cloud.google.com/datastore/docs) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+> Firestore is the newest version of Datastore and introduces several improvements over Datastore.
+Install the python package:
+
+```bash
+pip install langchain-google-datastore
+```
+
+See [usage example](docs/docs/integrations/memory/datastore).
+
+```python
+from langchain_google_datastore import DatastoreChatMessageHistory
 ```
 
 ## Chat Loaders
