@@ -3,6 +3,10 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+import requests
+from functools import wraps
+from urllib.parse import urljoin
+import json
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -356,3 +360,179 @@ class NeuralDBVectorStore(VectorStore):
             path: path on disk to save the NeuralDB instance to.
         """
         self.db.save(path)
+
+
+def check_deployment_decorator(func):
+    """
+    A decorator function to check if deployment is complete before executing the decorated method.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The decorated function.
+    """
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except requests.RequestException as e:
+            print(f"Error during HTTP request: {str(e)}")
+            print(
+                "Deployment might not be complete yet. Call `list_deployments()` to check status of your deployment."
+            )
+            return None
+
+    return wrapper
+
+def auth_header(access_token):
+    return {
+        "Authorization": f"Bearer {access_token}",
+    }
+    
+class NeuralDBClient:
+    """
+    A client for interacting with the deployed NeuralDB model.
+
+    Attributes:
+        deployment_identifier (str): The identifier for the deployment.
+        bazaar (thirdai.neural_db.ModelBazaar): The ModelBazaar object corresponding to a NeuralDB Enterprise installation.
+
+    Methods:
+        __init__(self, deployment_identifier: str, bazaar: thirdai.neural_db.ModelBazaar) -> None:
+            Initializes a new instance of the NeuralDBClient.
+
+        search(self, query: str, top_k: int = 10) -> List[dict]:
+            Searches the ndb model for relevant search results.
+    """
+
+    def __init__(self, deployment_identifier, bazaar):
+        """
+        Initializes a new instance of the NeuralDBClient.
+
+        Args:
+            deployment_identifier (str): The identifier for the deployment.
+            bazaar (thirdai.neural_db.ModelBazaar): The ModelBazaar object corresponding to a NeuralDB Enterprise installation.
+        """
+        self.deployment_identifier = deployment_identifier
+        self.bazaar = bazaar
+        
+        url = urljoin(self.bazaar._base_url, f"jobs/{self.bazaar._user_id}/deploy-status")
+
+        response = requests.get(
+            url,
+            params={"deployment_identifier": deployment_identifier},
+            headers=auth_header(self.bazaar._access_token),
+        )
+
+        response_data = json.loads(response.content)["data"]
+
+        if response_data["status"] == "complete":
+            print("Connection obtained...")
+            self.base_url = response_data["endpoint"] + "/"
+        else:
+            raise Exception("The model isn't deployed...")
+        
+
+    @check_deployment_decorator
+    def search(self, query, top_k=10):
+        """
+        Searches the ndb model for similar queries.
+
+        Args:
+            query (str): The query to search for.
+            top_k (int): The number of top results to retrieve (default is 10).
+
+        Returns:
+            Dict: A dict of search results containing keys: `query_text` and `references`.
+        """
+        print(urljoin(self.base_url, "predict"))
+        response = requests.get(
+            urljoin(self.base_url, "predict"),
+            params={"query_text": query, "top_k": top_k},
+            headers=auth_header(self.bazaar._login_instance._access_token)
+        )
+
+        if not (200 <= response.status_code < 300):
+            print(response.content)
+            raise requests.exceptions.HTTPError(
+                "Failed with status code:", response.status_code
+            )
+    
+        content = json.loads(response.content)
+    
+        status = content["status"]
+    
+        if status != "success":
+            error = content["message"]
+            raise requests.exceptions.HTTPError(f"error: {error}")
+
+        return json.loads(response.content)["data"]
+
+
+class NeuralDBClientVectorStore(VectorStore):
+    """Vectorstore that uses ThirdAI's NeuralDB Enterprise Python Client for NeuralDBs.
+
+    To use, you should have the ``thirdai[neural_db]`` python package installed.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_community.vectorstores import NeuralDBClientVectorStore, NeuralDBClient
+            from thirdai.neural_db import ModelBazaar
+
+            bazaar = ModelBazaar(base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/")
+            bazaar.log_in(email="user@thirdai.com", password="1234")
+
+            ndb_client = NeuralDBClient(deployment_identifier="user/model-0:user/deployment-0", bazaar=bazaar)
+            vectorstore = NeuralDBClientVectorStore(db=ndb_client)
+            retriever = vectorstore.as_retriever(search_kwargs={'k':5})
+
+    """
+
+    def __init__(self, db):
+        self.db = db
+
+    db: Any = None  #: :meta private:
+    """NeuralDB Client instance"""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        underscore_attrs_are_private = True
+
+
+    def similarity_search(
+        self, query: str, k: int = 10, **kwargs: Any
+    ) -> List[Document]:
+        """Retrieve {k} contexts with for a given query
+
+        Args:
+            query: Query to submit to the model
+            k: The max number of context results to retrieve. Defaults to 10.
+        """
+        try:
+            references = self.db.search(query=query, top_k=k, **kwargs)["references"]
+            return [
+                Document(
+                    page_content=ref["text"],
+                    metadata={
+                        "id": ref["id"],
+                        "source": ref["source"],
+                        "metadata": ref["metadata"],
+                        "score": ref["source"],
+                        "context": ref["context"],
+                    },
+                )
+                for ref in references
+            ]
+        except Exception as e:
+            raise ValueError(f"Error while retrieving documents: {e}") from e
+
+    def add_texts():
+        raise NotImplementedError()
+
+    def from_texts():
+        raise NotImplementedError()
