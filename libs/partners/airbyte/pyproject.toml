@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-airbyte"
-version = "0.0.1"
+version = "0.1.0"
 description = "An integration package connecting Airbyte and LangChain"
 authors = []
 readme = "README.md"
@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
 langchain-core = "^0.1"
-airbyte = {git = "https://github.com/airbytehq/PyAirbyte.git", rev = "aj/feat/render-records-as-documents"}
+airbyte = { git = "https://github.com/airbytehq/PyAirbyte.git", rev = "aj/feat/render-records-as-documents" }
 
 [tool.poetry.group.test]
 optional = true
