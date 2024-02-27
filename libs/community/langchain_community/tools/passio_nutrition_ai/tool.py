@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
-from langchain_community.utilities.passio_nutritionai import NutritionAIAPI
+from langchain_community.utilities.passio_nutrition_ai import NutritionAIAPI
 
 
 class NutritionAIInputs(BaseModel):

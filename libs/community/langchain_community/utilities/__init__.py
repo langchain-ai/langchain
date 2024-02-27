@@ -164,8 +164,8 @@ def _import_outline() -> Any:
     return OutlineAPIWrapper
 
 
-def _import_nutritionai() -> Any:
-    from langchain_community.utilities.passio_nutritionai import NutritionAIAPI
+def _import_passio_nutrition_ai() -> Any:
+    from langchain_community.utilities.passio_nutrition_ai import NutritionAIAPI
 
     return NutritionAIAPI
 
@@ -362,7 +362,7 @@ def __getattr__(name: str) -> Any:
     elif name == "OutlineAPIWrapper":
         return _import_outline()
     elif name == "NutritionAIAPI":
-        return _import_nutritionai()
+        return _import_passio_nutrition_ai()
     elif name == "Portkey":
         return _import_portkey()
     elif name == "PowerBIDataset":
