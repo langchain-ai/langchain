@@ -102,7 +102,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         if "model" not in values:
             logger.warning(
                 "model will become a required arg for VoyageAIEmbeddings, "
-                "we recommend to specify it when using this class."
+                "we recommend to specify it when using this class. "
                 "Currently the default is set to voyage-01."
             )
 
@@ -134,6 +134,9 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         input_type: Optional[str] = None,
     ) -> List[List[float]]:
         embeddings: List[List[float]] = []
+
+        if batch_size is None:
+            batch_size = self.batch_size
 
         if self.show_progress_bar:
             try:
