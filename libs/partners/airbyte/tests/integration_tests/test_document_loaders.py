@@ -1,5 +1,6 @@
 """Test Airbyte embeddings."""
-from langchain_airbyte.embeddings import AirbyteEmbeddings
+
+from langchain_airbyte import AirbyteLoader
 
 
 def test_langchain_airbyte_embedding_documents() -> None:

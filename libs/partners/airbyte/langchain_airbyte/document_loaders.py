@@ -2,26 +2,14 @@
 
 from __future__ import annotations
 
-import asyncio
-from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, AsyncIterator, Dict, Iterator, List, Optional, TypeVar
 
 import airbyte as ab
-from langchain_core.embeddings import Embeddings
+from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
+    from langchain.text_splitter import TextSplitter
     from langchain_core.documents import Document
 
 VST = TypeVar("VST", bound=VectorStore)
@@ -51,146 +39,43 @@ class AirbyteLoader:
     ):
         self._airbyte_source = ab.get_source(source, config=config, streams=streams)
 
-    def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        raise NotImplementedError
+    def load(self) -> List[Document]:
+        """Load source data into Document objects."""
+        return list(self.lazy_load())
 
-    async def aadd_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.add_texts, **kwargs), texts, metadatas
+    def load_and_split(
+        self, text_splitter: Optional[TextSplitter] = None
+    ) -> List[Document]:
+        """Load Documents and split into chunks. Chunks are returned as Documents.
+
+        Args:
+            text_splitter: TextSplitter instance to use for splitting documents.
+              Defaults to RecursiveCharacterTextSplitter.
+
+        Returns:
+            List of Documents.
+        """
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+        if text_splitter is None:
+            _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
+        else:
+            _text_splitter = text_splitter
+        docs = self.load()
+        return _text_splitter.split_documents(docs)
+
+    def lazy_load(self) -> Iterator[Document]:
+        """A lazy loader for Documents."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement lazy_load()"
         )
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        raise NotImplementedError
-
-    async def adelete(
-        self, ids: Optional[List[str]] = None, **kwargs: Any
-    ) -> Optional[bool]:
-        raise NotImplementedError
-
-    def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        raise NotImplementedError
-
-    async def asimilarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search, query, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
-
-    def similarity_search_with_score(
-        self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
-        raise NotImplementedError
-
-    async def asimilarity_search_with_score(
-        self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_with_score, *args, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
-
-    def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        raise NotImplementedError
-
-    async def asimilarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_by_vector, embedding, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
-
-    def max_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        raise NotImplementedError
-
-    async def amax_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(
-            self.max_marginal_relevance_search,
-            query,
-            k=k,
-            fetch_k=fetch_k,
-            lambda_mult=lambda_mult,
-            **kwargs,
-        )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
-
-    def max_marginal_relevance_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        raise NotImplementedError
-
-    async def amax_marginal_relevance_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        raise NotImplementedError
-
-    @classmethod
-    def from_texts(
-        cls: Type[VST],
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> VST:
-        raise NotImplementedError
-
-    @classmethod
-    async def afrom_texts(
-        cls: Type[VST],
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> VST:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(cls.from_texts, **kwargs), texts, embedding, metadatas
-        )
-
-    def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        raise NotImplementedError
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        """A lazy loader for Documents."""
+        iterator = await run_in_executor(None, self.lazy_load)
+        done = object()
+        while True:
+            doc = await run_in_executor(None, next, iterator, done)  # type: ignore[call-arg, arg-type]
+            if doc is done:
+                break
+            yield doc  # type: ignore[misc]
