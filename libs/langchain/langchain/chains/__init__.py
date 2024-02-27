@@ -41,6 +41,8 @@ from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
+from langchain.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
+from langchain.chains.graph_qa.ontotext_graphdb import OntotextGraphDBQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
@@ -80,6 +82,7 @@ from langchain.chains.router import (
 )
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.query import create_sql_query_chain
+from langchain.chains.structured_output import create_structured_output_runnable
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chains.transform import TransformChain
 
@@ -96,6 +99,7 @@ __all__ = [
     "GraphCypherQAChain",
     "GraphQAChain",
     "GraphSparqlQAChain",
+    "OntotextGraphDBQAChain",
     "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
@@ -114,6 +118,7 @@ __all__ = [
     "NatBotChain",
     "NebulaGraphQAChain",
     "NeptuneOpenCypherQAChain",
+    "NeptuneSparqlQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
     "QAGenerationChain",
@@ -141,5 +146,6 @@ __all__ = [
     "create_sql_query_chain",
     "create_retrieval_chain",
     "create_history_aware_retriever",
+    "create_structured_output_runnable",
     "load_summarize_chain",
 ]

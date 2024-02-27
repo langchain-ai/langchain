@@ -36,6 +36,7 @@ from langchain_community.document_loaders.assemblyai import (
 )
 from langchain_community.document_loaders.astradb import AstraDBLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
+from langchain_community.document_loaders.athena import AthenaLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
@@ -59,6 +60,7 @@ from langchain_community.document_loaders.blob_loaders import (
 from langchain_community.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain_community.document_loaders.brave_search import BraveSearchLoader
 from langchain_community.document_loaders.browserless import BrowserlessLoader
+from langchain_community.document_loaders.cassandra import CassandraLoader
 from langchain_community.document_loaders.chatgpt import ChatGPTLoader
 from langchain_community.document_loaders.chromium import AsyncChromiumLoader
 from langchain_community.document_loaders.college_confidential import (
@@ -101,7 +103,10 @@ from langchain_community.document_loaders.gcs_file import GCSFileLoader
 from langchain_community.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain_community.document_loaders.git import GitLoader
 from langchain_community.document_loaders.gitbook import GitbookLoader
-from langchain_community.document_loaders.github import GitHubIssuesLoader
+from langchain_community.document_loaders.github import (
+    GithubFileLoader,
+    GitHubIssuesLoader,
+)
 from langchain_community.document_loaders.google_speech_to_text import (
     GoogleSpeechToTextLoader,
 )
@@ -155,6 +160,7 @@ from langchain_community.document_loaders.pdf import (
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
+from langchain_community.document_loaders.pebblo import PebbloSafeLoader
 from langchain_community.document_loaders.polars_dataframe import PolarsDataFrameLoader
 from langchain_community.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain_community.document_loaders.psychic import PsychicLoader
@@ -193,6 +199,7 @@ from langchain_community.document_loaders.tensorflow_datasets import (
     TensorflowDatasetLoader,
 )
 from langchain_community.document_loaders.text import TextLoader
+from langchain_community.document_loaders.tidb import TiDBLoader
 from langchain_community.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain_community.document_loaders.toml import TomlLoader
 from langchain_community.document_loaders.trello import TrelloLoader
@@ -253,6 +260,7 @@ __all__ = [
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
+    "AthenaLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
@@ -267,6 +275,7 @@ __all__ = [
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
     "BrowserlessLoader",
+    "CassandraLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
@@ -277,6 +286,7 @@ __all__ = [
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
+    "PebbloSafeLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
@@ -294,6 +304,7 @@ __all__ = [
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
+    "GithubFileLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
@@ -370,6 +381,7 @@ __all__ = [
     "TencentCOSDirectoryLoader",
     "TencentCOSFileLoader",
     "TextLoader",
+    "TiDBLoader",
     "ToMarkdownLoader",
     "TomlLoader",
     "TrelloLoader",

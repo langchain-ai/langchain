@@ -65,7 +65,7 @@ class _OllamaCommon(BaseLanguageModel):
     CPU cores your system has (as opposed to the logical number of cores)."""
 
     num_predict: Optional[int] = None
-    """Maximum number of tokens to predict when generating text. 
+    """Maximum number of tokens to predict when generating text.
     (Default: 128, -1 = infinite generation, -2 = fill context)"""
 
     repeat_last_n: Optional[int] = None
@@ -159,7 +159,7 @@ class _OllamaCommon(BaseLanguageModel):
         yield from self._create_stream(
             payload=payload,
             stop=stop,
-            api_url=f"{self.base_url}/api/generate/",
+            api_url=f"{self.base_url}/api/generate",
             **kwargs,
         )
 
@@ -174,7 +174,7 @@ class _OllamaCommon(BaseLanguageModel):
         async for item in self._acreate_stream(
             payload=payload,
             stop=stop,
-            api_url=f"{self.base_url}/api/generate/",
+            api_url=f"{self.base_url}/api/generate",
             **kwargs,
         ):
             yield item
@@ -284,7 +284,10 @@ class _OllamaCommon(BaseLanguageModel):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url=api_url,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    **(self.headers if isinstance(self.headers, dict) else {}),
+                },
                 json=request_payload,
                 timeout=self.timeout,
             ) as response:
@@ -294,7 +297,7 @@ class _OllamaCommon(BaseLanguageModel):
                             "Ollama call failed with status code 404."
                         )
                     else:
-                        optional_detail = await response.json().get("error")
+                        optional_detail = await response.json().get("error")  # type: ignore[attr-defined]
                         raise ValueError(
                             f"Ollama call failed with status code {response.status}."
                             f" Details: {optional_detail}"
@@ -377,7 +380,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         """Return type of llm."""
         return "ollama-llm"
 
-    def _generate(
+    def _generate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -413,7 +416,7 @@ class Ollama(BaseLLM, _OllamaCommon):
             generations.append([final_chunk])
         return LLMResult(generations=generations)
 
-    async def _agenerate(
+    async def _agenerate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -442,7 +445,7 @@ class Ollama(BaseLLM, _OllamaCommon):
                 prompt,
                 stop=stop,
                 images=images,
-                run_manager=run_manager,
+                run_manager=run_manager,  # type: ignore[arg-type]
                 verbose=self.verbose,
                 **kwargs,
             )
