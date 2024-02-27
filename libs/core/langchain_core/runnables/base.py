@@ -774,6 +774,7 @@ class Runnable(Generic[Input, Output], ABC):
         `format_docs`:
 
         .. code-block:: python
+        
             def format_docs(docs: List[Document]) -> str:
                 '''Format the docs.'''
                 return ", ".join([doc.page_content for doc in docs])
@@ -783,6 +784,7 @@ class Runnable(Generic[Input, Output], ABC):
         `some_tool`:
         
         .. code-block:: python
+        
             @tool
             def some_tool(x: int, y: str) -> dict:
                 '''Some_tool.'''
@@ -791,6 +793,7 @@ class Runnable(Generic[Input, Output], ABC):
         `prompt`:
         
         .. code-block:: python
+        
             template = ChatPromptTemplate.from_messages(
                 [("system", "You are Cat Agent 007"), ("human", "{question}")]
             ).with_config({"run_name": "my_template", "tags": ["my_template"]})
