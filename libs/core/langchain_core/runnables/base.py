@@ -106,17 +106,17 @@ class Runnable(Generic[Input, Output], ABC):
      Key Methods
      ===========
 
-    * invoke/ainvoke: Transforms a single input into an output.
-    * batch/abatch: Efficiently transforms multiple inputs into outputs.
-    * stream/astream: Streams output from a single input as it's produced.
-    * astream_log: Streams output and selected intermediate results from an input.
+    - **invoke/ainvoke**: Transforms a single input into an output.
+    - **batch/abatch**: Efficiently transforms multiple inputs into outputs.
+    - **stream/astream**: Streams output from a single input as it's produced.
+    - **astream_log**: Streams output and selected intermediate results from an input.
 
     Built-in optimizations:
 
-    * Batch: By default, batch runs invoke() in parallel using a thread pool executor.
+    - **Batch**: By default, batch runs invoke() in parallel using a thread pool executor.
              Override to optimize batching.
 
-    * Async: Methods with "a" suffix are asynchronous. By default, they execute
+    - **Async**: Methods with "a" suffix are asynchronous. By default, they execute
              the sync counterpart using asyncio's thread pool.
              Override for native async.
 
@@ -772,31 +772,26 @@ class Runnable(Generic[Input, Output], ABC):
         Here are declarations associated with the events shown above:
 
         `format_docs`:
+        .. code-block:: python
+            def format_docs(docs: List[Document]) -> str:
+                '''Format the docs.'''
+                return ", ".join([doc.page_content for doc in docs])
 
-        ```python
-        def format_docs(docs: List[Document]) -> str:
-            '''Format the docs.'''
-            return ", ".join([doc.page_content for doc in docs])
-
-        format_docs = RunnableLambda(format_docs)
-        ```
+            format_docs = RunnableLambda(format_docs)
 
         `some_tool`:
-
-        ```python
-        @tool
-        def some_tool(x: int, y: str) -> dict:
-            '''Some_tool.'''
-            return {"x": x, "y": y}
-        ```
+        .. code-block:: python
+            @tool
+            def some_tool(x: int, y: str) -> dict:
+                '''Some_tool.'''
+                return {"x": x, "y": y}
 
         `prompt`:
-
-        ```python
-        template = ChatPromptTemplate.from_messages(
-            [("system", "You are Cat Agent 007"), ("human", "{question}")]
-        ).with_config({"run_name": "my_template", "tags": ["my_template"]})
-        ```
+        .. code-block:: python
+            template = ChatPromptTemplate.from_messages(
+                [("system", "You are Cat Agent 007"), ("human", "{question}")]
+            ).with_config({"run_name": "my_template", "tags": ["my_template"]})
+        
 
         Example:
 
