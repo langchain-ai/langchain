@@ -1,10 +1,8 @@
 from langchain_kinetica import __all__
 
 EXPECTED_ALL = [
-    "KineticaLLM",
     "ChatKinetica",
     "KineticaVectorStore",
-    "KineticaEmbeddings",
 ]
 
 
