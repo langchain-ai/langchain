@@ -1,4 +1,5 @@
 """Airbyte vector stores."""
+
 from __future__ import annotations
 
 import asyncio
@@ -7,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -15,6 +17,7 @@ from typing import (
     TypeVar,
 )
 
+import airbyte as ab
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
@@ -24,16 +27,29 @@ if TYPE_CHECKING:
 VST = TypeVar("VST", bound=VectorStore)
 
 
-class AirbyteVectorStore(VectorStore):
-    """Airbyte vector store.
+class AirbyteLoader:
+    """Airbyte Document Loader.
 
     Example:
         .. code-block:: python
 
-            from langchain_airbyte.vectorstores import AirbyteVectorStore
+            from langchain_airbyte import AirbyteLoader
 
-            vectorstore = AirbyteVectorStore()
+            loader = AirbyteLoader(
+                source="github",
+
+            )
+            documents = loader.lazy_load()
     """
+
+    def __init__(
+        self,
+        source: str,
+        *,
+        config: Optional[Dict] = None,
+        streams: Optional[List[str]] = None,
+    ):
+        self._airbyte_source = ab.get_source(source, config=config, streams=streams)
 
     def add_texts(
         self,

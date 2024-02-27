@@ -1,11 +1,3 @@
-from langchain_airbyte.chat_models import ChatAirbyte
-from langchain_airbyte.embeddings import AirbyteEmbeddings
-from langchain_airbyte.llms import AirbyteLLM
-from langchain_airbyte.vectorstores import AirbyteVectorStore
+from langchain_airbyte.document_loaders import AirbyteLoader
 
-__all__ = [
-    "AirbyteLLM",
-    "ChatAirbyte",
-    "AirbyteVectorStore",
-    "AirbyteEmbeddings",
-]
+__all__ = ["AirbyteLoader"]
