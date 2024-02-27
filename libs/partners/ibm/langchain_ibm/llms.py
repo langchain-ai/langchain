@@ -116,19 +116,18 @@ class WatsonxLLM(BaseLLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that credentials and python package exists in environment."""
         if isinstance(values.get("watsonx_model"), (ModelInference, Model)):
-            values["model_id"] = getattr(values["watsonx_model"], "model_id", "")
+            values["model_id"] = getattr(values["watsonx_model"], "model_id")
             values["deployment_id"] = getattr(
                 values["watsonx_model"], "deployment_id", ""
             )
             values["project_id"] = getattr(
-                getattr(values["watsonx_model"], "_client", ""),
+                getattr(values["watsonx_model"], "_client"),
                 "default_project_id",
-                "",
             )
             values["space_id"] = getattr(
-                getattr(values["watsonx_model"], "_client", ""), "default_space_id", ""
+                getattr(values["watsonx_model"], "_client"), "default_space_id"
             )
-            values["params"] = getattr(values["watsonx_model"], "params", "")
+            values["params"] = getattr(values["watsonx_model"], "params")
         else:
             values["url"] = convert_to_secret_str(
                 get_from_dict_or_env(values, "url", "WATSONX_URL")
