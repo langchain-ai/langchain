@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1"
-mistralai = ">=0.0.11,<0.1"
+mistralai = [{version = "^0.1", python = "^3.9"}, {version = ">=0.0.11,<0.2", python="3.8"}]
 tokenizers = "^0.15.1"
 
 [tool.poetry.group.test]
