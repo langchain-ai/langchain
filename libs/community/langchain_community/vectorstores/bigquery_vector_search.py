@@ -404,6 +404,8 @@ class BigQueryVectorSearch(VectorStore):
             if self.metadata_field:
                 metadata = row[self.metadata_field]
             if metadata:
+                if isinstance(metadata, dict):
+                    metadata = json.dumps(metadata)
                 metadata = json.loads(metadata)
             else:
                 metadata = {}
@@ -544,6 +546,8 @@ class BigQueryVectorSearch(VectorStore):
         for row in job:
             metadata = row[self.metadata_field]
             if metadata:
+                if isinstance(metadata, dict):
+                    metadata = json.dumps(metadata)
                 metadata = json.loads(metadata)
             else:
                 metadata = {}
