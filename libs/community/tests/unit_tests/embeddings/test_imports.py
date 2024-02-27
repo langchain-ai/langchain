@@ -62,6 +62,9 @@ EXPECTED_ALL = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
+    "ItrexHuggingFaceEmbeddings",
+    "ItrexHuggingFaceBgeEmbeddings",
+    "ItrexHuggingFaceInstructEmbeddings",
 ]
 
 

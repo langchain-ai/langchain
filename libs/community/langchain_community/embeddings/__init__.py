@@ -52,6 +52,11 @@ from langchain_community.embeddings.huggingface import (
 from langchain_community.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain_community.embeddings.infinity import InfinityEmbeddings
 from langchain_community.embeddings.infinity_local import InfinityEmbeddingsLocal
+from langchain_community.embeddings.itrex import (
+    ItrexHuggingFaceEmbeddings,
+    ItrexHuggingFaceBgeEmbeddings,
+    ItrexHuggingFaceInstructEmbeddings,
+)
 from langchain_community.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain_community.embeddings.jina import JinaEmbeddings
 from langchain_community.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
@@ -156,6 +161,9 @@ __all__ = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
+    "ItrexHuggingFaceEmbeddings",
+    "ItrexHuggingFaceBgeEmbeddings",
+    "ItrexHuggingFaceInstructEmbeddings",
 ]
 
 

@@ -1,0 +1,26 @@
+# Itrex
+
+All functionality related to the [intel-extension-for-transformers](https://github.com/intel/intel-extension-for-transformers).
+
+## Installation
+
+```bash
+pip install intel-extension-for-transformers
+pip install accelerate datasets intel-extension-for-pytorch
+```
+
+Please follow the installation instructions as specified below:
+
+* Install intel-extension-for-transformers as shown [here](https://github.com/intel/intel-extension-for-transformers?tab=readme-ov-file#installation).
+
+## Embedding Models
+
+See a [usage example](/docs/integrations/text_embedding/itrex).
+
+```python
+from langchain_community.embeddings.itrex import (
+    ItrexHuggingFaceEmbeddings,
+    ItrexHuggingFaceBgeEmbeddings,
+    ItrexHuggingFaceInstructEmbeddings,
+)
+```
