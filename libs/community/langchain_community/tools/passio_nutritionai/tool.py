@@ -1,12 +1,20 @@
 """Tool for the Passio Nutrition AI API."""
 
-from typing import Optional
-from pydantic import Field
+from typing import Optional, Type
+from pydantic import BaseModel, Field
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.passio_nutritionai import NutritionAIAPI
+
+
+class NutritionAIInputs(BaseModel):
+    """Inputs to the Passio Nutrition AI tool."""
+
+    query: str = Field(
+        description="A query to look up using Passio Nutrition AI, usually a few words."
+    )
 
 
 class NutritionAI(BaseTool):
@@ -16,9 +24,10 @@ class NutritionAI(BaseTool):
     description: str = (
         "A wrapper around the Passio Nutrition AI. "
         "Useful to retrieve nutrition facts. "
-        "Input should be a search query."
+        "Input should be a search query string."
     )
     api_wrapper: NutritionAIAPI
+    args_schema: Type[BaseModel] = NutritionAIInputs
 
     def _run(
         self,
