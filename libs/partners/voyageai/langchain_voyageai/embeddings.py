@@ -55,11 +55,14 @@ class VoyageAIEmbeddings(Embeddings):
         else:
             _iter = range(0, len(texts), self.batch_size)
 
-        for _i in _iter:
-            embeddings_iter = self.client.embed(
-                texts, model=self.model, input_type="document"
-            ).embeddings
-            embeddings.extend(embeddings_iter)
+        for i in _iter:
+            embeddings.extend(
+                self.client.embed(
+                    texts[i : i + self.batch_size],
+                    model=self.model,
+                    input_type="document",
+                ).embeddings
+            )
 
         return embeddings
 
