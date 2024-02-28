@@ -141,6 +141,8 @@ def _parse_video_id(url: str) -> Optional[str]:
 
 
 class TranscriptFormat(Enum):
+    """Transcript format."""
+
     TEXT = "text"
     LINES = "lines"
 

@@ -14,6 +14,7 @@ EXPECTED_ALL = [
     "SimpleJsonOutputParser",
     "XMLOutputParser",
     "JsonOutputParser",
+    "PydanticOutputParser",
 ]
 
 

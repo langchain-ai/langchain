@@ -41,7 +41,7 @@ class GitLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         try:
-            from git import Blob, Repo  # type: ignore
+            from git import Blob, Repo
         except ImportError as ex:
             raise ImportError(
                 "Could not import git python package. "
@@ -76,7 +76,7 @@ class GitLoader(BaseLoader):
 
             file_path = os.path.join(self.repo_path, item.path)
 
-            ignored_files = repo.ignored([file_path])  # type: ignore
+            ignored_files = repo.ignored([file_path])
             if len(ignored_files):
                 continue
 
@@ -105,6 +105,6 @@ class GitLoader(BaseLoader):
                     doc = Document(page_content=text_content, metadata=metadata)
                     docs.append(doc)
             except Exception as e:
-                print(f"Error reading file {file_path}: {e}")
+                print(f"Error reading file {file_path}: {e}")  # noqa: T201
 
         return docs

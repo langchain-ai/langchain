@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 class UnstructuredCHMLoader(UnstructuredFileLoader):
     """Load `CHM` files using `Unstructured`.
 
-    CHM mean Microsoft Compiled HTML Help.
+    CHM means Microsoft Compiled HTML Help.
 
     Examples
     --------
@@ -35,6 +35,8 @@ class UnstructuredCHMLoader(UnstructuredFileLoader):
 
 
 class CHMParser(object):
+    """Microsoft Compiled HTML Help (CHM) Parser."""
+
     path: str
     file: "chm.CHMFile"
 
