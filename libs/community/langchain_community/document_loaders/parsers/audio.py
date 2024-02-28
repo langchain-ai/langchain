@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 import time
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, Optional, Sequence, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_env
@@ -344,7 +346,7 @@ class AzureAISpeechParser(BaseBlobParser):
         log_path: Optional[str] = None,
         polling_interval_seconds: float = 0.5,
         speech_recognition_language: Optional[str] = None,
-        auto_detect_languages: Optional[list[str]] = None,
+        auto_detect_languages: Optional[Sequence[str]] = None,
         speech_config_kwargs: Optional[dict] = None,
     ) -> None:
         """Initialize the parser.
