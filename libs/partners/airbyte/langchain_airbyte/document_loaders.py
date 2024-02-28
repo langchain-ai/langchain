@@ -87,20 +87,25 @@ class AirbyteLoader:
         if not self._template:
             for document in self._airbyte_source.get_documents(self._stream):
                 # convert airbyte document to langchain document
-                yield Document(
-                    page_content=document.content,
-                    metadata={
+                metadata = (
+                    {}
+                    if not self._include_metadata
+                    else {
                         **document.metadata,
                         "_last_modified": document.last_modified,
                         "_id": document.id,
-                    },
+                    }
+                )
+                yield Document(
+                    page_content=document.content,
+                    metadata=metadata,
                 )
         else:
             records: Iterator[Mapping[str, Any]] = self._airbyte_source.get_records(
                 self._stream
             )
             for record in records:
-                metadata = {} if not self._include_metadata else record
+                metadata = {} if not self._include_metadata else dict(record)
                 yield Document(
                     page_content=self._template.format(**record), metadata=metadata
                 )
