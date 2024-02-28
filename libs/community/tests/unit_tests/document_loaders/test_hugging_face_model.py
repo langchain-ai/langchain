@@ -62,14 +62,14 @@ def test_load_models_with_readme() -> None:
     responses.add_callback(
         responses.GET,
         "https://huggingface.co/api/models",
-        callback=response_callback,
+        callback=response_callback,  # type: ignore
         content_type="application/json",
     )
     responses.add_callback(
         responses.GET,
         # Use a regex or update this placeholder
         "https://huggingface.co/microsoft/phi-2/raw/main/README.md",
-        callback=response_callback,
+        callback=response_callback,  # type: ignore
         content_type="text/plain",
     )
 
@@ -78,5 +78,7 @@ def test_load_models_with_readme() -> None:
 
     assert len(docs) == len(MOCKED_MODELS_RESPONSE)
     for doc, expected_model in zip(docs, MOCKED_MODELS_RESPONSE):
-        assert doc.page_content == MOCKED_README_CONTENT[expected_model["id"]]
+        id_ = expected_model["id"]
+        assert isinstance(id_, str)
+        assert doc.page_content == MOCKED_README_CONTENT[id_]
         assert doc.metadata["modelId"] == expected_model["id"]
