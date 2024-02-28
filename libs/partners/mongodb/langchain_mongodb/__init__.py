@@ -1,4 +1,4 @@
-from langchain_mongodb_atlas.vectorstores import (
+from langchain_mongodb.vectorstores import (
     MongoDBAtlasVectorSearch,
 )
 

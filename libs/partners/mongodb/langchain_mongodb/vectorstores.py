@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
+from importlib.metadata import version
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -16,14 +16,15 @@ from typing import (
 )
 
 import numpy as np
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
+from pymongo import MongoClient
+from pymongo.collection import Collection
+from pymongo.driver_info import DriverInfo
 
-if TYPE_CHECKING:
-    from pymongo.collection import Collection
+from langchain_mongodb.utils import maximal_marginal_relevance
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
@@ -124,16 +125,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
             A new MongoDBAtlasVectorSearch instance.
 
         """
-        try:
-            from importlib.metadata import version
-
-            from pymongo import MongoClient
-            from pymongo.driver_info import DriverInfo
-        except ImportError:
-            raise ImportError(
-                "Could not import pymongo, please install it with "
-                "`pip install pymongo`."
-            )
         client: MongoClient = MongoClient(
             connection_string,
             driver=DriverInfo(name="Langchain", version=version("langchain")),

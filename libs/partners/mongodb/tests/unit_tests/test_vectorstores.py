@@ -8,7 +8,7 @@ from langchain_core.embeddings import Embeddings
 from pymongo.collection import Collection
 from pymongo.results import DeleteResult, InsertManyResult
 
-from langchain_mongodb_atlas.vectorstores import MongoDBAtlasVectorSearch
+from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
 
 INDEX_NAME = "langchain-test-index"
 NAMESPACE = "langchain_test_db.langchain_test_collection"

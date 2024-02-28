@@ -1,17 +1,17 @@
-# langchain-mongodb-atlas
+# langchain-mongodb
 
 # Installation
 ```
-pip install -U langchain-mongodb-atlas
+pip install -U langchain-mongodb
 ```
 
 # Usage
-- See [integrations doc](../../../docs/docs/integrations/vectorstores/mongodb_atlas.ipynb) for more in-depth usage instructions.
+- See [integrations doc](../../../docs/docs/integrations/vectorstores/mongodb.ipynb) for more in-depth usage instructions.
 - See [Getting Started with the LangChain Integration](https://www.mongodb.com/docs/atlas/atlas-vector-search/ai-integrations/langchain/#get-started-with-the-langchain-integration) for a walkthrough on using your first LangChain implementation with MongoDB Atlas.
 
 ## Using MongoDBAtlasVectorSearch
 ```python
-from langchain_community.vectorstores import MongoDBAtlasVectorSearch
+from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
 
 # Pull MongoDB Atlas URI from environment variables
 MONGODB_ATLAS_CLUSTER_URI = os.environ.get("MONGODB_ATLAS_CLUSTER_URI")
