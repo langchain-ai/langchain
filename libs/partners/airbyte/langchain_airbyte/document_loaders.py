@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncIterator, Dict, Iterator, List, Optional, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    TypeVar,
+)
 
 import airbyte as ab
+from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
@@ -25,7 +36,7 @@ class AirbyteLoader:
 
             loader = AirbyteLoader(
                 source="github",
-
+                stream="pull_requests",
             )
             documents = loader.lazy_load()
     """
@@ -33,11 +44,16 @@ class AirbyteLoader:
     def __init__(
         self,
         source: str,
+        stream: str,
         *,
         config: Optional[Dict] = None,
-        streams: Optional[List[str]] = None,
+        include_metadata: bool = True,
+        template: Optional[PromptTemplate] = None,
     ):
-        self._airbyte_source = ab.get_source(source, config=config, streams=streams)
+        self._airbyte_source = ab.get_source(source, config=config, streams=[stream])
+        self._stream = stream
+        self._template = template
+        self._include_metadata = include_metadata
 
     def load(self) -> List[Document]:
         """Load source data into Document objects."""
@@ -61,14 +77,32 @@ class AirbyteLoader:
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
         else:
             _text_splitter = text_splitter
-        docs = self.load()
+        docs = self.lazy_load()
         return _text_splitter.split_documents(docs)
 
     def lazy_load(self) -> Iterator[Document]:
         """A lazy loader for Documents."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement lazy_load()"
-        )
+        # if no prompt template defined, use default airbyte documents
+        if not self._template:
+            for document in self._airbyte_source.get_documents(self._stream):
+                # convert airbyte document to langchain document
+                yield Document(
+                    page_content=document.content,
+                    metadata={
+                        **document.metadata,
+                        "_last_modified": document.last_modified,
+                        "_id": document.id,
+                    },
+                )
+        else:
+            records: Iterator[Dict[str, Any]] = self._airbyte_source.get_records(
+                self._stream
+            )
+            for record in records:
+                metadata = {} if not self._include_metadata else record
+                yield Document(
+                    page_content=self._template.format(**record), metadata=metadata
+                )
 
     async def alazy_load(self) -> AsyncIterator[Document]:
         """A lazy loader for Documents."""

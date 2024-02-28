@@ -1,6 +1,6 @@
-from langchain_airbyte.vectorstores import AirbyteVectorStore
+from langchain_airbyte import AirbyteLoader
 
 
 def test_initialization() -> None:
     """Test integration vectorstore initialization."""
-    AirbyteVectorStore()
+    AirbyteLoader(source="source-github", stream="pull_requests")

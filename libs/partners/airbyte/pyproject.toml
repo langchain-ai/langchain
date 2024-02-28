@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.9"
 langchain-core = "^0.1"
-airbyte = { git = "https://github.com/airbytehq/PyAirbyte.git", rev = "aj/feat/render-records-as-documents", python = "<3.13" }
+airbyte = "^0.7.0"
 
 [tool.poetry.group.test]
 optional = true
@@ -75,10 +75,7 @@ build-backend = "poetry.core.masonry.api"
 # https://docs.pytest.org/en/7.1.x/reference/reference.html
 # --strict-config       any warnings encountered while parsing the `pytest`
 #                       section of the configuration file raise errors.
-#
-# https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+addopts = "--strict-markers --strict-config --durations=5"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [

@@ -2,43 +2,39 @@
 
 [[package]]
 name = "airbyte"
-version = "0.0.0"
+version = "0.7.0"
 description = "PyAirbyte"
 optional = false
-python-versions = ">=3.9,<3.13"
-files = []
-develop = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "airbyte-0.7.0-py3-none-any.whl", hash = "sha256:482cc10e0df01a5359d33f77a64a6110ff584f6814a9379cf3997977449caf13"},
+    {file = "airbyte-0.7.0.tar.gz", hash = "sha256:30320fedbaf7a362d8032f374073f17ac25b0c567e8e746447d9fff82a97a0b9"},
+]
 
 [package.dependencies]
-airbyte-cdk = "^0.58.3"
+airbyte-cdk = ">=0.58.3,<0.59.0"
 duckdb = "0.9.2"
 duckdb-engine = "0.9.2"
-google-auth = "^2.28.1"
-google-cloud-bigquery = "^3.17.2"
+google-auth = ">=2.28.1,<3.0.0"
+google-cloud-bigquery = ">=3.17.2,<4.0.0"
 jsonschema = "3.2.0"
-orjson = "^3.9.10"
-overrides = "^7.4.0"
+orjson = ">=3.9.10,<4.0.0"
+overrides = ">=7.4.0,<8.0.0"
 pandas = "2.1.4"
 pendulum = "<=3.0.0"
-psycopg2-binary = "^2.9.9"
-pyarrow = "^14.0.2"
+psycopg2-binary = ">=2.9.9,<3.0.0"
+pyarrow = ">=14.0.2,<15.0.0"
 pydantic = "<=2.0"
-python-dotenv = "^1.0.1"
-python-ulid = "^2.2.0"
-requests = "^2.31.0"
-rich = "^13.7.0"
+python-dotenv = ">=1.0.1,<2.0.0"
+python-ulid = ">=2.2.0,<3.0.0"
+requests = ">=2.31.0,<3.0.0"
+rich = ">=13.7.0,<14.0.0"
 snowflake-connector-python = "3.6.0"
-snowflake-sqlalchemy = "^1.5.1"
+snowflake-sqlalchemy = ">=1.5.1,<2.0.0"
 sqlalchemy = "1.4.51"
-sqlalchemy-bigquery = "1.9.0"
-types-pyyaml = "^6.0.12.12"
-ulid = "^1.1"
-
-[package.source]
-type = "git"
-url = "https://github.com/airbytehq/PyAirbyte.git"
-reference = "aj/feat/render-records-as-documents"
-resolved_reference = "b244dbe30d31cb8671fccd509c296b79d56246e6"
+sqlalchemy-bigquery = {version = "1.9.0", markers = "python_version < \"3.13\""}
+types-pyyaml = ">=6.0.12.12,<7.0.0.0"
+ulid = ">=1.1,<2.0"
 
 [[package]]
 name = "airbyte-cdk"
@@ -996,13 +992,13 @@ url = "../../core"
 
 [[package]]
 name = "langsmith"
-version = "0.1.9"
+version = "0.1.10"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.1.9-py3-none-any.whl", hash = "sha256:f821b3cb07a87eac5cb2181ff0b61051811e4eef09ae4b46e700981f7ae5dfb9"},
-    {file = "langsmith-0.1.9.tar.gz", hash = "sha256:9bd3e80607722c3d2db84cf3440005491a859b80b5e499bc988032d5c2da91f0"},
+    {file = "langsmith-0.1.10-py3-none-any.whl", hash = "sha256:2997a80aea60ed235d83502a7ccdc1f62ffb4dd6b3b7dd4218e8fa4de68a6725"},
+    {file = "langsmith-0.1.10.tar.gz", hash = "sha256:13e7e8b52e694aa4003370cefbb9e79cce3540c65dbf1517902bf7aa4dbbb653"},
 ]
 
 [package.dependencies]
@@ -2474,4 +2470,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "c2ab613b206da1824cec9aea5a5a0afe59487381a02a9914e45d92f2a286fa55"
+content-hash = "a63fa25cd4b610fcb5c502f7e37aa44a21f188199acf1595bcd580c9ddee2f78"
