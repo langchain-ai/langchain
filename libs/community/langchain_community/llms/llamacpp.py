@@ -333,7 +333,7 @@ class LlamaCpp(LLM):
                 for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
                         stop=["'","\n"]):
                     result = chunk["choices"][0]
-                    print(result["text"], end='', flush=True)
+                    print(result["text"], end='', flush=True)  # noqa: T201
 
         """
         params = {**self._get_parameters(stop), **kwargs}

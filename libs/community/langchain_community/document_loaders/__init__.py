@@ -36,6 +36,7 @@ from langchain_community.document_loaders.assemblyai import (
 )
 from langchain_community.document_loaders.astradb import AstraDBLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
+from langchain_community.document_loaders.athena import AthenaLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
@@ -117,6 +118,9 @@ from langchain_community.document_loaders.html_bs import BSHTMLLoader
 from langchain_community.document_loaders.hugging_face_dataset import (
     HuggingFaceDatasetLoader,
 )
+from langchain_community.document_loaders.hugging_face_model import (
+    HuggingFaceModelLoader,
+)
 from langchain_community.document_loaders.ifixit import IFixitLoader
 from langchain_community.document_loaders.image import UnstructuredImageLoader
 from langchain_community.document_loaders.image_captions import ImageCaptionLoader
@@ -159,6 +163,7 @@ from langchain_community.document_loaders.pdf import (
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
+from langchain_community.document_loaders.pebblo import PebbloSafeLoader
 from langchain_community.document_loaders.polars_dataframe import PolarsDataFrameLoader
 from langchain_community.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain_community.document_loaders.psychic import PsychicLoader
@@ -198,6 +203,7 @@ from langchain_community.document_loaders.tensorflow_datasets import (
     TensorflowDatasetLoader,
 )
 from langchain_community.document_loaders.text import TextLoader
+from langchain_community.document_loaders.tidb import TiDBLoader
 from langchain_community.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain_community.document_loaders.toml import TomlLoader
 from langchain_community.document_loaders.trello import TrelloLoader
@@ -258,6 +264,7 @@ __all__ = [
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
+    "AthenaLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
@@ -283,6 +290,7 @@ __all__ = [
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
+    "PebbloSafeLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
@@ -311,6 +319,7 @@ __all__ = [
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
+    "HuggingFaceModelLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
@@ -378,6 +387,7 @@ __all__ = [
     "TencentCOSDirectoryLoader",
     "TencentCOSFileLoader",
     "TextLoader",
+    "TiDBLoader",
     "ToMarkdownLoader",
     "TomlLoader",
     "TrelloLoader",

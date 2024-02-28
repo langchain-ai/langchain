@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class BaseMessage(Serializable):
-    """The base abstract Message class.
+    """Base abstract Message class.
 
     Messages are the inputs and outputs of ChatModels.
     """
@@ -24,6 +24,10 @@ class BaseMessage(Serializable):
     """Any additional information."""
 
     type: str
+
+    name: Optional[str] = None
+
+    id: Optional[str] = None
 
     class Config:
         extra = Extra.allow
@@ -53,10 +57,12 @@ class BaseMessage(Serializable):
     def pretty_repr(self, html: bool = False) -> str:
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
         # TODO: handle non-string content.
+        if self.name is not None:
+            title += f"\nName: {self.name}"
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
 def merge_content(
@@ -96,7 +102,7 @@ def merge_content(
 
 
 class BaseMessageChunk(BaseMessage):
-    """A Message chunk, which can be concatenated with other Message chunks."""
+    """Message chunk, which can be concatenated with other Message chunks."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -157,6 +163,7 @@ class BaseMessageChunk(BaseMessage):
             # concat into a single BaseMessageChunk
 
             return self.__class__(
+                id=self.id,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs
@@ -195,6 +202,15 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> List[dict]:
 
 
 def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
+    """Get a title representation for a message.
+
+    Args:
+        title: The title.
+        bold: Whether to bold the title.
+
+    Returns:
+        The title representation.
+    """
     padded = " " + title + " "
     sep_len = (80 - len(padded)) // 2
     sep = "=" * sep_len
