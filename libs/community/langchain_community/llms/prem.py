@@ -1,15 +1,20 @@
 """Wrapper around Prem AI Platform"""
 
+import logging
 from typing import Any, Dict, List, Union, Optional, Callable
 
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
+
+
+logger = logging.getLogger(__name__)
 
 
 class Prem(LLM):
@@ -20,7 +25,7 @@ class Prem(LLM):
     """
 
     model: str
-    premai_api_key: SecretStr
+    premai_api_key: str
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
     project_id: int
@@ -46,8 +51,8 @@ class Prem(LLM):
     n: Optional[int] = None
     """The number of responses to generate."""
 
-    # stream: Optional[bool] = False
-    # """Whether to stream the responses or not."""
+    streaming: Optional[bool] = False
+    """Whether to stream the responses or not."""
 
     tools: Optional[Dict[str, Any]] = None
     """A list of tools the model may call. Currently, only functions are supported as a tool"""
@@ -67,12 +72,40 @@ class Prem(LLM):
     seed: Optional[int] = None
     """This feature is in Beta. If specified, our system will make a best effort to sample deterministically."""
 
+    client: Any
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+
+    @root_validator()
+    def validate_environments(cls, values: Dict) -> Dict:
+        """Validate that the package is installed and that the API token is valid"""
+        try:
+            from premai import Prem
+        except ImportError as error:
+            raise ImportError(
+                "Could not import Prem Python package."
+                "Please install it with: `pip install premai`"
+            ) from error
+
+        try:
+            premai_api_key = get_from_dict_or_env(
+                values, "premai_api_key", "PREMAI_API_KEY"
+            )
+            values["client"] = Prem(api_key=premai_api_key)
+        except Exception as error:
+            raise ValueError("Your API Key is incorrect. Please try again.") from error
+        return values
+
     @property
     def _llm_type(self) -> str:
         return "prem"
 
     @property
-    def default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
+        # For default objects tools can not be None
         return {
             "model": "gpt-3.5-turbo",
             "system_prompt": "",
@@ -83,9 +116,8 @@ class Prem(LLM):
             "logit_bias": None,
             "max_tokens": 128,
             "presence_penalty": 0.0,
-            "frequency_penalty": 0.0,
+            "frequency_penalty": 2,
             "seed": None,
-            "tools": None,
             "stop": None,
         }
 
@@ -107,6 +139,7 @@ class Prem(LLM):
     def _call(
         self,
         prompt: str,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ):
@@ -115,22 +148,25 @@ class Prem(LLM):
         Args:
             prompt: The prompt to pass into the model
         """
-
-        try:
-            from premai import Prem
-        except ImportError as error:
-            raise ImportError(
-                "Could not import Prem Python package."
-                "Please install it with: `pip install premai`"
-            ) from error
-
-        try:
-            client = Prem(api_key=str(self.premai_api_key.get_secret_value()))
-        except ValueError as error:
-            raise ValueError("Your API Key is incorrect. Please try again.") from error
+        params = {**self._default_params, **kwargs}
+        # if params['stop'] == None:
+        #     params["stop"] = []
+        # params["stop"] = params[stop] + stop
 
         messages = self._apply_default_format(prompt=prompt)
-        response = client.chat.completions.create(
-            project_id=self.project_id, messages=messages, **kwargs
-        )
-        return self._parse_response(response)
+
+        if self.streaming:
+            # TODO: Do streaming here
+            pass
+
+        else:
+            response = self.client.chat.completions.create(
+                project_id=self.project_id, messages=messages, **params
+            )
+            response_text = self._parse_response(response)
+
+            # if len(params["stop"]) > 0:
+            #     for stop_seq in params["stop"]:
+            #         if response_text[-len(stop_seq) :] == stop_seq:
+            #             response_text = response_text[: -len(stop_seq)]
+            return response_text
