@@ -1,5 +1,5 @@
 """Test Base Schema of documents."""
-from typing import Iterator, List
+from typing import Iterator
 
 from langchain_core.documents import Document
 
