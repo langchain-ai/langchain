@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from langchain_core.runnables.graph import Graph, LabelsDict
 
@@ -27,8 +27,10 @@ class PngDrawer:
         drawer.draw(state_graph, 'graph.png')
     """
 
-    def __init__(self, fontname="arial", labels: Optional[LabelsDict] = None):
-        self.fontname = fontname
+    def __init__(
+        self, fontname: Optional[str] = None, labels: Optional[LabelsDict] = None
+    ) -> None:
+        self.fontname = fontname or "arial"
         self.labels = labels or LabelsDict(nodes={}, edges={})
 
     def get_node_label(self, label: str) -> str:
@@ -39,21 +41,20 @@ class PngDrawer:
         label = self.labels.get("edges", {}).get(label, label)
         return f"<<U>{label}</U>>"
 
-    def add_node(self, graphviz_graph, node: str, label: str = None):
-        if not label:
-            label = node
-
-        graphviz_graph.add_node(
+    def add_node(self, viz: Any, node: str) -> None:
+        viz.add_node(
             node,
-            label=self.get_node_label(label),
+            label=self.get_node_label(node),
             style="filled",
             fillcolor="yellow",
             fontsize=15,
             fontname=self.fontname,
         )
 
-    def add_edge(self, graphviz_graph, source: str, target: str, label: str = None):
-        graphviz_graph.add_edge(
+    def add_edge(
+        self, viz: Any, source: str, target: str, label: Optional[str] = None
+    ) -> None:
+        viz.add_edge(
             source,
             target,
             label=self.get_edge_label(label) if label else "",
@@ -61,44 +62,46 @@ class PngDrawer:
             fontname=self.fontname,
         )
 
-    def draw(self, state_graph: Graph, output_file_path="graph.png"):
+    def draw(self, graph: Graph, output_path: Optional[str] = None) -> Optional[bytes]:
         """
         Draws the given state graph into a PNG file.
         Requires graphviz and pygraphviz to be installed.
-        :param state_graph: The state graph to draw
-        :param output_file_path: The path to the output file
+        :param graph: The graph to draw
+        :param output_path: The path to save the PNG. If None, PNG bytes are returned.
         """
 
         try:
-            import pygraphviz as pgv
+            import pygraphviz as pgv  # type: ignore[import]
         except ImportError as exc:
             raise ImportError(
                 "Install pygraphviz to draw graphs: `pip install pygraphviz`."
             ) from exc
 
         # Create a directed graph
-        graphviz_graph = pgv.AGraph(directed=True, nodesep=0.9, ranksep=1.0)
+        viz = pgv.AGraph(directed=True, nodesep=0.9, ranksep=1.0)
 
         # Add nodes, conditional edges, and edges to the graph
-        self.add_nodes(graphviz_graph, state_graph)
-        self.add_edges(graphviz_graph, state_graph)
+        self.add_nodes(viz, graph)
+        self.add_edges(viz, graph)
 
         # Update entrypoint and END styles
-        self.update_styles(graphviz_graph, state_graph)
+        self.update_styles(viz, graph)
 
         # Save the graph as PNG
-        graphviz_graph.draw(output_file_path, format="png", prog="dot")
-        graphviz_graph.close()
+        try:
+            return viz.draw(output_path, format="png", prog="dot")
+        finally:
+            viz.close()
 
-    def add_nodes(self, viz, graph: Graph):
+    def add_nodes(self, viz: Any, graph: Graph) -> None:
         for node in graph.nodes:
-            self.add_node(viz, node, node)
+            self.add_node(viz, node)
 
-    def add_edges(self, viz, graph: Graph):
+    def add_edges(self, viz: Any, graph: Graph) -> None:
         for start, end, label in graph.edges:
             self.add_edge(viz, start, end, label)
 
-    def update_styles(self, viz, graph: Graph):
+    def update_styles(self, viz: Any, graph: Graph) -> None:
         if first := graph.first_node():
             viz.get_node(first.id).attr.update(fillcolor="lightblue")
         if last := graph.last_node():

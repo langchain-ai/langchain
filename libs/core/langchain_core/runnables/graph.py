@@ -12,6 +12,7 @@ from typing import (
     Type,
     TypedDict,
     Union,
+    overload,
 )
 from uuid import UUID, uuid4
 
@@ -236,12 +237,30 @@ class Graph:
     def print_ascii(self) -> None:
         print(self.draw_ascii())  # noqa: T201
 
+    @overload
     def draw_png(
         self,
         output_file_path: str,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
     ) -> None:
+        ...
+
+    @overload
+    def draw_png(
+        self,
+        output_file_path: None,
+        fontname: Optional[str] = None,
+        labels: Optional[LabelsDict] = None,
+    ) -> bytes:
+        ...
+
+    def draw_png(
+        self,
+        output_file_path: Optional[str] = None,
+        fontname: Optional[str] = None,
+        labels: Optional[LabelsDict] = None,
+    ) -> Union[bytes, None]:
         from langchain_core.runnables.graph_png import PngDrawer
 
-        PngDrawer(fontname, labels).draw(self, output_file_path)
+        return PngDrawer(fontname, labels).draw(self, output_file_path)
