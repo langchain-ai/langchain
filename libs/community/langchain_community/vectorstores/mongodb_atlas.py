@@ -34,9 +34,9 @@ DEFAULT_INSERT_BATCH_SIZE = 100
 
 
 @deprecated(
-    since="0.1.8",
+    since="0.0.25",
     removal="0.2.0",
-    alternative_import="langchain_mongodb_atlas.MongoDBAtlasVectorSearch",
+    alternative_import="langchain_mongodb.MongoDBAtlasVectorSearch",
 )
 class MongoDBAtlasVectorSearch(VectorStore):
     """`MongoDB Atlas Vector Search` vector store.
