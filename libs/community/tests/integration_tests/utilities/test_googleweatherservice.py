@@ -1,4 +1,4 @@
-from langchain_community.utilities.googleweatherservice import GoogleNationalWeatherAPI
+from libs.community.langchain_community.utilities.google_weatherservice import GoogleNationalWeatherAPI
 
 
 def test_googlenationalweatherapi() -> None:
