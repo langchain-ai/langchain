@@ -3995,16 +3995,6 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                 runnable with a custom type.
             **other_kwargs: Unpacked into the base class.
         """
-        config = config or {}
-        # config_specs contains the list of valid `configurable` keys
-        if configurable := config.get("configurable", None):
-            allowed_keys = set(s.id for s in bound.config_specs)
-            for key in configurable:
-                if key not in allowed_keys:
-                    raise ValueError(
-                        f"Configurable key '{key}' not found in runnable with"
-                        f" config keys: {allowed_keys}"
-                    )
         super().__init__(
             bound=bound,
             kwargs=kwargs or {},
