@@ -100,18 +100,13 @@ class Prem(LLM):
                 {"role": "user", "content": prompt},
             ]
 
-    def _generate(
-        self,
-        prompts: List[Dict[str, str]],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> LLMResult:
-        pass
+    def _parse_response(self, response) -> str:
+        # TODO: support multi response instead of hardcoded single response
+        return response.choices[0].message.content
 
     def _call(
         self,
-        prompt: Union[str, List[Dict[str, str]]],
+        prompt: str,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ):
@@ -134,35 +129,8 @@ class Prem(LLM):
         except ValueError as error:
             raise ValueError("Your API Key is incorrect. Please try again.") from error
 
-        prompt = (
-            self._apply_default_format(prompt) if isinstance(prompt, str) else prompt
-        )
+        messages = self._apply_default_format(prompt=prompt)
         response = client.chat.completions.create(
-            project_id=self.project_id, messages=prompt, **kwargs
+            project_id=self.project_id, messages=messages, **kwargs
         )
-        return response
-
-
-def completion_with_reply(
-    llm: Prem,
-    use_retry: bool,
-    *,
-    run_manager: Optional[CallbackManagerForLLMRun] = None,
-    **kwargs: Any,
-) -> Any:
-    """Using tenacity to retry the completion call"""
-
-
-def _retry_decorator(
-    llm: Prem,
-    *,
-    run_manager: Optional[
-        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
-    ] = None,
-) -> Callable[[Any], Any]:
-    """Define retry mechanism."""
-    # TODO: Add custom Prem Errors
-    errors = []
-    return create_base_retry_decorator(
-        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
-    )
+        return self._parse_response(response)
