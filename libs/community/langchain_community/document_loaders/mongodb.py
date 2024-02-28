@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 from langchain_core.documents import Document
 
-from langchain.document_loaders.base import BaseLoader
+from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
