@@ -1,4 +1,4 @@
-from langchain_community.retrievers.document_compressors.llmlingua_filter import (
+from langchain_community.document_compressors.llmlingua_filter import (
     LLMLinguaCompressor,
 )
 
