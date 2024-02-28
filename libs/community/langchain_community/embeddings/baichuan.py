@@ -79,17 +79,17 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
                 return [result.get("embedding", []) for result in sorted_embeddings]
             else:
                 # Log error or handle unsuccessful response appropriately
-                print(
+                print(  # noqa: T201
                     f"""Error: Received status code {response.status_code} from 
                     embedding API"""
                 )
                 return None
         except Exception as e:
             # Log the exception or handle it as needed
-            print(f"Exception occurred while trying to get embeddings: {str(e)}")
+            print(f"Exception occurred while trying to get embeddings: {str(e)}")  # noqa: T201
             return None
 
-    def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:
+    def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
         """Public method to get embeddings for a list of documents.
 
         Args:
@@ -100,7 +100,7 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
         """
         return self._embed(texts)
 
-    def embed_query(self, text: str) -> Optional[List[float]]:
+    def embed_query(self, text: str) -> Optional[List[float]]:  # type: ignore[override]
         """Public method to get embedding for a single query text.
 
         Args:

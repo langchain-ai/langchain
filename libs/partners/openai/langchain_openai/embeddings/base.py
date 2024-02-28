@@ -18,7 +18,6 @@ from typing import (
     cast,
 )
 
-import numpy as np
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
@@ -209,9 +208,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "please use the `AzureOpenAIEmbeddings` class."
             )
         client_params = {
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
-            else None,
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
@@ -289,9 +290,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 encoding = tiktoken.encoding_for_model(model_name)
             except KeyError:
-                logger.warning("Warning: model not found. Using cl100k_base encoding.")
-                model = "cl100k_base"
-                encoding = tiktoken.get_encoding(model)
+                encoding = tiktoken.get_encoding("cl100k_base")
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
                     # See: https://github.com/openai/openai-python/
@@ -326,7 +325,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size], **self._invocation_params
             )
             if not isinstance(response, dict):
-                response = response.dict()
+                response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
@@ -345,11 +344,25 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
-                    average_embedded = average_embedded.dict()
+                    average_embedded = average_embedded.model_dump()
                 average = average_embedded["data"][0]["embedding"]
             else:
-                average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
-            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+                # should be same as
+                # average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
+                total_weight = sum(num_tokens_in_batch[i])
+                average = [
+                    sum(
+                        val * weight
+                        for val, weight in zip(embedding, num_tokens_in_batch[i])
+                    )
+                    / total_weight
+                    for embedding in zip(*_result)
+                ]
+
+            # should be same as
+            #  embeddings[i] = (average / np.linalg.norm(average)).tolist()
+            magnitude = sum(val**2 for val in average) ** 0.5
+            embeddings[i] = [val / magnitude for val in average]
 
         return embeddings
 
@@ -438,7 +451,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
 
             if not isinstance(response, dict):
-                response = response.dict()
+                response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
@@ -455,11 +468,24 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
-                    average_embedded = average_embedded.dict()
+                    average_embedded = average_embedded.model_dump()
                 average = average_embedded["data"][0]["embedding"]
             else:
-                average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
-            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+                # should be same as
+                # average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
+                total_weight = sum(num_tokens_in_batch[i])
+                average = [
+                    sum(
+                        val * weight
+                        for val, weight in zip(embedding, num_tokens_in_batch[i])
+                    )
+                    / total_weight
+                    for embedding in zip(*_result)
+                ]
+            # should be same as
+            # embeddings[i] = (average / np.linalg.norm(average)).tolist()
+            magnitude = sum(val**2 for val in average) ** 0.5
+            embeddings[i] = [val / magnitude for val in average]
 
         return embeddings
 

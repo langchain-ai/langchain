@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, root_validator
@@ -19,8 +20,10 @@ VALID_TASKS_DICT = {
 }
 
 
+@deprecated("0.0.21", removal="0.2.0", alternative="HuggingFaceEndpoint")
 class HuggingFaceHub(LLM):
     """HuggingFaceHub  models.
+    ! This class is deprecated, you should use HuggingFaceEndpoint instead.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
@@ -127,10 +130,10 @@ class HuggingFaceHub(LLM):
                 response = hf("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
-        params = {**_model_kwargs, **kwargs}
+        parameters = {**_model_kwargs, **kwargs}
 
         response = self.client.post(
-            json={"inputs": prompt, "params": params}, task=self.task
+            json={"inputs": prompt, "parameters": parameters}, task=self.task
         )
         response = json.loads(response.decode())
         if "error" in response:

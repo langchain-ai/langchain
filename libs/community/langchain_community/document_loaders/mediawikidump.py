@@ -60,7 +60,7 @@ class MWDumpLoader(BaseLoader):
         self.skip_redirects = skip_redirects
         self.stop_on_error = stop_on_error
 
-    def _load_dump_file(self):
+    def _load_dump_file(self):  # type: ignore[no-untyped-def]
         try:
             import mwxml
         except ImportError as e:
@@ -70,7 +70,7 @@ class MWDumpLoader(BaseLoader):
 
         return mwxml.Dump.from_file(open(self.file_path, encoding=self.encoding))
 
-    def _load_single_page_from_dump(self, page) -> Document:
+    def _load_single_page_from_dump(self, page) -> Document:  # type: ignore[no-untyped-def, return]
         """Parse a single page."""
         try:
             import mwparserfromhell

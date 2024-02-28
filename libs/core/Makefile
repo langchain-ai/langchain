@@ -15,6 +15,9 @@ tests:
 test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
+test_profile:
+	poetry run pytest -vv tests/unit_tests/ --profile-svg
+
 check_imports: $(shell find langchain_core -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
@@ -42,7 +45,7 @@ lint lint_diff lint_package lint_tests:
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || poetry run mypy $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || mkdir $(MYPY_CACHE) || poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)
