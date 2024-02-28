@@ -199,6 +199,7 @@ from langchain_community.document_loaders.tensorflow_datasets import (
     TensorflowDatasetLoader,
 )
 from langchain_community.document_loaders.text import TextLoader
+from langchain_community.document_loaders.tidb import TiDBLoader
 from langchain_community.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain_community.document_loaders.toml import TomlLoader
 from langchain_community.document_loaders.trello import TrelloLoader
@@ -380,6 +381,7 @@ __all__ = [
     "TencentCOSDirectoryLoader",
     "TencentCOSFileLoader",
     "TextLoader",
+    "TiDBLoader",
     "ToMarkdownLoader",
     "TomlLoader",
     "TrelloLoader",
