@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any, List, Tuple
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
@@ -30,15 +30,15 @@ class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
         """Return type of chat model."""
         return "ChatGLM"
 
-    def _convert_messages(self, messages: List[BaseMessage]) -> str:
+    def _convert_messages(self, messages: List[BaseMessage]) -> Tuple[List, str]:
         if len(messages) == 0:
             raise ValueError(f"Got no message in {messages}")
         elif len(messages) == 1:
-            history = []
-            prompt = messages[0].content
+            history: List[List] = []
+            prompt: str = messages[0].content
         else:
-            history = []
-            prompt = messages[-1].content
+            history: List[List] = []
+            prompt: str = messages[-1].content
             for index, message in enumerate(messages):
                 if index == len(messages) - 1:
                     break
