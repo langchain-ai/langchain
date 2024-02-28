@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterator, List, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Union, Sequence
 
 import sqlalchemy as sa
 
@@ -21,10 +21,11 @@ class SQLDatabaseLoader(BaseLoader):
         self,
         query: Union[str, sa.Select],
         db: SQLDatabase,
+            *,
         parameters: Optional[Dict[str, Any]] = None,
         page_content_mapper: Optional[Callable[..., str]] = None,
         metadata_mapper: Optional[Callable[..., Dict[str, Any]]] = None,
-        source_columns: Optional[List[str]] = None,
+        source_columns: Optional[Sequence[str]] = None,
         include_rownum_into_metadata: bool = False,
         include_query_into_metadata: bool = False,
     ):
