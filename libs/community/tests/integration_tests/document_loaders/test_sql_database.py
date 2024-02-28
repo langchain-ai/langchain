@@ -1,5 +1,13 @@
 """
 Test SQLAlchemy document loader functionality on behalf of SQLite and PostgreSQL.
+
+To run the tests for SQLite, you need to have the `sqlite3` package installed.
+
+To run the tests for PostgreSQL, you need to have the `psycopg2` package installed.
+In addition, to launch the PostgreSQL instance, you can use the docker compose file
+located at the root of the repo, `langchain/docker/docker-compose.yml`. Use the
+command `docker compose up postgres` to start the instance. It will have the
+appropriate credentials set up including being exposed on the appropriate port.
 """
 import functools
 import logging
@@ -10,7 +18,6 @@ from tempfile import TemporaryDirectory
 
 import pytest
 import sqlalchemy as sa
-import sqlparse
 
 from langchain_community.utilities.sql_database import SQLDatabase
 
@@ -61,7 +68,10 @@ def provision_database(engine: sa.Engine) -> None:
     sql_statements = MLB_TEAMS_2012_SQL.read_text()
     with engine.connect() as connection:
         connection.execute(sa.text("DROP TABLE IF EXISTS mlb_teams_2012;"))
-        for statement in sqlparse.split(sql_statements):
+        for statement in sql_statements.split(";"):
+            statement = statement.strip()
+            if not statement:
+                continue
             connection.execute(sa.text(statement))
             connection.commit()
 
@@ -81,7 +91,16 @@ def pytest_generate_tests(metafunc: "Metafunc") -> None:
             urls.append(f"sqlite:///{db_path}")
             ids.append("sqlite")
         if psycopg2_installed:
-            urls.append("postgresql+psycopg2://postgres@localhost:5432/")
+            # We use non-standard port for testing purposes.
+            # The easiest way to spin up the PostgreSQL instance is to use
+            # the docker compose file at the root of the repo located at
+            # langchain/docker/docker-compose.yml
+            # use `docker compose up postgres` to start the instance
+            # it will have the appropriate credentials set up including
+            # being exposed on the appropriate port.
+            urls.append(
+                "postgresql+psycopg2://langchain:langchain@localhost:6023/langchain"
+            )
             ids.append("postgresql")
 
         metafunc.parametrize("db_uri", urls, ids=ids)
