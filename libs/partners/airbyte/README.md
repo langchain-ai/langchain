@@ -13,7 +13,7 @@ set, but some integrations (e.g. `source-github`) may need credentials passed in
 
 ## Document Loaders
 
-`AirbyteLoader` class exposes a single document loader for Airbyte.
+`AirbyteLoader` class exposes a single document loader for Airbyte sources.
 
 ```python
 from langchain_airbyte import AirbyteLoader
