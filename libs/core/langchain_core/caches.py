@@ -34,23 +34,23 @@ class BaseCache(ABC):
     """Base interface for cache."""
 
     @abstractmethod
-    def lookup(self, prompt: str, llm_string: str, **kwargs: Any) -> Optional[RETURN_VAL_TYPE]:
+    def lookup(self, prompt: str, llm_string: str, cache_params: Any) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
 
     @abstractmethod
-    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE, **kwargs: Any) -> None:
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE, cache_params: Any) -> None:
         """Update cache based on prompt and llm_string."""
 
     @abstractmethod
     def clear(self, **kwargs: Any) -> None:
         """Clear cache that can take additional keyword arguments."""
 
-    async def alookup(self, prompt: str, llm_string: str, **kwargs: Any) -> Optional[RETURN_VAL_TYPE]:
+    async def alookup(self, prompt: str, llm_string: str, cache_params: Any) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         return await run_in_executor(None, self.lookup, prompt, llm_string)
 
     async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE, **kwargs: Any
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE, cache_params: Any
     ) -> None:
         """Update cache based on prompt and llm_string."""
         return await run_in_executor(None, self.update, prompt, llm_string, return_val)
