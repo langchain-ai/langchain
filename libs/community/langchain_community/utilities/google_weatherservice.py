@@ -11,7 +11,7 @@ class GCPWeatherInput(BaseModel):
 
 class GoogleNationalWeatherAPI(BaseTool):
     name = "Temperature Query Tool"
-    description = "Use this tool to return the temperature for a location. It works by first geocoding a location into coordinates using the Google API, and then querying the weather from the National Weather Service using the coordinates"
+    description = "Use this tool to return the temperature for a location."
     args_schema: Type[BaseModel] = GCPWeatherInput
     
     gmaps: Any
