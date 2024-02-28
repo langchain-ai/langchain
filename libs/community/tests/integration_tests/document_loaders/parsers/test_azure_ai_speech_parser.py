@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -30,13 +30,6 @@ class _AzureAISpeechLoader(BaseLoader):
             loader.lazy_load()
     """
 
-    def load(self) -> List[Document]:
-        blob = Blob.from_path(self.file_path)
-        return self.parser.parse(blob)
-
-    def lazy_load(self) -> List[Document]:
-        return self.load()
-
     def __init__(self, file_path: str, **kwargs: Optional[list[str] | str]) -> None:
         """
         Args:
@@ -44,6 +37,13 @@ class _AzureAISpeechLoader(BaseLoader):
         """
         self.file_path = file_path
         self.parser = AzureAISpeechParser(**kwargs)
+
+    def load(self) -> List[Document]:
+        return list(self.lazy_load())
+
+    def lazy_load(self) -> Iterator[Document]:
+        blob = Blob.from_path(self.file_path)
+        return self.parser.lazy_parse(blob)
 
 
 def _get_audio_file_path() -> str:
