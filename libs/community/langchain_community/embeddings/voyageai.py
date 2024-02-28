@@ -74,7 +74,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
             query_result = voyage.embed_query(text)
     """
 
-    model: str
+    model: str = "voyage-01"
     voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
     voyage_api_key: Optional[SecretStr] = None
     batch_size: Optional[int] = None
@@ -107,6 +107,21 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         values["voyage_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")
         )
+
+        if "model" not in values:
+            logger.warning(
+                "model will become a required arg for VoyageAIEmbeddings, "
+                "we recommend to specify it when using this class. "
+                "Currently the default is set to voyage-01."
+            )
+
+        if "batch_size" not in values:
+            values["batch_size"] = (
+                72
+                if "model" in values and (values["model"] in ["voyage-2", "voyage-02"])
+                else 7
+            )
+
         return values
 
     def _invocation_params(
@@ -132,7 +147,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         embeddings: List[List[float]] = []
 
         if batch_size is None:
-            batch_size = 72 if self.model in ["voyage-2", "voyage-02"] else 7
+            batch_size = self.batch_size
 
         if self.show_progress_bar:
             try:
@@ -186,7 +201,9 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        return self._get_embeddings([text], input_type="query")[0]
+        return self._get_embeddings(
+            [text], batch_size=self.batch_size, input_type="query"
+        )[0]
 
     def embed_general_texts(
         self, texts: List[str], *, input_type: Optional[str] = None
