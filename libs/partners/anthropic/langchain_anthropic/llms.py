@@ -300,7 +300,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             prompt=self._wrap_prompt(prompt), stop_sequences=stop, stream=True, **params
         ):
             chunk = GenerationChunk(text=token.completion)
-            
+
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
@@ -337,7 +337,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             **params,
         ):
             chunk = GenerationChunk(text=token.completion)
-            
+
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
