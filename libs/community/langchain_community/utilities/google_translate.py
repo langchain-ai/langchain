@@ -9,7 +9,7 @@ class GoogleTranslateApiWarper(BaseModel):
     Free and does not require any setup.
     """
 
-    service_urls: List[str] = ["translate.googleapis.com"]
+    service_urls: List[str] = ["translate.google.com"]
     src: str = "auto"
     dest: str = "en"
     proxy: Any = None
