@@ -80,7 +80,7 @@ class OpenAIWhisperParser(BaseBlobParser):
                 file_obj.name = f"part_{split_number}.mp3"
 
             # Transcribe
-            print(f"Transcribing part {split_number + 1}!")  # noqa: T201
+            logger.info(f"Transcribing part {split_number + 1}!")  # noqa: T201
             attempts = 0
             while attempts < 3:
                 try:
@@ -93,10 +93,10 @@ class OpenAIWhisperParser(BaseBlobParser):
                     break
                 except Exception as e:
                     attempts += 1
-                    print(f"Attempt {attempts} failed. Exception: {str(e)}")  # noqa: T201
+                    logger.error(f"Attempt {attempts} failed. Exception: {str(e)}")  # noqa: T201
                     time.sleep(5)
             else:
-                print("Failed to transcribe after 3 attempts.")  # noqa: T201
+                logger.info("Failed to transcribe after 3 attempts.")  # noqa: T201
                 continue
 
             yield Document(
@@ -185,7 +185,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 rec_model = "openai/whisper-large"
             self.lang_model = lang_model if lang_model else rec_model
 
-        print("Using the following model: ", self.lang_model)  # noqa: T201
+        logger.info("Using the following model: ", self.lang_model)  # noqa: T201
 
         self.batch_size = batch_size
 
@@ -232,7 +232,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
         # Transcribe
-        print(f"Transcribing part {blob.path}!")  # noqa: T201
+        logger.info(f"Transcribing part {blob.path}!")  # noqa: T201
 
         y, sr = librosa.load(file_obj, sr=16000)
 
@@ -467,11 +467,11 @@ class AzureAISpeechParser(BaseBlobParser):
                         "speaker_id": speaker_id,
                     },
                 )
-                print(f"TRANSCRIBED:{evt_dict}")
+                logger.info(f"TRANSCRIBED:{evt_dict}")
                 raw_json_list.append(evt_dict)
                 document_list.append(_doc)
             elif evt.result.reason == speechsdk.ResultReason.NoMatch:
-                print(
+                logger.warning(
                     "\tNOMATCH: Speech could not be TRANSCRIBED: {}".format(
                         evt.result.no_match_details
                     )
@@ -523,7 +523,7 @@ class AzureAISpeechParser(BaseBlobParser):
             def stop_cb(evt: speechsdk.SessionEventArgs) -> None:
                 # callback that signals to stop continuous recognition
                 # upon receiving an event `evt`
-                print("CLOSING on {}".format(evt))
+                logger.info("CLOSING on {}".format(evt))
                 nonlocal transcribing_stop
                 transcribing_stop = True
 
@@ -556,5 +556,5 @@ class AzureAISpeechParser(BaseBlobParser):
         try:
             return recognize_from_file()
         except Exception as err:
-            print("Encountered exception. {}".format(err))
+            logger.error("Encountered exception. {}".format(err))
             raise err

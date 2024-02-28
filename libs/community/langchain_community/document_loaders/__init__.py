@@ -41,7 +41,6 @@ from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
 )
-from langchain_community.document_loaders.azure_ai_speech import AzureAISpeechLoader
 from langchain_community.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
 )
@@ -266,7 +265,6 @@ __all__ = [
     "AsyncHtmlLoader",
     "AthenaLoader",
     "AzureAIDataLoader",
-    "AzureAISpeechLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
