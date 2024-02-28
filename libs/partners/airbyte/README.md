@@ -8,38 +8,20 @@ This package contains the LangChain integration with Airbyte
 pip install -U langchain-airbyte
 ```
 
-And you should configure credentials by setting the following environment variables:
+The integration package doesn't have any global environment variables that need to be
+set, but some integrations (e.g. `source-github`) may need credentials passed in.
 
-* TODO: fill this out
+## Document Loaders
 
-## Chat Models
-
-`ChatAirbyte` class exposes chat models from Airbyte.
-
-```python
-from langchain_airbyte import ChatAirbyte
-
-llm = ChatAirbyte()
-llm.invoke("Sing a ballad of LangChain.")
-```
-
-## Embeddings
-
-`AirbyteEmbeddings` class exposes embeddings from Airbyte.
+`AirbyteLoader` class exposes a single document loader for Airbyte.
 
 ```python
-from langchain_airbyte import AirbyteEmbeddings
+from langchain_airbyte import AirbyteLoader
 
-embeddings = AirbyteEmbeddings()
-embeddings.embed_query("What is the meaning of life?")
-```
-
-## LLMs
-`AirbyteLLM` class exposes LLMs from Airbyte.
-
-```python
-from langchain_airbyte import AirbyteLLM
-
-llm = AirbyteLLM()
-llm.invoke("The meaning of life is")
+loader = AirbyteLoader(
+    source="source-faker",
+    stream="users",
+    config={"count": 100},
+)
+docs = loader.load()
 ```
