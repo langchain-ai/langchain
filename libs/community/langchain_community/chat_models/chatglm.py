@@ -38,7 +38,7 @@ class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
             prompt = messages[0].content
         else:
             history = []
-            prompt = messages[-1].content            
+            prompt = messages[-1].content
             for index, message in enumerate(messages):
                 if index == len(messages) - 1:
                     break
