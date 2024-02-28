@@ -99,14 +99,10 @@ class GmailSearch(GmailBaseTool):
                     cdispo = str(part.get("Content-Disposition"))
                     if ctype == "text/plain" and "attachment" not in cdispo:
                         try:
-                            message_body = (
-                                part.get_payload(decode=True)
-                                .decode("utf-8")
-                            )
+                            message_body = part.get_payload(decode=True).decode("utf-8")
                         except UnicodeDecodeError:
-                            message_body = (
-                                part.get_payload(decode=True)
-                                .decode("latin-1")
+                            message_body = part.get_payload(decode=True).decode(
+                                "latin-1"
                             )
                         break
             else:
