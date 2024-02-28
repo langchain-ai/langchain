@@ -1,6 +1,7 @@
 """Test Airbyte embeddings."""
 
 import os
+import time
 
 from langchain_core.prompts import PromptTemplate
 
@@ -51,3 +52,51 @@ def test_load_github_with_template() -> None:
         ), f"Document does not start with h3: {doc.page_content[:100]}"
         # make sure no metadata from include_metadata=False
         assert doc.metadata == {}
+
+
+def test_lazy_load_github() -> None:
+    """Test lazy loading from GitHub."""
+    airbyte_loader = AirbyteLoader(
+        source="source-github",
+        stream="issues",
+        config={
+            "repositories": ["airbytehq/quickstarts"],
+            "credentials": {"personal_access_token": GITHUB_TOKEN},
+        },
+    )
+    # lazy load should be fast, iteration slow
+    t0 = time.time()
+    documents = airbyte_loader.lazy_load()
+    assert time.time() - t0 < 1
+
+    # make sure some documents have body in metadata, confirm iterable
+    found_body = False
+    for doc in documents:
+        if "body" in doc.metadata and doc.metadata["body"]:
+            found_body = True
+            break
+    assert found_body, "No documents with body found"
+
+
+async def test_alazy_load_github() -> None:
+    """Test async lazy loading from GitHub."""
+    airbyte_loader = AirbyteLoader(
+        source="source-github",
+        stream="issues",
+        config={
+            "repositories": ["airbytehq/quickstarts"],
+            "credentials": {"personal_access_token": GITHUB_TOKEN},
+        },
+    )
+    # lazy load should be fast, iteration slow
+    t0 = time.time()
+    documents = airbyte_loader.alazy_load()
+    assert time.time() - t0 < 1
+
+    # make sure some documents have body in metadata, confirm iterable
+    found_body = False
+    async for doc in documents:
+        if "body" in doc.metadata and doc.metadata["body"]:
+            found_body = True
+            break
+    assert found_body, "No documents with body found"

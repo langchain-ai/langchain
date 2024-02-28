@@ -1,10 +1,7 @@
 from langchain_airbyte import __all__
 
 EXPECTED_ALL = [
-    "AirbyteLLM",
-    "ChatAirbyte",
-    "AirbyteVectorStore",
-    "AirbyteEmbeddings",
+    "AirbyteLoader",
 ]
 
 

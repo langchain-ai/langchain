@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
     TypeVar,
 )
@@ -95,7 +96,7 @@ class AirbyteLoader:
                     },
                 )
         else:
-            records: Iterator[Dict[str, Any]] = self._airbyte_source.get_records(
+            records: Iterator[Mapping[str, Any]] = self._airbyte_source.get_records(
                 self._stream
             )
             for record in records:
