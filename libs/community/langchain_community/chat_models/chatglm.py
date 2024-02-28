@@ -35,10 +35,10 @@ class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
             raise ValueError(f"Got no message in {messages}")
         elif len(messages) == 1:
             history: List[List] = []
-            prompt: str = messages[0].content
+            prompt: str = str(messages[0].content)
         else:
-            history: List[List] = []
-            prompt: str = messages[-1].content
+            history = []
+            prompt = str(messages[-1].content)
             for index, message in enumerate(messages):
                 if index == len(messages) - 1:
                     break
