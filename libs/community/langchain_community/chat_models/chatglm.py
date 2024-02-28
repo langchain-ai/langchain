@@ -16,14 +16,24 @@ from langchain_community.llms.chatglm import ChatGLM
 
 
 class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
-    
+
+    """ChatGLM LLM ChatModel.
+    Example:
+        .. code-block:: python
+
+            from langchain_community.chat_models.chatglm import ChatGLM_ChatModel
+            llm = ChatGLM_ChatModel(temperature=0.9, top_p=0.9)
+    """
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "ChatGLM"
 
     def _convert_messages(self, messages: List[BaseMessage]) -> str:
-        if len(messages) == 1:
+        if len(messages) == 0:
+            raise ValueError(f"Got no message in {messages}")
+        elif len(messages) == 1:
             history = []
             prompt = messages[0].content
         else:
@@ -52,4 +62,3 @@ class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
         history, prompt = self._convert_messages(messages)
         response = AIMessage(content=self._call(history=history, prompt=prompt))
         return ChatResult(generations=[ChatGeneration(message=response)])
-
