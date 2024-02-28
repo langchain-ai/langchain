@@ -253,7 +253,7 @@ class BaseOpenAI(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            
+
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
@@ -282,7 +282,7 @@ class BaseOpenAI(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            
+
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
