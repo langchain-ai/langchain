@@ -2,7 +2,7 @@ from langchain_airbyte import AirbyteLoader
 
 
 def test_initialization() -> None:
-    """Test integration vectorstore initialization."""
+    """Test integration loader initialization."""
     AirbyteLoader(
         source="source-faker",
         stream="users",
