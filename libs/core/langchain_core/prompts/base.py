@@ -8,10 +8,12 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Mapping,
     Optional,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -23,14 +25,21 @@ from langchain_core.prompt_values import (
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables.config import ensure_config
+from langchain_core.runnables.utils import create_model
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
 
 
-class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
+FormatOutputType = TypeVar("FormatOutputType")
+
+
+class BasePromptTemplate(
+    RunnableSerializable[Dict, PromptValue], Generic[FormatOutputType], ABC
+):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
@@ -40,9 +49,15 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
-    partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
-        default_factory=dict
-    )
+    partial_variables: Mapping[str, Any] = Field(default_factory=dict)
+    """A dictionary of the partial variables the prompt template carries.
+    
+    Partial variables populate the template so that you don't need to
+    pass them in every time you call the prompt."""
+    metadata: Optional[Dict[str, Any]] = None
+    """Metadata to be used for tracing."""
+    tags: Optional[List[str]] = None
+    """Tags to be used for tracing."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -90,6 +105,11 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     def invoke(
         self, input: Dict, config: Optional[RunnableConfig] = None
     ) -> PromptValue:
+        config = ensure_config(config)
+        if self.metadata:
+            config["metadata"].update(self.metadata)
+        if self.tags:
+            config["tags"].extend(self.tags)
         return self._call_with_config(
             self._format_prompt_with_error_handling,
             input,
@@ -136,13 +156,12 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
     def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
         # Get partial params:
         partial_kwargs = {
-            k: v if isinstance(v, str) else v()
-            for k, v in self.partial_variables.items()
+            k: v if not callable(v) else v() for k, v in self.partial_variables.items()
         }
         return {**partial_kwargs, **kwargs}
 
     @abstractmethod
-    def format(self, **kwargs: Any) -> str:
+    def format(self, **kwargs: Any) -> FormatOutputType:
         """Format the prompt with the inputs.
 
         Args:
@@ -203,14 +222,14 @@ class BasePromptTemplate(RunnableSerializable[Dict, PromptValue], ABC):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(prompt_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
     """Format a document into a string based on a prompt template.
 
     First, this pulls information from the document from two sources:
@@ -236,7 +255,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
     Example:
         .. code-block:: python
 
-            from langchain_core import Document
+            from langchain_core.documents import Document
             from langchain_core.prompts import PromptTemplate
 
             doc = Document(page_content="This is a joke", metadata={"page": "1"})

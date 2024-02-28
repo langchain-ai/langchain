@@ -38,8 +38,10 @@ from langchain_community.chat_models.human import HumanInputChatModel
 from langchain_community.chat_models.hunyuan import ChatHunyuan
 from langchain_community.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
 from langchain_community.chat_models.jinachat import JinaChat
+from langchain_community.chat_models.kinetica import ChatKinetica
 from langchain_community.chat_models.konko import ChatKonko
 from langchain_community.chat_models.litellm import ChatLiteLLM
+from langchain_community.chat_models.litellm_router import ChatLiteLLMRouter
 from langchain_community.chat_models.llama_edge import LlamaEdgeChatService
 from langchain_community.chat_models.minimax import MiniMaxChat
 from langchain_community.chat_models.mlflow import ChatMlflow
@@ -53,6 +55,7 @@ from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_community.chat_models.vertexai import ChatVertexAI
 from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain_community.chat_models.yandex import ChatYandexGPT
+from langchain_community.chat_models.yuan2 import ChatYuan2
 from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
 __all__ = [
@@ -78,6 +81,7 @@ __all__ = [
     "MiniMaxChat",
     "ChatAnyscale",
     "ChatLiteLLM",
+    "ChatLiteLLMRouter",
     "ErnieBotChat",
     "ChatJavelinAIGateway",
     "ChatKonko",
@@ -92,5 +96,7 @@ __all__ = [
     "ChatSparkLLM",
     "VolcEngineMaasChat",
     "GPTRouter",
+    "ChatYuan2",
     "ChatZhipuAI",
+    "ChatKinetica",
 ]

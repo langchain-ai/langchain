@@ -108,6 +108,14 @@ def beta(
                 emit_warning()
             return wrapped(*args, **kwargs)
 
+        async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Same as warning_emitting_wrapper, but for async functions."""
+            nonlocal warned
+            if not warned and not is_caller_internal():
+                warned = True
+                emit_warning()
+            return await wrapped(*args, **kwargs)
+
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
@@ -198,10 +206,9 @@ def beta(
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
+        # old_doc can be None
         if not old_doc:
-            new_doc = "[*Beta*]"
-        else:
-            new_doc = f"[*Beta*]  {old_doc}"
+            old_doc = ""
 
         # Modify the docstring to include a beta notice.
         notes_header = "\nNotes\n-----"
@@ -210,14 +217,17 @@ def beta(
             addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
-        new_doc += (
+        new_doc = (
             f"[*Beta*] {old_doc}\n"
             f"{notes_header if notes_header not in old_doc else ''}\n"
             f".. beta::\n"
             f"   {details}"
         )
 
-        return finalize(warning_emitting_wrapper, new_doc)
+        if inspect.iscoroutinefunction(obj):
+            return finalize(awarning_emitting_wrapper, new_doc)
+        else:
+            return finalize(warning_emitting_wrapper, new_doc)
 
     return beta
 

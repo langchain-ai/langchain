@@ -115,13 +115,10 @@ celerybeat.pid
 # Environments
 .env
 .envrc
-.venv
-.venvs
+.venv*
 env/
-venv/
 ENV/
 env.bak/
-venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -178,3 +175,5 @@ docs/docs/node_modules
 docs/docs/yarn.lock
 _dist
 docs/docs/templates
+
+prof

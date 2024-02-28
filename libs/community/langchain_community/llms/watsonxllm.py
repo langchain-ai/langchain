@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
@@ -11,6 +12,9 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.18", removal="0.2", alternative_import="langchain_ibm.WatsonxLLM"
+)
 class WatsonxLLM(BaseLLM):
     """
     IBM watsonx.ai large language models.
@@ -166,24 +170,30 @@ class WatsonxLLM(BaseLLM):
 
             credentials = {
                 "url": values["url"].get_secret_value() if values["url"] else None,
-                "apikey": values["apikey"].get_secret_value()
-                if values["apikey"]
-                else None,
-                "token": values["token"].get_secret_value()
-                if values["token"]
-                else None,
-                "password": values["password"].get_secret_value()
-                if values["password"]
-                else None,
-                "username": values["username"].get_secret_value()
-                if values["username"]
-                else None,
-                "instance_id": values["instance_id"].get_secret_value()
-                if values["instance_id"]
-                else None,
-                "version": values["version"].get_secret_value()
-                if values["version"]
-                else None,
+                "apikey": (
+                    values["apikey"].get_secret_value() if values["apikey"] else None
+                ),
+                "token": (
+                    values["token"].get_secret_value() if values["token"] else None
+                ),
+                "password": (
+                    values["password"].get_secret_value()
+                    if values["password"]
+                    else None
+                ),
+                "username": (
+                    values["username"].get_secret_value()
+                    if values["username"]
+                    else None
+                ),
+                "instance_id": (
+                    values["instance_id"].get_secret_value()
+                    if values["instance_id"]
+                    else None
+                ),
+                "version": (
+                    values["version"].get_secret_value() if values["version"] else None
+                ),
             }
             credentials_without_none_value = {
                 key: value for key, value in credentials.items() if value is not None
@@ -250,9 +260,9 @@ class WatsonxLLM(BaseLLM):
         }
 
     def _get_chat_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
-        params: Dict[str, Any] = {**self.params} if self.params else None
+        params: Dict[str, Any] = {**self.params} if self.params else {}
         if stop is not None:
-            params = (params or {}) | {"stop_sequences": stop}
+            params["stop_sequences"] = stop
         return params
 
     def _create_llm_result(self, response: List[dict]) -> LLMResult:
@@ -287,9 +297,6 @@ class WatsonxLLM(BaseLLM):
             generation_info=dict(
                 finish_reason=stream_response["results"][0].get("stop_reason", None),
                 llm_output={
-                    "generated_token_count": stream_response["results"][0].get(
-                        "generated_token_count", None
-                    ),
                     "model_id": self.model_id,
                     "deployment_id": self.deployment_id,
                 },
@@ -384,14 +391,14 @@ class WatsonxLLM(BaseLLM):
 
                 response = watsonx_llm.stream("What is a molecule")
                 for chunk in response:
-                    print(chunk, end='')
+                    print(chunk, end='')  # noqa: T201
         """
         params = self._get_chat_params(stop=stop)
         for stream_resp in self.watsonx_model.generate_text_stream(
             prompt=prompt, raw_response=True, params=params
         ):
             chunk = self._stream_response_to_generation_chunk(stream_resp)
-            yield chunk
 
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk

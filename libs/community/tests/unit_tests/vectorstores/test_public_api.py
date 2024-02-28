@@ -6,6 +6,7 @@ _EXPECTED = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
+    "ApacheDoris",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
@@ -20,6 +21,7 @@ _EXPECTED = [
     "DatabricksVectorSearch",
     "DeepLake",
     "Dingo",
+    "DistanceStrategy",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "ElasticKnnSearch",
@@ -27,8 +29,11 @@ _EXPECTED = [
     "ElasticsearchStore",
     "Epsilla",
     "FAISS",
+    "HanaDB",
     "Hologres",
     "KDBAI",
+    "Kinetica",
+    "KineticaSettings",
     "LanceDB",
     "Lantern",
     "LLMRails",
@@ -73,6 +78,7 @@ _EXPECTED = [
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "Yellowbrick",
+    "NeuralDBVectorStore",
 ]
 
 

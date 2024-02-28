@@ -22,6 +22,7 @@ EXPECTED_ALL = [
     "MiniMaxChat",
     "ChatAnyscale",
     "ChatLiteLLM",
+    "ChatLiteLLMRouter",
     "ErnieBotChat",
     "ChatJavelinAIGateway",
     "ChatKonko",
@@ -37,7 +38,9 @@ EXPECTED_ALL = [
     "VolcEngineMaasChat",
     "LlamaEdgeChatService",
     "GPTRouter",
+    "ChatYuan2",
     "ChatZhipuAI",
+    "ChatKinetica",
 ]
 
 
