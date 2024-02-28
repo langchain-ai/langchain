@@ -2,7 +2,17 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Type,
+    TypedDict,
+    Union,
+)
 from uuid import UUID, uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
@@ -10,6 +20,11 @@ from langchain_core.runnables.graph_ascii import draw_ascii
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
+
+
+class LabelsDict(TypedDict):
+    nodes: dict[str, str]
+    edges: dict[str, str]
 
 
 def is_uuid(value: str) -> bool:
@@ -220,3 +235,13 @@ class Graph:
 
     def print_ascii(self) -> None:
         print(self.draw_ascii())  # noqa: T201
+
+    def draw_png(
+        self,
+        output_file_path: str,
+        fontname: Optional[str] = None,
+        labels: Optional[LabelsDict] = None,
+    ) -> None:
+        from langchain_core.runnables.graph_png import PngDrawer
+
+        PngDrawer(fontname, labels).draw(self, output_file_path)
