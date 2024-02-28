@@ -366,38 +366,16 @@ class AzureAISpeechParser(BaseBlobParser):
             speech_recognition_language: pass a transcribe job's target source languages
         """
 
-        self.api_key = (
-            api_key
-            if api_key is not None
-            else get_from_env("api_key", "AZURE_SPEECH_SERVICE_KEY")
-        )
-
-        self.region = (
-            region
-            if region is not None
-            else get_from_env("region", "AZURE_SPEECH_REGION", "NONE")
-        )
-        self.region = self.region if self.region != "NONE" else None
-
-        self.endpoint = (
-            endpoint
-            if endpoint is not None
-            else get_from_env("endpoint", "AZURE_SPEECH_ENDPOINT", "NONE")
-        )
-        self.endpoint = self.endpoint if self.endpoint != "NONE" else None
+        self.api_key = api_key or get_from_env("api_key", "AZURE_SPEECH_SERVICE_KEY")
+        self.region = region or get_from_env("region", "AZURE_SPEECH_REGION")
+        self.endpoint = endpoint or get_from_env("endpoint", "AZURE_SPEECH_ENDPOINT")
 
         if not self.region and not self.endpoint:
             raise ValueError(
                 "You need to provide either the region or the endpoint argument."
             )
 
-        self.log_path = (
-            log_path
-            if log_path is not None
-            else get_from_env("log_path", "AZURE_SPEECH_LOG_PATH", "NONE")
-        )
-        self.log_path = self.log_path if self.log_path != "NONE" else None
-
+        self.log_path = log_path or get_from_env("log_path", "AZURE_SPEECH_LOG_PATH")
         self.polling_interval_seconds = polling_interval_seconds
 
         self.speech_recognition_language = speech_recognition_language
