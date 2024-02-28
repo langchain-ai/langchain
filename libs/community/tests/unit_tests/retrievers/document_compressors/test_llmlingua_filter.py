@@ -2,7 +2,7 @@ import pytest
 from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
-from langchain_community.retrievers.document_compressors import LLMLinguaCompressor
+from langchain_community.document_compressors import LLMLinguaCompressor
 
 LLM_LINGUA_INSTRUCTION = "Given this documents, please answer the final question"
 
