@@ -187,6 +187,7 @@ from langchain_community.document_loaders.sitemap import SitemapLoader
 from langchain_community.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain_community.document_loaders.snowflake_loader import SnowflakeLoader
 from langchain_community.document_loaders.spreedly import SpreedlyLoader
+from langchain_community.document_loaders.sql_database import SQLDatabaseLoader
 from langchain_community.document_loaders.srt import SRTLoader
 from langchain_community.document_loaders.stripe import StripeLoader
 from langchain_community.document_loaders.surrealdb import SurrealDBLoader
@@ -376,6 +377,7 @@ __all__ = [
     "SlackDirectoryLoader",
     "SnowflakeLoader",
     "SpreedlyLoader",
+    "SQLDatabaseLoader",
     "StripeLoader",
     "SurrealDBLoader",
     "TelegramChatApiLoader",
