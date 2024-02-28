@@ -22,21 +22,14 @@ class VoyageAIEmbeddings(Embeddings):
     client: Client = PrivateAttr()
     model: str = "voyage-01"
     batch_size: int = 7
+    show_progress_bar: bool = False
 
     def __init__(
         self,
-        model: str = "voyage-01",
+        model: str,
         voyage_api_key: Optional[str] = None,
         embed_batch_size: Optional[int] = None,
     ):
-        if model == "voyage-01":
-            logger.warning(
-                "voyage-01 is not the latest model by Voyage AI. Please note that "
-                "`model_name` will be a required argument in the future. We recommend "
-                "setting it explicitly. Please see "
-                "https://docs.voyageai.com/docs/embeddings for the latest models "
-                "offered by Voyage AI."
-            )
         self.model = model
 
         if embed_batch_size is None:
@@ -47,9 +40,28 @@ class VoyageAIEmbeddings(Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        return self.client.embed(
-            texts, model=self.model, input_type="document"
-        ).embeddings
+        embeddings: List[List[float]] = []
+
+        if self.show_progress_bar:
+            try:
+                from tqdm.auto import tqdm
+            except ImportError as e:
+                raise ImportError(
+                    "Must have tqdm installed if `show_progress_bar` is set to True. "
+                    "Please install with `pip install tqdm`."
+                ) from e
+
+            _iter = tqdm(range(0, len(texts), self.batch_size))
+        else:
+            _iter = range(0, len(texts), self.batch_size)
+
+        for _i in _iter:
+            embeddings_iter = self.client.embed(
+                texts, model=self.model, input_type="document"
+            ).embeddings
+            embeddings.extend(embeddings_iter)
+
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""

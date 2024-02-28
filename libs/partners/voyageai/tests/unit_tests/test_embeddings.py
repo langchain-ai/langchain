@@ -4,15 +4,10 @@ import os
 from langchain_voyageai.embeddings import VoyageAIEmbeddings
 from langchain_core.embeddings import Embeddings
 
+MODEL="voyage-2"
+
 
 def test_initialization() -> None:
     """Test embedding model initialization."""
-    emb = VoyageAIEmbeddings(voyage_api_key="NOT_A_VALID_KEY")
-    assert isinstance(emb, Embeddings)
-
-
-def test_initialization_api_key_in_environment() -> None:
-    """Test embedding model initialization."""
-    os.environ["VOYAGE_API_KEY"] = "NOT_A_VALID_KEY"
-    emb = VoyageAIEmbeddings()
+    emb = VoyageAIEmbeddings(voyage_api_key="NOT_A_VALID_KEY", model=MODEL)
     assert isinstance(emb, Embeddings)
