@@ -49,9 +49,9 @@ class ConsistentFakeEmbeddings(Embeddings):
 class MockCollection(Collection):
     """Mocked Mongo Collection"""
 
-    _aggregate_result: list[Any]
+    _aggregate_result: List[Any]
     _insert_result: Optional[InsertManyResult]
-    _data: list[Any]
+    _data: List[Any]
 
     def __init__(self) -> None:
         self._data = []
