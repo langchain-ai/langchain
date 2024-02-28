@@ -570,6 +570,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         llm_cache = get_llm_cache()
         parameters = inspect.signature(llm_cache.update).parameters.values()
         can_cache_accept_kwargs = any(param.kind == param.VAR_KEYWORD for param in parameters)
+        # Only include kwargs that are in self._default_params for generation
+        generation_kwargs = {
+            k: v for k, v in kwargs.items() if k in self._default_params
+        }
         if llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
             if self.cache is not None and self.cache:
@@ -578,12 +582,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             if new_arg_supported:
                 return self._generate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
+                    messages, stop=stop, run_manager=run_manager, **generation_kwargs
                 )
             else:
-                return self._generate(messages, stop=stop, **kwargs)
+                return self._generate(messages, stop=stop, **generation_kwargs)
         else:
-            llm_string = self._get_llm_string(stop=stop, **kwargs)
+            llm_string = self._get_llm_string(stop=stop, **generation_kwargs)
             prompt = dumps(messages)
             if can_cache_accept_kwargs:
                 cache_val = llm_cache.lookup(prompt, llm_string, **kwargs)
@@ -594,10 +598,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             else:
                 if new_arg_supported:
                     result = self._generate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
+                        messages, stop=stop, run_manager=run_manager, **generation_kwargs
                     )
                 else:
-                    result = self._generate(messages, stop=stop, **kwargs)
+                    result = self._generate(messages, stop=stop, **generation_kwargs)
                 if can_cache_accept_kwargs:
                     llm_cache.update(prompt, llm_string, result.generations, **kwargs)
                 else:
@@ -618,6 +622,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         llm_cache = get_llm_cache()
         parameters = inspect.signature(llm_cache.update).parameters.values()
         can_cache_accept_kwargs = any(param.kind == param.VAR_KEYWORD for param in parameters)
+        # Only include kwargs that are in self._default_params for generation
+        generation_kwargs = {
+            k: v for k, v in kwargs.items() if k in self._default_params
+        }
         if llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
             if self.cache is not None and self.cache:
@@ -626,12 +634,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             if new_arg_supported:
                 return await self._agenerate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
+                    messages, stop=stop, run_manager=run_manager, **generation_kwargs
                 )
             else:
-                return await self._agenerate(messages, stop=stop, **kwargs)
+                return await self._agenerate(messages, stop=stop, **generation_kwargs)
         else:
-            llm_string = self._get_llm_string(stop=stop, **kwargs)
+            llm_string = self._get_llm_string(stop=stop, **generation_kwargs)
             prompt = dumps(messages)
             if can_cache_accept_kwargs:
                 cache_val = await llm_cache.alookup(prompt, llm_string, **kwargs)
@@ -642,10 +650,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             else:
                 if new_arg_supported:
                     result = await self._agenerate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
+                        messages, stop=stop, run_manager=run_manager, **generation_kwargs
                     )
                 else:
-                    result = await self._agenerate(messages, stop=stop, **kwargs)
+                    result = await self._agenerate(messages, stop=stop, **generation_kwargs)
                 if can_cache_accept_kwargs:
                     await llm_cache.aupdate(prompt, llm_string, result.generations, **kwargs)
                 else:
