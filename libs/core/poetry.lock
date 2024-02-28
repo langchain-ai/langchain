@@ -1793,16 +1793,6 @@ plugins = ["importlib-metadata"]
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
-name = "pygraphviz"
-version = "1.12"
-description = "Python interface to Graphviz"
-optional = false
-python-versions = ">=3.10"
-files = [
-    {file = "pygraphviz-1.12.tar.gz", hash = "sha256:8b0b9207954012f3b670e53b8f8f448a28d12bdbbcf69249313bd8dbe680152f"},
-]
-
-[[package]]
 name = "pyparsing"
 version = "3.1.1"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -2806,4 +2796,4 @@ extended-testing = ["jinja2"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "c518864fd54c5850a3ffa43dd941d77676ce8b17fa5f956450598a90755e7041"
+content-hash = "8fe07123109b62d7210542d8aff20df6df00819e5b0f36bc12f02206c5161c43"
