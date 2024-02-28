@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Type, U
 from uuid import UUID, uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables.graph_draw import draw
+from langchain_core.runnables.graph_ascii import draw_ascii
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
@@ -213,7 +213,7 @@ class Graph:
                 self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
-        return draw(
+        return draw_ascii(
             {node.id: node_data_str(node) for node in self.nodes.values()},
             [(edge.source, edge.target) for edge in self.edges],
         )
