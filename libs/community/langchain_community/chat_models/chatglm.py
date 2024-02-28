@@ -43,13 +43,13 @@ class ChatGLM_ChatModel(BaseChatModel, ChatGLM):
                 if index == len(messages) - 1:
                     break
                 if isinstance(message, SystemMessage):
-                    history.append([message.content, '知道了。'])
+                    history.append([message.content, "知道了。"])
                 elif isinstance(message, HumanMessage):
-                    history.append([message.content, ''])
+                    history.append([message.content, ""])
                 elif isinstance(message, AIMessage):
-                    history.append(['', message.content])
+                    history.append(["", message.content])
                 elif isinstance(message, FunctionMessage):
-                    history.append([message.content, '知道了。'])
+                    history.append([message.content, "知道了。"])
                 else:
                     raise ValueError(f"Got unknown type {message}")
         return history, prompt
