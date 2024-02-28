@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "neo4j-cypher-ft"
+version = "0.1.0"
+description = "Interact with a Neo4j graph database using natural language"
+authors = [
+    "Tomaz Bratanic <tomaz.bratanic@neo4j.com>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+neo4j = ">5.12"
+openai = "<2"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "neo4j_cypher_ft"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "query"
+author = "Neo4j"
+integrations = ["Neo4j", "OpenAI"]
+tags = ["search", "graph-database", "query"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

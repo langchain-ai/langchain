@@ -1,0 +1,642 @@
+# Google
+
+All functionality related to [Google Cloud Platform](https://cloud.google.com/) and other `Google` products.
+
+## Chat models
+
+### Google Generative AI
+
+Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `ChatGoogleGenerativeAI` class.
+
+```bash
+pip install -U langchain-google-genai
+```
+
+Configure your API key.
+
+```bash
+export GOOGLE_API_KEY=your-api-key
+```
+
+```python
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(model="gemini-pro")
+llm.invoke("Sing a ballad of LangChain.")
+```
+
+Gemini vision model supports image inputs when providing a single chat message.
+
+```python
+from langchain_core.messages import HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(model="gemini-pro-vision")
+
+message = HumanMessage(
+    content=[
+        {
+            "type": "text",
+            "text": "What's in this image?",
+        },  # You can optionally provide text parts
+        {"type": "image_url", "image_url": "https://picsum.photos/seed/picsum/200/300"},
+    ]
+)
+llm.invoke([message])
+```
+
+The value of image_url can be any of the following:
+
+- A public image URL
+- A gcs file (e.g., "gcs://path/to/file.png")
+- A local file path
+- A base64 encoded image (e.g., data:image/png;base64,abcd124)
+- A PIL image
+
+### Vertex AI
+
+Access PaLM chat models like `chat-bison` and `codechat-bison` via Google Cloud.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
+
+```python
+from langchain_google_vertexai import ChatVertexAI
+```
+
+## LLMs
+
+### Google Generative AI
+
+Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
+
+Install python package.
+
+```bash
+pip install langchain-google-genai
+```
+
+See a [usage example](/docs/integrations/llms/google_ai).
+
+```python
+from langchain_google_genai import GoogleGenerativeAI
+```
+
+### Vertex AI
+
+Access to `Gemini` and `PaLM` LLMs (like `text-bison` and `code-bison`) via `Vertex AI` on Google Cloud.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
+
+```python
+from langchain_google_vertexai import VertexAI
+```
+
+### Model Garden
+
+Access PaLM and hundreds of OSS models via `Vertex AI Model Garden` on Google Cloud.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
+
+```python
+from langchain_google_vertexai import VertexAIModelGarden
+```
+
+## Vector Stores
+
+### Vertex AI Vector Search
+
+> [Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview) from Google Cloud,
+> formerly known as `Vertex AI Matching Engine`, provides the industry's leading high-scale
+> low latency vector database. These vector databases are commonly
+> referred to as vector similarity-matching or an approximate nearest neighbor (ANN) service.
+
+We need to install several python packages.
+
+```bash
+pip install tensorflow langchain-google-vertexai tensorflow-hub tensorflow-text
+```
+
+See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_search).
+
+```python
+from langchain_community.vectorstores import MatchingEngine
+```
+
+### BigQuery
+
+> [BigQuery](https://cloud.google.com/bigquery),
+> BigQuery is a serverless and cost-effective enterprise data warehouse in Google Cloud.
+>
+> [BigQuery Vector Search](https://cloud.google.com/bigquery/docs/vector-search-intro)
+> BigQuery vector search lets you use GoogleSQL to do semantic search, using vector indexes for fast but approximate results, or using brute force for exact results.
+
+> It can calculate Euclidean or Cosine distance. With LangChain, we default to use Euclidean distance.
+
+We need to install several python packages.
+
+```bash
+pip install google-cloud-bigquery
+```
+
+See a [usage example](/docs/integrations/vectorstores/bigquery_vector_search).
+
+```python
+from langchain.vectorstores import BigQueryVectorSearch
+```
+
+### Google ScaNN
+
+>[Google ScaNN](https://github.com/google-research/google-research/tree/master/scann)
+> (Scalable Nearest Neighbors) is a python package.
+>
+>`ScaNN` is a method for efficient vector similarity search at scale.
+
+>`ScaNN` includes search space pruning and quantization for Maximum Inner
+> Product Search and also supports other distance functions such as
+> Euclidean distance. The implementation is optimized for x86 processors
+> with AVX2 support. See its [Google Research github](https://github.com/google-research/google-research/tree/master/scann)
+> for more details.
+
+We need to install `scann` python package.
+
+```bash
+pip install scann
+```
+
+See a [usage example](/docs/integrations/vectorstores/scann).
+
+```python
+from langchain_community.vectorstores import ScaNN
+```
+
+## Retrievers
+
+### Google Drive
+
+We need to install several python packages.
+
+```bash
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+```
+
+See a [usage example and authorization instructions](/docs/integrations/retrievers/google_drive).
+
+```python
+from langchain_googledrive.retrievers import GoogleDriveRetriever
+```
+
+### Vertex AI Search
+
+> [Vertex AI Search](https://cloud.google.com/generative-ai-app-builder/docs/introduction)
+> from Google Cloud allows developers to quickly build generative AI powered search engines for customers and employees.
+
+We need to install the `google-cloud-discoveryengine` python package.
+
+```bash
+pip install google-cloud-discoveryengine
+```
+
+See a [usage example](/docs/integrations/retrievers/google_vertex_ai_search).
+
+```python
+from langchain.retrievers import GoogleVertexAISearchRetriever
+```
+
+### Document AI Warehouse
+
+> [Document AI Warehouse](https://cloud.google.com/document-ai-warehouse)
+> from Google Cloud allows enterprises to search, store, govern, and manage documents and their AI-extracted
+> data and metadata in a single platform.
+
+```python
+from langchain.retrievers import GoogleDocumentAIWarehouseRetriever
+docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(
+    project_number=...
+)
+query = ...
+documents = docai_wh_retriever.get_relevant_documents(
+    query, user_ldap=...
+)
+```
+
+## Document Loaders
+
+### BigQuery
+
+> [BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
+
+We need to install `google-cloud-bigquery` python package.
+
+```bash
+pip install google-cloud-bigquery
+```
+
+See a [usage example](/docs/integrations/document_loaders/google_bigquery).
+
+```python
+from langchain_community.document_loaders import BigQueryLoader
+```
+
+### Cloud Storage
+
+>[Cloud Storage](https://en.wikipedia.org/wiki/Google_Cloud_Storage) is a managed service for storing unstructured data in Google Cloud.
+
+We need to install `google-cloud-storage` python package.
+
+```bash
+pip install google-cloud-storage
+```
+
+There are two loaders for the `Google Cloud Storage`: the `Directory` and the `File` loaders.
+
+See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_directory).
+
+```python
+from langchain_community.document_loaders import GCSDirectoryLoader
+```
+See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_file).
+
+```python
+from langchain_community.document_loaders import GCSFileLoader
+```
+
+### Google Drive
+
+>[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
+
+Currently, only `Google Docs` are supported.
+
+We need to install several python packages.
+
+```bash
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
+
+```python
+from langchain_community.document_loaders import GoogleDriveLoader
+```
+
+### Speech-to-Text
+
+> [Speech-to-Text](https://cloud.google.com/speech-to-text) is an audio transcription API powered by Google's speech recognition models in Google Cloud.
+
+This document loader transcribes audio files and outputs the text results as Documents.
+
+First, we need to install the python package.
+
+```bash
+pip install google-cloud-speech
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
+
+```python
+from langchain_community.document_loaders import GoogleSpeechToTextLoader
+```
+
+## Document Transformers
+
+### Document AI
+
+>[Document AI](https://cloud.google.com/document-ai/docs/overview) is a Google Cloud
+> service that transforms unstructured data from documents into structured data, making it easier
+> to understand, analyze, and consume.
+
+We need to set up a [`GCS` bucket and create your own OCR processor](https://cloud.google.com/document-ai/docs/create-processor)
+The `GCS_OUTPUT_PATH` should be a path to a folder on GCS (starting with `gs://`)
+and a processor name should look like `projects/PROJECT_NUMBER/locations/LOCATION/processors/PROCESSOR_ID`.
+We can get it either programmatically or copy from the `Prediction endpoint` section of the `Processor details`
+tab in the Google Cloud Console.
+
+```bash
+pip install google-cloud-documentai
+pip install google-cloud-documentai-toolbox
+```
+
+See a [usage example](/docs/integrations/document_transformers/docai).
+
+```python
+from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.parsers import DocAIParser
+```
+
+### Google Translate
+
+> [Google Translate](https://translate.google.com/) is a multilingual neural machine
+> translation service developed by Google to translate text, documents and websites
+> from one language into another.
+
+The `GoogleTranslateTransformer` allows you to translate text and HTML with the [Google Cloud Translation API](https://cloud.google.com/translate).
+
+To use it, you should have the `google-cloud-translate` python package installed, and a Google Cloud project with the [Translation API enabled](https://cloud.google.com/translate/docs/setup). This transformer uses the [Advanced edition (v3)](https://cloud.google.com/translate/docs/intro-to-v3).
+
+First, we need to install the python package.
+
+```bash
+pip install google-cloud-translate
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
+
+```python
+from langchain_community.document_transformers import GoogleTranslateTransformer
+```
+
+## Tools
+
+### Text-to-Speech
+
+>[Text-to-Speech](https://cloud.google.com/text-to-speech) is a Google Cloud service that enables developers to
+> synthesize natural-sounding speech with 100+ voices, available in multiple languages and variants.
+> It applies DeepMind’s groundbreaking research in WaveNet and Google’s powerful neural networks
+> to deliver the highest fidelity possible.
+
+We need to install a python package.
+
+```bash
+pip install google-cloud-text-to-speech
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_cloud_texttospeech).
+
+```python
+from langchain.tools import GoogleCloudTextToSpeechTool
+```
+
+### Google Drive
+
+We need to install several python packages.
+
+```bash
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_drive).
+
+```python
+from langchain_community.utilities.google_drive import GoogleDriveAPIWrapper
+from langchain_community.tools.google_drive.tool import GoogleDriveSearchTool
+```
+
+### Google Places
+
+We need to install a python package.
+
+```bash
+pip install googlemaps
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_places).
+
+```python
+from langchain.tools import GooglePlacesTool
+```
+
+### Google Search
+
+- Set up a Custom Search Engine, following [these instructions](https://stackoverflow.com/questions/37083058/programmatically-searching-google-in-python-using-custom-search)
+- Get an API Key and Custom Search Engine ID from the previous step, and set them as environment variables
+`GOOGLE_API_KEY` and `GOOGLE_CSE_ID` respectively.
+
+```python
+from langchain_community.utilities import GoogleSearchAPIWrapper
+```
+
+For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/google_search).
+
+We can easily load this wrapper as a Tool (to use with an Agent). We can do this with:
+
+```python
+from langchain.agents import load_tools
+tools = load_tools(["google-search"])
+```
+
+### Google Finance
+
+We need to install a python package.
+
+```bash
+pip install google-search-results
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_finance).
+
+```python
+from langchain_community.tools.google_finance import GoogleFinanceQueryRun
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
+```
+
+### Google Jobs
+
+We need to install a python package.
+
+```bash
+pip install google-search-results
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_jobs).
+
+```python
+from langchain_community.tools.google_jobs import GoogleJobsQueryRun
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
+```
+
+### Google Lens
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_lens).
+
+```python
+from langchain_community.tools.google_lens import GoogleLensQueryRun
+from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
+```
+
+### Google Scholar
+
+We need to install a python package.
+
+```bash
+pip install google-search-results
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_scholar).
+
+```python
+from langchain_community.tools.google_scholar import GoogleScholarQueryRun
+from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
+```
+
+### Google Trends
+
+We need to install a python package.
+
+```bash
+pip install google-search-results
+```
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_trends).
+
+```python
+from langchain_community.tools.google_trends import GoogleTrendsQueryRun
+from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
+```
+
+## Toolkits
+
+### GMail
+
+> [Gmail](https://en.wikipedia.org/wiki/Gmail) is a free email service provided by Google.
+This toolkit works with emails through the `Gmail API`.
+
+We need to install several python packages.
+
+```bash
+pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+```
+
+See a [usage example and authorization instructions](/docs/integrations/toolkits/gmail).
+
+```python
+from langchain_community.agent_toolkits import GmailToolkit
+```
+
+## Memory
+
+### Firestore
+
+> [`Firestore`](https://cloud.google.com/firestore) is a NoSQL document database built for automatic scaling, high performance, and ease of application development in Google Cloud.
+
+First, we need to install the python package.
+
+```bash
+pip install firebase-admin
+```
+
+See a [usage example and authorization instructions](/docs/integrations/memory/firestore_chat_message_history).
+
+```python
+from langchain_community.chat_message_histories.firestore import  FirestoreChatMessageHistory
+```
+
+## Chat Loaders
+
+### GMail
+
+> [Gmail](https://en.wikipedia.org/wiki/Gmail) is a free email service provided by Google.
+This loader works with emails through the `Gmail API`.
+
+We need to install several python packages.
+
+```bash
+pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
+```
+
+See a [usage example and authorization instructions](/docs/integrations/chat_loaders/gmail).
+
+```python
+from langchain_community.chat_loaders.gmail import GMailLoader
+```
+
+## 3rd Party Integrations
+
+### SearchApi
+
+>[SearchApi](https://www.searchapi.io/) provides a 3rd-party API to access Google search results, YouTube search & transcripts, and other Google-related engines.
+
+See [usage examples and authorization instructions](/docs/integrations/tools/searchapi).
+
+```python
+from langchain_community.utilities import SearchApiAPIWrapper
+```
+
+### SerpApi
+
+>[SerpApi](https://serpapi.com/) provides a 3rd-party API to access Google search results.
+
+See a [usage example and authorization instructions](/docs/integrations/tools/serpapi).
+
+```python
+from langchain_community.utilities import SerpAPIWrapper
+```
+
+### Serper.dev
+
+See a [usage example and authorization instructions](/docs/integrations/tools/google_serper).
+
+```python
+from langchain_community.utilities import GoogleSerperAPIWrapper
+```
+
+### YouTube
+
+>[YouTube Search](https://github.com/joetats/youtube_search) package searches `YouTube` videos avoiding using their heavily rate-limited API.
+>
+>It uses the form on the YouTube homepage and scrapes the resulting page.
+
+We need to install a python package.
+
+```bash
+pip install youtube_search
+```
+
+See a [usage example](/docs/integrations/tools/youtube).
+
+```python
+from langchain.tools import YouTubeSearchTool
+```
+
+### YouTube audio
+
+>[YouTube](https://www.youtube.com/) is an online video sharing and social media platform created by `Google`.
+
+Use `YoutubeAudioLoader` to fetch / download the audio files.
+
+Then, use `OpenAIWhisperParser` to transcribe them to text.
+
+We need to install several python packages.
+
+```bash
+pip install yt_dlp pydub librosa
+```
+
+See a [usage example and authorization instructions](/docs/integrations/document_loaders/youtube_audio).
+
+```python
+from langchain_community.document_loaders.blob_loaders.youtube_audio import YoutubeAudioLoader
+from langchain_community.document_loaders.parsers import OpenAIWhisperParser, OpenAIWhisperParserLocal
+```
+
+### YouTube transcripts
+
+>[YouTube](https://www.youtube.com/) is an online video sharing and social media platform created by `Google`.
+
+We need to install `youtube-transcript-api` python package.
+
+```bash
+pip install youtube-transcript-api
+```
+
+See a [usage example](/docs/integrations/document_loaders/youtube_transcript).
+
+```python
+from langchain_community.document_loaders import YoutubeLoader
+```
