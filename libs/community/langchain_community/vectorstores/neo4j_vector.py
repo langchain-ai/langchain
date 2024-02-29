@@ -566,7 +566,10 @@ class Neo4jVector(VectorStore):
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
