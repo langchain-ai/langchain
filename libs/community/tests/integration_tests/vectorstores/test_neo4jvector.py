@@ -721,3 +721,23 @@ def test_index_fetching() -> None:
 
     index_0_store = fetch_store(index_0_str)
     assert index_0_store.index_name == index_0_str
+
+
+def test_retrieval_params() -> None:
+    """Test if we use parameters in retrieval query"""
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        pre_delete_collection=True,
+        retrieval_query="""
+        RETURN $test as text, score, {test: $test1} AS metadata
+        """,
+    )
+
+    output = docsearch.similarity_search(
+        "Foo", k=2, params={"test": "test", "test1": "test1"}
+    )
+    assert output == [
+        Document(page_content="test", metadata={"test": "test1"}),
+        Document(page_content="test", metadata={"test": "test1"}),
+    ]
