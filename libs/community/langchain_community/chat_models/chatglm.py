@@ -19,8 +19,8 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
-class ChatGLM_ChatModel(BaseChatModel, BaseModel):
 
+class ChatGLM_ChatModel(BaseChatModel, BaseModel):
     """ChatGLM LLM ChatModel.
     Example:
         .. code-block:: python
