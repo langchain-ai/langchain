@@ -74,10 +74,10 @@ class VoyageEmbeddings(BaseModel, Embeddings):
             query_result = voyage.embed_query(text)
     """
 
-    model: str = "voyage-01"
+    model: str
     voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
     voyage_api_key: Optional[SecretStr] = None
-    batch_size: Optional[int] = None
+    batch_size: int
     """Maximum number of texts to embed in each API request."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
@@ -106,6 +106,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         )
 
         if "model" not in values:
+            values["model"] = "voyage-01"
             logger.warning(
                 "model will become a required arg for VoyageAIEmbeddings, "
                 "we recommend to specify it when using this class. "
