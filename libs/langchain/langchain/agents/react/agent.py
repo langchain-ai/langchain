@@ -14,10 +14,10 @@ from langchain.tools.render import render_text_description
 
 
 def create_react_agent(
-        llm: BaseLanguageModel,
-        tools: Sequence[BaseTool],
-        prompt: BasePromptTemplate,
-        output_parser: Optional[AgentOutputParser] = None
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: BasePromptTemplate,
+    output_parser: Optional[AgentOutputParser] = None
 ) -> Runnable:
     """Create an agent that uses ReAct prompting.
 
