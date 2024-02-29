@@ -119,7 +119,13 @@ jobs:
           poetry install -E extended_testing --with test
 
       - name: Run extended tests
-        run: make extended_tests
+        run: |
+          echo "sleeping 150"
+          sleep 150
+          echo "sleeping 151"
+          sleep 151
+          echo "done sleeping lets test"
+          make extended_tests
 
       - name: Ensure the tests did not create any additional files
         shell: bash
