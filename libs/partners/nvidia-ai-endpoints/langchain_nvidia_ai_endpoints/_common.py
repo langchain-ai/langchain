@@ -338,11 +338,7 @@ class NVEModel(BaseModel):
                 ## Tease out ['choices'][0]...['delta'/'message']
                 msg = msg.get("choices", [{}])[0]
                 is_stopped = msg.get("finish_reason", "") == "stop"
-                msg = msg.get("delta",
-                    msg.get("message",
-                        msg.get("text", "")
-                    )
-                )
+                msg = msg.get("delta", msg.get("message", msg.get("text", "")))
                 if not isinstance(msg, dict):
                     msg = {"content" : msg}
             elif "data" in msg:
@@ -455,6 +451,8 @@ class _NVIDIAClient(BaseModel):
         """Validate and update client arguments, including API key and formatting"""
         if not values.get("client"):
             values["client"] = NVEModel(**values)
+        elif isinstance(values["client"], BaseModel.__class__):
+            values["client"] = values["client"](**values["client"])
         return values
 
     @classmethod
