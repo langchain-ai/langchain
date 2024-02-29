@@ -71,6 +71,8 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             self.moving_summary_buffer = self.predict_new_summary(
                 pruned_memory, self.moving_summary_buffer
             )
+            self.chat_memory.clear()
+            self.chat_memory.add_messages(buffer)
 
     def clear(self) -> None:
         """Clear memory contents."""
