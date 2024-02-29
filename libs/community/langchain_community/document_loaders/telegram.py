@@ -48,7 +48,7 @@ class TelegramChatFileLoader(BaseLoader):
 
 def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
     """Convert a string or list of strings to a list of Documents with metadata."""
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     if isinstance(text, str):
         # Take a single string as one page

@@ -10,7 +10,7 @@ from langchain_core.runnables import run_in_executor
 from langchain_community.document_loaders.blob_loaders import Blob
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import TextSplitter
+    from langchain_text_splitters import TextSplitter, RecursiveCharacterTextSplitter
 
 
 class BaseLoader(ABC):
@@ -42,7 +42,6 @@ class BaseLoader(ABC):
         Returns:
             List of Documents.
         """
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
 
         if text_splitter is None:
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()

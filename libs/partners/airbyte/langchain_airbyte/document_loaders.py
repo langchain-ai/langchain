@@ -15,13 +15,12 @@ from typing import (
 )
 
 import airbyte as ab
-from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import TextSplitter
+    from langchain_text_splitters import TextSplitter, RecursiveCharacterTextSplitter
     from langchain_core.documents import Document
 
 VST = TypeVar("VST", bound=VectorStore)
@@ -72,7 +71,6 @@ class AirbyteLoader:
         Returns:
             List of Documents.
         """
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
 
         if text_splitter is None:
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()

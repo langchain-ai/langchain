@@ -5,9 +5,10 @@ from typing import Dict
 
 LANGCHAIN_DIRS = [
     "libs/core",
+    "libs/text-splitters",
+    "libs/community",
     "libs/langchain",
     "libs/experimental",
-    "libs/community",
 ]
 
 if __name__ == "__main__":
