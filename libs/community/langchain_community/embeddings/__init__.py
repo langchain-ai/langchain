@@ -51,9 +51,11 @@ from langchain_community.embeddings.huggingface import (
 )
 from langchain_community.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain_community.embeddings.infinity import InfinityEmbeddings
+from langchain_community.embeddings.infinity_local import InfinityEmbeddingsLocal
 from langchain_community.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain_community.embeddings.jina import JinaEmbeddings
 from langchain_community.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
+from langchain_community.embeddings.laser import LaserEmbeddings
 from langchain_community.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain_community.embeddings.llm_rails import LLMRailsEmbeddings
 from langchain_community.embeddings.localai import LocalAIEmbeddings
@@ -84,6 +86,7 @@ from langchain_community.embeddings.sentence_transformer import (
     SentenceTransformerEmbeddings,
 )
 from langchain_community.embeddings.spacy_embeddings import SpacyEmbeddings
+from langchain_community.embeddings.sparkllm import SparkLLMTextEmbeddings
 from langchain_community.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.volcengine import VolcanoEmbeddings
@@ -104,8 +107,10 @@ __all__ = [
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "InfinityEmbeddings",
+    "InfinityEmbeddingsLocal",
     "GradientEmbeddings",
     "JinaEmbeddings",
+    "LaserEmbeddings",
     "LlamaCppEmbeddings",
     "LLMRailsEmbeddings",
     "HuggingFaceHubEmbeddings",
@@ -152,6 +157,7 @@ __all__ = [
     "OCIGenAIEmbeddings",
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
+    "SparkLLMTextEmbeddings",
 ]
 
 
