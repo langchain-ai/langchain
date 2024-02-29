@@ -7,7 +7,6 @@ from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
     BaseTransformOutputParser,
 )
-from langchain_core.output_parsers.base import T
 from langchain_core.outputs import ChatGeneration, Generation
 from tests.unit_tests.fake.chat_model import GenericFakeChatModel
 
