@@ -22,7 +22,7 @@ context_value = [
         "metadata": {
             "source": "source#1",
             "doc_id": 123,
-        }
+        },
     },
 ]
 
