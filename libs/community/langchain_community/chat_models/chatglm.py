@@ -19,6 +19,7 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 
 class ChatGLM_ChatModel(BaseChatModel, BaseModel):
+    
     """ChatGLM LLM ChatModel.
     Example:
         .. code-block:: python
@@ -26,6 +27,7 @@ class ChatGLM_ChatModel(BaseChatModel, BaseModel):
             from langchain_community.chat_models.chatglm import ChatGLM_ChatModel
             llm = ChatGLM_ChatModel(temperature=0.9, top_p=0.9)
     """
+    
     streaming: bool = False
     """Whether to stream the results."""
     endpoint_url: str = "http://127.0.0.1:8000"
