@@ -1,16 +1,16 @@
 """Wrapper around Prem AI Platform"""
 
 import logging
-from typing import Any, Dict, List, Union, Optional, Callable
+from typing import Any, Dict, List, Union, Optional, Callable, Iterator
 
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.language_models import LanguageModelInput
@@ -164,6 +164,40 @@ class Prem(BaseLLM, BaseModel):
             generations.append(prompt_generation)
         return LLMResult(generations=generations)
 
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs,
+    ) -> Iterator[GenerationChunk]:
+        if stop is not None:
+            kwargs["stop"] = stop
+        messages = [self._apply_default_format(prompt) for prompt in prompt]
+
+        for streamed_response in completion_with_retry(
+            self,
+            project_id=self.project_id,
+            prompt=messages,
+            stream=True,
+            run_manager=run_manager,
+            **kwargs,
+        ):
+            try:
+                chunk = GenerationChunk(
+                    text=streamed_response.choices[0].delta["content"]
+                )
+
+                yield chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        streamed_response.choices[0].delta["content"],
+                        chunk=chunk,
+                        verbose=self.verbose,
+                    )
+            except Exception as e:
+                continue
+
 
 def create_prem_retry_decorator(
     llm: Prem,
@@ -213,9 +247,10 @@ def completion_with_retry(
     def _completion_with_retry(
         project_id: int, prompt: LanguageModelInput, stream: bool, **kwargs: Any
     ) -> Any:
-        return llm.client.chat.completions.create(
+        response = llm.client.chat.completions.create(
             project_id=project_id, messages=prompt[0], stream=stream, **kwargs
         )
+        return response
 
     return _completion_with_retry(
         project_id=project_id, prompt=prompt, stream=stream, **kwargs
