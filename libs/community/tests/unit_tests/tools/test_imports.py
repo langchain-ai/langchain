@@ -84,6 +84,7 @@ EXPECTED_ALL = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonFinancials",
     "PolygonLastQuote",
     "PolygonTickerNews",
     "RedditSearchRun",

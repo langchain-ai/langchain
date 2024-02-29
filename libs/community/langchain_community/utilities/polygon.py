@@ -27,6 +27,25 @@ class PolygonAPIWrapper(BaseModel):
 
         return values
 
+    def get_financials(self, ticker: str) -> Optional[dict]:
+        """
+        Get fundamental financial data, which is found in balance sheets,
+        income statements, and cash flow statements for a given ticker.
+        """
+        url = (
+            f"{POLYGON_BASE_URL}vX/reference/financials?"
+            f"ticker={ticker}&"
+            f"apiKey={self.polygon_api_key}"
+        )
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status != "OK":
+            raise ValueError(f"API Error: {data}")
+
+        return data.get("results", None)
+
     def get_last_quote(self, ticker: str) -> Optional[dict]:
         """Get the most recent National Best Bid and Offer (Quote) for a ticker."""
         url = f"{POLYGON_BASE_URL}v2/last/nbbo/{ticker}?apiKey={self.polygon_api_key}"
@@ -59,7 +78,9 @@ class PolygonAPIWrapper(BaseModel):
         return data.get("results", None)
 
     def run(self, mode: str, ticker: str) -> str:
-        if mode == "get_last_quote":
+        if mode == "get_financials":
+            return json.dumps(self.get_financials(ticker))
+        elif mode == "get_last_quote":
             return json.dumps(self.get_last_quote(ticker))
         elif mode == "get_ticker_news":
             return json.dumps(self.get_ticker_news(ticker))
