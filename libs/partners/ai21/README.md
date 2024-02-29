@@ -84,8 +84,6 @@ and a question and returns an answer based entirely on this context.
 This means that if the answer to your question is not in the document,
 the model will indicate it (instead of providing a false answer)
 
-### Query
-
 ```python
 from langchain_ai21 import AI21ContextualAnswers
 
