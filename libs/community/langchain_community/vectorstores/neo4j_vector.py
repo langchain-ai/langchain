@@ -549,6 +549,7 @@ class Neo4jVector(VectorStore):
         self,
         query: str,
         k: int = 4,
+        params: Dict[str, Any] = {},
         **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search with Neo4jVector.
@@ -562,13 +563,15 @@ class Neo4jVector(VectorStore):
         """
         embedding = self.embedding.embed_query(text=query)
         return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            query=query,
+            embedding=embedding, k=k, query=query, params=params, **kwargs
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self,
+        query: str,
+        k: int = 4,
+        params: Dict[str, Any] = {},
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -581,12 +584,16 @@ class Neo4jVector(VectorStore):
         """
         embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, query=query
+            embedding=embedding, k=k, query=query, params=params, **kwargs
         )
         return docs
 
     def similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        params: Dict[str, Any] = {},
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
         Perform a similarity search in the Neo4j database using a
@@ -623,6 +630,7 @@ class Neo4jVector(VectorStore):
             "embedding": embedding,
             "keyword_index": self.keyword_index_name,
             "query": remove_lucene_chars(kwargs["query"]),
+            **params,
         }
 
         results = self.query(read_query, params=parameters)
