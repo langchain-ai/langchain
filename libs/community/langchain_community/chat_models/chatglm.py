@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import requests
 from typing import Any, List, Tuple, Optional
+
+import requests
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
