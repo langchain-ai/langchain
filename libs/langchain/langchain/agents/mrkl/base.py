@@ -17,6 +17,7 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
 from langchain.chains import LLMChain
+from langchain.tools.render import render_text_description
 
 
 class ChainConfig(NamedTuple):
@@ -79,7 +80,7 @@ class ZeroShotAgent(Agent):
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
         """
-        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+        tool_strings = render_text_description(list(tools))
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
