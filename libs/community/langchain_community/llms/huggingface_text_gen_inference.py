@@ -1,6 +1,7 @@
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -13,9 +14,11 @@ from langchain_core.utils import get_pydantic_field_names
 logger = logging.getLogger(__name__)
 
 
+@deprecated("0.0.21", removal="0.2.0", alternative="HuggingFaceEndpoint")
 class HuggingFaceTextGenInference(LLM):
     """
     HuggingFace text generation API.
+    ! This class is deprecated, you should use HuggingFaceEndpoint instead !
 
     To use, you should have the `text-generation` python package installed and
     a text-generation server running.

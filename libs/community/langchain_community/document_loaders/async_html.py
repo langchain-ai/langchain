@@ -140,9 +140,9 @@ class AsyncHtmlLoader(BaseLoader):
         return BeautifulSoup(html_doc.text, parser, **(bs_kwargs or {}))
 
     async def _fetch(
-        self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
+        self, url: str, retries: int = 2, cooldown: int = 2, backoff: float = 1.5, timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(total=3)
     ) -> str:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             for i in range(retries):
                 try:
                     async with session.get(
@@ -156,7 +156,7 @@ class AsyncHtmlLoader(BaseLoader):
                             logger.error(f"Failed to decode content from {url}")
                             text = ""
                         return text
-                except aiohttp.ClientConnectionError as e:
+                except Exception as e:
                     if i == retries - 1 and self.ignore_load_errors:
                         logger.warning(f"Error fetching {url} after {retries} retries.")
                         return ""

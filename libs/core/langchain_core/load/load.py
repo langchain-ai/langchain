@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core._api import beta
 from langchain_core.load.mapping import (
+    _JS_SERIALIZABLE_MAPPING,
     _OG_SERIALIZABLE_MAPPING,
     OLD_CORE_NAMESPACES_MAPPING,
     SERIALIZABLE_MAPPING,
@@ -17,6 +18,7 @@ ALL_SERIALIZABLE_MAPPINGS = {
     **SERIALIZABLE_MAPPING,
     **OLD_CORE_NAMESPACES_MAPPING,
     **_OG_SERIALIZABLE_MAPPING,
+    **_JS_SERIALIZABLE_MAPPING,
 }
 
 

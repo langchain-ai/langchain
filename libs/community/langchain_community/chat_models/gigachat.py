@@ -248,24 +248,12 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         payload = self._build_payload(messages, **kwargs)
 
         for chunk in self._client.stream(payload):
-            if not isinstance(chunk, dict):
-                chunk = chunk.dict()
-            if len(chunk["choices"]) == 0:
-                continue
-
-            choice = chunk["choices"][0]
-            content = choice.get("delta", {}).get("content", {})
-            chunk = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
-
-            finish_reason = choice.get("finish_reason")
-
-            generation_info = (
-                dict(finish_reason=finish_reason) if finish_reason is not None else None
-            )
-
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
-            if run_manager:
-                run_manager.on_llm_new_token(content)
+            if chunk.choices:
+                content = chunk.choices[0].delta.content
+                cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
+                if run_manager:
+                    run_manager.on_llm_new_token(content, chunk=cg_chunk)
+                yield cg_chunk
 
     async def _astream(
         self,
@@ -338,6 +326,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             functions=formatted_functions,
             **kwargs,
         )
-
-    class Config:
-        extra = "allow"
+    
+    def get_num_tokens(self, text: str) -> int:
+        """Count approximate number of tokens"""
+        return round(len(text) / 4.6)

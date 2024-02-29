@@ -22,7 +22,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
             embeddings = GigaChatEmbeddings(credentials=..., verify_ssl_certs=False)
     """
 
-    one_by_one_mode: bool = True
+    one_by_one_mode: bool = False
     """ Send texts one-by-one to server (to increase token limit)"""
 
     base_url: Optional[str] = None
@@ -81,7 +81,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         )
 
     @root_validator()
-    def validate_environment(self, cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate authenticate data in environment and python package is installed."""
         try:
             import gigachat  # noqa: F401

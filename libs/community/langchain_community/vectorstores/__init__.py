@@ -74,6 +74,12 @@ def _import_annoy() -> Any:
     return Annoy
 
 
+def _import_apache_doris() -> Any:
+    from langchain_community.vectorstores.apache_doris import ApacheDoris
+
+    return ApacheDoris
+
+
 def _import_atlas() -> Any:
     from langchain_community.vectorstores.atlas import AtlasDB
 
@@ -208,6 +214,24 @@ def _import_hanavector() -> Any:
     from langchain_community.vectorstores.hanavector import HanaDB
 
     return HanaDB
+
+
+def _import_kinetica() -> Any:
+    from langchain_community.vectorstores.kinetica import Kinetica
+
+    return Kinetica
+
+
+def _import_kinetica_settings() -> Any:
+    from langchain_community.vectorstores.kinetica import KineticaSettings
+
+    return KineticaSettings
+
+
+def _import_distance_strategy() -> Any:
+    from langchain_community.vectorstores.kinetica import DistanceStrategy
+
+    return DistanceStrategy
 
 
 def _import_hologres() -> Any:
@@ -497,6 +521,8 @@ def __getattr__(name: str) -> Any:
         return _import_elastic_vector_search()
     elif name == "Annoy":
         return _import_annoy()
+    elif name == "ApacheDoris":
+        return _import_apache_doris()
     elif name == "AtlasDB":
         return _import_atlas()
     elif name == "AwaDB":
@@ -545,6 +571,12 @@ def __getattr__(name: str) -> Any:
         return _import_hologres()
     elif name == "KDBAI":
         return _import_kdbai()
+    elif name == "DistanceStrategy":
+        return _import_distance_strategy()
+    elif name == "KineticaSettings":
+        return _import_kinetica_settings()
+    elif name == "Kinetica":
+        return _import_kinetica()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -640,6 +672,7 @@ __all__ = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
+    "ApacheDoris",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
@@ -664,6 +697,9 @@ __all__ = [
     "HanaDB",
     "Hologres",
     "KDBAI",
+    "DistanceStrategy",
+    "Kinetica",
+    "KineticaSettings",
     "LanceDB",
     "LLMRails",
     "Marqo",

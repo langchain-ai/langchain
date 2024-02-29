@@ -46,6 +46,7 @@ gigachain-community = { path = "libs/community/", develop = true }
 gigachain = { path = "libs/langchain/", develop = true }
 gigachain-experimental = { path = "libs/experimental/", develop = true }
 gigachain-openai = { path = "libs/partners/openai", develop = true }
+ipykernel = "^6.29.2"
 
 [tool.poetry.group.test.dependencies]
 
