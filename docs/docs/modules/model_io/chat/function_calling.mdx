@@ -55,7 +55,7 @@ schema and get different models to invoke it:
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 
-# Note that the docstring here are crucial, as they will be passed along
+# Note that the docstrings here are crucial, as they will be passed along
 # to the model along with the class name.
 class Multiply(BaseModel):
     """Multiply two integers together."""
@@ -67,7 +67,8 @@ class Multiply(BaseModel):
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-<Tabs> <TabItem value="openai" label="OpenAI" default>
+<Tabs>
+<TabItem value="openai" label="OpenAI" default>
 
 Set up dependencies and API keys:
 
@@ -86,13 +87,11 @@ passing it in each time the model is invoked).
 
 :::note
 
-There is a legacy `ChatOpenAI.bind_functions()` method that uses
-OpenAI’s now-deprecated `functions` API parameter instead of their
-updated `tools` parameter. Using the new `tools` parameter allows us to
-take advantage of the parallel function-calling capabilities of the
-latest models.
+There is a legacy `ChatOpenAI.bind_functions()` method that uses OpenAI's now-deprecated `functions` API parameter instead of their
+updated `tools` parameter. Using the new `tools` parameter allows us to take advantage of the parallel function-calling capabilities of the latest models.
 
 :::
+
 
 
 ```python
@@ -151,32 +150,8 @@ AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_f3DApOzb60i
 For more see the [ChatOpenAI API
 reference](https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html#langchain_openai.chat_models.base.ChatOpenAI.bind_tools).
 
-</TabItem> <TabItem value="google_vertexai" label="Google Vertex AI">
-
-Install dependencies:
-
-```python
-%pip install -qU langchain-google-vertexai
-```
-
-Uncomment to set up Google Cloud auth:
-
-```python
-# !gcloud auth login
-```
-
-We can pass Pydantic classes in as function schemas by binding the
-`functions` argument to our model:
-
-```python
-from langchain_google_vertexai import ChatVertexAI
-
-llm = ChatVertexAI(model="gemini-pro", temperature=0)
-llm_with_functions = llm.bind(functions=[Multiply])
-llm_with_functions.invoke("what's 3 * 12")
-```
-
-</TabItem> <TabItem value="fireworks" label="Fireworks">
+</TabItem>
+<TabItem value="fireworks" label="Fireworks">
 
 Install dependencies and set API keys:
 
@@ -245,7 +220,10 @@ tool_chain.invoke("what's 3 * 12")
 [Multiply(a=3, b=12)]
 ```
 
-</TabItem> <TabItem value="mistral" label="Mistral">
+For more see the [ChatFireworks](https://api.python.langchain.com/en/latest/chat_models/langchain_fireworks.chat_models.ChatFireworks.html#langchain_fireworks.chat_models.ChatFireworks.bind_tools) reference.
+
+</TabItem>
+<TabItem value="mistral" label="Mistral">
 
 Install dependencies and set API keys:
 
@@ -312,7 +290,10 @@ llm_with_tools.invoke("I don't even want you to use the tool")
 AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'null', 'type': <ToolType.function: 'function'>, 'function': {'name': 'Multiply', 'arguments': '{"a": 5, "b": 7}'}}]})
 ```
 
-</TabItem> <TabItem value="mistral" label="Mistral">
+For more see the [ChatMistralAI API reference](https://api.python.langchain.com/en/latest/chat_models/langchain_mistralai.chat_models.ChatMistralAI.html#langchain_mistralai.chat_models.ChatMistralAI).
+
+</TabItem>
+<TabItem value="together" label="Together">
 
 Since TogetherAI is a drop-in replacement for OpenAI, we can just use
 the OpenAI integration.
@@ -392,13 +373,13 @@ AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_6k6d0gr3jhq
 For more see the [ChatOpenAI API
 reference](https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html#langchain_openai.chat_models.base.ChatOpenAI.bind_tools).
 
-</TabItem> </Tabs>
+</TabItem>
+</Tabs>
 
 ## Defining functions schemas
 
-In case you need to LangChain has a built-in converter that can turn
-Python functions, Pydantic classes, and LangChain Tools into the OpenAI
-function format:
+In case you need to access function schemas directly, LangChain has a built-in converter that can turn
+Python functions, Pydantic classes, and LangChain Tools into the OpenAI format JSON schema:
 
 ### Python function
 
@@ -546,110 +527,6 @@ print(json.dumps(convert_to_openai_tool(Multiply()), indent=2))
 }
 ```
 
-## Binding functions
-
-Now that we’ve defined a function, we’ll want to pass it in to our
-model.
-
-```python
-from langchain_openai import ChatOpenAI
-
-llm = ChatOpenAI(model="gpt-3.5-turbo")
-llm.invoke("what's 5 times three", tools=[convert_to_openai_tool(multiply)])
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_JvOu9oUwMrQHiDekZTbpNCHY', 'function': {'arguments': '{\n  "a": 5,\n  "b": 3\n}', 'name': 'multiply'}, 'type': 'function'}]})
-```
-
-And if we wanted this function to be passed in every time we call the
-tool, we could bind it to the tool:
-
-```python
-llm_with_tool = llm.bind(tools=[convert_to_openai_tool(multiply)])
-llm_with_tool.invoke("what's 5 times three")
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_cwRoTnD1ux1SnWXLrTj2KlWH', 'function': {'arguments': '{\n  "a": 5,\n  "b": 3\n}', 'name': 'multiply'}, 'type': 'function'}]})
-```
-
-We can also enforce that a tool is called using the
-[tool_choice](https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools)
-parameter.
-
-```python
-llm_with_tool = llm.bind(
-    tools=[convert_to_openai_tool(multiply)],
-    tool_choice={"type": "function", "function": {"name": "multiply"}},
-)
-llm_with_tool.invoke(
-    "don't answer my question. no do answer my question. no don't. what's five times four"
-)
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_sWjLyioSZAtYMQRLMTzncz1v', 'function': {'arguments': '{\n  "a": 5,\n  "b": 4\n}', 'name': 'multiply'}, 'type': 'function'}]})
-```
-
-The
-[ChatOpenAI](https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html#langchain_openai.chat_models.base.ChatOpenAI)
-class even comes with a `bind_tools` helper function that handles
-converting function-like objects to the OpenAI format and binding them
-for you:
-
-```python
-llm_with_tool = llm.bind_tools([multiply], tool_choice="multiply")
-llm_with_tool.invoke("what's 5 times three")
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_LCdBa4cbhMJPRdtkhDzpRh7x', 'function': {'arguments': '{\n  "a": 5,\n  "b": 3\n}', 'name': 'multiply'}, 'type': 'function'}]})
-```
-
-## Legacy args `functions` and `function_call`
-
-Until Fall of 2023 the OpenAI API expected arguments `functions` and
-`funtion_call` instead of `tools` and `tool_choice`, and they had a
-slightly different format than `tools` and `tool_choice`. LangChain
-maintains utilities for using the old API if you need to use that as
-well:
-
-```python
-from langchain_core.utils.function_calling import convert_to_openai_function
-
-convert_to_openai_function(multiply)
-```
-
-``` text
-{'name': 'multiply',
- 'description': 'Multiply two integers together.',
- 'parameters': {'type': 'object',
-  'properties': {'a': {'description': 'First integer', 'type': 'integer'},
-   'b': {'description': 'Second integer', 'type': 'integer'}},
-  'required': ['a', 'b']}}
-```
-
-```python
-llm_with_functions = llm.bind(
-    functions=[convert_to_openai_function(multiply)], function_call={"name": "multiply"}
-)
-llm_with_functions.invoke("what's 3 times a million")
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'function_call': {'arguments': '{\n  "a": 3,\n  "b": 1000000\n}', 'name': 'multiply'}})
-```
-
-```python
-llm_with_functions = llm.bind_functions([multiply], function_call="multiply")
-llm_with_functions.invoke("what's 3 times a million")
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'function_call': {'arguments': '{\n  "a": 3,\n  "b": 1000000\n}', 'name': 'multiply'}})
-```
-
 ## Next steps
 
 -   **Output parsing**: See [OpenAI Tools output
@@ -658,6 +535,8 @@ AIMessage(content='', additional_kwargs={'function_call': {'arguments': '{\n  "a
     parsers](../../../../docs/modules/model_io/output_parsers/types/openai_functions)
     to learn about extracting the function calling API responses into
     various formats.
+-   **Structured output chains**: [Some models have constructors](../../../../docs/guides/structured_output) that
+    handle creating a structured output chain for you.
 -   **Tool use**: See how to construct chains and agents that actually
     call the invoked tools in [these
     guides](../../../../docs/use_cases/tool_use/).
