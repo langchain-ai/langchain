@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import logging
 from typing import Any, List, Tuple, Optional
-
 import requests
+
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
@@ -15,10 +14,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel
-
 from langchain_community.llms.utils import enforce_stop_tokens
-
-logger = logging.getLogger(__name__)
 
 
 class ChatGLM_ChatModel(BaseChatModel, BaseModel):
@@ -93,12 +89,10 @@ class ChatGLM_ChatModel(BaseChatModel, BaseModel):
             "endpoint_url": self.endpoint_url,
         }
 
-        logger.debug(f"ChatGLM payload: {payload}")
         try:
             response = requests.post(self.endpoint_url, headers=headers, json=payload)
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
-        logger.debug(f"ChatGLM response: {response}")
 
         if response.status_code != 200:
             raise ValueError(f"Failed with response: {response}")
