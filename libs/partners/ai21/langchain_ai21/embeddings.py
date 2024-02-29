@@ -5,7 +5,7 @@ from langchain_core.embeddings import Embeddings
 
 from langchain_ai21.ai21_base import AI21Base
 
-_DEFAULT_CHUNK_SIZE = 1000
+_DEFAULT_CHUNK_SIZE = 128
 
 
 class AI21Embeddings(Embeddings, AI21Base):
