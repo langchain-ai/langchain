@@ -17,9 +17,9 @@ class MongodbLoader(BaseLoader):
         connection_string: str,
         db_name: str,
         collection_name: str,
-        field_names: Optional[List[str]] = None,
         *,
         filter_criteria: Optional[Dict] = None,
+        field_names: Optional[Sequence[str]] = None,
     ) -> None:
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
@@ -74,13 +74,13 @@ class MongodbLoader(BaseLoader):
                     fields = {name: doc[name] for name in self.field_names}
                 except KeyError as err:
                     logger.warning(f"{err.args[0]} field not found in Mongo document.")
-                    continue  """Skip this document if a specified field is not found"""
+                    continue  #Skip this document if a specified field is not found
 
-                """Extract text content from filtered fields"""
+                #Extract text content from filtered fields
                 texts = [str(value) for value in fields.values()]
                 text = " ".join(texts)
             else:
-                """If field_names is None, use the entire document content as text"""
+                #If field_names is None, use the entire document content as text
                 text = str(doc)
 
             result.append(Document(page_content=text, metadata=metadata))
