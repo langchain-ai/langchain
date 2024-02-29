@@ -85,13 +85,6 @@ We can use the `ChatOpenAI.bind_tools()` method to handle converting
 `Multiply` to an OpenAI function and binding it to the model (i.e.,
 passing it in each time the model is invoked).
 
-:::note
-
-There is a legacy `ChatOpenAI.bind_functions()` method that uses OpenAI's now-deprecated `functions` API parameter instead of their
-updated `tools` parameter. Using the new `tools` parameter allows us to take advantage of the parallel function-calling capabilities of the latest models.
-
-:::
-
 
 
 ```python
