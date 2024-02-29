@@ -1,10 +1,6 @@
 {
   "redirects": [
     {
-      "source": "/docs/use_cases/question_answering/query_analysis",
-      "destination": "/docs/use_cases/query_analysis/"
-    },
-    {
       "source": "/docs/integrations/llms/huggingface_textgen_inference",
       "destination": "/docs/integrations/llms/huggingface_endpoint"
     },
