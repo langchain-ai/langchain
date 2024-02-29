@@ -19,8 +19,10 @@ os.environ["OPENAI_API_KEY"] = "sk-xxxx"
 context_value = [
     {
         "context": "this document is about John",
-        "source": "source#1",
-        "document_id": 123,
+        "metadata": {
+            "source": "source#1",
+            "doc_id": 123,
+        },
     },
 ]
 
