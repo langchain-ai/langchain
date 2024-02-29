@@ -70,7 +70,7 @@ Initialize the WatsonxLLM class with the previously set parameters.
 from langchain_ibm import WatsonxLLM
 
 watsonx_llm = WatsonxLLM(
-    model_id="PASTE THE CHOOSEN MODEL_ID HERE",
+    model_id="PASTE THE CHOSEN MODEL_ID HERE",
     url="PASTE YOUR URL HERE",
     project_id="PASTE YOUR PROJECT_ID HERE",
     params=parameters,
