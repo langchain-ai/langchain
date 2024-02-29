@@ -20,7 +20,7 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 
 class ChatGLM_ChatModel(BaseChatModel, BaseModel):
-    
+
     """ChatGLM LLM ChatModel.
     Example:
         .. code-block:: python
@@ -50,7 +50,7 @@ class ChatGLM_ChatModel(BaseChatModel, BaseModel):
         return "ChatGLM"
 
     def _convert_messages(self, messages: List[BaseMessage]) -> Tuple[List, str]:
-        """Convert the list of messages into history and prompt to feed the ChatGLM."""
+        """Convert the list of messages into a history and a prompt to feed the ChatGLM."""
         if len(messages) == 0:
             raise ValueError(f"Got no message in {messages}")
         elif len(messages) == 1:
@@ -140,3 +140,4 @@ class ChatGLM_ChatModel(BaseChatModel, BaseModel):
         history, prompt = self._convert_messages(messages)
         response = AIMessage(content=self._call(history=history, prompt=prompt))
         return ChatResult(generations=[ChatGeneration(message=response)])
+
