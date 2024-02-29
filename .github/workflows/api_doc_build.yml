@@ -22,10 +22,12 @@ jobs:
           path: langchain-google
       - name: Move google libs
         run: |
+          rm -rf langchain/libs/partners/google-genai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
 
       - name: Set Git config
+        working-directory: langchain
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
@@ -37,11 +39,12 @@ jobs:
           git merge origin/master -m "Merge master" --allow-unrelated-histories -X theirs
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+        uses: "./langchain/.github/actions/poetry_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
           cache-key: api-docs
+          working-directory: langchain
 
       - name: Install dependencies
         working-directory: langchain
