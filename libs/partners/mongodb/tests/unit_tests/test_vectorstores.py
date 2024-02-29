@@ -33,7 +33,7 @@ class MockCollection(Collection):
         self._data = []
         return DeleteResult({"n": old_len}, acknowledged=True)
 
-    def insert_many(self, to_insert: list[Any], *args, **kwargs) -> InsertManyResult:  # type: ignore
+    def insert_many(self, to_insert: List[Any], *args, **kwargs) -> InsertManyResult:  # type: ignore
         mongodb_inserts = [
             {"_id": str(uuid.uuid4()), "score": 1, **insert} for insert in to_insert
         ]
@@ -42,7 +42,7 @@ class MockCollection(Collection):
             [k["_id"] for k in mongodb_inserts], acknowledged=True
         )
 
-    def aggregate(self, *args, **kwargs) -> list[Any]:  # type: ignore
+    def aggregate(self, *args, **kwargs) -> List[Any]:  # type: ignore
         return deepcopy(self._aggregate_result)
 
     def count_documents(self, *args, **kwargs) -> int:  # type: ignore
