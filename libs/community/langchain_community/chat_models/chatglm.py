@@ -50,7 +50,7 @@ class ChatGLM_ChatModel(BaseChatModel, BaseModel):
         return "ChatGLM"
 
     def _convert_messages(self, messages: List[BaseMessage]) -> Tuple[List, str]:
-        """Convert the list of messages into a history and a prompt to feed the ChatGLM."""
+        """Convert the list of messages into history and prompt to feed the ChatGLM."""
         if len(messages) == 0:
             raise ValueError(f"Got no message in {messages}")
         elif len(messages) == 1:
