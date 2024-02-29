@@ -41,17 +41,10 @@ def test_base_generation_parser() -> None:
                 raise OutputParserException(
                     "This output parser can only be used with a chat generation."
                 )
-            message = generation.message
-            result = ""
 
-            for char in message.content:
-                # Invert the case of the characters
-                if char.isupper():
-                    result += char.lower()
-                else:
-                    result += char.upper()
-
-            return result
+            content = generation.message.content
+            assert isinstance(content, str)
+            return content.swapcase()  # type: ignore
 
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hEllo")]))
     chain = model | StrInvertCase()
@@ -64,7 +57,7 @@ def test_base_transform_output_parser() -> None:
     class StrInvertCase(BaseTransformOutputParser[str]):
         """An example parser that inverts the case of the characters in the message."""
 
-        def parse(self, text: str) -> T:
+        def parse(self, text: str) -> str:
             """Parse a single string into a specific format."""
             raise NotImplementedError()
 
@@ -91,8 +84,9 @@ def test_base_transform_output_parser() -> None:
                 raise OutputParserException(
                     "This output parser can only be used with a chat generation."
                 )
-            message = generation.message
-            return message.content.swapcase()
+            content = generation.message.content
+            assert isinstance(content, str)
+            return content.swapcase()  # type: ignore
 
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
     chain = model | StrInvertCase()
