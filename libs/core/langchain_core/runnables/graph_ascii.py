@@ -209,7 +209,7 @@ def _build_sugiyama_layout(
     return sug
 
 
-def draw(vertices: Mapping[str, str], edges: Sequence[Tuple[str, str]]) -> str:
+def draw_ascii(vertices: Mapping[str, str], edges: Sequence[Tuple[str, str]]) -> str:
     """Build a DAG and draw it in ASCII.
 
     Args:
