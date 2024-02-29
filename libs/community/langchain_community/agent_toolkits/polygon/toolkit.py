@@ -2,7 +2,11 @@ from typing import List
 
 from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools import BaseTool
-from langchain_community.tools.polygon import PolygonLastQuote, PolygonTickerNews, PolygonFinancials
+from langchain_community.tools.polygon import (
+    PolygonFinancials,
+    PolygonLastQuote,
+    PolygonTickerNews,
+)
 from langchain_community.utilities.polygon import PolygonAPIWrapper
 
 
