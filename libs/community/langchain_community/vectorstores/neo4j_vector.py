@@ -562,7 +562,7 @@ class Neo4jVector(VectorStore):
         """
         embedding = self.embedding.embed_query(text=query)
         return self.similarity_search_by_vector(
-            embedding=embedding, k=k, query=query, **kwargs
+            embedding=embedding, k=k, query=query, **kwargs: Any
         )
 
     def similarity_search_with_score(
@@ -579,7 +579,7 @@ class Neo4jVector(VectorStore):
         """
         embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, query=query, **kwargs
+            embedding=embedding, k=k, query=query, **kwargs: Any
         )
         return docs
 
