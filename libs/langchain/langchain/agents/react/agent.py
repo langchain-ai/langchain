@@ -17,7 +17,7 @@ def create_react_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
     prompt: BasePromptTemplate,
-    output_parser: Optional[AgentOutputParser] = None
+    output_parser: Optional[AgentOutputParser] = None,
 ) -> Runnable:
     """Create an agent that uses ReAct prompting.
 
