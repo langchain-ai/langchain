@@ -63,24 +63,22 @@ class MongodbLoader(BaseLoader):
         """Load data into Document objects."""
         result = []
         total_docs = await self.collection.count_documents(self.filter_criteria)
-        async for doc in self.collection.find(self.filter_criteria):
+
+        # Construct the projection dictionary if field_names are specified
+        projection = {field: 1 for field in self.field_names} if self.field_names else None
+
+        async for doc in self.collection.find(self.filter_criteria, projection):
             metadata = {
                 "database": self.db_name,
                 "collection": self.collection_name,
             }
-            if self.field_names is not None:
-                """Filter fields based on field_names"""
-                try:
-                    fields = {name: doc[name] for name in self.field_names}
-                except KeyError as err:
-                    logger.warning(f"{err.args[0]} field not found in Mongo document.")
-                    continue  #Skip this document if a specified field is not found
 
-                #Extract text content from filtered fields
+            # Extract text content from filtered fields or use the entire document content
+            if self.field_names is not None:
+                fields = {name: doc[name] for name in self.field_names}
                 texts = [str(value) for value in fields.values()]
                 text = " ".join(texts)
             else:
-                #If field_names is None, use the entire document content as text
                 text = str(doc)
 
             result.append(Document(page_content=text, metadata=metadata))
