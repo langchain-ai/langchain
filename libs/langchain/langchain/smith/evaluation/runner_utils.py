@@ -969,15 +969,18 @@ def _prepare_eval_run(
     examples = list(client.list_examples(dataset_id=dataset.id))
     if not examples:
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
+    max_modified_at = max([ex.modified_at for ex in examples])
 
     try:
+        project_metadata = project_metadata or {}
         git_info = get_git_info()
         if git_info:
-            project_metadata = project_metadata or {}
             project_metadata = {
                 **project_metadata,
                 "git": git_info,
             }
+        dataset_version = max_modified_at.isoformat()
+        project_metadata["dataset_version"] = dataset_version
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
