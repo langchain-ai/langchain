@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, List, Tuple, Optional
 import logging
-import requests
+from typing import Any, List, Tuple, Optional
 
+import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
@@ -15,6 +15,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel
+
 from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
