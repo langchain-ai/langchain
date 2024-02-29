@@ -8,7 +8,7 @@ from langchain_core.embeddings import Embeddings
 from pymongo.collection import Collection
 from pymongo.results import DeleteResult, InsertManyResult
 
-from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
+from langchain_mongodb import MongoDBAtlasVectorSearch
 from tests.utils import ConsistentFakeEmbeddings
 
 INDEX_NAME = "langchain-test-index"

@@ -11,7 +11,7 @@ pip install -U langchain-mongodb
 
 ## Using MongoDBAtlasVectorSearch
 ```python
-from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
+from langchain_mongodb import MongoDBAtlasVectorSearch
 
 # Pull MongoDB Atlas URI from environment variables
 MONGODB_ATLAS_CLUSTER_URI = os.environ.get("MONGODB_ATLAS_CLUSTER_URI")
