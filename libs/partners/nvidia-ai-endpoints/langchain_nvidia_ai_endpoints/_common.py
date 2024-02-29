@@ -338,7 +338,13 @@ class NVEModel(BaseModel):
                 ## Tease out ['choices'][0]...['delta'/'message']
                 msg = msg.get("choices", [{}])[0]
                 is_stopped = msg.get("finish_reason", "") == "stop"
-                msg = msg.get("delta", msg.get("message", {"content": ""}))
+                msg = msg.get("delta",
+                    msg.get("message",
+                        msg.get("text", "")
+                    )
+                )
+                if not isinstance(msg, dict):
+                    msg = {"content" : msg}
             elif "data" in msg:
                 ## Tease out ['data'][0]...['embedding']
                 msg = msg.get("data", [{}])[0]
@@ -382,7 +388,7 @@ class NVEModel(BaseModel):
         self.last_inputs = {
             "url": invoke_url,
             "headers": self.headers["stream"],
-            "json": payload,
+            "json": self.payload_fn(payload),
             "stream": True,
         }
         response = self.get_session_fn().post(**self.last_inputs)
@@ -418,7 +424,7 @@ class NVEModel(BaseModel):
         self.last_inputs = {
             "url": invoke_url,
             "headers": self.headers["stream"],
-            "json": payload,
+            "json": self.payload_fn(payload),
         }
         async with self.get_asession_fn() as session:
             async with session.post(**self.last_inputs) as response:
