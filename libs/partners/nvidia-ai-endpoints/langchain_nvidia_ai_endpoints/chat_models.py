@@ -161,9 +161,9 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         inputs = self.custom_preprocess(messages)
         for response in self.get_stream(inputs=inputs, stop=stop, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -175,9 +175,9 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, SimpleChatModel):
         inputs = self.custom_preprocess(messages)
         async for response in self.get_astream(inputs=inputs, stop=stop, **kwargs):
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     def custom_preprocess(
         self, msg_list: Sequence[BaseMessage]
