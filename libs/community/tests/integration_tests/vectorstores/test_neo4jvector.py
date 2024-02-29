@@ -734,7 +734,9 @@ def test_retrieval_params() -> None:
         """,
     )
 
-    output = docsearch.similarity_search("Foo", k=2, test="test", test1="test1")
+    output = docsearch.similarity_search(
+        "Foo", k=2, params={"test": "test", "test1": "test1"}
+    )
     assert output == [
         Document(page_content="test", metadata={"test": "test1"}),
         Document(page_content="test", metadata={"test": "test1"}),
