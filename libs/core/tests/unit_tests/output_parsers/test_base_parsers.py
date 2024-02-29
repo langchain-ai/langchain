@@ -1,8 +1,8 @@
 """Module to test base parser implementations."""
-from typing import Iterable, List
+from typing import List
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
     BaseTransformOutputParser,
