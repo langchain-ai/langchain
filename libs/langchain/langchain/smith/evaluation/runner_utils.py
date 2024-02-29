@@ -973,6 +973,7 @@ def _prepare_eval_run(
     # Should always be defined in practice when fetched,
     # but the typing permits None
     max_modified_at = max(modified_at) if modified_at else None
+    dataset_version = max_modified_at.isoformat() if max_modified_at else None
 
     try:
         project_metadata = project_metadata or {}
@@ -982,7 +983,7 @@ def _prepare_eval_run(
                 **project_metadata,
                 "git": git_info,
             }
-        dataset_version = max_modified_at.isoformat()
+
         project_metadata["dataset_version"] = dataset_version
         project = client.create_project(
             project_name,
