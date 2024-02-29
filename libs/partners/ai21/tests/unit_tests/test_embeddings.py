@@ -50,6 +50,7 @@ def test_embed_query(mock_client_with_embeddings: Mock) -> None:
     mock_client_with_embeddings.embed.create.assert_called_once_with(
         texts=[text],
         type=EmbedType.QUERY,
+        chunk_size=1000,
     )
 
 
@@ -66,6 +67,7 @@ def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
     mock_client_with_embeddings.embed.create.assert_called_once_with(
         texts=texts,
         type=EmbedType.SEGMENT,
+        chunk_size=1000,
     )
 
 
