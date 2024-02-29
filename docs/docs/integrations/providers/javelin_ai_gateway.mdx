@@ -66,7 +66,7 @@ print(embeddings.embed_documents(["hello"]))
 ## Chat Example
 ```python
 from langchain_community.chat_models import ChatJavelinAIGateway
-from langchain.schema import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 messages = [
     SystemMessage(
