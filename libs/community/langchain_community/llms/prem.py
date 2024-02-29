@@ -160,9 +160,8 @@ class Prem(BaseLLM, BaseModel):
         )
         prompt_generation = []
         for response in responses.choices:
-            prompt_generation.append(response.message.content)
+            prompt_generation.append(Generation(text=response.message.content))
             generations.append(prompt_generation)
-        print(generations)
         return LLMResult(generations=generations)
 
 
@@ -214,9 +213,6 @@ def completion_with_retry(
     def _completion_with_retry(
         project_id: int, prompt: LanguageModelInput, stream: bool, **kwargs: Any
     ) -> Any:
-        print("================================")
-        print(prompt[0])
-        print(project_id)
         return llm.client.chat.completions.create(
             project_id=project_id, messages=prompt[0], stream=stream, **kwargs
         )
