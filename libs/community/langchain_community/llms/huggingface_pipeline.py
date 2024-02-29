@@ -199,12 +199,20 @@ class HuggingFacePipeline(BaseLLM):
             batch_prompts = prompts[i : i + self.batch_size]
 
             # Process batch of prompts
-            responses = self.pipeline(
-                batch_prompts,
-                stop_sequence=stop,
-                return_full_text=False,
-                **pipeline_kwargs,
-            )
+
+            if self.pipeline.task == "text-generation":
+                responses = self.pipeline(
+                    batch_prompts,
+                    stop_sequence=stop,
+                    return_full_text=False,
+                    **pipeline_kwargs,
+                )
+            else :
+                responses = self.pipeline(
+                    batch_prompts,
+                    stop_sequence=stop,
+                    **pipeline_kwargs,
+                )
 
             # Process each response in the batch
             for j, response in enumerate(responses):
