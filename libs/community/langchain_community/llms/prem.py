@@ -3,7 +3,8 @@
 import logging
 from typing import Any, Dict, List, Union, Optional, Callable
 
-from langchain_core.language_models.llms import LLM
+from langchain_core.language_models.llms import BaseLLM
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -12,12 +13,12 @@ from langchain_core.callbacks import (
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
-
+from langchain_core.language_models import LanguageModelInput
 
 logger = logging.getLogger(__name__)
 
 
-class Prem(LLM):
+class Prem(BaseLLM, BaseModel):
     """Use any LLM provider with Prem and Langchain.
 
     To use, you will need to have an API key. You can find your existing API Key
@@ -44,6 +45,9 @@ class Prem(LLM):
 
     max_tokens: Optional[int] = None
     """The maximum number of tokens to generate"""
+
+    max_retries: Optional[int] = 1
+    """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
     """Acts like a default instruction that helps the LLM act or generate in a specific way."""
@@ -132,41 +136,91 @@ class Prem(LLM):
                 {"role": "user", "content": prompt},
             ]
 
-    def _parse_response(self, response) -> str:
-        # TODO: support multi response instead of hardcoded single response
-        return response.choices[0].message.content
-
-    def _call(
+    def _generate(
         self,
-        prompt: str,
+        prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ):
-        """Calls out models supported in Prem.
+    ) -> LLMResult:
 
-        Args:
-            prompt: The prompt to pass into the model
-        """
-        params = {**self._default_params, **kwargs}
-        # if params['stop'] == None:
-        #     params["stop"] = []
-        # params["stop"] = params[stop] + stop
+        messages = [self._apply_default_format(prompt) for prompt in prompts]
+        generations: List[List[Generation]] = []
 
-        messages = self._apply_default_format(prompt=prompt)
+        if stop is not None:
+            kwargs["stop"] = stop
 
-        if self.streaming:
-            # TODO: Do streaming here
-            pass
+        responses = completion_with_retry(
+            self,
+            project_id=self.project_id,
+            prompt=messages,
+            stream=False,
+            run_manager=run_manager,
+            **kwargs,
+        )
+        prompt_generation = []
+        for response in responses.choices:
+            prompt_generation.append(response.message.content)
+            generations.append(prompt_generation)
+        print(generations)
+        return LLMResult(generations=generations)
 
-        else:
-            response = self.client.chat.completions.create(
-                project_id=self.project_id, messages=messages, **params
-            )
-            response_text = self._parse_response(response)
 
-            # if len(params["stop"]) > 0:
-            #     for stop_seq in params["stop"]:
-            #         if response_text[-len(stop_seq) :] == stop_seq:
-            #             response_text = response_text[: -len(stop_seq)]
-            return response_text
+def create_prem_retry_decorator(
+    llm: Prem,
+    *,
+    max_retries: int = 1,
+    run_manager: Optional[
+        Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
+    import premai.models
+
+    errors = [
+        premai.models.api_response_validation_error.APIResponseValidationError,
+        premai.models.conflict_error.ConflictError,
+        premai.models.model_not_found_error.ModelNotFoundError,
+        premai.models.permission_denied_error.PermissionDeniedError,
+        premai.models.provider_api_connection_error.ProviderAPIConnectionError,
+        premai.models.provider_api_status_error.ProviderAPIStatusError,
+        premai.models.provider_api_timeout_error.ProviderAPITimeoutError,
+        premai.models.provider_internal_server_error.ProviderInternalServerError,
+        premai.models.provider_not_found_error.ProviderNotFoundError,
+        premai.models.rate_limit_error.RateLimitError,
+        premai.models.unprocessable_entity_error.UnprocessableEntityError,
+        premai.models.validation_error.ValidationError,
+    ]
+
+    decorator = create_base_retry_decorator(
+        error_types=errors, max_retries=max_retries, run_manager=run_manager
+    )
+    return decorator
+
+
+def completion_with_retry(
+    llm: Prem,
+    project_id: int,
+    prompt: LanguageModelInput,
+    stream: bool = False,
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
+    """Using tenacity for retry in completion call"""
+    retry_decorator = create_prem_retry_decorator(
+        llm, max_retries=llm.max_retries, run_manager=run_manager
+    )
+
+    @retry_decorator
+    def _completion_with_retry(
+        project_id: int, prompt: LanguageModelInput, stream: bool, **kwargs: Any
+    ) -> Any:
+        print("================================")
+        print(prompt[0])
+        print(project_id)
+        return llm.client.chat.completions.create(
+            project_id=project_id, messages=prompt[0], stream=stream, **kwargs
+        )
+
+    return _completion_with_retry(
+        project_id=project_id, prompt=prompt, stream=stream, **kwargs
+    )
