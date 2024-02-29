@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
+from importlib.metadata import version
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -16,28 +16,24 @@ from typing import (
 )
 
 import numpy as np
-from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
+from pymongo import MongoClient
+from pymongo.collection import Collection
+from pymongo.driver_info import DriverInfo
 
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
-
-if TYPE_CHECKING:
-    from pymongo.collection import Collection
+from langchain_mongodb.utils import maximal_marginal_relevance
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
+VST = TypeVar("VST", bound=VectorStore)
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_INSERT_BATCH_SIZE = 100
 
 
-@deprecated(
-    since="0.0.25",
-    removal="0.2.0",
-    alternative_import="langchain_mongodb.MongoDBAtlasVectorSearch",
-)
 class MongoDBAtlasVectorSearch(VectorStore):
     """`MongoDB Atlas Vector Search` vector store.
 
@@ -75,11 +71,15 @@ class MongoDBAtlasVectorSearch(VectorStore):
             embedding: Text embedding model to use.
             text_key: MongoDB field that will contain the text for each
                 document.
+                defaults to 'text'
             embedding_key: MongoDB field that will contain the embedding for
                 each document.
+                defaults to 'embedding'
             index_name: Name of the Atlas Search index.
+                defaults to 'default'
             relevance_score_fn: The similarity score used for the index.
-            Currently supported: Euclidean, cosine, and dot product.
+                defaults to 'cosine'
+            Currently supported: 'euclidean', 'cosine', and 'dotProduct'.
         """
         self._collection = collection
         self._embedding = embedding
@@ -93,12 +93,13 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return self._embedding
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        if self._relevance_score_fn == "euclidean":
-            return self._euclidean_relevance_score_fn
-        elif self._relevance_score_fn == "dotProduct":
-            return self._max_inner_product_relevance_score_fn
-        elif self._relevance_score_fn == "cosine":
-            return self._cosine_relevance_score_fn
+        scoring: dict[str, Callable] = {
+            "euclidean": self._euclidean_relevance_score_fn,
+            "dotProduct": self._max_inner_product_relevance_score_fn,
+            "cosine": self._cosine_relevance_score_fn,
+        }
+        if self._relevance_score_fn in scoring:
+            return scoring[self._relevance_score_fn]
         else:
             raise NotImplementedError(
                 f"No relevance score function for ${self._relevance_score_fn}"
@@ -124,16 +125,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
             A new MongoDBAtlasVectorSearch instance.
 
         """
-        try:
-            from importlib.metadata import version
-
-            from pymongo import MongoClient
-            from pymongo.driver_info import DriverInfo
-        except ImportError:
-            raise ImportError(
-                "Could not import pymongo, please install it with "
-                "`pip install pymongo`."
-            )
         client: MongoClient = MongoClient(
             connection_string,
             driver=DriverInfo(name="Langchain", version=version("langchain")),
@@ -215,7 +206,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
-            del res[self._embedding_key]
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
@@ -375,3 +365,99 @@ class MongoDBAtlasVectorSearch(VectorStore):
         vectorstore = cls(collection, embedding, **kwargs)
         vectorstore.add_texts(texts, metadatas=metadatas)
         return vectorstore
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by ObjectId or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        search_params: dict[str, Any] = {}
+        if ids:
+            search_params[self._text_key]["$in"] = ids
+
+        return self._collection.delete_many({**search_params, **kwargs}).acknowledged
+
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        return await run_in_executor(None, self.delete, ids=ids, **kwargs)
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        pre_filter: Optional[Dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:  # type: ignore
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            pre_filter: (Optional) dictionary of argument(s) to prefilter on document
+                fields.
+            post_filter_pipeline: (Optional) pipeline of MongoDB aggregation stages
+                following the vectorSearch stage.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        docs = self._similarity_search_with_score(
+            embedding,
+            k=fetch_k,
+            pre_filter=pre_filter,
+            post_filter_pipeline=post_filter_pipeline,
+        )
+        mmr_doc_indexes = maximal_marginal_relevance(
+            np.array(embedding),
+            [doc.metadata[self._embedding_key] for doc, _ in docs],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        mmr_docs = [docs[i][0] for i in mmr_doc_indexes]
+        return mmr_docs
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+        return await run_in_executor(
+            None,
+            self.max_marginal_relevance_search_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
+        )
