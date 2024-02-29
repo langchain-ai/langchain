@@ -969,7 +969,10 @@ def _prepare_eval_run(
     examples = list(client.list_examples(dataset_id=dataset.id))
     if not examples:
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
-    max_modified_at = max([ex.modified_at for ex in examples])
+    modified_at = [ex.modified_at for ex in examples if ex.modified_at]
+    # Should always be defined in practice when fetched,
+    # but the typing permits None
+    max_modified_at = max(modified_at) if modified_at else None
 
     try:
         project_metadata = project_metadata or {}
