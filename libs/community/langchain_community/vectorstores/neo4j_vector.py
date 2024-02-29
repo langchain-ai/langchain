@@ -562,13 +562,11 @@ class Neo4jVector(VectorStore):
         """
         embedding = self.embedding.embed_query(text=query)
         return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            query=query,
+            embedding=embedding, k=k, query=query, **kwargs
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self, query: str, k: int = 4, **kwargs
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -581,7 +579,7 @@ class Neo4jVector(VectorStore):
         """
         embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, query=query
+            embedding=embedding, k=k, query=query, **kwargs
         )
         return docs
 
@@ -622,6 +620,7 @@ class Neo4jVector(VectorStore):
             "k": k,
             "embedding": embedding,
             "keyword_index": self.keyword_index_name,
+            **kwargs,
             "query": remove_lucene_chars(kwargs["query"]),
         }
 
