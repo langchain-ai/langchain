@@ -24,6 +24,8 @@ If a question does not make any sense, or is not factually coherent, explain why
 
 
 class ChatWrapper(BaseChatModel):
+    """Wrapper for chat LLMs."""
+
     llm: LLM
     sys_beg: str
     sys_end: str
@@ -130,6 +132,8 @@ class ChatWrapper(BaseChatModel):
 
 
 class Llama2Chat(ChatWrapper):
+    """Wrapper for Llama-2-chat model."""
+
     @property
     def _llm_type(self) -> str:
         return "llama-2-chat"
@@ -145,6 +149,8 @@ class Llama2Chat(ChatWrapper):
 
 
 class Orca(ChatWrapper):
+    """Wrapper for Orca-style models."""
+
     @property
     def _llm_type(self) -> str:
         return "orca-style"
@@ -158,6 +164,8 @@ class Orca(ChatWrapper):
 
 
 class Vicuna(ChatWrapper):
+    """Wrapper for Vicuna-style models."""
+
     @property
     def _llm_type(self) -> str:
         return "vicuna-style"
