@@ -517,7 +517,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score(
-            query, k=k, kind=kind, ef_search=ef_search, score_threshold=score_threshold
+            query, k=k, kind=kind, ef_search=ef_search, score_threshold=score_threshold,
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -539,7 +539,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             k=fetch_k,
             kind=kind,
             ef_search=ef_search,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
 
         # Re-ranks the docs using MMR
