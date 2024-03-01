@@ -625,9 +625,10 @@ class ChatFireworks(BaseChatModel):
                         "tool_choice can only be True when there is one tool. Received "
                         f"{len(tools)} tools."
                     )
+                tool_name = formatted_tools[0]["function"]["name"]
                 tool_choice = {
                     "type": "function",
-                    "function": {"name": formatted_tools[0]["name"]},
+                    "function": {"name": tool_name},
                 }
 
             kwargs["tool_choice"] = tool_choice
