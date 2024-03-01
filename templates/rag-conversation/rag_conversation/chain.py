@@ -2,11 +2,15 @@ import os
 from operator import itemgetter
 from typing import List, Tuple
 
-from langchain.schema import AIMessage, HumanMessage, format_document
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    format_document,
+)
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import (
@@ -32,7 +36,7 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 # data = loader.load()
 
 # # Split
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
 # text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 # all_splits = text_splitter.split_documents(data)
 

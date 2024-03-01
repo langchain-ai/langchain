@@ -25,7 +25,7 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 # data = loader.load()
 
 # # Split
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
 # text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 # all_splits = text_splitter.split_documents(data)
 
