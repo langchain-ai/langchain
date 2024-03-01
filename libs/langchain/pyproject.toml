@@ -13,7 +13,7 @@ langchain-server = "langchain.server:main"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.1.26,<0.2"
-langchain-text-splitters = {path = "../text-splitters", develop = true}
+langchain-text-splitters = ">=0.0.1,<0.1"
 langchain-community = ">=0.0.21,<0.1"
 langsmith = "^0.1.0"
 pydantic = ">=1,<3"
