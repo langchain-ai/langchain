@@ -1,3 +1,20 @@
+"""**Chat message history** stores a history of the message interactions in a chat.
+
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseChatMessageHistory --> <name>ChatMessageHistory  # Examples: FileChatMessageHistory, PostgresChatMessageHistory
+
+**Main helpers:**
+
+.. code-block::
+
+    AIMessage, HumanMessage, BaseMessage
+
+"""  # noqa: E501
+
 from langchain_community.chat_message_histories.astradb import (
     AstraDBChatMessageHistory,
 )
