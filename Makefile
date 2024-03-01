@@ -72,6 +72,7 @@ build_all:
 	cd libs/community
 	poetry lock --no-update
 	make lint
+	make lint_package
 	make tests
 	pip install .
 	cd ../..
@@ -83,6 +84,10 @@ build_all:
 	make extended_tests
 	pip install .
 	cd ../..
+
+	poetry lock --no-update
+	make lint
+	make lint_package
 
 ######################
 # HELP

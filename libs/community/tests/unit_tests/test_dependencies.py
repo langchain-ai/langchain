@@ -42,6 +42,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "aiohttp",
             "dataclasses-json",
             "gigachain-core",
+            "gigachat",
             "langsmith",
             "numpy",
             "python",
@@ -70,10 +71,10 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     assert test_group_deps == sorted(
         [
+            "duckdb",
             "duckdb-engine",
             "freezegun",
             "gigachain-core",
-            "gigachat",
             "lark",
             "pandas",
             "pytest",
