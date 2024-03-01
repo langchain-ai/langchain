@@ -113,5 +113,4 @@ __all__ = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
-    "DocumentDBVectorSearch",
 ]
