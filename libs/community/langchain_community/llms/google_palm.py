@@ -59,7 +59,7 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
         return text
 
 
-@deprecated("0.0.351", alternative_import="langchain_google_genai.GoogleGenerativeAI")
+@deprecated("0.0.12", alternative_import="langchain_google_genai.GoogleGenerativeAI")
 class GooglePalm(BaseLLM, BaseModel):
     """
     DEPRECATED: Use `langchain_google_genai.GoogleGenerativeAI` instead.
