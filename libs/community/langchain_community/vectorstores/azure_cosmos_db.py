@@ -395,7 +395,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         k: int = 4,
         kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
         ef_search: int = 40,
-        score_threshold: Optional[float] = None,
+        score_threshold: float = 0.0,
     ) -> List[Tuple[Document, float]]:
         """Returns a list of documents with their scores
 
@@ -426,17 +426,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
         cursor = self._collection.aggregate(pipeline)
 
         docs = []
-        # TODO: Update this once similarity score is supported by vector_hnsw search
-        score = 0.0
         for res in cursor:
-            if (
-                score_threshold is not None
-                and kind == CosmosDBVectorSearchType.VECTOR_IVF
-            ):
-                score = res.pop("similarityScore")
-                if score < score_threshold:
-                    continue
-
+            score = res.pop("similarityScore")
+            if score < score_threshold:
+                continue
             document_object_field = (
                 res.pop("document")
                 if kind == CosmosDBVectorSearchType.VECTOR_IVF
@@ -446,7 +439,6 @@ class AzureCosmosDBVectorSearch(VectorStore):
             docs.append(
                 (Document(page_content=text, metadata=document_object_field), score)
             )
-
         return docs
 
     def _get_pipeline_vector_ivf(
@@ -486,6 +478,12 @@ class AzureCosmosDBVectorSearch(VectorStore):
                     },
                 }
             },
+            {
+                "$project": {
+                    "similarityScore": {"$meta": "searchScore"},
+                    "document": "$$ROOT",
+                }
+            },
         ]
         return pipeline
 
@@ -517,7 +515,11 @@ class AzureCosmosDBVectorSearch(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score(
-            query, k=k, kind=kind, ef_search=ef_search, score_threshold=score_threshold,
+            query,
+            k=k,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
         )
         return [doc for doc, _ in docs_and_scores]
 
