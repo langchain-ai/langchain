@@ -276,7 +276,6 @@ class DeepLake(VectorStore):
             else:
                 raise e
 
-
     def _search_tql(
         self,
         tql: Optional[str],
