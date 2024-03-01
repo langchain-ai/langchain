@@ -1,4 +1,5 @@
 """Load prompts."""
+
 import json
 import logging
 from pathlib import Path
@@ -17,7 +18,9 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/pro
 logger = logging.getLogger(__name__)
 
 
-def load_prompt_from_config(config: dict, template_base_path: Optional[Union[str, Path]] = None) -> BasePromptTemplate:
+def load_prompt_from_config(
+    config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> BasePromptTemplate:
     """Load prompt from Config Dict."""
     if "_type" not in config:
         logger.warning("No `_type` key found, defaulting to `prompt`.")
@@ -30,7 +33,9 @@ def load_prompt_from_config(config: dict, template_base_path: Optional[Union[str
     return prompt_loader(config, template_base_path)
 
 
-def _load_template(var_name: str, config: dict, template_base_path: Optional[Path] = None) -> dict:
+def _load_template(
+    var_name: str, config: dict, template_base_path: Optional[Path] = None
+) -> dict:
     """Load template from the path if applicable."""
     # Check if template_path exists in config.
     if f"{var_name}_path" in config:
@@ -109,7 +114,9 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
     return FewShotPromptTemplate(**config)
 
 
-def _load_prompt(config: dict, template_base_path: Optional[Union[str, Path]] = None) -> PromptTemplate:
+def _load_prompt(
+    config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> PromptTemplate:
     """Load the prompt template from config."""
     # Load the template from disk if necessary.
     config = _load_template("template", config, template_base_path)
@@ -128,7 +135,9 @@ def _load_prompt(config: dict, template_base_path: Optional[Union[str, Path]] = 
     return PromptTemplate(**config)
 
 
-def load_prompt(path: Union[str, Path], template_base_path: Optional[Union[str, Path]] = None) -> BasePromptTemplate:
+def load_prompt(
+    path: Union[str, Path], template_base_path: Optional[Union[str, Path]] = None
+) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs."""
     if hub_result := try_load_from_hub(
         path, _load_prompt_from_file, "prompts", {"py", "json", "yaml"}
@@ -138,7 +147,9 @@ def load_prompt(path: Union[str, Path], template_base_path: Optional[Union[str, 
         return _load_prompt_from_file(path, template_base_path)
 
 
-def _load_prompt_from_file(file: Union[str, Path], template_base_path: Optional[Union[str, Path]] = None) -> BasePromptTemplate:
+def _load_prompt_from_file(
+    file: Union[str, Path], template_base_path: Optional[Union[str, Path]] = None
+) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
     if isinstance(file, str):
