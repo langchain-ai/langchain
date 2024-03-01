@@ -20,11 +20,19 @@ jobs:
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-datastax
+          path: langchain-datastax
       - name: Move google libs
         run: |
-          rm -rf langchain/libs/partners/google-genai langchain/libs/partners/google-vertexai
+          rm -rf \
+            langchain/libs/partners/google-genai \
+            langchain/libs/partners/google-vertexai \
+            langchain/libs/partners/astradb
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
+          mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
 
       - name: Set Git config
         working-directory: langchain
