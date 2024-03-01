@@ -2,23 +2,25 @@ import logging
 import re
 from typing import List, Optional
 
-from langchain.callbacks.manager import (
+from langchain_community.document_loaders import AsyncHtmlLoader
+from langchain_community.document_transformers import Html2TextTransformer
+from langchain_community.llms import LlamaCpp
+from langchain_community.utilities import GoogleSearchAPIWrapper
+from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLLM
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
+
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
-from langchain.document_loaders import AsyncHtmlLoader
-from langchain.document_transformers import Html2TextTransformer
-from langchain.llms import LlamaCpp
-from langchain.llms.base import BaseLLM
-from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.prompts import BasePromptTemplate, PromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import BaseRetriever, Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.utilities import GoogleSearchAPIWrapper
-from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -48,21 +50,12 @@ should have a question mark at the end: {question}""",
 )
 
 
-class LineList(BaseModel):
-    """List of questions."""
-
-    lines: List[str] = Field(description="Questions")
-
-
-class QuestionListOutputParser(PydanticOutputParser):
+class QuestionListOutputParser(BaseOutputParser[List[str]]):
     """Output parser for a list of numbered questions."""
 
-    def __init__(self) -> None:
-        super().__init__(pydantic_object=LineList)
-
-    def parse(self, text: str) -> LineList:
-        lines = re.findall(r"\d+\..*?\n", text)
-        return LineList(lines=lines)
+    def parse(self, text: str) -> List[str]:
+        lines = re.findall(r"\d+\..*?(?:\n|$)", text)
+        return lines
 
 
 class WebResearchRetriever(BaseRetriever):
@@ -75,7 +68,7 @@ class WebResearchRetriever(BaseRetriever):
     llm_chain: LLMChain
     search: GoogleSearchAPIWrapper = Field(..., description="Google Search API Wrapper")
     num_search_results: int = Field(1, description="Number of pages per Google search")
-    text_splitter: RecursiveCharacterTextSplitter = Field(
+    text_splitter: TextSplitter = Field(
         RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
         description="Text splitter for splitting web pages into chunks",
     )
@@ -150,7 +143,7 @@ class WebResearchRetriever(BaseRetriever):
         return query.strip()
 
     def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
-        """Returns num_serch_results pages per Google search."""
+        """Returns num_search_results pages per Google search."""
         query_clean = self.clean_search_query(query)
         result = self.search.results(query_clean, num_search_results)
         return result
@@ -174,7 +167,7 @@ class WebResearchRetriever(BaseRetriever):
         logger.info("Generating questions for Google Search ...")
         result = self.llm_chain({"question": query})
         logger.info(f"Questions for Google Search (raw): {result}")
-        questions = getattr(result["text"], "lines", [])
+        questions = result["text"]
         logger.info(f"Questions for Google Search: {questions}")
 
         # Get urls
@@ -198,7 +191,7 @@ class WebResearchRetriever(BaseRetriever):
         logger.info(f"New URLs to load: {new_urls}")
         # Load, split, and add new urls to vectorstore
         if new_urls:
-            loader = AsyncHtmlLoader(new_urls)
+            loader = AsyncHtmlLoader(new_urls, ignore_load_errors=True)
             html2text = Html2TextTransformer()
             logger.info("Indexing new urls...")
             docs = loader.load()

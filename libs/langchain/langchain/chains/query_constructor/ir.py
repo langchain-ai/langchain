@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, List, Optional, Sequence, Union
 
-from langchain.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 
 class Visitor(ABC):
@@ -81,12 +81,15 @@ class Comparator(str, Enum):
     """Enumerator of the comparison operators."""
 
     EQ = "eq"
+    NE = "ne"
     GT = "gt"
     GTE = "gte"
     LT = "lt"
     LTE = "lte"
     CONTAIN = "contain"
     LIKE = "like"
+    IN = "in"
+    NIN = "nin"
 
 
 class FilterDirective(Expr, ABC):
@@ -100,12 +103,24 @@ class Comparison(FilterDirective):
     attribute: str
     value: Any
 
+    def __init__(
+        self, comparator: Comparator, attribute: str, value: Any, **kwargs: Any
+    ) -> None:
+        super().__init__(
+            comparator=comparator, attribute=attribute, value=value, **kwargs
+        )
+
 
 class Operation(FilterDirective):
     """A logical operation over other directives."""
 
     operator: Operator
     arguments: List[FilterDirective]
+
+    def __init__(
+        self, operator: Operator, arguments: List[FilterDirective], **kwargs: Any
+    ):
+        super().__init__(operator=operator, arguments=arguments, **kwargs)
 
 
 class StructuredQuery(Expr):
@@ -117,3 +132,12 @@ class StructuredQuery(Expr):
     """Filtering expression."""
     limit: Optional[int]
     """Limit on the number of results."""
+
+    def __init__(
+        self,
+        query: str,
+        filter: Optional[FilterDirective],
+        limit: Optional[int] = None,
+        **kwargs: Any,
+    ):
+        super().__init__(query=query, filter=filter, limit=limit, **kwargs)

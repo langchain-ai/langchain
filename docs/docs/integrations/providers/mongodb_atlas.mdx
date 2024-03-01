@@ -1,0 +1,24 @@
+# MongoDB Atlas
+
+>[MongoDB Atlas](https://www.mongodb.com/docs/atlas/) is a fully-managed cloud
+> database available in AWS, Azure, and GCP.  It now has support for native 
+> Vector Search on the MongoDB document data.
+
+## Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/mongodb_atlas).
+
+We need to install `langchain-mongodb` python package.
+
+```bash
+pip install langchain-mongodb
+```
+
+## Vector Store
+
+See a [usage example](/docs/integrations/vectorstores/mongodb_atlas).
+
+```python
+from langchain_mongodb import MongoDBAtlasVectorSearch
+```
+

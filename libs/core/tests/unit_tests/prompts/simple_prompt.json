@@ -1,0 +1,4 @@
+{
+  "input_variables": ["foo"],
+  "template": "This is a {foo} test."
+}

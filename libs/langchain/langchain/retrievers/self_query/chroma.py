@@ -17,6 +17,7 @@ class ChromaTranslator(Visitor):
     """Subset of allowed logical operators."""
     allowed_comparators = [
         Comparator.EQ,
+        Comparator.NE,
         Comparator.GT,
         Comparator.GTE,
         Comparator.LT,

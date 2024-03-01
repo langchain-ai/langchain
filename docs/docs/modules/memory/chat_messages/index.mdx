@@ -1,0 +1,37 @@
+---
+sidebar_position: 1
+---
+# Chat Messages
+
+:::info
+Head to [Integrations](/docs/integrations/memory/) for documentation on built-in memory integrations with 3rd-party databases and tools.
+:::
+
+One of the core utility classes underpinning most (if not all) memory modules is the `ChatMessageHistory` class.
+This is a super lightweight wrapper that provides convenience methods for saving HumanMessages, AIMessages, and then fetching them all.
+
+You may want to use this class directly if you are managing memory outside of a chain.
+
+```python
+from langchain.memory import ChatMessageHistory
+
+history = ChatMessageHistory()
+
+history.add_user_message("hi!")
+
+history.add_ai_message("whats up?")
+```
+
+
+```python
+history.messages
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [HumanMessage(content='hi!', additional_kwargs={}),
+     AIMessage(content='whats up?', additional_kwargs={})]
+```
+
+</CodeOutputBlock>

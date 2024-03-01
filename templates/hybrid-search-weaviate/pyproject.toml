@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "hybrid-search-weaviate"
+version = "0.1.0"
+description = "Improve accuracy and relevance with Weaviate hybrid search"
+authors = ["Erika Cardenas <erika@weaviate.io>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+tiktoken = "^0.5.1"
+weaviate-client = ">=3.24.2"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+[tool.poetry.group.dev.dependencies.python-dotenv]
+extras = [
+    "cli",
+]
+version = "^1.0.0"
+
+[tool.langserve]
+export_module = "hybrid_search_weaviate"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "search"
+author = "Weaviate"
+integrations = ["Weaviate", "OpenAI"]
+tags = ["hybrid-search", "vectordb"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"
