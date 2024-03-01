@@ -2,14 +2,30 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Type,
+    TypedDict,
+    Union,
+    overload,
+)
 from uuid import UUID, uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables.graph_draw import draw
+from langchain_core.runnables.graph_ascii import draw_ascii
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
+
+
+class LabelsDict(TypedDict):
+    nodes: dict[str, str]
+    edges: dict[str, str]
 
 
 def is_uuid(value: str) -> bool:
@@ -213,10 +229,51 @@ class Graph:
                 self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
-        return draw(
+        return draw_ascii(
             {node.id: node_data_str(node) for node in self.nodes.values()},
             [(edge.source, edge.target) for edge in self.edges],
         )
 
     def print_ascii(self) -> None:
         print(self.draw_ascii())  # noqa: T201
+
+    @overload
+    def draw_png(
+        self,
+        output_file_path: str,
+        fontname: Optional[str] = None,
+        labels: Optional[LabelsDict] = None,
+    ) -> None:
+        ...
+
+    @overload
+    def draw_png(
+        self,
+        output_file_path: None,
+        fontname: Optional[str] = None,
+        labels: Optional[LabelsDict] = None,
+    ) -> bytes:
+        ...
+
+    def draw_png(
+        self,
+        output_file_path: Optional[str] = None,
+        fontname: Optional[str] = None,
+        labels: Optional[LabelsDict] = None,
+    ) -> Union[bytes, None]:
+        from langchain_core.runnables.graph_png import PngDrawer
+
+        default_node_labels = {
+            node.id: node_data_str(node) for node in self.nodes.values()
+        }
+
+        return PngDrawer(
+            fontname,
+            LabelsDict(
+                nodes={
+                    **default_node_labels,
+                    **(labels["nodes"] if labels is not None else {}),
+                },
+                edges=labels["edges"] if labels is not None else {},
+            ),
+        ).draw(self, output_file_path)
