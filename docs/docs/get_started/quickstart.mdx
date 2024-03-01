@@ -224,7 +224,7 @@ After that, we can import and use WebBaseLoader.
 
 ```python
 from langchain_community.document_loaders import WebBaseLoader
-loader = WebBaseLoader("https://docs.smith.langchain.com")
+loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
 
 docs = loader.load()
 ```
@@ -543,7 +543,7 @@ from langchain_core.messages import BaseMessage
 from langserve import add_routes
 
 # 1. Load Retriever
-loader = WebBaseLoader("https://docs.smith.langchain.com/overview")
+loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
 docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
