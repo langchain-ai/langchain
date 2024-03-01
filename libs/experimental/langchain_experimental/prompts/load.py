@@ -1,16 +1,17 @@
 # Susceptible to arbitrary code execution: https://github.com/langchain-ai/langchain/issues/4849
-import importlib
+import importlib.util
 import json
 from pathlib import Path
 from typing import Union
 
 import yaml
 from langchain.prompts.loading import load_prompt_from_config, try_load_from_hub
-from langchain.schema.prompts import BasePromptTemplate
+from langchain_core.prompts import BasePromptTemplate
 
 
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
-    """Unified method for loading a prompt from LangChainHub or local fs."""
+    """Unified method for loading a prompt from LangChainHub or local file system."""
+
     if hub_result := try_load_from_hub(
         path, _load_prompt_from_file, "prompts", {"py", "json", "yaml"}
     ):
@@ -30,7 +31,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     if file_path.suffix == ".json":
         with open(file_path) as f:
             config = json.load(f)
-    elif file_path.suffix == ".yaml":
+    elif file_path.suffix.endswith((".yaml", ".yml")):
         with open(file_path, "r") as f:
             config = yaml.safe_load(f)
     elif file_path.suffix == ".py":

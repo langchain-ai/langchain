@@ -1,7 +1,7 @@
 
 # hyde
 
-This template HyDE with RAG. 
+This template uses HyDE with RAG. 
 
 Hyde is a retrieval method that stands for Hypothetical Document Embeddings (HyDE). It is a method used to enhance retrieval by generating a hypothetical document for an incoming query. 
 
@@ -20,7 +20,7 @@ Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:

@@ -7,8 +7,8 @@ from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.utils import mock_now
+from langchain_core.language_models import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 

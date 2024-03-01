@@ -27,7 +27,7 @@ NEO4J_PASSWORD=<YOUR_NEO4J_PASSWORD>
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -44,7 +44,7 @@ langchain app add neo4j-generation
 
 And add the following code to your `server.py` file:
 ```python
-from neo4j_generation import chain as neo4j_generation_chain
+from neo4j_generation.chain import chain as neo4j_generation_chain
 
 add_routes(app, neo4j_generation_chain, path="/neo4j-generation")
 ```

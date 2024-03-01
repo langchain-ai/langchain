@@ -17,7 +17,7 @@ Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -34,7 +34,7 @@ langchain app add stepback-qa-prompting
 
 And add the following code to your `server.py` file:
 ```python
-from stepback_qa_prompting import chain as stepback_qa_prompting_chain
+from stepback_qa_prompting.chain import chain as stepback_qa_prompting_chain
 
 add_routes(app, stepback_qa_prompting_chain, path="/stepback-qa-prompting")
 ```
