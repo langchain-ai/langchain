@@ -9,7 +9,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
-loader = WebBaseLoader("https://clickhouse.com/blog/powering-featurestores-with-clickhouse")
+loader = WebBaseLoader(
+    "https://clickhouse.com/blog/powering-featurestores-with-clickhouse"
+)
 data = loader.load()
 
 # Split
@@ -20,9 +22,7 @@ all_splits = text_splitter.split_documents(data)
 # Add to vectorDB
 settings = ClickhouseSettings(table="clickhouse_vector_search_example", index_type=None)
 vectorstore = Clickhouse.from_documents(
-    documents=all_splits,
-    embedding=GPT4AllEmbeddings(),
-    config=settings
+    documents=all_splits, embedding=GPT4AllEmbeddings(), config=settings
 )
 retriever = vectorstore.as_retriever()
 
