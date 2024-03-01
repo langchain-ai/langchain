@@ -36,11 +36,3 @@ class NutritionAI(BaseTool):
     ) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)
-
-
-if __name__ == "__main__":
-    # Provide the api_wrapper when creating an instance of NutritionAI
-    tool = NutritionAI(api_wrapper=NutritionAIAPI())
-
-    # Run the tool
-    print(tool.run("chicken tikka masala"))
