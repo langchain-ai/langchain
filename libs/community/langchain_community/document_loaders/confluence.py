@@ -469,7 +469,7 @@ class ConfluenceLoader(BaseLoader):
                 )
         if include_comments or not keep_markdown_format:
             try:
-                from bs4 import BeautifulSoup  # type: ignore
+                from bs4 import BeautifulSoup
             except ImportError:
                 raise ImportError(
                     "`beautifulsoup4` package not found, please run "
