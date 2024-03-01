@@ -1,6 +1,6 @@
+import tokenize
 from pathlib import Path
 from typing import Union
-import tokenize
 
 from langchain_community.document_loaders.text import TextLoader
 

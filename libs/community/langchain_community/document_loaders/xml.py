@@ -33,7 +33,10 @@ class UnstructuredXMLLoader(UnstructuredFileLoader):
     """
 
     def __init__(
-        self, file_path: Union[str, Path], mode: str = "single", **unstructured_kwargs: Any
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
     ):
         file_path = str(file_path)
         validate_unstructured_version(min_unstructured_version="0.6.7")

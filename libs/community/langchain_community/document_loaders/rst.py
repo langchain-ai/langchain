@@ -33,7 +33,10 @@ class UnstructuredRSTLoader(UnstructuredFileLoader):
     """
 
     def __init__(
-        self, file_path: Union[str, Path], mode: str = "single", **unstructured_kwargs: Any
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
     ):
         """
         Initialize with a file path.
