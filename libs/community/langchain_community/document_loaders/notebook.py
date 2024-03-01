@@ -75,7 +75,7 @@ class NotebookLoader(BaseLoader):
 
     def __init__(
         self,
-        path: str,
+        path: str | Path,
         include_outputs: bool = False,
         max_output_length: int = 10,
         remove_newline: bool = False,

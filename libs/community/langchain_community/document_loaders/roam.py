@@ -9,7 +9,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class RoamLoader(BaseLoader):
     """Load `Roam` files from a directory."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: str | Path):
         """Initialize with a path."""
         self.file_path = path
 

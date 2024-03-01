@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, List
 
 from langchain_core.documents import Document
@@ -41,7 +42,7 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
     """
 
     def __init__(
-        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+        self, file_path: str | Path, mode: str = "single", **unstructured_kwargs: Any
     ):
         process_attachments = unstructured_kwargs.get("process_attachments")
         attachment_partitioner = unstructured_kwargs.get("attachment_partitioner")

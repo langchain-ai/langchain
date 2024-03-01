@@ -1,5 +1,6 @@
 import email
 import logging
+from pathlib import Path
 from typing import Dict, List, Union
 
 from langchain_core.documents import Document
@@ -14,7 +15,7 @@ class MHTMLLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: str | Path,
         open_encoding: Union[str, None] = None,
         bs_kwargs: Union[dict, None] = None,
         get_text_separator: str = "",
@@ -37,7 +38,7 @@ class MHTMLLoader(BaseLoader):
                 "`pip install beautifulsoup4`"
             )
 
-        self.file_path = file_path
+        self.file_path = str(file_path)
         self.open_encoding = open_encoding
         if bs_kwargs is None:
             bs_kwargs = {"features": "lxml"}

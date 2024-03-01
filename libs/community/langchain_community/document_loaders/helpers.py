@@ -1,6 +1,7 @@
 """Document loader helpers."""
 
 import concurrent.futures
+from pathlib import Path
 from typing import List, NamedTuple, Optional, cast
 
 
@@ -15,7 +16,7 @@ class FileEncoding(NamedTuple):
     """The language of the file."""
 
 
-def detect_file_encodings(file_path: str, timeout: int = 5) -> List[FileEncoding]:
+def detect_file_encodings(file_path: str | Path, timeout: int = 5) -> List[FileEncoding]:
     """Try to detect the file encoding.
 
     Returns a list of `FileEncoding` tuples with the detected encodings ordered
@@ -27,6 +28,7 @@ def detect_file_encodings(file_path: str, timeout: int = 5) -> List[FileEncoding
     """
     import chardet
 
+    file_path = str(file_path)
     def read_and_detect(file_path: str) -> List[dict]:
         with open(file_path, "rb") as f:
             rawdata = f.read()

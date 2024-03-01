@@ -25,7 +25,7 @@ def concatenate_rows(row: dict) -> str:
 class FacebookChatLoader(BaseLoader):
     """Load `Facebook Chat` messages directory dump."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: str | Path):
         """Initialize with a path."""
         self.file_path = path
 

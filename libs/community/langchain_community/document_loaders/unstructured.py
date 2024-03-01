@@ -2,6 +2,7 @@
 import collections
 from abc import ABC, abstractmethod
 from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Union
+from pathlib import Path
 
 from langchain_core.documents import Document
 
@@ -159,7 +160,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str]],
+        file_path: Union[str, List[str], Path, List[Path]],
         mode: str = "single",
         **unstructured_kwargs: Any,
     ):
@@ -173,8 +174,12 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         if isinstance(self.file_path, list):
             elements = []
             for file in self.file_path:
+                if isinstance(file, Path):
+                    file = str(file)
                 elements.extend(partition(filename=file, **self.unstructured_kwargs))
             return elements
+        elif isinstance(self.file_path, Path):
+            self.file_path = str(file_path)
         else:
             return partition(filename=self.file_path, **self.unstructured_kwargs)
 

@@ -1,3 +1,4 @@
+from pathlib import Path
 import tokenize
 
 from langchain_community.document_loaders.text import TextLoader
@@ -6,7 +7,7 @@ from langchain_community.document_loaders.text import TextLoader
 class PythonLoader(TextLoader):
     """Load `Python` files, respecting any non-default encoding if specified."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str | Path):
         """Initialize with a file path.
 
         Args:

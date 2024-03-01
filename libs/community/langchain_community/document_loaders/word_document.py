@@ -4,6 +4,7 @@ import tempfile
 from abc import ABC
 from typing import List
 from urllib.parse import urlparse
+from pathlib import Path
 
 import requests
 from langchain_core.documents import Document
@@ -19,7 +20,7 @@ class Docx2txtLoader(BaseLoader, ABC):
     to a temporary file, and use that, then clean up the temporary file after completion
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str | Path):
         """Initialize with file path."""
         self.file_path = file_path
         if "~" in self.file_path:

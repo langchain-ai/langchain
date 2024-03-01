@@ -1,4 +1,5 @@
 from io import BytesIO
+from pathlib import Path
 from typing import Any, List, Tuple, Union
 
 import requests
@@ -17,7 +18,7 @@ class ImageCaptionLoader(BaseLoader):
 
     def __init__(
         self,
-        images: Union[str, bytes, List[Union[str, bytes]]],
+        images: Union[str, Path, bytes, List[Union[str, bytes, Path]]],
         blip_processor: str = "Salesforce/blip-image-captioning-base",
         blip_model: str = "Salesforce/blip-image-captioning-base",
     ):
@@ -29,7 +30,7 @@ class ImageCaptionLoader(BaseLoader):
             blip_processor: The name of the pre-trained BLIP processor.
             blip_model: The name of the pre-trained BLIP model.
         """
-        if isinstance(images, (str, bytes)):
+        if isinstance(images, (str, Path, bytes)):
             self.images = [images]
         else:
             self.images = images
@@ -94,6 +95,6 @@ class ImageCaptionLoader(BaseLoader):
         if isinstance(image_source, bytes):
             metadata: dict = {"image_source": "Image bytes provided"}
         else:
-            metadata = {"image_path": image_source}
+            metadata = {"image_path": str(image_source)}
 
         return caption, metadata

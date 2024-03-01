@@ -1,4 +1,5 @@
 from typing import Any, List
+from pathlib import Path
 
 from langchain_community.document_loaders.unstructured import (
     UnstructuredFileLoader,
@@ -26,7 +27,7 @@ class UnstructuredTSVLoader(UnstructuredFileLoader):
     """
 
     def __init__(
-        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+        self, file_path: str | Path, mode: str = "single", **unstructured_kwargs: Any
     ):
         validate_unstructured_version(min_unstructured_version="0.7.6")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)

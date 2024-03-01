@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import List, Optional
 
 from langchain_core.documents import Document
@@ -25,12 +26,12 @@ class TextLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: str | Path,
         encoding: Optional[str] = None,
         autodetect_encoding: bool = False,
     ):
         """Initialize with file path."""
-        self.file_path = file_path
+        self.file_path = str(file_path)
         self.encoding = encoding
         self.autodetect_encoding = autodetect_encoding
 

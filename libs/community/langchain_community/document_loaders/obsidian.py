@@ -23,7 +23,7 @@ class ObsidianLoader(BaseLoader):
     DATAVIEW_INLINE_PAREN_REGEX = re.compile(r"\((\w+)::\s*(.*)\)", re.MULTILINE)
 
     def __init__(
-        self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
+        self, path: str | Path, encoding: str = "UTF-8", collect_metadata: bool = True
     ):
         """Initialize with a path.
 
