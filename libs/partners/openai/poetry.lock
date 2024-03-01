@@ -215,7 +215,7 @@ python-dateutil = ">=2.7"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.23"
+version = "0.1.27"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -225,7 +225,7 @@ develop = true
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
-langsmith = "^0.0.87"
+langsmith = "^0.1.0"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -1184,4 +1184,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "353e369905006dd599064240e69905f77905b6e910cbe4be761bb2302d17f252"
+content-hash = "eab81ac4fc994fea91c7ecdb9c75e70ee7b16a475ced05530341ffdd41a073bf"

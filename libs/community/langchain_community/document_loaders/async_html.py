@@ -140,7 +140,12 @@ class AsyncHtmlLoader(BaseLoader):
         return BeautifulSoup(html_doc.text, parser, **(bs_kwargs or {}))
 
     async def _fetch(
-        self, url: str, retries: int = 2, cooldown: int = 2, backoff: float = 1.5, timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(total=3)
+        self,
+        url: str,
+        retries: int = 2,
+        cooldown: int = 2,
+        backoff: float = 1.5,
+        timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(total=3),
     ) -> str:
         async with aiohttp.ClientSession(timeout=timeout) as session:
             for i in range(retries):

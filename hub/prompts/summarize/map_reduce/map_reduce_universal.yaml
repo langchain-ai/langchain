@@ -1,0 +1,12 @@
+input_variables: [text]
+partial_variables:
+    size: '5-7 предложений'
+template: 'Выдели основные мысли и факты из текста. Напиши {size}.
+
+    
+"{text}"
+
+
+Основные мысли и факты:'
+template_format: f-string
+_type: prompt

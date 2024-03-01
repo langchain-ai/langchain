@@ -197,7 +197,9 @@ class WebResearchRetriever(BaseRetriever):
         logger.info(f"New URLs to load: {new_urls}")
         # Load, split, and add new urls to vectorstore
         if new_urls:
-            loader = AsyncHtmlLoader(new_urls, ignore_load_errors=True, verify_ssl=self.verify_ssl)
+            loader = AsyncHtmlLoader(
+                new_urls, ignore_load_errors=True, verify_ssl=self.verify_ssl
+            )
             html2text = Html2TextTransformer()
             logger.info("Indexing new urls...")
             docs = loader.load()

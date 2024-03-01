@@ -80,28 +80,6 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
             key_file_password=self.key_file_password,
         )
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate authenticate data in environment and python package is installed."""
-        try:
-            import gigachat  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "Could not import gigachat python package. "
-                "Please install it with `pip install gigachat`."
-            )
-        fields = set(cls.__fields__.keys())
-        fields.add("profanity_check")
-        diff = set(values.keys()) - fields
-        if diff:
-            logger.warning(f"Extra fields {diff} in GigaChat class")
-        if "profanity" in fields and values.get("profanity") is False:
-            logger.warning(
-                "Profanity field is deprecated. Use 'profanity_check' instead."
-            )
-            if values.get("profanity_check") is None:
-                values["profanity_check"] = values.get("profanity")
-        return values
 
     def embed_documents(
         self, texts: List[str], model: str = "Embeddings"

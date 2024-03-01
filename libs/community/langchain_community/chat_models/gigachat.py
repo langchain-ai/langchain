@@ -326,7 +326,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             functions=formatted_functions,
             **kwargs,
         )
-    
+
     def get_num_tokens(self, text: str) -> int:
         """Count approximate number of tokens"""
         return round(len(text) / 4.6)
