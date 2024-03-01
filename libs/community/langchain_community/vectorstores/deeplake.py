@@ -9,6 +9,7 @@ try:
     import deeplake
     from deeplake import VectorStore as DeepLakeVectorStore
     from deeplake.core.fast_forwarding import version_compare
+    from deeplake.util.exceptions import SampleExtendError
 
     _DEEPLAKE_INSTALLED = True
 except ImportError:
@@ -256,7 +257,7 @@ class DeepLake(VectorStore):
             raise ValueError("`texts` parameter shouldn't be empty.")
 
         try:
-            result = self.vectorstore.add(
+            return self.vectorstore.add(
                 text=texts,
                 metadata=metadatas,
                 embedding_data=texts,
@@ -268,8 +269,12 @@ class DeepLake(VectorStore):
         except SampleExtendError as e:
             if "Failed to append a sample to the tensor 'metadata'" in str(e):
                 msg = (
-                    "**Hint: You might be using invalid path type (e.g. 'pathlib.PosixPath')" 
+                    "**Hint: You might be using invalid type of argument in "
+                    "document loader (e.g. 'pathlib.PosixPath' instead of 'str')"
                 )
+                raise ValueError(e.args[0] + "\n\n" + msg)
+            else:
+                raise e
 
 
     def _search_tql(
