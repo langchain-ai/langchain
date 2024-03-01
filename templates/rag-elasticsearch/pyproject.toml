@@ -15,6 +15,7 @@ elasticsearch = "^8.10.0"
 sentence-transformers = "^2.2.2"
 jq = "^1.6.0"
 tiktoken = "^0.5.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"

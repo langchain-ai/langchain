@@ -51,7 +51,8 @@ jobs:
         run: |
           poetry run python -m pip install --upgrade --no-cache-dir pip setuptools
           poetry run python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
-          poetry run python -m pip install ./libs/partners/*
+          # skip airbyte and ibm due to pandas dependency issue
+          poetry run python -m pip install $(ls ./libs/partners | grep -vE "airbyte|ibm" | xargs -I {} echo "./libs/partners/{}")
           poetry run python -m pip install --exists-action=w --no-cache-dir -r docs/api_reference/requirements.txt
 
       - name: Build docs
