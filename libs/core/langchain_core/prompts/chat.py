@@ -672,7 +672,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return cls.from_messages([message])
 
     @classmethod
-    @deprecated("0.0.260", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
@@ -692,7 +692,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         )
 
     @classmethod
-    @deprecated("0.0.260", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
     def from_strings(
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
@@ -849,12 +849,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         self.messages.extend([_convert_to_message(message) for message in messages])
 
     @overload
-    def __getitem__(self, index: int) -> MessageLike:
-        ...
+    def __getitem__(self, index: int) -> MessageLike: ...
 
     @overload
-    def __getitem__(self, index: slice) -> ChatPromptTemplate:
-        ...
+    def __getitem__(self, index: slice) -> ChatPromptTemplate: ...
 
     def __getitem__(
         self, index: Union[int, slice]
