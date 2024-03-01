@@ -1833,11 +1833,6 @@ class AstraDBSemanticCache(BaseCache):
         await self.async_collection.delete_one(document_id)
 
     def clear(self, **kwargs: Any) -> None:
-<<<<<<< HEAD
-        """Clear the *whole* semantic cache."""
-        self.astra_db.truncate_collection(self.collection_name)
-=======
->>>>>>> master
         self.astra_env.ensure_db_setup()
         self.collection.clear()
 
