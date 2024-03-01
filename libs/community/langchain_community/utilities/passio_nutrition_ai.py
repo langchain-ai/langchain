@@ -72,8 +72,10 @@ class ManagedPassioLifeAuth(NoDiskStorage):
         self._last_token = token = rsp.json()
         self._customer_id = token["customer_id"]
         self._access_token = token["access_token"]
-        self._access_token_expiry = datetime.now() + timedelta(seconds=token["expires_in"]) \
-            - timedelta(seconds=5)  # 5 seconds: approximate time for a token refresh to be processed.
+        self._access_token_expiry = datetime.now() \
+            + timedelta(seconds=token["expires_in"]) \
+            - timedelta(seconds=5)  \
+            # 5 seconds: approximate time for a token refresh to be processed.
 
 
 class NutritionAIAPI(BaseModel):
@@ -111,7 +113,9 @@ class NutritionAIAPI(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
         nutritionai_subscription_key = get_from_dict_or_env(
-            values, "nutritionai_subscription_key", "NUTRITIONAI_SUBSCRIPTION_KEY"
+            values, 
+            "nutritionai_subscription_key", 
+            "NUTRITIONAI_SUBSCRIPTION_KEY"
         )
         values["nutritionai_subscription_key"] = nutritionai_subscription_key
 
