@@ -76,9 +76,6 @@ class AstraDBLoader(BaseLoader):
         self.nb_prefetched = nb_prefetched
         self.extraction_function = extraction_function
 
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
-
     def lazy_load(self) -> Iterator[Document]:
         for doc in self.collection.paginated_find(
             filter=self.filter,

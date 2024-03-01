@@ -157,10 +157,6 @@ class PyPDFLoader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFParser(password=password, extract_images=extract_images)
 
-    def load(self) -> List[Document]:
-        """Load given path as pages."""
-        return list(self.lazy_load())
-
     def lazy_load(
         self,
     ) -> Iterator[Document]:
