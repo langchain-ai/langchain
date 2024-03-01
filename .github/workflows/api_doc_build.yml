@@ -22,6 +22,7 @@ jobs:
           path: langchain-google
       - name: Move google libs
         run: |
+          rm -rf langchain/libs/partners/google-genai langchain/libs/partners/google-vertexai
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
 
