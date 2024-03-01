@@ -137,15 +137,18 @@ def fix_filter_directive(
         if allowed_operators and filter.operator not in allowed_operators:
             return None
         args = [
-            fix_filter_directive(
-                arg,
-                allowed_comparators=allowed_comparators,
-                allowed_operators=allowed_operators,
-                allowed_attributes=allowed_attributes,
+            cast(
+                FilterDirective,
+                fix_filter_directive(
+                    arg,
+                    allowed_comparators=allowed_comparators,
+                    allowed_operators=allowed_operators,
+                    allowed_attributes=allowed_attributes,
+                ),
             )
             for arg in filter.arguments
+            if arg is not None
         ]
-        args = [arg for arg in args if arg is not None]
         if not args:
             return None
         elif len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
@@ -323,7 +326,8 @@ def load_query_constructor_runnable(
 
     Args:
         llm: BaseLanguageModel to use for the chain.
-        document_contents: The contents of the document to be queried.
+        document_contents: Description of the page contents of the document to be
+            queried.
         attribute_info: Sequence of attributes in the document.
         examples: Optional list of examples to use for the chain.
         allowed_comparators: Sequence of allowed comparators. Defaults to all

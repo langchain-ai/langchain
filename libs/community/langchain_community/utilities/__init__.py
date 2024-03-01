@@ -248,6 +248,12 @@ def _import_twilio() -> Any:
     return TwilioAPIWrapper
 
 
+def _import_you() -> Any:
+    from langchain_community.utilities.you import YouSearchAPIWrapper
+
+    return YouSearchAPIWrapper
+
+
 def _import_wikipedia() -> Any:
     from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 
@@ -377,6 +383,8 @@ def __getattr__(name: str) -> Any:
         return _import_tensorflow_datasets()
     elif name == "TwilioAPIWrapper":
         return _import_twilio()
+    elif name == "YouSearchAPIWrapper":
+        return _import_you()
     elif name == "WikipediaAPIWrapper":
         return _import_wikipedia()
     elif name == "WolframAlphaAPIWrapper":
@@ -434,6 +442,7 @@ __all__ = [
     "TensorflowDatasets",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
+    "YouSearchAPIWrapper",
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
     "ZapierNLAWrapper",

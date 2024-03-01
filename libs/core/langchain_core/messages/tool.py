@@ -8,7 +8,7 @@ from langchain_core.messages.base import (
 
 
 class ToolMessage(BaseMessage):
-    """A Message for passing the result of executing a tool back to a model."""
+    """Message for passing the result of executing a tool back to a model."""
 
     tool_call_id: str
     """Tool call that this message is responding to."""
@@ -25,7 +25,7 @@ ToolMessage.update_forward_refs()
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):
-    """A Tool Message chunk."""
+    """Tool Message chunk."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the

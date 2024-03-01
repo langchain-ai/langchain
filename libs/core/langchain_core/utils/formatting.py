@@ -4,7 +4,7 @@ from typing import Any, List, Mapping, Sequence
 
 
 class StrictFormatter(Formatter):
-    """A subclass of formatter that checks for extra keys."""
+    """Formatter that checks for extra keys."""
 
     def vformat(
         self, format_string: str, args: Sequence, kwargs: Mapping[str, Any]
