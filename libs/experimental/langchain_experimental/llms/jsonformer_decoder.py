@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def import_jsonformer() -> jsonformer:
-    """Lazily import jsonformer."""
+    """Lazily import of the jsonformer package."""
     try:
         import jsonformer
     except ImportError:

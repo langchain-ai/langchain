@@ -12,16 +12,15 @@ And you should configure credentials by setting the following environment variab
 
 - `PINECONE_API_KEY`
 - `PINECONE_INDEX_NAME`
-- `PINECONE_ENVIRONMENT`
 
 ## Usage
 
-The `Pinecone` class exposes the connection to the Pinecone vector store.
+The `PineconeVectorStore` class exposes the connection to the Pinecone vector store.
 
 ```python
-from langchain_pinecone import Pinecone
+from langchain_pinecone import PineconeVectorStore
 
 embeddings = ... # use a LangChain Embeddings class
 
-vectorstore = Pinecone(embeddings=embeddings)
+vectorstore = PineconeVectorStore(embeddings=embeddings)
 ```

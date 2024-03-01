@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterator, List, Mapping, Optional
+from typing import Any, Callable, Iterator, Mapping, Optional
 
 from langchain_core.documents import Document
 from langchain_core.utils.utils import guard_import
@@ -52,9 +52,6 @@ class AirbyteCDKLoader(BaseLoader):
         )
         self._stream_name = stream_name
         self._state = state
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         return self._integration._load_data(
