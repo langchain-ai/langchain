@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import Callable, Dict, Iterator, Optional
 
 from langchain_core.documents import Document
 
@@ -75,6 +75,3 @@ class TensorflowDatasetLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         yield from self._tfds_client.lazy_load()
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
