@@ -13,6 +13,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Union,
     cast,
 )
 
@@ -104,7 +105,7 @@ async def agenerate_from_stream(
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for Chat models."""
 
-    cache: Optional[bool | BaseCache] = None
+    cache: Union[None, bool, BaseCache] = None
     """Specify caching behavior for model responses.
     
     Caching can help speed up performance by reducing the number of API calls 
