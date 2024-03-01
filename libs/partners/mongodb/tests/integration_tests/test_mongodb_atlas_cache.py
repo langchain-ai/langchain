@@ -3,18 +3,14 @@ import uuid
 from typing import Any
 
 import pytest
+from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.caches import BaseCache
 from langchain_core.load.dump import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
-from langchain.cache import MongoDBAtlasCache, MongoDBAtlasSemanticCache
-from langchain.globals import get_llm_cache, set_llm_cache
-from tests.integration_tests.cache.fake_embeddings import (
-    ConsistentFakeEmbeddings,
-)
-from tests.unit_tests.llms.fake_chat_model import FakeChatModel
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain_mongodb.cache import MongoDBAtlasCache, MongoDBAtlasSemanticCache
+from tests.utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM
 
 CONN_STRING = os.environ.get("MONGODB_ATLAS_URI")
 COLLECTION = "default"
