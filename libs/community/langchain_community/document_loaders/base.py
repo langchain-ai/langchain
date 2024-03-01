@@ -19,21 +19,21 @@ class BaseLoader(ABC):
     Implementations should implement the lazy-loading method using generators
     to avoid loading all Documents into memory at once.
 
-    The `load` method will remain as is for backwards compatibility, but its
-    implementation should be just `list(self.lazy_load())`.
+    `load` is provided just for user convenience and should not be overridden.
     """
 
-    # Sub-classes should implement this method
-    # as return list(self.lazy_load()).
-    # This method returns a List which is materialized in memory.
-    @abstractmethod
+    # Sub-classes should not implement this method directly. Instead, they
+    # should implement the lazy load method.
     def load(self) -> List[Document]:
         """Load data into Document objects."""
+        return list(self.lazy_load())
 
     def load_and_split(
         self, text_splitter: Optional[TextSplitter] = None
     ) -> List[Document]:
         """Load Documents and split into chunks. Chunks are returned as Documents.
+
+        Do not override this method. It should be considered to be deprecated!
 
         Args:
             text_splitter: TextSplitter instance to use for splitting documents.
