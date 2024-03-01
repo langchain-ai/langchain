@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -32,6 +33,11 @@ logger = logging.getLogger(__name__)
 DEFAULT_INSERT_BATCH_SIZE = 100
 
 
+@deprecated(
+    since="0.0.25",
+    removal="0.2.0",
+    alternative_import="langchain_mongodb.MongoDBAtlasVectorSearch",
+)
 class MongoDBAtlasVectorSearch(VectorStore):
     """`MongoDB Atlas Vector Search` vector store.
 
