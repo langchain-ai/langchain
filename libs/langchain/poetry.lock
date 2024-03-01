@@ -3446,7 +3446,7 @@ files = [
 
 [[package]]
 name = "langchain-community"
-version = "0.0.21"
+version = "0.0.24"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3456,7 +3456,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = ">=0.1.24,<0.2"
+langchain-core = ">=0.1.26,<0.2"
 langsmith = "^0.1.0"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -3474,7 +3474,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.1.26"
+version = "0.1.28"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3514,6 +3514,25 @@ langchain-core = ">=0.1.7,<0.2"
 numpy = ">=1,<2"
 openai = ">=1.6.1,<2.0.0"
 tiktoken = ">=0.5.2,<0.6.0"
+
+[[package]]
+name = "langchain-text-splitters"
+version = "0.0.1"
+description = "LangChain text splitting utilities"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+langchain-core = "^0.1.28"
+
+[package.extras]
+extended-testing = ["lxml (>=5.1.0,<6.0.0)"]
+
+[package.source]
+type = "directory"
+url = "../text-splitters"
 
 [[package]]
 name = "langsmith"
@@ -9150,4 +9169,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "30df9669a4ed14c320cf8aac20f43d96234bad6d12ec6b6ac49984320832e029"
+content-hash = "a9b21852298f682bdb77689c6f31044a62407185fa3c23d4d65cb9dbbc4522ba"
