@@ -255,15 +255,22 @@ class DeepLake(VectorStore):
         elif len(texts) == 0:
             raise ValueError("`texts` parameter shouldn't be empty.")
 
-        return self.vectorstore.add(
-            text=texts,
-            metadata=metadatas,
-            embedding_data=texts,
-            embedding_tensor="embedding",
-            embedding_function=self._embedding_function.embed_documents,  # type: ignore
-            return_ids=True,
-            **kwargs,
-        )
+        try:
+            result = self.vectorstore.add(
+                text=texts,
+                metadata=metadatas,
+                embedding_data=texts,
+                embedding_tensor="embedding",
+                embedding_function=self._embedding_function.embed_documents,  # type: ignore
+                return_ids=True,
+                **kwargs,
+            )
+        except SampleExtendError as e:
+            if "Failed to append a sample to the tensor 'metadata'" in str(e):
+                msg = (
+                    "**Hint: You might be using invalid path type (e.g. 'pathlib.PosixPath')" 
+                )
+
 
     def _search_tql(
         self,
