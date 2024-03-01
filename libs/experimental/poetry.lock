@@ -1642,7 +1642,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.1.8"
+version = "0.1.9"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1655,7 +1655,8 @@ async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
 jsonpatch = "^1.33"
 langchain-community = ">=0.0.21,<0.1"
-langchain-core = ">=0.1.24,<0.2"
+langchain-core = ">=0.1.26,<0.2"
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 langsmith = "^0.1.0"
 numpy = "^1"
 pydantic = ">=1,<3"
@@ -1685,7 +1686,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-community"
-version = "0.0.21"
+version = "0.0.24"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1695,7 +1696,8 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = ">=0.1.24,<0.2"
+langchain-core = ">=0.1.26,<0.2"
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 langsmith = "^0.1.0"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -1713,7 +1715,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.1.24"
+version = "0.1.28"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1736,6 +1738,25 @@ extended-testing = ["jinja2 (>=3,<4)"]
 [package.source]
 type = "directory"
 url = "../core"
+
+[[package]]
+name = "langchain-text-splitters"
+version = "0.0.1"
+description = "LangChain text splitting utilities"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+langchain-core = "^0.1.28"
+
+[package.extras]
+extended-testing = []
+
+[package.source]
+type = "directory"
+url = "../text-splitters"
 
 [[package]]
 name = "langcodes"
@@ -5060,4 +5081,4 @@ extended-testing = ["faker", "jinja2", "pandas", "presidio-analyzer", "presidio-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "577689c4eebd644296ea46af03ec0eead2b2877b739c0989b59dc633f904099f"
+content-hash = "bde47b4a6eed5f419e34857a3bcbf5efece9ed41d4f8e68ed37ef853e4208ab7"

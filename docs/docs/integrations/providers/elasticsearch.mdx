@@ -34,7 +34,7 @@ The vector store is a simple wrapper around Elasticsearch. It provides a simple 
 from langchain_elasticsearch import ElasticsearchStore
 
 from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_text_splitters import CharacterTextSplitter
 
 loader = TextLoader("./state_of_the_union.txt")
 documents = loader.load()
