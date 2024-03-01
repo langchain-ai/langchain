@@ -1936,7 +1936,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         hashed_index = _hash(llm_string)
         return f"cache:{hashed_index}"
 
-    def _get_llm_cache(self, llm_string: str):
+    def _get_llm_cache(self, llm_string: str) -> AzureCosmosDBVectorSearch:
         index_name = self._index_name(llm_string)
 
         namespace = self.database_name + "." + self.collection_name
