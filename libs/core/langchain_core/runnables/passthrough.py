@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, create_model
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -36,7 +36,11 @@ from langchain_core.runnables.config import (
     patch_config,
 )
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.utils import AddableDict, ConfigurableFieldSpec
+from langchain_core.runnables.utils import (
+    AddableDict,
+    ConfigurableFieldSpec,
+    create_model,
+)
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
 
@@ -48,23 +52,23 @@ if TYPE_CHECKING:
 
 
 def identity(x: Other) -> Other:
-    """An identity function"""
+    """Identity function"""
     return x
 
 
 async def aidentity(x: Other) -> Other:
-    """An async identity function"""
+    """Async identity function"""
     return x
 
 
 class RunnablePassthrough(RunnableSerializable[Other, Other]):
-    """A runnable to passthrough inputs unchanged or with additional keys.
+    """Runnable to passthrough inputs unchanged or with additional keys.
 
     This runnable behaves almost like the identity function, except that it
     can be configured to add additional keys to the output, if the input is a
     dict.
 
-    The examples below demonstrate this runnable works using a few simple
+    The examples below demonstrate this Runnable works using a few simple
     chains. The chains rely on simple lambdas to make the examples easy to execute
     and experiment with.
 
@@ -572,7 +576,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
 class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
-    A runnable that picks keys from Dict[str, Any] inputs.
+    Runnable that picks keys from Dict[str, Any] inputs.
     """
 
     keys: Union[str, List[str]]

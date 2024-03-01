@@ -135,6 +135,42 @@ class NetworkxEntityGraph:
         """Clear the graph."""
         self._graph.clear()
 
+    def clear_edges(self) -> None:
+        """Clear the graph edges."""
+        self._graph.clear_edges()
+
+    def add_node(self, node: str) -> None:
+        """Add node in the graph."""
+        self._graph.add_node(node)
+
+    def remove_node(self, node: str) -> None:
+        """Remove node from the graph."""
+        if self._graph.has_node(node):
+            self._graph.remove_node(node)
+
+    def has_node(self, node: str) -> bool:
+        """Return if graph has the given node."""
+        return self._graph.has_node(node)
+
+    def remove_edge(self, source_node: str, destination_node: str) -> None:
+        """Remove edge from the graph."""
+        self._graph.remove_edge(source_node, destination_node)
+
+    def has_edge(self, source_node: str, destination_node: str) -> bool:
+        """Return if graph has an edge between the given nodes."""
+        if self._graph.has_node(source_node) and self._graph.has_node(destination_node):
+            return self._graph.has_edge(source_node, destination_node)
+        else:
+            return False
+
+    def get_neighbors(self, node: str) -> List[str]:
+        """Return the neighbor nodes of the given node."""
+        return self._graph.neighbors(node)
+
+    def get_number_of_nodes(self) -> int:
+        """Get number of nodes in the graph."""
+        return self._graph.number_of_nodes()
+
     def get_topological_sort(self) -> List[str]:
         """Get a list of entity names in the graph sorted by causal dependence."""
         import networkx as nx

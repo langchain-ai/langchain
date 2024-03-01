@@ -15,6 +15,7 @@ class MWDumpLoader(BaseLoader):
     Example:
         .. code-block:: python
 
+            from langchain_text_splitters import RecursiveCharacterTextSplitter
             from langchain_community.document_loaders import MWDumpLoader
 
             loader = MWDumpLoader(
@@ -22,7 +23,6 @@ class MWDumpLoader(BaseLoader):
                 encoding="utf8"
             )
             docs = loader.load()
-            from langchain.text_splitter import RecursiveCharacterTextSplitter
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=1000, chunk_overlap=0
             )
@@ -60,7 +60,7 @@ class MWDumpLoader(BaseLoader):
         self.skip_redirects = skip_redirects
         self.stop_on_error = stop_on_error
 
-    def _load_dump_file(self):
+    def _load_dump_file(self):  # type: ignore[no-untyped-def]
         try:
             import mwxml
         except ImportError as e:
@@ -70,7 +70,7 @@ class MWDumpLoader(BaseLoader):
 
         return mwxml.Dump.from_file(open(self.file_path, encoding=self.encoding))
 
-    def _load_single_page_from_dump(self, page) -> Document:
+    def _load_single_page_from_dump(self, page) -> Document:  # type: ignore[no-untyped-def, return]
         """Parse a single page."""
         try:
             import mwparserfromhell
