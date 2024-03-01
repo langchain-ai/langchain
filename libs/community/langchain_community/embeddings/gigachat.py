@@ -4,10 +4,10 @@ from __future__ import annotations
 import logging
 import time
 from functools import cached_property
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,6 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
             key_file=self.key_file,
             key_file_password=self.key_file_password,
         )
-
 
     def embed_documents(
         self, texts: List[str], model: str = "Embeddings"

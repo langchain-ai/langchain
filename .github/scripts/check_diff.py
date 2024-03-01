@@ -7,8 +7,7 @@ LANGCHAIN_DIRS = [
     "libs/core",
     "libs/langchain",
     "libs/experimental",
-    "libs/community",
-    "libs/cli",
+    "libs/community"
 ]
 
 if __name__ == "__main__":
@@ -52,13 +51,13 @@ if __name__ == "__main__":
             if os.path.isdir(f"libs/partners/{partner_dir}"):
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted
+        elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/", "libs/cli/"]):
+            dirs_to_run["lint"].add(".")
         elif file.startswith("libs/"):
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/"]):
-            dirs_to_run["lint"].add(".")
 
     outputs = {
         "dirs-to-lint": list(

@@ -990,7 +990,7 @@ tqdm = ["tqdm"]
 
 [[package]]
 name = "gigachain"
-version = "0.1.7"
+version = "0.1.9"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1001,11 +1001,11 @@ develop = true
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-community = ">=0.0.20,<0.1"
-gigachain-core = ">=0.1.22,<0.2"
-gigachat = ">=0.1.16"
+gigachain-community = ">=0.0.21,<0.1"
+gigachain-core = ">=0.1.26,<0.2"
+gigachat = ">=0.1.17"
 jsonpatch = "^1.33"
-langsmith = ">=0.0.83,<0.1"
+langsmith = "^0.1.0"
 numpy = "^1"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -1034,7 +1034,7 @@ url = "../langchain"
 
 [[package]]
 name = "gigachain-community"
-version = "0.0.20"
+version = "0.0.24"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1044,8 +1044,8 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-core = ">=0.1.21,<0.2"
-langsmith = ">=0.0.83,<0.1"
+gigachain-core = ">=0.1.26,<0.2"
+langsmith = "^0.1.0"
 numpy = "^1"
 PyYAML = ">=5.3"
 requests = "^2"
@@ -1062,7 +1062,7 @@ url = "../community"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.23"
+version = "0.1.27"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1072,7 +1072,7 @@ develop = true
 [package.dependencies]
 anyio = ">=3,<5"
 jsonpatch = "^1.33"
-langsmith = "^0.0.87"
+langsmith = "^0.1.0"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -1088,13 +1088,13 @@ url = "../core"
 
 [[package]]
 name = "gigachat"
-version = "0.1.16"
+version = "0.1.17"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "gigachat-0.1.16-py3-none-any.whl", hash = "sha256:35fac1ee3d1ca5066fb132edc0ee424e91d72b5116c92572d572d74f74ce8e9f"},
-    {file = "gigachat-0.1.16.tar.gz", hash = "sha256:eccf247a81fd90eadb6ee2367f5afd950a99d376675875273ecdf850fd17619c"},
+    {file = "gigachat-0.1.17-py3-none-any.whl", hash = "sha256:a6021623e14daeef7c117bb8bdb84e4c919392730361e418ad16207f01aa2390"},
+    {file = "gigachat-0.1.17.tar.gz", hash = "sha256:4e3f7fcdce2c6dcf401058c7f2e2d9adb2dbdd55c147ff0ed451be44fbb884c8"},
 ]
 
 [package.dependencies]
@@ -2596,8 +2596,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -5343,4 +5343,4 @@ extended-testing = ["faker", "jinja2", "pandas", "presidio-analyzer", "presidio-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "437428830ed7a376655f20a8faca0de5cf75ff843f0b44ef92cdbd5e3cd16305"
+content-hash = "ed3220ae69add310647f35a16e62c5ae3f9d2c980b984f04883a7d6e10f9232f"
