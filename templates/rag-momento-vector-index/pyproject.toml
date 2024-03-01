@@ -11,6 +11,7 @@ langchain = "^0.1"
 momento = "^1.12.0"
 openai = "<2"
 tiktoken = "^0.5.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
