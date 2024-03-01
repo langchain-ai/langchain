@@ -39,7 +39,7 @@ class AzureBlobStorageContainerLoader(BaseLoader):
             loader = AzureBlobStorageFileLoader(
                 self.conn_str,
                 self.container,
-                blob.name,  # type: ignore
+                blob.name,
             )
             docs.extend(loader.load())
         return docs

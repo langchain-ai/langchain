@@ -1,5 +1,5 @@
 import json
-from typing import Iterator, List, Mapping, Optional, Sequence, Union
+from typing import Iterator, Mapping, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
@@ -83,10 +83,6 @@ class HuggingFaceDatasetLoader(BaseLoader):
             for key in dataset.keys()
             for row in dataset[key]
         )
-
-    def load(self) -> List[Document]:
-        """Load documents."""
-        return list(self.lazy_load())
 
     def parse_obj(self, page_content: Union[str, object]) -> str:
         if isinstance(page_content, object):

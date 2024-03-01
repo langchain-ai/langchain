@@ -106,7 +106,3 @@ class HuggingFaceModelLoader(BaseLoader):
                 page_content=readme_content,
                 metadata=model,
             )
-
-    def load(self) -> List[Document]:
-        """Load model information, including README content."""
-        return list(self.lazy_load())
