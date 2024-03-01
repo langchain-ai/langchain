@@ -346,143 +346,145 @@ async def test_event_stream_with_simple_chain() -> None:
     events = await _collect_events(
         chain.astream_events({"question": "hello"}, version="v1")
     )
+    
     assert events == [
         {
-            "data": {"input": {"question": "hello"}},
-            "event": "on_chain_start",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "tags": ["my_chain"],
+            'data': {'input': {'question': 'hello'}},
+            'event': 'on_chain_start',
+            'metadata': {'foo': 'bar'},
+            'name': 'my_chain',
+            'run_id': '',
+            'tags': ['my_chain']
         },
         {
-            "data": {"input": {"question": "hello"}},
-            "event": "on_prompt_start",
-            "metadata": {"foo": "bar"},
-            "name": "my_template",
-            "run_id": "",
-            "tags": ["my_chain", "my_template", "seq:step:1"],
+            'data': {'input': {'question': 'hello'}},
+            'event': 'on_prompt_start',
+            'metadata': {'foo': 'bar'},
+            'name': 'my_template',
+            'run_id': '',
+            'tags': ['my_chain', 'my_template', 'seq:step:1']
         },
+        
         {
-            "data": {
-                "input": {"question": "hello"},
-                "output": ChatPromptValue(
+            'data': {
+                'input': {'question': 'hello'},
+                'output': ChatPromptValue(
                     messages=[
-                        SystemMessage(content="You are Cat Agent 007"),
-                        HumanMessage(content="hello"),
+                        SystemMessage(content='You are Cat Agent 007'), 
+                        HumanMessage(content='hello')
                     ]
                 ),
             },
-            "event": "on_prompt_end",
-            "metadata": {"foo": "bar"},
-            "name": "my_template",
-            "run_id": "",
-            "tags": ["my_chain", "my_template", "seq:step:1"],
+            'event': 'on_prompt_end',
+            'metadata': {'foo': 'bar'},
+            'name': 'my_template',
+            'run_id': '',
+            'tags': ['my_chain', 'my_template', 'seq:step:1']
         },
         {
-            "data": {
-                "input": {
-                    "messages": [
+            'data': {
+                'input': {
+                    'messages': [
                         [
-                            SystemMessage(content="You are Cat Agent 007"),
-                            HumanMessage(content="hello"),
+                            SystemMessage(content='You are Cat Agent 007'),
+                            HumanMessage(content='hello')
                         ]
                     ]
                 }
             },
-            "event": "on_chat_model_start",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": "",
-            "tags": ["my_chain", "my_model", "seq:step:2"],
+            'event': 'on_chat_model_start',
+            'metadata': {'a': 'b', 'foo': 'bar'},
+            'name': 'my_model',
+            'run_id': '',
+            'tags': ['my_chain', 'my_model', 'seq:step:2']
         },
         {
-            "data": {"chunk": AIMessageChunk(content="hello")},
-            "event": "on_chain_stream",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "tags": ["my_chain"],
+            'data': {'chunk': AIMessageChunk(content='hello')},
+            'event': 'on_chat_model_stream',
+            'metadata': {'a': 'b', 'foo': 'bar'},
+            'name': 'my_model',
+            'run_id': '',
+            'tags': ['my_chain', 'my_model', 'seq:step:2']
         },
         {
-            "data": {"chunk": AIMessageChunk(content="hello")},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": "",
-            "tags": ["my_chain", "my_model", "seq:step:2"],
+            'data': {'chunk': AIMessageChunk(content='hello')},
+            'event': 'on_chain_stream',
+            'metadata': {'foo': 'bar'},
+            'name': 'my_chain',
+            'run_id': '',
+            'tags': ['my_chain']
         },
         {
-            "data": {"chunk": AIMessageChunk(content=" ")},
-            "event": "on_chain_stream",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "tags": ["my_chain"],
+            'data': {'chunk': AIMessageChunk(content=' ')},
+            'event': 'on_chat_model_stream',
+            'metadata': {'a': 'b', 'foo': 'bar'},
+            'name': 'my_model',
+            'run_id': '',
+            'tags': ['my_chain', 'my_model', 'seq:step:2']
         },
         {
-            "data": {"chunk": AIMessageChunk(content=" ")},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": "",
-            "tags": ["my_chain", "my_model", "seq:step:2"],
+            'data': {'chunk': AIMessageChunk(content=' ')},
+            'event': 'on_chain_stream',
+            'metadata': {'foo': 'bar'},
+            'name': 'my_chain',
+            'run_id': '',
+            'tags': ['my_chain']
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!")},
-            "event": "on_chain_stream",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "tags": ["my_chain"],
+            'data': {'chunk': AIMessageChunk(content='world!')},
+            'event': 'on_chat_model_stream',
+            'metadata': {'a': 'b', 'foo': 'bar'},
+            'name': 'my_model',
+            'run_id': '',
+            'tags': ['my_chain', 'my_model', 'seq:step:2']
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!")},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": "",
-            "tags": ["my_chain", "my_model", "seq:step:2"],
+            'data': {'chunk': AIMessageChunk(content='world!')},
+            'event': 'on_chain_stream',
+            'metadata': {'foo': 'bar'},
+            'name': 'my_chain',
+            'run_id': '',
+            'tags': ['my_chain']
         },
         {
-            "data": {
-                "input": {
-                    "messages": [
+            'data': {
+                'input': {
+                    'messages': [
                         [
-                            SystemMessage(content="You are Cat Agent 007"),
-                            HumanMessage(content="hello"),
+                            SystemMessage(content='You are Cat Agent 007'),
+                            HumanMessage(content='hello')
                         ]
                     ]
                 },
-                "output": {
-                    "generations": [
+                'output': {
+                    'generations': [
                         [
                             {
-                                "generation_info": None,
-                                "message": AIMessageChunk(content="hello world!"),
-                                "text": "hello world!",
-                                "type": "ChatGenerationChunk",
+                                'generation_info': None,
+                                'message': AIMessageChunk(content='hello world!'),
+                                'text': 'hello world!',
+                                'type': 'ChatGenerationChunk'
                             }
                         ]
                     ],
-                    "llm_output": None,
-                    "run": None,
+                    'llm_output': None,
+                    'run': None
                 },
             },
-            "event": "on_chat_model_end",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": "",
-            "tags": ["my_chain", "my_model", "seq:step:2"],
+            'event': 'on_chat_model_end',
+            'metadata': {'a': 'b', 'foo': 'bar'},
+            'name': 'my_model',
+            'run_id': '',
+            'tags': ['my_chain', 'my_model', 'seq:step:2']
         },
         {
-            "data": {"output": AIMessageChunk(content="hello world!")},
-            "event": "on_chain_end",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
-            "run_id": "",
-            "tags": ["my_chain"],
-        },
+            'data': {'output': AIMessageChunk(content='hello world!')},
+            'event': 'on_chain_end',
+            'metadata': {'foo': 'bar'},
+            'name': 'my_chain',
+            'run_id': '',
+            'tags': ['my_chain']
+        }
     ]
 
 
