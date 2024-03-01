@@ -226,7 +226,7 @@ def test_global_cache_batch() -> None:
         results = chat_model.batch(["first prompt", "first prompt"])
         # These could be either "hello" or "goodbye" and should be identical
         assert results[0].content == results[1].content
-        assert {results[0].content, results[1].content}.issubset({'hello', 'goodbye'})
+        assert {results[0].content, results[1].content}.issubset({"hello", "goodbye"})
 
         ## RACE CONDITION -- note behavior is different from async
         # Now, reset cache and test the race condition
