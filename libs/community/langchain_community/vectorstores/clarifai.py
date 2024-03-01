@@ -59,7 +59,8 @@ class Clarifai(VectorStore):
         _app_id = app_id or os.environ.get("CLARIFAI_APP_ID")
         if _user_id is None or _app_id is None:
             raise ValueError(
-                "Could not find CLARIFAI_USER_ID or CLARIFAI_APP_ID in your environment. "
+                "Could not find CLARIFAI_USER_ID "
+                "or CLARIFAI_APP_ID in your environment. "
                 "Please set those env variables with a valid user ID, app ID"
             )
         self._number_of_docs = number_of_docs
@@ -163,7 +164,7 @@ class Clarifai(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = None,
+        k: Optional[int] = None,
         filters: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -171,7 +172,8 @@ class Clarifai(VectorStore):
 
         Args:
             query (str): Query text to search for.
-            k (int): Number of results to return. Defaults to None.
+            k (Optional[int]): Number of results to return. If not set,
+            it'll take _number_of_docs. Defaults to None.
             filter (Optional[Dict[str, str]]): Filter by metadata.
             Defaults to None.
 
@@ -228,14 +230,15 @@ class Clarifai(VectorStore):
     def similarity_search(
         self,
         query: str,
-        k: int = None,
+        k: Optional[int] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search using Clarifai.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
+            If not set, it'll take _number_of_docs. Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -262,10 +265,13 @@ class Clarifai(VectorStore):
             user_id (str): User ID.
             app_id (str): App ID.
             texts (List[str]): List of texts to add.
-            number_of_docs (Optional[int]): Number of documents to return during vector search. Defaults to None.
-            pat (Optional[str], optional): Personal access token. Defaults to None.
+            number_of_docs (Optional[int]): Number of documents
+            to return during vector search. Defaults to None.
+            pat (Optional[str], optional): Personal access token.
+            Defaults to None.
             token (Optional[str], optional): Session token. Defaults to None.
-            metadatas (Optional[List[dict]]): Optional list of metadatas. Defaults to None.
+            metadatas (Optional[List[dict]]): Optional list
+            of metadatas. Defaults to None.
             **kwargs: Additional keyword arguments to be passed to the Search.
 
         Returns:
@@ -300,7 +306,8 @@ class Clarifai(VectorStore):
             user_id (str): User ID.
             app_id (str): App ID.
             documents (List[Document]): List of documents to add.
-            number_of_docs (Optional[int]): Number of documents to return during vector search. Defaults to None.
+            number_of_docs (Optional[int]): Number of documents
+            to return during vector search. Defaults to None.
             pat (Optional[str], optional): Personal access token. Defaults to None.
             token (Optional[str], optional): Session token. Defaults to None.
             **kwargs: Additional keyword arguments to be passed to the Search.

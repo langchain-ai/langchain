@@ -130,14 +130,6 @@ class Clarifai(LLM):
 
                 response = clarifai_llm("Tell me a joke.")
         """
-        # If version_id None, Defaults to the latest model version
-        try:
-            from clarifai.client.model import Model
-        except ImportError:
-            raise ImportError(
-                "Could not import clarifai python package. "
-                "Please install it with `pip install clarifai`."
-            )
 
         try:
             (inference_params := {}) if inference_params is None else inference_params
