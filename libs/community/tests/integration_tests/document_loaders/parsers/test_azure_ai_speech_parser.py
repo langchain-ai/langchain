@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, List, Optional
+from typing import Any, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -30,13 +30,13 @@ class _AzureAISpeechLoader(BaseLoader):
             loader.lazy_load()
     """
 
-    def __init__(self, file_path: str, **kwargs: Optional[list[str] | str]) -> None:
+    def __init__(self, file_path: str, **kwargs: Any) -> None:
         """
         Args:
             file_path: The path to the audio file.
         """
         self.file_path = file_path
-        self.parser = AzureAISpeechParser(**kwargs)
+        self.parser = AzureAISpeechParser(**kwargs)  # type: ignore
 
     def load(self) -> List[Document]:
         return list(self.lazy_load())
@@ -87,5 +87,5 @@ def test_azure_speech_load_key_endpoint() -> None:
         endpoint=f"wss://{SPEECH_SERVICE_REGION}.stt.speech.microsoft.com/speech/recognition"
         "/conversation/cognitiveservices/v1",
     )
-    documents = loader.lazy_load()
+    documents = loader.load()
     assert "what" in documents[0].page_content.lower()
