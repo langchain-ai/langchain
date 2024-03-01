@@ -1,18 +1,28 @@
 # NVIDIA
 
-> [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to NVIDIA hosted API endpoints for NVIDIA AI Foundation Models like Mixtral 8x7B, Llama 2, Stable Diffusion, etc. These models, hosted on the [NVIDIA NGC catalog](https://catalog.ngc.nvidia.com/ai-foundation-models), are optimized, tested, and hosted on the NVIDIA AI platform, making them fast and easy to evaluate, further customize, and seamlessly run at peak performance on any accelerated stack.
+>NVIDIA provides an integration package for LangChain: `langchain-nvidia-ai-endpoints`.
+
+## NVIDIA AI Foundation Endpoints
+
+> [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to NVIDIA hosted API endpoints for 
+> NVIDIA AI Foundation Models like `Mixtral 8x7B`, `Llama 2`, `Stable Diffusion`, etc. These models, 
+> hosted on the [NVIDIA NGC catalog](https://catalog.ngc.nvidia.com/ai-foundation-models), are optimized, tested, and hosted on 
+> the NVIDIA AI platform, making them fast and easy to evaluate, further customize, 
+> and seamlessly run at peak performance on any accelerated stack.
 > 
-> With [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/), you can get quick results from a fully accelerated stack running on [NVIDIA DGX Cloud](https://www.nvidia.com/en-us/data-center/dgx-cloud/). Once customized, these models can be deployed anywhere with enterprise-grade security, stability, and support using [NVIDIA AI Enterprise](https://www.nvidia.com/en-us/data-center/products/ai-enterprise/).
-> 
-> These models can be easily accessed via the [`langchain-nvidia-ai-endpoints`](https://pypi.org/project/langchain-nvidia-ai-endpoints/) package, as shown below.
+> With [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/), you can get quick results from a fully 
+> accelerated stack running on [NVIDIA DGX Cloud](https://www.nvidia.com/en-us/data-center/dgx-cloud/). Once customized, these 
+> models can be deployed anywhere with enterprise-grade security, stability, 
+> and support using [NVIDIA AI Enterprise](https://www.nvidia.com/en-us/data-center/products/ai-enterprise/).
 
-## Installation
+A selection of NVIDIA AI Foundation models is supported directly in LangChain with familiar APIs.
 
-```bash
-pip install -U langchain-nvidia-ai-endpoints
-```
+The supported models can be found [in NGC](https://catalog.ngc.nvidia.com/ai-foundation-models).
 
-## Setup and Authentication
+These models can be accessed via the [`langchain-nvidia-ai-endpoints`](https://pypi.org/project/langchain-nvidia-ai-endpoints/) 
+package, as shown below.
+
+### Setting up
 
 - Create a free [NVIDIA NGC](https://catalog.ngc.nvidia.com/) account.
 - Navigate to `Catalog > AI Foundation Models > (Model with API endpoint)`.
@@ -22,6 +32,16 @@ pip install -U langchain-nvidia-ai-endpoints
 export NVIDIA_API_KEY=nvapi-XXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
+- Install a package:
+
+```bash
+pip install -U langchain-nvidia-ai-endpoints
+```
+
+### Chat models
+
+See a [usage example](/docs/integrations/chat/nvidia_ai_endpoints).
+
 ```python
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
@@ -30,12 +50,10 @@ result = llm.invoke("Write a ballad about LangChain.")
 print(result.content)
 ```
 
-## Using NVIDIA AI Foundation Endpoints
+### Embedding models
 
-A selection of NVIDIA AI Foundation models are supported directly in LangChain with familiar APIs.
+See a [usage example](/docs/integrations/text_embedding/nvidia_ai_endpoints).
 
-The active models which are supported can be found [in NGC](https://catalog.ngc.nvidia.com/ai-foundation-models).
-
-**The following may be useful examples to help you get started:**
-- **[`ChatNVIDIA` Model](/docs/integrations/chat/nvidia_ai_endpoints).**
-- **[`NVIDIAEmbeddings` Model for RAG Workflows](/docs/integrations/text_embedding/nvidia_ai_endpoints).**
+```python
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+```
