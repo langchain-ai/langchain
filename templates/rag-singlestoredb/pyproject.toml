@@ -13,6 +13,7 @@ langchain = "^0.1"
 openai = "<2"
 singlestoredb = ">=0.8.1"
 tiktoken = "^0.5.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"

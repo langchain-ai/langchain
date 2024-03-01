@@ -1,7 +1,6 @@
 import getpass
 import os
 
-from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import Milvus
 from langchain_core.output_parsers import StrOutputParser
@@ -13,6 +12,7 @@ from langchain_core.runnables import (
     RunnablePassthrough,
 )
 from langchain_nvidia_aiplay import ChatNVIDIA, NVIDIAEmbeddings
+from langchain_text_splitters.character import CharacterTextSplitter
 
 EMBEDDING_MODEL = "nvolveqa_40k"
 CHAT_MODEL = "llama2_13b"
@@ -23,7 +23,7 @@ INGESTION_CHUNK_SIZE = 500
 INGESTION_CHUNK_OVERLAP = 0
 
 if os.environ.get("NVIDIA_API_KEY", "").startswith("nvapi-"):
-    print("Valid NVIDIA_API_KEY already in environment. Delete to reset")
+    print("Valid NVIDIA_API_KEY already in environment. Delete to reset")  # noqa: T201
 else:
     nvapi_key = getpass.getpass("NVAPI Key (starts with nvapi-): ")
     assert nvapi_key.startswith("nvapi-"), f"{nvapi_key[:5]}... is not a valid key"

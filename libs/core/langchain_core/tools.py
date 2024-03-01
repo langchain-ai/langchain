@@ -1,4 +1,22 @@
-"""Base implementation for tools or skills."""
+"""**Tools** are classes that an Agent uses to interact with the world.
+
+Each tool has a **description**. Agent uses the description to choose the right
+tool for the job.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    RunnableSerializable --> BaseTool --> <name>Tool  # Examples: AIPluginTool, BaseGraphQLTool
+                                          <name>      # Examples: BraveSearch, HumanInputRun
+
+**Main helpers:**
+
+.. code-block::
+
+    CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
+"""  # noqa: E501
+
 from __future__ import annotations
 
 import inspect
@@ -99,10 +117,10 @@ def create_schema_from_function(
 
 
 class ToolException(Exception):
-    """An optional exception that tool throws when execution error occurs.
+    """Optional exception that tool throws when execution error occurs.
 
     When this exception is thrown, the agent will not stop working,
-    but will handle the exception according to the handle_tool_error
+    but it will handle the exception according to the handle_tool_error
     variable of the tool, and the processing result will be returned
     to the agent as observation, and printed in red on the console.
     """
