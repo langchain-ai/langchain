@@ -50,6 +50,7 @@ from langchain_community.chat_models.mlflow_ai_gateway import ChatMLflowAIGatewa
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
+from langchain_community.chat_models.perplexity import ChatPerplexity
 from langchain_community.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain_community.chat_models.sparkllm import ChatSparkLLM
 from langchain_community.chat_models.tongyi import ChatTongyi
@@ -99,6 +100,7 @@ __all__ = [
     "GPTRouter",
     "ChatYuan2",
     "ChatZhipuAI",
+    "ChatPerplexity",
     "ChatKinetica",
     "ChatMaritalk",
 ]
