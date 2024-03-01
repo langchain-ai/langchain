@@ -346,7 +346,6 @@ async def test_event_stream_with_simple_chain() -> None:
     events = await _collect_events(
         chain.astream_events({"question": "hello"}, version="v1")
     )
-    
     assert events == [
         {
             'data': {'input': {'question': 'hello'}},
@@ -364,7 +363,6 @@ async def test_event_stream_with_simple_chain() -> None:
             'run_id': '',
             'tags': ['my_chain', 'my_template', 'seq:step:1']
         },
-        
         {
             'data': {
                 'input': {'question': 'hello'},
