@@ -94,7 +94,6 @@ hdbcli = {version = "^2.19.21", optional = true}
 oci = {version = "^2.119.1", optional = true}
 rdflib = {version = "7.0.0", optional = true}
 nvidia-riva-client = {version = "^2.14.0", optional = true}
-llmlingua = {version = "^0.1.6", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -170,6 +169,7 @@ types-chardet = "^5.0.4.6"
 types-redis = "^4.3.21.6"
 mypy-protobuf = "^3.0.0"
 langchain-core = {path = "../core", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
@@ -260,8 +260,7 @@ extended_testing = [
  "elasticsearch",
  "hdbcli",
  "oci",
- "rdflib",
- "llmlingua"
+ "rdflib"
 ]
 
 [tool.ruff]
