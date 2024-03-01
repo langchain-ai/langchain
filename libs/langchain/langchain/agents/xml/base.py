@@ -121,8 +121,8 @@ def create_xml_agent(
         prompt: The prompt to use, must have input keys
             `tools`: contains descriptions for each tool.
             `agent_scratchpad`: contains previous agent actions and tool outputs.
-        tools_renderer: Custom tools renderer that suit to your LLM.
-            Default is `render_text_description`.
+        tools_renderer: This controls how the tools are converted into a string and
+            then passed into the LLM. Default is `render_text_description`.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
