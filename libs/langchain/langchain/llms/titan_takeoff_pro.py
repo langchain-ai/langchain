@@ -1,3 +1,3 @@
-from langchain_community.llms.titan_takeoff_pro import TitanTakeoffPro
+from langchain_community.llms.titan_takeoff import TitanTakeoff as TitanTakeoffPro
 
 __all__ = ["TitanTakeoffPro"]

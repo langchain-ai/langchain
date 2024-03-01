@@ -9,53 +9,35 @@ from requests.exceptions import ConnectionError
 from langchain_community.llms.utils import enforce_stop_tokens
 
 
-class TitanTakeoff(LLM):
-    """Wrapper around Titan Takeoff APIs."""
+class TitanTakeoffPro(LLM):
+    """Titan Takeoff Pro is a language model that can be used to generate text."""
 
-    base_url: str = "http://localhost:8000"
-    """Specifies the baseURL to use for the Titan Takeoff API. 
-    Default = http://localhost:8000.
-    """
+    base_url: str = "http://localhost"
+    """The base URL of the Titan Takeoff (Pro) server. Default = "http://localhost"."""
 
-    generate_max_length: int = 128
-    """Maximum generation length. Default = 128."""
+    port: int = 3000
+    """The port of the Titan Takeoff (Pro) server. Default = 3000."""
 
-    sampling_topk: int = 1
-    """Sample predictions from the top K most probable candidates. Default = 1."""
-
-    sampling_topp: float = 1.0
-    """Sample from predictions whose cumulative probability exceeds this value.
-    Default = 1.0.
-    """
-
-    sampling_temperature: float = 1.0
-    """Sample with randomness. Bigger temperatures are associated with 
-    more randomness and 'creativity'. Default = 1.0.
-    """
-
-    repetition_penalty: float = 1.0
-    """Penalise the generation of tokens that have been generated before. 
-    Set to > 1 to penalize. Default = 1 (no penalty).
-    """
-
-    no_repeat_ngram_size: int = 0
-    """Prevent repetitions of ngrams of this size. Default = 0 (turned off)."""
+    mgmt_port: int = 3001
+    """The management port of the Titan Takeoff (Pro) server. Default = 3001."""
 
     streaming: bool = False
     """Whether to stream the output. Default = False."""
 
-    @property
-    def _default_params(self) -> Mapping[str, Any]:
-        """Get the default parameters for calling Titan Takeoff Server."""
-        params = {
-            "generate_max_length": self.generate_max_length,
-            "sampling_topk": self.sampling_topk,
-            "sampling_topp": self.sampling_topp,
-            "sampling_temperature": self.sampling_temperature,
-            "repetition_penalty": self.repetition_penalty,
-            "no_repeat_ngram_size": self.no_repeat_ngram_size,
-        }
-        return params
+    models: List[str] = []
+    """A list of models to initialize on the running Takeoff server. Default = []."""
+
+    def __init__(self):
+        """Initialize the Titan Takeoff Pro language model."""
+        super().__init__(self)
+        try:
+            from takeoff_client import TakeoffClient  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "takeoff-client is required for TitanTakeoff. "
+                "Please install it with `pip install takeoff-client`."
+            )
+        self.client = TakeoffClient(self.base_url, port=self.port, mgmt_port=self.mgmt_port)
 
     @property
     def _llm_type(self) -> str:
@@ -69,7 +51,7 @@ class TitanTakeoff(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Call out to Titan Takeoff generate endpoint.
+        """Call out to Titan Takeoff (Pro) generate endpoint.
 
         Args:
             prompt: The prompt to pass into the model.
@@ -95,17 +77,17 @@ class TitanTakeoff(LLM):
                 ):
                     text_output += chunk.text
                 return text_output
-
             url = f"{self.base_url}/generate"
             params = {"text": prompt, **self._default_params}
 
             response = requests.post(url, json=params)
             response.raise_for_status()
             response.encoding = "utf-8"
-            text = ""
 
-            if "message" in response.json():
-                text = response.json()["message"]
+            text = ""
+            if "text" in response.json():
+                text = response.json()["text"]
+                text = text.replace("</s>", "")
             else:
                 raise ValueError("Something went wrong.")
             if stop is not None:
@@ -113,7 +95,7 @@ class TitanTakeoff(LLM):
             return text
         except ConnectionError:
             raise ConnectionError(
-                "Could not connect to Titan Takeoff server. \
+                "Could not connect to Titan Takeoff (Pro) server. \
                 Please make sure that the server is running."
             )
 
@@ -124,7 +106,7 @@ class TitanTakeoff(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        """Call out to Titan Takeoff stream endpoint.
+        """Call out to Titan Takeoff (Pro) stream endpoint.
 
         Args:
             prompt: The prompt to pass into the model.
@@ -148,12 +130,30 @@ class TitanTakeoff(LLM):
 
         response = requests.post(url, json=params, stream=True)
         response.encoding = "utf-8"
+        buffer = ""
         for text in response.iter_content(chunk_size=1, decode_unicode=True):
-            if text:
-                chunk = GenerationChunk(text=text)
-                yield chunk
-                if run_manager:
-                    run_manager.on_llm_new_token(token=chunk.text)
+            buffer += text
+            if "data:" in buffer:
+                # Remove the first instance of "data:" from the buffer.
+                if buffer.startswith("data:"):
+                    buffer = ""
+                if len(buffer.split("data:", 1)) == 2:
+                    content, _ = buffer.split("data:", 1)
+                    buffer = content.rstrip("\n")
+                # Trim the buffer to only have content after the "data:" part.
+                if buffer:  # Ensure that there's content to process.
+                    chunk = GenerationChunk(text=buffer)
+                    buffer = ""  # Reset buffer for the next set of data.
+                    yield chunk
+                    if run_manager:
+                        run_manager.on_llm_new_token(token=chunk.text)
+
+        # Yield any remaining content in the buffer.
+        if buffer:
+            chunk = GenerationChunk(text=buffer.replace("</s>", ""))
+            yield chunk
+            if run_manager:
+                run_manager.on_llm_new_token(token=chunk.text)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
