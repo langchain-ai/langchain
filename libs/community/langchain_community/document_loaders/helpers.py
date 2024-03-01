@@ -2,7 +2,7 @@
 
 import concurrent.futures
 from pathlib import Path
-from typing import List, NamedTuple, Optional, cast
+from typing import List, NamedTuple, Optional, cast, Union
 
 
 class FileEncoding(NamedTuple):
@@ -16,7 +16,7 @@ class FileEncoding(NamedTuple):
     """The language of the file."""
 
 
-def detect_file_encodings(file_path: str | Path, timeout: int = 5) -> List[FileEncoding]:
+def detect_file_encodings(file_path: Union[str, Path], timeout: int = 5) -> List[FileEncoding]:
     """Try to detect the file encoding.
 
     Returns a list of `FileEncoding` tuples with the detected encodings ordered

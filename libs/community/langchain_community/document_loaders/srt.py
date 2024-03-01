@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from langchain_core.documents import Document
 
@@ -9,7 +9,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class SRTLoader(BaseLoader):
     """Load `.srt` (subtitle) files."""
 
-    def __init__(self, file_path: str | Path):
+    def __init__(self, file_path: Union[str, Path]):
         """Initialize with a file path."""
         try:
             import pysrt  # noqa:F401

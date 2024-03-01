@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from langchain_core.documents import Document
 from langchain_core.utils import stringify_dict
@@ -11,7 +11,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class AirbyteJSONLoader(BaseLoader):
     """Load local `Airbyte` json files."""
 
-    def __init__(self, file_path: str | Path):
+    def __init__(self, file_path: Union[str, Path]):
         """Initialize with a file path. This should start with '/tmp/airbyte_local/'."""
         self.file_path = file_path
         """Path to the directory containing the json files."""

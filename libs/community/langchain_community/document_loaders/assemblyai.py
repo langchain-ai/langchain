@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
 import requests
 from langchain_core.documents import Document
@@ -45,7 +45,7 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str | Path,
+        file_path: Union[str, Path],
         *,
         transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
         config: Optional[assemblyai.TranscriptionConfig] = None,

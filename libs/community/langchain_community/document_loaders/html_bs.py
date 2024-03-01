@@ -14,7 +14,7 @@ class BSHTMLLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str | Path,
+        file_path: Union[str, Path],
         open_encoding: Union[str, None] = None,
         bs_kwargs: Union[dict, None] = None,
         get_text_separator: str = "",

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Union
 
 from langchain_core.documents import Document
 
@@ -42,7 +42,7 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
     """
 
     def __init__(
-        self, file_path: str | Path, mode: str = "single", **unstructured_kwargs: Any
+        self, file_path: Union[str, Path], mode: str = "single", **unstructured_kwargs: Any
     ):
         process_attachments = unstructured_kwargs.get("process_attachments")
         attachment_partitioner = unstructured_kwargs.get("attachment_partitioner")
@@ -80,17 +80,17 @@ class OutlookMessageLoader(BaseLoader):
     https://github.com/TeamMsgExtractor/msg-extractor
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: Union[str, Path]):
         """Initialize with a file path.
 
         Args:
             file_path: The path to the Outlook Message file.
         """
 
-        self.file_path = file_path
+        self.file_path = str(file_path)
 
         if not os.path.isfile(self.file_path):
-            raise ValueError("File path %s is not a valid file" % self.file_path)
+            raise ValueError(f"File path {self.file_path} is not a valid file")
 
         try:
             import extract_msg  # noqa:F401

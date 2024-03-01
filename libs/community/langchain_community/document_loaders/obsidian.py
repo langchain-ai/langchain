@@ -2,7 +2,7 @@ import functools
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import yaml
 from langchain_core.documents import Document
@@ -23,7 +23,7 @@ class ObsidianLoader(BaseLoader):
     DATAVIEW_INLINE_PAREN_REGEX = re.compile(r"\((\w+)::\s*(.*)\)", re.MULTILINE)
 
     def __init__(
-        self, path: str | Path, encoding: str = "UTF-8", collect_metadata: bool = True
+        self, path: Union[str, Path], encoding: str = "UTF-8", collect_metadata: bool = True
     ):
         """Initialize with a path.
 

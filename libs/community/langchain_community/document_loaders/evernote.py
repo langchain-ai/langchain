@@ -7,7 +7,7 @@ import logging
 from base64 import b64decode
 from pathlib import Path
 from time import strptime
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -36,7 +36,7 @@ class EverNoteLoader(BaseLoader):
             the 'source' which contains the file name of the export.
     """  # noqa: E501
 
-    def __init__(self, file_path: str | Path, load_single_document: bool = True):
+    def __init__(self, file_path: Union[str, Path], load_single_document: bool = True):
         """Initialize with file path."""
         self.file_path = str(file_path)
         self.load_single_document = load_single_document

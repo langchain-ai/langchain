@@ -1,7 +1,7 @@
 import csv
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
@@ -36,7 +36,7 @@ class CSVLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str | Path,
+        file_path: Union[str, Path],
         source_column: Optional[str] = None,
         metadata_columns: Sequence[str] = (),
         csv_args: Optional[Dict] = None,
@@ -55,7 +55,7 @@ class CSVLoader(BaseLoader):
             encoding: The encoding of the CSV file. Optional. Defaults to None.
             autodetect_encoding: Whether to try to autodetect the file encoding.
         """
-        self.file_path = str(file_path)
+        self.file_path = file_path
         self.source_column = source_column
         self.metadata_columns = metadata_columns
         self.encoding = encoding
@@ -97,7 +97,7 @@ class CSVLoader(BaseLoader):
                 source = (
                     row[self.source_column]
                     if self.source_column is not None
-                    else self.file_path
+                    else str(self.file_path)
                 )
             except KeyError:
                 raise ValueError(

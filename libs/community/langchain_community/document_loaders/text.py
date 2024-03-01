@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -26,12 +26,12 @@ class TextLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str | Path,
+        file_path: Union[str, Path],
         encoding: Optional[str] = None,
         autodetect_encoding: bool = False,
     ):
         """Initialize with file path."""
-        self.file_path = str(file_path)
+        self.file_path = file_path
         self.encoding = encoding
         self.autodetect_encoding = autodetect_encoding
 
@@ -57,5 +57,5 @@ class TextLoader(BaseLoader):
         except Exception as e:
             raise RuntimeError(f"Error loading {self.file_path}") from e
 
-        metadata = {"source": self.file_path}
+        metadata = {"source": str(self.file_path)}
         return [Document(page_content=text, metadata=metadata)]

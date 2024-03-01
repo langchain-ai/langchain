@@ -15,7 +15,7 @@ class MHTMLLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str | Path,
+        file_path: Union[str, Path],
         open_encoding: Union[str, None] = None,
         bs_kwargs: Union[dict, None] = None,
         get_text_separator: str = "",
@@ -38,7 +38,7 @@ class MHTMLLoader(BaseLoader):
                 "`pip install beautifulsoup4`"
             )
 
-        self.file_path = str(file_path)
+        self.file_path = file_path
         self.open_encoding = open_encoding
         if bs_kwargs is None:
             bs_kwargs = {"features": "lxml"}
@@ -70,7 +70,7 @@ class MHTMLLoader(BaseLoader):
                         title = ""
 
                     metadata: Dict[str, Union[str, None]] = {
-                        "source": self.file_path,
+                        "source": str(self.file_path),
                         "title": title,
                     }
                     return [Document(page_content=text, metadata=metadata)]

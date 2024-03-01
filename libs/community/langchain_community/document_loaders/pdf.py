@@ -66,7 +66,7 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: str | Path, *, headers: Optional[Dict] = None):
+    def __init__(self, file_path: Union[str, Path], *, headers: Optional[Dict] = None):
         """Initialize with a file path.
 
         Args:
@@ -209,7 +209,7 @@ class PyPDFDirectoryLoader(BaseLoader):
 
     def __init__(
         self,
-        path: str | Path,
+        path: Union[str, Path],
         glob: str = "**/[!.]*.pdf",
         silent_errors: bool = False,
         load_hidden: bool = False,
