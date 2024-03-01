@@ -245,13 +245,13 @@ ibm-cos-sdk-core = "2.13.4"
 
 [[package]]
 name = "ibm-watson-machine-learning"
-version = "1.0.348"
+version = "1.0.349"
 description = "IBM Watson Machine Learning API Client"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ibm_watson_machine_learning-1.0.348-py3-none-any.whl", hash = "sha256:46cec3bcc9c6522440290d284845390158b92573d9759b77b6987d22580a1222"},
-    {file = "ibm_watson_machine_learning-1.0.348.tar.gz", hash = "sha256:9eceaae1c7b01457c9d5e3bdfb24209a828b4c6212b159dbfd9fdb9a74268e14"},
+    {file = "ibm_watson_machine_learning-1.0.349-py3-none-any.whl", hash = "sha256:b5bc4cdec2a9cda1c9fa6681558f721a7a3058937257ae3040618c7183fe2f55"},
+    {file = "ibm_watson_machine_learning-1.0.349.tar.gz", hash = "sha256:46dd3d67bee39c3e84b047e651bafa06dfb0cb973354c4e2c582928340b51a17"},
 ]
 
 [package.dependencies]
@@ -274,17 +274,17 @@ fl-rt23-1-py3-10 = ["GPUtil", "cloudpickle (==1.3.0)", "cryptography (==39.0.1)"
 
 [[package]]
 name = "ibm-watsonx-ai"
-version = "0.1.8"
+version = "0.2.0"
 description = "IBM watsonx.ai API Client"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ibm_watsonx_ai-0.1.8-py3-none-any.whl", hash = "sha256:85536b00aa3c495540480e53a17b56a0990d1340e47fae0e7ea778dcd717e5dc"},
-    {file = "ibm_watsonx_ai-0.1.8.tar.gz", hash = "sha256:ba4e60091165cb755985f85ef0ece1db76ad1d351dd515a55d739467196dace3"},
+    {file = "ibm_watsonx_ai-0.2.0-py3-none-any.whl", hash = "sha256:75234916b2cd9accedb401a3c11925845efa08361cff4978589f58e39dad48f6"},
+    {file = "ibm_watsonx_ai-0.2.0.tar.gz", hash = "sha256:9af9e402c6f0c74e30ac11c0ae1b80e55e21fb2b2d7c546fc506ab1b9be4851e"},
 ]
 
 [package.dependencies]
-ibm-watson-machine-learning = ">=1.0.335"
+ibm-watson-machine-learning = ">=1.0.349"
 
 [package.extras]
 fl = ["cloudpickle (==1.3.0)", "ddsketch (==1.1.2)", "diffprivlib (==0.5.1)", "environs (==9.5.0)", "gym", "image (==1.5.33)", "jsonpickle (==1.4.2)", "lz4", "numcompress (==0.1.2)", "numpy (==1.19.2)", "pandas (==1.3.4)", "parse (==1.19.0)", "pathlib2 (==2.3.6)", "psutil", "pyYAML (==5.4.1)", "pytest (==6.2.5)", "requests (==2.27.1)", "scikit-learn (==0.23.2)", "scipy (==1.6.3)", "setproctitle", "skorch (==0.11.0)", "tabulate (==0.8.9)", "tensorflow (==2.4.4)", "torch (==1.7.1)", "websockets (==8.1)"]
@@ -372,7 +372,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.27"
+version = "0.1.28"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -398,13 +398,13 @@ url = "../../core"
 
 [[package]]
 name = "langsmith"
-version = "0.1.9"
+version = "0.1.12"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.1.9-py3-none-any.whl", hash = "sha256:f821b3cb07a87eac5cb2181ff0b61051811e4eef09ae4b46e700981f7ae5dfb9"},
-    {file = "langsmith-0.1.9.tar.gz", hash = "sha256:9bd3e80607722c3d2db84cf3440005491a859b80b5e499bc988032d5c2da91f0"},
+    {file = "langsmith-0.1.12-py3-none-any.whl", hash = "sha256:4f3d03c365c4d9eb4ed151055e2830ea73235d8c8be0841a63334f9d4fcf8b2b"},
+    {file = "langsmith-0.1.12.tar.gz", hash = "sha256:cf8d371f92f1035fd98a9692edd8af9c3a60947db4a77864a9c07dec96d3b039"},
 ]
 
 [package.dependencies]
@@ -666,13 +666,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pydantic"
-version = "2.6.2"
+version = "2.6.3"
 description = "Data validation using Python type hints"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pydantic-2.6.2-py3-none-any.whl", hash = "sha256:37a5432e54b12fecaa1049c5195f3d860a10e01bdfd24f1840ef14bd0d3aeab3"},
-    {file = "pydantic-2.6.2.tar.gz", hash = "sha256:a09be1c3d28f3abe37f8a78af58284b236a92ce520105ddc91a6d29ea1176ba7"},
+    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
+    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
 ]
 
 [package.dependencies]
@@ -848,13 +848,13 @@ watchdog = ">=2.0.0"
 
 [[package]]
 name = "python-dateutil"
-version = "2.8.2"
+version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
-    {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
-    {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
+    {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
+    {file = "python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"},
 ]
 
 [package.dependencies]
@@ -896,6 +896,7 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
+    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -1152,4 +1153,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "82240f0636b69c79784cf3b14d1b73f6df90e4a8e9f9ee4f6b6c0b8653c7ee90"
+content-hash = "96cc11c3e73681170c57bf7198ad3a1091620b2272e82dde34bcce4df8721d62"
