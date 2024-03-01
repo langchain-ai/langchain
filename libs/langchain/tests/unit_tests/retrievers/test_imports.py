@@ -11,7 +11,6 @@ EXPECTED_ALL = [
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",
     "CohereRagRetriever",
-    "DriaRetriever",
     "ElasticSearchBM25Retriever",
     "EmbedchainRetriever",
     "GoogleDocumentAIWarehouseRetriever",

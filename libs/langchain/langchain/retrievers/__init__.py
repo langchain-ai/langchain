@@ -67,7 +67,6 @@ __all__ = [
     "CohereRagRetriever",
     "ElasticSearchBM25Retriever",
     "EmbedchainRetriever",
-    "DriaRetriever",
     "GoogleDocumentAIWarehouseRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
     "GoogleVertexAIMultiTurnSearchRetriever",
