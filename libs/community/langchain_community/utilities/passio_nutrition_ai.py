@@ -1,7 +1,7 @@
 """Util that invokes the Passio Nutrition AI API.
 """
 from datetime import datetime, timedelta
-from typing import Union, Dict,final
+from typing import Dict, Union, final
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
@@ -16,7 +16,13 @@ class NoDiskStorage:
 
 
 try:
-    from tenacity import retry, stop_after_attempt, wait_random, wait_exponential, retry_if_result
+    from tenacity import (
+        retry,
+        retry_if_result,
+        stop_after_attempt,
+        wait_exponential,
+        wait_random,
+    )
 except ImportError:
     # No retries if tenacity is not installed.
     def retry(f, *args, **kwargs): return f
