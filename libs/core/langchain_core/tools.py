@@ -785,7 +785,7 @@ class StructuredTool(BaseTool):
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
-        
+
         # This is old openai format
         # sig = signature(source_function)
         # description = f"{name}{sig} - {description.strip()}"

@@ -13,6 +13,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 gigachain-core = ">=0.1.26,<0.2"
+gigachat = ">=0.1.17"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
