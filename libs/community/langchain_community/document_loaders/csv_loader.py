@@ -1,6 +1,6 @@
 import csv
 from io import TextIOWrapper
-from typing import Any, Dict, List, Optional, Sequence, Iterator
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from langchain_core.documents import Document
 
