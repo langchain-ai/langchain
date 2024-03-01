@@ -2,10 +2,12 @@
 
 import pytest
 
-from langchain.text_splitter import (
-    CharacterTextSplitter,
-    SentenceTransformersTokenTextSplitter,
+from langchain_text_splitters import (
     TokenTextSplitter,
+)
+from langchain_text_splitters.character import CharacterTextSplitter
+from langchain_text_splitters.sentence_transformers import (
+    SentenceTransformersTokenTextSplitter,
 )
 
 
