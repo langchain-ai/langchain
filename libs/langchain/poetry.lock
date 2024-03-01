@@ -3457,7 +3457,6 @@ develop = true
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
 langchain-core = ">=0.1.26,<0.2"
-langchain-text-splitters = {path = "../text-splitters", develop = true}
 langsmith = "^0.1.0"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -3529,7 +3528,7 @@ develop = true
 langchain-core = "^0.1.28"
 
 [package.extras]
-extended-testing = []
+extended-testing = ["lxml (>=5.1.0,<6.0.0)"]
 
 [package.source]
 type = "directory"
@@ -9170,4 +9169,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "14fd23dceb33bb70afb364587b46e53806c5ac38a61a7e435684bf3f63f6b6f9"
+content-hash = "a9b21852298f682bdb77689c6f31044a62407185fa3c23d4d65cb9dbbc4522ba"
