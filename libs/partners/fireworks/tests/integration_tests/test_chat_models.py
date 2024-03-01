@@ -74,3 +74,64 @@ def test_tool_choice_bool() -> None:
         "name": "Erick",
     }
     assert tool_call["type"] == "function"
+
+
+def test_stream() -> None:
+    """Test streaming tokens from ChatFireworks."""
+    llm = ChatFireworks()
+
+    for token in llm.stream("I'm Pickle Rick"):
+        assert isinstance(token.content, str)
+
+
+async def test_astream() -> None:
+    """Test streaming tokens from ChatFireworks."""
+    llm = ChatFireworks()
+
+    async for token in llm.astream("I'm Pickle Rick"):
+        assert isinstance(token.content, str)
+
+
+async def test_abatch() -> None:
+    """Test abatch tokens from ChatFireworks."""
+    llm = ChatFireworks()
+
+    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    for token in result:
+        assert isinstance(token.content, str)
+
+
+async def test_abatch_tags() -> None:
+    """Test batch tokens from ChatFireworks."""
+    llm = ChatFireworks()
+
+    result = await llm.abatch(
+        ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
+    )
+    for token in result:
+        assert isinstance(token.content, str)
+
+
+def test_batch() -> None:
+    """Test batch tokens from ChatFireworks."""
+    llm = ChatFireworks()
+
+    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    for token in result:
+        assert isinstance(token.content, str)
+
+
+async def test_ainvoke() -> None:
+    """Test invoke tokens from ChatFireworks."""
+    llm = ChatFireworks()
+
+    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
+    assert isinstance(result.content, str)
+
+
+def test_invoke() -> None:
+    """Test invoke tokens from ChatFireworks."""
+    llm = ChatFireworks()
+
+    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    assert isinstance(result.content, str)
