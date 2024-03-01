@@ -47,3 +47,30 @@ def test_tool_choice() -> None:
         "name": "Erick",
     }
     assert tool_call["type"] == "function"
+
+
+def test_tool_choice_bool() -> None:
+    """Test that tool choice is respected just passing in True."""
+
+    llm = ChatFireworks(
+        model="accounts/fireworks/models/firefunction-v1", temperature=0
+    )
+
+    class MyTool(BaseModel):
+        name: str
+        age: int
+
+    with_tool = llm.bind_tools([MyTool], tool_choice=True)
+
+    resp = with_tool.invoke("Who was the 27 year old named Erick?")
+    assert isinstance(resp, AIMessage)
+    assert resp.content == ""  # should just be tool call
+    tool_calls = resp.additional_kwargs["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert tool_call["function"]["name"] == "MyTool"
+    assert json.loads(tool_call["function"]["arguments"]) == {
+        "age": 27,
+        "name": "Erick",
+    }
+    assert tool_call["type"] == "function"
