@@ -742,7 +742,7 @@ class Redis(VectorStore):
         tags.extend(self._get_retriever_tags())
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
-    @deprecated("0.0.272", alternative="similarity_search(distance_threshold=0.1)")
+    @deprecated("0.0.1", alternative="similarity_search(distance_threshold=0.1)")
     def similarity_search_limit_score(
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Document]:
