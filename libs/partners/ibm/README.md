@@ -1,6 +1,6 @@
 # langchain-ibm
 
-This package provides the integration between LangChain and IBM Watson AI through the `ibm-watsonx-ai` SDK.
+This package provides the integration between LangChain and IBM watsonx.ai through the `ibm-watsonx-ai` SDK.
 
 ## Installation
 
@@ -9,10 +9,6 @@ To use the `langchain-ibm` package, follow these installation steps:
 ```bash
 pip install langchain-ibm
 ```
-
-
-
-
 
 ## Usage
 
@@ -44,14 +40,9 @@ In alternative, you can set the environment variable in your terminal.
     set WATSONX_APIKEY=your_ibm_api_key
     ```
 
-
-
-
-
 ### Loading the model
 
 You might need to adjust model parameters for different models or tasks. For more details on the parameters, refer to IBM's [documentation](https://ibm.github.io/watsonx-ai-python-sdk/fm_model.html#metanames.GenTextParamsMetaNames).
-
 
 ```python
 parameters = {
@@ -83,7 +74,6 @@ watsonx_llm = WatsonxLLM(
 - You need to specify the model you want to use for inferencing through `model_id`. You can find the list of available models [here](https://ibm.github.io/watsonx-ai-python-sdk/fm_model.html#ibm_watsonx_ai.foundation_models.utils.enums.ModelTypes).
 
 
-
 Alternatively you can use Cloud Pak for Data credentials. For more details, refer to IBM's [documentation](https://ibm.github.io/watsonx-ai-python-sdk/setup_cpd.html).
 
 ```python
@@ -98,9 +88,6 @@ watsonx_llm = WatsonxLLM(
     params=parameters,
 )
 ```
-
-
-
 
 ### Create a Chain
 
@@ -123,10 +110,6 @@ response = llm_chain.invoke("dog")
 print(response)
 ```
 
-
-
-
-
 ### Calling the Model Directly
 To obtain completions, you can call the model directly using a string prompt.
 
@@ -148,9 +131,6 @@ response = watsonx_llm.generate(
 )
 print(response)
 ```
-
-
-
 
 ### Streaming the Model output
 
