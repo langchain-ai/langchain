@@ -11,6 +11,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.28"
+lxml = {version = "^5.1.0", extras = ["extended_testing"]}
 
 [tool.poetry.group.lint]
 optional = true
