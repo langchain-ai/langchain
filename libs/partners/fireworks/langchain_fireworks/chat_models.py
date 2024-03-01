@@ -449,9 +449,7 @@ class ChatFireworks(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
-        ):
+        async for chunk in self.async_client.acreate(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
@@ -497,7 +495,7 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = await self.async_client.create(messages=message_dicts, **params)
+        response = await self.async_client.acreate(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     @property
