@@ -9,8 +9,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -73,7 +73,8 @@ class BaseCohere(Serializable):
     temperature: float = 0.75
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    cohere_api_key: Optional[str] = None
+    cohere_api_key: Optional[SecretStr] = None
+    """Cohere API key. If not provided, will be read from the environment variable."""
 
     stop: Optional[List[str]] = None
 
@@ -94,13 +95,17 @@ class BaseCohere(Serializable):
                 "Please install it with `pip install cohere`."
             )
         else:
-            cohere_api_key = get_from_dict_or_env(
-                values, "cohere_api_key", "COHERE_API_KEY"
+            values["cohere_api_key"] = convert_to_secret_str(
+                get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
             )
             client_name = values["user_agent"]
-            values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
+            values["client"] = cohere.Client(
+                api_key=values["cohere_api_key"].get_secret_value(),
+                client_name=client_name,
+            )
             values["async_client"] = cohere.AsyncClient(
-                cohere_api_key, client_name=client_name
+                api_key=values["cohere_api_key"].get_secret_value(),
+                client_name=client_name,
             )
         return values
 

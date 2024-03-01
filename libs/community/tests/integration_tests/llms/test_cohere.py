@@ -2,16 +2,11 @@
 
 from pathlib import Path
 
-<<<<<<< HEAD:libs/langchain/tests/integration_tests/llms/test_cohere.py
+from langchain_core.pydantic_v1 import SecretStr
 from pytest import MonkeyPatch
 
-from langchain.llms.cohere import Cohere
-from langchain.llms.loading import load_llm
-from langchain.pydantic_v1 import SecretStr
-=======
 from langchain_community.llms.cohere import Cohere
 from langchain_community.llms.loading import load_llm
->>>>>>> master:libs/community/tests/integration_tests/llms/test_cohere.py
 from tests.integration_tests.llms.utils import assert_llm_equality
 
 
