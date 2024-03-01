@@ -56,9 +56,6 @@ langchain-core = {path = "../core", develop = true}
 optional = true
 dependencies = {}
 
-[tool.poetry.extras]
-extended_testing = ["jinja2"]
-
 [tool.ruff.lint]
 select = [
   "E",  # pycodestyle
