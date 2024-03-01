@@ -4,7 +4,7 @@ import tomllib
 from packaging.version import parse as parse_version
 import re
 
-MIN_VERSION_LIBS = ["langchain-core", "langchain-community", "langchain"]
+MIN_VERSION_LIBS = ["langchain-core", "langchain-community", "langchain", "langchain-text-splitters"]
 
 
 def get_min_version(version: str) -> str:

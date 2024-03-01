@@ -21,8 +21,7 @@ from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import TextSplitter
-    from langchain_core.documents import Document
+    from langchain_text_splitters import TextSplitter
 
 VST = TypeVar("VST", bound=VectorStore)
 
@@ -72,9 +71,16 @@ class AirbyteLoader:
         Returns:
             List of Documents.
         """
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
 
         if text_splitter is None:
+            try:
+                from langchain_text_splitters import RecursiveCharacterTextSplitter
+            except ImportError as e:
+                raise ImportError(
+                    "Unable to import from langchain_text_splitters. Please specify "
+                    "text_splitter or install langchain_text_splitters with "
+                    "`pip install -U langchain-text-splitters`."
+                ) from e
             _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
         else:
             _text_splitter = text_splitter

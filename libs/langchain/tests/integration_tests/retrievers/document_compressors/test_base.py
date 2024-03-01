@@ -2,12 +2,12 @@
 from langchain_community.document_transformers import EmbeddingsRedundantFilter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_core.documents import Document
+from langchain_text_splitters.character import CharacterTextSplitter
 
 from langchain.retrievers.document_compressors import (
     DocumentCompressorPipeline,
     EmbeddingsFilter,
 )
-from langchain.text_splitter import CharacterTextSplitter
 
 
 def test_document_compressor_pipeline() -> None:

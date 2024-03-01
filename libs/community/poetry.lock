@@ -3675,6 +3675,25 @@ type = "directory"
 url = "../core"
 
 [[package]]
+name = "langchain-text-splitters"
+version = "0.0.1"
+description = "LangChain text splitting utilities"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+langchain-core = "^0.1.28"
+
+[package.extras]
+extended-testing = []
+
+[package.source]
+type = "directory"
+url = "../text-splitters"
+
+[[package]]
 name = "langsmith"
 version = "0.1.1"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
@@ -9162,4 +9181,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "200df001a4e2099d4c41040984391acbdbc5719a072f80e3ee929221a7e8dfeb"
+content-hash = "7af07f4d9c43d4bc23fe11776bc1afd9874f6c3696bffb063b6453e9862dc4df"

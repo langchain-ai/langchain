@@ -8,18 +8,18 @@ from typing import Any, List
 import pytest
 from langchain_core.documents import Document
 
-from langchain.text_splitter import (
-    CharacterTextSplitter,
-    HTMLHeaderTextSplitter,
+from langchain_text_splitters import (
     Language,
-    MarkdownHeaderTextSplitter,
-    PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
-    RecursiveJsonSplitter,
     TextSplitter,
     Tokenizer,
-    split_text_on_tokens,
 )
+from langchain_text_splitters.base import split_text_on_tokens
+from langchain_text_splitters.character import CharacterTextSplitter
+from langchain_text_splitters.html import HTMLHeaderTextSplitter
+from langchain_text_splitters.json import RecursiveJsonSplitter
+from langchain_text_splitters.markdown import MarkdownHeaderTextSplitter
+from langchain_text_splitters.python import PythonCodeTextSplitter
 
 FAKE_PYTHON_TEXT = """
 class Foo:
