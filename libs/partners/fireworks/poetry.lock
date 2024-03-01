@@ -341,13 +341,13 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "fireworks-ai"
-version = "0.12.1"
+version = "0.13.0"
 description = "Python client library for the Fireworks.ai Generative AI Platform"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "fireworks-ai-0.12.1.tar.gz", hash = "sha256:77a3b3be243182548cb5f690f60528f09ca2a7223b871e47fc4e9d13a0df5c1b"},
-    {file = "fireworks_ai-0.12.1-py3-none-any.whl", hash = "sha256:f78dc61f46c534ba045ad111fc7eeed6ea7ff022e7dce446dd23f56ebad371e7"},
+    {file = "fireworks-ai-0.13.0.tar.gz", hash = "sha256:d6db1e60f65f237b6e87e3e9c028681be0ba77496df398db386ae2876dab54e0"},
+    {file = "fireworks_ai-0.13.0-py3-none-any.whl", hash = "sha256:900559d7eeea8a86dc5789f9034b3873684a685a2e96b56a63e6be3a04803eb6"},
 ]
 
 [package.dependencies]
@@ -1149,13 +1149,13 @@ watchdog = ">=2.0.0"
 
 [[package]]
 name = "python-dateutil"
-version = "2.8.2"
+version = "2.9.0"
 description = "Extensions to the standard Python datetime module"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
-    {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
-    {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
+    {file = "python-dateutil-2.9.0.tar.gz", hash = "sha256:78e73e19c63f5b20ffa567001531680d939dc042bf7850431877645523c66709"},
+    {file = "python_dateutil-2.9.0-py2.py3-none-any.whl", hash = "sha256:cbf2f1da5e6083ac2fbfd4da39a25f34312230110440f424a14c7558bb85d82e"},
 ]
 
 [package.dependencies]
@@ -1538,4 +1538,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b9ee2bfb5053127cb29b8182baea395897744d7b5e8b985c42863133a26708ba"
+content-hash = "ab5538b63e5d347dadcad268e135a5ca9fb5bc2edd2436dcee99c55a7ee4b609"

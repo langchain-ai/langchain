@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.27"
-fireworks-ai = ">=0.12.0,<1"
+fireworks-ai = ">=0.13.0"
 openai = "^1.10.0"
 requests = "^2"
 aiohttp = "^3.9.1"
