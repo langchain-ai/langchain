@@ -963,10 +963,12 @@ def _prepare_eval_run(
     project_name: str,
     project_metadata: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
+    dataset_version: Optional[Union[str, datetime]] = None,
 ) -> Tuple[MCF, TracerSession, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
-    examples = list(client.list_examples(dataset_id=dataset.id))
+    as_of = dataset_version if isinstance(dataset_version, datetime) else None
+    examples = list(client.list_examples(dataset_id=dataset.id, as_of=as_of))
     if not examples:
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
     modified_at = [ex.modified_at for ex in examples if ex.modified_at]
@@ -1123,6 +1125,7 @@ class _DatasetRunContainer:
         concurrency_level: int = 5,
         project_metadata: Optional[Dict[str, Any]] = None,
         revision_id: Optional[str] = None,
+        dataset_version: Optional[Union[datetime, str]] = None,
     ) -> _DatasetRunContainer:
         project_name = project_name or name_generation.random_name()
         if revision_id:
@@ -1136,6 +1139,7 @@ class _DatasetRunContainer:
             project_name,
             project_metadata=project_metadata,
             tags=tags,
+            dataset_version=dataset_version,
         )
         tags = tags or []
         for k, v in (project.metadata.get("git") or {}).items():
@@ -1222,6 +1226,7 @@ async def arun_on_dataset(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
     evaluation: Optional[smith_eval.RunEvalConfig] = None,
+    dataset_version: Optional[Union[datetime, str]] = None,
     concurrency_level: int = 5,
     project_name: Optional[str] = None,
     project_metadata: Optional[Dict[str, Any]] = None,
@@ -1256,6 +1261,7 @@ async def arun_on_dataset(
         concurrency_level,
         project_metadata=project_metadata,
         revision_id=revision_id,
+        dataset_version=dataset_version,
     )
     batch_results = await runnable_utils.gather_with_concurrency(
         container.configs[0].get("max_concurrency"),
@@ -1278,6 +1284,7 @@ def run_on_dataset(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
     evaluation: Optional[smith_eval.RunEvalConfig] = None,
+    dataset_version: Optional[Union[datetime, str]] = None,
     concurrency_level: int = 5,
     project_name: Optional[str] = None,
     project_metadata: Optional[Dict[str, Any]] = None,
@@ -1312,6 +1319,7 @@ def run_on_dataset(
         concurrency_level,
         project_metadata=project_metadata,
         revision_id=revision_id,
+        dataset_version=dataset_version,
     )
     if concurrency_level == 0:
         batch_results = [
