@@ -71,10 +71,6 @@ class EtherscanLoader(BaseLoader):
         for doc in result:
             yield doc
 
-    def load(self) -> List[Document]:
-        """Load transactions from spcifc account by Etherscan."""
-        return list(self.lazy_load())
-
     def getNormTx(self) -> List[Document]:
         url = (
             f"https://api.etherscan.io/api?module=account&action=txlist&address={self.account_address}"

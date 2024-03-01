@@ -104,9 +104,6 @@ class SQLDatabaseLoader(BaseLoader):
 
             yield Document(page_content=page_content, metadata=metadata)
 
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
-
     @staticmethod
     def page_content_default_mapper(
         row: sa.RowMapping, column_names: Optional[List[str]] = None

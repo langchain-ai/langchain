@@ -36,10 +36,6 @@ class ToyLoader(BaseLoader):
     ) -> Iterator[Document]:
         yield from self.documents
 
-    def load(self) -> List[Document]:
-        """Load the documents from the source."""
-        return list(self.lazy_load())
-
     async def alazy_load(
         self,
     ) -> AsyncIterator[Document]:

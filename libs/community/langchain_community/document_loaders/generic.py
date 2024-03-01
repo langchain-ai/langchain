@@ -115,10 +115,6 @@ class GenericLoader(BaseLoader):
         for blob in self.blob_loader.yield_blobs():
             yield from self.blob_parser.lazy_parse(blob)
 
-    def load(self) -> List[Document]:
-        """Load all documents."""
-        return list(self.lazy_load())
-
     def load_and_split(
         self, text_splitter: Optional[TextSplitter] = None
     ) -> List[Document]:

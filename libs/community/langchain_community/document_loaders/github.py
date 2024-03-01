@@ -127,32 +127,6 @@ class GitHubIssuesLoader(BaseGitHubLoader):
             else:
                 url = None
 
-    def load(self) -> List[Document]:
-        """
-        Get issues of a GitHub repository.
-
-        Returns:
-            A list of Documents with attributes:
-                - page_content
-                - metadata
-                    - url
-                    - title
-                    - creator
-                    - created_at
-                    - last_update_time
-                    - closed_time
-                    - number of comments
-                    - state
-                    - labels
-                    - assignee
-                    - assignees
-                    - milestone
-                    - locked
-                    - number
-                    - is_pull_request
-        """
-        return list(self.lazy_load())
-
     def parse_issue(self, issue: dict) -> Document:
         """Create Document objects from a list of GitHub issues."""
         metadata = {

@@ -314,7 +314,3 @@ class RecursiveUrlLoader(BaseLoader):
             return iter(results or [])
         else:
             return self._get_child_links_recursive(self.url, visited)
-
-    def load(self) -> List[Document]:
-        """Load web pages."""
-        return list(self.lazy_load())
