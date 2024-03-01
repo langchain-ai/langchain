@@ -20,11 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 class ref(BaseModel):
+    """Reference used in CharacterGLM."""
+
     enable: bool = Field(True)
     search_query: str = Field("")
 
 
 class meta(BaseModel):
+    """Metadata used in CharacterGLM."""
+
     user_info: str = Field("")
     bot_info: str = Field("")
     bot_name: str = Field("")
@@ -323,9 +327,10 @@ class ChatZhipuAI(BaseChatModel):
         for r in response.events():
             if r.event == "add":
                 delta = r.data
-                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
-                    run_manager.on_llm_new_token(delta)
+                    run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
 
             elif r.event == "error":
                 raise ValueError(f"Error from ZhipuAI API response: {r.data}")

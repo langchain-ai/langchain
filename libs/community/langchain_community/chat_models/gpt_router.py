@@ -53,6 +53,8 @@ class GPTRouterException(Exception):
 
 
 class GPTRouterModel(BaseModel):
+    """GPTRouter model."""
+
     name: str
     provider_name: str
 
@@ -323,12 +325,12 @@ class GPTRouter(BaseChatModel):
                 chunk.data, default_chunk_class
             )
 
-            yield chunk
-
             if run_manager:
                 run_manager.on_llm_new_token(
                     token=chunk.message.content, chunk=chunk.message
                 )
+
+            yield chunk
 
     async def _astream(
         self,
@@ -356,12 +358,12 @@ class GPTRouter(BaseChatModel):
                 chunk.data, default_chunk_class
             )
 
-            yield chunk
-
             if run_manager:
                 await run_manager.on_llm_new_token(
                     token=chunk.message.content, chunk=chunk.message
                 )
+
+            yield chunk
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]

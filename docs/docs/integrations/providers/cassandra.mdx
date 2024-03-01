@@ -1,0 +1,76 @@
+# Apache Cassandra
+
+> [Apache Cassandra®](https://cassandra.apache.org/) is a NoSQL, row-oriented, highly scalable and highly available database.
+> Starting with version 5.0, the database ships with [vector search capabilities](https://cassandra.apache.org/doc/trunk/cassandra/vector-search/overview.html).
+
+The integrations outlined in this page can be used with Cassandra as well as other CQL-compatible databases, i.e. those using the Cassandra Query Language protocol.
+
+
+### Setup
+
+Install the following Python package:
+
+```bash
+pip install "cassio>=0.1.4"
+```
+
+
+## Vector Store
+
+```python
+from langchain_community.vectorstores import Cassandra
+vector_store = Cassandra(
+    embedding=my_embedding,
+    table_name="my_store",
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/vectorstores/cassandra).
+
+## Chat message history
+
+```python
+from langchain_community.chat_message_histories import CassandraChatMessageHistory
+message_history = CassandraChatMessageHistory(session_id="my-session")
+```
+
+Learn more in the [example notebook](/docs/integrations/memory/cassandra_chat_message_history).
+
+
+## LLM Cache
+
+```python
+from langchain.globals import set_llm_cache
+from langchain_community.cache import CassandraCache
+set_llm_cache(CassandraCache())
+```
+
+Learn more in the [example notebook](/docs/integrations/llms/llm_caching#cassandra-caches) (scroll to the Cassandra section).
+
+
+## Semantic LLM Cache
+
+```python
+from langchain.globals import set_llm_cache
+from langchain_community.cache import CassandraSemanticCache
+set_llm_cache(CassandraSemanticCache(
+    embedding=my_embedding,
+    table_name="my_store",
+))
+```
+
+Learn more in the [example notebook](/docs/integrations/llms/llm_caching#cassandra-caches) (scroll to the appropriate section).
+
+## Document loader
+
+```python
+from langchain_community.document_loaders import CassandraLoader
+loader = CassandraLoader(table="my_table")
+docs = loader.load()
+```
+
+Learn more in the [example notebook](/docs/integrations/document_loaders/cassandra).
+
+#### Attribution statement
+
+> Apache Cassandra, Cassandra and Apache are either registered trademarks or trademarks of the [Apache Software Foundation](http://www.apache.org/) in the United States and/or other countries.
