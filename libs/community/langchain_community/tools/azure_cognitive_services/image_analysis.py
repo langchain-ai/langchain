@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, Optional
+import warnings
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import root_validator
@@ -14,6 +15,11 @@ from langchain_community.tools.azure_cognitive_services.utils import (
 
 logger = logging.getLogger(__name__)
 
+warnings.warn(
+    "The 'azure-ai-vision' package has been yanked from PyPI and replaced by 'azure-ai-vision-imageanalysis'. "
+    "This tool may be removed in a future release. ",
+    DeprecationWarning
+)
 
 class AzureCogsImageAnalysisTool(BaseTool):
     """Tool that queries the Azure Cognitive Services Image Analysis API.
@@ -62,7 +68,7 @@ class AzureCogsImageAnalysisTool(BaseTool):
         except ImportError:
             raise ImportError(
                 "azure-ai-vision is not installed. "
-                "Run `pip install azure-ai-vision` to install."
+                "azure-ai-vision has been yanked from PyPI. "
             )
 
         return values
