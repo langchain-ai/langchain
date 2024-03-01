@@ -8,6 +8,7 @@ LANGCHAIN_DIRS = [
     "libs/langchain",
     "libs/experimental",
     "libs/community",
+    "libs/cli",
 ]
 
 if __name__ == "__main__":
