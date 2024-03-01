@@ -263,4 +263,17 @@ class Graph:
     ) -> Union[bytes, None]:
         from langchain_core.runnables.graph_png import PngDrawer
 
-        return PngDrawer(fontname, labels).draw(self, output_file_path)
+        default_node_labels = {
+            node.id: node_data_str(node) for node in self.nodes.values()
+        }
+
+        return PngDrawer(
+            fontname,
+            LabelsDict(
+                nodes={
+                    **default_node_labels,
+                    **(labels["nodes"] if labels is not None else {}),
+                },
+                edges=labels["edges"] if labels is not None else {},
+            ),
+        ).draw(self, output_file_path)
