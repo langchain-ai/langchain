@@ -545,17 +545,6 @@ isodate = ">=0.6.1,<1.0.0"
 typing-extensions = ">=4.0.1"
 
 [[package]]
-name = "azure-ai-vision"
-version = "0.11.1b1"
-description = "Microsoft Azure AI Vision SDK for Python"
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "azure_ai_vision-0.11.1b1-py3-none-manylinux1_x86_64.whl", hash = "sha256:6f8563ae26689da6cdee9b2de009a53546ae2fd86c6c180236ce5da5b45f41d3"},
-    {file = "azure_ai_vision-0.11.1b1-py3-none-win_amd64.whl", hash = "sha256:f5df03b9156feaa1d8c776631967b1455028d30dfd4cd1c732aa0f9c03d01517"},
-]
-
-[[package]]
 name = "azure-cognitiveservices-speech"
 version = "1.32.1"
 description = "Microsoft Cognitive Services Speech SDK for Python"
@@ -1768,13 +1757,13 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "executing"
-version = "2.0.0"
+version = "2.0.1"
 description = "Get the currently executing AST node of a frame, and other information"
 optional = false
-python-versions = "*"
+python-versions = ">=3.5"
 files = [
-    {file = "executing-2.0.0-py2.py3-none-any.whl", hash = "sha256:06df6183df67389625f4e763921c6cf978944721abf3e714000200aab95b0657"},
-    {file = "executing-2.0.0.tar.gz", hash = "sha256:0ff053696fdeef426cda5bd18eacd94f82c91f49823a2e9090124212ceea9b08"},
+    {file = "executing-2.0.1-py2.py3-none-any.whl", hash = "sha256:eac49ca94516ccc753f9fb5ce82603156e590b27525a8bc32cce8ae302eb61bc"},
+    {file = "executing-2.0.1.tar.gz", hash = "sha256:35afe2ce3affba8ee97f2d69927fa823b08b472b7b994e36a52a964b93d16147"},
 ]
 
 [package.extras]
@@ -3446,7 +3435,7 @@ files = [
 
 [[package]]
 name = "langchain-community"
-version = "0.0.24"
+version = "0.0.25"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3456,7 +3445,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = ">=0.1.26,<0.2"
+langchain-core = "^0.1.28"
 langsmith = "^0.1.0"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -9153,7 +9142,7 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 all = []
-azure = ["azure-ai-formrecognizer", "azure-ai-textanalytics", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
+azure = ["azure-ai-formrecognizer", "azure-ai-textanalytics", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cli = ["typer"]
 cohere = ["cohere"]
@@ -9169,4 +9158,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a9b21852298f682bdb77689c6f31044a62407185fa3c23d4d65cb9dbbc4522ba"
+content-hash = "86f58f5567562ea0058941a6066f9c687f1bc39117df7a0308b9006f190e8197"
