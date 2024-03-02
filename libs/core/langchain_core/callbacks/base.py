@@ -9,7 +9,7 @@ from tenacity import RetryCallState
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
-    from langchain_core.messages import BaseMessage, AIMessage
+    from langchain_core.messages import AIMessage, BaseMessage
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 
 
