@@ -27,6 +27,8 @@ class BaseMessage(Serializable):
 
     name: Optional[str] = None
 
+    id: Optional[str] = None
+
     class Config:
         extra = Extra.allow
 
@@ -161,6 +163,7 @@ class BaseMessageChunk(BaseMessage):
             # concat into a single BaseMessageChunk
 
             return self.__class__(
+                id=self.id,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=self._merge_kwargs_dict(
                     self.additional_kwargs, other.additional_kwargs

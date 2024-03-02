@@ -2,6 +2,7 @@
 
 from langchain_community.graphs.arangodb_graph import ArangoGraph
 from langchain_community.graphs.falkordb_graph import FalkorDBGraph
+from langchain_community.graphs.gremlin_graph import GremlinGraph
 from langchain_community.graphs.hugegraph import HugeGraph
 from langchain_community.graphs.kuzu_graph import KuzuGraph
 from langchain_community.graphs.memgraph_graph import MemgraphGraph
@@ -28,4 +29,5 @@ __all__ = [
     "FalkorDBGraph",
     "TigerGraph",
     "OntotextGraphDBGraph",
+    "GremlinGraph",
 ]

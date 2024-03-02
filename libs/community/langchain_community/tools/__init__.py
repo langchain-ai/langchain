@@ -504,6 +504,12 @@ def _import_plugin() -> Any:
     return AIPluginTool
 
 
+def _import_polygon_tool_PolygonFinancials() -> Any:
+    from langchain_community.tools.polygon.financials import PolygonFinancials
+
+    return PolygonFinancials
+
+
 def _import_polygon_tool_PolygonLastQuote() -> Any:
     from langchain_community.tools.polygon.last_quote import PolygonLastQuote
 
@@ -961,6 +967,8 @@ def __getattr__(name: str) -> Any:
         return _import_playwright_NavigateTool()
     elif name == "AIPluginTool":
         return _import_plugin()
+    elif name == "PolygonFinancials":
+        return _import_polygon_tool_PolygonFinancials()
     elif name == "PolygonLastQuote":
         return _import_polygon_tool_PolygonLastQuote()
     elif name == "PolygonTickerNews":
@@ -1148,6 +1156,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonFinancials",
     "PolygonLastQuote",
     "PolygonTickerNews",
     "RedditSearchRun",
