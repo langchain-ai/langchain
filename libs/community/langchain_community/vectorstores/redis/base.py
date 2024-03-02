@@ -742,7 +742,7 @@ class Redis(VectorStore):
         tags.extend(self._get_retriever_tags())
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
-    @deprecated("0.0.272", alternative="similarity_search(distance_threshold=0.1)")
+    @deprecated("0.0.1", alternative="similarity_search(distance_threshold=0.1)")
     def similarity_search_limit_score(
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Document]:
@@ -1118,7 +1118,7 @@ class Redis(VectorStore):
         base_query = f"@{vector_key}:[VECTOR_RANGE $distance_threshold $vector]"
 
         if filter:
-            base_query = "(" + base_query + " " + str(filter) + ")"
+            base_query = str(filter) + " " + base_query
 
         query_string = base_query + "=>{$yield_distance_as: distance}"
 
