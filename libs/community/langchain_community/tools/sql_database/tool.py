@@ -53,7 +53,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
                 for key, value in self.metadata.items()
                 if key in ["include_columns"]
             }
-        
+
         """Execute the query, return the results or an error message."""
         return self.db.run_no_throw(query, **valid_kwargs)
 
