@@ -1,6 +1,6 @@
 import json
 import urllib.request
-from typing import Any, Iterator, List
+from typing import Any, Iterator
 
 from langchain_core.documents import Document
 
@@ -46,7 +46,3 @@ class LarkSuiteDocLoader(BaseLoader):
             "title": metadata_json["data"]["document"]["title"],
         }
         yield Document(page_content=text, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        """Load LarkSuite (FeiShu) document."""
-        return list(self.lazy_load())

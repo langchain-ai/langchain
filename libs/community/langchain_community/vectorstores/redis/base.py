@@ -1118,7 +1118,7 @@ class Redis(VectorStore):
         base_query = f"@{vector_key}:[VECTOR_RANGE $distance_threshold $vector]"
 
         if filter:
-            base_query = "(" + base_query + " " + str(filter) + ")"
+            base_query = str(filter) + " " + base_query
 
         query_string = base_query + "=>{$yield_distance_as: distance}"
 
