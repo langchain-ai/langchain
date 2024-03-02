@@ -9,7 +9,7 @@ from tenacity import RetryCallState
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
-    from langchain_core.messages import BaseMessage
+    from langchain_core.messages import BaseMessage, AIMessage
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 
 
@@ -211,7 +211,7 @@ class CallbackManagerMixin:
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        inputs: Union[str, Dict[str, Any], AIMessage],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
