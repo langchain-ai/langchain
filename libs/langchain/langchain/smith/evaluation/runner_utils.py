@@ -1,6 +1,7 @@
 """Utilities for running language models or Chains over datasets."""
 
 from __future__ import annotations
+import concurrent.futures
 
 import dataclasses
 import functools
@@ -71,6 +72,7 @@ MODEL_OR_CHAIN_FACTORY = Union[
     Chain,
 ]
 MCF = Union[Callable[[], Union[Chain, Runnable]], BaseLanguageModel]
+_NULL_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 class InputFormatError(Exception):
@@ -1068,13 +1070,20 @@ class _DatasetRunContainer:
     def _run_session_evaluators(self, runs: Dict[str, Run]) -> List[dict]:
         runs_list = [runs[str(example.id)] for example in self.examples]
         aggregate_feedback = []
-        for evaluator in self.session_evaluators:
-            try:
-                aggregate_feedback.append(
-                    evaluator(runs=runs_list, examples=self.examples)
-                )
-            except Exception:
-                logger.error(f"Error running session evaluator {repr(evaluator)}")
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for evaluator in self.session_evaluators:
+                try:
+                    result = evaluator(runs=runs_list, examples=self.examples)
+                    aggregate_feedback.append(result)
+                    executor.submit(
+                        # TODO need to add the session ID
+                        self.client.create_feedback,
+                        **result,
+                        run_id=_NULL_UUID,
+                        project_name=self.project.name,
+                    )
+                except Exception:
+                    logger.error(f"Error running session evaluator {repr(evaluator)}")
         return aggregate_feedback
 
     def _collect_metrics(self) -> Tuple[Dict[str, _RowResult], Dict[str, Run]]:
