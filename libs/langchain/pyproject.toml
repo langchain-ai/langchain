@@ -223,7 +223,6 @@ azure = [
     "openai",
     "azure-core",
     "azure-ai-formrecognizer",
-    "azure-ai-vision",
     "azure-cognitiveservices-speech",
     "azure-search-documents",
     "azure-ai-textanalytics",
