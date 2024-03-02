@@ -65,8 +65,10 @@ class MongodbLoader(BaseLoader):
         total_docs = await self.collection.count_documents(self.filter_criteria)
 
         # Construct the projection dictionary if field_names are specified
-        projection = {field: 1 for field in self.field_names} if self.field_names else None
-
+        projection = {
+            field: 1 for field in self.field_names
+        } if self.field_names else None
+        
         async for doc in self.collection.find(self.filter_criteria, projection):
             metadata = {
                 "database": self.db_name,
@@ -85,8 +87,8 @@ class MongodbLoader(BaseLoader):
 
         if len(result) != total_docs:
             logger.warning(
-                f"Only partial collection of documents returned. Loaded {len(result)} "
-                f"docs, expected {total_docs}."
+                f"Only partial collection of documents returned. "
+                f"Loaded {len(result)} docs, expected {total_docs}."
             )
 
         return result
