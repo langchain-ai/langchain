@@ -1,5 +1,6 @@
 import csv
 from io import TextIOWrapper
+from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
