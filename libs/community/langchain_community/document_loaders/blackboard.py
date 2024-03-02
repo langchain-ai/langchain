@@ -176,16 +176,16 @@ class BlackboardLoader(WebBaseLoader):
         from bs4 import BeautifulSoup, Tag
 
         # Get content list
+        content_list: BeautifulSoup
         content_list = soup.find("ul", {"class": "contentList"})
         if content_list is None:
             raise ValueError("No content list found.")
-        content_list: BeautifulSoup  # type: ignore
         # Get all attachments
         attachments = []
+        attachment: Tag
         for attachment in content_list.find_all("ul", {"class": "attachments"}):
-            attachment: Tag  # type: ignore
+            link: Tag
             for link in attachment.find_all("a"):
-                link: Tag  # type: ignore
                 href = link.get("href")
                 # Only add if href is not None and does not start with #
                 if href is not None and not href.startswith("#"):
