@@ -358,7 +358,7 @@ class ElasticVectorSearch(VectorStore):
             self.client.delete(index=self.index_name, id=id)
 
 
-@deprecated("0.0.265", alternative="ElasticsearchStore class.", pending=True)
+@deprecated("0.0.1", alternative="ElasticsearchStore class.", pending=True)
 class ElasticKnnSearch(VectorStore):
     """[DEPRECATED] `Elasticsearch` with k-nearest neighbor search
     (`k-NN`) vector store.
@@ -564,9 +564,11 @@ class ElasticKnnSearch(VectorStore):
         docs_and_scores = [
             (
                 Document(
-                    page_content=hit["_source"][page_content]
-                    if source
-                    else hit["fields"][page_content][0],
+                    page_content=(
+                        hit["_source"][page_content]
+                        if source
+                        else hit["fields"][page_content][0]
+                    ),
                     metadata=hit["fields"] if fields else {},
                 ),
                 hit["_score"],
@@ -647,9 +649,11 @@ class ElasticKnnSearch(VectorStore):
         docs_and_scores = [
             (
                 Document(
-                    page_content=hit["_source"][page_content]
-                    if source
-                    else hit["fields"][page_content][0],
+                    page_content=(
+                        hit["_source"][page_content]
+                        if source
+                        else hit["fields"][page_content][0]
+                    ),
                     metadata=hit["fields"] if fields else {},
                 ),
                 hit["_score"],

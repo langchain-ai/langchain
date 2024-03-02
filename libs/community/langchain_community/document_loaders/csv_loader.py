@@ -1,6 +1,6 @@
 import csv
 from io import TextIOWrapper
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from langchain_core.documents import Document
 
@@ -61,13 +61,10 @@ class CSVLoader(BaseLoader):
         self.csv_args = csv_args or {}
         self.autodetect_encoding = autodetect_encoding
 
-    def load(self) -> List[Document]:
-        """Load data into document objects."""
-
-        docs = []
+    def lazy_load(self) -> Iterator[Document]:
         try:
             with open(self.file_path, newline="", encoding=self.encoding) as csvfile:
-                docs = self.__read_file(csvfile)
+                yield from self.__read_file(csvfile)
         except UnicodeDecodeError as e:
             if self.autodetect_encoding:
                 detected_encodings = detect_file_encodings(self.file_path)
@@ -76,7 +73,7 @@ class CSVLoader(BaseLoader):
                         with open(
                             self.file_path, newline="", encoding=encoding.encoding
                         ) as csvfile:
-                            docs = self.__read_file(csvfile)
+                            yield from self.__read_file(csvfile)
                             break
                     except UnicodeDecodeError:
                         continue
@@ -85,11 +82,7 @@ class CSVLoader(BaseLoader):
         except Exception as e:
             raise RuntimeError(f"Error loading {self.file_path}") from e
 
-        return docs
-
-    def __read_file(self, csvfile: TextIOWrapper) -> List[Document]:
-        docs = []
-
+    def __read_file(self, csvfile: TextIOWrapper) -> Iterator[Document]:
         csv_reader = csv.DictReader(csvfile, **self.csv_args)
         for i, row in enumerate(csv_reader):
             try:
@@ -113,10 +106,7 @@ class CSVLoader(BaseLoader):
                     metadata[col] = row[col]
                 except KeyError:
                     raise ValueError(f"Metadata column '{col}' not found in CSV file.")
-            doc = Document(page_content=content, metadata=metadata)
-            docs.append(doc)
-
-        return docs
+            yield Document(page_content=content, metadata=metadata)
 
 
 class UnstructuredCSVLoader(UnstructuredFileLoader):
