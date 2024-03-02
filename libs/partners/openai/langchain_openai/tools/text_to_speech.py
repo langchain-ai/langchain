@@ -1,8 +1,8 @@
+from datetime import datetime
 from enum import Enum
 from os import path
 from pathlib import Path
 from typing import Any, Optional
-from datetime import datetime
 
 import openai
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -139,6 +139,4 @@ class OpenAITextToSpeechTool(BaseTool):
 
     def _default_output_name(self) -> str:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return (
-            f"{OpenAITextToSpeechTool._DEFAULT_OUTPUT_NAME_PREFIX}_{timestamp}"
-        )
+        return f"{OpenAITextToSpeechTool._DEFAULT_OUTPUT_NAME_PREFIX}_{timestamp}"
