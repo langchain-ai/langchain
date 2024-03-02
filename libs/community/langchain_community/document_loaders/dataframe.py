@@ -1,4 +1,4 @@
-from typing import Any, Iterator, List
+from typing import Any, Iterator
 
 from langchain_core.documents import Document
 
@@ -25,10 +25,6 @@ class BaseDataFrameLoader(BaseLoader):
             metadata = row.to_dict()
             metadata.pop(self.page_content_column)
             yield Document(page_content=text, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        """Load full dataframe."""
-        return list(self.lazy_load())
 
 
 class DataFrameLoader(BaseDataFrameLoader):

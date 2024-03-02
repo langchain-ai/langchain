@@ -23,7 +23,10 @@ from typing import (
 import numpy as np
 import yaml
 from langchain_core._api import deprecated
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
@@ -739,7 +742,7 @@ class Redis(VectorStore):
         tags.extend(self._get_retriever_tags())
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
-    @deprecated("0.0.272", alternative="similarity_search(distance_threshold=0.1)")
+    @deprecated("0.0.1", alternative="similarity_search(distance_threshold=0.1)")
     def similarity_search_limit_score(
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Document]:
@@ -1115,7 +1118,7 @@ class Redis(VectorStore):
         base_query = f"@{vector_key}:[VECTOR_RANGE $distance_threshold $vector]"
 
         if filter:
-            base_query = "(" + base_query + " " + str(filter) + ")"
+            base_query = str(filter) + " " + base_query
 
         query_string = base_query + "=>{$yield_distance_as: distance}"
 
@@ -1458,6 +1461,37 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
+                query, **self.search_kwargs
+            )
+        else:
+            raise ValueError(f"search_type of {self.search_type} not allowed.")
+        return docs
+
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        if self.search_type == "similarity":
+            docs = await self.vectorstore.asimilarity_search(
+                query, **self.search_kwargs
+            )
+        elif self.search_type == "similarity_distance_threshold":
+            if self.search_kwargs["distance_threshold"] is None:
+                raise ValueError(
+                    "distance_threshold must be provided for "
+                    + "similarity_distance_threshold retriever"
+                )
+            docs = await self.vectorstore.asimilarity_search(
+                query, **self.search_kwargs
+            )
+        elif self.search_type == "similarity_score_threshold":
+            docs_and_similarities = (
+                await self.vectorstore.asimilarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            docs = [doc for doc, _ in docs_and_similarities]
+        elif self.search_type == "mmr":
+            docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
             )
         else:

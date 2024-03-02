@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -122,7 +124,7 @@ class Rockset(VectorStore):
                 batch = []
             doc = {}
             if metadatas and len(metadatas) > i:
-                doc = metadatas[i]
+                doc = deepcopy(metadatas[i])
             if ids and len(ids) > i:
                 doc["_id"] = ids[i]
             doc[self._text_key] = text
@@ -332,3 +334,19 @@ LIMIT {str(k)}
             data=[DeleteDocumentsRequestData(id=i) for i in ids],
             workspace=self._workspace,
         )
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        try:
+            if ids is None:
+                ids = []
+            self.delete_texts(ids)
+        except Exception as e:
+            logger.error("Exception when deleting docs from Rockset: %s\n", e)
+            return False
+
+        return True
+
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Optional[bool]:
+        return await run_in_executor(None, self.delete, ids, **kwargs)

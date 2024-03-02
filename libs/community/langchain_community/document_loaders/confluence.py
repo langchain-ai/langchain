@@ -469,7 +469,7 @@ class ConfluenceLoader(BaseLoader):
                 )
         if include_comments or not keep_markdown_format:
             try:
-                from bs4 import BeautifulSoup  # type: ignore
+                from bs4 import BeautifulSoup
             except ImportError:
                 raise ImportError(
                     "`beautifulsoup4` package not found, please run "
@@ -564,7 +564,7 @@ class ConfluenceLoader(BaseLoader):
                 texts.append(text)
             except requests.HTTPError as e:
                 if e.response.status_code == 404:
-                    print(f"Attachment not found at {absolute_url}")
+                    print(f"Attachment not found at {absolute_url}")  # noqa: T201
                     continue
                 else:
                     raise

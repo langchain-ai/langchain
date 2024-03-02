@@ -157,10 +157,6 @@ class PyPDFLoader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFParser(password=password, extract_images=extract_images)
 
-    def load(self) -> List[Document]:
-        """Load given path as pages."""
-        return list(self.lazy_load())
-
     def lazy_load(
         self,
     ) -> Iterator[Document]:
@@ -318,7 +314,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         output_string = StringIO()
         with open_filename(self.file_path, "rb") as fp:
             extract_text_to_fp(
-                fp,  # type: ignore[arg-type]
+                fp,
                 output_string,
                 codec="",
                 laparams=LAParams(),
@@ -480,7 +476,7 @@ class MathpixPDFLoader(BasePDFLoader):
                 # This indicates an error with the PDF processing
                 raise ValueError("Unable to retrieve PDF from Mathpix")
             else:
-                print(f"Status: {status}, waiting for processing to complete")
+                print(f"Status: {status}, waiting for processing to complete")  # noqa: T201
                 time.sleep(5)
         raise TimeoutError
 

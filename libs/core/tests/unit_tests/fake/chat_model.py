@@ -225,9 +225,9 @@ class GenericFakeChatModel(BaseChatModel):
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
+                yield chunk
 
         if message.additional_kwargs:
             for key, value in message.additional_kwargs.items():
@@ -247,12 +247,12 @@ class GenericFakeChatModel(BaseChatModel):
                                         },
                                     )
                                 )
-                                yield chunk
                                 if run_manager:
                                     run_manager.on_llm_new_token(
                                         "",
                                         chunk=chunk,  # No token for function call
                                     )
+                                yield chunk
                         else:
                             chunk = ChatGenerationChunk(
                                 message=AIMessageChunk(
@@ -260,24 +260,24 @@ class GenericFakeChatModel(BaseChatModel):
                                     additional_kwargs={"function_call": {fkey: fvalue}},
                                 )
                             )
-                            yield chunk
                             if run_manager:
                                 run_manager.on_llm_new_token(
                                     "",
                                     chunk=chunk,  # No token for function call
                                 )
+                            yield chunk
                 else:
                     chunk = ChatGenerationChunk(
                         message=AIMessageChunk(
                             content="", additional_kwargs={key: value}
                         )
                     )
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(
                             "",
                             chunk=chunk,  # No token for function call
                         )
+                    yield chunk
 
     async def _astream(
         self,
@@ -301,3 +301,24 @@ class GenericFakeChatModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "generic-fake-chat-model"
+
+
+class ParrotFakeChatModel(BaseChatModel):
+    """A generic fake chat model that can be used to test the chat model interface.
+
+    * Chat model should be usable in both sync and async tests
+    """
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Top Level call"""
+        return ChatResult(generations=[ChatGeneration(message=messages[-1])])
+
+    @property
+    def _llm_type(self) -> str:
+        return "parrot-fake-chat-model"

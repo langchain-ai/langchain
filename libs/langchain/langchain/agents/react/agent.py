@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import List, Optional, Sequence
 
+
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
+from langchain.agents import AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
 from langchain.tools.render import render_text_description
@@ -17,6 +19,7 @@ def create_react_agent(
     tools: Sequence[BaseTool],
     prompt: BasePromptTemplate,
     stop: Optional[List[str]] = None,
+    output_parser: Optional[AgentOutputParser] = None,
 ) -> Runnable:
     """Create an agent that uses ReAct prompting.
 
@@ -25,6 +28,7 @@ def create_react_agent(
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
         stop: The list of stop sequences of the react agent.
+        output_parser: AgentOutputParser for parse the LLM output.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -108,12 +112,13 @@ def create_react_agent(
     stop = (stop or []) + ["\nObservation"]
     llm_with_stop = llm.bind(stop=stop)
 
+    output_parser = output_parser or ReActSingleInputOutputParser()
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
         )
         | prompt
         | llm_with_stop
-        | ReActSingleInputOutputParser()
+        | output_parser
     )
     return agent
