@@ -668,6 +668,49 @@ class Redis(VectorStore):
             # Index not exist
             return False
 
+    @staticmethod
+    def delete_documents(
+        index_name: str,
+        **kwargs: Any,
+    ) -> bool:
+        """
+        Delete documents in Redis Index.
+
+        Args:
+            index_name (str): Name of the index to delete documents.
+        Returns:
+            bool: Whether or not the deleting documents was successful.
+        """
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+        try:
+            import redis  # noqa: F401
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        try:
+            # We need to first remove redis_url from kwargs,
+            # otherwise passing it to Redis will result in an error.
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
+            client = get_client(redis_url=redis_url, **kwargs)
+        except ValueError as e:
+            raise ValueError(f"Your redis connected error: {e}")
+        # Check if index exists
+        try:
+            pipe = client.pipeline()
+
+            for key in client.scan_iter(f"doc:{index_name}:*"):
+                pipe.delete(key)
+
+            pipe.execute()
+
+            logger.info("Documents removed")
+            return True
+        except:  # noqa: E722
+            return False
+
     def add_texts(
         self,
         texts: Iterable[str],
