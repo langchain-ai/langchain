@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional, Sequence
+from typing import Iterator, Optional, Sequence
 
 from langchain_core.documents import Document
 
@@ -27,9 +27,6 @@ class FaunaLoader(BaseLoader):
         self.page_content_field = page_content_field
         self.secret = secret
         self.metadata_fields = metadata_fields
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         try:
