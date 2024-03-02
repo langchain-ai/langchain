@@ -106,17 +106,17 @@ class Runnable(Generic[Input, Output], ABC):
      Key Methods
      ===========
 
-    * invoke/ainvoke: Transforms a single input into an output.
-    * batch/abatch: Efficiently transforms multiple inputs into outputs.
-    * stream/astream: Streams output from a single input as it's produced.
-    * astream_log: Streams output and selected intermediate results from an input.
+    - **invoke/ainvoke**: Transforms a single input into an output.
+    - **batch/abatch**: Efficiently transforms multiple inputs into outputs.
+    - **stream/astream**: Streams output from a single input as it's produced.
+    - **astream_log**: Streams output and selected intermediate results from an input.
 
     Built-in optimizations:
 
-    * Batch: By default, batch runs invoke() in parallel using a thread pool executor.
+    - **Batch**: By default, batch runs invoke() in parallel using a thread pool executor.
              Override to optimize batching.
 
-    * Async: Methods with "a" suffix are asynchronous. By default, they execute
+    - **Async**: Methods with "a" suffix are asynchronous. By default, they execute
              the sync counterpart using asyncio's thread pool.
              Override for native async.
 
@@ -228,7 +228,7 @@ class Runnable(Generic[Input, Output], ABC):
             )
 
     For a UI (and much more) checkout LangSmith: https://docs.smith.langchain.com/
-    """
+    """  # noqa: E501
 
     name: Optional[str] = None
     """The name of the runnable. Used for debugging and tracing."""
@@ -707,78 +707,97 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> AsyncIterator[StreamEvent]:
         """Generate a stream of events.
 
-        Use to create an iterator ove StreamEvents that provide real-time information
+        Use to create an iterator over StreamEvents that provide real-time information
         about the progress of the runnable, including StreamEvents from intermediate
         results.
 
         A StreamEvent is a dictionary with the following schema:
 
-        * ``event``: str - Event names are of the
+        - ``event``: **str** - Event names are of the
             format: on_[runnable_type]_(start|stream|end).
-        * ``name``: str - The name of the runnable that generated the event.
-        * ``run_id``: str - randomly generated ID associated with the given execution of
+        - ``name``: **str** - The name of the runnable that generated the event.
+        - ``run_id``: **str** - randomly generated ID associated with the given execution of
             the runnable that emitted the event.
             A child runnable that gets invoked as part of the execution of a
             parent runnable is assigned its own unique ID.
-        * ``tags``: Optional[List[str]] - The tags of the runnable that generated
+        - ``tags``: **Optional[List[str]]** - The tags of the runnable that generated
             the event.
-        * ``metadata``: Optional[Dict[str, Any]] - The metadata of the runnable
+        - ``metadata``: **Optional[Dict[str, Any]]** - The metadata of the runnable
             that generated the event.
-        * ``data``: Dict[str, Any]
+        - ``data``: **Dict[str, Any]**
 
 
         Below is a table that illustrates some evens that might be emitted by various
         chains. Metadata fields have been omitted from the table for brevity.
         Chain definitions have been included after the table.
 
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | event                | name             | chunk                           | input                                         | output                                          |
-        |----------------------|------------------|---------------------------------|-----------------------------------------------|-------------------------------------------------|
+        +======================+==================+=================================+===============================================+=================================================+
         | on_chat_model_start  | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_chat_model_stream | [model name]     | AIMessageChunk(content="hello") |                                               |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_chat_model_end    | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} | {"generations": [...], "llm_output": None, ...} |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_llm_start         | [model name]     |                                 | {'input': 'hello'}                            |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_llm_stream        | [model name]     | 'Hello'                         |                                               |                                                 |
-        | on_llm_end           | [model name]     |                                 | 'Hello human!'                                |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
+        | on_llm_end           | [model name]     |                                 | 'Hello human!'                                |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_chain_start       | format_docs      |                                 |                                               |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_chain_stream      | format_docs      | "hello world!, goodbye world!"  |                                               |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_chain_end         | format_docs      |                                 | [Document(...)]                               | "hello world!, goodbye world!"                  |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_tool_start        | some_tool        |                                 | {"x": 1, "y": "2"}                            |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_tool_stream       | some_tool        | {"x": 1, "y": "2"}              |                                               |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_tool_end          | some_tool        |                                 |                                               | {"x": 1, "y": "2"}                              |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_retriever_start   | [retriever name] |                                 | {"query": "hello"}                            |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_retriever_chunk   | [retriever name] | {documents: [...]}              |                                               |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_retriever_end     | [retriever name] |                                 | {"query": "hello"}                            | {documents: [...]}                              |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_prompt_start      | [template_name]  |                                 | {"question": "hello"}                         |                                                 |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_prompt_end        | [template_name]  |                                 | {"question": "hello"}                         | ChatPromptValue(messages: [SystemMessage, ...]) |
+        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
 
         Here are declarations associated with the events shown above:
 
         `format_docs`:
 
-        ```python
-        def format_docs(docs: List[Document]) -> str:
-            '''Format the docs.'''
-            return ", ".join([doc.page_content for doc in docs])
+        .. code-block:: python
 
-        format_docs = RunnableLambda(format_docs)
-        ```
+            def format_docs(docs: List[Document]) -> str:
+                '''Format the docs.'''
+                return ", ".join([doc.page_content for doc in docs])
+
+            format_docs = RunnableLambda(format_docs)
 
         `some_tool`:
 
-        ```python
-        @tool
-        def some_tool(x: int, y: str) -> dict:
-            '''Some_tool.'''
-            return {"x": x, "y": y}
-        ```
+        .. code-block:: python
+
+            @tool
+            def some_tool(x: int, y: str) -> dict:
+                '''Some_tool.'''
+                return {"x": x, "y": y}
 
         `prompt`:
 
-        ```python
-        template = ChatPromptTemplate.from_messages(
-            [("system", "You are Cat Agent 007"), ("human", "{question}")]
-        ).with_config({"run_name": "my_template", "tags": ["my_template"]})
-        ```
+        .. code-block:: python
+
+            template = ChatPromptTemplate.from_messages(
+                [("system", "You are Cat Agent 007"), ("human", "{question}")]
+            ).with_config({"run_name": "my_template", "tags": ["my_template"]})
+
 
         Example:
 
@@ -1253,7 +1272,7 @@ class Runnable(Generic[Input, Output], ABC):
             run_manager.on_chain_error(e)
             raise
         else:
-            run_manager.on_chain_end(dumpd(output))
+            run_manager.on_chain_end(output)
             return output
 
     async def _acall_with_config(
@@ -1296,7 +1315,7 @@ class Runnable(Generic[Input, Output], ABC):
             await run_manager.on_chain_error(e)
             raise
         else:
-            await run_manager.on_chain_end(dumpd(output))
+            await run_manager.on_chain_end(output)
             return output
 
     def _batch_with_config(
@@ -1360,7 +1379,7 @@ class Runnable(Generic[Input, Output], ABC):
                     first_exception = first_exception or out
                     run_manager.on_chain_error(out)
                 else:
-                    run_manager.on_chain_end(dumpd(out))
+                    run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], output)
             else:
@@ -1435,7 +1454,7 @@ class Runnable(Generic[Input, Output], ABC):
                     first_exception = first_exception or out
                     coros.append(run_manager.on_chain_error(out))
                 else:
-                    coros.append(run_manager.on_chain_end(dumpd(out)))
+                    coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], output)
@@ -2219,7 +2238,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     first_exception = first_exception or out
                     run_manager.on_chain_error(out)
                 else:
-                    run_manager.on_chain_end(dumpd(out))
+                    run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], inputs)
             else:
@@ -2344,7 +2363,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     first_exception = first_exception or out
                     coros.append(run_manager.on_chain_error(out))
                 else:
-                    coros.append(run_manager.on_chain_end(dumpd(out)))
+                    coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], inputs)
@@ -3036,12 +3055,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             return False
 
     def __repr__(self) -> str:
-        if hasattr(self, "_transform"):
-            return f"RunnableGenerator({self._transform.__name__})"
-        elif hasattr(self, "_atransform"):
-            return f"RunnableGenerator({self._atransform.__name__})"
-        else:
-            return "RunnableGenerator(...)"
+        return f"RunnableGenerator({self.name})"
 
     def transform(
         self,
@@ -3049,6 +3063,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[Output]:
+        if not hasattr(self, "_transform"):
+            raise NotImplementedError(f"{repr(self)} only supports async methods.")
         return self._transform_stream_with_config(
             input, self._transform, config, **kwargs
         )
@@ -3079,7 +3095,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         if not hasattr(self, "_atransform"):
-            raise NotImplementedError("This runnable does not support async methods.")
+            raise NotImplementedError(f"{repr(self)} only supports sync methods.")
 
         return self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
@@ -3979,16 +3995,6 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                 runnable with a custom type.
             **other_kwargs: Unpacked into the base class.
         """
-        config = config or {}
-        # config_specs contains the list of valid `configurable` keys
-        if configurable := config.get("configurable", None):
-            allowed_keys = set(s.id for s in bound.config_specs)
-            for key in configurable:
-                if key not in allowed_keys:
-                    raise ValueError(
-                        f"Configurable key '{key}' not found in runnable with"
-                        f" config keys: {allowed_keys}"
-                    )
         super().__init__(
             bound=bound,
             kwargs=kwargs or {},

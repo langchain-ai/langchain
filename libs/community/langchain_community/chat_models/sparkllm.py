@@ -190,10 +190,10 @@ class ChatSparkLLM(BaseChatModel):
             "spark_api_secret",
             "IFLYTEK_SPARK_API_SECRET",
         )
-        values["spark_app_url"] = get_from_dict_or_env(
+        values["spark_api_url"] = get_from_dict_or_env(
             values,
-            "spark_app_url",
-            "IFLYTEK_SPARK_APP_URL",
+            "spark_api_url",
+            "IFLYTEK_SPARK_API_URL",
             "wss://spark-api.xf-yun.com/v3.1/chat",
         )
         values["spark_llm_domain"] = get_from_dict_or_env(

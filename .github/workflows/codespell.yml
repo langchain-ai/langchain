@@ -32,6 +32,6 @@ jobs:
       - name: Codespell
         uses: codespell-project/actions-codespell@v2
         with:
-          skip: guide_imports.json,*.ambr
+          skip: guide_imports.json,*.ambr,./cookbook/data/imdb_top_1000.csv
           ignore_words_list: ${{ steps.extract_ignore_words.outputs.ignore_words_list }}
           exclude_file: libs/community/langchain_community/llms/yuan2.py
