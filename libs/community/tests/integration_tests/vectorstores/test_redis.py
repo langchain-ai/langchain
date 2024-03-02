@@ -34,6 +34,12 @@ def drop(index_name: str) -> bool:
     )
 
 
+def delete_documents(index_name: str) -> bool:
+    return Redis.delete_documents(
+        index_name=index_name, redis_url=TEST_REDIS_URL
+    )
+
+
 def convert_bytes(data: Any) -> Any:
     if isinstance(data, bytes):
         return data.decode("ascii")
@@ -202,9 +208,9 @@ def test_custom_keys_from_docs(texts: List[str]) -> None:
     ],
 )
 def test_redis_filters_1(
-    filter_expr: RedisFilterExpression,
-    expected_length: int,
-    expected_nums: Optional[list],
+        filter_expr: RedisFilterExpression,
+        expected_length: int,
+        expected_nums: Optional[list],
 ) -> None:
     metadata = [
         {"name": "joe", "num": 1, "text": "foo", "category": ["a", "b"]},
@@ -227,13 +233,13 @@ def test_redis_filters_1(
     if expected_nums is not None:
         for out in sim_output:
             assert (
-                out.metadata["text"] in expected_nums
-                or int(out.metadata["num"]) in expected_nums
+                    out.metadata["text"] in expected_nums
+                    or int(out.metadata["num"]) in expected_nums
             )
         for out in mmr_output:
             assert (
-                out.metadata["text"] in expected_nums
-                or int(out.metadata["num"]) in expected_nums
+                    out.metadata["text"] in expected_nums
+                    or int(out.metadata["num"]) in expected_nums
             )
 
     assert drop(docsearch.index_name)
