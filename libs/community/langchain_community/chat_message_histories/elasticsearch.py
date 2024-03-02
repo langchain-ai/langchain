@@ -141,7 +141,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         return es_client
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Elasticsearch"""
         try:
             from elasticsearch import ApiError
@@ -164,6 +164,10 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
             items = []
 
         return messages_from_dict(items)
+
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError("Use add_messages instead")
 
     def add_message(self, message: BaseMessage) -> None:
         """Add a message to the chat session in Elasticsearch"""
