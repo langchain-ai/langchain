@@ -6,7 +6,6 @@ from typing import Any, Optional
 
 import openai
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import validator
 from langchain_core.tools import BaseTool
 
 
@@ -74,16 +73,6 @@ class OpenAITextToSpeechTool(BaseTool):
     _MIN_SPEED = 0.25
     _MAX_SPEED = 4.0
 
-    @validator("_speed")
-    def validate_my_float(cls, v: float) -> float:
-        if not (
-            OpenAITextToSpeechTool._MIN_SPEED <= v <= OpenAITextToSpeechTool._MAX_SPEED
-        ):
-            raise ValueError(
-                "Value must be greater or equal than 0.25 and less than or equal to 4.0"
-            )
-        return v
-
     def __init__(
         self,
         model: Optional[OpenAISpeechModel] = None,
@@ -94,6 +83,15 @@ class OpenAITextToSpeechTool(BaseTool):
     ) -> None:
         """Initializes private fields."""
         super().__init__(**kwargs)
+
+        if speed and not (
+            OpenAITextToSpeechTool._MIN_SPEED
+            <= speed
+            <= OpenAITextToSpeechTool._MAX_SPEED
+        ):
+            raise ValueError(
+                "Value must be greater or equal than 0.25 and less than or equal to 4.0"
+            )
 
         self._model = model or OpenAISpeechModel.DEFAULT
         self._voice = voice or OpenAISpeechVoice.DEFAULT

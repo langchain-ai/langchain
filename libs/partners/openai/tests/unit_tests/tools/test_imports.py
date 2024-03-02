@@ -1,4 +1,4 @@
-from langchain_openai.llms import __all__
+from langchain_openai.tools import __all__
 
 EXPECTED_ALL = ["OpenAITextToSpeechTool"]
 
