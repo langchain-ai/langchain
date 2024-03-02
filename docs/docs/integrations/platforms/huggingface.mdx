@@ -40,6 +40,22 @@ See a [usage example](/docs/integrations/llms/huggingface_pipelines).
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 ```
 
+To use the OpenVINO backend in local pipeline wrapper, please install the optimum library and set HuggingFacePipeline's backend as `openvino`:
+
+```bash
+pip install --upgrade-strategy eager "optimum[openvino,nncf]"
+```
+
+See a [usage example](/docs/integrations/llms/huggingface_pipelines)
+
+To export your model to the OpenVINO IR format with the CLI:
+
+```bash
+optimum-cli export openvino --model gpt2 ov_model
+```
+
+To apply [weight-only quantization](https://github.com/huggingface/optimum-intel?tab=readme-ov-file#export) when exporting your model.
+
 ### Hugging Face TextGen Inference
 
 >[Text Generation Inference](https://github.com/huggingface/text-generation-inference) is 

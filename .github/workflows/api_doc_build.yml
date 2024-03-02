@@ -15,32 +15,56 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: bagatur/api_docs_build
+          path: langchain
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-google
+          path: langchain-google
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-datastax
+          path: langchain-datastax
+      - name: Move google libs
+        run: |
+          rm -rf \
+            langchain/libs/partners/google-genai \
+            langchain/libs/partners/google-vertexai \
+            langchain/libs/partners/astradb
+          mv langchain-google/libs/genai langchain/libs/partners/google-genai
+          mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
+          mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
 
       - name: Set Git config
+        working-directory: langchain
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
 
       - name: Merge master
+        working-directory: langchain
         run: | 
           git fetch origin master
           git merge origin/master -m "Merge master" --allow-unrelated-histories -X theirs
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+        uses: "./langchain/.github/actions/poetry_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
           cache-key: api-docs
+          working-directory: langchain
 
       - name: Install dependencies
+        working-directory: langchain
         run: |
           poetry run python -m pip install --upgrade --no-cache-dir pip setuptools
           poetry run python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
-          poetry run python -m pip install ./libs/partners/*
+          # skip airbyte and ibm due to pandas dependency issue
+          poetry run python -m pip install $(ls ./libs/partners | grep -vE "airbyte|ibm" | xargs -I {} echo "./libs/partners/{}")
           poetry run python -m pip install --exists-action=w --no-cache-dir -r docs/api_reference/requirements.txt
 
       - name: Build docs
+        working-directory: langchain
         run: |
           poetry run python -m pip install --upgrade --no-cache-dir pip setuptools
           poetry run python docs/api_reference/create_api_rst.py
@@ -49,4 +73,5 @@ jobs:
       # https://github.com/marketplace/actions/add-commit
       - uses: EndBug/add-and-commit@v9
         with:
+          cwd: langchain
           message: 'Update API docs build'

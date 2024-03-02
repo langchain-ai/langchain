@@ -1,3 +1,13 @@
+"""**Tracers** are classes for tracing runs.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseCallbackHandler --> BaseTracer --> <name>Tracer  # Examples: LangChainTracer, RootListenersTracer
+                                       --> <name>  # Examples: LogStreamCallbackHandler
+"""  # noqa: E501
+
 __all__ = [
     "BaseTracer",
     "EvaluatorCallbackHandler",

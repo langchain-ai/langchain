@@ -124,6 +124,3 @@ class RSpaceLoader(BaseLoader):
                 yield d
         else:
             raise ValueError("Unknown global ID type")
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
