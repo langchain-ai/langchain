@@ -62,7 +62,7 @@ class ImageCaptionLoader(BaseLoader):
         return results
 
     def _get_captions_and_metadata(
-        self, model: Any, processor: Any, image: Union[str, bytes]
+        self, model: Any, processor: Any, image: Union[str, Path, bytes]
     ) -> Tuple[str, dict]:
         """Helper function for getting the captions and metadata of an image."""
         try:
@@ -77,7 +77,9 @@ class ImageCaptionLoader(BaseLoader):
         try:
             if isinstance(image, bytes):
                 image = Image.open(BytesIO(image)).convert("RGB")
-            elif image.startswith("http://") or image.startswith("https://"):
+            elif isinstance(image, str) and (
+                image.startswith("http://") or image.startswith("https://")
+            ):
                 image = Image.open(requests.get(image, stream=True).raw).convert("RGB")
             else:
                 image = Image.open(image).convert("RGB")

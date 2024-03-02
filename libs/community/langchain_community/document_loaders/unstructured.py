@@ -178,9 +178,9 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
                     file = str(file)
                 elements.extend(partition(filename=file, **self.unstructured_kwargs))
             return elements
-        elif isinstance(self.file_path, Path):
-            self.file_path = str(self.file_path)
         else:
+            if isinstance(self.file_path, Path):
+                self.file_path = str(self.file_path)
             return partition(filename=self.file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
@@ -188,7 +188,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
 
 def get_elements_from_api(
-    file_path: Union[str, List[str], None] = None,
+    file_path: Union[str, List[str], Path, List[Path], None] = None,
     file: Union[IO, Sequence[IO], None] = None,
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
@@ -197,6 +197,8 @@ def get_elements_from_api(
     """Retrieve a list of elements from the `Unstructured API`."""
     if isinstance(file, collections.abc.Sequence) or isinstance(file_path, list):
         from unstructured.partition.api import partition_multiple_via_api
+
+        file_path = [str(path) for path in file_path]
 
         _doc_elements = partition_multiple_via_api(
             filenames=file_path,
@@ -215,7 +217,7 @@ def get_elements_from_api(
         from unstructured.partition.api import partition_via_api
 
         return partition_via_api(
-            filename=file_path,
+            filename=str(file_path),
             file=file,
             api_key=api_key,
             api_url=api_url,

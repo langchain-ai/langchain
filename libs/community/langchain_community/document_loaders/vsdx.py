@@ -16,7 +16,7 @@ from langchain_community.document_loaders.parsers import VsdxParser
 class VsdxLoader(BaseLoader, ABC):
     def __init__(self, file_path: Union[str, Path]):
         """Initialize with file path."""
-        self.file_path = file_path
+        self.file_path = str(file_path)
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
@@ -36,8 +36,6 @@ class VsdxLoader(BaseLoader, ABC):
             self.file_path = self.temp_file.name
         elif not os.path.isfile(self.file_path):
             raise ValueError("File path %s is not a valid file or url" % self.file_path)
-        if isinstance(self.file_path, Path):
-            self.file_path = str(self.file_path)
 
         self.parser = VsdxParser()
 
