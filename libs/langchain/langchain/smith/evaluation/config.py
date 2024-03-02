@@ -7,8 +7,8 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langsmith import RunEvaluator
-from langsmith.schemas import Run, Example
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
+from langsmith.schemas import Example, Run
 
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import (

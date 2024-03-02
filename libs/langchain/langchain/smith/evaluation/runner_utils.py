@@ -1,8 +1,8 @@
 """Utilities for running language models or Chains over datasets."""
 
 from __future__ import annotations
-import concurrent.futures
 
+import concurrent.futures
 import dataclasses
 import functools
 import inspect
@@ -39,6 +39,8 @@ from langsmith.env import get_git_info, get_langchain_env_var_metadata
 from langsmith.evaluation import (
     EvaluationResult,
     RunEvaluator,
+)
+from langsmith.evaluation import (
     run_evaluator as run_evaluator_dec,
 )
 from langsmith.run_helpers import as_runnable, is_traceable_function
