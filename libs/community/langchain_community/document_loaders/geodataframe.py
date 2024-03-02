@@ -1,4 +1,4 @@
-from typing import Any, Iterator, List
+from typing import Any, Iterator
 
 from langchain_core.documents import Document
 
@@ -67,7 +67,3 @@ class GeoDataFrameLoader(BaseLoader):
 
             # using WKT instead of str() to help GIS system interoperability
             yield Document(page_content=geom.wkt, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        """Load full dataframe."""
-        return list(self.lazy_load())
