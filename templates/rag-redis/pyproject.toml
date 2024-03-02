@@ -18,6 +18,7 @@ sentence-transformers = "2.2.2"
 redis = "5.0.1"
 tiktoken = "0.5.1"
 pdf2image = "1.16.3"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.dependencies.unstructured]
 version = "^0.10.27"
