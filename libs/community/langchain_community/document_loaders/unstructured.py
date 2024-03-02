@@ -195,13 +195,10 @@ def get_elements_from_api(
     **unstructured_kwargs: Any,
 ) -> List:
     """Retrieve a list of elements from the `Unstructured API`."""
-    if isinstance(file, collections.abc.Sequence) or (
-        is_list := isinstance(file_path, list)
-    ):
+    if is_list := isinstance(file_path, list):
+        file_path = [str(path) for path in file_path]
+    if isinstance(file, collections.abc.Sequence) or is_list:
         from unstructured.partition.api import partition_multiple_via_api
-
-        if is_list:
-            file_path = [str(path) for path in file_path]
 
         _doc_elements = partition_multiple_via_api(
             filenames=file_path,
