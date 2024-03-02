@@ -65,7 +65,7 @@ class YuqueLoader(BaseLoader):
     @staticmethod
     def parse_document_body(body: str) -> str:
         result = re.sub(r'<a name="(.*)"></a>', "", body)
-        result = re.sub(r'<br\s*/?>', '', result)
+        result = re.sub(r"<br\s*/?>", "", result)
 
         return result
 
