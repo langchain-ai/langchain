@@ -80,3 +80,45 @@ def test_huggingface_pipeline_runtime_kwargs() -> None:
     prompt = "Say foo:"
     output = llm(prompt, pipeline_kwargs={"max_new_tokens": 2})
     assert len(output) < 10
+
+
+ov_config = {"PERFORMANCE_HINT": "LATENCY", "NUM_STREAMS": "1", "CACHE_DIR": ""}
+
+
+def test_huggingface_pipeline_text_generation_ov() -> None:
+    """Test valid call to HuggingFace text generation model with openvino."""
+    llm = HuggingFacePipeline.from_model_id(
+        model_id="gpt2",
+        task="text-generation",
+        backend="openvino",
+        model_kwargs={"device": "CPU", "ov_config": ov_config},
+        pipeline_kwargs={"max_new_tokens": 64},
+    )
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
+def test_huggingface_pipeline_text2text_generation_ov() -> None:
+    """Test valid call to HuggingFace text2text generation model with openvino."""
+    llm = HuggingFacePipeline.from_model_id(
+        model_id="google/flan-t5-small",
+        task="text2text-generation",
+        backend="openvino",
+        model_kwargs={"device": "CPU", "ov_config": ov_config},
+        pipeline_kwargs={"max_new_tokens": 64},
+    )
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
+def text_huggingface_pipeline_summarization_ov() -> None:
+    """Test valid call to HuggingFace summarization model with openvino."""
+    llm = HuggingFacePipeline.from_model_id(
+        model_id="facebook/bart-large-cnn",
+        task="summarization",
+        backend="openvino",
+        model_kwargs={"device": "CPU", "ov_config": ov_config},
+        pipeline_kwargs={"max_new_tokens": 64},
+    )
+    output = llm("Say foo:")
+    assert isinstance(output, str)
