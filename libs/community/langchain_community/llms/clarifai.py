@@ -41,11 +41,11 @@ class Clarifai(LLM):
     """Clarifai application id to use."""
     user_id: Optional[str] = None
     """Clarifai user id to use."""
-    pat: Optional[str] = Field(default=None, exclude=True)
+    pat: Optional[str] = Field(default=None, exclude=True)  #: :meta private:
     """Clarifai personal access token to use."""
-    token: Optional[str] = Field(default=None, exclude=True)
+    token: Optional[str] = Field(default=None, exclude=True)  #: :meta private:
     """Clarifai session token to use."""
-    model: Any = None
+    model: Any = Field(default=None, exclude=True)  #: :meta private:
     api_base: str = "https://api.clarifai.com"
 
     class Config:
