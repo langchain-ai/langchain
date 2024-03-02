@@ -295,6 +295,12 @@ def _import_llamacpp() -> Type[BaseLLM]:
     return LlamaCpp
 
 
+def _import_llamafile() -> Type[BaseLLM]:
+    from langchain_community.llms.llamafile import Llamafile
+
+    return Llamafile
+
+
 def _import_manifest() -> Type[BaseLLM]:
     from langchain_community.llms.manifest import ManifestWrapper
 
