@@ -20,7 +20,7 @@ if __name__ == "__main__":
         "extended-test": set(),
     }
 
-    if len(files) == 300:
+    if len(files) == 3000:
         # max diff length is 300 files - there are likely files missing
         raise ValueError("Max diff reached. Please manually run CI on changed libs.")
 
