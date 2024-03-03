@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from langchain_community.callbacks.manager import (
+    get_bedrock_token_count_callback,
     get_openai_callback,
     wandb_tracing_enabled,
-    get_bedrock_token_count_callback,
 )
 from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
