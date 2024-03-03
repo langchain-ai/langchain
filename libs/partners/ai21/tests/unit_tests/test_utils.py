@@ -19,6 +19,6 @@ from langchain_ai21.embeddings import chunked_text_generator
         ),
     ],
 )
-def test_chunks(input_texts, chunk_size, expected_output):
+def test_chunked_text_generator(input_texts, chunk_size, expected_output):
     result = list(chunked_text_generator(input_texts, chunk_size))
     assert result == expected_output
