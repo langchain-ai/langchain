@@ -23,7 +23,7 @@ from langchain.agents.structured_chat.output_parser import (
 )
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.chains.llm import LLMChain
-from langchain.tools.render import render_text_description_and_args
+from langchain.tools.render import ToolsRenderer, render_text_description_and_args
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
@@ -151,7 +151,10 @@ class StructuredChatAgent(Agent):
 
 
 def create_structured_chat_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: ChatPromptTemplate,
+    tools_renderer: ToolsRenderer = render_text_description_and_args,
 ) -> Runnable:
     """Create an agent aimed at supporting tools with multiple inputs.
 
@@ -159,6 +162,8 @@ def create_structured_chat_agent(
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
+        tools_renderer: This controls how the tools are converted into a string and
+            then passed into the LLM. Default is `render_text_description`.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -265,7 +270,7 @@ def create_structured_chat_agent(
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     prompt = prompt.partial(
-        tools=render_text_description_and_args(list(tools)),
+        tools=tools_renderer(list(tools)),
         tool_names=", ".join([t.name for t in tools]),
     )
     llm_with_stop = llm.bind(stop=["Observation"])
