@@ -74,7 +74,6 @@ MODEL_OR_CHAIN_FACTORY = Union[
     Chain,
 ]
 MCF = Union[Callable[[], Union[Chain, Runnable]], BaseLanguageModel]
-_NULL_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 class InputFormatError(Exception):
