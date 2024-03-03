@@ -213,9 +213,9 @@ class QianfanLLMEndpoint(LLM):
         for res in self.client.do(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
     async def _astream(
         self,
@@ -228,7 +228,6 @@ class QianfanLLMEndpoint(LLM):
         async for res in await self.client.ado(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])
-
-                yield chunk
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text)
+                yield chunk
