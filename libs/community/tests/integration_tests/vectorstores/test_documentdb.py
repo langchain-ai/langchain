@@ -109,7 +109,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.create_index(dimensions, similarity_algorithm)
         sleep(2)  # waits for the index to be set up
 
-        output = vectorstore.similarity_search("Sandwich", similarity_algorithm, k=1)
+        output = vectorstore.similarity_search("Sandwich", k=1)
 
         assert output
         assert output[0].page_content == "What is a sandwich?"
@@ -139,7 +139,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.create_index(dimensions, DocumentDBSimilarityType.DOT)
         sleep(2)  # waits for the index to be set up
 
-        output = vectorstore.similarity_search("Sandwich", similarity_algorithm, k=1)
+        output = vectorstore.similarity_search("Sandwich", k=1, ef_search=100)
 
         assert output
         assert output[0].page_content == "What is a sandwich?"
@@ -166,7 +166,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.create_index(dimensions, similarity_algorithm)
         sleep(2)  # waits for the index to be set up
 
-        output = vectorstore.similarity_search("Sandwich", similarity_algorithm, k=1)
+        output = vectorstore.similarity_search("Sandwich", k=1)
 
         assert output[0].page_content == "What is a sandwich?"
         vectorstore.delete_index()
@@ -193,7 +193,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.create_index(dimensions, similarity_algorithm)
         sleep(2)  # waits for the index to be set up
 
-        output = vectorstore.similarity_search("Sandwich", similarity_algorithm, k=1)
+        output = vectorstore.similarity_search("Sandwich", k=1)
 
         assert output
         assert output[0].page_content == "What is a sandwich?"
@@ -223,7 +223,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.create_index(dimensions, similarity_algorithm)
         sleep(2)  # waits for the index to be set up
 
-        output = vectorstore.similarity_search("Sandwich", similarity_algorithm, k=1)
+        output = vectorstore.similarity_search("Sandwich", k=1)
 
         assert output
         assert output[0].page_content == "What is a sandwich?"
@@ -235,7 +235,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.delete_document_by_id(first_document_id)
         sleep(2)  # waits for the index to be updated
 
-        output2 = vectorstore.similarity_search("Sandwich", similarity_algorithm, k=1)
+        output2 = vectorstore.similarity_search("Sandwich", k=1, ef_search=10)
         assert output2
         assert output2[0].page_content != "What is a sandwich?"
 
@@ -263,7 +263,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.create_index(dimensions, similarity_algorithm)
         sleep(2)  # waits for the index to be set up
 
-        output = vectorstore.similarity_search("Sandwich", similarity_algorithm, k=5)
+        output = vectorstore.similarity_search("Sandwich", k=5)
 
         first_document_id_object = output[0].metadata["_id"]
         first_document_id = str(first_document_id_object)
@@ -278,7 +278,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.delete(document_ids)
         sleep(2)  # waits for the index to be updated
 
-        output_2 = vectorstore.similarity_search("Sandwich", similarity_algorithm, k=5)
+        output_2 = vectorstore.similarity_search("Sandwich", k=5)
         assert output
         assert output_2
 
@@ -311,9 +311,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.create_index(dimensions, DocumentDBSimilarityType.DOT)
         sleep(2)  # waits for the index to be set up
 
-        output = vectorstore.similarity_search(
-            "Sandwich", DocumentDBSimilarityType.DOT, k=1
-        )
+        output = vectorstore.similarity_search("Sandwich", k=1)
 
         assert output
         assert output[0].page_content == "What is a sandwich?"
@@ -342,9 +340,7 @@ class TestDocumentDBVectorSearch:
         vectorstore.create_index(dimensions, DocumentDBSimilarityType.EUC)
         sleep(2)  # waits for the index to be set up
 
-        output = vectorstore.similarity_search(
-            "Sandwich", DocumentDBSimilarityType.EUC, k=1
-        )
+        output = vectorstore.similarity_search("Sandwich", k=1)
 
         assert output
         assert output[0].page_content == "What is a sandwich?"

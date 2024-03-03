@@ -10,7 +10,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -89,6 +88,7 @@ class DocumentDBVectorSearch(VectorStore):
         self._index_name = index_name
         self._text_key = text_key
         self._embedding_key = embedding_key
+        self._similarity_type = DocumentDBSimilarityType.COS
 
     @property
     def embeddings(self) -> Embeddings:
@@ -164,6 +164,8 @@ class DocumentDBVectorSearch(VectorStore):
         self,
         dimensions: int = 1536,
         similarity: DocumentDBSimilarityType = DocumentDBSimilarityType.COS,
+        m: int = 16,
+        ef_construction: int = 64,
     ) -> dict[str, Any]:
         """Creates an index using the index name specified at
             instance construction
@@ -174,6 +176,13 @@ class DocumentDBVectorSearch(VectorStore):
 
             similarity: Similarity algorithm to use with the HNSW index.
 
+            m: Specifies the max number of connections for an HNSW index.
+                Large impact on memory consumption.
+
+            ef_construction: Specifies the size of the dynamic candidate list
+                for constructing the graph for HNSW index. Higher values lead
+                to more accurate results but slower indexing speed.
+
                 Possible options are:
                     - DocumentDBSimilarityType.COS (cosine distance),
                     - DocumentDBSimilarityType.EUC (Euclidean distance), and
@@ -183,6 +192,8 @@ class DocumentDBVectorSearch(VectorStore):
             An object describing the created index
 
         """
+        self._similarity_type = similarity
+
         # prepare the command
         create_index_commands = {
             "createIndexes": self._collection.name,
@@ -194,6 +205,8 @@ class DocumentDBVectorSearch(VectorStore):
                         "type": "hnsw",
                         "similarity": similarity,
                         "dimensions": dimensions,
+                        "m": m,
+                        "efConstruction": ef_construction,
                     },
                 }
             ],
@@ -296,13 +309,16 @@ class DocumentDBVectorSearch(VectorStore):
         self._collection.delete_one({"_id": ObjectId(document_id)})
 
     def _similarity_search_without_score(
-        self, embeddings: List[float], similarity: DocumentDBSimilarityType, k: int = 4
-    ) -> List[Tuple[Document, float]]:
+        self, embeddings: List[float], k: int = 4, ef_search: int = 40
+    ) -> List[Document]:
         """Returns a list of documents.
 
         Args:
             embeddings: The query vector
             k: the number of documents to return
+            ef_search: Specifies the size of the dynamic candidate list
+                that HNSW index uses during search. A higher value of
+                efSearch provides better recall at cost of speed.
 
         Returns:
             A list of documents closest to the query vector
@@ -313,8 +329,9 @@ class DocumentDBVectorSearch(VectorStore):
                     "vectorSearch": {
                         "vector": embeddings,
                         "path": self._embedding_key,
-                        "similarity": similarity,
+                        "similarity": self._similarity_type,
                         "k": k,
+                        "efSearch": ef_search,
                     }
                 }
             }
@@ -325,7 +342,6 @@ class DocumentDBVectorSearch(VectorStore):
         docs = []
 
         for res in cursor:
-            print(res)
             text = res.pop(self._text_key)
             docs.append(Document(page_content=text, metadata=res))
 
@@ -334,12 +350,12 @@ class DocumentDBVectorSearch(VectorStore):
     def similarity_search(
         self,
         query: str,
-        similarity: DocumentDBSimilarityType,
         k: int = 4,
+        ef_search: int = 40,
         **kwargs: Any,
     ) -> List[Document]:
         embeddings = self._embedding.embed_query(query)
         docs = self._similarity_search_without_score(
-            embeddings=embeddings, similarity=similarity, k=k
+            embeddings=embeddings, k=k, ef_search=ef_search
         )
         return [doc for doc in docs]
