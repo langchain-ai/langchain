@@ -4,10 +4,7 @@ import uuid
 import json
 import logging
 from hashlib import sha1
-from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Type
-
-from manticoresearch.api import search_api
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -19,6 +16,7 @@ DEFAULT_K = 4  # Number of Documents to return.
 
 
 class ManticoreSearchSettings(BaseSettings):
+    proto: str = "http"
     host: str = "localhost"
     port: int = 9308
 
@@ -52,7 +50,7 @@ class ManticoreSearchSettings(BaseSettings):
     hnsw_ef_construction = 100
 
     def get_connection_string(self) -> str:
-        return 'http://' + self.host + ':' + str(self.port)
+        return self.proto + '://' + self.host + ':' + str(self.port)
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
@@ -99,7 +97,7 @@ class ManticoreSearch(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import manticoresearch python package. "
-                "Please install it with `pip install manticoresearch`."
+                "Please install it with `pip install manticoresearch-dev`."
             )
 
         try:
