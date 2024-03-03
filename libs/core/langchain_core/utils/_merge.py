@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict
 import numbers
+from typing import Any, Dict
 
 
 def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
