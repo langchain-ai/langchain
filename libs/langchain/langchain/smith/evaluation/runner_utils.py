@@ -1078,14 +1078,16 @@ class _DatasetRunContainer:
                     result = evaluator(runs=runs_list, examples=self.examples)
                     aggregate_feedback.append(result)
                     executor.submit(
-                        # TODO need to add the session ID
                         self.client.create_feedback,
                         **result,
-                        run_id=_NULL_UUID,
+                        run_id=None,
                         project_name=self.project.name,
+                        sesssion_id=self.project.id,
                     )
-                except Exception:
-                    logger.error(f"Error running session evaluator {repr(evaluator)}")
+                except Exception as e:
+                    logger.error(
+                        f"Error running session evaluator {repr(evaluator)}: {e}"
+                    )
         return aggregate_feedback
 
     def _collect_metrics(self) -> Tuple[Dict[str, _RowResult], Dict[str, Run]]:

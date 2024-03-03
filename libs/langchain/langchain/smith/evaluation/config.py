@@ -22,7 +22,10 @@ from langchain.evaluation.string_distance.base import (
 RUN_EVALUATOR_LIKE = Callable[
     [Run, Optional[Example]], Union[EvaluationResult, EvaluationResults, dict]
 ]
-SESSION_EVALUATOR_LIKE = Callable[[Sequence[Run], Optional[Sequence[Example]]]]
+SESSION_EVALUATOR_LIKE = Callable[
+    [Sequence[Run], Optional[Sequence[Example]]],
+    Union[EvaluationResult, EvaluationResults, dict],
+]
 
 
 class EvalConfig(BaseModel):
