@@ -53,20 +53,17 @@ class TranslateQueryExpansionRetriever():
 
     def rephrase_using_translation(self, query, iteration):
         queries = [query]
-        # print(f"query: {query}")
         current_query = query
         for _ in range(iteration):
             fwd_pass_text = self.translate_pass(current_query, pass_fwd_or_rev='fwd')
             rev_pass_text = self.translate_pass(fwd_pass_text, pass_fwd_or_rev='rev')
             current_query = rev_pass_text
             queries.append(rev_pass_text)
-        # print(f"queries : {queries}")
         return queries
 
     def _get_expanded_queries_ltor(self, query, iteration=1, language_pair=None)-> List[Document]:
         expanded_queries = self.rephrase_using_translation(query, iteration)
         list_of_queries = {}
-        # print(f"list_of_queries : {list_of_queries}")
         for _, i in enumerate(expanded_queries):
             for count, j in enumerate(i):
                 if count not in list_of_queries:
@@ -75,7 +72,6 @@ class TranslateQueryExpansionRetriever():
                     list_of_queries[count].append(j.lower())
 
         list_of_queries = list(list_of_queries.values())
-        # print(f"list_of_queries : {list_of_queries}")
         return list_of_queries
 
     def _get_relevant_documents(self, retriever, queries):
@@ -101,17 +97,5 @@ class TranslateQueryExpansionRetriever():
 
         return relevant_documents_wo_duplicates
 
-
-
-# if __name__ == '__main__':
-#     retriever = BM25Retriever.from_texts(["Hey, are you ok?", "I walked my dog", "lets meet for dinner", "hello", "foo bar"])
-#     translate_query_expansion = TranslateQueryExpansion()
-#     texts_to_translate = ["Hello, how are you?", "@PhotOle, we also walked down to the blockade tonight for dinner and saw it, but were unaware of the situation."]
-#     expanded_queries = translate_query_expansion._get_expanded_queries_ltor(texts_to_translate,2)
-#     sol = translate_query_expansion._get_relevant_documents(retriever, expanded_queries)
-#     print(f"sol ======== {sol}")
-    # for i in expanded_queries:
-    #     print(i)
-    #     print(retriever.get_relevant_documents(i))
 
 
