@@ -27,6 +27,7 @@ from typing import (
 )
 
 import openai
+from openai import OpenAI
 import tiktoken
 from langchain_core._api import beta
 from langchain_core.callbacks import (
@@ -372,7 +373,7 @@ class ChatOpenAI(BaseChatModel):
         }
 
         if not values.get("client"):
-            values["client"] = openai.OpenAI(**client_params).chat.completions
+            values["client"] = OpenAI(**client_params).chat.completions
         if not values.get("async_client"):
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params
