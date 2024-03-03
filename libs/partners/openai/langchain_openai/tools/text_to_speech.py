@@ -1,11 +1,11 @@
 from datetime import datetime
 from enum import Enum
 from os import path
-from pathlib import Path
 from typing import Any, Optional
 
 import openai
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import validator
 from langchain_core.tools import BaseTool
 
 
@@ -60,10 +60,10 @@ class OpenAITextToSpeechTool(BaseTool):
     name: str = "openai_text_to_speech"
     description: str = "A wrapper around OpenAI Text-to-Speech API. "
 
-    _model: OpenAISpeechModel
-    _voice: OpenAISpeechVoice
-    _speed: float
-    _format: OpenAISpeechFormat
+    model: OpenAISpeechModel
+    voice: OpenAISpeechVoice
+    speed: float
+    format: OpenAISpeechFormat
 
     _DEFAULT_SPEED = 1.0
     _DEFAULT_OUTPUT_DIR = "./tts/"
@@ -72,6 +72,14 @@ class OpenAITextToSpeechTool(BaseTool):
     _MAX_CHARACTER_LENGTH = 4096
     _MIN_SPEED = 0.25
     _MAX_SPEED = 4.0
+
+    @validator("speed", always=True)
+    def check_speed_constraints(cls, speed: float) -> float:
+        if not (cls._MIN_SPEED <= speed <= cls._MAX_SPEED):
+            raise ValueError(
+                "Value must be greater or equal than 0.25 and less than or equal to 4.0"
+            )
+        return speed
 
     def __init__(
         self,
@@ -82,21 +90,13 @@ class OpenAITextToSpeechTool(BaseTool):
         **kwargs: Any,
     ) -> None:
         """Initializes private fields."""
-        super().__init__(**kwargs)
-
-        if speed and not (
-            OpenAITextToSpeechTool._MIN_SPEED
-            <= speed
-            <= OpenAITextToSpeechTool._MAX_SPEED
-        ):
-            raise ValueError(
-                "Value must be greater or equal than 0.25 and less than or equal to 4.0"
-            )
-
-        self._model = model or OpenAISpeechModel.DEFAULT
-        self._voice = voice or OpenAISpeechVoice.DEFAULT
-        self._speed = speed or OpenAITextToSpeechTool._DEFAULT_SPEED
-        self._format = format or OpenAISpeechFormat.DEFAULT
+        super().__init__(
+            model=model if model is not None else OpenAISpeechModel.DEFAULT,
+            voice=voice if voice is not None else OpenAISpeechVoice.DEFAULT,
+            speed=speed if speed is not None else OpenAITextToSpeechTool._DEFAULT_SPEED,
+            format=format if format is not None else OpenAISpeechFormat.DEFAULT,
+            **kwargs,
+        )
 
     def _run(
         self,
@@ -104,7 +104,7 @@ class OpenAITextToSpeechTool(BaseTool):
         output_dir: Optional[str] = None,
         output_name: Optional[str] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Path:
+    ) -> str:
         """Use the tool."""
         if len(input) > self._MAX_CHARACTER_LENGTH:
             # TODO: break up input string and concat results into one file
@@ -112,10 +112,12 @@ class OpenAITextToSpeechTool(BaseTool):
                 f"Max input character length is {self._MAX_CHARACTER_LENGTH}."
             )
 
-        output_dir = output_dir or OpenAITextToSpeechTool._DEFAULT_OUTPUT_DIR
-        output_name = output_name or self._default_output_name()
+        output_dir = output_dir if output_dir is not None else self._DEFAULT_OUTPUT_DIR
+        output_name = (
+            output_name if output_name is not None else self._default_output_name()
+        )
 
-        output_path = Path(output_dir) / f"{output_name}.{self._format}"
+        output_path = f"{output_dir}/{output_name}.{self.format.value}"
 
         if path.exists(output_path):
             raise ValueError(
@@ -124,10 +126,10 @@ class OpenAITextToSpeechTool(BaseTool):
             )
 
         response = openai.audio.speech.create(
-            model=self._model.value,
-            voice=self._voice.value,
-            speed=self._speed,
-            response_format=self._format.value,
+            model=self.model.value,
+            voice=self.voice.value,
+            speed=self.speed,
+            response_format=self.format.value,
             input=input,
         )
 
@@ -137,4 +139,4 @@ class OpenAITextToSpeechTool(BaseTool):
 
     def _default_output_name(self) -> str:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"{OpenAITextToSpeechTool._DEFAULT_OUTPUT_NAME_PREFIX}_{timestamp}"
+        return f"{self._DEFAULT_OUTPUT_NAME_PREFIX}_{timestamp}"
