@@ -10,8 +10,8 @@ _DEFAULT_CHUNK_SIZE = 128
 
 
 def chunked_text_generator(texts: List[str], chunk_size: int) -> Iterator[List[str]]:
-    lst_it = iter(texts)
-    return iter(lambda: list(islice(lst_it, chunk_size)), [])
+    texts_itr = iter(texts)
+    return iter(lambda: list(islice(texts_itr, chunk_size)), [])
 
 
 class AI21Embeddings(Embeddings, AI21Base):
