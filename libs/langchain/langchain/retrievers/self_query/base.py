@@ -54,6 +54,7 @@ from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 
 logger = logging.getLogger(__name__)
+QUERY_CONSTRUCTOR_RUN_NAME = "query_constructor"
 
 
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
@@ -243,6 +244,9 @@ class SelfQueryRetriever(BaseRetriever):
             metadata_field_info,
             enable_limit=enable_limit,
             **chain_kwargs,
+        )
+        query_constructor = query_constructor.with_config(
+            run_name=QUERY_CONSTRUCTOR_RUN_NAME
         )
         return cls(
             query_constructor=query_constructor,

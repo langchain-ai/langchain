@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Iterator, List, Union
+from typing import Iterator, Union
 
 from langchain_core.documents import Document
 
@@ -17,10 +17,6 @@ class TomlLoader(BaseLoader):
     def __init__(self, source: Union[str, Path]):
         """Initialize the TomlLoader with a source file or directory."""
         self.source = Path(source)
-
-    def load(self) -> List[Document]:
-        """Load and return all documents."""
-        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazily load the TOML documents from the source file or directory."""

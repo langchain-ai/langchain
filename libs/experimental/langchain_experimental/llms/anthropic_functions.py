@@ -41,6 +41,8 @@ for the weather in SF you would respond:
 
 
 class TagParser(HTMLParser):
+    """Parser for the tool tags."""
+
     def __init__(self) -> None:
         """A heavy-handed solution, but it's fast for prototyping.
 
@@ -122,6 +124,8 @@ def _destrip(tool_input: Any) -> Any:
 
 
 class AnthropicFunctions(BaseChatModel):
+    """Chat model for interacting with Anthropic functions."""
+
     llm: BaseChatModel
 
     @root_validator(pre=True)

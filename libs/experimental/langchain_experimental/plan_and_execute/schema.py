@@ -40,7 +40,7 @@ class BaseStepContainer(BaseModel):
 
 
 class ListStepContainer(BaseStepContainer):
-    """List step container."""
+    """Container for List of steps."""
 
     steps: List[Tuple[Step, StepResponse]] = Field(default_factory=list)
     """The steps."""
