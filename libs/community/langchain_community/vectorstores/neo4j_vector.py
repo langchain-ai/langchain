@@ -4,6 +4,7 @@ import enum
 import logging
 import os
 import uuid
+import hashlib
 from typing import (
     Any,
     Callable,
@@ -493,7 +494,8 @@ class Neo4jVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [hashlib.sha256(text.encode('utf-8')).hexdigest()
+               for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
