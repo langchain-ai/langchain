@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict
+import numbers
 
 
 def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
@@ -22,6 +23,9 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
         elif v is not None and merged[k] is None:
             merged[k] = v
         elif v is None or merged[k] == v:
+            continue
+        # TODO Numeric type data is temporarily passed.
+        elif isinstance(v, numbers.Number):
             continue
         elif type(merged[k]) != type(v):
             raise TypeError(
