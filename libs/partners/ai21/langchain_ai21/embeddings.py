@@ -1,9 +1,10 @@
-from typing import Any, List, Optional
+from itertools import islice
+from typing import Any, List, Optional, Iterator
 
 from ai21.models import EmbedType
-from langchain_core.embeddings import Embeddings
 
 from langchain_ai21.ai21_base import AI21Base
+from langchain_core.embeddings import Embeddings
 
 _DEFAULT_CHUNK_SIZE = 128
 
@@ -72,10 +73,6 @@ class AI21Embeddings(Embeddings, AI21Base):
 
     def _get_len_safe_embeddings(
         self, texts: List[str], chunk_size: int
-    ) -> List[List[str]]:
-        result = []
-
-        for i in range(0, len(texts), chunk_size):
-            result.append(texts[i : i + chunk_size])
-
-        return result
+    ) -> Iterator[List[str]]:
+        lst_it = iter(texts)
+        return iter(lambda: list(islice(lst_it, chunk_size)), [])
