@@ -2,7 +2,16 @@ import asyncio
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, List, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    TypeVar,
+)
 
 from langchain.document_loaders.base import BaseLoader
 from langchain.schema.document import Document
@@ -58,6 +67,9 @@ def _load_loader(
     return loader.load()
 
 
+Methods = Literal["sequential", "thread", "process", "async"]
+
+
 class BatchLoader(BaseLoader):
     """
     Meta loader use to load multiple data from a loader either in parallel
@@ -99,7 +111,7 @@ class BatchLoader(BaseLoader):
         loader_initializer_callable: Callable[..., BaseLoader],
         init_loader_args: Dict[str, List[Any]],
         *,
-        method: str = "sequential",
+        method: Methods = "sequential",
         max_workers: int = 1,
         show_progress: bool = False,
     ):
@@ -139,6 +151,7 @@ class BatchLoader(BaseLoader):
         self.method = method
         self.max_workers = max_workers
 
+        # Check that all lists in loader_args have the same length
         if len(set(len(arg) for arg in init_loader_args.values())) != 1:
             raise ValueError("All loader_args lists must have the same length")
 
@@ -150,7 +163,7 @@ class BatchLoader(BaseLoader):
             - "sequential": load data sequentially
             - "thread": load data using threads
             - "process": load data using processes
-            - "async": load data using asyncio
+            - "async": load data using asyncio (use the `aload` method instead)
 
         Args:
             method (str, optional): concurrent method to use.
@@ -172,9 +185,20 @@ class BatchLoader(BaseLoader):
         elif self.method == "sequential":
             return self._load_sequential()
         elif self.method == "async":
-            return self._async_load()
+            raise ValueError(
+                "You must use the `aload` method to use the 'async' method"
+            )
         else:
             raise ValueError(f"Invalid method {self.method}")
+
+    async def aload(self) -> Coroutine[None, None, List[Document]]:
+        """Load data from the loader using asyncio.
+
+        Returns:
+            Coroutine[None, None, List[Document]]: coroutine that returns
+                a list of loaded documents flattened.
+        """
+        return self._async_load()
 
     async def _async_load(self) -> List[Document]:
         """Load data from the loader using asyncio.
