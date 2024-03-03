@@ -1,9 +1,11 @@
 """Test functionality related to prompts."""
+
 from unittest import mock
 
 import pytest
 
 from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 
 
 def test_prompt_valid() -> None:
@@ -328,3 +330,22 @@ def test_prompt_jinja2_wrong_input_variables() -> None:
     assert PromptTemplate(
         input_variables=input_variables, template=template, template_format="jinja2"
     ).input_variables == ["foo"]
+
+
+def test_prompt_invoke_with_metadata() -> None:
+    """Test prompt can be invoked with metadata."""
+    template = "This is a {foo} test."
+    prompt = PromptTemplate(
+        input_variables=["foo"],
+        template=template,
+        metadata={"version": "1"},
+        tags=["tag1", "tag2"],
+    )
+    tracer = RunCollectorCallbackHandler()
+    result = prompt.invoke(
+        {"foo": "bar"}, {"metadata": {"foo": "bar"}, "callbacks": [tracer]}
+    )
+    assert result.to_string() == "This is a bar test."
+    assert len(tracer.traced_runs) == 1
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore

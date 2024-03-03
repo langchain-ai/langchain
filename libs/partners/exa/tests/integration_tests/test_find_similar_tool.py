@@ -9,5 +9,5 @@ def test_similarity_tool() -> None:
             "num_results": 5,
         }
     )
-    print(res)
+    print(res)  # noqa: T201
     assert not isinstance(res, str)  # str means error for this tool

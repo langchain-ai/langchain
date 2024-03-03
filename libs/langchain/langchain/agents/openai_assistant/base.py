@@ -210,7 +210,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=[convert_to_openai_tool(tool) for tool in tools],
+            tools=[convert_to_openai_tool(tool) for tool in tools],  # type: ignore
             model=model,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
@@ -331,7 +331,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=openai_tools,
+            tools=openai_tools,  # type: ignore
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)

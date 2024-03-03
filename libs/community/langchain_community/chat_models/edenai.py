@@ -165,6 +165,12 @@ class ChatEdenAI(BaseChatModel):
         """Return type of chat model."""
         return "edenai-chat"
 
+    @property
+    def _api_key(self) -> str:
+        if self.edenai_api_key:
+            return self.edenai_api_key.get_secret_value()
+        return ""
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -175,7 +181,7 @@ class ChatEdenAI(BaseChatModel):
         """Call out to EdenAI's chat endpoint."""
         url = f"{self.edenai_api_url}/text/chat/stream"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self._api_key}",
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)
@@ -200,12 +206,10 @@ class ChatEdenAI(BaseChatModel):
         for chunk_response in response.iter_lines():
             chunk = json.loads(chunk_response.decode())
             token = chunk["text"]
-            chat_generatio_chunk = ChatGenerationChunk(
-                message=AIMessageChunk(content=token)
-            )
-            yield chat_generatio_chunk
+            cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
             if run_manager:
-                run_manager.on_llm_new_token(token, chunk=chat_generatio_chunk)
+                run_manager.on_llm_new_token(token, chunk=cg_chunk)
+            yield cg_chunk
 
     async def _astream(
         self,
@@ -216,7 +220,7 @@ class ChatEdenAI(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         url = f"{self.edenai_api_url}/text/chat/stream"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self._api_key}",
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)
@@ -240,14 +244,14 @@ class ChatEdenAI(BaseChatModel):
                 async for chunk_response in response.content:
                     chunk = json.loads(chunk_response.decode())
                     token = chunk["text"]
-                    chat_generation_chunk = ChatGenerationChunk(
+                    cg_chunk = ChatGenerationChunk(
                         message=AIMessageChunk(content=token)
                     )
-                    yield chat_generation_chunk
                     if run_manager:
                         await run_manager.on_llm_new_token(
-                            token=chunk["text"], chunk=chat_generation_chunk
+                            token=chunk["text"], chunk=cg_chunk
                         )
+                    yield cg_chunk
 
     def _generate(
         self,
@@ -265,7 +269,7 @@ class ChatEdenAI(BaseChatModel):
 
         url = f"{self.edenai_api_url}/text/chat"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self._api_key}",
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)
@@ -323,7 +327,7 @@ class ChatEdenAI(BaseChatModel):
 
         url = f"{self.edenai_api_url}/text/chat"
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self._api_key}",
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)

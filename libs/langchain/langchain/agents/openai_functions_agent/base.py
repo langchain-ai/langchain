@@ -175,7 +175,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             content="You are a helpful AI assistant."
         ),
         extra_prompt_messages: Optional[List[BaseMessagePromptTemplate]] = None,
-    ) -> BasePromptTemplate:
+    ) -> ChatPromptTemplate:
         """Create prompt for this agent.
 
         Args:

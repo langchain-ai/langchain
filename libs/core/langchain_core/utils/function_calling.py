@@ -89,7 +89,7 @@ def convert_pydantic_to_openai_function(
 
 @deprecated(
     "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
     removal="0.2.0",
 )
 def convert_pydantic_to_openai_tool(
@@ -253,7 +253,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
 @deprecated(
     "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
     removal="0.2.0",
 )
 def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:

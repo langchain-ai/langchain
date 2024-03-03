@@ -969,15 +969,22 @@ def _prepare_eval_run(
     examples = list(client.list_examples(dataset_id=dataset.id))
     if not examples:
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
+    modified_at = [ex.modified_at for ex in examples if ex.modified_at]
+    # Should always be defined in practice when fetched,
+    # but the typing permits None
+    max_modified_at = max(modified_at) if modified_at else None
+    dataset_version = max_modified_at.isoformat() if max_modified_at else None
 
     try:
+        project_metadata = project_metadata or {}
         git_info = get_git_info()
         if git_info:
-            project_metadata = project_metadata or {}
             project_metadata = {
                 **project_metadata,
                 "git": git_info,
             }
+
+        project_metadata["dataset_version"] = dataset_version
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
@@ -999,7 +1006,7 @@ run_on_dataset(
             f"\n\n{example_msg}"
         )
     comparison_url = dataset.url + f"/compare?selectedSessions={project.id}"
-    print(
+    print(  # noqa: T201
         f"View the evaluation results for project '{project_name}'"
         f" at:\n{comparison_url}\n\n"
         f"View all tests for Dataset {dataset_name} at:\n{dataset.url}",
@@ -1145,7 +1152,6 @@ class _DatasetRunContainer:
                     LangChainTracer(
                         project_name=project.name,
                         client=client,
-                        use_threading=False,
                         example_id=example.id,
                     ),
                     EvaluatorCallbackHandler(
@@ -1191,8 +1197,8 @@ def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
         formatted_string = aggregate_results.to_string(
             float_format=lambda x: f"{x:.2f}", justify="right"
         )
-        print("\n Experiment Results:")
-        print(formatted_string)
+        print("\n Experiment Results:")  # noqa: T201
+        print(formatted_string)  # noqa: T201
 
 
 _INPUT_MAPPER_DEP_WARNING = (

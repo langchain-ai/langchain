@@ -22,7 +22,7 @@ def _get_llm(**kwargs: Any) -> AzureOpenAI:
     return AzureOpenAI(
         deployment_name=DEPLOYMENT_NAME,
         openai_api_version=OPENAI_API_VERSION,
-        openai_api_base=OPENAI_API_BASE,
+        azure_endpoint=OPENAI_API_BASE,
         openai_api_key=OPENAI_API_KEY,
         **kwargs,
     )

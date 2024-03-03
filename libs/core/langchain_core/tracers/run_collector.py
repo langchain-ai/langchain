@@ -9,7 +9,7 @@ from langchain_core.tracers.schemas import Run
 
 class RunCollectorCallbackHandler(BaseTracer):
     """
-    A tracer that collects all nested runs in a list.
+    Tracer that collects all nested runs in a list.
 
     This tracer is useful for inspection and evaluation purposes.
 

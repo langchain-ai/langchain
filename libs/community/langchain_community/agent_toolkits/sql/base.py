@@ -2,7 +2,17 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
@@ -70,9 +80,7 @@ def create_sql_agent(
         format_instructions: Formatting instructions to pass to
             ZeroShotAgent.create_prompt() when 'agent_type' is
             "zero-shot-react-description". Otherwise ignored.
-        input_variables: DEPRECATED. Input variables to explicitly specify as part of
-            ZeroShotAgent.create_prompt() when 'agent_type' is
-            "zero-shot-react-description". Otherwise ignored.
+        input_variables: DEPRECATED.
         top_k: Number of rows to query for by default.
         max_iterations: Passed to AgentExecutor init.
         max_execution_time: Passed to AgentExecutor init.
@@ -123,6 +131,9 @@ def create_sql_agent(
         raise ValueError(
             "Must provide exactly one of 'toolkit' or 'db'. Received both."
         )
+    if input_variables:
+        kwargs = kwargs or {}
+        kwargs["input_variables"] = input_variables
     if kwargs:
         warnings.warn(
             f"Received additional kwargs {kwargs} which are no longer supported."
@@ -175,8 +186,8 @@ def create_sql_agent(
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
         if prompt is None:
-            messages = [
-                SystemMessage(content=prefix),
+            messages: List = [
+                SystemMessage(content=cast(str, prefix)),
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -190,7 +201,7 @@ def create_sql_agent(
     elif agent_type == "openai-tools":
         if prompt is None:
             messages = [
-                SystemMessage(content=prefix),
+                SystemMessage(content=cast(str, prefix)),
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -203,7 +214,10 @@ def create_sql_agent(
         )
 
     else:
-        raise ValueError(f"Agent type {agent_type} not supported at the moment.")
+        raise ValueError(
+            f"Agent type {agent_type} not supported at the moment. Must be one of "
+            "'openai-tools', 'openai-functions', or 'zero-shot-react-description'."
+        )
 
     return AgentExecutor(
         name="SQL Agent Executor",

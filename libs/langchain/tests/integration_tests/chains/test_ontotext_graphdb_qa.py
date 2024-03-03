@@ -167,6 +167,65 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
 
 @pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize("max_fix_retries", [1, 2, 3])
+def test_invalid_sparql_server_response_400(max_fix_retries: int) -> None:
+    from langchain_openai import ChatOpenAI
+
+    question = "Who is the oldest character?"
+    generated_invalid_sparql = (
+        "PREFIX : <https://swapi.co/vocabulary/> "
+        "PREFIX owl: <http://www.w3.org/2002/07/owl#> "
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
+        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> "
+        "SELECT ?character (MAX(?lifespan) AS ?maxLifespan) "
+        "WHERE {"
+        "  ?species a :Species ;"
+        "    :character ?character ;"
+        "    :averageLifespan ?lifespan ."
+        "  FILTER(xsd:integer(?lifespan))"
+        "} "
+        "ORDER BY DESC(?maxLifespan) "
+        "LIMIT 1"
+    )
+
+    graph = OntotextGraphDBGraph(
+        query_endpoint="http://localhost:7200/repositories/starwars",
+        query_ontology="CONSTRUCT {?s ?p ?o} "
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+    )
+    chain = OntotextGraphDBQAChain.from_llm(
+        Mock(ChatOpenAI),
+        graph=graph,
+        max_fix_retries=max_fix_retries,
+    )
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_fix_chain = Mock(LLMChain)
+    chain.qa_chain = Mock(LLMChain)
+
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_invalid_sparql,
+            "prompt": question,
+            "schema": "",
+        }
+    )
+    chain.sparql_fix_chain.output_key = "text"
+    chain.sparql_fix_chain.invoke = MagicMock()
+    chain.qa_chain.output_key = "text"
+    chain.qa_chain.invoke = MagicMock()
+
+    with pytest.raises(ValueError) as e:
+        chain.invoke({chain.input_key: question})
+
+    assert str(e.value) == "Failed to execute the generated SPARQL query."
+
+    assert chain.sparql_generation_chain.invoke.call_count == 1
+    assert chain.sparql_fix_chain.invoke.call_count == 0
+    assert chain.qa_chain.invoke.call_count == 0
+
+
+@pytest.mark.requires("langchain_openai", "rdflib")
+@pytest.mark.parametrize("max_fix_retries", [1, 2, 3])
 def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
     from langchain_openai import ChatOpenAI
 

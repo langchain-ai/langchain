@@ -185,7 +185,7 @@ class BaseSingleActionAgent(BaseModel):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
@@ -310,7 +310,7 @@ class BaseMultiActionAgent(BaseModel):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
