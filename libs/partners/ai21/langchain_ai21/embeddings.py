@@ -9,6 +9,11 @@ from langchain_core.embeddings import Embeddings
 _DEFAULT_CHUNK_SIZE = 128
 
 
+def chunked_text_generator(texts: List[str], chunk_size: int) -> Iterator[List[str]]:
+    lst_it = iter(texts)
+    return iter(lambda: list(islice(lst_it, chunk_size)), [])
+
+
 class AI21Embeddings(Embeddings, AI21Base):
     """AI21 Embeddings embedding model.
     To use, you should have the 'AI21_API_KEY' environment variable set
@@ -57,7 +62,7 @@ class AI21Embeddings(Embeddings, AI21Base):
     def _send_embeddings(
         self, texts: List[str], chunk_size: int, embed_type: EmbedType, **kwargs: Any
     ) -> List[List[float]]:
-        chunks = self._get_len_safe_embeddings(texts, chunk_size)
+        chunks = chunked_text_generator(texts, chunk_size)
         responses = [
             self.client.embed.create(
                 texts=chunk,
@@ -70,9 +75,3 @@ class AI21Embeddings(Embeddings, AI21Base):
         return [
             result.embedding for response in responses for result in response.results
         ]
-
-    def _get_len_safe_embeddings(
-        self, texts: List[str], chunk_size: int
-    ) -> Iterator[List[str]]:
-        lst_it = iter(texts)
-        return iter(lambda: list(islice(lst_it, chunk_size)), [])
