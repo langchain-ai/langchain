@@ -1,10 +1,10 @@
 from itertools import islice
-from typing import Any, List, Optional, Iterator
+from typing import Any, Iterator, List, Optional
 
 from ai21.models import EmbedType
+from langchain_core.embeddings import Embeddings
 
 from langchain_ai21.ai21_base import AI21Base
-from langchain_core.embeddings import Embeddings
 
 _DEFAULT_CHUNK_SIZE = 128
 
