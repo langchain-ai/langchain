@@ -16,7 +16,7 @@ class WatsonxLLM(BaseLLM):
     """
     IBM watsonx.ai large language models.
 
-    To use, you should have ``ibm_watsonx_ai`` python package installed,
+    To use, you should have ``langchain_ibm`` python package installed,
     and the environment variable ``WATSONX_APIKEY`` set with your API key, or pass
     it as a named parameter to the constructor.
 
@@ -103,6 +103,18 @@ class WatsonxLLM(BaseLLM):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
+        """A map of constructor argument names to secret ids.
+
+        For example:
+            {
+                "url": "WATSONX_URL",
+                "apikey": "WATSONX_APIKEY",
+                "token": "WATSONX_TOKEN",
+                "password": "WATSONX_PASSWORD",
+                "username": "WATSONX_USERNAME",
+                "instance_id": "WATSONX_INSTANCE_ID",
+            }
+        """
         return {
             "url": "WATSONX_URL",
             "apikey": "WATSONX_APIKEY",
