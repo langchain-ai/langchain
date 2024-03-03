@@ -1080,8 +1080,7 @@ class _DatasetRunContainer:
                         self.client.create_feedback,
                         **result,
                         run_id=None,
-                        project_name=self.project.name,
-                        sesssion_id=self.project.id,
+                        project_id=self.project.id,
                     )
                 except Exception as e:
                     logger.error(
