@@ -21,11 +21,14 @@ def _resolve_schema_references(schema: Any, definitions: Dict[str, Any]) -> Any:
 
 def _convert_schema(schema: dict) -> dict:
     props = {k: {"title": k, **v} for k, v in schema["properties"].items()}
-    return {
+    converted_schema = {
         "type": "object",
         "properties": props,
         "required": schema.get("required", []),
     }
+    if schema.get("title"):
+        converted_schema["title"] = schema.get("title")
+    return converted_schema
 
 
 def get_llm_kwargs(function: dict) -> dict:
