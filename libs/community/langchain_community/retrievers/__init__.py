@@ -106,6 +106,7 @@ __all__ = [
     "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
+    "TranslateQueryExpansionRetriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
     "WikipediaRetriever",
