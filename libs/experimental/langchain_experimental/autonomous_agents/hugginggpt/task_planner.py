@@ -76,6 +76,8 @@ class TaskPlaningChain(LLMChain):
 
 
 class Step:
+    """A step in the plan."""
+
     def __init__(
         self, task: str, id: int, dep: List[int], args: Dict[str, str], tool: BaseTool
     ):
@@ -87,6 +89,8 @@ class Step:
 
 
 class Plan:
+    """A plan to execute."""
+
     def __init__(self, steps: List[Step]):
         self.steps = steps
 
@@ -98,6 +102,8 @@ class Plan:
 
 
 class BasePlanner(BaseModel):
+    """Base class for a planner."""
+
     @abstractmethod
     def plan(self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any) -> Plan:
         """Given input, decide what to do."""
@@ -106,11 +112,22 @@ class BasePlanner(BaseModel):
     async def aplan(
         self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any
     ) -> Plan:
-        """Given input, decide what to do."""
+        """Asynchronous Given input, decide what to do."""
 
 
 class PlanningOutputParser(BaseModel):
+    """Parses the output of the planning stage."""
+
     def parse(self, text: str, hf_tools: List[BaseTool]) -> Plan:
+        """Parse the output of the planning stage.
+
+        Args:
+            text: The output of the planning stage.
+            hf_tools: The tools available.
+
+        Returns:
+            The plan.
+        """
         steps = []
         for v in json.loads(re.findall(r"\[.*\]", text)[0]):
             choose_tool = None
@@ -124,6 +141,8 @@ class PlanningOutputParser(BaseModel):
 
 
 class TaskPlanner(BasePlanner):
+    """Planner for tasks."""
+
     llm_chain: LLMChain
     output_parser: PlanningOutputParser
     stop: Optional[List] = None
@@ -139,7 +158,7 @@ class TaskPlanner(BasePlanner):
     async def aplan(
         self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any
     ) -> Plan:
-        """Given input, decided what to do."""
+        """Asynchronous Given input, decided what to do."""
         inputs["hf_tools"] = [
             f"{tool.name}: {tool.description}" for tool in inputs["hf_tools"]
         ]
@@ -150,5 +169,7 @@ class TaskPlanner(BasePlanner):
 
 
 def load_chat_planner(llm: BaseLanguageModel) -> TaskPlanner:
+    """Load the chat planner."""
+
     llm_chain = TaskPlaningChain.from_llm(llm)
     return TaskPlanner(llm_chain=llm_chain, output_parser=PlanningOutputParser())

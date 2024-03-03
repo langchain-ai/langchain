@@ -12,7 +12,7 @@ def create_data_generation_chain(
     llm: BaseLanguageModel,
     prompt: Optional[PromptTemplate] = None,
 ) -> Chain:
-    """Creates a chain that generates synthetic sentences with
+    """Create a chain that generates synthetic sentences with
      provided fields.
 
     Args:
@@ -28,7 +28,7 @@ def create_data_generation_chain(
 
 
 class DatasetGenerator:
-    """Generates synthetic dataset with a given language model."""
+    """Generate synthetic dataset with a given language model."""
 
     def __init__(
         self,

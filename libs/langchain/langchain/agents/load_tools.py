@@ -453,7 +453,10 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "stackexchange": (_get_stackexchange, []),
     "sceneXplain": (_get_scenexplain, []),
-    "graphql": (_get_graphql_tool, ["graphql_endpoint", "custom_headers"]),
+    "graphql": (
+        _get_graphql_tool,
+        ["graphql_endpoint", "custom_headers", "fetch_schema_from_transport"],
+    ),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),
     "dataforseo-api-search": (
         _get_dataforseo_api_search,

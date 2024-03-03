@@ -68,7 +68,7 @@ Note: sessionId must be received from previous Browser window creation."""
                 self.sessionId = sessionId
                 return content
             except Exception as e:
-                print(f"{e}, retrying...")
+                print(f"{e}, retrying...")  # noqa: T201
                 return {"error": f"{e}", "Response": "retrying..."}
         except Exception as e:
             raise Exception(f"An error occurred: {e}")

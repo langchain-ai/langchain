@@ -49,7 +49,7 @@ def is_gemini_model(model_name: str) -> bool:
     return model_name is not None and "gemini" in model_name
 
 
-def completion_with_retry(
+def completion_with_retry(  # type: ignore[no-redef]
     llm: VertexAI,
     prompt: List[Union[str, "Image"]],
     stream: bool = False,
@@ -330,7 +330,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
                     generation += chunk
                 generations.append([generation])
             else:
-                res = completion_with_retry(
+                res = completion_with_retry(  # type: ignore[misc]
                     self,
                     [prompt],
                     stream=should_stream,
@@ -373,7 +373,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = self._prepare_params(stop=stop, stream=True, **kwargs)
-        for stream_resp in completion_with_retry(
+        for stream_resp in completion_with_retry(  # type: ignore[misc]
             self,
             [prompt],
             stream=True,

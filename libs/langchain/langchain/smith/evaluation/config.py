@@ -296,7 +296,7 @@ class RunEvalConfig(BaseModel):
             Whether to ignore numbers when comparing strings.
         """
 
-        evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
+        evaluator_type: EvaluatorType = EvaluatorType.EXACT_MATCH
         ignore_case: bool = False
         ignore_punctuation: bool = False
         ignore_numbers: bool = False

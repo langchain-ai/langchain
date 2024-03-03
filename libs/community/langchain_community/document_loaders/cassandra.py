@@ -5,7 +5,6 @@ from typing import (
     Any,
     Callable,
     Iterator,
-    List,
     Optional,
     Sequence,
     Union,
@@ -29,18 +28,18 @@ class CassandraLoader(BaseLoader):
         table: Optional[str] = None,
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
-        query: Optional[Union[str, Statement]] = None,
+        query: Union[str, Statement, None] = None,
         page_content_mapper: Callable[[Any], str] = str,
         metadata_mapper: Callable[[Any], dict] = lambda _: {},
         *,
-        query_parameters: Union[dict, Sequence] = None,
-        query_timeout: Optional[float] = _NOT_SET,
+        query_parameters: Union[dict, Sequence, None] = None,
+        query_timeout: Optional[float] = _NOT_SET,  # type: ignore[assignment]
         query_trace: bool = False,
-        query_custom_payload: dict = None,
+        query_custom_payload: Optional[dict] = None,
         query_execution_profile: Any = _NOT_SET,
         query_paging_state: Any = None,
-        query_host: Host = None,
-        query_execute_as: str = None,
+        query_host: Optional[Host] = None,
+        query_execute_as: Optional[str] = None,
     ) -> None:
         """
         Document Loader for Apache Cassandra.
@@ -85,7 +84,7 @@ class CassandraLoader(BaseLoader):
             self.query = f"SELECT * FROM {_keyspace}.{table};"
             self.metadata = {"table": table, "keyspace": _keyspace}
         else:
-            self.query = query
+            self.query = query  # type: ignore[assignment]
             self.metadata = {}
 
         self.session = session or check_resolve_session(session)
@@ -105,9 +104,6 @@ class CassandraLoader(BaseLoader):
 
         if query_execution_profile is not _NOT_SET:
             self.query_kwargs["execution_profile"] = query_execution_profile
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         for row in self.session.execute(self.query, **self.query_kwargs):

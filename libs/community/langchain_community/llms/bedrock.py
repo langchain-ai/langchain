@@ -1,11 +1,8 @@
-from __future__ import annotations
-
 import asyncio
 import json
 import warnings
 from abc import ABC
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     AsyncIterator,
@@ -30,9 +27,6 @@ from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
-
-if TYPE_CHECKING:
-    from botocore.config import Config
 
 AMAZON_BEDROCK_TRACE_KEY = "amazon-bedrock-trace"
 GUARDRAILS_BODY_KEY = "amazon-bedrock-guardrailAssessment"
@@ -226,12 +220,20 @@ class BedrockBase(BaseModel, ABC):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    config: Optional[Config] = None
+    config: Any = None
     """An optional botocore.config.Config instance to pass to the client."""
+
+    provider: Optional[str] = None
+    """The model provider, e.g., amazon, cohere, ai21, etc. When not supplied, provider
+    is extracted from the first part of the model_id e.g. 'amazon' in 
+    'amazon.titan-text-express-v1'. This value should be provided for model ids that do
+    not have the provider in them, e.g., custom and provisioned models that have an ARN
+    associated with them."""
 
     model_id: str
     """Id of the model to call, e.g., amazon.titan-text-express-v1, this is
-    equivalent to the modelId property in the list-foundation-models api"""
+    equivalent to the modelId property in the list-foundation-models api. For custom and
+    provisioned models, an ARN value is expected."""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model."""
@@ -353,6 +355,14 @@ class BedrockBase(BaseModel, ABC):
         }
 
     def _get_provider(self) -> str:
+        if self.provider:
+            return self.provider
+        if self.model_id.startswith("arn"):
+            raise ValueError(
+                "Model provider should be supplied when passing a model ARN as "
+                "model_id"
+            )
+
         return self.model_id.split(".")[0]
 
     @property
@@ -395,8 +405,8 @@ class BedrockBase(BaseModel, ABC):
         """
         return {
             "amazon-bedrock-guardrailDetails": {
-                "guardrailId": self.guardrails.get("id"),
-                "guardrailVersion": self.guardrails.get("version"),
+                "guardrailId": self.guardrails.get("id"),  # type: ignore[union-attr]
+                "guardrailVersion": self.guardrails.get("version"),  # type: ignore[union-attr]
             }
         }
 
@@ -427,7 +437,7 @@ class BedrockBase(BaseModel, ABC):
 
         if self._guardrails_enabled:
             request_options["guardrail"] = "ENABLED"
-            if self.guardrails.get("trace"):
+            if self.guardrails.get("trace"):  # type: ignore[union-attr]
                 request_options["trace"] = "ENABLED"
 
         try:
@@ -446,7 +456,7 @@ class BedrockBase(BaseModel, ABC):
         # Verify and raise a callback error if any intervention occurs or a signal is
         # sent from a Bedrock service,
         # such as when guardrails are triggered.
-        services_trace = self._get_bedrock_services_signal(body)
+        services_trace = self._get_bedrock_services_signal(body)  # type: ignore[arg-type]
 
         if services_trace.get("signal") and run_manager is not None:
             run_manager.on_llm_error(
@@ -468,7 +478,7 @@ class BedrockBase(BaseModel, ABC):
 
         if (
             self._guardrails_enabled
-            and self.guardrails.get("trace")
+            and self.guardrails.get("trace")  # type: ignore[union-attr]
             and self._is_guardrails_intervention(body)
         ):
             return {
@@ -526,7 +536,7 @@ class BedrockBase(BaseModel, ABC):
 
         if self._guardrails_enabled:
             request_options["guardrail"] = "ENABLED"
-            if self.guardrails.get("trace"):
+            if self.guardrails.get("trace"):  # type: ignore[union-attr]
                 request_options["trace"] = "ENABLED"
 
         try:
@@ -540,7 +550,7 @@ class BedrockBase(BaseModel, ABC):
         ):
             yield chunk
             # verify and raise callback error if any middleware intervened
-            self._get_bedrock_services_signal(chunk.generation_info)
+            self._get_bedrock_services_signal(chunk.generation_info)  # type: ignore[arg-type]
 
             if run_manager is not None:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
@@ -588,7 +598,7 @@ class BedrockBase(BaseModel, ABC):
             ):
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             elif run_manager is not None:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)  # type: ignore[unused-coroutine]
 
 
 class Bedrock(LLM, BedrockBase):

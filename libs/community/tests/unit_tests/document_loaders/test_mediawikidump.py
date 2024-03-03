@@ -44,5 +44,5 @@ def test_multiple_namespaces() -> None:
         stop_on_error=False,
     )
     documents = loader.load()
-    [print(doc) for doc in documents]
+    [print(doc) for doc in documents]  # noqa: T201
     assert len(documents) == 2

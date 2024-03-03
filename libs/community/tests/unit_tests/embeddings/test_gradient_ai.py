@@ -29,7 +29,7 @@ class GradientEmbeddingsModel(MagicMock):
         embeddings = []
         for i, inp in enumerate(inputs):
             # verify correct ordering
-            inp = inp["input"]
+            inp = inp["input"]  # type: ignore[assignment]
             if "pizza" in inp:
                 v = [1.0, 0.0, 0.0]
             elif "document" in inp:
@@ -45,14 +45,14 @@ class GradientEmbeddingsModel(MagicMock):
         output.embeddings = embeddings
         return output
 
-    async def aembed(self, *args) -> Any:
+    async def aembed(self, *args) -> Any:  # type: ignore[no-untyped-def]
         return self.embed(*args)
 
 
 class MockGradient(MagicMock):
     """Mock Gradient package."""
 
-    def __init__(self, access_token: str, workspace_id, host):
+    def __init__(self, access_token: str, workspace_id, host):  # type: ignore[no-untyped-def]
         assert access_token == _GRADIENT_SECRET
         assert workspace_id == _GRADIENT_WORKSPACE_ID
         assert host == _GRADIENT_BASE_URL

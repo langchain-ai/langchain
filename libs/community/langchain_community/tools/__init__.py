@@ -118,6 +118,32 @@ def _import_brave_search_tool() -> Any:
     return BraveSearch
 
 
+def _import_cogniswitch_store_file_tool() -> Any:
+    from langchain_community.tools.cogniswitch.tool import (
+        CogniswitchKnowledgeSourceFile,
+    )
+
+    return CogniswitchKnowledgeSourceFile
+
+
+def _import_cogniswitch_store_url_tool() -> Any:
+    from langchain_community.tools.cogniswitch.tool import CogniswitchKnowledgeSourceURL
+
+    return CogniswitchKnowledgeSourceURL
+
+
+def _import_cogniswitch_answer_tool() -> Any:
+    from langchain_community.tools.cogniswitch.tool import CogniswitchKnowledgeRequest
+
+    return CogniswitchKnowledgeRequest
+
+
+def _import_cogniswitch_knowledge_status_tool() -> Any:
+    from langchain_community.tools.cogniswitch.tool import CogniswitchKnowledgeStatus
+
+    return CogniswitchKnowledgeStatus
+
+
 def _import_connery_tool() -> Any:
     from langchain_community.tools.connery import ConneryAction
 
@@ -478,10 +504,22 @@ def _import_plugin() -> Any:
     return AIPluginTool
 
 
+def _import_polygon_tool_PolygonFinancials() -> Any:
+    from langchain_community.tools.polygon.financials import PolygonFinancials
+
+    return PolygonFinancials
+
+
 def _import_polygon_tool_PolygonLastQuote() -> Any:
     from langchain_community.tools.polygon.last_quote import PolygonLastQuote
 
     return PolygonLastQuote
+
+
+def _import_polygon_tool_PolygonTickerNews() -> Any:
+    from langchain_community.tools.polygon.ticker_news import PolygonTickerNews
+
+    return PolygonTickerNews
 
 
 def _import_powerbi_tool_InfoPowerBITool() -> Any:
@@ -803,6 +841,14 @@ def __getattr__(name: str) -> Any:
         return _import_bing_search_tool_BingSearchRun()
     elif name == "BraveSearch":
         return _import_brave_search_tool()
+    elif name == "CogniswitchKnowledgeSourceFile":
+        return _import_cogniswitch_store_file_tool()
+    elif name == "CogniswitchKnowledgeSourceURL":
+        return _import_cogniswitch_store_url_tool()
+    elif name == "CogniswitchKnowledgeRequest":
+        return _import_cogniswitch_answer_tool()
+    elif name == "CogniswitchKnowledgeStatus":
+        return _import_cogniswitch_knowledge_status_tool()
     elif name == "ConneryAction":
         return _import_connery_tool()
     elif name == "DuckDuckGoSearchResults":
@@ -921,8 +967,12 @@ def __getattr__(name: str) -> Any:
         return _import_playwright_NavigateTool()
     elif name == "AIPluginTool":
         return _import_plugin()
+    elif name == "PolygonFinancials":
+        return _import_polygon_tool_PolygonFinancials()
     elif name == "PolygonLastQuote":
         return _import_polygon_tool_PolygonLastQuote()
+    elif name == "PolygonTickerNews":
+        return _import_polygon_tool_PolygonTickerNews()
     elif name == "InfoPowerBITool":
         return _import_powerbi_tool_InfoPowerBITool()
     elif name == "ListPowerBITool":
@@ -1043,6 +1093,10 @@ __all__ = [
     "BingSearchRun",
     "BraveSearch",
     "ClickTool",
+    "CogniswitchKnowledgeSourceFile",
+    "CogniswitchKnowledgeSourceURL",
+    "CogniswitchKnowledgeRequest",
+    "CogniswitchKnowledgeStatus",
     "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
@@ -1102,7 +1156,9 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonFinancials",
     "PolygonLastQuote",
+    "PolygonTickerNews",
     "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",

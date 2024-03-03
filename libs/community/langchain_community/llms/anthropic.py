@@ -52,6 +52,9 @@ class _AnthropicCommon(BaseLanguageModel):
     default_request_timeout: Optional[float] = None
     """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
+    max_retries: int = 2
+    """Number of retries allowed for requests sent to the Anthropic Completion API."""
+
     anthropic_api_url: Optional[str] = None
 
     anthropic_api_key: Optional[SecretStr] = None
@@ -92,11 +95,13 @@ class _AnthropicCommon(BaseLanguageModel):
                 base_url=values["anthropic_api_url"],
                 api_key=values["anthropic_api_key"].get_secret_value(),
                 timeout=values["default_request_timeout"],
+                max_retries=values["max_retries"],
             )
             values["async_client"] = anthropic.AsyncAnthropic(
                 base_url=values["anthropic_api_url"],
                 api_key=values["anthropic_api_key"].get_secret_value(),
                 timeout=values["default_request_timeout"],
+                max_retries=values["max_retries"],
             )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT

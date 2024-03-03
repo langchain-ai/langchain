@@ -2,7 +2,17 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
@@ -176,8 +186,8 @@ def create_sql_agent(
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
         if prompt is None:
-            messages = [
-                SystemMessage(content=prefix),
+            messages: List = [
+                SystemMessage(content=cast(str, prefix)),
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -191,7 +201,7 @@ def create_sql_agent(
     elif agent_type == "openai-tools":
         if prompt is None:
             messages = [
-                SystemMessage(content=prefix),
+                SystemMessage(content=cast(str, prefix)),
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
