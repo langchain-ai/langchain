@@ -254,7 +254,7 @@ extended_testing = [
 ]
 
 [tool.ruff]
-lint.select = [
+select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
@@ -288,7 +288,7 @@ build-backend = "poetry.core.masonry.api"
 #
 # https://github.com/tophat/syrupy
 # --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--strict-markers --strict-config --durations=5 -vv"
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
@@ -296,6 +296,7 @@ markers = [
   "scheduled: mark tests to run in scheduled testing",
   "compile: mark placeholder test used to compile integration tests without running them"
 ]
+asyncio_mode = "auto"
 
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
