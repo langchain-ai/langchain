@@ -28,7 +28,9 @@ from langchain_community.document_loaders.airbyte import (
 )
 from langchain_community.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain_community.document_loaders.airtable import AirtableLoader
-from langchain_community.document_loaders.apify_dataset import ApifyDatasetLoader
+from langchain_community.document_loaders.apify_dataset import (
+    ApifyDatasetLoader,
+)
 from langchain_community.document_loaders.arcgis_loader import ArcGISLoader
 from langchain_community.document_loaders.arxiv import ArxivLoader
 from langchain_community.document_loaders.assemblyai import (
@@ -47,6 +49,7 @@ from langchain_community.document_loaders.azure_blob_storage_container import (
 from langchain_community.document_loaders.azure_blob_storage_file import (
     AzureBlobStorageFileLoader,
 )
+from langchain_community.document_loaders.batch_loader import BatchLoader
 from langchain_community.document_loaders.bibtex import BibtexLoader
 from langchain_community.document_loaders.bigquery import BigQueryLoader
 from langchain_community.document_loaders.bilibili import BiliBiliLoader
@@ -57,7 +60,9 @@ from langchain_community.document_loaders.blob_loaders import (
     FileSystemBlobLoader,
     YoutubeAudioLoader,
 )
-from langchain_community.document_loaders.blockchain import BlockchainDocumentLoader
+from langchain_community.document_loaders.blockchain import (
+    BlockchainDocumentLoader,
+)
 from langchain_community.document_loaders.brave_search import BraveSearchLoader
 from langchain_community.document_loaders.browserless import BrowserlessLoader
 from langchain_community.document_loaders.cassandra import CassandraLoader
@@ -74,7 +79,9 @@ from langchain_community.document_loaders.csv_loader import (
     CSVLoader,
     UnstructuredCSVLoader,
 )
-from langchain_community.document_loaders.cube_semantic import CubeSemanticLoader
+from langchain_community.document_loaders.cube_semantic import (
+    CubeSemanticLoader,
+)
 from langchain_community.document_loaders.datadog_logs import DatadogLogsLoader
 from langchain_community.document_loaders.dataframe import DataFrameLoader
 from langchain_community.document_loaders.diffbot import DiffbotLoader
@@ -95,12 +102,18 @@ from langchain_community.document_loaders.epub import UnstructuredEPubLoader
 from langchain_community.document_loaders.etherscan import EtherscanLoader
 from langchain_community.document_loaders.evernote import EverNoteLoader
 from langchain_community.document_loaders.excel import UnstructuredExcelLoader
-from langchain_community.document_loaders.facebook_chat import FacebookChatLoader
+from langchain_community.document_loaders.facebook_chat import (
+    FacebookChatLoader,
+)
 from langchain_community.document_loaders.fauna import FaunaLoader
 from langchain_community.document_loaders.figma import FigmaFileLoader
-from langchain_community.document_loaders.gcs_directory import GCSDirectoryLoader
+from langchain_community.document_loaders.gcs_directory import (
+    GCSDirectoryLoader,
+)
 from langchain_community.document_loaders.gcs_file import GCSFileLoader
-from langchain_community.document_loaders.geodataframe import GeoDataFrameLoader
+from langchain_community.document_loaders.geodataframe import (
+    GeoDataFrameLoader,
+)
 from langchain_community.document_loaders.git import GitLoader
 from langchain_community.document_loaders.gitbook import GitbookLoader
 from langchain_community.document_loaders.github import (
@@ -123,33 +136,47 @@ from langchain_community.document_loaders.hugging_face_model import (
 )
 from langchain_community.document_loaders.ifixit import IFixitLoader
 from langchain_community.document_loaders.image import UnstructuredImageLoader
-from langchain_community.document_loaders.image_captions import ImageCaptionLoader
+from langchain_community.document_loaders.image_captions import (
+    ImageCaptionLoader,
+)
 from langchain_community.document_loaders.imsdb import IMSDbLoader
 from langchain_community.document_loaders.iugu import IuguLoader
 from langchain_community.document_loaders.joplin import JoplinLoader
 from langchain_community.document_loaders.json_loader import JSONLoader
 from langchain_community.document_loaders.lakefs import LakeFSLoader
 from langchain_community.document_loaders.larksuite import LarkSuiteDocLoader
-from langchain_community.document_loaders.markdown import UnstructuredMarkdownLoader
+from langchain_community.document_loaders.markdown import (
+    UnstructuredMarkdownLoader,
+)
 from langchain_community.document_loaders.mastodon import MastodonTootsLoader
 from langchain_community.document_loaders.max_compute import MaxComputeLoader
 from langchain_community.document_loaders.mediawikidump import MWDumpLoader
 from langchain_community.document_loaders.merge import MergedDataLoader
 from langchain_community.document_loaders.mhtml import MHTMLLoader
-from langchain_community.document_loaders.modern_treasury import ModernTreasuryLoader
+from langchain_community.document_loaders.modern_treasury import (
+    ModernTreasuryLoader,
+)
 from langchain_community.document_loaders.mongodb import MongodbLoader
 from langchain_community.document_loaders.news import NewsURLLoader
 from langchain_community.document_loaders.notebook import NotebookLoader
 from langchain_community.document_loaders.notion import NotionDirectoryLoader
 from langchain_community.document_loaders.notiondb import NotionDBLoader
-from langchain_community.document_loaders.obs_directory import OBSDirectoryLoader
+from langchain_community.document_loaders.obs_directory import (
+    OBSDirectoryLoader,
+)
 from langchain_community.document_loaders.obs_file import OBSFileLoader
 from langchain_community.document_loaders.obsidian import ObsidianLoader
 from langchain_community.document_loaders.odt import UnstructuredODTLoader
 from langchain_community.document_loaders.onedrive import OneDriveLoader
-from langchain_community.document_loaders.onedrive_file import OneDriveFileLoader
-from langchain_community.document_loaders.open_city_data import OpenCityDataLoader
-from langchain_community.document_loaders.org_mode import UnstructuredOrgModeLoader
+from langchain_community.document_loaders.onedrive_file import (
+    OneDriveFileLoader,
+)
+from langchain_community.document_loaders.open_city_data import (
+    OpenCityDataLoader,
+)
+from langchain_community.document_loaders.org_mode import (
+    UnstructuredOrgModeLoader,
+)
 from langchain_community.document_loaders.pdf import (
     AmazonTextractPDFLoader,
     MathpixPDFLoader,
@@ -164,8 +191,12 @@ from langchain_community.document_loaders.pdf import (
     UnstructuredPDFLoader,
 )
 from langchain_community.document_loaders.pebblo import PebbloSafeLoader
-from langchain_community.document_loaders.polars_dataframe import PolarsDataFrameLoader
-from langchain_community.document_loaders.powerpoint import UnstructuredPowerPointLoader
+from langchain_community.document_loaders.polars_dataframe import (
+    PolarsDataFrameLoader,
+)
+from langchain_community.document_loaders.powerpoint import (
+    UnstructuredPowerPointLoader,
+)
 from langchain_community.document_loaders.psychic import PsychicLoader
 from langchain_community.document_loaders.pubmed import PubMedLoader
 from langchain_community.document_loaders.pyspark_dataframe import (
@@ -173,7 +204,9 @@ from langchain_community.document_loaders.pyspark_dataframe import (
 )
 from langchain_community.document_loaders.python import PythonLoader
 from langchain_community.document_loaders.readthedocs import ReadTheDocsLoader
-from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
+from langchain_community.document_loaders.recursive_url_loader import (
+    RecursiveUrlLoader,
+)
 from langchain_community.document_loaders.reddit import RedditPostsLoader
 from langchain_community.document_loaders.roam import RoamLoader
 from langchain_community.document_loaders.rocksetdb import RocksetLoader
@@ -184,8 +217,12 @@ from langchain_community.document_loaders.s3_directory import S3DirectoryLoader
 from langchain_community.document_loaders.s3_file import S3FileLoader
 from langchain_community.document_loaders.sharepoint import SharePointLoader
 from langchain_community.document_loaders.sitemap import SitemapLoader
-from langchain_community.document_loaders.slack_directory import SlackDirectoryLoader
-from langchain_community.document_loaders.snowflake_loader import SnowflakeLoader
+from langchain_community.document_loaders.slack_directory import (
+    SlackDirectoryLoader,
+)
+from langchain_community.document_loaders.snowflake_loader import (
+    SnowflakeLoader,
+)
 from langchain_community.document_loaders.spreedly import SpreedlyLoader
 from langchain_community.document_loaders.sql_database import SQLDatabaseLoader
 from langchain_community.document_loaders.srt import SRTLoader
@@ -198,7 +235,9 @@ from langchain_community.document_loaders.telegram import (
 from langchain_community.document_loaders.tencent_cos_directory import (
     TencentCOSDirectoryLoader,
 )
-from langchain_community.document_loaders.tencent_cos_file import TencentCOSFileLoader
+from langchain_community.document_loaders.tencent_cos_file import (
+    TencentCOSFileLoader,
+)
 from langchain_community.document_loaders.tensorflow_datasets import (
     TensorflowDatasetLoader,
 )
@@ -216,12 +255,16 @@ from langchain_community.document_loaders.unstructured import (
     UnstructuredFileLoader,
 )
 from langchain_community.document_loaders.url import UnstructuredURLLoader
-from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
+from langchain_community.document_loaders.url_playwright import (
+    PlaywrightURLLoader,
+)
 from langchain_community.document_loaders.url_selenium import SeleniumURLLoader
 from langchain_community.document_loaders.vsdx import VsdxLoader
 from langchain_community.document_loaders.weather import WeatherDataLoader
 from langchain_community.document_loaders.web_base import WebBaseLoader
-from langchain_community.document_loaders.whatsapp_chat import WhatsAppChatLoader
+from langchain_community.document_loaders.whatsapp_chat import (
+    WhatsAppChatLoader,
+)
 from langchain_community.document_loaders.wikipedia import WikipediaLoader
 from langchain_community.document_loaders.word_document import (
     Docx2txtLoader,
@@ -270,6 +313,7 @@ __all__ = [
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
+    "BatchLoader",
     "BibtexLoader",
     "BigQueryLoader",
     "BiliBiliLoader",
