@@ -5,7 +5,6 @@ from functools import partial
 from typing import (
     Any,
     Callable,
-    Coroutine,
     Dict,
     Iterable,
     List,
@@ -13,8 +12,9 @@ from typing import (
     TypeVar,
 )
 
-from langchain.document_loaders.base import BaseLoader
-from langchain.schema.document import Document
+from langchain_core.documents import Document
+
+from langchain_community.document_loaders.base import BaseLoader
 
 T = TypeVar("T")
 
@@ -191,14 +191,13 @@ class BatchLoader(BaseLoader):
         else:
             raise ValueError(f"Invalid method {self.method}")
 
-    async def aload(self) -> Coroutine[None, None, List[Document]]:
+    async def aload(self) -> List[Document]:
         """Load data from the loader using asyncio.
 
         Returns:
-            Coroutine[None, None, List[Document]]: coroutine that returns
-                a list of loaded documents flattened.
+            List[Document]: list of loaded documents flattened.
         """
-        return self._async_load()
+        return await self._async_load()
 
     async def _async_load(self) -> List[Document]:
         """Load data from the loader using asyncio.

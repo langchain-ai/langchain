@@ -2,10 +2,10 @@ from typing import Any, List
 from unittest.mock import patch
 
 import pytest
+from langchain_core.documents import Document
 
-from langchain.document_loaders import BatchLoader
-from langchain.document_loaders.base import BaseLoader
-from langchain.schema import Document
+from langchain_community.document_loaders import BatchLoader
+from langchain_community.document_loaders.base import BaseLoader
 
 
 # Mocking BaseLoader and its load method
@@ -20,8 +20,8 @@ class MockLoader(BaseLoader):
         return [Document(page_content="", metadata={"doc_id": i}) for i in range(2)]
 
 
-@pytest.fixture
-def batch_loader() -> BatchLoader:
+@pytest.fixture(name="batch_loader")
+def fixture_batch_loader() -> BatchLoader:
     """Fixture to create a BatchLoader instance with 2 loader_args so that
     load() is called twice in the batch loader.
 
@@ -58,7 +58,14 @@ def test_missing_tqdm() -> None:
 def test_load_invalid_method(batch_loader: BatchLoader) -> None:
     """Test that an error is raised if the method is invalid"""
     with pytest.raises(ValueError):
-        batch_loader.method = "invalid"
+        batch_loader.method = "invalid"  # type: ignore
+        batch_loader.load()
+
+
+def test_use_load_with_async_method(batch_loader: BatchLoader) -> None:
+    """Test that an error is raised if the method is invalid"""
+    with pytest.raises(ValueError):
+        batch_loader.method = "async"
         batch_loader.load()
 
 
@@ -87,10 +94,11 @@ def test_load_process(batch_loader: BatchLoader) -> None:
     assert len(documents) == 4
     assert [doc.metadata["doc_id"] for doc in documents] == [0, 1, 0, 1]
 
+
 @pytest.mark.asyncio
 async def test_load_async(batch_loader: BatchLoader) -> None:
     """Test that load() calls the load() method of the loader in processes"""
     batch_loader.method = "async"
-    documents = await batch_loader.load()
+    documents = await batch_loader.aload()
     assert len(documents) == 4
     assert [doc.metadata["doc_id"] for doc in documents] == [0, 1, 0, 1]
