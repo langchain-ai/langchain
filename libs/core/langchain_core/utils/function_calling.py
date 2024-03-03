@@ -73,7 +73,7 @@ def convert_pydantic_to_openai_function(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    rm_titles: bool = True,
+    rm_titles: bool = False,
 ) -> FunctionDescription:
     """Converts a Pydantic model to a function description for the OpenAI API."""
     schema = dereference_refs(model.schema())
