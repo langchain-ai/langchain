@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import pytest
 from langchain_core.caches import BaseCache
@@ -81,8 +81,8 @@ def llm_cache(cls: Any) -> BaseCache:
 
 
 def _execute_test(
-    prompt: str | List[BaseMessage],
-    llm: str | FakeLLM | FakeChatModel,
+    prompt: Union[str, List[BaseMessage]],
+    llm: Union[str, FakeLLM, FakeChatModel],
     response: List[Generation],
 ) -> None:
     # Fabricate an LLM String
@@ -102,8 +102,8 @@ def _execute_test(
     llm_cache.update(dumped_prompt, llm_string, response)
 
     # Retrieve the cached result through 'generate' call
-    output: List[Generation] | LLMResult | None
-    expected_output: List[Generation] | LLMResult
+    output: Union[List[Generation], LLMResult, None]
+    expected_output: Union[List[Generation], LLMResult]
     if isinstance(llm_cache, PatchedMongoDBAtlasSemanticCache):
         llm_cache._collection._aggregate_result = [  # type: ignore
             data
@@ -145,9 +145,9 @@ def _execute_test(
     "cacher", [PatchedMongoDBCache, PatchedMongoDBAtlasSemanticCache]
 )
 def test_mongodb_cache(
-    cacher: MongoDBCache | MongoDBAtlasSemanticCache,
-    prompt: str | List[BaseMessage],
-    llm: str | FakeLLM | FakeChatModel,
+    cacher: Union[MongoDBCache, MongoDBAtlasSemanticCache],
+    prompt: Union[str, List[BaseMessage]],
+    llm: Union[str, FakeLLM, FakeChatModel],
     response: List[Generation],
 ) -> None:
     llm_cache(cacher)
