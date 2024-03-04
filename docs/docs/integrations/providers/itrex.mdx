@@ -1,0 +1,25 @@
+# Itrex
+
+All functionality related to the [intel-extension-for-transformers](https://github.com/intel/intel-extension-for-transformers).
+
+## Installation
+
+Install intel-extension-for-transformers. For system requirements and other installation tips, please refer to [Installation Guide](https://github.com/intel/intel-extension-for-transformers/blob/main/docs/installation.md)
+
+```bash
+pip install intel-extension-for-transformers
+```
+
+Install other required packages.
+
+```bash
+pip install -U torch onnx accelerate datasets
+```
+
+## Embedding Models
+
+See a [usage example](/docs/integrations/text_embedding/itrex).
+
+```python
+from langchain_community.embeddings import ItrexRuntimeBgeEmbeddings
+```
