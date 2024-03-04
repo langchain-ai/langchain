@@ -35,7 +35,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAI
 
 llm = OpenAI()
-chat_model = ChatOpenAI()
+chat_model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 ```
 
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
@@ -84,7 +84,7 @@ We can then initialize the model:
 ```python
 from langchain_anthropic import ChatAnthropic
 
-chat_model = ChatAnthropic(model="claude-2.1", temperature=0.2, max_tokens=1024)
+chat_model = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024)
 ```
 
 If you'd prefer not to set an environment variable you can pass the key in directly via the `anthropic_api_key` named parameter when initiating the Anthropic Chat Model class:
