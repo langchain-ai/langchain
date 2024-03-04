@@ -6,6 +6,11 @@ from langchain_core.output_parsers import (
     BaseOutputParser,
     JsonOutputParser,
 )
+from langchain_core.output_parsers.openai_functions import (
+    JsonOutputFunctionsParser,
+    PydanticAttrOutputFunctionsParser,
+    PydanticOutputFunctionsParser,
+)
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
@@ -18,11 +23,6 @@ from langchain.output_parsers import (
     JsonOutputKeyToolsParser,
     PydanticOutputParser,
     PydanticToolsParser,
-)
-from langchain.output_parsers.openai_functions import (
-    JsonOutputFunctionsParser,
-    PydanticAttrOutputFunctionsParser,
-    PydanticOutputFunctionsParser,
 )
 
 
