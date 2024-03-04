@@ -1,15 +1,49 @@
-from typing import Any, Iterator, List, Mapping, Optional
+from typing import Any, Iterator, List, Optional, cast
 
-import requests
+import logging
+from pydantic import BaseModel
+from enum import Enum
+
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from requests.exceptions import ConnectionError
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
+logger = logging.getLogger(__file__)
 
-class TitanTakeoffPro(LLM):
+
+class Device(str, Enum):
+    """The device to use for inference, cuda or cpu"""
+
+    cuda = "cuda"
+    cpu = "cpu"
+
+
+class ReaderConfig(BaseModel):
+    class Config:
+        protected_namespaces = ()
+
+    model_name: str
+    """The name of the model to use"""
+
+    device: Device = Device.cuda
+    """The device to use for inference, cuda or cpu"""
+
+    consumer_group: str = "primary"
+    """The consumer group to place the reader into"""
+
+    tensor_parallel: int | None = None
+    """The number of gpus you would like your model to be split across"""
+
+    max_seq_length: int = 512
+    """The maximum sequence length to use for inference, defaults to 512"""
+
+    max_batch_size: int = 4
+    """The max batch size for continuous batching of requests"""
+
+
+class TitanTakeoff(LLM):
     """Titan Takeoff Pro is a language model that can be used to generate text."""
 
     base_url: str = "http://localhost"
@@ -24,20 +58,27 @@ class TitanTakeoffPro(LLM):
     streaming: bool = False
     """Whether to stream the output. Default = False."""
 
-    models: List[str] = []
-    """A list of models to initialize on the running Takeoff server. Default = []."""
+    client: Any = None
 
-    def __init__(self):
+    def __init__(
+        self,
+        base_url: str = "http://localhost",
+        port: int = 3000,
+        mgmt_port: int = 3001,
+        streaming: bool = False,
+        models: List[ReaderConfig] = [],
+    ):
         """Initialize the Titan Takeoff Pro language model."""
-        super().__init__(self)
+        super().__init__(base_url=base_url, port=port, mgmt_port=mgmt_port, streaming=streaming)
         try:
-            from takeoff_client import TakeoffClient  # noqa:F401
+            from takeoff_client import TakeoffClient
         except ImportError:
             raise ImportError(
-                "takeoff-client is required for TitanTakeoff. "
-                "Please install it with `pip install takeoff-client`."
+                "takeoff-client is required for TitanTakeoff. " "Please install it with `pip install takeoff-client`."
             )
         self.client = TakeoffClient(self.base_url, port=self.port, mgmt_port=self.mgmt_port)
+        for model in models:
+            self.client.create_reader(model)
 
     @property
     def _llm_type(self) -> str:
@@ -67,37 +108,22 @@ class TitanTakeoffPro(LLM):
                 response = model(prompt)
 
         """
-        try:
-            if self.streaming:
-                text_output = ""
-                for chunk in self._stream(
-                    prompt=prompt,
-                    stop=stop,
-                    run_manager=run_manager,
-                ):
-                    text_output += chunk.text
-                return text_output
-            url = f"{self.base_url}/generate"
-            params = {"text": prompt, **self._default_params}
+        if self.streaming:
+            text_output = ""
+            for chunk in self._stream(
+                prompt=prompt,
+                stop=stop,
+                run_manager=run_manager,
+            ):
+                text_output += chunk.text
+            return text_output
 
-            response = requests.post(url, json=params)
-            response.raise_for_status()
-            response.encoding = "utf-8"
+        response = self.client.generate(prompt, **kwargs)
+        text = response["text"]
 
-            text = ""
-            if "text" in response.json():
-                text = response.json()["text"]
-                text = text.replace("</s>", "")
-            else:
-                raise ValueError("Something went wrong.")
-            if stop is not None:
-                text = enforce_stop_tokens(text, stop)
-            return text
-        except ConnectionError:
-            raise ConnectionError(
-                "Could not connect to Titan Takeoff (Pro) server. \
-                Please make sure that the server is running."
-            )
+        if stop is not None:
+            text = enforce_stop_tokens(text, stop)
+        return text
 
     def _stream(
         self,
@@ -125,13 +151,9 @@ class TitanTakeoffPro(LLM):
                 response = model(prompt)
 
         """
-        url = f"{self.base_url}/generate_stream"
-        params = {"text": prompt, **self._default_params}
-
-        response = requests.post(url, json=params, stream=True)
-        response.encoding = "utf-8"
+        response = self.client.generate_stream(prompt, **kwargs)
         buffer = ""
-        for text in response.iter_content(chunk_size=1, decode_unicode=True):
+        for text in response:
             buffer += text
             if "data:" in buffer:
                 # Remove the first instance of "data:" from the buffer.
@@ -154,8 +176,3 @@ class TitanTakeoffPro(LLM):
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(token=chunk.text)
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        """Get the identifying parameters."""
-        return {"base_url": self.base_url, **{}, **self._default_params}
