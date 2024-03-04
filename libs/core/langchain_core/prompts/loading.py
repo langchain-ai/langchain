@@ -59,15 +59,18 @@ def _load_template(
     return config
 
 
-def _load_examples(config: dict) -> dict:
+def _load_examples(config: dict, template_base_path: Optional[Union[str, Path]] = None) -> dict:
     """Load examples if necessary."""
     if isinstance(config["examples"], list):
         pass
     elif isinstance(config["examples"], str):
-        with open(config["examples"]) as f:
-            if config["examples"].endswith(".json"):
+        examples_file_path = Path(config["examples"])
+        if template_base_path:
+            examples_file_path = template_base_path / examples_file_path
+        with open(examples_file_path) as f:
+            if examples_file_path.endswith(".json"):
                 examples = json.load(f)
-            elif config["examples"].endswith((".yaml", ".yml")):
+            elif examples_file_path.endswith((".yaml", ".yml")):
                 examples = yaml.safe_load(f)
             else:
                 raise ValueError(
@@ -92,7 +95,7 @@ def _load_output_parser(config: dict) -> dict:
     return config
 
 
-def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
+def _load_few_shot_prompt(config: dict, template_base_path: Optional[Union[str, Path]] = None) -> FewShotPromptTemplate:
     """Load the "few shot" prompt from the config."""
     # Load the suffix and prefix templates.
     config = _load_template("suffix", config)
@@ -108,7 +111,7 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
     else:
         config["example_prompt"] = load_prompt_from_config(config["example_prompt"])
     # Load the examples.
-    config = _load_examples(config)
+    config = _load_examples(config, template_base_path)
     config = _load_output_parser(config)
     return FewShotPromptTemplate(**config)
 
