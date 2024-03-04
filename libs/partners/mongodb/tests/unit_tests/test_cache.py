@@ -30,6 +30,7 @@ class PatchedMongoDBCache(MongoDBCache):
         self.__database_name = database_name
         self.__collection_name = collection_name
         self.client = {self.__database_name: {self.__collection_name: MockCollection()}}  # type: ignore
+        self._local_cache = {}
 
     @property
     def database(self) -> Any:  # type: ignore
@@ -54,6 +55,7 @@ class PatchedMongoDBAtlasSemanticCache(MongoDBAtlasSemanticCache):
     ):
         self.collection = MockCollection()
         self._wait_until_ready = False
+        self._local_cache = dict()
         MongoDBAtlasVectorSearch.__init__(
             self,
             self.collection,
