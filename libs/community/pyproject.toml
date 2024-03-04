@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.24"
+version = "0.0.25"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.26,<0.2"
+langchain-core = "^0.1.28"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -169,6 +169,7 @@ types-chardet = "^5.0.4.6"
 types-redis = "^4.3.21.6"
 mypy-protobuf = "^3.0.0"
 langchain-core = {path = "../core", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
