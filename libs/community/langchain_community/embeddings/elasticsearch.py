@@ -13,7 +13,7 @@ from langchain_core.embeddings import Embeddings
 
 
 @deprecated(
-    "0.1.11", alternative="Use class in langchain-elasticsearch package", removal=False
+    "0.1.11", alternative="Use class in langchain-elasticsearch package", pending=True
 )
 class ElasticsearchEmbeddings(Embeddings):
     """Elasticsearch embedding models.
