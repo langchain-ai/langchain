@@ -10,7 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-3-opus-20240229"
+MODEL_NAME = "claude-3-sonnet-20240229"
 
 
 def test_stream() -> None:
