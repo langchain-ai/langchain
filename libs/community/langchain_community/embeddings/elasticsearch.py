@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 from langchain_core.embeddings import Embeddings
 
 
-@deprecated("0.1.11", alternative="Use class in langchain-elasticsearch package")
+@deprecated(
+    "0.1.11", alternative="Use class in langchain-elasticsearch package", removal=False
+)
 class ElasticsearchEmbeddings(Embeddings):
     """Elasticsearch embedding models.
 
