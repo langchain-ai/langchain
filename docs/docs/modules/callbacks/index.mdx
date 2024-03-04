@@ -135,10 +135,25 @@ Prompt after formatting:
 
 ## Where to pass in callbacks
 
-The `callbacks` argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) in two different places:
+The `callbacks` are available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) in two different places:
 
-- **Constructor callbacks**: defined in the constructor, e.g. `LLMChain(callbacks=[handler], tags=['a-tag'])`, which will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
-- **Request callbacks**: defined in the `run()`/`apply()` methods used for issuing a request, e.g. `chain.run(input, callbacks=[handler])`, which will be used for that specific request only, and all sub-requests that it contains (e.g. a call to an LLMChain triggers a call to a Model, which uses the same handler passed in the `call()` method).
+- **Constructor callbacks**: defined in the constructor, e.g. `LLMChain(callbacks=[handler], tags=['a-tag'])`. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
+- **Request callbacks**: defined in the 'invoke' method used for issuing a request. In this case, the callbacks will be used for that specific request only, and all sub-requests that it contains (e.g. a call to an LLMChain triggers a call to a Model, which uses the same handler passed in the `invoke()` method).  In the `invoke()` method callbacks are passed through the config parameter.
+Example with the 'invoke' method (**Note**: the same approach can be used for the `batch`, `ainvoke`, and `abatch` methods.):
+```python
+handler = StdOutCallbackHandler()
+llm = OpenAI()
+prompt = PromptTemplate.from_template("1 + {number} = ")
+
+config = {
+    'callbacks' : [handler]
+}
+
+chain = prompt | chain
+chain.invoke({"number":2}, config=config)
+```
+
+**Note:** `chain = prompt | chain` is equivalent to `chain = LLMChain(llm=llm, prompt=prompt)` (check [LangChain Expression Language (LCEL) documentation](https://python.langchain.com/docs/expression_language/) for more details)
 
 The `verbose` argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) as a constructor argument, e.g. `LLMChain(verbose=True)`, and it is equivalent to passing a `ConsoleCallbackHandler` to the `callbacks` argument of that object and all child objects. This is useful for debugging, as it will log all events to the console.
 
