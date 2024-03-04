@@ -1124,6 +1124,7 @@ class _DatasetRunContainer:
         logger.info("Waiting for evaluators to complete.")
         wait_for_all_evaluators()
         all_eval_results, all_runs = self._collect_metrics()
+        aggregate_feedback = None
         if self.session_evaluators:
             logger.info("Running session evaluators.")
             aggregate_feedback = self._run_session_evaluators(all_runs)
