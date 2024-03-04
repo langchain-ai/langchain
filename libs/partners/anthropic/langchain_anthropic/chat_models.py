@@ -56,14 +56,18 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
 
 
 class ChatAnthropic(BaseChatModel):
-    """ChatAnthropicMessages chat model.
+    """Anthropic chat model.
+
+    To use, you should have the packages ``anthropic`` and ``langchain-anthropic``
+    installed, and the environment variable ANTHROPIC_API_KEY set with your API key,
+    or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
-            from langchain_anthropic import ChatAnthropicMessages
+            from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropicMessages()
+            model = ChatAnthropic()
     """
 
     class Config:
