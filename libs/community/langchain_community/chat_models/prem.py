@@ -181,3 +181,18 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
         retry=retry_if_exception_type(*errors),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+
+
+class ChatPrem:
+    pass
+
+
+def chat_with_retry(llm: ChatPrem, **kwargs: Any) -> Any:
+    """Use tenacity to retry the chat completion call."""
+    retry_decorator = _create_retry_decorator()
+
+    @retry_decorator
+    def _chat_with_retry(**kwargs: Any) -> Any:
+        return llm.client.chat.completions.create(**kwargs)
+
+    return _chat_with_retry(**kwargs)
