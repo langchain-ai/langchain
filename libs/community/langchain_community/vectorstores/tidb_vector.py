@@ -86,7 +86,7 @@ class TiDBVectorStore(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
-                "Please install it with `pip install tidbvec`."
+                "Please install it with `pip install tidb-vector`."
             )
 
         self._tidb = TiDBVectorClient(
@@ -212,7 +212,7 @@ class TiDBVectorStore(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
-                "Please install it with `pip install tidbvec`."
+                "Please install it with `pip install tidb-vector`."
             )
 
         if check_table_existence(connection_string, table_name):
