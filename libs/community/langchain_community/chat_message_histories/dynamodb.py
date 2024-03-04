@@ -131,18 +131,11 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
     @messages.setter
     def messages(self, value: List[BaseMessage]) -> None:
-        """
-        A placeholder setter for 'messages'.
-
-        This setter exists to fulfill the interface requirements of the base class and
-        ensure compatibility with type-checking, without enabling external modification
-        of the 'messages' property. The 'messages' list should be modified through
-        specific methods like 'add_message' instead of direct assignment.
-
-        Note: This method is intentionally left as a no-operation (no-op) and should not
-        be used for updating messages.
-        """
-        pass
+        """Raises error if 'messages' is directly set."""
+        raise NotImplementedError(
+            "Direct setting of 'messages' is not supported. Use 'add_message' "
+            "and 'clear' methods."
+        )
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in DynamoDB"""
