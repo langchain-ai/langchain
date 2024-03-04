@@ -50,23 +50,29 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         self.session_id = session_id
         self.ttl_seconds = ttl_seconds
         self.blob_history = StoredBlobHistory(session, keyspace, table_name)
+        self._messages: List[BaseMessage] = []
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve all session messages from DB"""
-        message_blobs = self.blob_history.retrieve(
-            self.session_id,
-        )
+        message_blobs = self.blob_history.retrieve(self.session_id)
         items = [json.loads(message_blob) for message_blob in message_blobs]
-        messages = messages_from_dict(items)
-        return messages
+        self._messages = messages_from_dict(items)
+        return self._messages
+
+    @messages.setter
+    def messages(self, value: List[BaseMessage]) -> None:
+        """Allow setting the messages property, updating the database accordingly"""
+        self._messages = value
 
     def add_message(self, message: BaseMessage) -> None:
         """Write a message to the table"""
         self.blob_history.store(
             self.session_id, json.dumps(message_to_dict(message)), self.ttl_seconds
         )
+        self._messages.append(message)
 
     def clear(self) -> None:
         """Clear session memory from DB"""
         self.blob_history.clear_session_id(self.session_id)
+        self._messages = []
