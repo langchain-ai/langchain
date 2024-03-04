@@ -28,18 +28,24 @@ class FileChatMessageHistory(BaseChatMessageHistory):
             self.file_path.write_text(json.dumps([]))
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from the local file"""
         items = json.loads(self.file_path.read_text())
         messages = messages_from_dict(items)
         return messages
 
+    @messages.setter
+    def messages(self, new_messages: List[BaseMessage]) -> None:
+        """Set the messages in the local file"""
+        messages_dict = messages_to_dict(new_messages)
+        self.file_path.write_text(json.dumps(messages_dict))
+
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in the local file"""
-        messages = messages_to_dict(self.messages)
-        messages.append(messages_to_dict([message])[0])
-        self.file_path.write_text(json.dumps(messages))
+        messages = self.messages
+        messages.append(message)
+        self.messages = messages
 
     def clear(self) -> None:
         """Clear session memory from the local file"""
-        self.file_path.write_text(json.dumps([]))
+        self.messages = []
