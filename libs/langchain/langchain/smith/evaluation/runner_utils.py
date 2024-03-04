@@ -979,20 +979,15 @@ def _prepare_eval_run(
 ) -> Tuple[MCF, TracerSession, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
-    as_of = dataset_version if isinstance(dataset_version, datetime) else None
-    if isinstance(dataset_version, str):
-        raise NotImplementedError(
-            "Selecting dataset_version by tag is not yet supported."
-            " Please use a datetime object."
-        )
-    examples = list(client.list_examples(dataset_id=dataset.id, as_of=as_of))
+
+    examples = list(client.list_examples(dataset_id=dataset.id, as_of=dataset_version))
     if not examples:
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
     modified_at = [ex.modified_at for ex in examples if ex.modified_at]
     # Should always be defined in practice when fetched,
     # but the typing permits None
     max_modified_at = max(modified_at) if modified_at else None
-    dataset_version = max_modified_at.isoformat() if max_modified_at else None
+    inferred_version = max_modified_at.isoformat() if max_modified_at else None
 
     try:
         project_metadata = project_metadata or {}
@@ -1003,7 +998,7 @@ def _prepare_eval_run(
                 "git": git_info,
             }
 
-        project_metadata["dataset_version"] = dataset_version
+        project_metadata["dataset_version"] = inferred_version
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
