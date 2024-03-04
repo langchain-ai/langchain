@@ -17,6 +17,7 @@ from langchain_core.utils import try_load_from_hub
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
 logger = logging.getLogger(__name__)
 
+
 def load_prompt_from_config(
     config: dict, template_base_path: Optional[Union[str, Path]] = None
 ) -> BasePromptTemplate:
@@ -59,7 +60,9 @@ def _load_template(
     return config
 
 
-def _load_examples(config: dict, template_base_path: Optional[Union[str, Path]] = None) -> dict:
+def _load_examples(
+    config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> dict:
     """Load examples if necessary."""
     if isinstance(config["examples"], list):
         pass
@@ -95,7 +98,9 @@ def _load_output_parser(config: dict) -> dict:
     return config
 
 
-def _load_few_shot_prompt(config: dict, template_base_path: Optional[Union[str, Path]] = None) -> FewShotPromptTemplate:
+def _load_few_shot_prompt(
+    config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> FewShotPromptTemplate:
     """Load the "few shot" prompt from the config."""
     # Load the suffix and prefix templates.
     config = _load_template("suffix", config)
