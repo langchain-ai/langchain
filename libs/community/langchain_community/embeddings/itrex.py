@@ -6,7 +6,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
 
 
-class ItrexRuntimeBgeEmbeddings(BaseModel, Embeddings):
+class QuantizedBgeEmbeddings(BaseModel, Embeddings):
     """Leverage Itrex runtime to unlock the performance of compressed NLP models.
 
     Please ensure that you have installed intel-extension-for-transformers.
@@ -32,11 +32,11 @@ class ItrexRuntimeBgeEmbeddings(BaseModel, Embeddings):
 
     Example:
 
-    from langchain_community.embeddings import ItrexRuntimeBgeEmbeddings
+    from langchain_community.embeddings import QuantizedBgeEmbeddings
 
     model_name = "Intel/bge-small-en-v1.5-sts-int8-static-inc"
     encode_kwargs = {'normalize_embeddings': True}
-    hf = ItrexRuntimeBgeEmbeddings(
+    hf = QuantizedBgeEmbeddings(
         model_name,
         encode_kwargs=encode_kwargs,
         query_instruction="Represent this sentence for searching relevant passages: "

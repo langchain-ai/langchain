@@ -64,7 +64,7 @@ EXPECTED_ALL = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
-    "ItrexRuntimeBgeEmbeddings",
+    "QuantizedBgeEmbeddings",
 ]
 
 
