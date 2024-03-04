@@ -1,5 +1,5 @@
-import os
 import importlib.util
+import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
@@ -53,7 +53,7 @@ class ItrexRuntimeBgeEmbeddings(BaseModel, Embeddings):
         padding: bool = True,
         model_kwargs: Optional[Dict] = None,
         encode_kwargs: Optional[Dict] = None,
-        onnx_file_name: Optional[str] = 'int8-model.onnx',
+        onnx_file_name: Optional[str] = "int8-model.onnx",
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -62,7 +62,8 @@ class ItrexRuntimeBgeEmbeddings(BaseModel, Embeddings):
         if importlib.util.find_spec("intel_extension_for_transformers") is None:
             raise ImportError(
                 "Could not import intel_extension_for_transformers python package. "
-                "Please install it with `pip install -U intel-extension-for-transformers`."
+                "Please install it with "
+                "`pip install -U intel-extension-for-transformers`."
             )
 
         # check torch python package
@@ -71,7 +72,6 @@ class ItrexRuntimeBgeEmbeddings(BaseModel, Embeddings):
                 "Could not import torch python package. "
                 "Please install it with `pip install -U torch`."
             )
-        # torch accelerate datasets intel-extension-for-pytorch
 
         # check onnx python package
         if importlib.util.find_spec("onnx") is None:
@@ -98,18 +98,23 @@ class ItrexRuntimeBgeEmbeddings(BaseModel, Embeddings):
 
     def load_model(self) -> None:
         from huggingface_hub import hf_hub_download
-        from transformers import AutoConfig, AutoTokenizer
         from intel_extension_for_transformers.transformers import AutoModel
+        from transformers import AutoConfig, AutoTokenizer
 
-        self.hidden_size = AutoConfig.from_pretrained(self.model_name_or_path).hidden_size
+        self.hidden_size = AutoConfig.from_pretrained(
+            self.model_name_or_path
+        ).hidden_size
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(
             self.model_name_or_path,
         )
         onnx_model_path = os.path.join(self.model_name_or_path, self.onnx_file_name)
         if not os.path.exists(onnx_model_path):
-            onnx_model_path = hf_hub_download(self.model_name_or_path, filename=self.onnx_file_name)
+            onnx_model_path = hf_hub_download(
+                self.model_name_or_path, filename=self.onnx_file_name
+            )
         self.transformer_model = AutoModel.from_pretrained(
-           onnx_model_path, use_embedding_runtime=True)
+            onnx_model_path, use_embedding_runtime=True
+        )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -118,14 +123,16 @@ class ItrexRuntimeBgeEmbeddings(BaseModel, Embeddings):
 
     def _embed(self, inputs: Any) -> Any:
         import torch
+
         engine_input = [value for value in inputs.values()]
         outputs = self.transformer_model.generate(engine_input)
         if "last_hidden_state:0" in outputs:
-            last_hidden_state = outputs['last_hidden_state:0']
+            last_hidden_state = outputs["last_hidden_state:0"]
         else:
             last_hidden_state = [out for out in outputs.values()][0]
         last_hidden_state = torch.tensor(last_hidden_state).reshape(
-            inputs['input_ids'].shape[0], inputs['input_ids'].shape[1], self.hidden_size)
+            inputs["input_ids"].shape[0], inputs["input_ids"].shape[1], self.hidden_size
+        )
         if self.pooling == "mean":
             emb = self._mean_pooling(last_hidden_state, inputs["attention_mask"])
         elif self.pooling == "cls":
