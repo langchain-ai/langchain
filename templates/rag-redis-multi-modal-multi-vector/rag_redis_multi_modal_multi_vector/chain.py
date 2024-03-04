@@ -2,7 +2,7 @@ import base64
 import io
 
 from langchain.pydantic_v1 import BaseModel
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser

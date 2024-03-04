@@ -1,12 +1,12 @@
 
 # rag-redis-multi-modal-multi-vector
 
-Multi-modal LLMs enable visual assistants that can perform question-answering about images. 
+Multi-modal LLMs enable visual assistants that can perform question-answering about images.
 
 This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
 
 It uses GPT-4V to create image summaries for each slide, embeds the summaries, and stores them in Redis.
- 
+
 Given a question, relevant slides are retrieved and passed to GPT-4V for answer synthesis.
 
 ![](RAG-architecture.png)
