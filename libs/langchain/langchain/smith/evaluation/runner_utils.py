@@ -520,7 +520,10 @@ def _determine_reference_key(
 
 
 def _construct_run_evaluator(
-    eval_config: Union[EvaluatorType, str, smith_eval_config.EvalConfig],
+    eval_config: Union[
+        smith_eval_config.SINGLE_EVAL_CONFIG_TYPE,
+        smith_eval_config.CUSTOM_EVALUATOR_TYPE,
+    ],
     eval_llm: Optional[BaseLanguageModel],
     run_type: str,
     data_type: DataType,
@@ -1077,10 +1080,10 @@ class _DatasetRunContainer:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for evaluator in evaluators:
                 try:
-                    result = evaluator(runs=runs_list, examples=self.examples)
+                    result = evaluator(runs_list, self.examples)
                     if isinstance(result, EvaluationResult):
                         result = result.dict()
-                    aggregate_feedback.append(result)
+                    aggregate_feedback.append(cast(dict, result))
                     executor.submit(
                         self.client.create_feedback,
                         **result,
