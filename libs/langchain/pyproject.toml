@@ -13,6 +13,7 @@ langchain-server = "langchain.server:main"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.1.26,<0.2"
+langchain-text-splitters = ">=0.0.1,<0.1"
 langchain-community = ">=0.0.21,<0.1"
 langsmith = "^0.1.0"
 pydantic = ">=1,<3"
@@ -135,6 +136,7 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 langchain-core = {path = "../core", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
@@ -170,6 +172,7 @@ tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.group.lint]
 optional = true
@@ -191,6 +194,7 @@ types-chardet = "^5.0.4.6"
 mypy-protobuf = "^3.0.0"
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
@@ -201,6 +205,7 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.extras]
 llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]

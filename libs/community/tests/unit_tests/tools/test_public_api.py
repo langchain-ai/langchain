@@ -86,6 +86,7 @@ _EXPECTED = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonFinancials",
     "PolygonLastQuote",
     "PolygonTickerNews",
     "RedditSearchRun",
