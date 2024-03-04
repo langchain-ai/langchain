@@ -245,6 +245,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 
     _client: SearchServiceClient
     _serving_config: str
+    _attribution_token: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -346,6 +347,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 
         try:
             response = self._client.search(search_request)
+            self._attribution_token = response.attribution_token
         except InvalidArgument as exc:
             raise type(exc)(
                 exc.message
