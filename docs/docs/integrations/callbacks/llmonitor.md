@@ -53,7 +53,7 @@ Example:
 
 ```python
 from langchain_openai import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.agents import OpenAIFunctionsAgent, AgentExecutor, tool
 from langchain.callbacks import LLMonitorCallbackHandler
 

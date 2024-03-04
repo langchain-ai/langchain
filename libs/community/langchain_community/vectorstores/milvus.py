@@ -154,6 +154,7 @@ class Milvus(VectorStore):
             "RHNSW_PQ": {"metric_type": "L2", "params": {"ef": 10}},
             "IVF_HNSW": {"metric_type": "L2", "params": {"nprobe": 10, "ef": 10}},
             "ANNOY": {"metric_type": "L2", "params": {"search_k": 10}},
+            "SCANN": {"metric_type": "L2", "params": {"search_k": 10}},
             "AUTOINDEX": {"metric_type": "L2", "params": {}},
         }
 
@@ -738,8 +739,8 @@ class Milvus(VectorStore):
         if param is None:
             param = self.search_params
 
-        # Determine result metadata fields.
-        output_fields = [x for x in self.fields if x != self._primary_field]
+        # Determine result metadata fields with PK.
+        output_fields = self.fields[:]
         output_fields.remove(self._vector_field)
 
         # Perform the search.

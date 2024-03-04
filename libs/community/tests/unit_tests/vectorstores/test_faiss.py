@@ -438,8 +438,9 @@ def test_faiss_with_metadatas_and_filter() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
-    assert output != [Document(page_content="bar", metadata={"page": 1})]
+    # make sure it returns the result that matches the filter.
+    # Not the one who's text matches better.
+    assert output == [Document(page_content="bar", metadata={"page": 1})]
     assert output == docsearch.similarity_search(
         "foo", k=1, filter=lambda di: di["page"] == 1
     )
@@ -465,8 +466,9 @@ async def test_faiss_async_with_metadatas_and_filter() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foo", k=1, filter={"page": 1})
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
-    assert output != [Document(page_content="bar", metadata={"page": 1})]
+    # make sure it returns the result that matches the filter.
+    # Not the one who's text matches better.
+    assert output == [Document(page_content="bar", metadata={"page": 1})]
     assert output == await docsearch.asimilarity_search(
         "foo", k=1, filter=lambda di: di["page"] == 1
     )
