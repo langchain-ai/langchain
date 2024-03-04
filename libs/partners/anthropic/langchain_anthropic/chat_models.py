@@ -77,7 +77,7 @@ class ChatAnthropic(BaseChatModel):
     model: str = Field(alias="model_name")
     """Model name to use."""
 
-    max_tokens: int = Field(default=256, alias="max_tokens_to_sample")
+    max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
