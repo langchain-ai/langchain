@@ -30,11 +30,14 @@ def load_prompt_from_config(
         raise ValueError(f"Loading {config_type} prompt not supported")
 
     prompt_loader = type_to_loader_dict[config_type]
-    return prompt_loader(config, template_base_path)
+    if prompt_loader == _load_chat_prompt:
+        return prompt_loader(config)
+    else:
+        return prompt_loader(config, template_base_path)
 
 
 def _load_template(
-    var_name: str, config: dict, template_base_path: Optional[Path] = None
+    var_name: str, config: dict, template_base_path: Optional[Union[str, Path]] = None
 ) -> dict:
     """Load template from the path if applicable."""
     # Check if template_path exists in config.
