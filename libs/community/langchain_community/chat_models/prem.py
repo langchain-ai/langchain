@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast, Union
-
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, Tuple
+from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -21,8 +20,8 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, root_validator, Extra
+from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -95,58 +94,26 @@ def _response_to_result(
         return ChatResult(generations=generations)
 
 
-def _messages_to_prompt_dict(input_messages: List[BaseMessage]) -> dict:
+def _messages_to_prompt_dict(
+    input_messages: List[BaseMessage],
+) -> Tuple[str, List[dict]]:
     """Converts a list of LangChain Messages into a simple dict which is the message structure in Prem"""
 
-    remaining = list(enumerate(input_messages))
     system_prompt: str = None
     examples_and_messages: List[Dict[str, str]] = []
 
-    while remaining:
-        index, input_message = remaining.pop(0)
-
-        if isinstance(input_message, SystemMessage):
-            if index != 0:
-                raise ChatPremAPIError("System message must be first input message.")
-            system_prompt = cast(str, input_message.content)
-
-        elif isinstance(input_message, HumanMessage) and input_message.example:
-            if examples_and_messages:
-                raise ChatPremAPIError(
-                    "Message examples must come before other messages."
-                )
-
-            _, next_input_message = remaining.pop(0)
-            if isinstance(next_input_message, AIMessage) and next_input_message.example:
-                examples_and_messages.extend(
-                    [
-                        {"role": "user", "content": input_message.content},
-                        {"role": "assistant", "content": next_input_message.content},
-                    ]
-                )
-            else:
-                raise ChatPremAPIError(
-                    "Human example message must be immediately followed by an "
-                    " AI example response."
-                )
-        elif isinstance(input_message, AIMessage) and input_message.example:
-            raise ChatPremAPIError(
-                "AI example message must be immediately preceded by a Human "
-                "example message."
-            )
-        elif isinstance(input_message, AIMessage):
+    for input_msg in input_messages:
+        if isinstance(input_msg, SystemMessage):
+            system_prompt = input_msg.content
+        elif isinstance(input_msg, HumanMessage):
+            examples_and_messages.append({"role": "user", "content": input_msg.content})
+        elif isinstance(input_msg, AIMessage):
             examples_and_messages.append(
-                {"role": "assistant", "content": input_message.content}
-            )
-        elif isinstance(input_message, HumanMessage):
-            examples_and_messages.append(
-                {"role": "user", "content": input_message.content}
+                {"role": "assistant", "content": input_msg.content}
             )
         else:
-            raise ChatPremAPIError(
-                "Messages without an explicit role not supported by PremAI API."
-            )
-        return system_prompt, examples_and_messages
+            raise ChatPremAPIError("No such explicite role exists")
+    return system_prompt, examples_and_messages
 
 
 def _create_retry_decorator() -> Callable[[Any], Any]:
@@ -183,16 +150,204 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     )
 
 
-class ChatPrem:
-    pass
+class ChatPrem(BaseChatModel, BaseModel):
+    """Use any LLM provider with Prem and Langchain.
+
+    To use, you will need to have an API key. You can find your existing API Key
+    or generate a new one here: https://app.premai.io/api_keys/
+    """
+
+    model: str
+    premai_api_key: str
+    """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
+
+    project_id: int
+    """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
+
+    session_id: Optional[str] = None
+    """The ID of the session to use. It helps to track the chat history."""
+
+    temperature: Optional[float] = None
+    """Model temperature. Value shoud be >= 0 and <= 1.0"""
+
+    top_p: Optional[float] = None
+    """top_p adjusts the number of choices for each predicted tokens based on
+        cumulative probabilities. Value should be ranging between 0.0 and 1.0. 
+    """
+
+    max_tokens: Optional[int] = None
+    """The maximum number of tokens to generate"""
+
+    max_retries: Optional[int] = 1
+    """Max number of retries to call the API"""
+
+    system_prompt: Optional[str] = ""
+    """Acts like a default instruction that helps the LLM act or generate in a specific way."""
+
+    n: Optional[int] = None
+    """The number of responses to generate."""
+
+    streaming: Optional[bool] = False
+    """Whether to stream the responses or not."""
+
+    tools: Optional[Dict[str, Any]] = None
+    """A list of tools the model may call. Currently, only functions are supported as a tool"""
+
+    frequency_penalty: Optional[float] = None
+    """Number between -2.0 and 2.0. Positive values penalize new tokens based"""
+
+    presence_penalty: Optional[float] = None
+    """Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far."""
+
+    logit_bias: Optional[dict] = None
+    """JSON object that maps tokens to an associated bias value from -100 to 100."""
+
+    stop: Optional[Union[str, List[str]]] = None
+    """Up to 4 sequences where the API will stop generating further tokens."""
+
+    seed: Optional[int] = None
+    """This feature is in Beta. If specified, our system will make a best effort to sample deterministically."""
+
+    client: Any
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+
+    @root_validator()
+    def validate_environments(cls, values: Dict) -> Dict:
+        """Validate that the package is installed and that the API token is valid"""
+        try:
+            from premai import Prem
+        except ImportError as error:
+            raise ImportError(
+                "Could not import Prem Python package."
+                "Please install it with: `pip install premai`"
+            ) from error
+
+        try:
+            premai_api_key = get_from_dict_or_env(
+                values, "premai_api_key", "PREMAI_API_KEY"
+            )
+            values["client"] = Prem(api_key=premai_api_key)
+        except Exception as error:
+            raise ValueError("Your API Key is incorrect. Please try again.") from error
+        return values
+
+    @property
+    def _llm_type(self) -> str:
+        return "prem"
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        # For default objects tools can not be None
+        return {
+            "model": "gpt-3.5-turbo",
+            "system_prompt": "",
+            "top_p": 0.95,
+            "temperature": 1.0,
+            "stream": False,
+            "n": 1,
+            "logit_bias": None,
+            "max_tokens": 128,
+            "presence_penalty": 0.0,
+            "frequency_penalty": 2,
+            "seed": None,
+            "stop": None,
+        }
+
+    def _generate(
+        self,
+        messages: List[List[BaseMessage]],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs,
+    ) -> ChatResult:
+
+        system_prompt, messages = _messages_to_prompt_dict(messages)
+
+        if stop is not None:
+            kwargs["stop"] = stop
+
+        if system_prompt is not None:
+            kwargs["system_prompt"] = system_prompt
+
+        response = chat_with_retry(
+            self,
+            project_id=self.project_id,
+            messages=messages,
+            stream=False,
+            run_manager=run_manager,
+            **kwargs,
+        )
+
+        return _response_to_result(response=response, stop=stop)
+
+    def _stream(self):
+        raise NotImplementedError
 
 
-def chat_with_retry(llm: ChatPrem, **kwargs: Any) -> Any:
-    """Use tenacity to retry the chat completion call."""
-    retry_decorator = _create_retry_decorator()
+def create_prem_retry_decorator(
+    llm: ChatPrem,
+    *,
+    max_retries: int = 1,
+    run_manager: Optional[Union[CallbackManagerForLLMRun]] = None,
+) -> Callable[[Any], Any]:
+    import premai.models
+
+    errors = [
+        premai.models.api_response_validation_error.APIResponseValidationError,
+        premai.models.conflict_error.ConflictError,
+        premai.models.model_not_found_error.ModelNotFoundError,
+        premai.models.permission_denied_error.PermissionDeniedError,
+        premai.models.provider_api_connection_error.ProviderAPIConnectionError,
+        premai.models.provider_api_status_error.ProviderAPIStatusError,
+        premai.models.provider_api_timeout_error.ProviderAPITimeoutError,
+        premai.models.provider_internal_server_error.ProviderInternalServerError,
+        premai.models.provider_not_found_error.ProviderNotFoundError,
+        premai.models.rate_limit_error.RateLimitError,
+        premai.models.unprocessable_entity_error.UnprocessableEntityError,
+        premai.models.validation_error.ValidationError,
+    ]
+
+    decorator = create_base_retry_decorator(
+        error_types=errors, max_retries=max_retries, run_manager=run_manager
+    )
+    return decorator
+
+
+def chat_with_retry(
+    llm: ChatPrem,
+    project_id: int,
+    messages: List[dict],
+    stream: bool = False,
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
+    """Using tenacity for retry in completion call"""
+    retry_decorator = create_prem_retry_decorator(
+        llm, max_retries=llm.max_retries, run_manager=run_manager
+    )
 
     @retry_decorator
-    def _chat_with_retry(**kwargs: Any) -> Any:
-        return llm.client.chat.completions.create(**kwargs)
+    def _completion_with_retry(
+        project_id: int,
+        messages: List[dict],
+        stream: Optional[bool] = False,
+        **kwargs: Any,
+    ) -> Any:
+        response = llm.client.chat.completions.create(
+            project_id=project_id,
+            messages=messages,
+            stream=stream,
+            **kwargs,
+        )
+        return response
 
-    return _chat_with_retry(**kwargs)
+    return _completion_with_retry(
+        project_id=project_id,
+        messages=messages,
+        stream=stream,
+        **kwargs,
+    )
