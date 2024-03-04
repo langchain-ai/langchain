@@ -25,6 +25,7 @@
     "@docusaurus/theme-mermaid": "2.4.3",
     "@mdx-js/react": "^1.6.22",
     "clsx": "^1.2.1",
+    "cookie": "^0.6.0",
     "json-loader": "^0.5.7",
     "process": "^0.11.10",
     "react": "^17.0.2",
