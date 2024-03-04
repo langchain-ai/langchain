@@ -31,7 +31,7 @@ class FlightSearchSchema(BaseModel):
         description=(
             " The earliest departure datetime from the origin airport "
             " for the flight search in the following format: "
-            ' "YYYY-MM-DDTHH:MM", where "T" separates the date and time '
+            ' "YYYY-MM-DDTHH:MM:SS", where "T" separates the date and time '
             ' components. For example: "2023-06-09T10:30:00" represents '
             " June 9th, 2023, at 10:30 AM. "
         )
@@ -40,7 +40,7 @@ class FlightSearchSchema(BaseModel):
         description=(
             " The latest departure datetime from the origin airport "
             " for the flight search in the following format: "
-            ' "YYYY-MM-DDTHH:MM", where "T" separates the date and time '
+            ' "YYYY-MM-DDTHH:MM:SS", where "T" separates the date and time '
             ' components. For example: "2023-06-09T10:30:00" represents '
             " June 9th, 2023, at 10:30 AM. "
         )
