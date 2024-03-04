@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -31,7 +31,17 @@ from tenacity import (
     wait_exponential,
 )
 
+if TYPE_CHECKING:
+    from premai.models.chat_completion_response import ChatCompletionResponse
+    from premai.api.chat_completions.v1_chat_completions_create import (
+        ChatCompletionResponseStream,
+    )
+
 logger = logging.getLogger(__name__)
+
+
+class ChatPremAPIError(Exception):
+    """Error with the `PremAI` API."""
 
 
 def _truncate_at_stop_tokens(
@@ -47,3 +57,39 @@ def _truncate_at_stop_tokens(
         if stop_token_idx != -1:
             text = text[:stop_token_idx]
     return text
+
+
+def _response_to_result(
+    response: ChatCompletionResponse,
+    stop: Optional[List[str]],
+) -> ChatResult:
+    """Converts a Prem API response into a LangChain result"""
+
+    if not response.choices:
+        raise ChatPremAPIError("ChatResponse must have at least one candidate")
+    generations: List[ChatGeneration] = []
+    for choice in response.choices:
+        role = choice.message.role
+        if role is None:
+            raise ChatPremAPIError(f"ChatResponse {choice} must have a role.")
+
+        # If content is None then it will be replaced by ""
+        content = _truncate_at_stop_tokens(text=choice.message.content or "", stop=stop)
+        if content is None:
+            raise ChatPremAPIError(f"ChatResponse must have a content: {content}")
+
+        if role == "assistant":
+            generations.append(
+                ChatGeneration(text=content, message=AIMessage(content=content))
+            )
+        elif role == "user":
+            generations.append(
+                ChatGeneration(text=content, message=HumanMessage(content=content))
+            )
+        else:
+            generations.append(
+                ChatGeneration(
+                    text=content, message=ChatMessage(role=role, content=content)
+                )
+            )
+        return ChatResult(generations=generations)
