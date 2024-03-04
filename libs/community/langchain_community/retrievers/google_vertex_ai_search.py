@@ -245,7 +245,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 
     _client: SearchServiceClient
     _serving_config: str
-    _attribution_tokens: list[Tuple[str, str]] = []
+    _attribution_tokens: List[Optional[Tuple[str, str]]] = []
 
     class Config:
         """Configuration for this pydantic object."""
