@@ -4688,6 +4688,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cookie@npm:^0.6.0":
+  version: 0.6.0
+  resolution: "cookie@npm:0.6.0"
+  checksum: f56a7d32a07db5458e79c726b77e3c2eff655c36792f2b6c58d351fb5f61531e5b1ab7f46987150136e366c65213cbe31729e02a3eaed630c3bf7334635fb410
+  languageName: node
+  linkType: hard
+
 "copy-text-to-clipboard@npm:^3.0.1":
   version: 3.2.0
   resolution: "copy-text-to-clipboard@npm:3.2.0"
@@ -5646,6 +5653,7 @@ __metadata:
     "@docusaurus/theme-mermaid": 2.4.3
     "@mdx-js/react": ^1.6.22
     clsx: ^1.2.1
+    cookie: ^0.6.0
     docusaurus-plugin-typedoc: next
     eslint: ^8.19.0
     eslint-config-airbnb: ^19.0.4
