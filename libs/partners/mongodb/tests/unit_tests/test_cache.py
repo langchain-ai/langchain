@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 from langchain_core.caches import BaseCache
@@ -81,9 +81,9 @@ def llm_cache(cls: Any) -> BaseCache:
 
 
 def _execute_test(
-    prompt: str | list[BaseMessage],
+    prompt: str | List[BaseMessage],
     llm: str | FakeLLM | FakeChatModel,
-    response: list[Generation],
+    response: List[Generation],
 ) -> None:
     # Fabricate an LLM String
 
@@ -102,8 +102,8 @@ def _execute_test(
     llm_cache.update(dumped_prompt, llm_string, response)
 
     # Retrieve the cached result through 'generate' call
-    output: list[Generation] | LLMResult | None
-    expected_output: list[Generation] | LLMResult
+    output: List[Generation] | LLMResult | None
+    expected_output: List[Generation] | LLMResult
     if isinstance(llm_cache, PatchedMongoDBAtlasSemanticCache):
         llm_cache._collection._aggregate_result = [  # type: ignore
             data
@@ -146,9 +146,9 @@ def _execute_test(
 )
 def test_mongodb_cache(
     cacher: MongoDBCache | MongoDBAtlasSemanticCache,
-    prompt: str | list[BaseMessage],
+    prompt: str | List[BaseMessage],
     llm: str | FakeLLM | FakeChatModel,
-    response: list[Generation],
+    response: List[Generation],
 ) -> None:
     llm_cache(cacher)
     try:
@@ -180,8 +180,8 @@ def test_mongodb_cache(
     ],
 )
 def test_mongodb_atlas_cache_matrix(
-    prompts: list[str],
-    generations: list[list[str]],
+    prompts: List[str],
+    generations: List[List[str]],
 ) -> None:
     llm_cache(PatchedMongoDBAtlasSemanticCache)
     llm = FakeLLM()
