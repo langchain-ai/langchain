@@ -184,7 +184,7 @@ class MongoDBCache(BaseCache):
             upsert=True,
         )
 
-    def _generate_keys(self, prompt: str, llm_string: str) -> dict[str, str]:
+    def _generate_keys(self, prompt: str, llm_string: str) -> Dict[str, str]:
         """Create keyed fields for caching layer"""
         return {self.PROMPT: prompt, self.LLM: llm_string}
 
