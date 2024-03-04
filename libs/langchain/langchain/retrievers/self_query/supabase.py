@@ -68,14 +68,14 @@ class SupabaseVectorTranslator(Visitor):
             return self.visit_operation(
                 Operation(
                     operator=Operator.AND,
-                    arguments=(
+                    arguments=[
                         Comparison(
                             comparator=comparison.comparator,
                             attribute=comparison.attribute,
                             value=value,
                         )
                         for value in comparison.value
-                    ),
+                    ],
                 )
             )
 

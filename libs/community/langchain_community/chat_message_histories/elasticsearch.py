@@ -47,7 +47,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
     ):
         self.index: str = index
         self.session_id: str = session_id
-        self.ensure_ascii: bool = esnsure_ascii
+        self.ensure_ascii = esnsure_ascii
 
         # Initialize Elasticsearch client from passed client arg or connection info
         if es_connection is not None:
@@ -177,7 +177,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                     "created_at": round(time() * 1000),
                     "history": json.dumps(
                         message_to_dict(message),
-                        ensure_ascii=self.ensure_ascii,
+                        ensure_ascii=bool(self.ensure_ascii),
                     ),
                 },
                 refresh=True,

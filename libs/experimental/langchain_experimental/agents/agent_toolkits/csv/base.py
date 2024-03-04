@@ -34,16 +34,16 @@ def create_csv_agent(
     Example:
         .. code-block:: python
 
-        from langchain_openai import ChatOpenAI
-        from langchain_experimental.agents import create_csv_agent
+            from langchain_openai import ChatOpenAI
+            from langchain_experimental.agents import create_csv_agent
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        agent_executor = create_pandas_dataframe_agent(
-            llm,
-            "titanic.csv",
-            agent_type="openai-tools",
-            verbose=True
-        )
+            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+            agent_executor = create_pandas_dataframe_agent(
+                llm,
+                "titanic.csv",
+                agent_type="openai-tools",
+                verbose=True
+            )
     """  # noqa: E501
     try:
         import pandas as pd

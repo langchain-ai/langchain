@@ -8,6 +8,8 @@ from langchain_community.utilities.polygon import PolygonAPIWrapper
 
 
 class Inputs(BaseModel):
+    """Inputs for Polygon's Last Quote API"""
+
     query: str
 
 

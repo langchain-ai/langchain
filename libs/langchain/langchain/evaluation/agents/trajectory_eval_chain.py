@@ -139,7 +139,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
             prediction=response["output"],
             reference="Paris",
         )
-        print(result["score"])
+        print(result["score"])  # noqa: T201
         # 0
     """  # noqa: E501
 
