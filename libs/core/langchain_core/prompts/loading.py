@@ -26,14 +26,14 @@ def load_prompt_from_config(
         logger.warning("No `_type` key found, defaulting to `prompt`.")
     config_type = config.pop("_type", "prompt")
 
-    if config_type not in type_to_loader_dict:
+    if config_type not in ["chat", "prompt", "few_shot"]:
         raise ValueError(f"Loading {config_type} prompt not supported")
 
-    prompt_loader = type_to_loader_dict[config_type]
-    if prompt_loader == _load_chat_prompt:
-        return prompt_loader(config)
-    else:
-        return prompt_loader(config, template_base_path)
+    if config_type == "chat":
+        return _load_chat_prompt(config)
+    if config_type == "prompt":
+        return _load_prompt(config, template_base_path)
+    return _load_few_shot_prompt(config, template_base_path)
 
 
 def _load_template(
@@ -190,10 +190,3 @@ def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
         raise ValueError("Can't load chat prompt without template")
 
     return ChatPromptTemplate.from_template(template=template, **config)
-
-
-type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
-    "prompt": _load_prompt,
-    "few_shot": _load_few_shot_prompt,
-    "chat": _load_chat_prompt,
-}
