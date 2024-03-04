@@ -3,7 +3,18 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    Tuple,
+    Iterator,
+    Type,
+)
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -15,11 +26,13 @@ from langchain_core.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
+    AIMessageChunk,
+    SystemMessageChunk,
+    HumanMessageChunk,
+    BaseMessageChunk,
+    ChatMessageChunk,
 )
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
 from langchain_core.pydantic_v1 import BaseModel, root_validator, Extra
 from langchain_core.utils import get_from_dict_or_env
 from tenacity import (
@@ -94,6 +107,32 @@ def _response_to_result(
         return ChatResult(generations=generations)
 
 
+def _convert_delta_response_to_message_chunk(
+    response: ChatCompletionResponseStream, default_class: Type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    """Converts delta response to message chunk"""
+    _delta = response.choices[0].delta
+    role = _delta["role"]
+    content = _delta["content"]
+    additional_kwargs: Dict = {}
+
+    finish_reasons = response.choices[0].finish_reason
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content), finish_reasons
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return (
+            AIMessageChunk(content=content, additional_kwargs=additional_kwargs),
+            finish_reasons,
+        )
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content), finish_reasons
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role), finish_reasons
+    else:
+        return default_class(content=content), finish_reasons
+
+
 def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
 ) -> Tuple[str, List[dict]]:
@@ -114,40 +153,6 @@ def _messages_to_prompt_dict(
         else:
             raise ChatPremAPIError("No such explicite role exists")
     return system_prompt, examples_and_messages
-
-
-def _create_retry_decorator() -> Callable[[Any], Any]:
-    """Returns a tenacity retry decorator, preconfigured to handle PremAI exceptions"""
-
-    import premai.models
-
-    errors = [
-        premai.models.api_response_validation_error.APIResponseValidationError,
-        premai.models.conflict_error.ConflictError,
-        premai.models.model_not_found_error.ModelNotFoundError,
-        premai.models.permission_denied_error.PermissionDeniedError,
-        premai.models.provider_api_connection_error.ProviderAPIConnectionError,
-        premai.models.provider_api_status_error.ProviderAPIStatusError,
-        premai.models.provider_api_timeout_error.ProviderAPITimeoutError,
-        premai.models.provider_internal_server_error.ProviderInternalServerError,
-        premai.models.provider_not_found_error.ProviderNotFoundError,
-        premai.models.rate_limit_error.RateLimitError,
-        premai.models.unprocessable_entity_error.UnprocessableEntityError,
-        premai.models.validation_error.ValidationError,
-    ]
-
-    multiplier = 2
-    min_seconds = 1
-    max_seconds = 60
-    max_retries = 10
-
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(max_retries),
-        wait=wait_exponential(multiplier=multiplier, min=min_seconds, max=max_seconds),
-        retry=retry_if_exception_type(*errors),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
 
 
 class ChatPrem(BaseChatModel, BaseModel):
@@ -273,6 +278,7 @@ class ChatPrem(BaseChatModel, BaseModel):
         if system_prompt is not None:
             kwargs["system_prompt"] = system_prompt
 
+        # TODO: Add default params in kwargs (but also it depends since it may override the parameters set in project, needs discussion)
         response = chat_with_retry(
             self,
             project_id=self.project_id,
@@ -284,8 +290,47 @@ class ChatPrem(BaseChatModel, BaseModel):
 
         return _response_to_result(response=response, stop=stop)
 
-    def _stream(self):
-        raise NotImplementedError
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs,
+    ) -> Iterator[ChatGenerationChunk]:
+        system_prompt, messages = _messages_to_prompt_dict(messages)
+        if stop is not None:
+            kwargs["stop"] = stop
+
+        if system_prompt is not None:
+            kwargs["system_prompt"] = system_prompt
+
+        default_chunk_class = AIMessageChunk
+
+        for streamed_response in chat_with_retry(
+            self,
+            project_id=self.project_id,
+            messages=messages,
+            stream=True,
+            run_manager=run_manager,
+            **kwargs,
+        ):
+            try:
+                chunk, finish_reason = _convert_delta_response_to_message_chunk(
+                    response=streamed_response, default_class=default_chunk_class
+                )
+                generation_info = (
+                    dict(finish_reason=finish_reason)
+                    if finish_reason is not None
+                    else None
+                )
+                cg_chunk = ChatGenerationChunk(
+                    message=chunk, generation_info=generation_info
+                )
+                if run_manager:
+                    run_manager.on_llm_new_token(cg_chunk.text, chunk=cg_chunk)
+                yield cg_chunk
+            except Exception as e:
+                continue
 
 
 def create_prem_retry_decorator(
