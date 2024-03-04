@@ -3,12 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Iterator, List, Mapping, Optional
 
-import mlx.nn as nn
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra
-from transformers import PreTrainedTokenizerBase
 
 DEFAULT_MODEL_ID = "mlx-community/quantized-gemma-2b"
 
@@ -40,9 +38,9 @@ class MLXPipeline(LLM):
 
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
-    model: nn.Module
+    model: Any  #: :meta private:
     """Model."""
-    tokenizer: PreTrainedTokenizerBase
+    tokenizer: Any  #: :meta private:
     """Tokenizer."""
     tokenizer_config: Optional[dict] = None
     """
@@ -128,7 +126,14 @@ class MLXPipeline(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        from mlx_lm import generate
+        try:
+            from mlx_lm import generate
+
+        except ImportError:
+            raise ValueError(
+                "Could not import mlx_lm python package. "
+                "Please install it with `pip install mlx_lm`."
+            )
 
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
 
@@ -141,9 +146,6 @@ class MLXPipeline(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        import mlx.core as mx
-        from mlx_lm.utils import generate_step
-
         try:
             import mlx.core as mx
             from mlx_lm.utils import generate_step
