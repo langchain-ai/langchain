@@ -4,7 +4,7 @@ import uuid
 from copy import deepcopy
 from typing import Any, Dict, List, Mapping, Optional, cast
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
