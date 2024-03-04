@@ -46,7 +46,8 @@ class TiDBVectorStore(VectorStore):
                 store vector data. If you do not provide a table name,
                 a default table named `langchain_vector` will be created automatically.
             distance_strategy: The strategy used for similarity search,
-                defaults to "cosine", valid values: "l2", "cosine".
+                defaults to "cosine", valid values: "l2", "cosine", "inner_product".
+            vector_dimension: The dimension of the vector, defaults to None.
             engine_args (Optional[Dict]): Additional arguments for the database engine,
                 defaults to None.
             drop_existing_table: Drop the existing TiDB table before initializing,
