@@ -67,7 +67,7 @@ class ChatAnthropic(BaseChatModel):
 
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(model="<model_name>", anthropic_api_key="<api_key>")
+            model = ChatAnthropic()
     """
 
     class Config:
