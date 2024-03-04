@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 import yaml
 
