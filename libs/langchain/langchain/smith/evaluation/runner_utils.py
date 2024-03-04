@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import dataclasses
 import functools
 import inspect
@@ -35,9 +36,15 @@ from langchain_core.tracers.evaluation import (
 from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
 from langsmith.env import get_git_info, get_langchain_env_var_metadata
-from langsmith.evaluation import EvaluationResult, RunEvaluator
+from langsmith.evaluation import (
+    EvaluationResult,
+    RunEvaluator,
+)
+from langsmith.evaluation import (
+    run_evaluator as run_evaluator_dec,
+)
 from langsmith.run_helpers import as_runnable, is_traceable_function
-from langsmith.schemas import Dataset, DataType, Example, TracerSession
+from langsmith.schemas import Dataset, DataType, Example, Run, TracerSession
 from langsmith.utils import LangSmithError
 from requests import HTTPError
 from typing_extensions import TypedDict
@@ -513,7 +520,10 @@ def _determine_reference_key(
 
 
 def _construct_run_evaluator(
-    eval_config: Union[EvaluatorType, str, smith_eval_config.EvalConfig],
+    eval_config: Union[
+        smith_eval_config.SINGLE_EVAL_CONFIG_TYPE,
+        smith_eval_config.CUSTOM_EVALUATOR_TYPE,
+    ],
     eval_llm: Optional[BaseLanguageModel],
     run_type: str,
     data_type: DataType,
@@ -522,12 +532,14 @@ def _construct_run_evaluator(
     input_key: Optional[str],
     prediction_key: Optional[str],
 ) -> RunEvaluator:
+    if isinstance(eval_config, RunEvaluator):
+        return eval_config
     if isinstance(eval_config, (EvaluatorType, str)):
         if not isinstance(eval_config, EvaluatorType):
             eval_config = EvaluatorType(eval_config)
         evaluator_ = load_evaluator(eval_config, llm=eval_llm)
         eval_type_tag = eval_config.value
-    else:
+    elif isinstance(eval_config, smith_eval_config.EvalConfig):
         kwargs = {"llm": eval_llm, **eval_config.get_kwargs()}
         evaluator_ = load_evaluator(eval_config.evaluator_type, **kwargs)
         eval_type_tag = eval_config.evaluator_type.value
@@ -536,6 +548,11 @@ def _construct_run_evaluator(
             input_key = eval_config.input_key or input_key
             prediction_key = eval_config.prediction_key or prediction_key
             reference_key = eval_config.reference_key or reference_key
+    elif callable(eval_config):
+        # Assume we can decorate
+        return run_evaluator_dec(eval_config)
+    else:
+        raise ValueError(f"Unknown evaluator type: {type(eval_config)}")
 
     if isinstance(evaluator_, StringEvaluator):
         if evaluator_.requires_reference and reference_key is None:
@@ -600,13 +617,9 @@ def _load_run_evaluators(
     """
     run_evaluators = []
     input_key, prediction_key, reference_key = None, None, None
-    if (
-        config.evaluators
-        or any([isinstance(e, EvaluatorType) for e in config.evaluators])
-        or (
-            config.custom_evaluators
-            and any([isinstance(e, StringEvaluator) for e in config.custom_evaluators])
-        )
+    if config.evaluators or (
+        config.custom_evaluators
+        and any([isinstance(e, StringEvaluator) for e in config.custom_evaluators])
     ):
         input_key, prediction_key, reference_key = _get_keys(
             config, run_inputs, run_outputs, example_outputs
@@ -638,6 +651,8 @@ def _load_run_evaluators(
                     reference_key=reference_key,
                 )
             )
+        elif callable(custom_evaluator):
+            run_evaluators.append(run_evaluator_dec(custom_evaluator))
         else:
             raise ValueError(
                 f"Unsupported custom evaluator: {custom_evaluator}."
@@ -1032,6 +1047,7 @@ class _DatasetRunContainer:
     wrapped_model: MCF
     examples: List[Example]
     configs: List[RunnableConfig]
+    batch_evaluators: Optional[List[smith_eval_config.BATCH_EVALUATOR_LIKE]] = None
 
     def _merge_test_outputs(
         self,
@@ -1055,8 +1071,34 @@ class _DatasetRunContainer:
                 results[str(example.id)]["reference"] = example.outputs
         return results
 
-    def _collect_metrics(self) -> Dict[str, _RowResult]:
+    def _run_batch_evaluators(self, runs: Dict[str, Run]) -> List[dict]:
+        evaluators = self.batch_evaluators
+        if not evaluators:
+            return []
+        runs_list = [runs[str(example.id)] for example in self.examples]
+        aggregate_feedback = []
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for evaluator in evaluators:
+                try:
+                    result = evaluator(runs_list, self.examples)
+                    if isinstance(result, EvaluationResult):
+                        result = result.dict()
+                    aggregate_feedback.append(cast(dict, result))
+                    executor.submit(
+                        self.client.create_feedback,
+                        **result,
+                        run_id=None,
+                        project_id=self.project.id,
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error running batch evaluator {repr(evaluator)}: {e}"
+                    )
+        return aggregate_feedback
+
+    def _collect_metrics(self) -> Tuple[Dict[str, _RowResult], Dict[str, Run]]:
         all_eval_results: dict = {}
+        all_runs: dict = {}
         for c in self.configs:
             for callback in cast(list, c["callbacks"]):
                 if isinstance(callback, EvaluatorCallbackHandler):
@@ -1077,20 +1119,28 @@ class _DatasetRunContainer:
                         {
                             "execution_time": execution_time,
                             "run_id": run_id,
+                            "run": run,
                         }
                     )
-        return cast(Dict[str, _RowResult], all_eval_results)
+                    all_runs[str(callback.example_id)] = run
+        return cast(Dict[str, _RowResult], all_eval_results), all_runs
 
     def _collect_test_results(
         self,
         batch_results: List[Union[dict, str, LLMResult, ChatResult]],
     ) -> TestResult:
+        logger.info("Waiting for evaluators to complete.")
         wait_for_all_evaluators()
-        all_eval_results = self._collect_metrics()
+        all_eval_results, all_runs = self._collect_metrics()
+        aggregate_feedback = None
+        if self.batch_evaluators:
+            logger.info("Running session evaluators.")
+            aggregate_feedback = self._run_batch_evaluators(all_runs)
         results = self._merge_test_outputs(batch_results, all_eval_results)
         return TestResult(
             project_name=self.project.name,
             results=results,
+            aggregate_metrics=aggregate_feedback,
         )
 
     def finish(self, batch_results: list, verbose: bool = False) -> TestResult:
@@ -1140,6 +1190,9 @@ class _DatasetRunContainer:
         tags = tags or []
         for k, v in (project.metadata.get("git") or {}).items():
             tags.append(f"git:{k}={v}")
+        run_metadata = {"dataset_version": project.metadata["dataset_version"]}
+        if revision_id:
+            run_metadata["revision_id"] = revision_id
         wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
         run_evaluators = _setup_evaluation(
             wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
@@ -1164,7 +1217,7 @@ class _DatasetRunContainer:
                 ],
                 tags=tags,
                 max_concurrency=concurrency_level,
-                metadata={"revision_id": revision_id} if revision_id else {},
+                metadata=run_metadata,
             )
             for example in examples
         ]
@@ -1174,6 +1227,7 @@ class _DatasetRunContainer:
             wrapped_model=wrapped_model,
             examples=examples,
             configs=configs,
+            batch_evaluators=evaluation.batch_evaluators if evaluation else None,
         )
 
 
