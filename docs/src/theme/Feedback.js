@@ -1,6 +1,57 @@
 /* eslint-disable no-return-assign, react/jsx-props-no-spreading */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import gtag from "../analytics";
+
+const useCookie = () => {
+  /**
+   * Function to set a cookie
+   * @param {string} name The name of the cookie to set
+   * @param {string} value The value of the cookie
+   * @param {number} days the number of days until the cookie expires
+   */
+  const setCookie = (name, value, days) => {
+    const d = new Date();
+    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+    let expires = "expires=" + d.toUTCString();
+    document.cookie = `${name}=${value};${expires};path=/`;
+  };
+
+  /**
+   * Function to get a cookie by name
+   * @param {string} name The name of the cookie to get
+   * @returns {string} The value of the cookie
+   */
+  const getCookie = (name) => {
+    let ca = document.cookie.split(";");
+    let caLen = ca.length;
+    let cookieName = `${name}=`;
+    let c;
+
+    for (let i = 0; i < caLen; i += 1) {
+      c = ca[i].replace(/^\s+/g, "");
+      if (c.indexOf(cookieName) == 0) {
+        return c.substring(cookieName.length, c.length);
+      }
+    }
+    return "";
+  };
+
+  /**
+   * Function to check cookie existence
+   * @param {string} name The name of the cookie to check for
+   * @returns {boolean} Whether or not the cookie exists
+   */
+  const checkCookie = (name) => {
+    let cookie = getCookie(name);
+    if (cookie !== "") {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  return { setCookie, checkCookie };
+};
 
 function SvgThumbsUp() {
   return (
@@ -40,22 +91,44 @@ function SvgThumbsDown() {
   );
 }
 
+const FEEDBACK_COOKIE_PREFIX = "feedbackSent";
+
 export default function Feedback() {
+  const { setCookie, checkCookie } = useCookie();
   const [feedbackSent, setFeedbackSent] = useState(false);
+
   /**
    * @param {"yes" | "no"} feedback
    */
   const handleFeedback = (feedback) => {
+    const cookieName = `${FEEDBACK_COOKIE_PREFIX}_${window.location.pathname}`;
+    if (checkCookie(cookieName)) {
+      return;
+    }
+
     const feedbackType =
       process.env.NODE_ENV === "production"
         ? "page_feedback"
         : "page_feedback_dev";
+
     gtag("event", feedbackType, {
       url: window.location.pathname,
       feedback,
     });
+    // Set a cookie to prevent feedback from being sent multiple times
+    setCookie(cookieName, window.location.pathname, 1);
     setFeedbackSent(true);
   };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // If the cookie exists, set feedback sent to
+      // true so the user can not send feedback again
+      // (cookies exp in 24hrs)
+      const cookieName = `${FEEDBACK_COOKIE_PREFIX}_${window.location.pathname}`;
+      setFeedbackSent(checkCookie(cookieName));
+    }
+  }, []);
 
   const defaultFields = {
     style: {
@@ -104,7 +177,7 @@ export default function Feedback() {
                 handleFeedback("yes");
               }}
             >
-              Good <SvgThumbsUp />
+              <SvgThumbsUp />
             </div>
             <div
               {...defaultFields}
@@ -122,7 +195,7 @@ export default function Feedback() {
                 handleFeedback("no");
               }}
             >
-              Needs improvement <SvgThumbsDown />
+              <SvgThumbsDown />
             </div>
           </div>
         </>
