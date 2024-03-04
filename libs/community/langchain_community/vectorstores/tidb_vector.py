@@ -121,42 +121,48 @@ class TiDBVectorStore(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        connection_string: str,
         metadatas: Optional[List[dict]] = None,
-        table_name: str = DEFAULT_TiDB_VECTOR_TABLE_NAME,
-        distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
-        ids: Optional[List[str]] = None,
-        *,
-        engine_args: Optional[Dict[str, Any]] = None,
-        drop_existing_table: bool = False,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> "TiDBVectorStore":
         """
         Create a VectorStore from a list of texts.
 
         Args:
             texts (List[str]): The list of texts to be added to the TiDB Vector.
             embedding (Embeddings): The function to use for generating embeddings.
-            connection_string (str): The connection string for the TiDB database,
-                format: "mysql+pymysql://root@34.212.137.91:4000/test".
             metadatas: The list of metadata dictionaries corresponding to each text,
                 defaults to None.
-            table_name (str, optional): The name of table used to store vector data,
-                defaults to "langchain_vector".
-            distance_strategy: The distance strategy used for similarity search,
-                defaults to "cosine", allowed strategies: "l2", "cosine".
-            ids (Optional[List[str]]): The list of IDs corresponding to each text,
-                defaults to None.
-            engine_args: Additional arguments for the underlying database engine,
-                defaults to None.
-            drop_existing_table: Drop the existing TiDB table before initializing,
-                defaults to False.
             **kwargs (Any): Additional keyword arguments.
+                connection_string (str): The connection string for the TiDB database,
+                    format: "mysql+pymysql://root@34.212.137.91:4000/test".
+                table_name (str, optional): The name of table used to store vector data,
+                    defaults to "langchain_vector".
+                distance_strategy: The distance strategy used for similarity search,
+                    defaults to "cosine", allowed: "l2", "cosine", "inner_product".
+                vector_dimension: The dimension of the vector, defaults to None.
+                ids (Optional[List[str]]): The list of IDs corresponding to each text,
+                    defaults to None.
+                engine_args: Additional arguments for the underlying database engine,
+                    defaults to None.
+                drop_existing_table: Drop the existing TiDB table before initializing,
+                    defaults to False.
 
         Returns:
             VectorStore: The created TiDB Vector Store.
 
         """
+
+        # Extract arguments from kwargs with default values
+        connection_string = kwargs.pop("connection_string", None)
+        if connection_string is None:
+            raise ValueError("please provide your tidb connection_url")
+        table_name = kwargs.pop("table_name", "langchain_vector")
+        distance_strategy = kwargs.pop("distance_strategy", "cosine")
+        vector_dimension = kwargs.pop("vector_dimension", None)
+        ids = kwargs.pop("ids", None)
+        engine_args = kwargs.pop("engine_args", None)
+        drop_existing_table = kwargs.pop("drop_existing_table", False)
+
         embeddings = embedding.embed_documents(list(texts))
 
         vs = cls(
@@ -164,6 +170,7 @@ class TiDBVectorStore(VectorStore):
             table_name=table_name,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
+            vector_dimension=vector_dimension,
             engine_args=engine_args,
             drop_existing_table=drop_existing_table,
             **kwargs,
@@ -196,7 +203,7 @@ class TiDBVectorStore(VectorStore):
             table_name (str, optional): The name of table used to store vector data,
                 defaults to "langchain_vector".
             distance_strategy: The distance strategy used for similarity search,
-                defaults to "cosine", allowed strategies: "l2", "cosine".
+                defaults to "cosine", allowed: "l2", "cosine", 'inner_product'.
             engine_args: Additional arguments for the underlying database engine,
                 defaults to None.
             **kwargs (Any): Additional keyword arguments.
@@ -208,7 +215,10 @@ class TiDBVectorStore(VectorStore):
         """
 
         try:
-            from tidb_vector.integrations import check_table_existence
+            from tidb_vector.integrations import (
+                check_table_existence,
+                get_embedding_column_definition,
+            )
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
@@ -216,11 +226,15 @@ class TiDBVectorStore(VectorStore):
             )
 
         if check_table_existence(connection_string, table_name):
+            actual_dim = get_embedding_column_definition(
+                connection_string, table_name, "embedding"
+            )
             return cls(
                 connection_string=connection_string,
                 table_name=table_name,
                 embedding_function=embedding,
                 distance_strategy=distance_strategy,
+                vector_dimension=actual_dim,
                 engine_args=engine_args,
                 **kwargs,
             )
@@ -256,7 +270,7 @@ class TiDBVectorStore(VectorStore):
 
         embeddings = self._embedding_function.embed_documents(list(texts))
         if ids is None:
-            ids = [uuid.uuid4() for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
         if not metadatas:
             metadatas = [{} for _ in texts]
 
