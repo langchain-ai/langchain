@@ -2,9 +2,9 @@ import uuid
 from typing import Any, Dict
 
 import pytest
-from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.caches import BaseCache
 from langchain_core.embeddings import Embeddings
+from langchain_core.globals import get_llm_cache, set_llm_cache
 from langchain_core.load.dump import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
