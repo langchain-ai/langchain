@@ -147,3 +147,37 @@ def _messages_to_prompt_dict(input_messages: List[BaseMessage]) -> dict:
                 "Messages without an explicit role not supported by PremAI API."
             )
         return system_prompt, examples_and_messages
+
+
+def _create_retry_decorator() -> Callable[[Any], Any]:
+    """Returns a tenacity retry decorator, preconfigured to handle PremAI exceptions"""
+
+    import premai.models
+
+    errors = [
+        premai.models.api_response_validation_error.APIResponseValidationError,
+        premai.models.conflict_error.ConflictError,
+        premai.models.model_not_found_error.ModelNotFoundError,
+        premai.models.permission_denied_error.PermissionDeniedError,
+        premai.models.provider_api_connection_error.ProviderAPIConnectionError,
+        premai.models.provider_api_status_error.ProviderAPIStatusError,
+        premai.models.provider_api_timeout_error.ProviderAPITimeoutError,
+        premai.models.provider_internal_server_error.ProviderInternalServerError,
+        premai.models.provider_not_found_error.ProviderNotFoundError,
+        premai.models.rate_limit_error.RateLimitError,
+        premai.models.unprocessable_entity_error.UnprocessableEntityError,
+        premai.models.validation_error.ValidationError,
+    ]
+
+    multiplier = 2
+    min_seconds = 1
+    max_seconds = 60
+    max_retries = 10
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=multiplier, min=min_seconds, max=max_seconds),
+        retry=retry_if_exception_type(*errors),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
