@@ -12,7 +12,7 @@ const useCookie = () => {
   const setCookie = (name, value, days) => {
     const d = new Date();
     d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-    let expires = "expires=" + d.toUTCString();
+    const expires = `expires=${d.toUTCString()}`;
     document.cookie = `${name}=${value};${expires};path=/`;
   };
 
@@ -22,14 +22,14 @@ const useCookie = () => {
    * @returns {string} The value of the cookie
    */
   const getCookie = (name) => {
-    let ca = document.cookie.split(";");
-    let caLen = ca.length;
-    let cookieName = `${name}=`;
+    const ca = document.cookie.split(";");
+    const caLen = ca.length;
+    const cookieName = `${name}=`;
     let c;
 
     for (let i = 0; i < caLen; i += 1) {
       c = ca[i].replace(/^\s+/g, "");
-      if (c.indexOf(cookieName) == 0) {
+      if (c.indexOf(cookieName) === 0) {
         return c.substring(cookieName.length, c.length);
       }
     }
@@ -42,12 +42,11 @@ const useCookie = () => {
    * @returns {boolean} Whether or not the cookie exists
    */
   const checkCookie = (name) => {
-    let cookie = getCookie(name);
+    const cookie = getCookie(name);
     if (cookie !== "") {
       return true;
-    } else {
-      return false;
     }
+    return false;
   };
 
   return { setCookie, checkCookie };
