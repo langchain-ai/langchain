@@ -93,3 +93,57 @@ def _response_to_result(
                 )
             )
         return ChatResult(generations=generations)
+
+
+def _messages_to_prompt_dict(input_messages: List[BaseMessage]) -> dict:
+    """Converts a list of LangChain Messages into a simple dict which is the message structure in Prem"""
+
+    remaining = list(enumerate(input_messages))
+    system_prompt: str = None
+    examples_and_messages: List[Dict[str, str]] = []
+
+    while remaining:
+        index, input_message = remaining.pop(0)
+
+        if isinstance(input_message, SystemMessage):
+            if index != 0:
+                raise ChatPremAPIError("System message must be first input message.")
+            system_prompt = cast(str, input_message.content)
+
+        elif isinstance(input_message, HumanMessage) and input_message.example:
+            if examples_and_messages:
+                raise ChatPremAPIError(
+                    "Message examples must come before other messages."
+                )
+
+            _, next_input_message = remaining.pop(0)
+            if isinstance(next_input_message, AIMessage) and next_input_message.example:
+                examples_and_messages.extend(
+                    [
+                        {"role": "user", "content": input_message.content},
+                        {"role": "assistant", "content": next_input_message.content},
+                    ]
+                )
+            else:
+                raise ChatPremAPIError(
+                    "Human example message must be immediately followed by an "
+                    " AI example response."
+                )
+        elif isinstance(input_message, AIMessage) and input_message.example:
+            raise ChatPremAPIError(
+                "AI example message must be immediately preceded by a Human "
+                "example message."
+            )
+        elif isinstance(input_message, AIMessage):
+            examples_and_messages.append(
+                {"role": "assistant", "content": input_message.content}
+            )
+        elif isinstance(input_message, HumanMessage):
+            examples_and_messages.append(
+                {"role": "user", "content": input_message.content}
+            )
+        else:
+            raise ChatPremAPIError(
+                "Messages without an explicit role not supported by PremAI API."
+            )
+        return system_prompt, examples_and_messages
