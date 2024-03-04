@@ -103,7 +103,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             )
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from DynamoDB"""
         try:
             from botocore.exceptions import ClientError
@@ -128,6 +128,21 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
         messages = messages_from_dict(items)
         return messages
+
+    @messages.setter
+    def messages(self, value: List[BaseMessage]) -> None:
+        """
+        A placeholder setter for 'messages'.
+
+        This setter exists to fulfill the interface requirements of the base class and
+        ensure compatibility with type-checking, without enabling external modification
+        of the 'messages' property. The 'messages' list should be modified through
+        specific methods like 'add_message' instead of direct assignment.
+
+        Note: This method is intentionally left as a no-operation (no-op) and should not
+        be used for updating messages.
+        """
+        pass
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in DynamoDB"""
