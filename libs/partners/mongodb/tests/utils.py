@@ -169,8 +169,8 @@ class MockCollection(Collection):
             [k["_id"] for k in mongodb_inserts], acknowledged=True
         )
 
-    def find_one(self, find_query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        def _is_match(item: Dict[str, Any]):
+    def find_one(self, find_query: Dict[str, Any]) -> Optional[Dict[str, Any]]:  # type: ignore
+        def _is_match(item: Dict[str, Any]) -> bool:
             for key, match_val in find_query.items():
                 if item.get(key) != match_val:
                     return False
@@ -182,14 +182,14 @@ class MockCollection(Collection):
                 return document
         return None
 
-    def update_one(
+    def update_one(  # type: ignore
         self,
         find_query: Dict[str, Any],
         options: Dict[str, Any],
-        *args,
+        *args: Any,
         upsert=True,
-        **kwargs,
-    ) -> None:
+        **kwargs: Any,
+    ) -> None:  # type: ignore
         result = self.find_one(find_query)
         set_options = options.get("$set", {})
 
@@ -198,7 +198,7 @@ class MockCollection(Collection):
         elif upsert:
             self._data.append({**find_query, **set_options})
 
-    def _execute_cache_aggreation_query(self, *args, **kwargs) -> List[Dict[str, Any]]:
+    def _execute_cache_aggreation_query(self, *args, **kwargs) -> List[Dict[str, Any]]:  # type: ignore
         """Helper function only to be used for MongoDBAtlasSemanticCache Testing
 
         Returns:

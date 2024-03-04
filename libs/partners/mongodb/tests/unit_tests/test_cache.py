@@ -1,4 +1,3 @@
-import os
 import uuid
 from typing import Any, Dict
 
@@ -10,7 +9,6 @@ from langchain_core.load.dump import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 from pymongo.collection import Collection
-from pymongo.database import Database
 
 from langchain_mongodb.cache import MongoDBAtlasSemanticCache, MongoDBCache
 from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
@@ -31,10 +29,10 @@ class PatchedMongoDBCache(MongoDBCache):
     ) -> None:
         self.__database_name = database_name
         self.__collection_name = collection_name
-        self.client = {self.__database_name: {self.__collection_name: MockCollection()}}
+        self.client = {self.__database_name: {self.__collection_name: MockCollection()}}  # type: ignore
 
     @property
-    def database(self) -> Database:
+    def database(self) -> Any:  # type: ignore
         """Returns the database used to store cache values."""
         return self.client[self.__database_name]
 
@@ -57,7 +55,10 @@ class PatchedMongoDBAtlasSemanticCache(MongoDBAtlasSemanticCache):
         self.collection = MockCollection()
         self._wait_until_ready = False
         MongoDBAtlasVectorSearch.__init__(
-            self, self.collection, embedding=embedding, **kwargs
+            self,
+            self.collection,
+            embedding=embedding,
+            **kwargs,  # type: ignore
         )
 
 
@@ -104,9 +105,9 @@ def _execute_test(
     output: list[Generation] | LLMResult | None
     expected_output: list[Generation] | LLMResult
     if isinstance(llm_cache, PatchedMongoDBAtlasSemanticCache):
-        llm_cache._collection._aggregate_result = [
+        llm_cache._collection._aggregate_result = [  # type: ignore
             data
-            for data in llm_cache._collection._data
+            for data in llm_cache._collection._data  # type: ignore
             if data.get("text") == dumped_prompt
             and data.get("llm_string") == llm_string
         ]  # type: ignore
@@ -201,7 +202,7 @@ def test_mongodb_atlas_cache_matrix(
     for prompt_i, llm_generations_i in zip(prompts, llm_generations):
         _execute_test(prompt_i, llm_string, llm_generations_i)
 
-    get_llm_cache()._collection._simluate_cache_aggregation_query = True
+    get_llm_cache()._collection._simluate_cache_aggregation_query = True  # type: ignore
     assert llm.generate(prompts) == LLMResult(
         generations=llm_generations, llm_output={}
     )
