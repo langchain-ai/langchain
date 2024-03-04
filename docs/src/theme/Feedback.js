@@ -159,7 +159,7 @@ export default function Feedback() {
         <h4>Thanks for your feedback!</h4>
       ) : (
         <>
-          <h4>Help us out by providing feedback:</h4>
+          <h4>Help us out by providing feedback on this documentation page:</h4>
           <div style={{ display: "flex", gap: "5px" }}>
             <div
               {...defaultFields}
