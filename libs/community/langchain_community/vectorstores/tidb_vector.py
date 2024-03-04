@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
+DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2", "inner_product"
 DEFAULT_TiDB_VECTOR_TABLE_NAME = "langchain_vector"
 
 
@@ -16,6 +16,7 @@ class TiDBVectorStore(VectorStore):
         embedding_function: Embeddings,
         table_name: str = DEFAULT_TiDB_VECTOR_TABLE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
+        vector_dimension: Optional[int] = None,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
         drop_existing_table: bool = False,
@@ -91,6 +92,7 @@ class TiDBVectorStore(VectorStore):
             connection_string=connection_string,
             table_name=table_name,
             distance_strategy=distance_strategy,
+            vector_dimension=vector_dimension,
             engine_args=engine_args,
             drop_existing_table=drop_existing_table,
             **kwargs,
@@ -205,14 +207,14 @@ class TiDBVectorStore(VectorStore):
         """
 
         try:
-            from tidb_vector.integrations import TiDBVectorClient
+            from tidb_vector.integrations import check_table_existence
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
                 "Please install it with `pip install tidbvec`."
             )
 
-        if TiDBVectorClient.check_table_existence(connection_string, table_name):
+        if check_table_existence(connection_string, table_name):
             return cls(
                 connection_string=connection_string,
                 table_name=table_name,
