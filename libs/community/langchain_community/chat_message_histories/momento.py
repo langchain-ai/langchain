@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -124,7 +124,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         return cls(session_id, cache_client, cache_name, ttl=ttl, **kwargs)
 
     @property
-    def messages(self) -> list[BaseMessage]:  # type: ignore[override]
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Momento.
 
         Raises:
@@ -132,7 +132,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
             Exception: Unexpected response
 
         Returns:
-            list[BaseMessage]: List of cached messages
+            List[BaseMessage]: List of cached messages
         """
         from momento.responses import CacheListFetch
 
@@ -147,6 +147,14 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
             raise fetch_response.inner_exception
         else:
             raise Exception(f"Unexpected response: {fetch_response}")
+
+    @messages.setter
+    def messages(self, value: List[BaseMessage]) -> None:
+        """Raises error if 'messages' is directly set."""
+        raise NotImplementedError(
+            "Direct setting of 'messages' is not supported. Use 'add_message' "
+            "and 'clear' methods."
+        )
 
     def add_message(self, message: BaseMessage) -> None:
         """Store a message in the cache.
