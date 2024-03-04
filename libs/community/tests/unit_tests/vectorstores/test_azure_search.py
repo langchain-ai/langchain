@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import Any, List, Optional
 from unittest.mock import patch
 
 import pytest
@@ -35,7 +35,7 @@ DEFAULT_KEY = "mykey"
 DEFAULT_EMBEDDING_MODEL = FakeEmbeddingsWithDimension()
 
 
-def mock_default_index(*args, **kwargs) -> any:
+def mock_default_index(*args, **kwargs) -> Any:
     from azure.search.documents.indexes.models import (
         ExhaustiveKnnAlgorithmConfiguration,
         ExhaustiveKnnParameters,
@@ -134,7 +134,7 @@ def create_vector_store() -> AzureSearch:
 def test_init_existing_index() -> None:
     from azure.search.documents.indexes import SearchIndexClient
 
-    def mock_create_index(self, index, **kwargs) -> None:
+    def mock_create_index() -> None:
         pytest.fail("Should not create index in this test")
 
     with patch.multiple(
@@ -148,13 +148,14 @@ def test_init_existing_index() -> None:
 def test_init_new_index() -> None:
     from azure.core.exceptions import ResourceNotFoundError
     from azure.search.documents.indexes import SearchIndexClient
+    from azure.search.documents.indexes.models import SearchIndex
 
-    def no_index(*args, **kwargs) -> None:
+    def no_index(self, name: str) -> None:
         raise ResourceNotFoundError
 
-    created_index = None
+    created_index: Optional[SearchIndex] = None
 
-    def mock_create_index(self, index, **kwargs) -> None:
+    def mock_create_index(self, index: Any) -> None:
         nonlocal created_index
         created_index = index
 
@@ -163,6 +164,7 @@ def test_init_new_index() -> None:
     ):
         vector_store = create_vector_store()
         assert vector_store.client is not None
+        assert created_index is not None
         assert json.dumps(created_index.as_dict()) == json.dumps(
             mock_default_index().as_dict()
         )
