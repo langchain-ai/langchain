@@ -9,7 +9,7 @@ from langchain_core.load.dump import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
-from langchain_mongodb.cache import MongoDBAtlasCache, MongoDBAtlasSemanticCache
+from langchain_mongodb.cache import MongoDBAtlasSemanticCache, MongoDBCache
 from tests.utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM
 
 CONN_STRING = os.environ.get("MONGODB_ATLAS_URI")
@@ -58,6 +58,7 @@ def _execute_test(
     # Retrieve the cached result through 'generate' call
     output: list[Generation] | LLMResult | None
     expected_output: list[Generation] | LLMResult
+
     if isinstance(llm, str):
         output = get_llm_cache().lookup(dumped_prompt, llm)  # type: ignore
         expected_output = response
@@ -88,9 +89,9 @@ def _execute_test(
         "cache_with_chat",
     ],
 )
-@pytest.mark.parametrize("cacher", [MongoDBAtlasCache, MongoDBAtlasSemanticCache])
+@pytest.mark.parametrize("cacher", [MongoDBCache, MongoDBAtlasSemanticCache])
 def test_mongodb_cache(
-    cacher: MongoDBAtlasCache | MongoDBAtlasSemanticCache,
+    cacher: MongoDBCache | MongoDBAtlasSemanticCache,
     prompt: str | list[BaseMessage],
     llm: str | FakeLLM | FakeChatModel,
     response: list[Generation],

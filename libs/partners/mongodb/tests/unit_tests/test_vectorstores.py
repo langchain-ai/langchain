@@ -22,7 +22,7 @@ def collection() -> MockCollection:
     return get_collection()
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def embedding_openai() -> Embeddings:
     return ConsistentFakeEmbeddings()
 

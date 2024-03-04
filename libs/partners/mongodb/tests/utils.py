@@ -20,6 +20,8 @@ from langchain_core.pydantic_v1 import validator
 from pymongo.collection import Collection
 from pymongo.results import DeleteResult, InsertManyResult
 
+from langchain_mongodb.cache import MongoDBAtlasSemanticCache
+
 
 class ConsistentFakeEmbeddings(Embeddings):
     """Fake embeddings functionality for testing."""
@@ -145,11 +147,13 @@ class MockCollection(Collection):
     _aggregate_result: List[Any]
     _insert_result: Optional[InsertManyResult]
     _data: List[Any]
+    _simluate_cache_aggregation_query: bool
 
     def __init__(self) -> None:
         self._data = []
         self._aggregate_result = []
         self._insert_result = None
+        self._simluate_cache_aggregation_query = False
 
     def delete_many(self, *args, **kwargs) -> DeleteResult:  # type: ignore
         old_len = len(self._data)
@@ -165,7 +169,59 @@ class MockCollection(Collection):
             [k["_id"] for k in mongodb_inserts], acknowledged=True
         )
 
+    def find_one(self, find_query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        def _is_match(item: Dict[str, Any]):
+            for key, match_val in find_query.items():
+                if item.get(key) != match_val:
+                    return False
+            return True
+
+        # Return the first element to match
+        for document in self._data:
+            if _is_match(document):
+                return document
+        return None
+
+    def update_one(
+        self,
+        find_query: Dict[str, Any],
+        options: Dict[str, Any],
+        *args,
+        upsert=True,
+        **kwargs,
+    ) -> None:
+        result = self.find_one(find_query)
+        set_options = options.get("$set", {})
+
+        if result:
+            result.update(set_options)
+        elif upsert:
+            self._data.append({**find_query, **set_options})
+
+    def _execute_cache_aggreation_query(self, *args, **kwargs) -> List[Dict[str, Any]]:
+        """Helper function only to be used for MongoDBAtlasSemanticCache Testing
+
+        Returns:
+            List[Dict[str, Any]]: Aggregation query result
+        """
+        pipeline: List[Dict[str, Any]] = args[0]
+        params = pipeline[0]["$vectorSearch"]
+        embedding = params["queryVector"]
+        # Assumes MongoDBAtlasSemanticCache.LLM == "llm_string"
+        llm_string = params["filter"][MongoDBAtlasSemanticCache.LLM]["$eq"]
+
+        acc = []
+        for document in self._data:
+            if (
+                document.get("embedding") == embedding
+                and document.get(MongoDBAtlasSemanticCache.LLM) == llm_string
+            ):
+                acc.append(document)
+        return acc
+
     def aggregate(self, *args, **kwargs) -> List[Any]:  # type: ignore
+        if self._simluate_cache_aggregation_query:
+            return deepcopy(self._execute_cache_aggreation_query(*args, **kwargs))
         return deepcopy(self._aggregate_result)
 
     def count_documents(self, *args, **kwargs) -> int:  # type: ignore

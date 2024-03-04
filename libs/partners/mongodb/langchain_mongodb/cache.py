@@ -121,7 +121,7 @@ def _wait_until(
         time.sleep(interval)
 
 
-class MongoDBAtlasCache(BaseCache):
+class MongoDBCache(BaseCache):
     """MongoDB Atlas cache
 
     A cache that uses MongoDB Atlas as a backend
@@ -129,11 +129,12 @@ class MongoDBAtlasCache(BaseCache):
 
     PROMPT = "prompt"
     LLM = "llm"
+    RETURN_VAL = "return_val"
 
     def __init__(
         self,
+        connection_string: str,
         collection_name: str = "default",
-        connection_string: str = "default",
         database_name: str = "default",
         **kwargs: Dict[str, Any],
     ) -> None:
@@ -172,14 +173,14 @@ class MongoDBAtlasCache(BaseCache):
         return_doc = (
             self.collection.find_one(self._generate_keys(prompt, llm_string)) or {}
         )
-        return_val = return_doc.get("return_val")
+        return_val = return_doc.get(self.RETURN_VAL)
         return _loads_generations(return_val) if return_val else None  # type: ignore
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         self.collection.update_one(
             {**self._generate_keys(prompt, llm_string)},
-            {"$set": {"return_val": _dumps_generations(return_val)}},
+            {"$set": {self.RETURN_VAL: _dumps_generations(return_val)}},
             upsert=True,
         )
 
@@ -242,7 +243,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
             prompt, 1, pre_filter={self.LLM: {"$eq": llm_string}}
         )
         if search_response:
-            return_val = search_response[0][0].metadata.get("return_val")
+            return_val = search_response[0][0].metadata.get(self.RETURN_VAL)
             return _loads_generations(return_val) or return_val  # type: ignore
         return None
 
