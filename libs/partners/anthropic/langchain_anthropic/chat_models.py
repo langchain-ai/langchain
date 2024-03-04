@@ -64,7 +64,6 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
     system: Optional[str] = None
     formatted_messages: List[Dict] = []
     for i, message in enumerate(messages):
-
         if message.type == "system":
             if i != 0:
                 raise ValueError("System message must be at beginning of message list.")
