@@ -35,13 +35,6 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
 from langchain_core.pydantic_v1 import BaseModel, root_validator, Extra
 from langchain_core.utils import get_from_dict_or_env
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
 
 if TYPE_CHECKING:
     from premai.models.chat_completion_response import ChatCompletionResponse
