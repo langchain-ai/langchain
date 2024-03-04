@@ -1089,7 +1089,7 @@ class _DatasetRunContainer:
                     )
                 except Exception as e:
                     logger.error(
-                        f"Error running session evaluator {repr(evaluator)}: {e}"
+                        f"Error running batch evaluator {repr(evaluator)}: {e}"
                     )
         return aggregate_feedback
 
@@ -1187,6 +1187,9 @@ class _DatasetRunContainer:
         tags = tags or []
         for k, v in (project.metadata.get("git") or {}).items():
             tags.append(f"git:{k}={v}")
+        run_metadata = {"dataset_version": project.metadata["dataset_version"]}
+        if revision_id:
+            run_metadata["revision_id"] = revision_id
         wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
         run_evaluators = _setup_evaluation(
             wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
@@ -1211,7 +1214,7 @@ class _DatasetRunContainer:
                 ],
                 tags=tags,
                 max_concurrency=concurrency_level,
-                metadata={"revision_id": revision_id} if revision_id else {},
+                metadata=run_metadata,
             )
             for example in examples
         ]
