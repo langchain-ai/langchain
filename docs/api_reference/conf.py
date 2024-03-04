@@ -1,4 +1,5 @@
 """Configuration file for the Sphinx documentation builder."""
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -174,3 +175,6 @@ myst_enable_extensions = ["colon_fence"]
 
 # generate autosummary even if no references
 autosummary_generate = True
+
+html_copy_source = False
+html_show_sourcelink = False
