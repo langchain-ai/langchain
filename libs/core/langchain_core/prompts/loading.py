@@ -68,9 +68,9 @@ def _load_examples(config: dict, template_base_path: Optional[Union[str, Path]] 
         if template_base_path:
             examples_file_path = template_base_path / examples_file_path
         with open(examples_file_path) as f:
-            if examples_file_path.endswith(".json"):
+            if config["examples"].endswith(".json"):
                 examples = json.load(f)
-            elif examples_file_path.endswith((".yaml", ".yml")):
+            elif config["examples"].endswith((".yaml", ".yml")):
                 examples = yaml.safe_load(f)
             else:
                 raise ValueError(
