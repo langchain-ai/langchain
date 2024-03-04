@@ -10,10 +10,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
 
+MODEL_NAME = "claude-3-sonnet-20240229"
+
 
 def test_stream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -21,7 +23,7 @@ def test_stream() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -29,7 +31,7 @@ async def test_astream() -> None:
 
 async def test_abatch() -> None:
     """Test streaming tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -38,7 +40,7 @@ async def test_abatch() -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -49,7 +51,7 @@ async def test_abatch_tags() -> None:
 
 def test_batch() -> None:
     """Test batch tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -58,7 +60,7 @@ def test_batch() -> None:
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -66,7 +68,7 @@ async def test_ainvoke() -> None:
 
 def test_invoke() -> None:
     """Test invoke tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -74,7 +76,7 @@ def test_invoke() -> None:
 
 def test_system_invoke() -> None:
     """Test invoke tokens with a system message"""
-    llm = ChatAnthropicMessages(model_name="claude-instant-1.2")
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     prompt = ChatPromptTemplate.from_messages(
         [
