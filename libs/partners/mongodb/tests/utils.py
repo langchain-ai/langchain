@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+from copy import deepcopy
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain.callbacks.manager import (
@@ -15,6 +17,8 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import validator
+from pymongo.collection import Collection
+from pymongo.results import DeleteResult, InsertManyResult
 
 
 class ConsistentFakeEmbeddings(Embeddings):
@@ -133,3 +137,39 @@ class FakeLLM(LLM):
         response = queries[list(queries.keys())[self.response_index]]
         self.response_index = self.response_index + 1
         return response
+
+
+class MockCollection(Collection):
+    """Mocked Mongo Collection"""
+
+    _aggregate_result: List[Any]
+    _insert_result: Optional[InsertManyResult]
+    _data: List[Any]
+
+    def __init__(self) -> None:
+        self._data = []
+        self._aggregate_result = []
+        self._insert_result = None
+
+    def delete_many(self, *args, **kwargs) -> DeleteResult:  # type: ignore
+        old_len = len(self._data)
+        self._data = []
+        return DeleteResult({"n": old_len}, acknowledged=True)
+
+    def insert_many(self, to_insert: List[Any], *args, **kwargs) -> InsertManyResult:  # type: ignore
+        mongodb_inserts = [
+            {"_id": str(uuid.uuid4()), "score": 1, **insert} for insert in to_insert
+        ]
+        self._data.extend(mongodb_inserts)
+        return self._insert_result or InsertManyResult(
+            [k["_id"] for k in mongodb_inserts], acknowledged=True
+        )
+
+    def aggregate(self, *args, **kwargs) -> List[Any]:  # type: ignore
+        return deepcopy(self._aggregate_result)
+
+    def count_documents(self, *args, **kwargs) -> int:  # type: ignore
+        return len(self._data)
+
+    def __repr__(self) -> str:
+        return "FakeCollection"
