@@ -1044,7 +1044,7 @@ class _DatasetRunContainer:
     wrapped_model: MCF
     examples: List[Example]
     configs: List[RunnableConfig]
-    session_evaluators: Optional[List[smith_eval.SESSION_EVALUATOR_LIKE]] = None
+    batch_evaluators: Optional[List[smith_eval_config.BATCH_EVALUATOR_LIKE]] = None
 
     def _merge_test_outputs(
         self,
@@ -1068,13 +1068,18 @@ class _DatasetRunContainer:
                 results[str(example.id)]["reference"] = example.outputs
         return results
 
-    def _run_session_evaluators(self, runs: Dict[str, Run]) -> List[dict]:
+    def _run_batch_evaluators(self, runs: Dict[str, Run]) -> List[dict]:
+        evaluators = self.batch_evaluators
+        if not evaluators:
+            return []
         runs_list = [runs[str(example.id)] for example in self.examples]
         aggregate_feedback = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            for evaluator in self.session_evaluators:
+            for evaluator in evaluators:
                 try:
                     result = evaluator(runs=runs_list, examples=self.examples)
+                    if isinstance(result, EvaluationResult):
+                        result = result.dict()
                     aggregate_feedback.append(result)
                     executor.submit(
                         self.client.create_feedback,
@@ -1125,9 +1130,9 @@ class _DatasetRunContainer:
         wait_for_all_evaluators()
         all_eval_results, all_runs = self._collect_metrics()
         aggregate_feedback = None
-        if self.session_evaluators:
+        if self.batch_evaluators:
             logger.info("Running session evaluators.")
-            aggregate_feedback = self._run_session_evaluators(all_runs)
+            aggregate_feedback = self._run_batch_evaluators(all_runs)
         results = self._merge_test_outputs(batch_results, all_eval_results)
         return TestResult(
             project_name=self.project.name,
@@ -1216,7 +1221,7 @@ class _DatasetRunContainer:
             wrapped_model=wrapped_model,
             examples=examples,
             configs=configs,
-            session_evaluators=evaluation.session_evaluators,
+            batch_evaluators=evaluation.batch_evaluators if evaluation else None,
         )
 
 

@@ -22,7 +22,7 @@ from langchain.evaluation.string_distance.base import (
 RUN_EVALUATOR_LIKE = Callable[
     [Run, Optional[Example]], Union[EvaluationResult, EvaluationResults, dict]
 ]
-SESSION_EVALUATOR_LIKE = Callable[
+BATCH_EVALUATOR_LIKE = Callable[
     [Sequence[Run], Optional[Sequence[Example]]],
     Union[EvaluationResult, EvaluationResults, dict],
 ]
@@ -95,7 +95,7 @@ class RunEvalConfig(BaseModel):
 
     Parameters
     ----------
-    evaluators : List[Union[EvaluatorType, EvalConfig]]
+    evaluators : List[Union[EvaluatorType, EvalConfig, RunEvaluator, Callable]]
         Configurations for which evaluators to apply to the dataset run.
         Each can be the string of an :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
         as EvaluatorType.QA, the evaluator type string ("qa"), or a configuration for a
@@ -136,9 +136,9 @@ class RunEvalConfig(BaseModel):
     :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""  # noqa: E501
     custom_evaluators: Optional[List[CUSTOM_EVALUATOR_TYPE]] = None
     """Custom evaluators to apply to the dataset run."""
-    session_evaluators: Optional[List[SESSION_EVALUATOR_LIKE]] = None
-    """Evaluators to apply on a full session level.
-    
+    batch_evaluators: Optional[List[BATCH_EVALUATOR_LIKE]] = None
+    """Evaluators that run on an aggregate/batch level.
+
     These generate 1 or more metrics that are assigned to the full test run.
     As a result, they are not associated with individual traces.
     """
