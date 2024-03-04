@@ -13,6 +13,15 @@ This loader is built on top of [PyAirbyte](https://pypi.org/project/airbyte/) fo
 pip install -U langchain-airbyte
 ```
 
+:::note
+
+Currently, the `airbyte` library does not support Pydantic v2.
+Please downgrade to Pydantic v1 to use this package.
+
+This package also currently requires Python 3.10+.
+
+:::
+
 The integration package doesn't have any global environment variables that need to be
 set, but some integrations (e.g. `source-github`) may need credentials passed in.
 

@@ -236,7 +236,7 @@ class _OllamaCommon(BaseLanguageModel):
                     f"and you should pull the model with `ollama pull {self.model}`."
                 )
             else:
-                optional_detail = response.json().get("error")
+                optional_detail = response.text
                 raise ValueError(
                     f"Ollama call failed with status code {response.status_code}."
                     f" Details: {optional_detail}"
@@ -297,7 +297,7 @@ class _OllamaCommon(BaseLanguageModel):
                             "Ollama call failed with status code 404."
                         )
                     else:
-                        optional_detail = await response.json().get("error")  # type: ignore[attr-defined]
+                        optional_detail = response.text
                         raise ValueError(
                             f"Ollama call failed with status code {response.status}."
                             f" Details: {optional_detail}"
