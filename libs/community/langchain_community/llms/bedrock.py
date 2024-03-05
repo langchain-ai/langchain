@@ -77,9 +77,7 @@ def _human_assistant_format(input_text: str) -> str:
     return input_text
 
 def _generate_messages_format(input_text: str) -> str:
-    return [
-        {"role": "user", "content": _add_newlines_before_ha(input_text)}
-    ]
+    return [{"role": "user", "content": _add_newlines_before_ha(input_text)}]
 
 def _stream_response_to_generation_chunk(
     stream_response: Dict[str, Any],
@@ -101,7 +99,8 @@ class LLMInputOutputAdapter:
     the generated text from the model response."""
 
     provider_to_output_key_map = {
-        "anthropic": "message",
+        "anthropic": "completion",
+        "anthropic_v3": "message",
         "amazon": "outputText",
         "cohere": "text",
         "meta": "generation",
@@ -113,6 +112,8 @@ class LLMInputOutputAdapter:
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
         if provider == "anthropic":
+            input_body["prompt"] = _human_assistant_format(prompt)
+        elif provider == "anthropic_v3":
             input_body["messages"] = _generate_messages_format(prompt)
         elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
@@ -123,8 +124,8 @@ class LLMInputOutputAdapter:
         else:
             input_body["inputText"] = prompt
 
-        # if provider == "anthropic" and "max_tokens_to_sample" not in input_body:
-        #     input_body["max_tokens_to_sample"] = 256
+        if provider == "anthropic" and "max_tokens_to_sample" not in input_body:
+            input_body["max_tokens_to_sample"] = 256
 
         return input_body
 
@@ -458,6 +459,9 @@ class BedrockBase(BaseModel, ABC):
         accept = "application/json"
         contentType = "application/json"
 
+        if self.model_id.split(".")[0] == "anthropic_v3":
+            self.model_id = self._swap_anthropic_v3_provider(self.model_id)
+
         request_options = {
             "body": body,
             "modelId": self.model_id,
@@ -526,6 +530,9 @@ class BedrockBase(BaseModel, ABC):
     def _is_guardrails_intervention(self, body: dict) -> bool:
         return body.get(GUARDRAILS_BODY_KEY) == "GUARDRAIL_INTERVENED"
 
+    def _swap_anthropic_v3_provider(self, model_id: str) -> str:
+        return ".".join([self.model_id.split(".")[0][:-3], self.model_id.split(".")[1]])
+
     def _prepare_input_and_invoke_stream(
         self,
         prompt: str,
@@ -556,6 +563,9 @@ class BedrockBase(BaseModel, ABC):
 
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
+
+        if self.model_id.split(".")[0] == "anthropic_v3":
+            self.model_id = self._swap_anthropic_v3_provider(self.model_id)
 
         request_options = {
             "body": body,
