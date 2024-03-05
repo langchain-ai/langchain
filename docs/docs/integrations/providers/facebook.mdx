@@ -24,7 +24,7 @@ See a [usage example](/docs/integrations/text_embedding/laser).
 from langchain_community.embeddings.laser import LaserEmbeddings
 ```
 
-## Document Loaders
+## Document loaders
 
 ### Facebook Messenger
 
@@ -38,7 +38,7 @@ See a [usage example](/docs/integrations/document_loaders/facebook_chat).
 from langchain_community.document_loaders import FacebookChatLoader
 ```
 
-## Vector Stores
+## Vector stores
 
 ### Facebook Faiss
 
@@ -67,7 +67,7 @@ See a [usage example](/docs/integrations/vectorstores/faiss).
 from langchain_community.vectorstores import FAISS
 ```
 
-## Chat Loaders
+## Chat loaders
 
 ### Facebook Messenger
 
@@ -82,4 +82,12 @@ from langchain_community.chat_loaders.facebook_messenger import (
     FolderFacebookMessengerChatLoader,
     SingleFileFacebookMessengerChatLoader,
 )
+```
+
+### Facebook WhatsApp
+
+See a [usage example](/docs/integrations/chat_loaders/whatsapp).
+
+```python
+from langchain_community.chat_loaders.whatsapp import WhatsAppChatLoader
 ```
