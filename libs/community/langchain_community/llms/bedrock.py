@@ -183,7 +183,9 @@ class LLMInputOutputAdapter:
             ):
                 return
                 # chunk obj format varies with provider
-            if provider == "anthropic" and chunk_obj.get('type') in ('message_start', 'content_block_start', 'content_block_delta'):
+            if provider == "anthropic" and chunk_obj.get('type') in (
+                'message_start', 'content_block_start', 'content_block_delta'
+            ):
                 if chunk_obj.get('type') == 'content_block_delta': 
                     chk = _stream_response_to_generation_chunk(chunk_obj)
                     yield chk
