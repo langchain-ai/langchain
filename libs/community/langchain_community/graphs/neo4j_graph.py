@@ -1,6 +1,5 @@
+import os
 from typing import Any, Dict, List, Optional
-
-from langchain_core.utils import get_from_env
 
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
@@ -122,6 +121,18 @@ def _get_rel_import_query(baseEntityLabel: bool) -> str:
         )
 
 
+def param_or_env(key: str, env_key: str) -> str:
+    if key:
+        return key
+    if os.environ.get(env_key):
+        return os.environ.get(env_key)
+    raise ValueError(
+        f"Did not find {key}, please add an environment variable"
+        f" `{env_key}` which contains it, or pass"
+        f" `{key}` as a named parameter."
+    )
+
+
 class Neo4jGraph(GraphStore):
     """Neo4j database wrapper for various graph operations.
 
@@ -167,10 +178,10 @@ class Neo4jGraph(GraphStore):
                 "Please install it with `pip install neo4j`."
             )
 
-        url = get_from_env("url", "NEO4J_URI", url)
-        username = get_from_env("username", "NEO4J_USERNAME", username)
-        password = get_from_env("password", "NEO4J_PASSWORD", password)
-        database = get_from_env("database", "NEO4J_DATABASE", database)
+        url = param_or_env(url, "NEO4J_URI")
+        username = param_or_env(username, "NEO4J_USERNAME")
+        password = param_or_env(password, "NEO4J_PASSWORD")
+        database = param_or_env(database, "NEO4J_DATABASE")
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
