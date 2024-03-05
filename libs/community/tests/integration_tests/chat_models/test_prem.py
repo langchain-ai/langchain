@@ -4,12 +4,9 @@ Note: This test must be run with the PREMAI_API_KEY environment variable set to 
 """
 
 import pytest
-from typing import cast
 from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
-from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
+from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_community.chat_models import ChatPrem
-
-# TODO: Need to see if batching can be done using prem-sdk
 
 
 @pytest.fixture
@@ -54,8 +51,6 @@ def test_chat_prem_generate() -> None:
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
     for generations in response.generations:
-        # TODO: Need to investigate this, getting same things in prem-sdk
-        # assert len(generations) == 2
         for generation in generations:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
@@ -65,9 +60,6 @@ def test_chat_prem_generate() -> None:
 @pytest.mark.scheduled
 async def test_prem_invoke(chat: ChatPrem) -> None:
     """Tests chat completion with invoke"""
-    # TODO: Need to investigate this, happend inside prem-sdk too
-    # result = await chat.invoke("How is the weather in New York today?", stop=[","])
-    # assert result.content[-1] == ","
     result = chat.invoke("How is the weather in New York today?")
     assert isinstance(result.content, str)
 
@@ -79,17 +71,3 @@ def test_prem_streaming() -> None:
 
     for token in chat.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-
-
-# TODO: Need to investigate this
-@pytest.mark.scheduled
-def test_prem_streaming_stop_words() -> None:
-    """Test streaming tokens with stop words."""
-    chat = ChatPrem(project_id=8, streaming=True)
-    last_token = ""
-    for token in chat.stream(
-        "I'm Pickle Rick",
-    ):  # stop=[","]):
-        last_token = cast(str, token.content)
-        assert isinstance(token.content, str)
-    # assert last_token[-1] == ","
