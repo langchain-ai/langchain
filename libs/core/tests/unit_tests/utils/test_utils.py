@@ -64,6 +64,61 @@ def test_check_package_version(
         ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}),
         ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}),
         ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}),
+        # Includes numeric types such as timestamps.
+        (
+            {
+                "id": "as-9sqgtsmpdd",
+                "object": "chat.completion",
+                "created": 1709634222,
+                "sentence_id": 0,
+                "is_end": False,
+                "is_truncated": False,
+                "result": "Once upon",
+                "need_clear_history": False,
+                "finish_reason": "normal",
+                "usage": {
+                    "prompt_tokens": 8,
+                    "completion_tokens": 0,
+                    "total_tokens": 8,
+                },
+            },
+            {
+                "id": "as-9sqgtsmpdd",
+                "object": "chat.completion",
+                "created": 1709634223,
+                "sentence_id": 0,
+                "is_end": False,
+                "is_truncated": False,
+                "result": "a time, there was a charming little town called "
+                "Whiskerville. In the heart of this town, lived a special"
+                " cat named Mia. Mia",
+                "need_clear_history": False,
+                "finish_reason": "normal",
+                "usage": {
+                    "prompt_tokens": 8,
+                    "completion_tokens": 0,
+                    "total_tokens": 8,
+                },
+            },
+            {
+                "id": "as-9sqgtsmpdd",
+                "object": "chat.completion",
+                "created": 1709634222,
+                "sentence_id": 0,
+                "is_end": False,
+                "is_truncated": False,
+                "result": "Once upon a time, there was a charming little town "
+                "called Whiskerville. In the heart of this town, "
+                "lived a special cat named Mia. Mia",
+                "need_clear_history": False,
+                "finish_reason": "normal",
+                "usage": {
+                    "prompt_tokens": 8,
+                    "completion_tokens": 0,
+                    "total_tokens": 8,
+                },
+            },
+        ),
         #
         # Invalid inputs.
         #
