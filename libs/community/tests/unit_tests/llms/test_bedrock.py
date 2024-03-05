@@ -271,7 +271,7 @@ def test__prepare_claude_v3_messages() -> None:
 
     # Test case with text and image data
     text_and_image = _prepare_claude_v3_messages(
-        text="Test message", image_data="base64ImageData"
+        text="Test message", image="base64ImageData"
     )
     assert text_and_image == {
         "role": "user",

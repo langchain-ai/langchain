@@ -128,8 +128,8 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
+        input_body.pop("model_id", None)
         if provider == "anthropic":
-            input_body.pop("model_id", None)
             input_body.pop("kwargs", None)
             if "model_id" in model_kwargs and model_kwargs["model_id"].startswith(
                 "anthropic.claude-3"
