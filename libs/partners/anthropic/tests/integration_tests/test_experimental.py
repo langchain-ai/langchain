@@ -115,3 +115,15 @@ def test_tools() -> None:
     function = tool_call["function"]
     assert function["name"] == "Person"
     assert function["arguments"] == {"name": "Erick", "age": "27"}
+
+
+def test_with_structured_output() -> None:
+    class Person(BaseModel):
+        name: str
+        age: int
+
+    chain = ChatAnthropicTools(model_name=MODEL_NAME).with_structured_output(Person)
+    result = chain.invoke("Erick is 27 years old")
+    assert isinstance(result, Person)
+    assert result.name == "Erick"
+    assert result.age == 27

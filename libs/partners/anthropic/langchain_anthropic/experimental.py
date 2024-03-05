@@ -1,3 +1,4 @@
+import json
 from typing import (
     Any,
     AsyncIterator,
@@ -126,7 +127,7 @@ def _xml_to_tool_calls(elem: Any) -> List[Dict[str, Any]]:
         {
             "function": {
                 "name": invoke.find("tool_name").text,
-                "arguments": _xml_to_dict(invoke.find("parameters")),
+                "arguments": json.dumps(_xml_to_dict(invoke.find("parameters"))),
             },
             "type": "function",
         }
