@@ -504,6 +504,12 @@ def _import_plugin() -> Any:
     return AIPluginTool
 
 
+def _import_polygon_tool_PolygonFinancials() -> Any:
+    from langchain_community.tools.polygon.financials import PolygonFinancials
+
+    return PolygonFinancials
+
+
 def _import_polygon_tool_PolygonLastQuote() -> Any:
     from langchain_community.tools.polygon.last_quote import PolygonLastQuote
 
@@ -776,6 +782,12 @@ def _import_yahoo_finance_news() -> Any:
     return YahooFinanceNewsTool
 
 
+def _import_you_tool() -> Any:
+    from langchain_community.tools.you.tool import YouSearchTool
+
+    return YouSearchTool
+
+
 def _import_youtube_search() -> Any:
     from langchain_community.tools.youtube.search import YouTubeSearchTool
 
@@ -961,6 +973,8 @@ def __getattr__(name: str) -> Any:
         return _import_playwright_NavigateTool()
     elif name == "AIPluginTool":
         return _import_plugin()
+    elif name == "PolygonFinancials":
+        return _import_polygon_tool_PolygonFinancials()
     elif name == "PolygonLastQuote":
         return _import_polygon_tool_PolygonLastQuote()
     elif name == "PolygonTickerNews":
@@ -1047,6 +1061,8 @@ def __getattr__(name: str) -> Any:
         return _import_wolfram_alpha_tool()
     elif name == "YahooFinanceNewsTool":
         return _import_yahoo_finance_news()
+    elif name == "YouSearchTool":
+        return _import_you_tool()
     elif name == "YouTubeSearchTool":
         return _import_youtube_search()
     elif name == "ZapierNLAListActions":
@@ -1148,6 +1164,7 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonFinancials",
     "PolygonLastQuote",
     "PolygonTickerNews",
     "RedditSearchRun",
@@ -1183,6 +1200,7 @@ __all__ = [
     "WolframAlphaQueryRun",
     "WriteFileTool",
     "YahooFinanceNewsTool",
+    "YouSearchTool",
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",

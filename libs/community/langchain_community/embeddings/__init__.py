@@ -40,7 +40,6 @@ from langchain_community.embeddings.fake import (
     FakeEmbeddings,
 )
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-from langchain_community.embeddings.gigachat import GigaChatEmbeddings
 from langchain_community.embeddings.google_palm import GooglePalmEmbeddings
 from langchain_community.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain_community.embeddings.gradient_ai import GradientEmbeddings
@@ -58,6 +57,7 @@ from langchain_community.embeddings.jina import JinaEmbeddings
 from langchain_community.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
 from langchain_community.embeddings.laser import LaserEmbeddings
 from langchain_community.embeddings.llamacpp import LlamaCppEmbeddings
+from langchain_community.embeddings.llamafile import LlamafileEmbeddings
 from langchain_community.embeddings.llm_rails import LLMRailsEmbeddings
 from langchain_community.embeddings.localai import LocalAIEmbeddings
 from langchain_community.embeddings.minimax import MiniMaxEmbeddings
@@ -109,11 +109,11 @@ __all__ = [
     "HuggingFaceInferenceAPIEmbeddings",
     "InfinityEmbeddings",
     "InfinityEmbeddingsLocal",
-    "GigaChatEmbeddings",
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LaserEmbeddings",
     "LlamaCppEmbeddings",
+    "LlamafileEmbeddings",
     "LLMRailsEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowEmbeddings",

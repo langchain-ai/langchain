@@ -343,6 +343,32 @@ files = [
 ]
 
 [[package]]
+name = "langchain-core"
+version = "0.1.27"
+description = "Building applications with LLMs through composability"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+anyio = ">=3,<5"
+jsonpatch = "^1.33"
+langsmith = "^0.1.0"
+packaging = "^23.2"
+pydantic = ">=1,<3"
+PyYAML = ">=5.3"
+requests = "^2"
+tenacity = "^8.1.0"
+
+[package.extras]
+extended-testing = ["jinja2 (>=3,<4)"]
+
+[package.source]
+type = "directory"
+url = "../../core"
+
+[[package]]
 name = "langsmith"
 version = "0.1.6"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
@@ -1184,4 +1210,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "eab81ac4fc994fea91c7ecdb9c75e70ee7b16a475ced05530341ffdd41a073bf"
+content-hash = "9466f099689054d8d42c744864b1d1f4111857a9f4dbca4765b462fba4f815db"

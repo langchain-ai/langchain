@@ -17,10 +17,10 @@ from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
-from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 logger = logging.getLogger(__name__)
 

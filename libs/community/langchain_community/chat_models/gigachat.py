@@ -265,24 +265,12 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         payload = self._build_payload(messages, **kwargs)
 
         async for chunk in self._client.astream(payload):
-            if not isinstance(chunk, dict):
-                chunk = chunk.dict()
-            if len(chunk["choices"]) == 0:
-                continue
-
-            choice = chunk["choices"][0]
-            content = choice.get("delta", {}).get("content", {})
-            chunk = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
-
-            finish_reason = choice.get("finish_reason")
-
-            generation_info = (
-                dict(finish_reason=finish_reason) if finish_reason is not None else None
-            )
-
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
-            if run_manager:
-                await run_manager.on_llm_new_token(content)
+            if chunk.choices:
+                content = chunk.choices[0].delta.content
+                cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=content))
+                if run_manager:
+                    await run_manager.on_llm_new_token(content, chunk=cg_chunk)
+                yield cg_chunk
 
     def bind_functions(
         self,

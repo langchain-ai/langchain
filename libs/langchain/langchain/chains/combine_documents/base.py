@@ -12,9 +12,9 @@ from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.utils import create_model
+from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 
 from langchain.chains.base import Chain
-from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 DEFAULT_DOCUMENT_SEPARATOR = "\n\n"
 DOCUMENTS_KEY = "context"

@@ -2250,7 +2250,7 @@ shapely = ">=1.7.1"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.27"
+version = "0.1.28"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -2275,14 +2275,33 @@ type = "directory"
 url = "../core"
 
 [[package]]
+name = "gigachain-text-splitters"
+version = "0.0.1"
+description = "GigaChain text splitting utilities"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+gigachain-core = "^0.1.28"
+
+[package.extras]
+extended-testing = ["lxml (>=5.1.0,<6.0.0)"]
+
+[package.source]
+type = "directory"
+url = "../text-splitters"
+
+[[package]]
 name = "gigachat"
-version = "0.1.17"
+version = "0.1.18"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "gigachat-0.1.17-py3-none-any.whl", hash = "sha256:a6021623e14daeef7c117bb8bdb84e4c919392730361e418ad16207f01aa2390"},
-    {file = "gigachat-0.1.17.tar.gz", hash = "sha256:4e3f7fcdce2c6dcf401058c7f2e2d9adb2dbdd55c147ff0ed451be44fbb884c8"},
+    {file = "gigachat-0.1.18-py3-none-any.whl", hash = "sha256:94a4a761726fc9ea8c08932759578c2fdcbd44904cb33538c29433626d8551a4"},
+    {file = "gigachat-0.1.18.tar.gz", hash = "sha256:0490f4c593058daf28afb98222ee744f2475f5ca696e02b7d09118bfa3949e82"},
 ]
 
 [package.dependencies]
@@ -9147,4 +9166,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "20ab9db50dc412444ae621fb41a45d74e5b62e7f787e1acc063b49e4a24c5f2e"
+content-hash = "0b86bc76eb327024077cfffb956cadfdab8c16dcb17ed1a5e5a73405b7365903"

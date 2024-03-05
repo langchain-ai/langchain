@@ -11,6 +11,8 @@ from langchain_core.pydantic_v1 import BaseModel
 
 logger = logging.getLogger(__name__)
 
+MAX_BATCH_SIZE_CHARS = 1000000
+MAX_BATCH_SIZE_PARTS = 90
 
 class GigaChatEmbeddings(BaseModel, Embeddings):
     """GigaChat Embeddings models.
@@ -44,8 +46,8 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
     password: Optional[str] = None
     """ Password for authenticate """
 
-    timeout: Optional[float] = None
-    """ Timeout for request """
+    timeout: Optional[float] = 600
+    """ Timeout for request. By default it works for long requests. """
     verify_ssl_certs: Optional[bool] = None
     """ Check certificates for all requests """
 
@@ -91,8 +93,8 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        result: List[List[float]] = []
         if self.one_by_one_mode:
-            result: List[List[float]] = []
             if self._debug_delay == 0:
                 for text in texts:
                     for embedding in self._client.embeddings(
@@ -106,14 +108,28 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
                         texts=[text], model=model
                     ).data:
                         result.append(embedding.embedding)
-            return result
         else:
-            return [
-                embedding.embedding
-                for embedding in self._client.embeddings(texts=texts, model=model).data
-            ]
+            result: List[List[float]] = []
+            size = 0
+            local_texts = []
+            for text in texts:
+                local_texts.append(text)
+                size += len(text)
+                if size > MAX_BATCH_SIZE_CHARS or len(local_texts) > MAX_BATCH_SIZE_PARTS:
+                    for embedding in self._client.embeddings(
+                        texts=local_texts, model=model
+                    ).data:
+                        result.append(embedding.embedding)
+                    size = 0
+                    local_texts = []
+            # Call for last iteration
+            if local_texts:
+                for embedding in self._client.embeddings(
+                    texts=local_texts, model=model
+                ).data:
+                    result.append(embedding.embedding)
 
-        # return _embed_with_retry(self, texts=texts)
+        return result
 
     def embed_query(self, text: str, model: str = "Embeddings") -> List[float]:
         """Embed a query using a GigaChat embeddings models.
