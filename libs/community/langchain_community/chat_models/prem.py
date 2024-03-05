@@ -273,11 +273,14 @@ class ChatPrem(BaseChatModel, BaseModel):
         if stop is not None:
             kwargs["stop"] = stop
 
+        if stop is not None or "stop" in list(kwargs.keys()):
+            raise NotImplementedError("Parameter: stop has no support yet")
+
         if system_prompt is not None:
             kwargs["system_prompt"] = system_prompt
 
         if "n" in list(kwargs.keys()):
-            raise NotImplementedError(f"parameter: n is not supported for now.")
+            raise NotImplementedError("parameter: n is not supported for now.")
 
         response = chat_with_retry(
             self,
@@ -301,8 +304,14 @@ class ChatPrem(BaseChatModel, BaseModel):
         if stop is not None:
             kwargs["stop"] = stop
 
+        if stop is not None or "stop" in list(kwargs.keys()):
+            raise NotImplementedError("Parameter: stop has no support yet")
+
         if system_prompt is not None:
             kwargs["system_prompt"] = system_prompt
+
+        if "n" in list(kwargs.keys()):
+            raise NotImplementedError("parameter: n is not supported for now.")
 
         default_chunk_class = AIMessageChunk
 
