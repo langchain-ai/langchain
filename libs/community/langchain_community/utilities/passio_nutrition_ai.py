@@ -34,10 +34,10 @@ except ImportError:
     def stop_after_attempt_fallback(n: int) -> None:
         return None
 
-    def wait_random_fallback(a: float, b: float)  -> None:
+    def wait_random_fallback(a: float, b: float) -> None:
         return None
 
-    def wait_exponential_fallback(multiplier: float = 1, min: float = 0, max: float = float('inf'))  -> None:
+    def wait_exponential_fallback(multiplier: float = 1, min: float = 0, max: float = float('inf')) -> None:
         return None
 
 
