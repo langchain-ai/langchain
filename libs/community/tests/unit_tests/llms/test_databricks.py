@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from pytest import MonkeyPatch
 
-from langchain_community.llms.databricks import Databricks
+from langchain_community.llms.databricks import Databricks, _load_pickled_fn_from_hex_string
 
 
 class MockDatabricksServingEndpointClient:
@@ -44,3 +44,7 @@ def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
     params = llm._default_params
     pickled_string = cloudpickle.dumps(transform_input).hex()
     assert params["transform_input_fn"] == pickled_string
+
+    request = {"prompt": "What is the meaning of life?"}
+    fn = _load_pickled_fn_from_hex_string(pickled_string)
+    assert fn(**request) == transform_input(**request)
