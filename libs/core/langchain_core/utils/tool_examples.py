@@ -30,7 +30,8 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
 
     1) HumanMessage: contains the content from which content should be extracted.
     2) AIMessage: contains the extracted information from the model
-    3) ToolMessage: contains confirmation to the model that the model requested a tool correctly.
+    3) ToolMessage: contains confirmation to the model that the model requested a tool
+        correctly.
 
     The ToolMessage is required because some chat models are hyper-optimized for agents
     rather than for an extraction use case.
@@ -60,11 +61,13 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
                 hair_color: Optional[str] = Field(
                     ..., description="The color of the peron's eyes if known"
                 )
-                height_in_meters: Optional[str] = Field(..., description="Height in METERs")
+                height_in_meters: Optional[str] = Field(
+                    ..., description="Height in METERs"
+                )
 
             examples = [
                 (
-                    "The ocean is vast and blue. It's more than 20,000 feet deep. There are many fish in it.",
+                    "The ocean is vast and blue. It's more than 20,000 feet deep.",
                     Person(name=None, height_in_meters=None, hair_color=None),
                 ),
                 (
@@ -76,9 +79,9 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
 
             messages = []
 
-            for text, tool_call in examples:
+            for txt, tool_call in examples:
                 messages.extend(
-                    tool_example_to_messages({"input": text, "tool_calls": [tool_call]})
+                    tool_example_to_messages({"input": txt, "tool_calls": [tool_call]})
                 )
     """
     messages: List[BaseMessage] = [HumanMessage(content=example["input"])]
@@ -89,8 +92,9 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
                 "id": str(uuid.uuid4()),
                 "type": "function",
                 "function": {
-                    # The name of the function right now corresponds to the name of the pydantic model
-                    # This is implicit in the API right now, and will be improved over time.
+                    # The name of the function right now corresponds to the name
+                    # of the pydantic model. This is implicit in the API right now,
+                    # and will be improved over time.
                     "name": tool_call.__class__.__name__,
                     "arguments": tool_call.json(),
                 },
