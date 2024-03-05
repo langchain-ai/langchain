@@ -141,7 +141,7 @@ class LLMInputOutputAdapter:
 
     @classmethod
     def prepare_output(cls, provider: str, response: Any) -> dict:
-        model_id = input_body.pop("model_id", "")
+        model_id = response.pop("model_id", "")
 
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())

@@ -28,7 +28,7 @@ class ChatPromptAdapter:
     def convert_messages_to_prompt(
         cls, provider: str, messages: List[BaseMessage]
     ) -> str:
-        if provider == "anthropic" or provider == "anthropic_v3":
+        if provider == "anthropic":
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
         elif provider == "meta":
             prompt = convert_messages_to_prompt_llama(messages=messages)
