@@ -4,7 +4,7 @@ import os
 import tempfile
 import time
 from abc import ABC
-from io import StringIO, BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
