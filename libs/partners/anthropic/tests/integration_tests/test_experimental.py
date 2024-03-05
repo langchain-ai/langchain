@@ -177,3 +177,4 @@ def test_anthropic_jacob() -> None:
             "email": "The email is about the new project. The tone is positive. The action items are to send the report and to schedule a meeting."
         }
     )  # noqa: E501
+    assert isinstance(response, Email)
