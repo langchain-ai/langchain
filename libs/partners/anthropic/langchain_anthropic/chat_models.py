@@ -177,7 +177,7 @@ class ChatAnthropic(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "chat-anthropic-messages"
+        return "anthropic-chat"
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
