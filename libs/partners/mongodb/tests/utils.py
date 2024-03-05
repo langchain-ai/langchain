@@ -169,18 +169,21 @@ class MockCollection(Collection):
             [k["_id"] for k in mongodb_inserts], acknowledged=True
         )
 
+    def insert_one(self, to_insert: Any, *args, **kwargs) -> Any:  # type: ignore
+        return self.insert_many([to_insert])
+
     def find_one(self, find_query: Dict[str, Any]) -> Optional[Dict[str, Any]]:  # type: ignore
+        find = self.find(find_query) or [None]  # type: ignore
+        return find[0]
+
+    def find(self, find_query: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:  # type: ignore
         def _is_match(item: Dict[str, Any]) -> bool:
             for key, match_val in find_query.items():
                 if item.get(key) != match_val:
                     return False
             return True
 
-        # Return the first element to match
-        for document in self._data:
-            if _is_match(document):
-                return document
-        return None
+        return [document for document in self._data if _is_match(document)]
 
     def update_one(  # type: ignore
         self,
