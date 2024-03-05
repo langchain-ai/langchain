@@ -47,28 +47,28 @@ def _add_newlines_before_ha(input_text: str) -> str:
 
 
 def _prepare_claude_v3_messages(
-    text: str, image_data: Optional[str] = None
+    text: str, image: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Prepares the 'messages' part of the input for Anthropics' Claude V3 model.
 
     Parameters:
     - text: The text content of the message.
-    - image_data: Optional base64-encoded image data.
+    - image: Optional base64-encoded image data.
 
     Returns:
     - A dictionary representing the 'messages' part of the Claude V3 request.
     """
     messages_content = []
 
-    if image_data:
+    if image:
         messages_content.append(
             {
                 "type": "image",
                 "source": {
                     "type": "base64",
                     "media_type": "image/jpeg",
-                    "data": image_data,
+                    "data": image,
                 },
             }
         )
@@ -128,12 +128,15 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        input_body.pop("model_id", None)
         if provider == "anthropic":
+            input_body.pop("model_id", None)
+            input_body.pop("kwargs", None)
             if "model_id" in model_kwargs and model_kwargs["model_id"].startswith(
                 "anthropic.claude-3"
             ):
-                claude_v3_message = _prepare_claude_v3_messages(prompt, None)
+                kwargs = model_kwargs.get("kwargs", {})
+                image = kwargs.get("image")
+                claude_v3_message = _prepare_claude_v3_messages(prompt, image)
                 input_body.update(
                     {
                         "anthropic_version": "bedrock-2023-05-31",
@@ -167,9 +170,9 @@ class LLMInputOutputAdapter:
     def prepare_output(cls, provider: str, response: Any) -> dict:
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            if 'completion' in response_body:
+            if "completion" in response_body:
                 text = response_body.get("completion")
-            elif 'content' in response_body:
+            elif "content" in response_body:
                 content = response_body.get("content")
                 text = content[0].get("text")
         else:
