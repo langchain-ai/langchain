@@ -1,5 +1,5 @@
 """test Databricks LLM"""
-import pickle
+import cloudpickle
 from typing import Any, Dict
 
 from pytest import MonkeyPatch
@@ -42,5 +42,5 @@ def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
         transform_input_fn=transform_input,
     )
     params = llm._default_params
-    pickled_string = pickle.dumps(transform_input).hex()
+    pickled_string = cloudpickle.dumps(transform_input).hex()
     assert params["transform_input_fn"] == pickled_string
