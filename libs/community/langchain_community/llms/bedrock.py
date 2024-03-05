@@ -167,6 +167,7 @@ class LLMInputOutputAdapter:
             ):
                 kwargs = model_kwargs.get("kwargs", {})
                 image = kwargs.get("image")
+                system = kwargs.get("system")
                 claude_v3_message = _prepare_claude_v3_messages(
                     _human_assistant_format(prompt), image
                 )
@@ -174,6 +175,7 @@ class LLMInputOutputAdapter:
                     {
                         "anthropic_version": "bedrock-2023-05-31",
                         "messages": claude_v3_message,
+                        **({"system": system} if system is not None else {}),
                     }
                 )
             else:
