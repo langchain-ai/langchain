@@ -1,4 +1,5 @@
 """Test ChatFireworks wrapper."""
+
 import sys
 from typing import cast
 
@@ -86,7 +87,8 @@ def test_fireworks_invoke(chat: ChatFireworks) -> None:
     """Tests chat completion with invoke"""
     result = chat.invoke("How is the weather in New York today?", stop=[","])
     assert isinstance(result.content, str)
-    assert result.content[-1] == ","
+    assert "," not in result.content
+    assert "new" in result.content.lower()  # check answer contents
 
 
 @pytest.mark.scheduled
@@ -94,7 +96,8 @@ async def test_fireworks_ainvoke(chat: ChatFireworks) -> None:
     """Tests chat completion with invoke"""
     result = await chat.ainvoke("How is the weather in New York today?", stop=[","])
     assert isinstance(result.content, str)
-    assert result.content[-1] == ","
+    assert "," not in result.content  # check for stop words enforcement
+    assert "new" in result.content.lower()  # check answer contents
 
 
 @pytest.mark.scheduled
@@ -111,7 +114,8 @@ def test_fireworks_batch(chat: ChatFireworks) -> None:
     )
     for token in result:
         assert isinstance(token.content, str)
-        assert token.content[-1] == ",", token.content
+        assert "," not in token.content  # check for stop words enforcement
+        assert "redwood" in token.content.lower()  # check answer contents
 
 
 @pytest.mark.scheduled
@@ -127,7 +131,8 @@ async def test_fireworks_abatch(chat: ChatFireworks) -> None:
     )
     for token in result:
         assert isinstance(token.content, str)
-        assert token.content[-1] == ","
+        assert "," not in token.content  # check for stop words enforcement
+        assert "redwood" in token.content.lower()  # check answer contents
 
 
 @pytest.mark.scheduled
@@ -146,7 +151,7 @@ def test_fireworks_streaming_stop_words(chat: ChatFireworks) -> None:
     for token in chat.stream("I'm Pickle Rick", stop=[","]):
         last_token = cast(str, token.content)
         assert isinstance(token.content, str)
-    assert last_token[-1] == ","
+    assert "," not in token.content  # check for stop words enforcement
 
 
 @pytest.mark.scheduled
@@ -169,10 +174,12 @@ async def test_chat_fireworks_agenerate() -> None:
 async def test_fireworks_astream(chat: ChatFireworks) -> None:
     """Test streaming tokens from Fireworks."""
 
-    last_token = ""
+    response = ""
     async for token in chat.astream(
         "Who's the best quarterback in the NFL?", stop=[","]
     ):
-        last_token = cast(str, token.content)
+        response += cast(str, token.content)
         assert isinstance(token.content, str)
-    assert last_token[-1] == ","
+
+    assert "," not in response  # check for stop words enforcement
+    assert "quarterback" in response.lower()  # check answer contents
