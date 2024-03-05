@@ -65,7 +65,3 @@ class TiDBLoader(BaseLoader):
                 )
                 metadata = {col: row_data[col] for col in self.metadata_columns}
                 yield Document(page_content=page_content, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        """Load TiDB data into document objects."""
-        return list(self.lazy_load())
