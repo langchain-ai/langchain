@@ -34,7 +34,7 @@ def test_memory_with_message_store() -> None:
     assert "This is me, the AI" in messages_json
     assert "This is me, the human" in messages_json
 
-    # remove the record from Azure Cosmos DB, so the next test run won't pick it up
+    # remove the record from MongoDB, so the next test run won't pick it up
     memory.chat_memory.clear()
 
     assert memory.chat_memory.messages == []
