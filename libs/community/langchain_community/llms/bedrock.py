@@ -46,6 +46,36 @@ def _add_newlines_before_ha(input_text: str) -> str:
     return new_text
 
 
+def _prepare_claude_v3_messages(prompt: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Prepares the 'messages' part of the input for Anthropics' Claude V3 model.
+
+    Parameters:
+    - text: The text content of the message.
+    - image_data: Optional base64-encoded image data.
+
+    Returns:
+    - A dictionary representing the 'messages' part of the Claude V3 request.
+    """
+    messages_content = []
+
+    if "image" in prompt:
+        messages_content.append(
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/jpeg",
+                    "data": prompt["image"],
+                },
+            }
+        )
+
+    messages_content.append({"type": "text", "text": prompt["text"]})
+
+    return {"role": "user", "content": messages_content}
+
+
 def _human_assistant_format(input_text: str) -> str:
     if input_text.count("Human:") == 0 or (
         input_text.find("Human:") > input_text.find("Assistant:")
@@ -96,7 +126,17 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        if provider == "anthropic":
+        if provider == "anthropic" and model_kwargs["model_id"].startswith(
+            "anthropic.claude-3"
+        ):
+            claude_v3_message = _prepare_claude_v3_messages(prompt)
+            input_body.update(
+                {
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "messages": [claude_v3_message],
+                }
+            )
+        elif provider == "anthropic":
             input_body["prompt"] = _human_assistant_format(prompt)
         elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
@@ -107,7 +147,11 @@ class LLMInputOutputAdapter:
         else:
             input_body["inputText"] = prompt
 
-        if provider == "anthropic" and "max_tokens_to_sample" not in input_body:
+        if provider == "anthropic" and model_kwargs["model_id"].startswith(
+            "anthropic.claude-3" and "max_tokens" not in input_body
+        ):
+            input_body["max_tokens"] = 1000
+        elif provider == "anthropic" and "max_tokens_to_sample" not in input_body:
             input_body["max_tokens_to_sample"] = 256
 
         return input_body
@@ -423,6 +467,7 @@ class BedrockBase(BaseModel, ABC):
         params = {**_model_kwargs, **kwargs}
         if self._guardrails_enabled:
             params.update(self._get_guardrails_canonical())
+        params.update({"model_id": self.model_id})
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
         accept = "application/json"

@@ -8,6 +8,7 @@ from langchain_community.llms.bedrock import (
     ALTERNATION_ERROR,
     Bedrock,
     _human_assistant_format,
+    _prepare_claude_v3_messages,
 )
 
 TEST_CASES = {
@@ -258,6 +259,34 @@ def test__human_assistant_format() -> None:
         else:
             output = _human_assistant_format(input_text)
             assert output == expected_output
+
+
+def test__prepare_claude_v3_messages() -> None:
+    # Test case with only text
+    text_only = _prepare_claude_v3_messages({"text": "Test message"})
+    assert text_only == {
+        "role": "user",
+        "content": [{"type": "text", "text": "Test message"}],
+    }, "Failed to correctly format message with text only"
+
+    # Test case with text and image data
+    text_and_image = _prepare_claude_v3_messages(
+        {"text": "Test message", "image": "base64ImageData"}
+    )
+    assert text_and_image == {
+        "role": "user",
+        "content": [
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/jpeg",
+                    "data": "base64ImageData",
+                },
+            },
+            {"type": "text", "text": "Test message"},
+        ],
+    }, "Failed to correctly format message with text and image data"
 
 
 # Sample mock streaming response data
