@@ -76,6 +76,11 @@ def _human_assistant_format(input_text: str) -> str:
 
     return input_text
 
+def _generate_messages_format(input_text: str) -> str:
+    return [
+        {"role": "user", "content": _add_newlines_before_ha(input_text)}
+    ]
+
 
 class LLMInputOutputAdapter:
     """Adapter class to prepare the inputs from Langchain to a format
@@ -97,7 +102,7 @@ class LLMInputOutputAdapter:
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
         if provider == "anthropic":
-            input_body["prompt"] = _human_assistant_format(prompt)
+            input_body["messages"] = _generate_messages_format(prompt)
         elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
@@ -107,8 +112,8 @@ class LLMInputOutputAdapter:
         else:
             input_body["inputText"] = prompt
 
-        if provider == "anthropic" and "max_tokens_to_sample" not in input_body:
-            input_body["max_tokens_to_sample"] = 256
+        # if provider == "anthropic" and "max_tokens_to_sample" not in input_body:
+        #     input_body["max_tokens_to_sample"] = 256
 
         return input_body
 
@@ -116,7 +121,7 @@ class LLMInputOutputAdapter:
     def prepare_output(cls, provider: str, response: Any) -> dict:
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            text = response_body.get("completion")
+            text = response_body.get("content")[0]['text']
         else:
             response_body = json.loads(response.get("body").read())
 
