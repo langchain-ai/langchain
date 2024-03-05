@@ -1,6 +1,5 @@
 import asyncio
 import json
-import re
 import warnings
 from abc import ABC
 from typing import (
@@ -47,66 +46,27 @@ def _add_newlines_before_ha(input_text: str) -> str:
     return new_text
 
 
-def _prepare_claude_v3_messages(
-    text: str, image: Optional[str] = None
-) -> List[Dict[str, Any]]:
+def _prepare_messages_api_input(json_str: str) -> List[Dict[str, Any]]:
     """
-    Prepares messages for Claude V3 model, appending image data only
-    to the final user message.
-    This approach ensures that all messages are parsed normally,
-    and the image is added at the end if it exists.
+    Parses a JSON string containing messages, potentially including text and images,
+    into a Python list of dictionaries suitable for processing or submission to a model.
 
     Parameters:
-    - text: Text content of the message, potentially in human-assistant format.
-    - image: Optional base64-encoded image data for the latest user message.
+    - json_str: A JSON string representation of messages including roles,
+    text, and optionally images.
 
     Returns:
-    - A list of dictionaries, each representing a message with role
-    and content for Claude V3 request.
+    - A list of dictionaries, each representing a message with role and content.
     """
-    messages = []
-    segments = re.split(r"(Human:|Assistant:)", text)
-    segments = [seg.strip() for seg in segments if seg.strip()]
-    current_role = None
-    buffer_text = ""
 
-    for seg in segments:
-        if seg == "Human:" or seg == "Assistant:":
-            if buffer_text:
-                messages.append(
-                    {
-                        "role": "user" if current_role == "Human:" else "assistant",
-                        "content": [{"type": "text", "text": buffer_text}],
-                    }
-                )
-                buffer_text = ""
-            current_role = seg
-        else:
-            buffer_text += " " + seg if buffer_text else seg
+    parsed_input = json.loads(json_str)
 
-    if buffer_text:
-        messages.append(
-            {
-                "role": "user" if current_role == "Human:" else "assistant",
-                "content": [{"type": "text", "text": buffer_text}],
-            }
+    if "messages" in parsed_input and isinstance(parsed_input["messages"], list):
+        return parsed_input["messages"]
+    else:
+        raise ValueError(
+            "Invalid JSON format: 'messages' key not found or is not a list."
         )
-
-    if image:
-        for message in reversed(messages):
-            message["content"].append(
-                {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "image/jpeg",
-                        "data": image,
-                    },
-                }
-            )
-            break
-
-    return messages
 
 
 def _human_assistant_format(input_text: str) -> str:
@@ -166,11 +126,8 @@ class LLMInputOutputAdapter:
                 "anthropic.claude-3"
             ):
                 kwargs = model_kwargs.get("kwargs", {})
-                image = kwargs.get("image")
                 system = kwargs.get("system")
-                claude_v3_message = _prepare_claude_v3_messages(
-                    _human_assistant_format(prompt), image
-                )
+                claude_v3_message = _prepare_messages_api_input(prompt)
                 input_body.update(
                     {
                         "anthropic_version": "bedrock-2023-05-31",

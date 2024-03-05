@@ -8,7 +8,7 @@ from langchain_community.llms.bedrock import (
     ALTERNATION_ERROR,
     Bedrock,
     _human_assistant_format,
-    _prepare_claude_v3_messages,
+    _prepare_messages_api_input,
 )
 
 TEST_CASES = {
@@ -261,35 +261,111 @@ def test__human_assistant_format() -> None:
             assert output == expected_output
 
 
-def test__prepare_claude_v3_messages() -> None:
+def test__prepare_messages_api_input() -> None:
     # Test case with only text
-    text_only = _prepare_claude_v3_messages("Test message", None)
+    text_only = _prepare_messages_api_input(
+        '{"messages":[{'
+        '"role":"user","content":[{"type":"text","text":'
+        '"Can you give me some travel tips for Japan?"}]},'
+        '{"role":"assistant","content":[{"type":"text","text":'
+        '"Absolutely! What do you need?"}]},'
+        '{"role":"user","content":[{"type":"text","text":"Mostly '
+        'interested in food and sightseeing."}]}'
+        "]}"
+    )
+
     assert text_only == [
         {
-            "role": "assistant",
-            "content": [{"type": "text", "text": "Test message"}],
-        }
-    ], "Failed to correctly format message with text only"
-
-    # Test case with text and image data
-    text_and_image = _prepare_claude_v3_messages(
-        text="Test message", image="base64ImageData"
-    )
-    assert text_and_image == [
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Can you give me some travel tips for Japan?",
+                }
+            ],
+        },
         {
             "role": "assistant",
             "content": [
-                {"type": "text", "text": "Test message"},
+                {
+                    "type": "text",
+                    "text": "Absolutely! What do you need?",
+                }
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Mostly interested in food and sightseeing.",
+                }
+            ],
+        },
+    ], "Failed to correctly format message with text only"
+
+    # Test case with text and image data
+    text_and_image = _prepare_messages_api_input(
+        "{"
+        '"messages":['
+        '{"role":"user","content":[{'
+        '"type":"text","text":"Check out this photo from my recent hike."'
+        "},"
+        '{"type":"image","source":{'
+        '"type":"base64","media_type":"image/jpeg","data":"base64EncodedImageData1"'
+        "}}"
+        "]},"
+        '{"role":"assistant","content":[{'
+        '"type":"text","text":"That looks beautiful! Where was it taken?"'
+        "}]},"
+        '{"role":"user","content":[{'
+        '"type":"text","text":"It was taken at the Grand Canyon. Here\'s another one."'
+        "},"
+        '{"type":"image","source":{'
+        '"type":"base64","media_type":"image/jpeg","data":"base64EncodedImageData2"'
+        "}}"
+        "]}"
+        "]}"
+    )
+
+    assert text_and_image == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Check out this photo from my recent hike."},
                 {
                     "type": "image",
                     "source": {
                         "type": "base64",
                         "media_type": "image/jpeg",
-                        "data": "base64ImageData",
+                        "data": "base64EncodedImageData1",
                     },
                 },
             ],
-        }
+        },
+        {
+            "role": "assistant",
+            "content": [
+                {"type": "text", "text": "That looks beautiful! Where was it taken?"}
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "It was taken at the Grand Canyon. Here's another one.",
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "base64EncodedImageData2",
+                    },
+                },
+            ],
+        },
     ], "Failed to correctly format message with text and image data"
 
 
