@@ -110,8 +110,8 @@ def remove_lucene_chars(text: str) -> str:
 def param_or_env(key: Optional[str], env_key: str) -> str:
     if key:
         return key
-    if os.environ.get(env_key):
-        return os.environ.get(env_key)
+    if env_key in os.environ and os.environ[env_key]:
+        return os.environ[env_key]
     raise ValueError(
         f"Did not find {key}, please add an environment variable"
         f" `{env_key}` which contains it, or pass"
