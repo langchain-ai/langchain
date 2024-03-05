@@ -155,12 +155,15 @@ class ChatPrem(BaseChatModel, BaseModel):
     or generate a new one here: https://app.premai.io/api_keys/
     """
 
-    model: str
+    project_id: int
+    """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
     premai_api_key: str
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
-    project_id: int
-    """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
+    model: Optional[str] = None
+    """Name of the model. This is an optional paramter. The default model is the one deployed from Prem's LaunchPad: https://app.premai.io/projects/8/launchpad
+    
+    If model name is other than default model then it will override the calls from the model deployed from launchpad."""
 
     session_id: Optional[str] = None
     """The ID of the session to use. It helps to track the chat history."""
@@ -180,7 +183,10 @@ class ChatPrem(BaseChatModel, BaseModel):
     """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
-    """Acts like a default instruction that helps the LLM act or generate in a specific way."""
+    """Acts like a default instruction that helps the LLM act or generate in a specific way. This is an Optional Parameter. By default the system prompt would be using Prem's Launchpad models system prompt: https://app.premai.io/projects/8/launchpad
+    
+    Changing the system prompt would override the default system prompt which was used in LaunchPad model. 
+    """
 
     n: Optional[int] = None
     """The number of responses to generate."""
@@ -240,6 +246,8 @@ class ChatPrem(BaseChatModel, BaseModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         # For default objects tools can not be None
+        # TODO: Need to add the default parameters through prem-sdk here
+        # And pass those paramteres as kwargs while calling the model
         return {
             "model": "gpt-3.5-turbo",
             "system_prompt": "",
@@ -271,7 +279,6 @@ class ChatPrem(BaseChatModel, BaseModel):
         if system_prompt is not None:
             kwargs["system_prompt"] = system_prompt
 
-        # TODO: Add default params in kwargs (but also it depends since it may override the parameters set in project, needs discussion)
         response = chat_with_retry(
             self,
             project_id=self.project_id,
