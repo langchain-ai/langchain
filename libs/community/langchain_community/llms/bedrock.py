@@ -190,8 +190,8 @@ class LLMInputOutputAdapter:
                 return
                 # chunk obj format varies with provider
             if provider == "anthropic_v3" and chunk_obj.get("type") in (
-                "message_start", 
-                "content_block_start", 
+                "message_start",
+                "content_block_start",
                 "content_block_delta",
             ):
                 if chunk_obj.get("type") == "content_block_delta":
