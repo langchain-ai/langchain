@@ -140,7 +140,7 @@ class LLMInputOutputAdapter:
                 input_body.update(
                     {
                         "anthropic_version": "bedrock-2023-05-31",
-                        "messages": [claude_v3_message],
+                        "messages": claude_v3_message,
                     }
                 )
             else:
