@@ -1,5 +1,6 @@
 import os
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple
+import re
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple, Union
 
 import anthropic
 from langchain_core._api.deprecation import deprecated
@@ -24,6 +25,33 @@ from langchain_core.utils import (
 _message_type_lookups = {"human": "user", "ai": "assistant"}
 
 
+def _format_image(image_url: str) -> Dict:
+    """
+    Formats an image of format data:image/jpeg;base64,{b64_string}
+    to a dict for anthropic api
+
+    {
+      "type": "base64",
+      "media_type": "image/jpeg",
+      "data": "/9j/4AAQSkZJRg...",
+    }
+
+    And throws an error if it's not a b64 image
+    """
+    regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
+    match = re.match(regex, image_url)
+    if match is None:
+        raise ValueError(
+            "Anthropic only supports base64-encoded images currently."
+            " Example: data:image/png;base64,'/9j/4AAQSk'..."
+        )
+    return {
+        "type": "base64",
+        "media_type": match.group("media_type"),
+        "data": match.group("data"),
+    }
+
+
 def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[Dict]]:
     """Format messages for anthropic."""
 
@@ -36,34 +64,82 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                 for m in messages
             ]
     """
-    system = None
-    formatted_messages = []
+    system: Optional[str] = None
+    formatted_messages: List[Dict] = []
     for i, message in enumerate(messages):
-        if not isinstance(message.content, str):
-            raise ValueError("Anthropic Messages API only supports text generation.")
         if message.type == "system":
             if i != 0:
                 raise ValueError("System message must be at beginning of message list.")
+            if not isinstance(message.content, str):
+                raise ValueError(
+                    "System message must be a string, "
+                    f"instead was: {type(message.content)}"
+                )
             system = message.content
+            continue
+
+        role = _message_type_lookups[message.type]
+        content: Union[str, List[Dict]]
+
+        if not isinstance(message.content, str):
+            # parse as dict
+            assert isinstance(
+                message.content, list
+            ), "Anthropic message content must be str or list of dicts"
+
+            # populate content
+            content = []
+            for item in message.content:
+                if isinstance(item, str):
+                    content.append(
+                        {
+                            "type": "text",
+                            "text": item,
+                        }
+                    )
+                elif isinstance(item, dict):
+                    if "type" not in item:
+                        raise ValueError("Dict content item must have a type key")
+                    if item["type"] == "image_url":
+                        # convert format
+                        source = _format_image(item["image_url"]["url"])
+                        content.append(
+                            {
+                                "type": "image",
+                                "source": source,
+                            }
+                        )
+                    else:
+                        content.append(item)
+                else:
+                    raise ValueError(
+                        f"Content items must be str or dict, instead was: {type(item)}"
+                    )
         else:
-            formatted_messages.append(
-                {
-                    "role": _message_type_lookups[message.type],
-                    "content": message.content,
-                }
-            )
+            content = message.content
+
+        formatted_messages.append(
+            {
+                "role": role,
+                "content": content,
+            }
+        )
     return system, formatted_messages
 
 
 class ChatAnthropic(BaseChatModel):
-    """ChatAnthropicMessages chat model.
+    """Anthropic chat model.
+
+    To use, you should have the packages ``anthropic`` and ``langchain-anthropic``
+    installed, and the environment variable ANTHROPIC_API_KEY set with your API key,
+    or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
-            from langchain_anthropic import ChatAnthropicMessages
+            from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropicMessages()
+            model = ChatAnthropic()
     """
 
     class Config:
@@ -77,7 +153,7 @@ class ChatAnthropic(BaseChatModel):
     model: str = Field(alias="model_name")
     """Model name to use."""
 
-    max_tokens: int = Field(default=256, alias="max_tokens_to_sample")
+    max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -101,7 +177,7 @@ class ChatAnthropic(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "chat-anthropic-messages"
+        return "anthropic-chat"
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
