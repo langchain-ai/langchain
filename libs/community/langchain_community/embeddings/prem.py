@@ -99,7 +99,7 @@ def embed_with_retry(
 ) -> Any:
     """Using tenacity for retry in embedding calls"""
     retry_decorator = create_prem_retry_decorator(
-        embedder, max_retries=embedder.max_retries, run_manager=None
+        embedder, max_retries=embedder.max_retries
     )
 
     @retry_decorator
@@ -114,4 +114,4 @@ def embed_with_retry(
         )
         return embedding_response
 
-    return _embed_with_retry(project_id=project_id, model=model, input=input)
+    return _embed_with_retry(embedder, project_id=project_id, model=model, input=input)
