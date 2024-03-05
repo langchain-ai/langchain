@@ -1,14 +1,10 @@
 import json
-import os
 
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import message_to_dict
 
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
 from tests.utils import MockCollection
-
-# Replace these with your mongodb connection string
-connection_string = os.environ.get("MONGODB_CONNECTION_STRING", "")
 
 
 class PatchedMongoDBChatMessageHistory(MongoDBChatMessageHistory):
