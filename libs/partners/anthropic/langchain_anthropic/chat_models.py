@@ -256,6 +256,14 @@ class ChatAnthropic(BaseChatModel):
                     await run_manager.on_llm_new_token(text, chunk=chunk)
                 yield chunk
 
+    def _format_output(self, data: Any) -> ChatResult:
+        return ChatResult(
+            generations=[
+                ChatGeneration(message=AIMessage(content=data.content[0].text))
+            ],
+            llm_output=data,
+        )
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -265,12 +273,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = self._client.messages.create(**params)
-        return ChatResult(
-            generations=[
-                ChatGeneration(message=AIMessage(content=data.content[0].text))
-            ],
-            llm_output=data,
-        )
+        return self._format_output(data, **kwargs)
 
     async def _agenerate(
         self,
@@ -281,12 +284,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = await self._async_client.messages.create(**params)
-        return ChatResult(
-            generations=[
-                ChatGeneration(message=AIMessage(content=data.content[0].text))
-            ],
-            llm_output=data,
-        )
+        return self._format_output(data, **kwargs)
 
 
 @deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")
