@@ -477,7 +477,9 @@ class BedrockBase(BaseModel, ABC):
 
         provider = self._get_provider()
         params = {**_model_kwargs, **kwargs}
-        params.update({"model_id": self.model_id}) # allows for model-based logic in input prep
+
+        # allows for model-based logic in input prep
+        params.update({"model_id": self.model_id}) 
 
         if self._guardrails_enabled:
             params.update(self._get_guardrails_canonical())
@@ -500,7 +502,9 @@ class BedrockBase(BaseModel, ABC):
 
         try:
             response = self.client.invoke_model(**request_options)
-            response.update({"model_id": self.model_id}) # allows for model-based logic in input prep
+
+            # allows for model-based logic in input prep
+            response.update({"model_id": self.model_id}) 
 
             text, body = LLMInputOutputAdapter.prepare_output(
                 provider, response
@@ -579,7 +583,9 @@ class BedrockBase(BaseModel, ABC):
             _model_kwargs["stream"] = True
 
         params = {**_model_kwargs, **kwargs}
-        params.update({"model_id": self.model_id}) # allows for model-based logic in input prep
+
+        # allows for model-based logic in input prep
+        params.update({"model_id": self.model_id}) 
 
         if self._guardrails_enabled:
             params.update(self._get_guardrails_canonical())
@@ -605,7 +611,9 @@ class BedrockBase(BaseModel, ABC):
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
 
-        response.update({"model_id": self.model_id}) # allows for model-based logic in output prep)
+        # allows for model-based logic in output prep)
+        response.update({"model_id": self.model_id})
+
         for chunk in LLMInputOutputAdapter.prepare_output_stream(
             provider, response, stop
         ):
