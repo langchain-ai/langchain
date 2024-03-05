@@ -213,10 +213,5 @@ class Fireworks(LLM):
                     )
 
                 response_json = await response.json()
-
-                if response_json.get("status") != "finished":
-                    err_msg = response_json.get("error", "Undefined Error")
-                    raise Exception(err_msg)
-
                 output = self._format_output(response_json)
                 return output

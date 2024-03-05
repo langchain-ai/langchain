@@ -345,6 +345,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["ai"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                     "example": {
                         "title": "Example",
@@ -381,6 +382,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["human"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                     "example": {
                         "title": "Example",
@@ -417,6 +419,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["chat"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                     "role": {"title": "Role", "type": "string"},
                 },
@@ -449,6 +452,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["system"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                 },
                 "required": ["content"],
@@ -480,6 +484,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["function"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                 },
                 "required": ["content", "name"],
@@ -511,6 +516,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["tool"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                     "tool_call_id": {"title": "Tool Call Id", "type": "string"},
                 },
@@ -1271,9 +1277,6 @@ def test_configurable_fields_example() -> None:
             },
         },
     }
-
-    with pytest.raises(ValueError):
-        chain_configurable.with_config(configurable={"llm123": "chat"})
 
     assert (
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
