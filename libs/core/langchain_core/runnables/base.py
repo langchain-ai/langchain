@@ -603,8 +603,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[RunLogPatch]:
-        ...
+    ) -> AsyncIterator[RunLogPatch]: ...
 
     @overload
     def astream_log(
@@ -621,8 +620,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[RunLog]:
-        ...
+    ) -> AsyncIterator[RunLog]: ...
 
     async def astream_log(
         self,
@@ -4381,29 +4379,25 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
 @overload
 def chain(
     func: Callable[[Input], Coroutine[Any, Any, Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], Iterator[Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], AsyncIterator[Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], Output],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 def chain(

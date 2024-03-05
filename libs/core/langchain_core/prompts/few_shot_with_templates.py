@@ -1,4 +1,5 @@
 """Prompt template that contains few shot examples."""
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 

@@ -1,4 +1,5 @@
 """Implementation of the RunnablePassthrough."""
+
 from __future__ import annotations
 
 import asyncio

@@ -1,4 +1,5 @@
 """Example selector that selects examples based on SemanticSimilarity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type

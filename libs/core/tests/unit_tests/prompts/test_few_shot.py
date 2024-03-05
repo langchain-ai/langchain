@@ -1,4 +1,5 @@
 """Test few shot prompt template."""
+
 from typing import Any, Dict, List, Sequence, Tuple
 
 import pytest

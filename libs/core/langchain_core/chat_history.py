@@ -14,6 +14,7 @@
     AIMessage, HumanMessage, BaseMessage
 
 """  # noqa: E501
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

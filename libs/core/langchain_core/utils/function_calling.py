@@ -1,4 +1,5 @@
 """Methods for creating function specs in the style of OpenAI Functions"""
+
 from __future__ import annotations
 
 import inspect

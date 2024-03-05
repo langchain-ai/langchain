@@ -1,4 +1,5 @@
 """Test XMLOutputParser"""
+
 import pytest
 
 from langchain_core.output_parsers.xml import XMLOutputParser

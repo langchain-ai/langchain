@@ -243,8 +243,7 @@ class Graph:
         output_file_path: str,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def draw_png(
@@ -252,8 +251,7 @@ class Graph:
         output_file_path: None,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
-    ) -> bytes:
-        ...
+    ) -> bytes: ...
 
     def draw_png(
         self,

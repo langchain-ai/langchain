@@ -14,6 +14,7 @@
     ChatPromptTemplate
 
 """  # noqa: E501
+
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk

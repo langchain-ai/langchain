@@ -1,4 +1,5 @@
 """Fake Chat Model wrapper for testing purposes."""
+
 import asyncio
 import re
 import time

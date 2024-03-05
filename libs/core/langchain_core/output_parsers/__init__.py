@@ -12,6 +12,7 @@
 
     Serializable, Generation, PromptValue
 """  # noqa: E501
+
 from langchain_core.output_parsers.base import (
     BaseGenerationOutputParser,
     BaseLLMOutputParser,

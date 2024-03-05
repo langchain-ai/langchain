@@ -1,4 +1,5 @@
 """Base interface for large language models to expose."""
+
 from __future__ import annotations
 
 import asyncio

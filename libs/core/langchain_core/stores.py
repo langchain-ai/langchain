@@ -5,6 +5,7 @@ to a simple key-value interface.
 
 The primary goal of these storages is to support implementation of caching.
 """
+
 from abc import ABC, abstractmethod
 from typing import (
     AsyncIterator,
