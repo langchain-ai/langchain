@@ -57,6 +57,7 @@ from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
 from langchain_community.chat_models.yandex import ChatYandexGPT
 from langchain_community.chat_models.yuan2 import ChatYuan2
 from langchain_community.chat_models.zhipuai import ChatZhipuAI
+from langchain_community.chat_models.prem import ChatPrem
 
 __all__ = [
     "LlamaEdgeChatService",
@@ -99,4 +100,5 @@ __all__ = [
     "ChatYuan2",
     "ChatZhipuAI",
     "ChatKinetica",
+    "ChatPrem",
 ]
