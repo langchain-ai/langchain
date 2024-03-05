@@ -90,6 +90,10 @@ def test_chat_mistralai_llm_output_contains_token_usage() -> None:
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
     assert "token_usage" in llm_result.llm_output
+    token_usage = llm_result.llm_output["token_usage"]
+    assert "prompt_tokens" in token_usage
+    assert "completion_tokens" in token_usage
+    assert "total_tokens" in token_usage
 
 
 def test_chat_mistralai_streaming_llm_output_contains_token_usage() -> None:
@@ -99,3 +103,7 @@ def test_chat_mistralai_streaming_llm_output_contains_token_usage() -> None:
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
     assert "token_usage" in llm_result.llm_output
+    token_usage = llm_result.llm_output["token_usage"]
+    assert "prompt_tokens" in token_usage
+    assert "completion_tokens" in token_usage
+    assert "total_tokens" in token_usage
