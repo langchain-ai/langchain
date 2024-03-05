@@ -1,5 +1,7 @@
 """Test ChatAnthropic chat model."""
 
+import json
+
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -114,7 +116,7 @@ def test_tools() -> None:
     assert tool_call["type"] == "function"
     function = tool_call["function"]
     assert function["name"] == "Person"
-    assert function["arguments"] == {"name": "Erick", "age": "27"}
+    assert json.loads(function["arguments"]) == {"name": "Erick", "age": "27"}
 
 
 def test_with_structured_output() -> None:
