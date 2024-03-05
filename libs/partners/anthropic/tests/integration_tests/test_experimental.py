@@ -6,10 +6,10 @@ from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_anthropic.experimental import ChatAnthropicTools
 from tests.unit_tests._utils import FakeCallbackHandler
-from langchain_core.pydantic_v1 import BaseModel
 
 MODEL_NAME = "claude-3-sonnet-20240229"
 
