@@ -33,6 +33,7 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
         elif isinstance(merged[right_k], dict):
             merged[right_k] = merge_dicts(merged[right_k], right_v)
         elif isinstance(merged[right_k], list):
+            merged[right_k] = merged[right_k].copy()
             for e in right_v:
                 if isinstance(e, dict) and "index" in e and isinstance(e["index"], int):
                     to_merge = [
@@ -41,7 +42,9 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
                         if e_left["index"] == e["index"]
                     ]
                     if to_merge:
-                        merged[right_k][to_merge[0]] = merge_dicts(merged[right_k][to_merge[0]], e)
+                        merged[right_k][to_merge[0]] = merge_dicts(
+                            merged[right_k][to_merge[0]], e
+                        )
                     else:
                         merged[right_k] = merged[right_k] + [e]
                 else:
