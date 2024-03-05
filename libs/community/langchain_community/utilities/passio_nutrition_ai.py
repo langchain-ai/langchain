@@ -1,7 +1,7 @@
 """Util that invokes the Passio Nutrition AI API.
 """
 from datetime import datetime, timedelta
-from typing import Dict, Union, final
+from typing import Dict, Union, final, Any, Callable
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
@@ -10,11 +10,11 @@ from langchain_core.utils import get_from_dict_or_env
 
 class NoDiskStorage:
     @final
-    def __getstate__(self):
+    def __getstate__(self) -> None:
         raise AttributeError("Do not store on disk.")
 
     @final
-    def __setstate__(self, state):
+    def __setstate__(self, state: Any) -> None:
         raise AttributeError("Do not store on disk.")
 
 
@@ -28,20 +28,20 @@ try:
     )
 except ImportError:
     # No retries if tenacity is not installed.
-    def retry(f, *args, **kwargs):
+    def retry_fallback(f: Callable[..., Any], *args: Any, **kwargs: Any) -> Callable[..., Any]:
         return f
 
-    def stop_after_attempt(n):
+    def stop_after_attempt_fallback(n: int) -> None:
         return None
 
-    def wait_random(a, b):
+    def wait_random_fallback(a: float, b: float)  -> None:
         return None
 
-    def wait_exponential(multiplier, min, max):
+    def wait_exponential_fallback(multiplier: float = 1, min: float = 0, max: float = float('inf'))  -> None:
         return None
 
 
-def is_http_retryable(rsp):
+def is_http_retryable(rsp: requests.Response) -> bool:
     return rsp and rsp.status_code in [408, 425, 429, 500, 502, 503, 504]
 
 
@@ -64,7 +64,7 @@ class ManagedPassioLifeAuth(NoDiskStorage):
             "Passio-ID": self._customer_id,
         }
 
-    def is_valid_now(self):
+    def is_valid_now(self) -> bool:
         return (
             self._access_token is not None
             and self._customer_id is not None
@@ -77,12 +77,12 @@ class ManagedPassioLifeAuth(NoDiskStorage):
         stop=stop_after_attempt(4),
         wait=wait_random(0, 0.3) + wait_exponential(multiplier=1, min=0.1, max=2),
     )
-    def _http_get(self, subscription_key):
+    def _http_get(self, subscription_key) -> requests.Response:
         return requests.get(
             f"https://api.passiolife.com/v2/token-cache/napi/oauth/token/{subscription_key}"
         )
 
-    def refresh_access_token(self):
+    def refresh_access_token(self) -> None:
         """Refresh the access token for the NutritionAI API."""
         rsp = self._http_get(self.subscription_key)
         if not rsp:
