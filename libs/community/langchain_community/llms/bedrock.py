@@ -132,9 +132,11 @@ class LLMInputOutputAdapter:
         else:
             input_body["inputText"] = prompt
 
-        if provider == "anthropic" and "max_tokens_to_sample" not in input_body and (
-            not model_id.startswith("anthropic.claude-3")
-        ):
+        if (
+            provider == "anthropic"
+            and "max_tokens_to_sample" not in input_body
+            and (not model_id.startswith("anthropic.claude-3")
+        )):
             input_body["max_tokens_to_sample"] = 256
 
         return input_body
@@ -148,7 +150,7 @@ class LLMInputOutputAdapter:
             if model_id.startswith('anthropic.claude-3'):
                 text = response_body.get("content")[0]['text']
             else:
-                text = response_body.get("completion")   
+                text = response_body.get("completion")
         else:
             response_body = json.loads(response.get("body").read())
 
@@ -281,7 +283,7 @@ class BedrockBase(BaseModel, ABC):
 
     provider: Optional[str] = None
     """The model provider, e.g., amazon, cohere, ai21, etc. When not supplied, provider
-    is extracted from the first part of the model_id e.g. 'amazon' in 
+    is extracted from the first part of the model_id e.g. 'amazon' in
     'amazon.titan-text-express-v1'. This value should be provided for model ids that do
     not have the provider in them, e.g., custom and provisioned models that have an ARN
     associated with them."""
@@ -479,7 +481,7 @@ class BedrockBase(BaseModel, ABC):
         params = {**_model_kwargs, **kwargs}
 
         # allows for model-based logic in input prep
-        params.update({"model_id": self.model_id}) 
+        params.update({"model_id": self.model_id})
 
         if self._guardrails_enabled:
             params.update(self._get_guardrails_canonical())
@@ -504,7 +506,7 @@ class BedrockBase(BaseModel, ABC):
             response = self.client.invoke_model(**request_options)
 
             # allows for model-based logic in input prep
-            response.update({"model_id": self.model_id}) 
+            response.update({"model_id": self.model_id})
 
             text, body = LLMInputOutputAdapter.prepare_output(
                 provider, response
@@ -585,7 +587,7 @@ class BedrockBase(BaseModel, ABC):
         params = {**_model_kwargs, **kwargs}
 
         # allows for model-based logic in input prep
-        params.update({"model_id": self.model_id}) 
+        params.update({"model_id": self.model_id})
 
         if self._guardrails_enabled:
             params.update(self._get_guardrails_canonical())
