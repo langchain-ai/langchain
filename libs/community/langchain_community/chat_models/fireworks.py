@@ -14,6 +14,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core._api.deprecation import deprecated
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
@@ -78,6 +79,11 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
         return ChatMessage(content=content, role=role)
 
 
+@deprecated(
+    since="0.0.26",
+    removal="0.2",
+    alternative_import="langchain_fireworks.ChatFireworks",
+)
 class ChatFireworks(BaseChatModel):
     """Fireworks Chat models."""
 
