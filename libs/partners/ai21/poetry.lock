@@ -2,20 +2,19 @@
 
 [[package]]
 name = "ai21"
-version = "2.1.2"
+version = "2.0.5"
 description = ""
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "ai21-2.1.2-py3-none-any.whl", hash = "sha256:5ca1b5e1f11dc52fd3e894edb288634572ee6f13d8fe456c66a1825812067548"},
-    {file = "ai21-2.1.2.tar.gz", hash = "sha256:8968a2b4a98fdc5b1bca4a9c856a903fa874d0762a2570741efa071b65a1accd"},
+    {file = "ai21-2.0.5-py3-none-any.whl", hash = "sha256:b10b66d9a8a3a7a010e3f67d39049913ea38d23034a34d18940a1801412bae10"},
+    {file = "ai21-2.0.5.tar.gz", hash = "sha256:3b0c933b7b7268f9d7615f6cab23febc7d78da887eaef002cdc24cd1e9971851"},
 ]
 
 [package.dependencies]
 ai21-tokenizer = ">=0.3.9,<0.4.0"
 dataclasses-json = ">=0.6.3,<0.7.0"
 requests = ">=2.31.0,<3.0.0"
-typing-extensions = ">=4.9.0,<5.0.0"
 
 [package.extras]
 aws = ["boto3 (>=1.28.82,<2.0.0)"]
@@ -1010,4 +1009,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a729644a60df3c46e478a2186303e93a0add916fd48b89c8530de30080c74a9a"
+content-hash = "f8512fa6e745dc32b49132bd7327ec204822c861c113b57db21f1f8cf2fac881"
