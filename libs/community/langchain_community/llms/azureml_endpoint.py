@@ -54,7 +54,8 @@ class AzureMLEndpointClient(object):
 
 class AzureMLEndpointApiType(str, Enum):
     """Azure ML endpoints API types. Use `dedicated` for models deployed in hosted
-    infrastructure, or `serverless` for models deployed as a service with a
+    infrastructure (also known as Online Endpoints in Azure Machine Learning),
+    or `serverless` for models deployed as a service with a
     pay-as-you-go billing or PTU.
     """
 
@@ -256,8 +257,8 @@ class DollyContentFormatter(ContentFormatterBase):
         return Generation(text=choice)
 
 
-class OpenAIStyleContentFormatter(ContentFormatterBase):
-    """Content formatter for LLaMa"""
+class CustomOpenAIContentFormatter(ContentFormatterBase):
+    """Content formatter for models that use the OpenAI like API scheme."""
 
     @property
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
@@ -289,7 +290,8 @@ class OpenAIStyleContentFormatter(ContentFormatterBase):
         self, output: bytes, api_type: AzureMLEndpointApiType
     ) -> Generation:
         """Formats response"""
-        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:            try:
+        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:
+            try:
                 choice = json.loads(output)[0]["0"]
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
@@ -313,6 +315,22 @@ class OpenAIStyleContentFormatter(ContentFormatterBase):
                 ),
             )
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
+
+
+class LlamaContentFormatter(CustomOpenAIContentFormatter):
+    """Deprecated: Kept for backwards compatibility
+
+    Content formatter for Llama."""
+
+    content_formatter: Any = None
+
+    def __init__(self) -> None:
+        super().__init__()
+        warnings.warn(
+            """`LlamaContentFormatter` will be deprecated in the future. 
+                Please use `CustomOpenAIContentFormatter` instead.  
+            """
+        )
 
 
 class AzureMLBaseEndpoint(BaseModel):

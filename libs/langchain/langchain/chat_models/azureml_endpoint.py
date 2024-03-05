@@ -1,6 +1,6 @@
 from langchain_community.chat_models.azureml_endpoint import (
     AzureMLChatOnlineEndpoint,
-    OpenAIStyleContentFormatter,
+    LlamaContentFormatter,
 )
 
-__all__ = ["OpenAIStyleContentFormatter", "AzureMLChatOnlineEndpoint"]
+__all__ = ["LlamaContentFormatter", "AzureMLChatOnlineEndpoint"]

@@ -1,4 +1,5 @@
 import json
+import warnings
 from typing import Any, Dict, List, Optional, cast, Iterator, AsyncIterator, Type, Mapping
 
 from langchain_core.callbacks import (
@@ -28,18 +29,18 @@ from langchain_community.llms.azureml_endpoint import (
 )
 
 
-class OpenAIStyleContentFormatter(ContentFormatterBase):
+class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for `LLaMA`."""
 
     def __init__(self) -> None:
         raise TypeError(
-            "`OpenAIStyleContentFormatter` is deprecated for chat models. Use "
+            "`LlamaContentFormatter` is deprecated for chat models. Use "
             "`CustomOpenAIContentFormatter` instead."
         )
 
 
-class CustomOpenAIContentFormatter(ContentFormatterBase):
-    """Content formatter for `LLaMA`."""
+class CustomOpenAIChatContentFormatter(ContentFormatterBase):
+    """Chat Content formatter for models with OpenAI like API scheme."""
 
     SUPPORTED_ROLES: List[str] = ["user", "assistant", "system"]
 
@@ -64,7 +65,7 @@ class CustomOpenAIContentFormatter(ContentFormatterBase):
             }
         elif (
             isinstance(message, ChatMessage)
-            and message.role in CustomOpenAIContentFormatter.SUPPORTED_ROLES
+            and message.role in CustomOpenAIChatContentFormatter.SUPPORTED_ROLES
         ):
             return {
                 "role": message.role,
@@ -72,7 +73,7 @@ class CustomOpenAIContentFormatter(ContentFormatterBase):
             }
         else:
             supported = ",".join(
-                [role for role in CustomOpenAIContentFormatter.SUPPORTED_ROLES]
+                [role for role in CustomOpenAIChatContentFormatter.SUPPORTED_ROLES]
             )
             raise ValueError(
                 f"""Received unsupported role. 
@@ -150,6 +151,20 @@ class CustomOpenAIContentFormatter(ContentFormatterBase):
                 ),
             )
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
+
+
+class LlamaChatContentFormatter(CustomOpenAIChatContentFormatter):
+    """Deprecated: Kept for backwards compatibility
+
+    Chat Content formatter for Llama."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        warnings.warn(
+            """`LlamaChatContentFormatter` will be deprecated in the future. 
+                Please use `CustomOpenAIChatContentFormatter` instead.  
+            """
+        )
 
 
 class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
@@ -233,7 +248,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         }
         
         client = openai.OpenAI(**client_params)
-        message_dicts = [CustomOpenAIContentFormatter._convert_message_to_dict(m) for m in messages]
+        message_dicts = [CustomOpenAIChatContentFormatter._convert_message_to_dict(m) for m in messages]
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
@@ -282,7 +297,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         }
         
         async_client = openai.AsyncOpenAI(**client_params)
-        message_dicts = [CustomOpenAIContentFormatter._convert_message_to_dict(m) for m in messages]
+        message_dicts = [CustomOpenAIChatContentFormatter._convert_message_to_dict(m) for m in messages]
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
