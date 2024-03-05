@@ -41,7 +41,10 @@ def _format_image(image_url: str) -> Dict:
     regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
     match = re.match(regex, image_url)
     if match is None:
-        raise ValueError("Anthropic only supports base64-encoded images currently")
+        raise ValueError(
+            "Anthropic only supports base64-encoded images currently."
+            " Example: "data:image/png;base64,'/9j/4AAQSk'..."
+        )
     return {
         "type": "base64",
         "media_type": match.group("media_type"),
