@@ -6,6 +6,9 @@ llm = Bedrock(
     model_kwargs={"max_tokens": 4096},
 )
 
-llm.invoke(
+test=llm.invoke(
     "What are some theories about the relationship between unemployment and inflation?"
 )
+
+print(test)
+

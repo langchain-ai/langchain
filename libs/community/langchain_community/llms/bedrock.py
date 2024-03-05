@@ -128,20 +128,20 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        if (
-            provider == "anthropic"
-            and "model_id" in model_kwargs
-            and model_kwargs["model_id"].startswith("anthropic.claude-3")
-        ):
-            claude_v3_message = _prepare_claude_v3_messages(prompt, None)
-            input_body.update(
-                {
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "messages": [claude_v3_message],
-                }
-            )
-        elif provider == "anthropic":
-            input_body["prompt"] = _human_assistant_format(prompt)
+        input_body.pop("model_id", None)
+        if provider == "anthropic":
+            if "model_id" in model_kwargs and model_kwargs["model_id"].startswith(
+                "anthropic.claude-3"
+            ):
+                claude_v3_message = _prepare_claude_v3_messages(prompt, None)
+                input_body.update(
+                    {
+                        "anthropic_version": "bedrock-2023-05-31",
+                        "messages": [claude_v3_message],
+                    }
+                )
+            else:
+                input_body["prompt"] = _human_assistant_format(prompt)
         elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
@@ -151,12 +151,15 @@ class LLMInputOutputAdapter:
         else:
             input_body["inputText"] = prompt
 
-        if provider == "anthropic" and model_kwargs["model_id"].startswith(
-            "anthropic.claude-3" and "max_tokens" not in input_body
-        ):
-            input_body["max_tokens"] = 1000
-        elif provider == "anthropic" and "max_tokens_to_sample" not in input_body:
-            input_body["max_tokens_to_sample"] = 256
+        if provider == "anthropic":
+            if "model_id" in model_kwargs and model_kwargs["model_id"].startswith(
+                "anthropic.claude-3"
+            ):
+                if "max_tokens" not in input_body:
+                    input_body["max_tokens"] = 1000
+            else:
+                if "max_tokens_to_sample" not in input_body:
+                    input_body["max_tokens_to_sample"] = 256
 
         return input_body
 
@@ -164,7 +167,11 @@ class LLMInputOutputAdapter:
     def prepare_output(cls, provider: str, response: Any) -> dict:
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            text = response_body.get("completion")
+            if 'completion' in response_body:
+                text = response_body.get("completion")
+            elif 'content' in response_body:
+                content = response_body.get("content")
+                text = content[0].get("text")
         else:
             response_body = json.loads(response.get("body").read())
 
