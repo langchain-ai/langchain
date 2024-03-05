@@ -51,15 +51,18 @@ def _prepare_claude_v3_messages(
     text: str, image: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
-    Prepares messages for Claude V3 model, appending image data only to the final user message.
-    This approach ensures that all messages are parsed normally, and the image is added at the end if it exists.
+    Prepares messages for Claude V3 model, appending image data only
+    to the final user message.
+    This approach ensures that all messages are parsed normally,
+    and the image is added at the end if it exists.
 
     Parameters:
     - text: Text content of the message, potentially in human-assistant format.
     - image: Optional base64-encoded image data for the latest user message.
 
     Returns:
-    - A list of dictionaries, each representing a message with role and content for Claude V3 request.
+    - A list of dictionaries, each representing a message with role
+    and content for Claude V3 request.
     """
     messages = []
     segments = re.split(r"(Human:|Assistant:)", text)
