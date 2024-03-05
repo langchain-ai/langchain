@@ -502,7 +502,8 @@ def _astream_log_implementation(
     diff: Literal[True] = True,
     with_streamed_output_list: bool = True,
     **kwargs: Any,
-) -> AsyncIterator[RunLogPatch]: ...
+) -> AsyncIterator[RunLogPatch]:
+    ...
 
 
 @overload
@@ -515,7 +516,8 @@ def _astream_log_implementation(
     diff: Literal[False],
     with_streamed_output_list: bool = True,
     **kwargs: Any,
-) -> AsyncIterator[RunLog]: ...
+) -> AsyncIterator[RunLog]:
+    ...
 
 
 async def _astream_log_implementation(
