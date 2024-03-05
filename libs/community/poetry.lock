@@ -1259,40 +1259,6 @@ test = ["Pillow", "contourpy[test-no-images]", "matplotlib"]
 test-no-images = ["pytest", "pytest-cov", "wurlitzer"]
 
 [[package]]
-name = "couchbase"
-version = "4.1.12"
-description = "Python Client for Couchbase"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "couchbase-4.1.12-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:215808375bc0aac1ba34a523c4fa759ccf3c6274079e3c4a66d54db6c1155ac7"},
-    {file = "couchbase-4.1.12-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d220d1d6d62b44f39c87f2912010905d527e8d8d5608c68701186ab80e44a2c9"},
-    {file = "couchbase-4.1.12-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:fc51da190c0bcb984b323df9f02bb7c81f92ab9a47357804d155c819288fb264"},
-    {file = "couchbase-4.1.12-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:5fe88f8105cafbd19f19823934a78a927ec87404aa8660e151b855db646c70db"},
-    {file = "couchbase-4.1.12-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:488d4e51d8df7c8a8e9c0111f920236e47e053de4a6fb9f36a7cbc049b649bf6"},
-    {file = "couchbase-4.1.12-cp310-cp310-win_amd64.whl", hash = "sha256:dce7fe4089bad49eb0add2e86537f2c1e7b1d3df145ebbdb200730933feeb5c1"},
-    {file = "couchbase-4.1.12-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:568429819be6f9b1439435bbb5c7b5124e552fb202f3a3b4cec286c39e31f3d5"},
-    {file = "couchbase-4.1.12-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:99d57f94a82371c011eeadfdedda9a7497e5bce8c4fa8658e7829a4e0e1c47e9"},
-    {file = "couchbase-4.1.12-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:015c651e0ea1c7d65242538bf185b9fac3edfa05b0c6a4b10ed25ac8d8bd6357"},
-    {file = "couchbase-4.1.12-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:73d5775e53a1abf66391766642192731ad5026c5845bce3cde7b6cd99e9225f0"},
-    {file = "couchbase-4.1.12-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:ed50c403ef4197ea756f632b666a1aa43a75603346ac0052288ea5a4baf41410"},
-    {file = "couchbase-4.1.12-cp311-cp311-win_amd64.whl", hash = "sha256:b53466540d692bc73e8646806bd046fe05fc5d24ade19e02f29fe067389eaa5c"},
-    {file = "couchbase-4.1.12-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:25d323a2bf0af4232047e683b6839643c5f2944f2a307ed378d7ee389eb10512"},
-    {file = "couchbase-4.1.12-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:0f11d06c97691f28f53f67ec6bcc3a8d8b272b3e7cd9e041b7c01d636d3d51cf"},
-    {file = "couchbase-4.1.12-cp38-cp38-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:6aa1bd5b0aa2f5053f86c34129fbe1a0b778c060105907ff8efd017d8512585d"},
-    {file = "couchbase-4.1.12-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:9e01534605cfe0cd93a143b30f6da2398406072aae22a486522872fbdb706fc7"},
-    {file = "couchbase-4.1.12-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:ce875440e40220cbe53dfb6559845fbb3b4277677a9de28a95f017db6fb431cc"},
-    {file = "couchbase-4.1.12-cp38-cp38-win_amd64.whl", hash = "sha256:7941547ac23c8d5951be537afda96b6d0da5e8143f24b30b6ef561e500288115"},
-    {file = "couchbase-4.1.12-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:dcd927e67a3faf5e0a1812b9b22570ef138346aeddae81cbf4588d0f95ae0fb9"},
-    {file = "couchbase-4.1.12-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:a1024b8e7edf5e341aa99a4ef8bd82282a9941ec81a21366cbcfa3c1a2757b5c"},
-    {file = "couchbase-4.1.12-cp39-cp39-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:4092fafb97ed7033e1eee995db4ba74271c40bb3ea396e9f371dc6c4897b9467"},
-    {file = "couchbase-4.1.12-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:76cd209eaa986a1fe2463527972e71afe152f6148d961f3c13d1f5759563f3a7"},
-    {file = "couchbase-4.1.12-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:ddd65121020fef1f750c0ed7220cb3c61637e8f2461293997c7865c3b916f1cb"},
-    {file = "couchbase-4.1.12-cp39-cp39-win_amd64.whl", hash = "sha256:cac88f438d97a15685c6ec98931d8637527d6ec31a61ef99114f4dc6107dcad4"},
-    {file = "couchbase-4.1.12.tar.gz", hash = "sha256:74c31dce32f43947718cab87b746930b4af67a6792bb0e19d72ed38775b8df4b"},
-]
-
-[[package]]
 name = "coverage"
 version = "7.4.1"
 description = "Code coverage measurement for Python"
