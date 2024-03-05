@@ -1,8 +1,6 @@
 from langchain_mongodb import __all__
 
-EXPECTED_ALL = [
-    "MongoDBAtlasVectorSearch",
-]
+EXPECTED_ALL = ["MongoDBAtlasVectorSearch", "MongoDBChatMessageHistory"]
 
 
 def test_all_imports() -> None:
