@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import warnings
 from abc import ABC
 from typing import (
@@ -46,27 +47,75 @@ def _add_newlines_before_ha(input_text: str) -> str:
     return new_text
 
 
-def _prepare_messages_api_input(json_str: str) -> List[Dict[str, Any]]:
+def _convert_human_assistant_to_api_format(text: str) -> List[Dict[str, Any]]:
     """
-    Parses a JSON string containing messages, potentially including text and images,
-    into a Python list of dictionaries suitable for processing or submission to a model.
+    Converts a human-assistant formatted string to the new messages API format.
 
     Parameters:
-    - json_str: A JSON string representation of messages including roles,
-    text, and optionally images.
+    - text: Text content of the message in human-assistant format.
+
+    Returns:
+    - A list of dictionaries, each representing a message with role and content.
+    """
+    messages = []
+    segments = re.split(r"\n\n(Human:|Assistant:)", text)
+    current_role = None
+    buffer_text = ""
+
+    for seg in segments:
+        if seg in ["Human:", "Assistant:"]:
+            if buffer_text:
+                messages.append(
+                    {
+                        "role": "user" if current_role == "Human:" else "assistant",
+                        "content": [{"type": "text", "text": buffer_text.strip()}],
+                    }
+                )
+                buffer_text = ""
+            current_role = seg
+        else:
+            buffer_text += seg
+
+    if buffer_text:
+        messages.append(
+            {
+                "role": "user" if current_role == "Human:" else "assistant",
+                "content": [{"type": "text", "text": buffer_text.strip()}],
+            }
+        )
+
+    return messages
+
+
+def _prepare_messages_api_input(json_str: str) -> List[Dict[str, Any]]:
+    """
+    Parses a JSON string containing messages in either the new API format or
+    the old human-assistant format, converting if necessary, into a Python list
+    of dictionaries suitable for processing or submission to a model.
+
+    Parameters:
+    - json_str: A JSON string representation of messages or a human-assistant
+      formatted string.
 
     Returns:
     - A list of dictionaries, each representing a message with role and content.
     """
 
-    parsed_input = json.loads(json_str)
+    try:
+        # Attempt to parse the input as JSON
+        parsed_input = json.loads(json_str)
 
-    if "messages" in parsed_input and isinstance(parsed_input["messages"], list):
-        return parsed_input["messages"]
-    else:
-        raise ValueError(
-            "Invalid JSON format: 'messages' key not found or is not a list."
-        )
+        # Check if the input is already in the new API format
+        if "messages" in parsed_input and isinstance(parsed_input["messages"], list):
+            return parsed_input["messages"]
+        else:
+            raise ValueError("Invalid JSON format.")
+    except json.JSONDecodeError:
+        # If JSON parsing fails, assume input is in human-assistant format
+        if "Human:" in json_str or "Assistant:" in json_str:
+            return _convert_human_assistant_to_api_format(
+                _human_assistant_format(json_str)
+            )
 
 
 def _human_assistant_format(input_text: str) -> str:
