@@ -263,7 +263,7 @@ def test__human_assistant_format() -> None:
 
 def test__prepare_claude_v3_messages() -> None:
     # Test case with only text
-    text_only = _prepare_claude_v3_messages({"text": "Test message"})
+    text_only = _prepare_claude_v3_messages("Test message", None)
     assert text_only == {
         "role": "user",
         "content": [{"type": "text", "text": "Test message"}],
@@ -271,7 +271,7 @@ def test__prepare_claude_v3_messages() -> None:
 
     # Test case with text and image data
     text_and_image = _prepare_claude_v3_messages(
-        {"text": "Test message", "image": "base64ImageData"}
+        text="Test message", image_data="base64ImageData"
     )
     assert text_and_image == {
         "role": "user",

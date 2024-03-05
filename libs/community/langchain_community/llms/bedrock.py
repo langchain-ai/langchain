@@ -46,7 +46,9 @@ def _add_newlines_before_ha(input_text: str) -> str:
     return new_text
 
 
-def _prepare_claude_v3_messages(prompt: Dict[str, Any]) -> Dict[str, Any]:
+def _prepare_claude_v3_messages(
+    text: str, image_data: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Prepares the 'messages' part of the input for Anthropics' Claude V3 model.
 
@@ -59,19 +61,19 @@ def _prepare_claude_v3_messages(prompt: Dict[str, Any]) -> Dict[str, Any]:
     """
     messages_content = []
 
-    if "image" in prompt:
+    if image_data:
         messages_content.append(
             {
                 "type": "image",
                 "source": {
                     "type": "base64",
                     "media_type": "image/jpeg",
-                    "data": prompt["image"],
+                    "data": image_data,
                 },
             }
         )
 
-    messages_content.append({"type": "text", "text": prompt["text"]})
+    messages_content.append({"type": "text", "text": text})
 
     return {"role": "user", "content": messages_content}
 
@@ -126,10 +128,12 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        if provider == "anthropic" and model_kwargs["model_id"].startswith(
-            "anthropic.claude-3"
+        if (
+            provider == "anthropic"
+            and "model_id" in model_kwargs
+            and model_kwargs["model_id"].startswith("anthropic.claude-3")
         ):
-            claude_v3_message = _prepare_claude_v3_messages(prompt)
+            claude_v3_message = _prepare_claude_v3_messages(prompt, None)
             input_body.update(
                 {
                     "anthropic_version": "bedrock-2023-05-31",
