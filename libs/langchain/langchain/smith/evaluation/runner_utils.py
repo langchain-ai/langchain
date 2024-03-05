@@ -1298,6 +1298,7 @@ async def arun_on_dataset(
             "0.1.9",
             message="The tags argument is deprecated and will be"
             " removed in a future release. Please specify project_metadata instead.",
+            pending=True,
         )
 
     if kwargs:
@@ -1360,6 +1361,7 @@ def run_on_dataset(
             "0.1.9",
             message="The tags argument is deprecated and will be"
             " removed in a future release. Please specify project_metadata instead.",
+            pending=True,
         )
     if revision_id is None:
         revision_id = get_langchain_env_var_metadata().get("revision_id")
