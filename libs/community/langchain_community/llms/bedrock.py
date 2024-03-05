@@ -102,7 +102,7 @@ class LLMInputOutputAdapter:
 
     provider_to_output_key_map = {
         "anthropic": "completion",
-        "anthropic_v3": "message",
+        "anthropic.claude-3": "message",
         "amazon": "outputText",
         "cohere": "text",
         "meta": "generation",
@@ -113,10 +113,15 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
+        model_id = input_body.pop("model_id", None)
         if provider == "anthropic":
-            input_body["prompt"] = _human_assistant_format(prompt)
-        elif provider == "anthropic_v3":
-            input_body["messages"] = _generate_messages_format(prompt)
+            if model_id.startswith("anthropic.claude-3"):
+                input_body["messages"] = _generate_messages_format(prompt)
+                input_body.pop("max_tokens_to_sample", None)
+            else:
+                input_body["prompt"] = _human_assistant_format(prompt)
+                if "max_tokens_to_sample" not in input_body:
+                    input_body["max_tokens_to_sample"] = 256
         elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
@@ -126,19 +131,22 @@ class LLMInputOutputAdapter:
         else:
             input_body["inputText"] = prompt
 
-        if provider == "anthropic" and "max_tokens_to_sample" not in input_body:
+        if provider == "anthropic" and "max_tokens_to_sample" not in input_body and (
+            not model_id.startswith("anthropic.claude-3")
+        ):
             input_body["max_tokens_to_sample"] = 256
 
         return input_body
 
     @classmethod
     def prepare_output(cls, provider: str, response: Any) -> dict:
+        model_id = input_body.pop("model_id", None)
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            text = response_body.get("completion")
-        elif provider == "anthropic_v3":
-            response_body = json.loads(response.get("body").read().decode())
-            text = response_body.get("content")[0].get("text")
+            if model_id.startswith('anthropic.claude-3'):
+                text = response_body.get("content")[0]['text']
+            else:
+                text = response_body.get("completion")   
         else:
             response_body = json.loads(response.get("body").read())
 
@@ -161,11 +169,15 @@ class LLMInputOutputAdapter:
         cls, provider: str, response: Any, stop: Optional[List[str]] = None
     ) -> Iterator[GenerationChunk]:
         stream = response.get("body")
+        model_id = response.pop("model_id", None)
 
         if not stream:
             return
 
-        output_key = cls.provider_to_output_key_map.get(provider, None)
+        if model_id.startswith("anthropic.claude-3"):
+            output_key = cls.provider_to_output_key_map.get("anthropic.claude-3", None)
+        else:
+            output_key = cls.provider_to_output_key_map.get(provider, None)
 
         if not output_key:
             raise ValueError(
@@ -184,12 +196,12 @@ class LLMInputOutputAdapter:
             ):
                 return
                 # chunk obj format varies with provider
-            elif provider == "anthropic_v3" and (
+            elif model_id.startswith('anthropic.claude-3') and (
                 chunk_obj.get("type") == "content_block_stop"
             ):
                 return
                 # chunk obj format varies with provider
-            if provider == "anthropic_v3" and chunk_obj.get("type") in (
+            if model_id.startswith('anthropic.claude-3') and chunk_obj.get("type") in (
                 "message_start",
                 "content_block_start",
                 "content_block_delta",
@@ -214,11 +226,15 @@ class LLMInputOutputAdapter:
         cls, provider: str, response: Any, stop: Optional[List[str]] = None
     ) -> AsyncIterator[GenerationChunk]:
         stream = response.get("body")
+        model_id = response.pop("model_id", None)
 
         if not stream:
             return
 
-        output_key = cls.provider_to_output_key_map.get(provider, None)
+        if model_id.startswith("anthropic.claude-3"):
+            output_key = cls.provider_to_output_key_map.get("anthropic.claude-3", None)
+        else:
+            output_key = cls.provider_to_output_key_map.get(provider, None)
 
         if not output_key:
             raise ValueError(
@@ -459,15 +475,14 @@ class BedrockBase(BaseModel, ABC):
 
         provider = self._get_provider()
         params = {**_model_kwargs, **kwargs}
+        params.update({"model_id": self.model_id}) # allows for model-based logic in input prep
+
         if self._guardrails_enabled:
             params.update(self._get_guardrails_canonical())
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
         accept = "application/json"
         contentType = "application/json"
-
-        if self.model_id.split(".")[0] == "anthropic_v3":
-            self.model_id = self._swap_anthropic_v3_provider(self.model_id)
 
         request_options = {
             "body": body,
@@ -483,6 +498,7 @@ class BedrockBase(BaseModel, ABC):
 
         try:
             response = self.client.invoke_model(**request_options)
+            response.update({"model_id": self.model_id}) # allows for model-based logic in input prep
 
             text, body = LLMInputOutputAdapter.prepare_output(
                 provider, response
@@ -537,9 +553,6 @@ class BedrockBase(BaseModel, ABC):
     def _is_guardrails_intervention(self, body: dict) -> bool:
         return body.get(GUARDRAILS_BODY_KEY) == "GUARDRAIL_INTERVENED"
 
-    def _swap_anthropic_v3_provider(self, model_id: str) -> str:
-        return ".".join([self.model_id.split(".")[0][:-3], self.model_id.split(".")[1]])
-
     def _prepare_input_and_invoke_stream(
         self,
         prompt: str,
@@ -564,15 +577,13 @@ class BedrockBase(BaseModel, ABC):
             _model_kwargs["stream"] = True
 
         params = {**_model_kwargs, **kwargs}
+        params.update({"model_id": self.model_id}) # allows for model-based logic in input prep
 
         if self._guardrails_enabled:
             params.update(self._get_guardrails_canonical())
 
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
-
-        if self.model_id.split(".")[0] == "anthropic_v3":
-            self.model_id = self._swap_anthropic_v3_provider(self.model_id)
 
         request_options = {
             "body": body,
@@ -592,6 +603,7 @@ class BedrockBase(BaseModel, ABC):
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
 
+        response.update({"model_id": self.model_id}) # allows for model-based logic in output prep)
         for chunk in LLMInputOutputAdapter.prepare_output_stream(
             provider, response, stop
         ):
