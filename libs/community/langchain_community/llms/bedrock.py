@@ -81,6 +81,17 @@ def _generate_messages_format(input_text: str) -> str:
         {"role": "user", "content": _add_newlines_before_ha(input_text)}
     ]
 
+def _stream_response_to_generation_chunk(
+    stream_response: Dict[str, Any],
+) -> GenerationChunk:
+    """Convert a stream response to a generation chunk."""
+    return GenerationChunk(
+        text=stream_response["delta"]["text"],
+        generation_info=dict(
+            finish_reason=stream_response.get("stop_reason", None),
+        ),
+    )
+
 
 class LLMInputOutputAdapter:
     """Adapter class to prepare the inputs from Langchain to a format
@@ -90,7 +101,7 @@ class LLMInputOutputAdapter:
     the generated text from the model response."""
 
     provider_to_output_key_map = {
-        "anthropic": "completion",
+        "anthropic": "message",
         "amazon": "outputText",
         "cohere": "text",
         "meta": "generation",
@@ -167,14 +178,26 @@ class LLMInputOutputAdapter:
             ):
                 return
                 # chunk obj format varies with provider
-            yield GenerationChunk(
-                text=chunk_obj[output_key],
-                generation_info={
-                    GUARDRAILS_BODY_KEY: chunk_obj.get(GUARDRAILS_BODY_KEY)
-                    if GUARDRAILS_BODY_KEY in chunk_obj
-                    else None,
-                },
-            )
+            elif provider == "anthropic" and (
+                chunk_obj.get("type") == 'content_block_stop'
+            ):
+                return
+                # chunk obj format varies with provider
+            if provider == "anthropic" and chunk_obj.get('type') in ('message_start', 'content_block_start', 'content_block_delta'):
+                if chunk_obj.get('type') == 'content_block_delta': 
+                    chk = _stream_response_to_generation_chunk(chunk_obj)
+                    yield chk
+                else:
+                    continue
+            else:
+                yield GenerationChunk(
+                    text=chunk_obj[output_key],
+                    generation_info={
+                        GUARDRAILS_BODY_KEY: chunk_obj.get(GUARDRAILS_BODY_KEY)
+                        if GUARDRAILS_BODY_KEY in chunk_obj
+                        else None,
+                    },
+                )
 
     @classmethod
     async def aprepare_output_stream(
