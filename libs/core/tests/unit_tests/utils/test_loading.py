@@ -103,4 +103,4 @@ def test_path_traversal() -> None:
     loader = Mock()
 
     with pytest.raises(ValueError):
-        try_load_from_hub(f"{path}", loader, "chains", {"json"})
+        try_load_from_hub(path, loader, "chains", {"json"})
