@@ -10,7 +10,6 @@ from different APIs and services.
     Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
 """
 
-
 import logging
 from typing import Any
 
@@ -92,6 +91,7 @@ from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.volcengine import VolcanoEmbeddings
 from langchain_community.embeddings.voyageai import VoyageEmbeddings
 from langchain_community.embeddings.xinference import XinferenceEmbeddings
+from langchain_community.embeddings.prem import PremEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +158,7 @@ __all__ = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
+    "PremEmbeddings",
 ]
 
 
