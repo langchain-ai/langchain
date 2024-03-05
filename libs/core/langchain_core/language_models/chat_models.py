@@ -161,7 +161,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         config = ensure_config(config)
-        return cast(
+        generation = cast(
             ChatGeneration,
             self.generate_prompt(
                 [self._convert_input(input)],
@@ -172,7 +172,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 run_name=config.get("run_name"),
                 **kwargs,
             ).generations[0][0],
-        ).message
+        )
+        message = generation.message
+        message.additional_kwargs = {
+            **(generation.generation_info or {}),
+            **message.additional_kwargs,
+        }
+        return message
 
     async def ainvoke(
         self,
@@ -192,7 +198,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_name=config.get("run_name"),
             **kwargs,
         )
-        return cast(ChatGeneration, llm_result.generations[0][0]).message
+        generation = cast(ChatGeneration, llm_result.generations[0][0])
+        message = generation.message
+        message.additional_kwargs = {
+            **(generation.generation_info or {}),
+            **message.additional_kwargs,
+        }
+        return message
 
     def stream(
         self,
@@ -234,6 +246,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
+                    chunk.message.additional_kwargs = {
+                        **(chunk.generation_info or {}),
+                        **chunk.message.additional_kwargs,
+                    }
                     yield chunk.message
                     if generation is None:
                         generation = chunk
@@ -292,6 +308,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 async for chunk in self._astream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
+                    chunk.message.additional_kwargs = {
+                        **(chunk.generation_info or {}),
+                        **chunk.message.additional_kwargs,
+                    }
                     yield chunk.message
                     if generation is None:
                         generation = chunk
