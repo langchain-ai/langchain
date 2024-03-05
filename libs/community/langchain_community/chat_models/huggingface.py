@@ -1,6 +1,6 @@
 """Hugging Face Chat Wrapper."""
 
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -20,10 +20,6 @@ from langchain_core.outputs import (
 )
 
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
-from langchain_community.llms.huggingface_hub import HuggingFaceHub
-from langchain_community.llms.huggingface_text_gen_inference import (
-    HuggingFaceTextGenInference,
-)
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
@@ -32,8 +28,7 @@ class ChatHuggingFace(BaseChatModel):
     """
     Wrapper for using Hugging Face LLM's as ChatModels.
 
-    Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`,
-    and `HuggingFaceHub` LLMs.
+    Works with `HuggingFaceEndpoint` LLMs.
 
     Upon instantiating this class, the model_id is resolved from the url
     provided to the LLM, and the appropriate tokenizer is loaded from
@@ -42,7 +37,7 @@ class ChatHuggingFace(BaseChatModel):
     Adapted from: https://python.langchain.com/docs/integrations/chat/llama2_chat
     """
 
-    llm: Union[HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub]
+    llm: HuggingFaceEndpoint
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
     tokenizer: Any = None
     model_id: Optional[str] = None
@@ -133,30 +128,25 @@ class ChatHuggingFace(BaseChatModel):
 
     def _resolve_model_id(self) -> None:
         """Resolve the model_id from the LLM's inference_server_url"""
-
-        from huggingface_hub import list_inference_endpoints
-
-        available_endpoints = list_inference_endpoints("*")
-        if isinstance(self.llm, HuggingFaceHub) or (
-            hasattr(self.llm, "repo_id") and self.llm.repo_id
-        ):
+        if hasattr(self.llm, "repo_id") and self.llm.repo_id:
             self.model_id = self.llm.repo_id
             return
-        elif isinstance(self.llm, HuggingFaceTextGenInference):
-            endpoint_url: Optional[str] = self.llm.inference_server_url
         else:
+            from huggingface_hub import list_inference_endpoints
+            
+            available_endpoints = list_inference_endpoints("*")
             endpoint_url = self.llm.endpoint_url
 
-        for endpoint in available_endpoints:
-            if endpoint.url == endpoint_url:
-                self.model_id = endpoint.repository
+            for endpoint in available_endpoints:
+                if endpoint.url == endpoint_url:
+                    self.model_id = endpoint.repository
 
-        if not self.model_id:
-            raise ValueError(
-                "Failed to resolve model_id:"
-                f"Could not find model id for inference server: {endpoint_url}"
-                "Make sure that your Hugging Face token has access to the endpoint."
-            )
+            if not self.model_id:
+                raise ValueError(
+                    "Failed to resolve model_id:"
+                    f"Could not find model id for inference server: {endpoint_url}"
+                    "Make sure that your Hugging Face token has access to the endpoint."
+                )
 
     @property
     def _llm_type(self) -> str:
