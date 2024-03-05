@@ -122,6 +122,7 @@ EXPECTED_ALL = [
     "WolframAlphaQueryRun",
     "WriteFileTool",
     "YahooFinanceNewsTool",
+    "YouSearchTool",
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
