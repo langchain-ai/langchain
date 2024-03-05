@@ -36,3 +36,4 @@ class NutritionAI(BaseTool):
     ) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)
+    
