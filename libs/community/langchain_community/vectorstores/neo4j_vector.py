@@ -17,6 +17,7 @@ from typing import (
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import DistanceStrategy
@@ -107,18 +108,6 @@ def remove_lucene_chars(text: str) -> str:
     return text.strip()
 
 
-def param_or_env(key: Optional[str], env_key: str) -> str:
-    if key:
-        return key
-    if env_key in os.environ and os.environ[env_key]:
-        return os.environ[env_key]
-    raise ValueError(
-        f"Did not find {key}, please add an environment variable"
-        f" `{env_key}` which contains it, or pass"
-        f" `{key}` as a named parameter."
-    )
-
-
 class Neo4jVector(VectorStore):
     """`Neo4j` vector index.
 
@@ -166,7 +155,7 @@ class Neo4jVector(VectorStore):
         password: Optional[str] = None,
         url: Optional[str] = None,
         keyword_index_name: Optional[str] = "keyword",
-        database: str = "neo4j",
+        database: Optional[str] = None,
         index_name: str = "vector",
         node_label: str = "Chunk",
         embedding_node_property: str = "embedding",
@@ -200,10 +189,16 @@ class Neo4jVector(VectorStore):
         if not url:
             url = os.environ.get("NEO4J_URL")
 
-        url = param_or_env(url, "NEO4J_URI")
-        username = param_or_env(username, "NEO4J_USERNAME")
-        password = param_or_env(password, "NEO4J_PASSWORD")
-        database = param_or_env(database, "NEO4J_DATABASE")
+        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+        username = get_from_dict_or_env(
+            {"username": username}, "username", "NEO4J_USERNAME"
+        )
+        password = get_from_dict_or_env(
+            {"password": password}, "password", "NEO4J_PASSWORD"
+        )
+        database = get_from_dict_or_env(
+            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+        )
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
