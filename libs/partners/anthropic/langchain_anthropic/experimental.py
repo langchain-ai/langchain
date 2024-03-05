@@ -143,11 +143,17 @@ def _xml_to_function_call(invoke: Any, tools: List[Dict]) -> Dict[str, Any]:
                         "type"
                     ] == "array" and not isinstance(value, list):
                         arguments[key] = [value]
+                    if (
+                        tool["parameters"]["properties"][key]["type"] != "object"
+                        and isinstance(value, dict)
+                        and len(value.keys()) == 1
+                    ):
+                        arguments[key] = list(value.values())[0]
 
     return {
         "function": {
             "name": name,
-            "arguments": arguments,
+            "arguments": json.dumps(arguments),
         },
         "type": "function",
     }
@@ -159,7 +165,7 @@ def _xml_to_tool_calls(elem: Any, tools: List[Dict]) -> List[Dict[str, Any]]:
     """
     invokes = elem.findall("invoke")
 
-    return [_xml_to_function_call(invoke) for invoke in invokes]
+    return [_xml_to_function_call(invoke, tools) for invoke in invokes]
 
 
 @beta()

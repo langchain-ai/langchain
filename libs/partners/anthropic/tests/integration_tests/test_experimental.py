@@ -133,7 +133,7 @@ def test_with_structured_output() -> None:
     assert result.age == 27
 
 
-def test_anthropic_jacob() -> None:
+def test_anthropic_complex_structured_output() -> None:
     class ToneEnum(str, Enum):
         positive = "positive"
         negative = "negative"
@@ -160,7 +160,6 @@ def test_anthropic_jacob() -> None:
 
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", "You are an expert researcher."),
             (
                 "human",
                 "What can you tell me about the following email? Make sure to answer in the correct format: {email}",  # noqa: E501
@@ -174,7 +173,7 @@ def test_anthropic_jacob() -> None:
 
     response = extraction_chain.invoke(
         {
-            "email": "The email is about the new project. The tone is positive. The action items are to send the report and to schedule a meeting."
+            "email": "From: Erick. The email is about the new project. The tone is positive. The action items are to send the report and to schedule a meeting."  # noqa: E501
         }
     )  # noqa: E501
     assert isinstance(response, Email)
