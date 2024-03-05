@@ -40,6 +40,7 @@ except ImportError:
     def wait_exponential(multiplier, min, max):
         return None
 
+
 def is_http_retryable(rsp):
     return rsp and rsp.status_code in [408, 425, 429, 500, 502, 503, 504]
 
@@ -74,7 +75,7 @@ class ManagedPassioLifeAuth(NoDiskStorage):
     @retry(
         retry=retry_if_result(is_http_retryable),
         stop=stop_after_attempt(4),
-        wait=wait_random(0, 0.3) + wait_exponential(multiplier=1, min=0.1, max=2)
+        wait=wait_random(0, 0.3) + wait_exponential(multiplier=1, min=0.1, max=2),
     )
     def _http_get(self, subscription_key):
         return requests.get(
@@ -114,7 +115,7 @@ class NutritionAIAPI(BaseModel):
     @retry(
         retry=retry_if_result(is_http_retryable),
         stop=stop_after_attempt(4),
-        wait=wait_random(0, 0.3) + wait_exponential(multiplier=1, min=0.1, max=2)
+        wait=wait_random(0, 0.3) + wait_exponential(multiplier=1, min=0.1, max=2),
     )
     def _http_get(self, params: dict):
         return requests.get(
