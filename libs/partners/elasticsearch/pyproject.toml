@@ -29,6 +29,7 @@ pytest-asyncio = "^0.21.1"
 langchain = { path = "../../langchain", develop = true }
 langchain-community = { path = "../../community", develop = true }
 langchain-core = { path = "../../core", develop = true }
+langchain-text-splitters = {path = "../../text-splitters", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
