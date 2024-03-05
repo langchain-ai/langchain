@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator, SecretStr, Union
+from langchain_core.pydantic_v1 import BaseModel, root_validator, SecretStr
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.language_models.llms import create_base_retry_decorator
 
@@ -17,7 +17,7 @@ class PremEmbeddings(BaseModel, Embeddings):
     project_id: int
     """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
 
-    premai_api_key: Optional[Union[str, SecretStr]]
+    premai_api_key: Optional[Union[str, SecretStr]] = None
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
     model: str
