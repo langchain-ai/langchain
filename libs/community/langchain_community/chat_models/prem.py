@@ -1,4 +1,4 @@
-"""Wrapper around Google's PaLM Chat API."""
+"""Wrapper around Prem's Chat API."""
 
 from __future__ import annotations
 
