@@ -82,6 +82,7 @@ from langchain.chains.router import (
 )
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.query import create_sql_query_chain
+from langchain.chains.structured_output import create_structured_output_runnable
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chains.transform import TransformChain
 
@@ -145,5 +146,6 @@ __all__ = [
     "create_sql_query_chain",
     "create_retrieval_chain",
     "create_history_aware_retriever",
+    "create_structured_output_runnable",
     "load_summarize_chain",
 ]

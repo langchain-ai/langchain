@@ -1,11 +1,8 @@
-from __future__ import annotations
-
 import asyncio
 import json
 import warnings
 from abc import ABC
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     AsyncIterator,
@@ -30,9 +27,6 @@ from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
-
-if TYPE_CHECKING:
-    from botocore.config import Config
 
 AMAZON_BEDROCK_TRACE_KEY = "amazon-bedrock-trace"
 GUARDRAILS_BODY_KEY = "amazon-bedrock-guardrailAssessment"
@@ -226,7 +220,7 @@ class BedrockBase(BaseModel, ABC):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    config: Optional[Config] = None
+    config: Any = None
     """An optional botocore.config.Config instance to pass to the client."""
 
     provider: Optional[str] = None

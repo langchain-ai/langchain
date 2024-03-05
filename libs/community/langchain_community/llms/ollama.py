@@ -65,7 +65,7 @@ class _OllamaCommon(BaseLanguageModel):
     CPU cores your system has (as opposed to the logical number of cores)."""
 
     num_predict: Optional[int] = None
-    """Maximum number of tokens to predict when generating text. 
+    """Maximum number of tokens to predict when generating text.
     (Default: 128, -1 = infinite generation, -2 = fill context)"""
 
     repeat_last_n: Optional[int] = None
@@ -159,7 +159,7 @@ class _OllamaCommon(BaseLanguageModel):
         yield from self._create_stream(
             payload=payload,
             stop=stop,
-            api_url=f"{self.base_url}/api/generate/",
+            api_url=f"{self.base_url}/api/generate",
             **kwargs,
         )
 
@@ -174,7 +174,7 @@ class _OllamaCommon(BaseLanguageModel):
         async for item in self._acreate_stream(
             payload=payload,
             stop=stop,
-            api_url=f"{self.base_url}/api/generate/",
+            api_url=f"{self.base_url}/api/generate",
             **kwargs,
         ):
             yield item
@@ -236,7 +236,7 @@ class _OllamaCommon(BaseLanguageModel):
                     f"and you should pull the model with `ollama pull {self.model}`."
                 )
             else:
-                optional_detail = response.json().get("error")
+                optional_detail = response.text
                 raise ValueError(
                     f"Ollama call failed with status code {response.status_code}."
                     f" Details: {optional_detail}"
@@ -297,7 +297,7 @@ class _OllamaCommon(BaseLanguageModel):
                             "Ollama call failed with status code 404."
                         )
                     else:
-                        optional_detail = await response.json().get("error")  # type: ignore[attr-defined]
+                        optional_detail = response.text
                         raise ValueError(
                             f"Ollama call failed with status code {response.status}."
                             f" Details: {optional_detail}"

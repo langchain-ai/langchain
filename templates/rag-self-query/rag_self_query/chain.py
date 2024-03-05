@@ -3,11 +3,11 @@ from operator import itemgetter
 from typing import List, Tuple
 
 from langchain.retrievers import SelfQueryRetriever
-from langchain.schema import format_document
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import format_document
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
