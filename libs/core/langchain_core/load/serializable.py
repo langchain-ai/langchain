@@ -13,6 +13,7 @@ from typing import (
 from typing_extensions import NotRequired
 
 from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
+from langchain_core.load.safe_repr import safe_repr
 
 
 class BaseSerialized(TypedDict):
@@ -232,7 +233,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         "repr": None,
     }
     try:
-        result["repr"] = repr(obj)
+        result["repr"] = safe_repr(obj)
     except Exception:
         pass
     return result
