@@ -1,11 +1,11 @@
-import os
 from contextlib import contextmanager
 from typing import Generator
 from unittest.mock import Mock
 
 import pytest
-from ai21 import AI21Client
+from ai21 import AI21Client, AI21EnvConfig
 from ai21.models import (
+    AnswerResponse,
     ChatOutput,
     ChatResponse,
     Completion,
@@ -84,8 +84,22 @@ def temporarily_unset_api_key() -> Generator:
     """
     Unset and set environment key for testing purpose for when an API KEY is not set
     """
-    api_key = os.environ.pop("API_KEY", None)
+    api_key = AI21EnvConfig.api_key
+    AI21EnvConfig.api_key = None
     yield
 
     if api_key is not None:
-        os.environ["API_KEY"] = api_key
+        AI21EnvConfig.api_key = api_key
+
+
+@pytest.fixture
+def mock_client_with_contextual_answers(mocker: MockerFixture) -> Mock:
+    mock_client = mocker.MagicMock(spec=AI21Client)
+    mock_client.answer = mocker.MagicMock()
+    mock_client.answer.create.return_value = AnswerResponse(
+        id="some_id",
+        answer="some answer",
+        answer_in_context=False,
+    )
+
+    return mock_client
