@@ -253,7 +253,7 @@ class ChatMistralAI(BaseChatModel):
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
-        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+        combined = {"token_usage": overall_token_usage, "model_name": self.model}
         return combined
 
     @root_validator()
