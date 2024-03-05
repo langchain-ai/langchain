@@ -157,7 +157,7 @@ class ChatPrem(BaseChatModel, BaseModel):
 
     project_id: int
     """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
-    premai_api_key: Optional[Union[str, SecretStr]] = None
+    premai_api_key: Optional[SecretStr] = None
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
     model: Optional[str] = None
