@@ -566,13 +566,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> ChatResult:
         llm_cache = get_llm_cache()
-        if self.cache:
+        check_cache = self.cache or self.cache is None
+        if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     return ChatResult(generations=cache_val)
+            elif self.cache is None:
+                pass
             else:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
@@ -585,7 +588,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             result = self._generate(messages, stop=stop, **kwargs)
 
         _update_result_msgs(result)
-        if self.cache:
+        if check_cache and llm_cache:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
 
@@ -597,13 +600,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> ChatResult:
         llm_cache = get_llm_cache()
-        if self.cache:
+        check_cache = self.cache or self.cache is None
+        if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     return ChatResult(generations=cache_val)
+            elif self.cache is None:
+                pass
             else:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
@@ -615,7 +621,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             result = await self._agenerate(messages, stop=stop, **kwargs)
         _update_result_msgs(result)
-        if self.cache:
+        if check_cache and llm_cache:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
 
