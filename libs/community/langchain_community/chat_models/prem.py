@@ -188,9 +188,6 @@ class ChatPrem(BaseChatModel, BaseModel):
     Changing the system prompt would override the default system prompt which was used in LaunchPad model. 
     """
 
-    n: Optional[int] = None
-    """The number of responses to generate."""
-
     streaming: Optional[bool] = False
     """Whether to stream the responses or not."""
 
@@ -278,6 +275,9 @@ class ChatPrem(BaseChatModel, BaseModel):
 
         if system_prompt is not None:
             kwargs["system_prompt"] = system_prompt
+
+        if "n" in list(kwargs.keys()):
+            raise NotImplementedError(f"parameter: n is not supported for now.")
 
         response = chat_with_retry(
             self,
