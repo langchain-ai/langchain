@@ -116,7 +116,7 @@ def stringify_embedding(embedding: List) -> str:
     return " ".join([f"{i}:{e}" for i, e in enumerate(embedding)])
 
 
-def parse_lines(parser: "vw.TextFormatParser", input_str: str) -> List["import langchain_core.utils.function_calling]:
+def parse_lines(parser: "vw.TextFormatParser", input_str: str) -> List["vw.Example"]:
     """Parse the input string into a list of examples."""
 
     return [parser.parse_line(line) for line in input_str.split("\n")]
