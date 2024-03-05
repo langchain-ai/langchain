@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from langchain_core.utils import get_from_env
+from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
@@ -154,7 +154,7 @@ class Neo4jGraph(GraphStore):
         url: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        database: str = "neo4j",
+        database: Optional[str] = None,
         timeout: Optional[float] = None,
         sanitize: bool = False,
     ) -> None:
@@ -167,10 +167,16 @@ class Neo4jGraph(GraphStore):
                 "Please install it with `pip install neo4j`."
             )
 
-        url = get_from_env("url", "NEO4J_URI", url)
-        username = get_from_env("username", "NEO4J_USERNAME", username)
-        password = get_from_env("password", "NEO4J_PASSWORD", password)
-        database = get_from_env("database", "NEO4J_DATABASE", database)
+        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+        username = get_from_dict_or_env(
+            {"username": username}, "username", "NEO4J_USERNAME"
+        )
+        password = get_from_dict_or_env(
+            {"password": password}, "password", "NEO4J_PASSWORD"
+        )
+        database = get_from_dict_or_env(
+            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+        )
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
