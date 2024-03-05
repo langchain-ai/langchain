@@ -154,6 +154,11 @@ class ChatPrem(BaseChatModel, BaseModel):
     To use, you will need to have an API key. You can find your existing API Key
     or generate a new one here: https://app.premai.io/api_keys/
     """
+    
+    # TODO: Discussion needed. We can any one the following:
+    
+    # - User can set/override parameters here and then we can set it in additional arguments
+    # - Remove all the optional paramter here and keep it to the kwargs (but that would avoid function defintion)
 
     project_id: int
     """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
