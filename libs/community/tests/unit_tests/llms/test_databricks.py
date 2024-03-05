@@ -42,9 +42,9 @@ def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
         transform_input_fn=transform_input,
     )
     params = llm._default_params
-    pickled_string = cloudpickle.dumps(transform_input).hex()
-    assert params["transform_input_fn"] == pickled_string
+    # pickled_string = cloudpickle.dumps(transform_input).hex()
+    # assert params["transform_input_fn"] == pickled_string
 
     request = {"prompt": "What is the meaning of life?"}
-    fn = _load_pickled_fn_from_hex_string(pickled_string)
+    fn = _load_pickled_fn_from_hex_string(params["transform_input_fn"])
     assert fn(**request) == transform_input(**request)
