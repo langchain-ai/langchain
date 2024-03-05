@@ -77,7 +77,7 @@ def _human_assistant_format(input_text: str) -> str:
     return input_text
 
 
-def _generate_messages_format(input_text: str) -> str:
+def _generate_messages_format(input_text: str) -> list:
     return [{"role": "user", "content": _add_newlines_before_ha(input_text)}]
 
 
