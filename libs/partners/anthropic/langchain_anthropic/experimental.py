@@ -1,4 +1,3 @@
-from io import StringIO
 from typing import (
     Any,
     AsyncIterator,
@@ -100,13 +99,13 @@ def get_system_message(tools: List[Dict]) -> str:
     return SYSTEM_PROMPT_FORMAT.format(formatted_tools=tools_formatted)
 
 
-def _xml_to_dict(t: Any):
+def _xml_to_dict(t: Any) -> Union[str, Dict[str, Any]]:
     # Base case: If the element has no children, return its text or an empty string.
     if len(t) == 0:
         return t.text or ""
 
     # Recursive case: The element has children. Convert them into a dictionary.
-    d = {}
+    d: Dict[str, Any] = {}
     for child in t:
         if child.tag not in d:
             d[child.tag] = _xml_to_dict(child)
@@ -142,10 +141,10 @@ class ChatAnthropicTools(ChatAnthropic):
     _xmllib: Any = Field(default=None)
 
     @root_validator()
-    def check_xml_lib(cls, values):
+    def check_xml_lib(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         try:
             # do this as an optional dep for temporary nature of this feature
-            import defusedxml.ElementTree as DET
+            import defusedxml.ElementTree as DET  # type: ignore
 
             values["_xmllib"] = DET
         except ImportError:
@@ -158,7 +157,7 @@ class ChatAnthropicTools(ChatAnthropic):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], BaseTool]],
-        **kwargs,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tools to the chat model."""
         formatted_tools = [convert_to_openai_function(tool) for tool in tools]
@@ -264,7 +263,7 @@ class ChatAnthropicTools(ChatAnthropic):
                 xml = self._xmllib.fromstring(xml_text)
                 additional_kwargs["tool_calls"] = _xml_to_tool_calls(xml)
                 text = ""
-            except Exception as e:
+            except Exception:
                 pass
 
         return ChatResult(
