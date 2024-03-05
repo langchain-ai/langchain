@@ -113,7 +113,8 @@ class LLMInputOutputAdapter:
         cls, provider: str, prompt: str, model_kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         input_body = {**model_kwargs}
-        model_id = input_body.pop("model_id", None)
+        model_id = input_body.pop("model_id", "")
+
         if provider == "anthropic":
             if model_id.startswith("anthropic.claude-3"):
                 input_body["messages"] = _generate_messages_format(prompt)
@@ -140,7 +141,8 @@ class LLMInputOutputAdapter:
 
     @classmethod
     def prepare_output(cls, provider: str, response: Any) -> dict:
-        model_id = input_body.pop("model_id", None)
+        model_id = input_body.pop("model_id", "")
+
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
             if model_id.startswith('anthropic.claude-3'):
@@ -169,12 +171,12 @@ class LLMInputOutputAdapter:
         cls, provider: str, response: Any, stop: Optional[List[str]] = None
     ) -> Iterator[GenerationChunk]:
         stream = response.get("body")
-        model_id = response.pop("model_id", None)
+        model_id = response.pop("model_id", "")
 
         if not stream:
             return
 
-        if model_id.startswith("anthropic.claude-3"):
+        if model_id and model_id.startswith("anthropic.claude-3"):
             output_key = cls.provider_to_output_key_map.get("anthropic.claude-3", None)
         else:
             output_key = cls.provider_to_output_key_map.get(provider, None)
@@ -226,12 +228,12 @@ class LLMInputOutputAdapter:
         cls, provider: str, response: Any, stop: Optional[List[str]] = None
     ) -> AsyncIterator[GenerationChunk]:
         stream = response.get("body")
-        model_id = response.pop("model_id", None)
+        model_id = response.pop("model_id", "")
 
         if not stream:
             return
 
-        if model_id.startswith("anthropic.claude-3"):
+        if model_id and model_id.startswith("anthropic.claude-3"):
             output_key = cls.provider_to_output_key_map.get("anthropic.claude-3", None)
         else:
             output_key = cls.provider_to_output_key_map.get(provider, None)
