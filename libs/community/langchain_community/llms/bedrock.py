@@ -84,7 +84,7 @@ def _stream_response_to_generation_chunk(
 ) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
     return GenerationChunk(
-        text=stream_response["delta"]["text"],
+        text=stream_response.get("delta").get("text"),
         generation_info=dict(
             finish_reason=stream_response.get("stop_reason", None),
         ),
@@ -133,7 +133,10 @@ class LLMInputOutputAdapter:
     def prepare_output(cls, provider: str, response: Any) -> dict:
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            text = response_body.get("content")[0]['text']
+            text = response_body.get("completion")
+        elif provider == "anthropic_v3":
+            response_body = json.loads(response.get("body").read().decode())
+            text = response_body.get("content")[0].get('text')
         else:
             response_body = json.loads(response.get("body").read())
 
@@ -179,12 +182,12 @@ class LLMInputOutputAdapter:
             ):
                 return
                 # chunk obj format varies with provider
-            elif provider == "anthropic" and (
+            elif provider == "anthropic_v3" and (
                 chunk_obj.get("type") == 'content_block_stop'
             ):
                 return
                 # chunk obj format varies with provider
-            if provider == "anthropic" and chunk_obj.get('type') in (
+            if provider == "anthropic_v3" and chunk_obj.get('type') in (
                 'message_start', 'content_block_start', 'content_block_delta'
             ):
                 if chunk_obj.get('type') == 'content_block_delta': 
