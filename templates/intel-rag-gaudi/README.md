@@ -54,7 +54,9 @@ poetry install
 poetry run python ingest.py
 ```
 
-The script process and stores sections from Edgar 10k filings data for Nike `nke-10k-2023.pdf` into a Chroma database.
+The script process and stores sections from Edgar 10k filings data for Nike `nke-10k-2023.pdf` into a Chroma database by default.
+
+If you wish to use a Redis database instead, please refer to [rag-redis](../rag-redis/README.md) for instructions on how to make the switch.
 
 ## Usage
 
