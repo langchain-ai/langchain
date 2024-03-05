@@ -33,7 +33,7 @@ from langchain_core.messages import (
     ChatMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, root_validator, Extra
+from langchain_core.pydantic_v1 import BaseModel, root_validator, Extra, SecretStr
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -157,7 +157,7 @@ class ChatPrem(BaseChatModel, BaseModel):
 
     project_id: int
     """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
-    premai_api_key: str
+    premai_api_key: Optional[Union[str, SecretStr]] = None
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
     model: Optional[str] = None
