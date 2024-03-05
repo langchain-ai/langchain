@@ -16,7 +16,6 @@ class TiDBVectorStore(VectorStore):
         embedding_function: Embeddings,
         table_name: str = DEFAULT_TiDB_VECTOR_TABLE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
-        vector_dimension: Optional[int] = None,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
         drop_existing_table: bool = False,
@@ -47,7 +46,6 @@ class TiDBVectorStore(VectorStore):
                 a default table named `langchain_vector` will be created automatically.
             distance_strategy: The strategy used for similarity search,
                 defaults to "cosine", valid values: "l2", "cosine", "inner_product".
-            vector_dimension: The dimension of the vector, defaults to None.
             engine_args (Optional[Dict]): Additional arguments for the database engine,
                 defaults to None.
             drop_existing_table: Drop the existing TiDB table before initializing,
@@ -80,6 +78,7 @@ class TiDBVectorStore(VectorStore):
         self._connection_string = connection_string
         self._embedding_function = embedding_function
         self._distance_strategy = distance_strategy
+        self._vector_dimension = self._get_dimension()
 
         try:
             from tidb_vector.integrations import TiDBVectorClient
@@ -93,7 +92,7 @@ class TiDBVectorStore(VectorStore):
             connection_string=connection_string,
             table_name=table_name,
             distance_strategy=distance_strategy,
-            vector_dimension=vector_dimension,
+            vector_dimension=self._vector_dimension,
             engine_args=engine_args,
             drop_existing_table=drop_existing_table,
             **kwargs,
@@ -115,6 +114,12 @@ class TiDBVectorStore(VectorStore):
         Returns the current distance strategy.
         """
         return self._distance_strategy
+
+    def _get_dimension(self) -> int:
+        """
+        Get the dimension of the vector using embedding functions.
+        """
+        return len(self._embedding_function.embed_query("test embedding length"))
 
     @classmethod
     def from_texts(
@@ -139,7 +144,6 @@ class TiDBVectorStore(VectorStore):
                     defaults to "langchain_vector".
                 distance_strategy: The distance strategy used for similarity search,
                     defaults to "cosine", allowed: "l2", "cosine", "inner_product".
-                vector_dimension: The dimension of the vector, defaults to None.
                 ids (Optional[List[str]]): The list of IDs corresponding to each text,
                     defaults to None.
                 engine_args: Additional arguments for the underlying database engine,
@@ -158,7 +162,6 @@ class TiDBVectorStore(VectorStore):
             raise ValueError("please provide your tidb connection_url")
         table_name = kwargs.pop("table_name", "langchain_vector")
         distance_strategy = kwargs.pop("distance_strategy", "cosine")
-        vector_dimension = kwargs.pop("vector_dimension", None)
         ids = kwargs.pop("ids", None)
         engine_args = kwargs.pop("engine_args", None)
         drop_existing_table = kwargs.pop("drop_existing_table", False)
@@ -170,7 +173,6 @@ class TiDBVectorStore(VectorStore):
             table_name=table_name,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
-            vector_dimension=vector_dimension,
             engine_args=engine_args,
             drop_existing_table=drop_existing_table,
             **kwargs,
@@ -215,10 +217,7 @@ class TiDBVectorStore(VectorStore):
         """
 
         try:
-            from tidb_vector.integrations import (
-                check_table_existence,
-                get_embedding_column_definition,
-            )
+            from tidb_vector.integrations import check_table_existence
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
@@ -226,15 +225,11 @@ class TiDBVectorStore(VectorStore):
             )
 
         if check_table_existence(connection_string, table_name):
-            actual_dim = get_embedding_column_definition(
-                connection_string, table_name, "embedding"
-            )
             return cls(
                 connection_string=connection_string,
                 table_name=table_name,
                 embedding_function=embedding,
                 distance_strategy=distance_strategy,
-                vector_dimension=actual_dim,
                 engine_args=engine_args,
                 **kwargs,
             )

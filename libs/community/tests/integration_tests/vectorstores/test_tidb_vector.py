@@ -218,7 +218,6 @@ def test_load_from_existing_vectorstore() -> None:
         table_name="test_tidb_vectorstore_langchain",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
-        vector_dimension=ADA_TOKEN_COUNT,
         metadatas=metadatas,
         drop_existing_table=True,
         distance_strategy="cosine",
