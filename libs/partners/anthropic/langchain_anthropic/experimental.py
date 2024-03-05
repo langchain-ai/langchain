@@ -1,3 +1,4 @@
+from io import StringIO
 from typing import (
     Any,
     AsyncIterator,
@@ -8,6 +9,7 @@ from typing import (
     Sequence,
     Type,
     Union,
+    cast,
 )
 
 from langchain_core._api.beta_decorator import beta
@@ -16,13 +18,18 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    BaseMessageChunk,
+    SystemMessage,
+)
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function
@@ -93,9 +100,60 @@ def get_system_message(tools: List[Dict]) -> str:
     return SYSTEM_PROMPT_FORMAT.format(formatted_tools=tools_formatted)
 
 
+def _xml_to_dict(t: Any):
+    # Base case: If the element has no children, return its text or an empty string.
+    if len(t) == 0:
+        return t.text or ""
+
+    # Recursive case: The element has children. Convert them into a dictionary.
+    d = {}
+    for child in t:
+        if child.tag not in d:
+            d[child.tag] = _xml_to_dict(child)
+        else:
+            # Handle multiple children with the same tag
+            if not isinstance(d[child.tag], list):
+                d[child.tag] = [d[child.tag]]  # Convert existing entry into a list
+            d[child.tag].append(_xml_to_dict(child))
+    return d
+
+
+def _xml_to_tool_calls(elem: Any) -> List[Dict[str, Any]]:
+    """
+    Convert an XML element and its children into a dictionary of dictionaries.
+    """
+    invokes = elem.findall("invoke")
+    return [
+        {
+            "function": {
+                "name": invoke.find("tool_name").text,
+                "arguments": _xml_to_dict(invoke.find("parameters")),
+            },
+            "type": "function",
+        }
+        for invoke in invokes
+    ]
+
+
 @beta()
-class ChatAnthropicFunctions(ChatAnthropic):
+class ChatAnthropicTools(ChatAnthropic):
     """Chat model for interacting with Anthropic functions."""
+
+    _xmllib: Any = Field(default=None)
+
+    @root_validator()
+    def check_xml_lib(cls, values):
+        try:
+            # do this as an optional dep for temporary nature of this feature
+            import defusedxml.ElementTree as DET
+
+            values["_xmllib"] = DET
+        except ImportError:
+            raise ImportError(
+                "Could not import defusedxml python package. "
+                "Please install it using `pip install defusedxml`"
+            )
+        return values
 
     def bind_tools(
         self,
@@ -139,7 +197,8 @@ class ChatAnthropicFunctions(ChatAnthropic):
                 sys_content = messages[0].content
                 new_sys_content = f"{tool_system}\n\n{sys_content}"
                 messages = [SystemMessage(content=new_sys_content), *messages[1:]]
-                return super()._format_params(messages=messages, stop=stop, **kwargs)
+            else:
+                messages = [SystemMessage(content=tool_system), *messages]
 
         return super()._format_params(messages=messages, stop=stop, **kwargs)
 
@@ -154,4 +213,65 @@ class ChatAnthropicFunctions(ChatAnthropic):
         result = self._generate(
             messages=messages, stop=stop, run_manager=run_manager, **kwargs
         )
-        yield result.generations[0]
+        to_yield = result.generations[0]
+        chunk = ChatGenerationChunk(
+            message=cast(BaseMessageChunk, to_yield.message),
+            generation_info=to_yield.generation_info,
+        )
+        if run_manager:
+            run_manager.on_llm_new_token(
+                cast(str, to_yield.message.content), chunk=chunk
+            )
+        yield chunk
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        # streaming not supported for functions
+        result = await self._agenerate(
+            messages=messages, stop=stop, run_manager=run_manager, **kwargs
+        )
+        to_yield = result.generations[0]
+        chunk = ChatGenerationChunk(
+            message=cast(BaseMessageChunk, to_yield.message),
+            generation_info=to_yield.generation_info,
+        )
+        if run_manager:
+            await run_manager.on_llm_new_token(
+                cast(str, to_yield.message.content), chunk=chunk
+            )
+        yield chunk
+
+    def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+        """Format the output of the model, parsing xml as a tool call."""
+        text = data.content[0].text
+        tools = kwargs.get("tools", None)
+
+        additional_kwargs: Dict[str, Any] = {}
+
+        if tools:
+            # parse out the xml from the text
+            try:
+                # get everything between <function_calls> and </function_calls>
+                start = text.find("<function_calls>")
+                end = text.find("</function_calls>") + len("</function_calls>")
+                xml_text = text[start:end]
+
+                xml = self._xmllib.fromstring(xml_text)
+                additional_kwargs["tool_calls"] = _xml_to_tool_calls(xml)
+                text = ""
+            except Exception as e:
+                pass
+
+        return ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(content=text, additional_kwargs=additional_kwargs)
+                )
+            ],
+            llm_output=data,
+        )
