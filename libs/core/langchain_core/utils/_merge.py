@@ -33,7 +33,19 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
         elif isinstance(merged[k], dict):
             merged[k] = merge_dicts(merged[k], v)
         elif isinstance(merged[k], list):
-            merged[k] = merged[k] + v
+            for e in v:
+                if isinstance(e, dict) and "index" in e and isinstance(e["index"], int):
+                    to_merge = [
+                        i
+                        for i, e_left in enumerate(merged[k])
+                        if e_left["index"] == e["index"]
+                    ]
+                    if to_merge:
+                        merged[k][to_merge[0]] = merge_dicts(merged[k][to_merge[0]], e)
+                    else:
+                        merged[k] = merged[k] + [e]
+                else:
+                    merged[k] = merged[k] + [e]
         else:
             raise TypeError(
                 f"Additional kwargs key {k} already exists in left dict and value has "
