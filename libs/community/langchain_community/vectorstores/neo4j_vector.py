@@ -107,7 +107,7 @@ def remove_lucene_chars(text: str) -> str:
     return text.strip()
 
 
-def param_or_env(key: str, env_key: str) -> str:
+def param_or_env(key: Optional[str], env_key: str) -> str:
     if key:
         return key
     if os.environ.get(env_key):
