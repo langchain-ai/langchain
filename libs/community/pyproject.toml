@@ -250,6 +250,7 @@ extended_testing = [
  "hologres-vector",
  "praw",
  "databricks-vectorsearch",
+ "cloudpickle",
  "dgml-utils",
  "cohere",
  "tree-sitter",
