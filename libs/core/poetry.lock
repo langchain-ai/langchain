@@ -1134,6 +1134,25 @@ files = [
 ]
 
 [[package]]
+name = "langchain-text-splitters"
+version = "0.0.1"
+description = "LangChain text splitting utilities"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+langchain-core = "^0.1.28"
+
+[package.extras]
+extended-testing = ["lxml (>=5.1.0,<6.0.0)"]
+
+[package.source]
+type = "directory"
+url = "../text-splitters"
+
+[[package]]
 name = "langsmith"
 version = "0.1.1"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
@@ -2815,4 +2834,4 @@ extended-testing = ["jinja2"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "de97591989f083b89c7a7bc6dabba87e29e13fddc812450d5196d564b2c02ce1"
+content-hash = "092a56ee5733650e75cdacb0480d6a7fea1ff40a4a7f33500f77990a6e590ea4"
