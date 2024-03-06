@@ -107,7 +107,7 @@ class QuantizedBgeEmbeddings(BaseModel, Embeddings):
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(
             self.model_name_or_path,
         )
-        onnx_model_path = os.path.join(self.model_name_or_path, self.onnx_file_name)
+        onnx_model_path = os.path.join(self.model_name_or_path, self.onnx_file_name)  # type: ignore[arg-type]
         if not os.path.exists(onnx_model_path):
             onnx_model_path = hf_hub_download(
                 self.model_name_or_path, filename=self.onnx_file_name
