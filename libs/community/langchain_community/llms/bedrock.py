@@ -85,15 +85,14 @@ def _stream_response_to_generation_chunk(
     stream_response: Dict[str, Any],
 ) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
-    if stream_response.get("delta"):
-        return GenerationChunk(
-            text=stream_response.get("delta").get("text"),
-            generation_info=dict(
-                finish_reason=stream_response.get("stop_reason", None),
-            ),
-        )
-    else:
-        return GenerationChunk("")
+    if not stream_response["delta"]:
+        return GenerationChunk(text="")
+    return GenerationChunk(
+        text=stream_response.get("delta").get("text"),
+        generation_info=dict(
+            finish_reason=stream_response.get("stop_reason", None),
+        ),
+    )
 
 
 class LLMInputOutputAdapter:
