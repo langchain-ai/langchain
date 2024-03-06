@@ -40,7 +40,7 @@ except ImportError:
         return None
 
     def wait_exponential_fallback(
-        multiplier: float = 1, min: float = 0, max: float = float('inf')
+        multiplier: float = 1, min: float = 0, max: float = float("inf")
     ) -> None:
         return None
 
