@@ -41,15 +41,31 @@ class RequestsToolkit(BaseToolkit):
     """
 
     requests_wrapper: TextRequestsWrapper
+    allow_dangerous_requests: bool = False
 
     def get_tools(self) -> List[BaseTool]:
         """Return a list of tools."""
         return [
-            RequestsGetTool(requests_wrapper=self.requests_wrapper),
-            RequestsPostTool(requests_wrapper=self.requests_wrapper),
-            RequestsPatchTool(requests_wrapper=self.requests_wrapper),
-            RequestsPutTool(requests_wrapper=self.requests_wrapper),
-            RequestsDeleteTool(requests_wrapper=self.requests_wrapper),
+            RequestsGetTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
+            RequestsPostTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
+            RequestsPatchTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
+            RequestsPutTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
+            RequestsDeleteTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
         ]
 
 
