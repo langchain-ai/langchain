@@ -1,7 +1,7 @@
 """Util that invokes the Passio Nutrition AI API.
 """
 from datetime import datetime, timedelta
-from typing import Dict, Union, final, Any, Callable
+from typing import Any, Callable, Dict, Union, final
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
@@ -28,7 +28,9 @@ try:
     )
 except ImportError:
     # No retries if tenacity is not installed.
-    def retry_fallback(f: Callable[..., Any], *args: Any, **kwargs: Any) -> Callable[..., Any]:
+    def retry_fallback(
+        f: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> Callable[..., Any]:
         return f
 
     def stop_after_attempt_fallback(n: int) -> None:
@@ -37,7 +39,9 @@ except ImportError:
     def wait_random_fallback(a: float, b: float) -> None:
         return None
 
-    def wait_exponential_fallback(multiplier: float = 1, min: float = 0, max: float = float('inf')) -> None:
+    def wait_exponential_fallback(
+        multiplier: float = 1, min: float = 0, max: float = float('inf')
+    ) -> None:
         return None
 
 
