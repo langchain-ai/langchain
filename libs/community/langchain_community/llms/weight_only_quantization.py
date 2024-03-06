@@ -88,11 +88,11 @@ class WeightOnlyQuantPipeline(LLM):
         pipeline_kwargs: Optional[dict] = None,
         load_in_4bit: Optional[bool] = False,
         load_in_8bit: Optional[bool] = False,
-        quantization_config=None,
+        quantization_config: Optional[Any] = None,
         **kwargs: Any,
     ) -> LLM:
         """Construct the pipeline object from model_id and task."""
-        if device_map is not None and device is not None:
+        if device_map is not None and device > -1:
             raise ValueError("`Device` and `device_map` cannot be set simultaneously!")
         if importlib.util.find_spec("torch") is None:
             raise ValueError(
@@ -113,7 +113,7 @@ class WeightOnlyQuantPipeline(LLM):
                 "Please install it with `pip install transformers` "
                 "and `pip install intel-extension-for-transformers`."
             )
-        if device is not None and device >= 0:
+        if device >= 0:
             if not is_ipex_available():
                 raise ValueError("Don't find out Intel GPU on this machine!")
             device_map = "xpu:" + str(device)
