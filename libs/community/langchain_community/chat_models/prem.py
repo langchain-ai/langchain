@@ -156,6 +156,7 @@ class ChatPrem(BaseChatModel, BaseModel):
     """
     
     # TODO: Discussion needed. We can any one the following:
+    # TODO: Need to add the default parameters through prem-sdk here
     
     # - User can set/override parameters here and then we can set it in additional arguments
     # - Remove all the optional paramter here and keep it to the kwargs (but that would avoid function defintion)
@@ -247,21 +248,18 @@ class ChatPrem(BaseChatModel, BaseModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        # For default objects tools can not be None
-        # TODO: Need to add the default parameters through prem-sdk here
-        # And pass those paramteres as kwargs while calling the model
+        # NOTE: n and stop is not supported, so hardcoding to current default value
+        # TODO: We might need to provide default prem-sdk params here too. 
         return {
-            "model": "gpt-3.5-turbo",
-            "system_prompt": "",
-            "top_p": 0.95,
-            "temperature": 1.0,
-            "stream": False,
-            "n": 1,
-            "logit_bias": None,
-            "max_tokens": 128,
-            "presence_penalty": 0.0,
-            "frequency_penalty": 2,
-            "seed": None,
+            "model": self.model,
+            "system_prompt": self.system_prompt, 
+            "top_p": self.top_p, 
+            "temperature": self.temperature, 
+            "logit_bias": self.logit_bias,
+            "max_tokens": self.max_tokens,
+            "presence_penalty": self.presence_penalty,
+            "frequency_penalty": self.frequency_penalty,
+            "seed": self.seed, 
             "stop": None,
         }
 
@@ -275,6 +273,9 @@ class ChatPrem(BaseChatModel, BaseModel):
 
         system_prompt, messages = _messages_to_prompt_dict(messages)
 
+        # TODO: If any of the kwargs is changed here w.r.t launched default parameters
+        # we need to push a warning message that those are changed. 
+        
         if stop is not None:
             kwargs["stop"] = stop
 
