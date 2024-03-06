@@ -34,12 +34,17 @@ def _dereference_refs_helper(obj, full_schema, skip_keys, processed_refs=None):
                     continue
                 processed_refs.add(v)
                 ref = _retrieve_ref(v, full_schema)
-                return _dereference_refs_helper(ref, full_schema, skip_keys, processed_refs)
+                return _dereference_refs_helper(
+                    ref, full_schema, skip_keys, processed_refs
+                )
             else:
                 obj_out[k] = v
         return obj_out
     elif isinstance(obj, list):
-        return [_dereference_refs_helper(el, full_schema, skip_keys, processed_refs) for el in obj]
+        return [
+            _dereference_refs_helper(el, full_schema, skip_keys, processed_refs)
+            for el in obj
+        ]
     else:
         return obj
 
