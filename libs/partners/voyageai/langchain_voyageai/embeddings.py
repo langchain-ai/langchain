@@ -1,7 +1,7 @@
 import logging
-from typing import List, Optional
+from typing import Iterable, List, Optional
 
-import voyageai
+import voyageai  # type: ignore
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import PrivateAttr
 from voyageai import Client
@@ -46,10 +46,10 @@ class VoyageAIEmbeddings(Embeddings):
         self.truncation = truncation
         self.show_progress_bar = show_progress_bar or self.show_progress_bar
 
-    def _get_batch_iterator(self, texts: List[str]):
+    def _get_batch_iterator(self, texts: List[str]) -> Iterable:
         if self.show_progress_bar:
             try:
-                from tqdm.auto import tqdm
+                from tqdm.auto import tqdm  # type: ignore
             except ImportError as e:
                 raise ImportError(
                     "Must have tqdm installed if `show_progress_bar` is set to True. "
@@ -58,7 +58,7 @@ class VoyageAIEmbeddings(Embeddings):
 
             _iter = tqdm(range(0, len(texts), self.batch_size))
         else:
-            _iter = range(0, len(texts), self.batch_size)
+            _iter = range(0, len(texts), self.batch_size)  # type: ignore
 
         return _iter
 
