@@ -44,8 +44,9 @@ def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("DATABRICKS_TOKEN", "my-default-token")
 
     llm = Databricks(
-        endpoint_name="databricks-mixtral-8x7b-instruct",
+        endpoint_name="some_end_point_name",  # Value should not matter for this test
         transform_input_fn=transform_input,
+        allow_dangerous_deserialization=True,
     )
     params = llm._default_params
     pickled_string = cloudpickle.dumps(transform_input).hex()
