@@ -9,6 +9,7 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_community.llms.utils import enforce_stop_tokens
 
 SOLAR_SERVICE_URL_BASE = "https://api.upstage.ai/v1/solar"
+SOLAR_SERVICE = "https://api.upstage.ai"
 
 
 class _SolarClient(BaseModel):
@@ -37,7 +38,7 @@ class SolarCommon(BaseModel):
     """Solar API key. Get it here: https://console.upstage.ai/services/solar"""
     model_name: str = Field(default="solar-1-mini-chat", alias="model")
     """Model name. Available models listed here: https://console.upstage.ai/services/solar"""
-    max_tokens = 1024
+    max_tokens = 32000
     temperature = 0.3
 
     class Config:
@@ -69,11 +70,21 @@ class SolarCommon(BaseModel):
             get_from_dict_or_env(values, "solar_api_key", "SOLAR_API_KEY")
         )
 
+        if "base_url" not in values:
+            values["base_url"] = SOLAR_SERVICE_URL_BASE
+
+        if values["solar_api_key"].empty():
+            raise ValueError("SOLAR_API_KEY must be configured")
+
+        if len(values["solar_api_key"]) != 32:
+            raise ValueError("SOLAR_API_KEY must be at least 32")
+
+        if "base_url" in values and not values["base_url"].startswith(SOLAR_SERVICE):
+            raise ValueError("base_url must match with: " + SOLAR_SERVICE)
+
         values["_client"] = _SolarClient(
             api_key=values["solar_api_key"],
             base_url=values["base_url"]
-            if "base_url" in values
-            else SOLAR_SERVICE_URL_BASE,
         )
         return values
 

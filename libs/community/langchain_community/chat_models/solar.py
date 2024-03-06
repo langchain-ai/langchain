@@ -13,11 +13,11 @@ class SolarChat(SolarCommon, ChatOpenAI):
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``SOLAR_API_KEY`` set with your API key.
     (Solar's chat API is compatible with OpenAI's SDK.)
-    Referenced from https://platform.solar.cn/docs
+    Referenced from https://console.upstage.ai/services/solar
     Example:
         .. code-block:: python
             from langchain_community.chat_models.solar import SolarChat
-            solar = SolarChat(model="solar-v1-8k")
+            solar = SolarChat(model="solar-1-mini-chat")
     """
 
     @root_validator()
