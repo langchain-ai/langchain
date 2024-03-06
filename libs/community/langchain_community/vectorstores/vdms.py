@@ -263,8 +263,6 @@ class VDMS(VectorStore):
         ids = ids if ids is not None else [str(uuid.uuid1()) for _ in range(texts)]
         _len_check_if_sized(texts, ids, "texts", "ids")
 
-        orig_props = self.__get_properties(collection_name)
-
         all_queries = []
         all_blobs = []
         inserted_ids = []
@@ -282,9 +280,6 @@ class VDMS(VectorStore):
 
         response, response_array = self.__run_vdms_query(all_queries, all_blobs)
 
-        self.__update_properties(
-            collection_name, orig_props, self.collection_properties
-        )
         # return inserted_ids
 
     def __add_set(
@@ -358,7 +353,23 @@ class VDMS(VectorStore):
         id: Optional[str] = None,
         # collection_properties: Optional[list] = []
     ) -> Tuple[Dict[str, Dict[str, Any]], Union[bytes, None]]:
-        props = {} if id is None else {"id": id}
+        if id is None:
+            props = {}
+        else:
+            props = {"id": id}
+            id_exists, query = check_descriptor_exists_by_id(self._client, collection_name, id)
+            if id_exists:
+                skipped_value = {
+                    prop_key: prop_val[-1]
+                    for prop_key, prop_val in query["FindDescriptor"]["constraints"].items()
+                }
+                print(
+                    f"[!] Embedding with id ({id}) exists in DB;",
+                    "Therefore, skipped and not inserted",
+                )
+                print(f"\tSkipped values are: {skipped_value}")
+                return query, None
+
         if metadata:
             # Validate properties (no arrays accepted)
             # metadata = validate_vdms_properties(metadata)
@@ -371,34 +382,9 @@ class VDMS(VectorStore):
                 # collection_properties.append(k)
                 self.collection_properties.append(k)
 
-        # query = add_descriptor("AddDescriptor", collection_name, label=None,
-        #                            ref=None, props=props, link=None, k_neighbors=None,
-        #                            constraints=None, results=None)
-        query = check_vdms_then_adddescriptor(
-            self._client,
-            collection_name,
-            label=None,
-            ref=None,
-            props=props,
-            link=None,
-            k_neighbors=None,
-        )
-
-        # print(f"get query: {time.time()-prop_time_s}")
-        if "FindDescriptor" in list(query.keys()):
-            skipped_value = {
-                prop_key: prop_val[-1]
-                for prop_key, prop_val in query["FindDescriptor"]["constraints"].items()
-            }
-            print(
-                f"[!] Embedding with id ({id}) exists in DB;",
-                "Therefore, skipped and not inserted",
-            )
-            print(f"\tSkipped values are: {skipped_value}")
-            return query, None
-
-        # emb = np.array(embedding, dtype="float32")
-        # blob = emb.tobytes()
+        query = add_descriptor("AddDescriptor", collection_name, label=None,
+                                   ref=None, props=props, link=None, k_neighbors=None,
+                                   constraints=None, results=None)
 
         blob = embedding2bytes(embedding)
 
@@ -431,8 +417,9 @@ class VDMS(VectorStore):
     ):
         response, response_array = self._client.query(all_queries, all_blobs)
 
+        _ = check_valid_response(all_queries, response)
         if print_last_response:
-            self.print_last_response()
+            self._client.print_last_response()
         return response, response_array
 
     def __update(
@@ -560,7 +547,10 @@ class VDMS(VectorStore):
         # Set embeddings
         embeddings = self._embed_image(uris=uris)
 
-        metadatas = metadatas if metadatas is not None else [None for _ in uris]
+        if metadatas is None:
+            metadatas = [None for _ in uris]
+        else:
+            metadatas = [validate_vdms_properties(m) for m in metadatas]
 
         self.__from(
             texts=b64_texts,
@@ -600,6 +590,8 @@ class VDMS(VectorStore):
 
         if metadatas is None:
             metadatas = [None for _ in texts]
+        else:
+            metadatas = [validate_vdms_properties(m) for m in metadatas]
 
         # for start_idx in range(0, len(texts), batch_size):
         #     end_idx = min(start_idx + batch_size, len(texts))
@@ -633,6 +625,9 @@ class VDMS(VectorStore):
         metadatas: Iterable[dict],
         batch_size: int,
     ) -> None:
+        # Get initial properties
+        orig_props = self.__get_properties(self._collection_name)
+
         for start_idx in range(0, len(texts), batch_size):
             end_idx = min(start_idx + batch_size, len(texts))
 
@@ -648,6 +643,11 @@ class VDMS(VectorStore):
                 metadatas=batch_metadatas,
                 ids=batch_ids,
             )
+
+        # Update Properties
+        self.__update_properties(
+            self._collection_name, orig_props, self.collection_properties
+        )
 
     def check_required_inputs(self, collection_name):
         # Check Distance Metric
@@ -751,7 +751,7 @@ class VDMS(VectorStore):
 
         return cls.from_texts(
             texts=[doc.page_content for doc in documents],
-            metadatas=[validate_vdms_properties(doc.metadata) for doc in documents],
+            metadatas=[doc.metadata for doc in documents],
             embedding_function=embedding_function,
             ids=ids,
             batch_size=batch_size,
@@ -1525,13 +1525,40 @@ def bytes2str(in_bytes: bytes) -> str:
     return in_bytes.decode()
 
 
-def check_valid_response(response: Any, cmd_list: List[str]) -> bool:
-    return isinstance(response, list) and any(
+
+def get_cmds_from_query(all_queries: list):
+    return list(set([k for q in all_queries for k in q.keys()]))
+
+def check_valid_response(all_queries: List[dict], response: Any) -> bool:
+    cmd_list = get_cmds_from_query(all_queries)
+    valid_res = isinstance(response, list) and any(
         cmd in response[0]
         and "returned" in response[0][cmd]
         and response[0][cmd]["returned"] > 0
         for cmd in cmd_list
     )
+    return valid_res
+
+
+def check_descriptor_exists_by_id(
+    db: vdms.vdms,
+    setname: str,
+    id: str,
+    # k_neighbors: Optional[int] = None,
+):
+    constraints = {"id": ["==", id]}
+    findDescriptor = add_descriptor(
+        "FindDescriptor",
+        setname,
+        # k_neighbors=k_neighbors,
+        constraints=constraints,
+        results={"list": ["id"], "count": ""},
+    )
+    all_queries = [findDescriptor]
+    res, _ = db.query(all_queries)
+
+    valid_res = check_valid_response(all_queries, res)
+    return valid_res, findDescriptor
 
 
 def check_vdms_then_adddescriptor(
@@ -1563,11 +1590,12 @@ def check_vdms_then_adddescriptor(
         constraints=props_as_constraints,
         results=results,
     )
-
-    res, _ = db.query([findDescriptor])
+    all_queries = [findDescriptor]
+    res, _ = db.query(all_queries)
     # print(findDescriptor, res)
 
-    if check_valid_response(res, ["AddDescriptor", "FindDescriptor"]):
+    valid_res = check_valid_response(all_queries, res)
+    if valid_res:
         if ref is not None:
             findDescriptor["FindDescriptor"]["_ref"] = ref
         # if link is not None:
