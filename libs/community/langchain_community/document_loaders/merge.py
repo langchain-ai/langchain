@@ -23,10 +23,6 @@ class MergedDataLoader(BaseLoader):
             for document in data:
                 yield document
 
-    def load(self) -> List[Document]:
-        """Load docs."""
-        return list(self.lazy_load())
-
     async def alazy_load(self) -> AsyncIterator[Document]:
         """Lazy load docs from each individual loader."""
         for loader in self.loaders:

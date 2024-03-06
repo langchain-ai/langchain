@@ -28,7 +28,7 @@ Learn more in the [example notebook](/docs/integrations/vectorstores/astradb).
 ## Chat message history
 
 ```python
-from langchain_community.chat_message_histories import AstraDBChatMessageHistory
+from langchain_astradb import AstraDBChatMessageHistory
 message_history = AstraDBChatMessageHistory(
     session_id="test-session",
     api_endpoint="...",
