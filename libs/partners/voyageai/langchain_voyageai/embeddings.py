@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import List, Optional
 
@@ -23,8 +22,8 @@ class VoyageAIEmbeddings(Embeddings):
 
     client: Client = PrivateAttr()
     aclient: voyageai.client_async.AsyncClient = PrivateAttr()
-    model: str = "voyage-01"
-    batch_size: int = 7
+    model: str
+    batch_size: int
     show_progress_bar: bool = False
     truncation: Optional[bool] = None
 
@@ -92,7 +91,7 @@ class VoyageAIEmbeddings(Embeddings):
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
             r = await self.aclient.embed(
-                texts[i: i + self.batch_size],
+                texts[i : i + self.batch_size],
                 model=self.model,
                 input_type="document",
                 truncation=self.truncation,
