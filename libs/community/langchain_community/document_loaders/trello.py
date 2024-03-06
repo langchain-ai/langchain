@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_env
@@ -89,7 +89,7 @@ class TrelloLoader(BaseLoader):
         client = TrelloClient(api_key=api_key, token=token)
         return cls(client, board_name, **kwargs)
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Loads all cards from the specified Trello board.
 
         You can filter the cards, metadata and text included by using the optional
@@ -111,7 +111,8 @@ class TrelloLoader(BaseLoader):
         list_dict = {list_item.id: list_item.name for list_item in board.list_lists()}
         # Get Cards on the board
         cards = board.get_cards(card_filter=self.card_filter)
-        return [self._card_to_doc(card, list_dict) for card in cards]
+        for card in cards:
+            yield self._card_to_doc(card, list_dict)
 
     def _get_board(self) -> Board:
         # Find the first board with a matching name

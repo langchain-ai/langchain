@@ -32,6 +32,7 @@ from langchain_community.document_loaders.apify_dataset import ApifyDatasetLoade
 from langchain_community.document_loaders.arcgis_loader import ArcGISLoader
 from langchain_community.document_loaders.arxiv import ArxivLoader
 from langchain_community.document_loaders.assemblyai import (
+    AssemblyAIAudioLoaderById,
     AssemblyAIAudioTranscriptLoader,
 )
 from langchain_community.document_loaders.astradb import AstraDBLoader
@@ -262,6 +263,7 @@ __all__ = [
     "ApifyDatasetLoader",
     "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
