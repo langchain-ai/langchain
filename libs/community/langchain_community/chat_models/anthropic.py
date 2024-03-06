@@ -143,9 +143,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         for data in stream_resp:
             delta = data.completion
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(delta, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -163,9 +163,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         async for data in stream_resp:
             delta = data.completion
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(delta, chunk=chunk)
+            yield chunk
 
     def _generate(
         self,

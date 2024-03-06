@@ -1,4 +1,5 @@
 """Configuration file for the Sphinx documentation builder."""
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -49,7 +50,7 @@ class ExampleLinksDirective(SphinxDirective):
         class_or_func_name = self.arguments[0]
         links = imported_classes.get(class_or_func_name, {})
         list_node = nodes.bullet_list()
-        for doc_name, link in links.items():
+        for doc_name, link in sorted(links.items()):
             item_node = nodes.list_item()
             para_node = nodes.paragraph()
             link_node = nodes.reference()
@@ -174,3 +175,6 @@ myst_enable_extensions = ["colon_fence"]
 
 # generate autosummary even if no references
 autosummary_generate = True
+
+html_copy_source = False
+html_show_sourcelink = False

@@ -104,6 +104,18 @@ class ChatSparkLLM(BaseChatModel):
             spark_api_key="<api_key>",
             spark_api_secret="<api_secret>"
         )
+
+    Extra infos:
+        1. Get app_id, api_key, api_secret from the iFlyTek Open Platform Console:
+            https://console.xfyun.cn/services/bm35
+        2. By default, iFlyTek Spark LLM V3.0 is invoked.
+            If you need to invoke other versions, please configure the corresponding
+            parameters(spark_api_url and spark_llm_domain) according to the document:
+            https://www.xfyun.cn/doc/spark/Web.html
+        3. It is necessary to ensure that the app_id used has a license for
+            the corresponding model version.
+        4. If you encounter problems during use, try getting help at:
+            https://console.xfyun.cn/workorder/commit
     """
 
     @classmethod
@@ -178,10 +190,10 @@ class ChatSparkLLM(BaseChatModel):
             "spark_api_secret",
             "IFLYTEK_SPARK_API_SECRET",
         )
-        values["spark_app_url"] = get_from_dict_or_env(
+        values["spark_api_url"] = get_from_dict_or_env(
             values,
-            "spark_app_url",
-            "IFLYTEK_SPARK_APP_URL",
+            "spark_api_url",
+            "IFLYTEK_SPARK_API_URL",
             "wss://spark-api.xf-yun.com/v3.1/chat",
         )
         values["spark_llm_domain"] = get_from_dict_or_env(
@@ -224,9 +236,10 @@ class ChatSparkLLM(BaseChatModel):
                 continue
             delta = content["data"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            yield ChatGenerationChunk(message=chunk)
+            cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
-                run_manager.on_llm_new_token(str(chunk.content))
+                run_manager.on_llm_new_token(str(chunk.content), chunk=cg_chunk)
+            yield cg_chunk
 
     def _generate(
         self,

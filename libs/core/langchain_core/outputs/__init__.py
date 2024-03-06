@@ -1,3 +1,7 @@
+"""**Output** classes are used to represent the output of a language model call
+and the output of a chat.
+
+"""
 from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
 from langchain_core.outputs.chat_result import ChatResult
 from langchain_core.outputs.generation import Generation, GenerationChunk

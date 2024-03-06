@@ -200,6 +200,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "example": {
                         "title": "Example",
                         "default": false,
@@ -250,6 +254,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -304,6 +312,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "role": {
                         "title": "Role",
                         "type": "string"
@@ -355,6 +367,10 @@
                       "name": {
                         "title": "Name",
                         "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -401,6 +417,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -449,6 +469,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -667,6 +691,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "example": {
                         "title": "Example",
                         "default": false,
@@ -717,6 +745,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -771,6 +803,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "role": {
                         "title": "Role",
                         "type": "string"
@@ -822,6 +858,10 @@
                       "name": {
                         "title": "Name",
                         "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -868,6 +908,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -916,6 +960,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -1187,6 +1235,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "example": {
                         "title": "Example",
                         "default": false,
@@ -1237,6 +1289,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -1291,6 +1347,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "role": {
                         "title": "Role",
                         "type": "string"
@@ -1342,6 +1402,10 @@
                       "name": {
                         "title": "Name",
                         "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -1388,6 +1452,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -1436,6 +1504,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -1576,6 +1648,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "example": {
                         "title": "Example",
                         "default": false,
@@ -1626,6 +1702,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -1680,6 +1760,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "role": {
                         "title": "Role",
                         "type": "string"
@@ -1731,6 +1815,10 @@
                       "name": {
                         "title": "Name",
                         "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -1777,6 +1865,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -1825,6 +1917,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -2002,6 +2098,10 @@
                                   "title": "Name",
                                   "type": "string"
                                 },
+                                "id": {
+                                  "title": "Id",
+                                  "type": "string"
+                                },
                                 "example": {
                                   "title": "Example",
                                   "default": false,
@@ -2052,6 +2152,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "example": {
@@ -2106,6 +2210,10 @@
                                   "title": "Name",
                                   "type": "string"
                                 },
+                                "id": {
+                                  "title": "Id",
+                                  "type": "string"
+                                },
                                 "role": {
                                   "title": "Role",
                                   "type": "string"
@@ -2157,6 +2265,10 @@
                                 "name": {
                                   "title": "Name",
                                   "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
+                                  "type": "string"
                                 }
                               },
                               "required": [
@@ -2203,6 +2315,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 }
                               },
@@ -2251,6 +2367,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "tool_call_id": {
@@ -2436,6 +2556,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "example": {
                         "title": "Example",
                         "default": false,
@@ -2486,6 +2610,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -2540,6 +2668,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "role": {
                         "title": "Role",
                         "type": "string"
@@ -2591,6 +2723,10 @@
                       "name": {
                         "title": "Name",
                         "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -2637,6 +2773,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -2685,6 +2825,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -2956,6 +3100,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "example": {
                         "title": "Example",
                         "default": false,
@@ -3006,6 +3154,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -3060,6 +3212,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "role": {
                         "title": "Role",
                         "type": "string"
@@ -3111,6 +3267,10 @@
                       "name": {
                         "title": "Name",
                         "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -3157,6 +3317,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -3205,6 +3369,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -3423,6 +3591,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "example": {
                         "title": "Example",
                         "default": false,
@@ -3473,6 +3645,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -3527,6 +3703,10 @@
                         "title": "Name",
                         "type": "string"
                       },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
+                      },
                       "role": {
                         "title": "Role",
                         "type": "string"
@@ -3578,6 +3758,10 @@
                       "name": {
                         "title": "Name",
                         "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -3624,6 +3808,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -3672,6 +3860,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -3933,6 +4125,10 @@
                     "title": "Name",
                     "type": "string"
                   },
+                  "id": {
+                    "title": "Id",
+                    "type": "string"
+                  },
                   "example": {
                     "title": "Example",
                     "default": false,
@@ -3983,6 +4179,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "example": {
@@ -4037,6 +4237,10 @@
                     "title": "Name",
                     "type": "string"
                   },
+                  "id": {
+                    "title": "Id",
+                    "type": "string"
+                  },
                   "role": {
                     "title": "Role",
                     "type": "string"
@@ -4088,6 +4292,10 @@
                   "name": {
                     "title": "Name",
                     "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -4134,6 +4342,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   }
                 },
@@ -4182,6 +4394,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "tool_call_id": {

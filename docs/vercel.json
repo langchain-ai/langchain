@@ -206,7 +206,7 @@
     },
     {
       "source": "/docs/modules/model_io/chat/llm_chain",
-      "destination":  "/docs/modules/chains/foundational/llm_chain"
+      "destination": "/docs/modules/chains/foundational/llm_chain"
     },
     {
       "source": "/docs/guides/langsmith(/?)",
@@ -413,79 +413,83 @@
       "destination": "/docs/expression_language/how_to/routing"
     },
     {
-      "source":  "/docs/integrations/providers/amazon_api_gateway",
+      "source": "/docs/guides/expression_language/",
+      "destination": "/docs/expression_language/"
+    },
+    {
+      "source": "/docs/integrations/providers/amazon_api_gateway",
       "destination": "/docs/integrations/platforms/aws"
     },
     {
-      "source":  "/docs/integrations/providers/huggingface",
+      "source": "/docs/integrations/providers/huggingface",
       "destination": "/docs/integrations/platforms/huggingface"
     },
     {
-      "source":  "/docs/integrations/providers/azure_blob_storage",
+      "source": "/docs/integrations/providers/azure_blob_storage",
       "destination": "/docs/integrations/platforms/microsoft"
     },
     {
-      "source":  "/docs/integrations/providers/google_vertexai_matchingengine",
+      "source": "/docs/integrations/providers/google_vertexai_matchingengine",
       "destination": "/docs/integrations/platforms/google"
     },
     {
-      "source":  "/docs/integrations/providers/aws_s3",
+      "source": "/docs/integrations/providers/aws_s3",
       "destination": "/docs/integrations/platforms/aws"
     },
     {
-      "source":  "/docs/integrations/providers/azure_openai",
+      "source": "/docs/integrations/providers/azure_openai",
       "destination": "/docs/integrations/platforms/microsoft"
     },
     {
-      "source":  "/docs/integrations/providers/azure_blob_storage",
+      "source": "/docs/integrations/providers/azure_blob_storage",
       "destination": "/docs/integrations/platforms/microsoft"
     },
     {
-      "source":  "/docs/integrations/providers/azure_cognitive_search_",
+      "source": "/docs/integrations/providers/azure_cognitive_search_",
       "destination": "/docs/integrations/platforms/microsoft"
     },
     {
-      "source":  "/docs/integrations/providers/bedrock",
+      "source": "/docs/integrations/providers/bedrock",
       "destination": "/docs/integrations/platforms/aws"
     },
     {
-      "source":  "/docs/integrations/providers/google_bigquery",
+      "source": "/docs/integrations/providers/google_bigquery",
       "destination": "/docs/integrations/platforms/google"
     },
     {
-      "source":  "/docs/integrations/providers/google_cloud_storage",
+      "source": "/docs/integrations/providers/google_cloud_storage",
       "destination": "/docs/integrations/platforms/google"
     },
     {
-      "source":  "/docs/integrations/providers/google_drive",
+      "source": "/docs/integrations/providers/google_drive",
       "destination": "/docs/integrations/platforms/google"
     },
     {
-      "source":  "/docs/integrations/providers/google_search",
+      "source": "/docs/integrations/providers/google_search",
       "destination": "/docs/integrations/platforms/google"
     },
     {
-      "source":  "/docs/integrations/providers/microsoft_onedrive",
+      "source": "/docs/integrations/providers/microsoft_onedrive",
       "destination": "/docs/integrations/platforms/microsoft"
     },
     {
-      "source":  "/docs/integrations/providers/microsoft_powerpoint",
+      "source": "/docs/integrations/providers/microsoft_powerpoint",
       "destination": "/docs/integrations/platforms/microsoft"
     },
     {
-      "source":  "/docs/integrations/providers/microsoft_word",
+      "source": "/docs/integrations/providers/microsoft_word",
       "destination": "/docs/integrations/platforms/microsoft"
     },
     {
-      "source":  "/docs/integrations/providers/sagemaker_endpoint",
+      "source": "/docs/integrations/providers/sagemaker_endpoint",
       "destination": "/docs/integrations/platforms/aws"
     },
     {
-      "source":  "/docs/integrations/providers/sagemaker_tracking",
+      "source": "/docs/integrations/providers/sagemaker_tracking",
       "destination": "/docs/integrations/callbacks/sagemaker_tracking"
     },
     {
-      "source":  "/docs/integrations/providers/openai",
+      "source": "/docs/integrations/providers/openai",
       "destination": "/docs/integrations/platforms/openai"
     },
     {
@@ -508,7 +512,7 @@
       "source": "/docs/integrations/vectorstores/matchingengine",
       "destination": "/docs/integrations/vectorstores/google_vertex_ai_vector_search"
     },
-  
+
     {
       "source": "/docs/integrations/tools/sqlite",
       "destination": "/docs/use_cases/sql"
