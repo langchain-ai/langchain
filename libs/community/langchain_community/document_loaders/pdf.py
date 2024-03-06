@@ -157,10 +157,6 @@ class PyPDFLoader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFParser(password=password, extract_images=extract_images)
 
-    def load(self) -> List[Document]:
-        """Load given path as pages."""
-        return list(self.lazy_load())
-
     def lazy_load(
         self,
     ) -> Iterator[Document]:
@@ -318,7 +314,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         output_string = StringIO()
         with open_filename(self.file_path, "rb") as fp:
             extract_text_to_fp(
-                fp,  # type: ignore[arg-type]
+                fp,
                 output_string,
                 codec="",
                 laparams=LAParams(),
@@ -462,9 +458,15 @@ class MathpixPDFLoader(BasePDFLoader):
 
             # This indicates an error with the request (e.g. auth problems)
             error = response_data.get("error", None)
+            error_info = response_data.get("error_info", None)
 
             if error is not None:
-                raise ValueError(f"Unable to retrieve PDF from Mathpix: {error}")
+                error_msg = f"Unable to retrieve PDF from Mathpix: {error}"
+
+                if error_info is not None:
+                    error_msg += f" ({error_info['id']})"
+
+                raise ValueError(error_msg)
 
             status = response_data.get("status", None)
 
@@ -474,7 +476,7 @@ class MathpixPDFLoader(BasePDFLoader):
                 # This indicates an error with the PDF processing
                 raise ValueError("Unable to retrieve PDF from Mathpix")
             else:
-                print(f"Status: {status}, waiting for processing to complete")
+                print(f"Status: {status}, waiting for processing to complete")  # noqa: T201
                 time.sleep(5)
         raise TimeoutError
 
@@ -512,7 +514,7 @@ class MathpixPDFLoader(BasePDFLoader):
         contents = self.get_processed_pdf(pdf_id)
         if self.should_clean_pdf:
             contents = self.clean_pdf(contents)
-        metadata = {"source": self.source, "file_path": self.source}
+        metadata = {"source": self.source, "file_path": self.source, "pdf_id": pdf_id}
         return [Document(page_content=contents, metadata=metadata)]
 
 

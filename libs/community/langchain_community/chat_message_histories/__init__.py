@@ -1,3 +1,20 @@
+"""**Chat message history** stores a history of the message interactions in a chat.
+
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseChatMessageHistory --> <name>ChatMessageHistory  # Examples: FileChatMessageHistory, PostgresChatMessageHistory
+
+**Main helpers:**
+
+.. code-block::
+
+    AIMessage, HumanMessage, BaseMessage
+
+"""  # noqa: E501
+
 from langchain_community.chat_message_histories.astradb import (
     AstraDBChatMessageHistory,
 )
@@ -35,6 +52,7 @@ from langchain_community.chat_message_histories.sql import SQLChatMessageHistory
 from langchain_community.chat_message_histories.streamlit import (
     StreamlitChatMessageHistory,
 )
+from langchain_community.chat_message_histories.tidb import TiDBChatMessageHistory
 from langchain_community.chat_message_histories.upstash_redis import (
     UpstashRedisChatMessageHistory,
 )
@@ -62,4 +80,5 @@ __all__ = [
     "ZepChatMessageHistory",
     "UpstashRedisChatMessageHistory",
     "Neo4jChatMessageHistory",
+    "TiDBChatMessageHistory",
 ]

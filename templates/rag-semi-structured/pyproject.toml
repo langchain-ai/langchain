@@ -9,7 +9,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
-langchain = ">=0.0.325"
+langchain = "^0.1"
 tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
 openai = "<2"

@@ -4,7 +4,7 @@ Ever struggled to reach inbox zero?
 
 Using this template, you can create and customize your very own AI assistant to manage your Gmail account. Using the default Gmail tools, it can read, search through, and draft emails to respond on your behalf. It also has access to a Tavily search engine so it can search for relevant information about any topics or people in the email thread before writing, ensuring the drafts include all the relevant information needed to sound well-informed.
 
-![Gmail Agent Playground](./static/gmail-agent-playground.gif)
+![Animated GIF showing the interface of the Gmail Agent Playground with a cursor interacting with the input field.](./static/gmail-agent-playground.gif "Gmail Agent Playground Interface")
 
 ## The details
 

@@ -39,3 +39,19 @@ await chat.ainvoke(messages)
 for chunk in chat.stream(messages):
     print(chunk.content, end="", flush=True)
 ```
+
+## Embeddings
+
+With `MistralAIEmbeddings`, you can directly use the default model 'mistral-embed', or set a different one if available.
+
+### Choose model
+
+`embedding.model = 'mistral-embed'`
+
+### Simple query
+
+`res_query = embedding.embed_query("The test information")`
+
+### Documents
+
+`res_document = embedding.embed_documents(["test1", "another test"])`

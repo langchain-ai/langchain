@@ -23,7 +23,7 @@ Elastic Cloud is a managed Elasticsearch service. Signup for a [free trial](http
 ### Install Client
 
 ```bash
-pip install elasticsearch
+pip install langchain-elasticsearch
 ```
 
 ## Vector Store
@@ -31,10 +31,10 @@ pip install elasticsearch
 The vector store is a simple wrapper around Elasticsearch. It provides a simple interface to store and retrieve vectors.
 
 ```python
-from langchain_community.vectorstores import ElasticsearchStore
+from langchain_elasticsearch import ElasticsearchStore
 
 from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_text_splitters import CharacterTextSplitter
 
 loader = TextLoader("./state_of_the_union.txt")
 documents = loader.load()

@@ -24,6 +24,9 @@ EXPECTED_ALL = [
     "MaxComputeAPIWrapper",
     "MetaphorSearchAPIWrapper",
     "NasaAPIWrapper",
+    "NVIDIARivaASR",
+    "NVIDIARivaTTS",
+    "NVIDIARivaStream",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",
     "Portkey",
@@ -45,6 +48,7 @@ EXPECTED_ALL = [
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
+    "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
     "MerriamWebsterAPIWrapper",
 ]

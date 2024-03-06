@@ -7,14 +7,15 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.353,<0.2"
+langchain = "^0.1"
 openai = "<2"
 chromadb = "^0.4.15"
 tiktoken = "^0.5.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 

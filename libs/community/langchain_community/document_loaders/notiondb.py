@@ -20,6 +20,17 @@ class NotionDBLoader(BaseLoader):
         database_id (str): Notion database id.
         request_timeout_sec (int): Timeout for Notion requests in seconds.
             Defaults to 10.
+        filter_object (Dict[str, Any]): Filter object used to limit returned
+            entries based on specified criteria.
+            E.g.: {
+                "timestamp": "last_edited_time",
+                "last_edited_time": {
+                    "on_or_after": "2024-02-07"
+                }
+            } -> will only return entries that were last edited
+                on or after 2024-02-07
+            Notion docs: https://developers.notion.com/reference/post-database-query-filter
+            Defaults to None, which will return ALL entries.
     """
 
     def __init__(
@@ -27,6 +38,8 @@ class NotionDBLoader(BaseLoader):
         integration_token: str,
         database_id: str,
         request_timeout_sec: Optional[int] = 10,
+        *,
+        filter_object: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize with parameters."""
         if not integration_token:
@@ -42,6 +55,7 @@ class NotionDBLoader(BaseLoader):
             "Notion-Version": "2022-06-28",
         }
         self.request_timeout_sec = request_timeout_sec
+        self.filter_object = filter_object or {}
 
     def load(self) -> List[Document]:
         """Load documents from the Notion database.
@@ -55,7 +69,10 @@ class NotionDBLoader(BaseLoader):
     def _retrieve_page_summaries(
         self, query_dict: Dict[str, Any] = {"page_size": 100}
     ) -> List[Dict[str, Any]]:
-        """Get all the pages from a Notion database."""
+        """
+        Get all the pages from a Notion database
+        OR filter based on specified criteria.
+        """
         pages: List[Dict[str, Any]] = []
 
         while True:
@@ -63,6 +80,7 @@ class NotionDBLoader(BaseLoader):
                 DATABASE_URL.format(database_id=self.database_id),
                 method="POST",
                 query_dict=query_dict,
+                filter_object=self.filter_object,
             )
 
             pages.extend(data.get("results"))
@@ -182,13 +200,18 @@ class NotionDBLoader(BaseLoader):
         return "\n".join(result_lines_arr)
 
     def _request(
-        self, url: str, method: str = "GET", query_dict: Dict[str, Any] = {}
+        self,
+        url: str,
+        method: str = "GET",
+        query_dict: Dict[str, Any] = {},
+        *,
+        filter_object: Optional[Dict[str, Any]] = None,
     ) -> Any:
         res = requests.request(
             method,
             url,
             headers=self.headers,
-            json=query_dict,
+            json={**query_dict, "filter": filter_object or {}},
             timeout=self.request_timeout_sec,
         )
         res.raise_for_status()

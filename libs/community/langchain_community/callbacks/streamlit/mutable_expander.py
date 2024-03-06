@@ -108,7 +108,7 @@ class MutableExpander:
     ) -> int:
         """Add a Markdown element to the container and return its index."""
         kwargs = {"body": body, "unsafe_allow_html": unsafe_allow_html, "help": help}
-        new_dg = self._get_dg(index).markdown(**kwargs)  # type: ignore[arg-type]
+        new_dg = self._get_dg(index).markdown(**kwargs)
         record = ChildRecord(ChildType.MARKDOWN, kwargs, new_dg)
         return self._add_record(record, index)
 

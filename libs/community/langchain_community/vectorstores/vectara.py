@@ -22,11 +22,14 @@ class SummaryConfig:
     is_enabled: True if summary is enabled, False otherwise
     max_results: maximum number of results to summarize
     response_lang: requested language for the summary
+    prompt_name: name of the prompt to use for summarization
+      (see https://docs.vectara.com/docs/learn/grounded-generation/select-a-summarizer)
     """
 
     is_enabled: bool = False
     max_results: int = 7
     response_lang: str = "eng"
+    prompt_name: str = "vectara-summary-ext-v1.2.0"
 
 
 @dataclass
@@ -305,7 +308,7 @@ class Vectara(VectorStore):
             self._delete_doc(doc_id)
             self._index_doc(doc)
         elif success_str == "E_NO_PERMISSIONS":
-            print(
+            print(  # noqa: T201
                 """No permissions to add document to Vectara. 
                 Check your corpus ID, customer ID and API key"""
             )
@@ -336,9 +339,11 @@ class Vectara(VectorStore):
                 {
                     "query": query,
                     "start": 0,
-                    "numResults": config.mmr_config.mmr_k
-                    if config.mmr_config.is_enabled
-                    else config.k,
+                    "numResults": (
+                        config.mmr_config.mmr_k
+                        if config.mmr_config.is_enabled
+                        else config.k
+                    ),
                     "contextConfig": {
                         "sentencesBefore": config.n_sentence_context,
                         "sentencesAfter": config.n_sentence_context,
@@ -364,6 +369,7 @@ class Vectara(VectorStore):
                 {
                     "maxSummarizedResults": config.summary_config.max_results,
                     "responseLang": config.summary_config.response_lang,
+                    "summarizerPromptName": config.summary_config.prompt_name,
                 }
             ]
 
@@ -380,7 +386,7 @@ class Vectara(VectorStore):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return [], ""
+            return [], ""  # type: ignore[return-value]
 
         result = response.json()
 
@@ -450,7 +456,7 @@ class Vectara(VectorStore):
         docs = self.vectara_query(query, config)
         return docs
 
-    def similarity_search(
+    def similarity_search(  # type: ignore[override]
         self,
         query: str,
         **kwargs: Any,
@@ -470,7 +476,7 @@ class Vectara(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def max_marginal_relevance_search(
+    def max_marginal_relevance_search(  # type: ignore[override]
         self,
         query: str,
         fetch_k: int = 50,
@@ -570,6 +576,7 @@ class VectaraRetriever(VectorStoreRetriever):
             "k": 5,
             "filter": "",
             "n_sentence_context": "2",
+            "summary_config": SummaryConfig(),
         }
     )
 

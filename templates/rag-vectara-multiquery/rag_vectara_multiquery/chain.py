@@ -41,7 +41,6 @@ retriever = MultiQueryRetriever.from_llm(retriever=vectara_retriever, llm=llm)
 # We extract the summary from the RAG output, which is the last document
 # (if summary is enabled)
 # Note that if you want to extract the citation information, you can use res[:-1]]
-model = ChatOpenAI()
 chain = (
     RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
     | (lambda res: res[-1])

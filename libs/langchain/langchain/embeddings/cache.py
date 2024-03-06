@@ -128,6 +128,41 @@ class CacheBackedEmbeddings(Embeddings):
             List[List[float]], vectors
         )  # Nones should have been resolved by now
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed a list of texts.
+
+        The method first checks the cache for the embeddings.
+        If the embeddings are not found, the method uses the underlying embedder
+        to embed the documents and stores the results in the cache.
+
+        Args:
+            texts: A list of texts to embed.
+
+        Returns:
+            A list of embeddings for the given texts.
+        """
+        vectors: List[
+            Union[List[float], None]
+        ] = await self.document_embedding_store.amget(texts)
+        missing_indices: List[int] = [
+            i for i, vector in enumerate(vectors) if vector is None
+        ]
+        missing_texts = [texts[i] for i in missing_indices]
+
+        if missing_texts:
+            missing_vectors = await self.underlying_embeddings.aembed_documents(
+                missing_texts
+            )
+            await self.document_embedding_store.amset(
+                list(zip(missing_texts, missing_vectors))
+            )
+            for index, updated_vector in zip(missing_indices, missing_vectors):
+                vectors[index] = updated_vector
+
+        return cast(
+            List[List[float]], vectors
+        )  # Nones should have been resolved by now
+
     def embed_query(self, text: str) -> List[float]:
         """Embed query text.
 
@@ -147,6 +182,26 @@ class CacheBackedEmbeddings(Embeddings):
             The embedding for the given text.
         """
         return self.underlying_embeddings.embed_query(text)
+
+    async def aembed_query(self, text: str) -> List[float]:
+        """Embed query text.
+
+        This method does not support caching at the moment.
+
+        Support for caching queries is easily to implement, but might make
+        sense to hold off to see the most common patterns.
+
+        If the cache has an eviction policy, we may need to be a bit more careful
+        about sharing the cache between documents and queries. Generally,
+        one is OK evicting query caches, but document caches should be kept.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            The embedding for the given text.
+        """
+        return await self.underlying_embeddings.aembed_query(text)
 
     @classmethod
     def from_bytes_store(

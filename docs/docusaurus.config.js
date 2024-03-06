@@ -13,7 +13,7 @@ const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 const config = {
   title: "🦜️🔗 Langchain",
   tagline: "LangChain Python Docs",
-  favicon: "img/favicon.ico",
+  favicon: "img/brand/favicon.png",
   // Set the production url of your site here
   url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
@@ -57,6 +57,10 @@ const config = {
               resolve: {
                 fullySpecified: false,
               },
+            },
+            {
+              test: /\.ya?ml$/,
+              use: 'yaml-loader'
             },
             {
               test: /\.ipynb$/,
@@ -140,9 +144,9 @@ const config = {
           },
         },
       },
-      image: "img/parrot-chainlink-icon.png",
+      image: "img/brand/theme-image.png",
       navbar: {
-        title: "🦜️🔗 LangChain",
+        logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
           {
             to: "/docs/get_started/introduction",
@@ -178,39 +182,39 @@ const config = {
             position: "left",
             items: [
               {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
+                to: "/docs/people/",
+                label: "People",
               },
               {
-                to: "/docs/community",
-                label: "Community",
+                to: "/docs/packages",
+                label: "Versioning",
+              },
+              {
+                type: "docSidebar",
+                sidebarId: "changelog",
+                label: "Changelog",
               },
               {
                 to: "/docs/contributing",
-                label: "Developer's guide",
+                label: "Contributing",
               },
               {
-                to: "/docs/additional_resources/dependents",
-                label: "Dependents",
-              },
-              {
-                label: "Integrations Hub",
-                href: "https://integrations.langchain.com/",
-              },
-              {
-                to: "/docs/additional_resources/tutorials",
-                label: "Tutorials"
+                type: "docSidebar",
+                sidebarId: "templates",
+                label: "Templates",
               },
               {
                 label: "Cookbooks",
                 href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
-                to: "/docs/additional_resources/youtube",
-                label: "YouTube videos"
+                to: "/docs/additional_resources/tutorials",
+                label: "Tutorials"
               },
-              { label: "Gallery", href: "https://github.com/kyrolabs/awesome-langchain" }
+              {
+                to: "/docs/additional_resources/youtube",
+                label: "YouTube"
+              },
             ]
           },
           {
@@ -301,6 +305,10 @@ const config = {
               {
                 label: "Blog",
                 href: "https://blog.langchain.dev",
+              },
+              {
+                label: "YouTube",
+                href: "https://www.youtube.com/@LangChain",
               },
             ],
           },

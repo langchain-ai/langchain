@@ -21,6 +21,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -724,6 +725,9 @@ class BaseOpenAI(BaseLLM):
         return self.max_context_size - num_tokens
 
 
+@deprecated(
+    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.OpenAI"
+)
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
 
@@ -750,6 +754,9 @@ class OpenAI(BaseOpenAI):
         return {**{"model": self.model_name}, **super()._invocation_params}
 
 
+@deprecated(
+    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.AzureOpenAI"
+)
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
 
@@ -763,6 +770,7 @@ class AzureOpenAI(BaseOpenAI):
         .. code-block:: python
 
             from langchain_community.llms import AzureOpenAI
+
             openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
@@ -953,6 +961,11 @@ class AzureOpenAI(BaseOpenAI):
         }
 
 
+@deprecated(
+    since="0.0.1",
+    removal="0.2.0",
+    alternative_import="langchain_openai.ChatOpenAI",
+)
 class OpenAIChat(BaseLLM):
     """OpenAI Chat large language models.
 

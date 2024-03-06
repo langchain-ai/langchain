@@ -248,6 +248,12 @@ def _import_twilio() -> Any:
     return TwilioAPIWrapper
 
 
+def _import_you() -> Any:
+    from langchain_community.utilities.you import YouSearchAPIWrapper
+
+    return YouSearchAPIWrapper
+
+
 def _import_wikipedia() -> Any:
     from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 
@@ -270,6 +276,24 @@ def _import_nasa() -> Any:
     from langchain_community.utilities.nasa import NasaAPIWrapper
 
     return NasaAPIWrapper
+
+
+def _import_nvidia_riva_asr() -> Any:
+    from langchain_community.utilities.nvidia_riva import RivaASR
+
+    return RivaASR
+
+
+def _import_nvidia_riva_tts() -> Any:
+    from langchain_community.utilities.nvidia_riva import RivaTTS
+
+    return RivaTTS
+
+
+def _import_nvidia_riva_stream() -> Any:
+    from langchain_community.utilities.nvidia_riva import AudioStream
+
+    return AudioStream
 
 
 def __getattr__(name: str) -> Any:
@@ -321,6 +345,12 @@ def __getattr__(name: str) -> Any:
         return _import_metaphor_search()
     elif name == "NasaAPIWrapper":
         return _import_nasa()
+    elif name == "NVIDIARivaASR":
+        return _import_nvidia_riva_asr()
+    elif name == "NVIDIARivaStream":
+        return _import_nvidia_riva_stream()
+    elif name == "NVIDIARivaTTS":
+        return _import_nvidia_riva_tts()
     elif name == "OpenWeatherMapAPIWrapper":
         return _import_openweathermap()
     elif name == "OutlineAPIWrapper":
@@ -353,6 +383,8 @@ def __getattr__(name: str) -> Any:
         return _import_tensorflow_datasets()
     elif name == "TwilioAPIWrapper":
         return _import_twilio()
+    elif name == "YouSearchAPIWrapper":
+        return _import_you()
     elif name == "WikipediaAPIWrapper":
         return _import_wikipedia()
     elif name == "WolframAlphaAPIWrapper":
@@ -388,6 +420,9 @@ __all__ = [
     "MerriamWebsterAPIWrapper",
     "MetaphorSearchAPIWrapper",
     "NasaAPIWrapper",
+    "NVIDIARivaASR",
+    "NVIDIARivaStream",
+    "NVIDIARivaTTS",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",
     "Portkey",
@@ -407,6 +442,7 @@ __all__ = [
     "TensorflowDatasets",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
+    "YouSearchAPIWrapper",
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
     "ZapierNLAWrapper",

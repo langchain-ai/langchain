@@ -32,6 +32,12 @@ class ChatPromptAdapter:
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
         elif provider == "meta":
             prompt = convert_messages_to_prompt_llama(messages=messages)
+        elif provider == "amazon":
+            prompt = convert_messages_to_prompt_anthropic(
+                messages=messages,
+                human_prompt="\n\nUser:",
+                ai_prompt="\n\nBot:",
+            )
         else:
             raise NotImplementedError(
                 f"Provider {provider} model does not support chat."

@@ -13,10 +13,22 @@ logger = logging.getLogger(__name__)
 
 class OpenAIWhisperParser(BaseBlobParser):
     """Transcribe and parse audio files.
-    Audio transcription is with OpenAI Whisper model."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    Audio transcription is with OpenAI Whisper model.
+
+    Args:
+        api_key: OpenAI API key
+        chunk_duration_threshold: minimum duration of a chunk in seconds
+            NOTE: According to the OpenAI API, the chunk duration should be at least 0.1
+            seconds. If the chunk duration is less or equal than the threshold,
+            it will be skipped.
+    """
+
+    def __init__(
+        self, api_key: Optional[str] = None, *, chunk_duration_threshold: float = 0.1
+    ):
         self.api_key = api_key
+        self.chunk_duration_threshold = chunk_duration_threshold
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -57,6 +69,9 @@ class OpenAIWhisperParser(BaseBlobParser):
         for split_number, i in enumerate(range(0, len(audio), chunk_duration_ms)):
             # Audio chunk
             chunk = audio[i : i + chunk_duration_ms]
+            # Skip chunks that are too short to transcribe
+            if chunk.duration_seconds <= self.chunk_duration_threshold:
+                continue
             file_obj = io.BytesIO(chunk.export(format="mp3").read())
             if blob.source is not None:
                 file_obj.name = blob.source + f"_part_{split_number}.mp3"
@@ -64,7 +79,7 @@ class OpenAIWhisperParser(BaseBlobParser):
                 file_obj.name = f"part_{split_number}.mp3"
 
             # Transcribe
-            print(f"Transcribing part {split_number+1}!")
+            print(f"Transcribing part {split_number + 1}!")  # noqa: T201
             attempts = 0
             while attempts < 3:
                 try:
@@ -77,10 +92,10 @@ class OpenAIWhisperParser(BaseBlobParser):
                     break
                 except Exception as e:
                     attempts += 1
-                    print(f"Attempt {attempts} failed. Exception: {str(e)}")
+                    print(f"Attempt {attempts} failed. Exception: {str(e)}")  # noqa: T201
                     time.sleep(5)
             else:
-                print("Failed to transcribe after 3 attempts.")
+                print("Failed to transcribe after 3 attempts.")  # noqa: T201
                 continue
 
             yield Document(
@@ -116,6 +131,8 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
         self,
         device: str = "0",
         lang_model: Optional[str] = None,
+        batch_size: int = 8,
+        chunk_length: int = 30,
         forced_decoder_ids: Optional[Tuple[Dict]] = None,
     ):
         """Initialize the parser.
@@ -126,6 +143,10 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
               Defaults to None.
             forced_decoder_ids: id states for decoder in a multilanguage model.
               Defaults to None.
+            batch_size: batch size used for decoding
+              Defaults to 8.
+            chunk_length: chunk length used during inference.
+              Defaults to 30s.
         """
         try:
             from transformers import pipeline
@@ -141,47 +162,37 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 "torch package not found, please install it with " "`pip install torch`"
             )
 
-        # set device, cpu by default check if there is a GPU available
+        # Determine the device to use
         if device == "cpu":
             self.device = "cpu"
-            if lang_model is not None:
-                self.lang_model = lang_model
-                print("WARNING! Model override. Using model: ", self.lang_model)
-            else:
-                # unless overridden, use the small base model on cpu
-                self.lang_model = "openai/whisper-base"
         else:
-            if torch.cuda.is_available():
-                self.device = "cuda:0"
-                # check GPU memory and select automatically the model
-                mem = torch.cuda.get_device_properties(self.device).total_memory / (
-                    1024**2
-                )
-                if mem < 5000:
-                    rec_model = "openai/whisper-base"
-                elif mem < 7000:
-                    rec_model = "openai/whisper-small"
-                elif mem < 12000:
-                    rec_model = "openai/whisper-medium"
-                else:
-                    rec_model = "openai/whisper-large"
+            self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-                # check if model is overridden
-                if lang_model is not None:
-                    self.lang_model = lang_model
-                    print("WARNING! Model override. Might not fit in your GPU")
-                else:
-                    self.lang_model = rec_model
+        if self.device == "cpu":
+            default_model = "openai/whisper-base"
+            self.lang_model = lang_model if lang_model else default_model
+        else:
+            # Set the language model based on the device and available memory
+            mem = torch.cuda.get_device_properties(self.device).total_memory / (1024**2)
+            if mem < 5000:
+                rec_model = "openai/whisper-base"
+            elif mem < 7000:
+                rec_model = "openai/whisper-small"
+            elif mem < 12000:
+                rec_model = "openai/whisper-medium"
             else:
-                "cpu"
+                rec_model = "openai/whisper-large"
+            self.lang_model = lang_model if lang_model else rec_model
 
-        print("Using the following model: ", self.lang_model)
+        print("Using the following model: ", self.lang_model)  # noqa: T201
+
+        self.batch_size = batch_size
 
         # load model for inference
         self.pipe = pipeline(
             "automatic-speech-recognition",
             model=self.lang_model,
-            chunk_length_s=30,
+            chunk_length_s=chunk_length,
             device=self.device,
         )
         if forced_decoder_ids is not None:
@@ -220,11 +231,11 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
         # Transcribe
-        print(f"Transcribing part {blob.path}!")
+        print(f"Transcribing part {blob.path}!")  # noqa: T201
 
         y, sr = librosa.load(file_obj, sr=16000)
 
-        prediction = self.pipe(y.copy(), batch_size=8)["text"]
+        prediction = self.pipe(y.copy(), batch_size=self.batch_size)["text"]
 
         yield Document(
             page_content=prediction,

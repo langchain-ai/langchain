@@ -1,15 +1,23 @@
 """SQLAlchemy wrapper around a database."""
 from __future__ import annotations
 
-import warnings
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
+from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
-from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
-from sqlalchemy.engine import Engine
+from sqlalchemy import (
+    MetaData,
+    Table,
+    create_engine,
+    inspect,
+    select,
+    text,
+)
+from sqlalchemy.engine import Engine, Result
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql.expression import Executable
 from sqlalchemy.types import NullType
 
 
@@ -272,11 +280,9 @@ class SQLDatabase:
             return sorted(self._include_tables)
         return sorted(self._all_tables - self._ignore_tables)
 
+    @deprecated("0.0.1", alternative="get_usable_table_name", removal="0.2.0")
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
-        warnings.warn(
-            "This method is deprecated - please use `get_usable_table_names`."
-        )
         return self.get_usable_table_names()
 
     @property
@@ -375,66 +381,113 @@ class SQLDatabase:
 
     def _execute(
         self,
-        command: str,
-        fetch: Literal["all", "one"] = "all",
-    ) -> Sequence[Dict[str, Any]]:
+        command: Union[str, Executable],
+        fetch: Literal["all", "one", "cursor"] = "all",
+        *,
+        parameters: Optional[Dict[str, Any]] = None,
+        execution_options: Optional[Dict[str, Any]] = None,
+    ) -> Union[Sequence[Dict[str, Any]], Result]:
         """
         Executes SQL command through underlying engine.
 
         If the statement returns no rows, an empty list is returned.
         """
-        with self._engine.begin() as connection:  # type: Connection
+        parameters = parameters or {}
+        execution_options = execution_options or {}
+        with self._engine.begin() as connection:  # type: Connection  # type: ignore[name-defined]
             if self._schema is not None:
                 if self.dialect == "snowflake":
                     connection.exec_driver_sql(
-                        "ALTER SESSION SET search_path = %s", (self._schema,)
+                        "ALTER SESSION SET search_path = %s",
+                        (self._schema,),
+                        execution_options=execution_options,
                     )
                 elif self.dialect == "bigquery":
-                    connection.exec_driver_sql("SET @@dataset_id=?", (self._schema,))
+                    connection.exec_driver_sql(
+                        "SET @@dataset_id=?",
+                        (self._schema,),
+                        execution_options=execution_options,
+                    )
                 elif self.dialect == "mssql":
                     pass
                 elif self.dialect == "trino":
-                    connection.exec_driver_sql("USE ?", (self._schema,))
+                    connection.exec_driver_sql(
+                        "USE ?",
+                        (self._schema,),
+                        execution_options=execution_options,
+                    )
                 elif self.dialect == "duckdb":
                     # Unclear which parameterized argument syntax duckdb supports.
                     # The docs for the duckdb client say they support multiple,
                     # but `duckdb_engine` seemed to struggle with all of them:
                     # https://github.com/Mause/duckdb_engine/issues/796
-                    connection.exec_driver_sql(f"SET search_path TO {self._schema}")
+                    connection.exec_driver_sql(
+                        f"SET search_path TO {self._schema}",
+                        execution_options=execution_options,
+                    )
                 elif self.dialect == "oracle":
                     connection.exec_driver_sql(
-                        f"ALTER SESSION SET CURRENT_SCHEMA = {self._schema}"
+                        f"ALTER SESSION SET CURRENT_SCHEMA = {self._schema}",
+                        execution_options=execution_options,
                     )
                 elif self.dialect == "sqlany":
                     # If anybody using Sybase SQL anywhere database then it should not
                     # go to else condition. It should be same as mssql.
                     pass
-                else:  # postgresql and other compatible dialects
-                    connection.exec_driver_sql("SET search_path TO %s", (self._schema,))
-            cursor = connection.execute(text(command))
+                elif self.dialect == "postgresql":  # postgresql
+                    connection.exec_driver_sql(
+                        "SET search_path TO %s",
+                        (self._schema,),
+                        execution_options=execution_options,
+                    )
+
+            if isinstance(command, str):
+                command = text(command)
+            elif isinstance(command, Executable):
+                pass
+            else:
+                raise TypeError(f"Query expression has unknown type: {type(command)}")
+            cursor = connection.execute(
+                command,
+                parameters,
+                execution_options=execution_options,
+            )
+
             if cursor.returns_rows:
                 if fetch == "all":
                     result = [x._asdict() for x in cursor.fetchall()]
                 elif fetch == "one":
                     first_result = cursor.fetchone()
                     result = [] if first_result is None else [first_result._asdict()]
+                elif fetch == "cursor":
+                    return cursor
                 else:
-                    raise ValueError("Fetch parameter must be either 'one' or 'all'")
+                    raise ValueError(
+                        "Fetch parameter must be either 'one', 'all', or 'cursor'"
+                    )
                 return result
         return []
 
     def run(
         self,
-        command: str,
-        fetch: Literal["all", "one"] = "all",
+        command: Union[str, Executable],
+        fetch: Literal["all", "one", "cursor"] = "all",
         include_columns: bool = False,
-    ) -> str:
+        *,
+        parameters: Optional[Dict[str, Any]] = None,
+        execution_options: Optional[Dict[str, Any]] = None,
+    ) -> Union[str, Sequence[Dict[str, Any]], Result[Any]]:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
         """
-        result = self._execute(command, fetch)
+        result = self._execute(
+            command, fetch, parameters=parameters, execution_options=execution_options
+        )
+
+        if fetch == "cursor":
+            return result
 
         res = [
             {
@@ -445,7 +498,7 @@ class SQLDatabase:
         ]
 
         if not include_columns:
-            res = [tuple(row.values()) for row in res]
+            res = [tuple(row.values()) for row in res]  # type: ignore[misc]
 
         if not res:
             return ""
@@ -473,7 +526,10 @@ class SQLDatabase:
         command: str,
         fetch: Literal["all", "one"] = "all",
         include_columns: bool = False,
-    ) -> str:
+        *,
+        parameters: Optional[Dict[str, Any]] = None,
+        execution_options: Optional[Dict[str, Any]] = None,
+    ) -> Union[str, Sequence[Dict[str, Any]], Result[Any]]:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -482,7 +538,19 @@ class SQLDatabase:
         If the statement throws an error, the error message is returned.
         """
         try:
-            return self.run(command, fetch, include_columns)
+            return self.run(
+                command,
+                fetch,
+                parameters=parameters,
+                execution_options=execution_options,
+                include_columns=include_columns,
+            )
         except SQLAlchemyError as e:
             """Format the error message"""
             return f"Error: {e}"
+
+    def get_context(self) -> Dict[str, Any]:
+        """Return db context that you may want in agent prompt."""
+        table_names = list(self.get_usable_table_names())
+        table_info = self.get_table_info_no_throw()
+        return {"table_info": table_info, "table_names": ", ".join(table_names)}

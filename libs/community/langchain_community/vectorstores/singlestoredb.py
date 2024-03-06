@@ -57,6 +57,10 @@ class SingleStoreDB(VectorStore):
         content_field: str = "content",
         metadata_field: str = "metadata",
         vector_field: str = "vector",
+        use_vector_index: bool = False,
+        vector_index_name: str = "",
+        vector_index_options: Optional[dict] = None,
+        vector_size: int = 1536,
         pool_size: int = 5,
         max_overflow: int = 10,
         timeout: float = 30,
@@ -87,6 +91,27 @@ class SingleStoreDB(VectorStore):
                 Defaults to "metadata".
             vector_field (str, optional): Specifies the field to store the vector.
                 Defaults to "vector".
+
+            use_vector_index (bool, optional): Toggles the use of a vector index.
+                Works only with SingleStoreDB 8.5 or later. Defaults to False.
+                If set to True, vector_size parameter is required to be set to
+                a proper value.
+
+            vector_index_name (str, optional): Specifies the name of the vector index.
+                Defaults to empty. Will be ignored if use_vector_index is set to False.
+
+            vector_index_options (dict, optional): Specifies the options for
+                the vector index. Defaults to {}.
+                Will be ignored if use_vector_index is set to False. The options are:
+                index_type (str, optional): Specifies the type of the index.
+                    Defaults to IVF_PQFS.
+                For more options, please refer to the SingleStoreDB documentation:
+                https://docs.singlestore.com/cloud/reference/sql-reference/vector-functions/vector-indexing/
+
+            vector_size (int, optional): Specifies the size of the vector.
+                Defaults to 1536. Required if use_vector_index is set to True.
+                Should be set to the same value as the size of the vectors
+                stored in the vector_field.
 
             Following arguments pertain to the connection pool:
 
@@ -177,6 +202,19 @@ class SingleStoreDB(VectorStore):
 
                 os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
                 vectorstore = SingleStoreDB(OpenAIEmbeddings())
+
+            Using vector index:
+
+            .. code-block:: python
+
+                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_community.vectorstores import SingleStoreDB
+
+                os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
+                vectorstore = SingleStoreDB(
+                    OpenAIEmbeddings(),
+                    use_vector_index=True,
+                )
         """
 
         self.embedding = embedding
@@ -186,6 +224,12 @@ class SingleStoreDB(VectorStore):
         self.metadata_field = self._sanitize_input(metadata_field)
         self.vector_field = self._sanitize_input(vector_field)
 
+        self.use_vector_index = bool(use_vector_index)
+        self.vector_index_name = self._sanitize_input(vector_index_name)
+        self.vector_index_options = dict(vector_index_options or {})
+        self.vector_index_options["metric_type"] = self.distance_strategy
+        self.vector_size = int(vector_size)
+
         # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
 
@@ -194,7 +238,7 @@ class SingleStoreDB(VectorStore):
             self.connection_kwargs["conn_attrs"] = dict()
 
         self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
-        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.1"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.2"
 
         # Create connection pool.
         self.connection_pool = QueuePool(
@@ -222,20 +266,71 @@ class SingleStoreDB(VectorStore):
         try:
             cur = conn.cursor()
             try:
-                cur.execute(
-                    """CREATE TABLE IF NOT EXISTS {}
-                    ({} TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-                    {} BLOB, {} JSON);""".format(
-                        self.table_name,
-                        self.content_field,
-                        self.vector_field,
-                        self.metadata_field,
-                    ),
-                )
+                if self.use_vector_index:
+                    index_options = ""
+                    if self.vector_index_options and len(self.vector_index_options) > 0:
+                        index_options = "INDEX_OPTIONS '{}'".format(
+                            json.dumps(self.vector_index_options)
+                        )
+                    cur.execute(
+                        """CREATE TABLE IF NOT EXISTS {}
+                        ({} TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+                        {} VECTOR({}, F32) NOT NULL, {} JSON,
+                        VECTOR INDEX {} ({}) {});""".format(
+                            self.table_name,
+                            self.content_field,
+                            self.vector_field,
+                            self.vector_size,
+                            self.metadata_field,
+                            self.vector_index_name,
+                            self.vector_field,
+                            index_options,
+                        ),
+                    )
+                else:
+                    cur.execute(
+                        """CREATE TABLE IF NOT EXISTS {}
+                        ({} TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+                        {} BLOB, {} JSON);""".format(
+                            self.table_name,
+                            self.content_field,
+                            self.vector_field,
+                            self.metadata_field,
+                        ),
+                    )
             finally:
                 cur.close()
         finally:
             conn.close()
+
+    def add_images(
+        self,
+        uris: List[str],
+        metadatas: Optional[List[dict]] = None,
+        embeddings: Optional[List[List[float]]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run images through the embeddings and add to the vectorstore.
+
+        Args:
+            uris List[str]: File path to images.
+                Each URI will be added to the vectorstore as document content.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+                Defaults to None.
+            embeddings (Optional[List[List[float]]], optional): Optional pre-generated
+                embeddings. Defaults to None.
+
+        Returns:
+            List[str]: empty list
+        """
+        # Set embeddings
+        if (
+            embeddings is None
+            and self.embedding is not None
+            and hasattr(self.embedding, "embed_image")
+        ):
+            embeddings = self.embedding.embed_image(uris=uris)
+        return self.add_texts(uris, metadatas, embeddings, **kwargs)
 
     def add_texts(
         self,
@@ -279,6 +374,8 @@ class SingleStoreDB(VectorStore):
                             json.dumps(metadata),
                         ),
                     )
+                if self.use_vector_index:
+                    cur.execute("OPTIMIZE TABLE {} FLUSH;".format(self.table_name))
             finally:
                 cur.close()
         finally:
@@ -406,6 +503,10 @@ class SingleStoreDB(VectorStore):
         content_field: str = "content",
         metadata_field: str = "metadata",
         vector_field: str = "vector",
+        use_vector_index: bool = False,
+        vector_index_name: str = "",
+        vector_index_options: Optional[dict] = None,
+        vector_size: int = 1536,
         pool_size: int = 5,
         max_overflow: int = 10,
         timeout: float = 30,
@@ -438,6 +539,10 @@ class SingleStoreDB(VectorStore):
             pool_size=pool_size,
             max_overflow=max_overflow,
             timeout=timeout,
+            use_vector_index=use_vector_index,
+            vector_index_name=vector_index_name,
+            vector_index_options=vector_index_options,
+            vector_size=vector_size,
             **kwargs,
         )
         instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)

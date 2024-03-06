@@ -216,9 +216,9 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
 
         except HttpError as e:
             if e.resp.status == 404:
-                print("File not found: {}".format(id))
+                print("File not found: {}".format(id))  # noqa: T201
             else:
-                print("An error occurred: {}".format(e))
+                print("An error occurred: {}".format(e))  # noqa: T201
 
         text = fh.getvalue().decode("utf-8")
         metadata = {
