@@ -51,7 +51,7 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
 
 
 @deprecated(
-    "0.0.26",
+    "0.0.27",
     alternative="Use ElasticsearchStore class in langchain-elasticsearch package",
     pending=True,
 )
