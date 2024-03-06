@@ -147,7 +147,7 @@ class LLMInputOutputAdapter:
 
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            if model_id.startswith('anthropic.claude-3'):
+            if model_id.startswith("anthropic.claude-3"):
                 text = response_body.get("content")[0]['text']
             else:
                 text = response_body.get("completion")
@@ -200,12 +200,12 @@ class LLMInputOutputAdapter:
             ):
                 return
                 # chunk obj format varies with provider
-            elif model_id.startswith('anthropic.claude-3') and (
+            elif model_id.startswith("anthropic.claude-3") and (
                 chunk_obj.get("type") == "content_block_stop"
             ):
                 return
                 # chunk obj format varies with provider
-            if model_id.startswith('anthropic.claude-3') and chunk_obj.get("type") in (
+            if model_id.startswith("anthropic.claude-3") and chunk_obj.get("type") in (
                 "message_start",
                 "content_block_start",
                 "content_block_delta",
