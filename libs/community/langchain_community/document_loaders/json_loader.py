@@ -74,7 +74,6 @@ class JSONLoader(BaseLoader):
     def _parse(self, content: str, index: int) -> Iterator[Document]:
         """Convert given content to documents."""
         data = self._jq_schema.input(json.loads(content))
-        seq_num = index
 
         # Perform some validation
         # This is not a perfect validation, but it should catch most cases
@@ -84,11 +83,10 @@ class JSONLoader(BaseLoader):
         if self._metadata_func is not None:
             self._validate_metadata_func(data)
 
-        for sample in data:
-            seq_num += 1
+        for i, sample in enumerate(data, index + 1):
             text = self._get_text(sample=sample)
             metadata = self._get_metadata(
-                sample=sample, source=str(self.file_path), seq_num=seq_num
+                sample=sample, source=str(self.file_path), seq_num=i
             )
             yield Document(page_content=text, metadata=metadata)
 
