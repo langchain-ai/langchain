@@ -24,6 +24,7 @@ _EXPECTED = [
     "DistanceStrategy",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
+    "DocumentDBVectorSearch",
     "ElasticKnnSearch",
     "ElasticVectorSearch",
     "ElasticsearchStore",

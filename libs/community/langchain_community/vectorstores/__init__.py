@@ -192,6 +192,14 @@ def _import_docarray_inmemory() -> Any:
     return DocArrayInMemorySearch
 
 
+def _import_documentdb() -> Any:
+    from langchain_community.vectorstores.documentdb import (
+        DocumentDBVectorSearch,
+    )
+
+    return DocumentDBVectorSearch
+
+
 def _import_elasticsearch() -> Any:
     from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
 
@@ -563,6 +571,8 @@ def __getattr__(name: str) -> Any:
         return _import_dingo()
     elif name == "DocArrayInMemorySearch":
         return _import_docarray_inmemory()
+    elif name == "DocumentDBVectorSearch":
+        return _import_documentdb()
     elif name == "DocArrayHnswSearch":
         return _import_docarray_hnsw()
     elif name == "ElasticsearchStore":
@@ -754,4 +764,5 @@ __all__ = [
     "VectorStore",
     "NeuralDBVectorStore",
     "Lantern",
+    "DocumentDBVectorSearch",
 ]
