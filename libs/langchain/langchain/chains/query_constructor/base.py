@@ -323,7 +323,8 @@ def load_query_constructor_runnable(
 
     Args:
         llm: BaseLanguageModel to use for the chain.
-        document_contents: The contents of the document to be queried.
+        document_contents: Description of the page contents of the document to be
+            queried.
         attribute_info: Sequence of attributes in the document.
         examples: Optional list of examples to use for the chain.
         allowed_comparators: Sequence of allowed comparators. Defaults to all

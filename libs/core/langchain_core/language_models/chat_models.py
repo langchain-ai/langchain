@@ -34,6 +34,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    convert_to_messages,
     message_chunk_to_message,
 )
 from langchain_core.outputs import (
@@ -144,7 +145,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         elif isinstance(input, str):
             return StringPromptValue(text=input)
         elif isinstance(input, Sequence):
-            return ChatPromptValue(messages=input)
+            return ChatPromptValue(messages=convert_to_messages(input))
         else:
             raise ValueError(
                 f"Invalid input type {type(input)}. "
@@ -621,7 +622,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
-            cache_val = llm_cache.lookup(prompt, llm_string)
+            cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 return ChatResult(generations=cache_val)
             else:
@@ -631,7 +632,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 else:
                     result = await self._agenerate(messages, stop=stop, **kwargs)
-                llm_cache.update(prompt, llm_string, result.generations)
+                await llm_cache.aupdate(prompt, llm_string, result.generations)
                 return result
 
     @abstractmethod
@@ -793,7 +794,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
 
 class SimpleChatModel(BaseChatModel):
-    """Simple Chat Model."""
+    """A simplified implementation for a chat model to inherit from."""
 
     def _generate(
         self,

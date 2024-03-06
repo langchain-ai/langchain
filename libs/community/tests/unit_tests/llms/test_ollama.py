@@ -4,11 +4,11 @@ from pytest import MonkeyPatch
 from langchain_community.llms.ollama import Ollama
 
 
-def mock_response_stream():
+def mock_response_stream():  # type: ignore[no-untyped-def]
     mock_response = [b'{ "response": "Response chunk 1" }']
 
     class MockRaw:
-        def read(self, chunk_size):
+        def read(self, chunk_size):  # type: ignore[no-untyped-def]
             try:
                 return mock_response.pop()
             except IndexError:
@@ -31,8 +31,8 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
         timeout=300,
     )
 
-    def mock_post(url, headers, json, stream, timeout):
-        assert url == "https://ollama-hostname:8000/api/generate/"
+    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
             "Authentication": "Bearer TEST-TOKEN-VALUE",
@@ -52,8 +52,8 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
 def test_handle_if_headers_not_provided(monkeypatch: MonkeyPatch) -> None:
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
-    def mock_post(url, headers, json, stream, timeout):
-        assert url == "https://ollama-hostname:8000/api/generate/"
+    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
         }
@@ -72,8 +72,8 @@ def test_handle_kwargs_top_level_parameters(monkeypatch: MonkeyPatch) -> None:
     """Test that top level params are sent to the endpoint as top level params"""
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
-    def mock_post(url, headers, json, stream, timeout):
-        assert url == "https://ollama-hostname:8000/api/generate/"
+    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
         }
@@ -88,6 +88,7 @@ def test_handle_kwargs_top_level_parameters(monkeypatch: MonkeyPatch) -> None:
                 "num_ctx": None,
                 "num_gpu": None,
                 "num_thread": None,
+                "num_predict": None,
                 "repeat_last_n": None,
                 "repeat_penalty": None,
                 "stop": [],
@@ -117,8 +118,8 @@ def test_handle_kwargs_with_unknown_param(monkeypatch: MonkeyPatch) -> None:
     """
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
-    def mock_post(url, headers, json, stream, timeout):
-        assert url == "https://ollama-hostname:8000/api/generate/"
+    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
         }
@@ -133,6 +134,7 @@ def test_handle_kwargs_with_unknown_param(monkeypatch: MonkeyPatch) -> None:
                 "num_ctx": None,
                 "num_gpu": None,
                 "num_thread": None,
+                "num_predict": None,
                 "repeat_last_n": None,
                 "repeat_penalty": None,
                 "stop": [],
@@ -163,8 +165,8 @@ def test_handle_kwargs_with_options(monkeypatch: MonkeyPatch) -> None:
     """
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
-    def mock_post(url, headers, json, stream, timeout):
-        assert url == "https://ollama-hostname:8000/api/generate/"
+    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
+        assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
         }

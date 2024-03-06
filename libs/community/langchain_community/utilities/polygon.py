@@ -39,8 +39,29 @@ class PolygonAPIWrapper(BaseModel):
 
         return data.get("results", None)
 
+    def get_ticker_news(self, ticker: str) -> Optional[dict]:
+        """
+        Get the most recent news articles relating to a stock ticker symbol,
+        including a summary of the article and a link to the original source.
+        """
+        url = (
+            f"{POLYGON_BASE_URL}v2/reference/news?"
+            f"ticker={ticker}&"
+            f"apiKey={self.polygon_api_key}"
+        )
+        response = requests.get(url)
+        data = response.json()
+
+        status = data.get("status", None)
+        if status != "OK":
+            raise ValueError(f"API Error: {data}")
+
+        return data.get("results", None)
+
     def run(self, mode: str, ticker: str) -> str:
         if mode == "get_last_quote":
             return json.dumps(self.get_last_quote(ticker))
+        elif mode == "get_ticker_news":
+            return json.dumps(self.get_ticker_news(ticker))
         else:
             raise ValueError(f"Invalid mode {mode} for Polygon API.")

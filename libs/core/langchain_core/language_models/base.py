@@ -5,19 +5,27 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     List,
     Optional,
     Sequence,
     Set,
+    Type,
     TypeVar,
     Union,
 )
 
 from typing_extensions import TypeAlias
 
-from langchain_core._api import deprecated
-from langchain_core.messages import AnyMessage, BaseMessage, get_buffer_string
+from langchain_core._api import beta, deprecated
+from langchain_core.messages import (
+    AnyMessage,
+    BaseMessage,
+    MessageLikeRepresentation,
+    get_buffer_string,
+)
 from langchain_core.prompt_values import PromptValue
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
@@ -49,7 +57,7 @@ def _get_token_ids_default_method(text: str) -> List[int]:
     return tokenizer.encode(text)
 
 
-LanguageModelInput = Union[PromptValue, str, Sequence[BaseMessage]]
+LanguageModelInput = Union[PromptValue, str, Sequence[MessageLikeRepresentation]]
 LanguageModelOutput = Union[BaseMessage, str]
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
@@ -149,6 +157,13 @@ class BaseLanguageModel(
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+
+    @beta()
+    def with_structured_output(
+        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Implement this if there is a way of steering the model to generate responses that match a given schema."""  # noqa: E501
+        raise NotImplementedError()
 
     @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     @abstractmethod

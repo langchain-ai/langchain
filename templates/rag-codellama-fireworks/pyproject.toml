@@ -16,7 +16,7 @@ chromadb = ">=0.4.14"
 fireworks-ai = ">=0.6.0"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_codellama_fireworks"

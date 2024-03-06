@@ -57,7 +57,7 @@ def test_add_messages() -> None:
     assert len(message_store_another.messages) == 0
 
 
-def test_tidb_recent_chat_message():
+def test_tidb_recent_chat_message():  # type: ignore[no-untyped-def]
     """Test the TiDBChatMessageHistory with earliest_time parameter."""
     import time
     from datetime import datetime

@@ -27,8 +27,12 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 from langchain_core.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
@@ -104,10 +108,7 @@ class BaseOpenAI(BaseLLM):
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    # When updating this to use a SecretStr
-    # Check for classes that derive from this class (as some of them
-    # may assume openai_api_key is a str)
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
@@ -175,8 +176,11 @@ class BaseOpenAI(BaseLLM):
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
-        values["openai_api_key"] = get_from_dict_or_env(
+        openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
+        )
+        values["openai_api_key"] = (
+            convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
@@ -194,7 +198,11 @@ class BaseOpenAI(BaseLLM):
         )
 
         client_params = {
-            "api_key": values["openai_api_key"],
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
             "timeout": values["request_timeout"],
@@ -243,7 +251,7 @@ class BaseOpenAI(BaseLLM):
         self.get_sub_prompts(params, [prompt], stop)  # this mutates params
         for stream_resp in self.client.create(prompt=prompt, **params):
             if not isinstance(stream_resp, dict):
-                stream_resp = stream_resp.dict()
+                stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -251,9 +259,11 @@ class BaseOpenAI(BaseLLM):
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
-                    logprobs=chunk.generation_info["logprobs"]
-                    if chunk.generation_info
-                    else None,
+                    logprobs=(
+                        chunk.generation_info["logprobs"]
+                        if chunk.generation_info
+                        else None
+                    ),
                 )
 
     async def _astream(
@@ -269,7 +279,7 @@ class BaseOpenAI(BaseLLM):
             prompt=prompt, **params
         ):
             if not isinstance(stream_resp, dict):
-                stream_resp = stream_resp.dict()
+                stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -277,9 +287,11 @@ class BaseOpenAI(BaseLLM):
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
-                    logprobs=chunk.generation_info["logprobs"]
-                    if chunk.generation_info
-                    else None,
+                    logprobs=(
+                        chunk.generation_info["logprobs"]
+                        if chunk.generation_info
+                        else None
+                    ),
                 )
 
     def _generate(
@@ -328,12 +340,16 @@ class BaseOpenAI(BaseLLM):
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:
@@ -341,7 +357,7 @@ class BaseOpenAI(BaseLLM):
                 if not isinstance(response, dict):
                     # V1 client returns the response in an PyDantic object instead of
                     # dict. For the transition period, we deep convert it to dict.
-                    response = response.dict()
+                    response = response.model_dump()
 
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
@@ -389,18 +405,22 @@ class BaseOpenAI(BaseLLM):
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:
                 response = await self.async_client.create(prompt=_prompts, **params)
                 if not isinstance(response, dict):
-                    response = response.dict()
+                    response = response.model_dump()
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(
@@ -490,9 +510,7 @@ class BaseOpenAI(BaseLLM):
         try:
             enc = tiktoken.encoding_for_model(model_name)
         except KeyError:
-            logger.warning("Warning: model not found. Using cl100k_base encoding.")
-            model = "cl100k_base"
-            enc = tiktoken.get_encoding(model)
+            enc = tiktoken.get_encoding("cl100k_base")
 
         return enc.encode(
             text,

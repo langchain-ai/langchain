@@ -79,12 +79,8 @@ def analyze_text(
     if nlp is not None:
         spacy = import_spacy()
         doc = nlp(text)
-        dep_out = spacy.displacy.render(  # type: ignore
-            doc, style="dep", jupyter=False, page=True
-        )
-        ent_out = spacy.displacy.render(  # type: ignore
-            doc, style="ent", jupyter=False, page=True
-        )
+        dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
+        ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
         text_visualizations = {
             "dependency_tree": dep_out,
             "entities": ent_out,
@@ -199,7 +195,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
                     complexity_metrics: Dict[str, float] = generation_resp.pop(
                         "text_complexity_metrics"
-                    )  # type: ignore  # noqa: E501
+                    )
                     self.deck.append(
                         self.markdown_renderer().to_html("#### Text Complexity Metrics")
                     )

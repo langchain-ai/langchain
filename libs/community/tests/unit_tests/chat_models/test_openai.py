@@ -17,9 +17,9 @@ from langchain_community.chat_models.openai import ChatOpenAI
 
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
-    llm = ChatOpenAI(model="foo")
+    llm = ChatOpenAI(model="foo", openai_api_key="foo")
     assert llm.model_name == "foo"
-    llm = ChatOpenAI(model_name="foo")
+    llm = ChatOpenAI(model_name="foo", openai_api_key="foo")
     assert llm.model_name == "foo"
 
 
@@ -81,7 +81,7 @@ def mock_completion() -> dict:
 
 @pytest.mark.requires("openai")
 def test_openai_predict(mock_completion: dict) -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(openai_api_key="foo")
     mock_client = MagicMock()
     completed = False
 
@@ -103,11 +103,11 @@ def test_openai_predict(mock_completion: dict) -> None:
 
 @pytest.mark.requires("openai")
 async def test_openai_apredict(mock_completion: dict) -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(openai_api_key="foo")
     mock_client = MagicMock()
     completed = False
 
-    def mock_create(*args: Any, **kwargs: Any) -> Any:
+    async def mock_create(*args: Any, **kwargs: Any) -> Any:
         nonlocal completed
         completed = True
         return mock_completion
@@ -115,9 +115,9 @@ async def test_openai_apredict(mock_completion: dict) -> None:
     mock_client.create = mock_create
     with patch.object(
         llm,
-        "client",
+        "async_client",
         mock_client,
     ):
-        res = llm.predict("bar")
+        res = await llm.apredict("bar")
         assert res == "Bar Baz"
     assert completed

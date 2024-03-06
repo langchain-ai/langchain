@@ -7,7 +7,7 @@ from langchain.vectorstores.milvus import Milvus
 from langchain_nvidia_aiplay import NVIDIAEmbeddings
 
 if os.environ.get("NVIDIA_API_KEY", "").startswith("nvapi-"):
-    print("Valid NVIDIA_API_KEY already in environment. Delete to reset")
+    print("Valid NVIDIA_API_KEY already in environment. Delete to reset")  # noqa: T201
 else:
     nvapi_key = getpass.getpass("NVAPI Key (starts with nvapi-): ")
     assert nvapi_key.startswith("nvapi-"), f"{nvapi_key[:5]}... is not a valid key"

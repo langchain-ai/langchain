@@ -132,6 +132,7 @@ class WebBaseLoader(BaseLoader):
                         url,
                         headers=self.session.headers,
                         ssl=None if self.session.verify else False,
+                        cookies=self.session.cookies.get_dict(),
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:

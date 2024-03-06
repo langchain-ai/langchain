@@ -17,7 +17,7 @@ jq = "^1.6.0"
 tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_elasticsearch"

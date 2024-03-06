@@ -89,4 +89,4 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             blob = Blob.from_path(self.file_path)
             yield from self.parser.parse(blob)
         else:
-            yield from self.parser.parse_url(self.url_path)
+            yield from self.parser.parse_url(self.url_path)  # type: ignore[arg-type]

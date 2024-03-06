@@ -17,7 +17,7 @@ lark = "^1.1.8"
 pydantic = "^2.4.2"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_self_query"

@@ -27,7 +27,7 @@ extras = [
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_redis.chain"

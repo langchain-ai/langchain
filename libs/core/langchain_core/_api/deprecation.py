@@ -245,10 +245,9 @@ def deprecated(
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
+        # old_doc can be None
         if not old_doc:
-            new_doc = "[*Deprecated*]"
-        else:
-            new_doc = f"[*Deprecated*]  {old_doc}"
+            old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
         notes_header = "\nNotes\n-----"
@@ -258,7 +257,7 @@ def deprecated(
             addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
-        new_doc += (
+        new_doc = (
             f"[*Deprecated*] {old_doc}\n"
             f"{notes_header if notes_header not in old_doc else ''}\n"
             f".. deprecated:: {since}\n"

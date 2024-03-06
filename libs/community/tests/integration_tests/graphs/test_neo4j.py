@@ -85,7 +85,7 @@ def test_neo4j_timeout() -> None:
         graph.query("UNWIND range(0,100000,1) AS i MERGE (:Foo {id:i})")
     except Exception as e:
         assert (
-            e.code
+            e.code  # type: ignore[attr-defined]
             == "Neo.ClientError.Transaction.TransactionTimedOutClientConfiguration"
         )
 

@@ -105,7 +105,7 @@ class AmadeusFlightSearch(AmadeusBaseTool):
                 adults=1,
             )
         except ResponseError as error:
-            print(error)
+            print(error)  # noqa: T201
 
         # Generate output dictionary
         output = []

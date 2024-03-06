@@ -12,6 +12,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLLM
+from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
@@ -19,7 +20,6 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
-from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 logger = logging.getLogger(__name__)
@@ -50,21 +50,12 @@ should have a question mark at the end: {question}""",
 )
 
 
-class LineList(BaseModel):
-    """List of questions."""
-
-    lines: List[str] = Field(description="Questions")
-
-
-class QuestionListOutputParser(PydanticOutputParser):
+class QuestionListOutputParser(BaseOutputParser[List[str]]):
     """Output parser for a list of numbered questions."""
 
-    def __init__(self) -> None:
-        super().__init__(pydantic_object=LineList)
-
-    def parse(self, text: str) -> LineList:
+    def parse(self, text: str) -> List[str]:
         lines = re.findall(r"\d+\..*?(?:\n|$)", text)
-        return LineList(lines=lines)
+        return lines
 
 
 class WebResearchRetriever(BaseRetriever):
@@ -176,7 +167,7 @@ class WebResearchRetriever(BaseRetriever):
         logger.info("Generating questions for Google Search ...")
         result = self.llm_chain({"question": query})
         logger.info(f"Questions for Google Search (raw): {result}")
-        questions = getattr(result["text"], "lines", [])
+        questions = result["text"]
         logger.info(f"Questions for Google Search: {questions}")
 
         # Get urls

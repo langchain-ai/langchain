@@ -15,7 +15,7 @@ tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_ollama_multi_query"

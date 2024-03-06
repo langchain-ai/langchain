@@ -109,13 +109,13 @@ class BlackboardLoader(WebBaseLoader):
             documents = []
             for path in relative_paths:
                 url = self.base_url + path
-                print(f"Fetching documents from {url}")
+                print(f"Fetching documents from {url}")  # noqa: T201
                 soup_info = self._scrape(url)
                 with contextlib.suppress(ValueError):
                     documents.extend(self._get_documents(soup_info))
             return documents
         else:
-            print(f"Fetching documents from {self.web_path}")
+            print(f"Fetching documents from {self.web_path}")  # noqa: T201
             soup_info = self.scrape()
             self.folder_path = self._get_folder_path(soup_info)
             return self._get_documents(soup_info)
@@ -295,4 +295,4 @@ if __name__ == "__main__":
         load_all_recursively=True,
     )
     documents = loader.load()
-    print(f"Loaded {len(documents)} pages of PDFs from {loader.web_path}")
+    print(f"Loaded {len(documents)} pages of PDFs from {loader.web_path}")  # noqa: T201

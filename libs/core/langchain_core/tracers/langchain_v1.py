@@ -37,7 +37,7 @@ def _get_endpoint() -> str:
 
 @deprecated("0.1.0", alternative="LangChainTracer", removal="0.2.0")
 class LangChainTracerV1(BaseTracer):
-    """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
+    """Implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the LangChain tracer."""

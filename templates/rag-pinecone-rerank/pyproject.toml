@@ -16,7 +16,7 @@ pinecone-client = ">=2.2.4"
 cohere = ">=4.32"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_pinecone_rerank"

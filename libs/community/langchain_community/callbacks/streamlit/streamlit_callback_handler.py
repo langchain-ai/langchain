@@ -225,7 +225,7 @@ class LLMThought:
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
-    """A callback handler that writes to a Streamlit app."""
+    """Callback handler that writes to a Streamlit app."""
 
     def __init__(
         self,

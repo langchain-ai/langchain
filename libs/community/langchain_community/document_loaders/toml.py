@@ -44,4 +44,4 @@ class TomlLoader(BaseLoader):
                     )
                     yield doc
                 except tomli.TOMLDecodeError as e:
-                    print(f"Error parsing TOML file {file_path}: {e}")
+                    print(f"Error parsing TOML file {file_path}: {e}")  # noqa: T201

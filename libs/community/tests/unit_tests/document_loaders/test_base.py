@@ -1,9 +1,9 @@
 """Test Base Schema of documents."""
-from typing import Iterator
+from typing import Iterator, List
 
 from langchain_core.documents import Document
 
-from langchain_community.document_loaders.base import BaseBlobParser
+from langchain_community.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain_community.document_loaders.blob_loaders import Blob
 
 
@@ -27,3 +27,20 @@ def test_base_blob_parser() -> None:
     docs = parser.parse(Blob(data="who?"))
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
+
+
+async def test_default_aload() -> None:
+    class FakeLoader(BaseLoader):
+        def load(self) -> List[Document]:
+            return list(self.lazy_load())
+
+        def lazy_load(self) -> Iterator[Document]:
+            yield from [
+                Document(page_content="foo"),
+                Document(page_content="bar"),
+            ]
+
+    loader = FakeLoader()
+    docs = loader.load()
+    assert docs == [Document(page_content="foo"), Document(page_content="bar")]
+    assert docs == [doc async for doc in loader.alazy_load()]

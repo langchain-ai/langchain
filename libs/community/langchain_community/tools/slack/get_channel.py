@@ -31,7 +31,7 @@ class SlackGetChannel(SlackBaseTool):
                 and "created" in channel
                 and "num_members" in channel
             ]
-            return json.dumps(filtered_result)
+            return json.dumps(filtered_result, ensure_ascii=False)
 
         except Exception as e:
             return "Error creating conversation: {}".format(e)

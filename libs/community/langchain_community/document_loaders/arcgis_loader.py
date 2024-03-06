@@ -41,7 +41,7 @@ class ArcGISLoader(BaseLoader):
             ) from e
 
         try:
-            from bs4 import BeautifulSoup  # type: ignore
+            from bs4 import BeautifulSoup
 
             self.BEAUTIFULSOUP = BeautifulSoup
         except ImportError:
