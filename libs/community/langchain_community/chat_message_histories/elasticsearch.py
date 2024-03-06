@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@deprecated("0.1.11", alternative="Use langchain-elasticsearch package", pending=True)
+@deprecated("0.0.26", alternative="Use langchain-elasticsearch package", pending=True)
 class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in Elasticsearch.
 

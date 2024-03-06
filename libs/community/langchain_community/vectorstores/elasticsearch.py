@@ -115,7 +115,7 @@ class BaseRetrievalStrategy(ABC):
 
 
 @deprecated(
-    "0.1.11", alternative="Use class in langchain-elasticsearch package", pending=True
+    "0.0.26", alternative="Use class in langchain-elasticsearch package", pending=True
 )
 class ApproxRetrievalStrategy(BaseRetrievalStrategy):
     """Approximate retrieval strategy using the `HNSW` algorithm."""
@@ -238,7 +238,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
 
 
 @deprecated(
-    "0.1.11", alternative="Use class in langchain-elasticsearch package", pending=True
+    "0.0.26", alternative="Use class in langchain-elasticsearch package", pending=True
 )
 class ExactRetrievalStrategy(BaseRetrievalStrategy):
     """Exact retrieval strategy using the `script_score` query."""
@@ -308,7 +308,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
 
 
 @deprecated(
-    "0.1.11", alternative="Use class in langchain-elasticsearch package", pending=True
+    "0.0.26", alternative="Use class in langchain-elasticsearch package", pending=True
 )
 class SparseRetrievalStrategy(BaseRetrievalStrategy):
     """Sparse retrieval strategy using the `text_expansion` processor."""
@@ -392,7 +392,7 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
 
 
 @deprecated(
-    "0.1.11", alternative="Use class in langchain-elasticsearch package", pending=True
+    "0.0.26", alternative="Use class in langchain-elasticsearch package", pending=True
 )
 class ElasticsearchStore(VectorStore):
     """`Elasticsearch` vector store.
