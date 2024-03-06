@@ -126,7 +126,7 @@ class LLMInputOutputAdapter:
             if prompt:
                 input_body["prompt"] = _human_assistant_format(prompt)
                 if "max_tokens_to_sample" not in input_body:
-                    input_body["max_tokens_to_sample"] = 256
+                    input_body["max_tokens_to_sample"] = 1024
         elif provider in ("ai21", "cohere", "meta"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
@@ -697,6 +697,17 @@ class Bedrock(LLM, BedrockBase):
             )
 
     """
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        model_id = values["model_id"]
+        if model_id.startswith("anthropic.claude-3"):
+            raise ValueError(
+                "Claude v3 models are not supported by this LLM."
+                "Please use `from langchain_community.chat_models import BedrockChat` "
+                "instead."
+            )
+        return super().validate_environment(values)
 
     @property
     def _llm_type(self) -> str:
