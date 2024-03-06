@@ -225,7 +225,10 @@ def _load_pickled_fn_from_hex_string(data: str) -> Callable:
     """Loads a pickled function from a hexadecimal string."""
     try:
         import cloudpickle
+    except Exception as e:
+        raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
 
+    try:
         return cloudpickle.loads(bytes.fromhex(data))
     except Exception as e:
         raise ValueError(
@@ -237,7 +240,10 @@ def _pickle_fn_to_hex_string(fn: Callable) -> str:
     """Pickles a function and returns the hexadecimal string."""
     try:
         import cloudpickle
+    except Exception as e:
+        raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
 
+    try:
         return cloudpickle.dumps(fn).hex()
     except Exception as e:
         raise ValueError(f"Failed to pickle the function: {e}")
