@@ -548,7 +548,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> Iterator[GenerationChunk]:
         raise NotImplementedError()
 
-    def _astream(
+    async def _astream(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
