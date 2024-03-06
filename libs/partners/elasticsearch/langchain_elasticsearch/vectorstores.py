@@ -23,6 +23,7 @@ from langchain_core.vectorstores import VectorStore
 from langchain_elasticsearch._utilities import (
     DistanceStrategy,
     maximal_marginal_relevance,
+    with_user_agent_header,
 )
 
 logger = logging.getLogger(__name__)
@@ -526,9 +527,7 @@ class ElasticsearchStore(VectorStore):
         self.strategy = strategy
 
         if es_connection is not None:
-            headers = dict(es_connection._headers)
-            headers.update({"user-agent": self.get_user_agent()})
-            self.client = es_connection.options(headers=headers)
+            self.client = es_connection
         elif es_url is not None or es_cloud_id is not None:
             self.client = ElasticsearchStore.connect_to_elasticsearch(
                 es_url=es_url,
@@ -544,11 +543,7 @@ class ElasticsearchStore(VectorStore):
                 or valid credentials for creating a new connection."""
             )
 
-    @staticmethod
-    def get_user_agent() -> str:
-        from langchain_core import __version__
-
-        return f"langchain-py-vs/{__version__}"
+        self.client = with_user_agent_header(self.client, "langchain-py-vs")
 
     @staticmethod
     def connect_to_elasticsearch(
@@ -582,10 +577,7 @@ class ElasticsearchStore(VectorStore):
         if es_params is not None:
             connection_params.update(es_params)
 
-        es_client = Elasticsearch(
-            **connection_params,
-            headers={"user-agent": ElasticsearchStore.get_user_agent()},
-        )
+        es_client = Elasticsearch(**connection_params)
         try:
             es_client.info()
         except Exception as e:
