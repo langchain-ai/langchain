@@ -1,7 +1,6 @@
 """test Databricks LLM"""
 from typing import Any, Dict
 
-import cloudpickle
 from pytest import MonkeyPatch
 
 from langchain_community.llms.databricks import (
@@ -33,6 +32,8 @@ def transform_input(**request: Any) -> Dict[str, Any]:
 
 
 def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
+    import cloudpickle
+
     monkeypatch.setattr(
         "langchain_community.llms.databricks._DatabricksServingEndpointClient",
         MockDatabricksServingEndpointClient,
