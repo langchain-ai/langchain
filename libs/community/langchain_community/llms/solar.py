@@ -67,7 +67,7 @@ class SolarCommon(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         api_key = get_from_dict_or_env(values, "solar_api_key", "SOLAR_API_KEY")
-        if values["solar_api_key"].empty():
+        if api_key is None or len(api_key) == 0:
             raise ValueError("SOLAR_API_KEY must be configured")
 
         values["solar_api_key"] = convert_to_secret_str(api_key)
