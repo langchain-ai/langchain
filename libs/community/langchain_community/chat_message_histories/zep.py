@@ -108,13 +108,9 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
                     "metadata": msg.metadata,
                 }
                 if msg.role == "ai":
-                    messages.append(
-                        AIMessage(content=msg.content, data=metadata)
-                    )
+                    messages.append(AIMessage(content=msg.content, data=metadata))
                 else:
-                    messages.append(
-                        HumanMessage(content=msg.content, data=metadata)
-                    )
+                    messages.append(HumanMessage(content=msg.content, data=metadata))
 
         return messages
 

@@ -29,14 +29,11 @@ def test_imessage_chat_loader_upgrade_osx11() -> None:
 
     expected_parsed_time = datetime.datetime(2023, 11, 5, 2, 50, 50, 393148)
     assert (
-        first_message.data["message_time_as_datetime"]
-        == expected_parsed_time
+        first_message.data["message_time_as_datetime"] == expected_parsed_time
     ), "date failed to parse"
 
     # is_from_me parsed correctly
-    assert (
-        first_message.data["is_from_me"] is False
-    ), "is_from_me failed to parse"
+    assert first_message.data["is_from_me"] is False, "is_from_me failed to parse"
 
 
 def test_imessage_chat_loader() -> None:
@@ -63,14 +60,11 @@ def test_imessage_chat_loader() -> None:
 
     expected_parsed_time = datetime.datetime(2023, 11, 5, 2, 50, 50, 393148)
     assert (
-        first_message.data["message_time_as_datetime"]
-        == expected_parsed_time
+        first_message.data["message_time_as_datetime"] == expected_parsed_time
     ), "date failed to parse"
 
     # is_from_me parsed correctly
-    assert (
-        first_message.data["is_from_me"] is False
-    ), "is_from_me failed to parse"
+    assert first_message.data["is_from_me"] is False, "is_from_me failed to parse"
 
     # short message content in attributedBody field
     assert (

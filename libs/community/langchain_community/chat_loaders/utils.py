@@ -31,8 +31,7 @@ def merge_chat_runs_in_session(
         elif (
             isinstance(message, type(messages[-1]))
             and messages[-1].data.get("sender") is not None
-            and messages[-1].data["sender"]
-            == message.data.get("sender")
+            and messages[-1].data["sender"] == message.data.get("sender")
         ):
             if not isinstance(messages[-1].content, str):
                 raise ValueError(
@@ -42,9 +41,7 @@ def merge_chat_runs_in_session(
             messages[-1].content = (
                 messages[-1].content + delimiter + message.content
             ).strip()
-            messages[-1].data.get("events", []).extend(
-                message.data.get("events") or []
-            )
+            messages[-1].data.get("events", []).extend(message.data.get("events") or [])
         else:
             messages.append(deepcopy(message))
     return ChatSession(messages=messages)
