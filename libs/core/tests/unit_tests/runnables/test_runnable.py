@@ -335,8 +335,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "output_metadata": {
-                        "title": "Output Metadata",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -372,8 +372,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "output_metadata": {
-                        "title": "Output Metadata",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -409,8 +409,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "output_metadata": {
-                        "title": "Output Metadata",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -442,8 +442,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "output_metadata": {
-                        "title": "Output Metadata",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -474,8 +474,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "output_metadata": {
-                        "title": "Output Metadata",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -506,8 +506,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "output_metadata": {
-                        "title": "Output Metadata",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {

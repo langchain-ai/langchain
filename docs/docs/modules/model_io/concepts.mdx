@@ -34,7 +34,7 @@ ChatModels take a list of messages as input and return a message. There are a fe
 - A string (most models are this way)
 - A List of dictionaries (this is used for multi-modal input, where the dictionary contains information about that input type and that input location)
 
-In addition, messages have an `output_metadata` property. This is where additional information about messages can be passed. This is largely used for input parameters that are *provider specific* and not general. The best known example of this is `function_call` from OpenAI.
+In addition, messages have an `data` property. This is where additional information about messages can be passed. This is largely used for input parameters that are *provider specific* and not general. The best known example of this is `function_call` from OpenAI.
 
 ### HumanMessage
 
@@ -43,7 +43,7 @@ This represents a message from the user. Generally consists only of content.
 
 ### AIMessage
 
-This represents a message from the model. This may have `output_metadata` in it - for example `functional_call` if using OpenAI Function calling.
+This represents a message from the model. This may have `data` in it - for example `functional_call` if using OpenAI Function calling.
 
 
 ### SystemMessage
@@ -96,7 +96,7 @@ This is an example of a prompt template. This consists of a list of MessagePromp
 
 ## Output Parsers
 
-The output of models are either strings or a message. Oftentimes, the string or messages contains information formatted in a specific format to be used downstream (e.g. a comma separated list, or JSON blob). Output parsers are responsible for taking in the output of a model and transforming it into a more usable form. These generally work on the `content` of the output message, but occasionally work on values in the `output_metadata` field.
+The output of models are either strings or a message. Oftentimes, the string or messages contains information formatted in a specific format to be used downstream (e.g. a comma separated list, or JSON blob). Output parsers are responsible for taking in the output of a model and transforming it into a more usable form. These generally work on the `content` of the output message, but occasionally work on values in the `data` field.
 
 ### StrOutputParser
 
@@ -104,7 +104,7 @@ This is a simple output parser that just converts the output of a language model
 
 ### OpenAI Functions Parsers
 
-There are a few parsers dedicated to working with OpenAI function calling. They take the output of the `function_call` and `arguments` parameters (which are inside `output_metadata`) and work with those, largely ignoring content.
+There are a few parsers dedicated to working with OpenAI function calling. They take the output of the `function_call` and `arguments` parameters (which are inside `data`) and work with those, largely ignoring content.
 
 ### Agent Output Parsers
 

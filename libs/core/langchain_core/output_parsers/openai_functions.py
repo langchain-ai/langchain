@@ -28,7 +28,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
             )
         message = generation.message
         try:
-            func_call = copy.deepcopy(message.output_metadata["function_call"])
+            func_call = copy.deepcopy(message.data["function_call"])
         except KeyError as exc:
             raise OutputParserException(f"Could not parse function call: {exc}")
 
@@ -70,7 +70,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             )
         message = generation.message
         try:
-            function_call = message.output_metadata["function_call"]
+            function_call = message.data["function_call"]
         except KeyError as exc:
             if partial:
                 return None
@@ -154,7 +154,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
             message = AIMessage(
                 content="This is a test message",
-                output_metadata={
+                data={
                     "function_call": {
                         "name": "cookie",
                         "arguments": json.dumps({"name": "value", "age": 10}),

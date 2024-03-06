@@ -17,7 +17,7 @@ def _assert_messages_are_equal(
     assert len(actual_messages) == len(expected_messages)
     for actual, expected in zip(actual_messages, expected_messages):
         assert actual.content == expected.content
-        assert actual.output_metadata["sender"] == expected.output_metadata["sender"]
+        assert actual.data["sender"] == expected.data["sender"]
 
 
 def _check_telegram_chat_loader(path: str) -> None:
@@ -47,21 +47,21 @@ def _check_telegram_chat_loader(path: str) -> None:
         expected_content = [
             HumanMessage(
                 content="i refuse to converse with you",
-                output_metadata={
+                data={
                     "sender": "Jimmeny Marvelton",
                     "events": [{"message_time": "23.08.2023 13:11:23 UTC-08:00"}],
                 },
             ),
             AIMessage(
                 content="Hi nemesis",
-                output_metadata={
+                data={
                     "sender": "Batman & Robin",
                     "events": [{"message_time": "23.08.2023 13:13:20 UTC-08:00"}],
                 },
             ),
             HumanMessage(
                 content="we meet again\n\nyou will not trick me this time",
-                output_metadata={
+                data={
                     "sender": "Jimmeny Marvelton",
                     "events": [{"message_time": "23.08.2023 13:15:35 UTC-08:00"}],
                 },

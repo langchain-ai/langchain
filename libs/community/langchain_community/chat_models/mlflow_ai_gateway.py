@@ -169,13 +169,13 @@ class ChatMLflowAIGateway(BaseChatModel):
         else:
             raise ValueError(f"Got unknown message type: {message}")
 
-        if "function_call" in message.output_metadata:
+        if "function_call" in message.data:
             ChatMLflowAIGateway._raise_functions_not_supported()
-        if message.output_metadata:
+        if message.data:
             logger.warning(
                 "Additional message arguments are unsupported by MLflow AI Gateway "
                 " and will be ignored: %s",
-                message.output_metadata,
+                message.data,
             )
         return message_dict
 

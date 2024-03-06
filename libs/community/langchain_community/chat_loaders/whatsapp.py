@@ -77,7 +77,7 @@ class WhatsAppChatLoader(BaseChatLoader):
                         HumanMessage(
                             role=sender,
                             content=text,
-                            output_metadata={
+                            data={
                                 "sender": sender,
                                 "events": [{"message_time": timestamp}],
                             },

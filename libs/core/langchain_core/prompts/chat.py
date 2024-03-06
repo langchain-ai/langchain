@@ -162,7 +162,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     prompt: StringPromptTemplate
     """String prompt template."""
-    output_metadata: dict = Field(default_factory=dict)
+    data: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
 
     @classmethod
@@ -280,9 +280,7 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
             Formatted message.
         """
         text = self.prompt.format(**kwargs)
-        return ChatMessage(
-            content=text, role=self.role, output_metadata=self.output_metadata
-        )
+        return ChatMessage(content=text, role=self.role, data=self.data)
 
 
 _StringImageMessagePromptTemplateT = TypeVar(
@@ -305,7 +303,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         StringPromptTemplate, List[Union[StringPromptTemplate, ImagePromptTemplate]]
     ]
     """Prompt template."""
-    output_metadata: dict = Field(default_factory=dict)
+    data: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
 
     _msg_class: Type[BaseMessage]
@@ -443,7 +441,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         if isinstance(self.prompt, StringPromptTemplate):
             text = self.prompt.format(**kwargs)
-            return self._msg_class(content=text, output_metadata=self.output_metadata)
+            return self._msg_class(content=text, data=self.data)
         else:
             content: List = []
             for prompt in self.prompt:
@@ -454,9 +452,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 elif isinstance(prompt, ImagePromptTemplate):
                     formatted = prompt.format(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
-            return self._msg_class(
-                content=content, output_metadata=self.output_metadata
-            )
+            return self._msg_class(content=content, data=self.data)
 
     def pretty_repr(self, html: bool = False) -> str:
         # TODO: Handle partials

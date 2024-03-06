@@ -102,7 +102,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
               ],
               "kwargs": {
                 "content": "I need to find out who directed the 2023 film Oppenheimer and their age. Then, I need to calculate their age in days. I will use DuckDuckGo to find out the director and their age.\nAction: duckduckgo_search\nAction Input: \"Director of the 2023 film Oppenheimer and their age\"",
-                "output_metadata": {}
+                "data": {}
               }
             }
           }
@@ -161,7 +161,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
               ],
               "kwargs": {
                 "content": "The director of the 2023 film Oppenheimer is Christopher Nolan. Now I need to find out his age.\nAction: duckduckgo_search\nAction Input: \"Christopher Nolan age\"",
-                "output_metadata": {}
+                "data": {}
               }
             }
           }
@@ -220,7 +220,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
               ],
               "kwargs": {
                 "content": "Christopher Nolan was born on July 30, 1970, which makes him 52 years old in 2023. Now I need to calculate his age in days.\nAction: Calculator\nAction Input: 52*365",
-                "output_metadata": {}
+                "data": {}
               }
             }
           }
@@ -279,7 +279,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
               ],
               "kwargs": {
                 "content": "```text\n52*365\n```\n...numexpr.evaluate(\"52*365\")...\n",
-                "output_metadata": {}
+                "data": {}
               }
             }
           }
@@ -340,7 +340,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
               ],
               "kwargs": {
                 "content": "I now know the final answer\nFinal Answer: The director of the 2023 film Oppenheimer is Christopher Nolan and he is 52 years old. His age in days is approximately 18980 days.",
-                "output_metadata": {}
+                "data": {}
               }
             }
           }

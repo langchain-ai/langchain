@@ -58,17 +58,17 @@ async def test_generic_fake_chat_model_stream() -> None:
 
     # Test streaming of additional kwargs.
     # Relying on insertion order of the additional kwargs dict
-    message = AIMessage(content="", output_metadata={"foo": 42, "bar": 24})
+    message = AIMessage(content="", data={"foo": 42, "bar": 24})
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        AIMessageChunk(content="", output_metadata={"foo": 42}),
-        AIMessageChunk(content="", output_metadata={"bar": 24}),
+        AIMessageChunk(content="", data={"foo": 42}),
+        AIMessageChunk(content="", data={"bar": 24}),
     ]
 
     message = AIMessage(
         content="",
-        output_metadata={
+        data={
             "function_call": {
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
@@ -80,23 +80,15 @@ async def test_generic_fake_chat_model_stream() -> None:
     chunks = [chunk async for chunk in model.astream("meow")]
 
     assert chunks == [
-        AIMessageChunk(
-            content="", output_metadata={"function_call": {"name": "move_file"}}
-        ),
+        AIMessageChunk(content="", data={"function_call": {"name": "move_file"}}),
         AIMessageChunk(
             content="",
-            output_metadata={
-                "function_call": {"arguments": '{\n  "source_path": "foo"'}
-            },
+            data={"function_call": {"arguments": '{\n  "source_path": "foo"'}},
         ),
-        AIMessageChunk(
-            content="", output_metadata={"function_call": {"arguments": ","}}
-        ),
+        AIMessageChunk(content="", data={"function_call": {"arguments": ","}}),
         AIMessageChunk(
             content="",
-            output_metadata={
-                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'}
-            },
+            data={"function_call": {"arguments": '\n  "destination_path": "bar"\n}'}},
         ),
     ]
 
@@ -109,7 +101,7 @@ async def test_generic_fake_chat_model_stream() -> None:
 
     assert accumulate_chunks == AIMessageChunk(
         content="",
-        output_metadata={
+        data={
             "function_call": {
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'

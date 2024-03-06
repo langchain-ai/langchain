@@ -9,7 +9,7 @@ from langchain.agents.output_parsers.openai_tools import (
 
 
 def test_calls_convert_agent_action_to_messages() -> None:
-    output_metadata1 = {
+    data1 = {
         "tool_calls": [
             {
                 "id": "call_abcd12345",
@@ -18,10 +18,10 @@ def test_calls_convert_agent_action_to_messages() -> None:
             }
         ],
     }
-    message1 = AIMessage(content="", output_metadata=output_metadata1)
+    message1 = AIMessage(content="", data=data1)
 
     actions1 = parse_ai_message_to_openai_tool_action(message1)
-    output_metadata2 = {
+    data2 = {
         "tool_calls": [
             {
                 "id": "call_abcd54321",
@@ -30,10 +30,10 @@ def test_calls_convert_agent_action_to_messages() -> None:
             }
         ],
     }
-    message2 = AIMessage(content="", output_metadata=output_metadata2)
+    message2 = AIMessage(content="", data=data2)
     actions2 = parse_ai_message_to_openai_tool_action(message2)
 
-    output_metadata3 = {
+    data3 = {
         "tool_calls": [
             {
                 "id": "call_abcd67890",
@@ -47,7 +47,7 @@ def test_calls_convert_agent_action_to_messages() -> None:
             },
         ],
     }
-    message3 = AIMessage(content="", output_metadata=output_metadata3)
+    message3 = AIMessage(content="", data=data3)
     actions3 = parse_ai_message_to_openai_tool_action(message3)
     # for mypy
     assert isinstance(actions1, list)
@@ -65,24 +65,24 @@ def test_calls_convert_agent_action_to_messages() -> None:
         ToolMessage(
             tool_call_id="call_abcd12345",
             content="observation1",
-            output_metadata={"name": "add"},
+            data={"name": "add"},
         ),
         message2,
         ToolMessage(
             tool_call_id="call_abcd54321",
             content="observation2",
-            output_metadata={"name": "subtract"},
+            data={"name": "subtract"},
         ),
         message3,
         ToolMessage(
             tool_call_id="call_abcd67890",
             content="observation3",
-            output_metadata={"name": "multiply"},
+            data={"name": "multiply"},
         ),
         ToolMessage(
             tool_call_id="call_abcd09876",
             content="observation4",
-            output_metadata={"name": "divide"},
+            data={"name": "divide"},
         ),
     ]
     output = format_to_openai_tool_messages(intermediate_steps)

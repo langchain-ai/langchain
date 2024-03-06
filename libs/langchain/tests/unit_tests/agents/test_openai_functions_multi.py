@@ -34,7 +34,7 @@ class TestParseAIMessage:
 
         msg = AIMessage(
             content="LLM thoughts.",
-            output_metadata={
+            data={
                 "function_call": {"name": "foo", "arguments": f'{{"actions": {act}}}'}
             },
         )
@@ -58,7 +58,7 @@ class TestParseAIMessage:
 
         msg = AIMessage(
             content="LLM thoughts.",
-            output_metadata={
+            data={
                 "function_call": {"name": "foo", "arguments": f'{{"actions": {act}}}'}
             },
         )
@@ -80,7 +80,7 @@ class TestParseAIMessage:
     def test_func_call_invalid(self) -> None:
         msg = AIMessage(
             content="LLM thoughts.",
-            output_metadata={"function_call": {"name": "foo", "arguments": "{42]"}},
+            data={"function_call": {"name": "foo", "arguments": "{42]"}},
         )
 
         err = (

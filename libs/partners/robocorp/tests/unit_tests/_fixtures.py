@@ -23,7 +23,7 @@ class FakeChatLLMT(BaseChatModel):
                 ChatGeneration(
                     message=AIMessage(
                         content="",
-                        output_metadata={
+                        data={
                             "function_call": {
                                 "name": "accept",
                                 "arguments": '{\n  "draft": "turtles"\n}',

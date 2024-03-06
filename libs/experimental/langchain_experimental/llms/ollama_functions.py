@@ -124,7 +124,7 @@ output: {chat_generation_content}"
 
         response_message_with_functions = AIMessage(
             content="",
-            output_metadata={
+            data={
                 "function_call": {
                     "name": called_tool_name,
                     "arguments": json.dumps(called_tool_arguments)

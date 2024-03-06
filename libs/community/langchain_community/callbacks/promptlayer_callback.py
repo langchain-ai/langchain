@@ -150,8 +150,8 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
             message_dict = {"role": message.role, "content": message.content}
         else:
             raise ValueError(f"Got unknown type {message}")
-        if "name" in message.output_metadata:
-            message_dict["name"] = message.output_metadata["name"]
+        if "name" in message.data:
+            message_dict["name"] = message.data["name"]
         return message_dict
 
     def _create_message_dicts(

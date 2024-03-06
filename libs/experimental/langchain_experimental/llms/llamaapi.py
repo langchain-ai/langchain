@@ -39,10 +39,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             _dict["function_call"]["arguments"] = json.dumps(
                 _dict["function_call"]["arguments"]
             )
-            output_metadata = {"function_call": dict(_dict["function_call"])}
+            data = {"function_call": dict(_dict["function_call"])}
         else:
-            output_metadata = {}
-        return AIMessage(content=content, output_metadata=output_metadata)
+            data = {}
+        return AIMessage(content=content, data=data)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     elif role == "function":
@@ -58,8 +58,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.output_metadata:
-            message_dict["function_call"] = message.output_metadata["function_call"]
+        if "function_call" in message.data:
+            message_dict["function_call"] = message.data["function_call"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, FunctionMessage):
@@ -70,8 +70,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         }
     else:
         raise ValueError(f"Got unknown type {message}")
-    if "name" in message.output_metadata:
-        message_dict["name"] = message.output_metadata["name"]
+    if "name" in message.data:
+        message_dict["name"] = message.data["name"]
     return message_dict
 
 

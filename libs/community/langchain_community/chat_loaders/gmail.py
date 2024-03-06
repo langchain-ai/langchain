@@ -26,7 +26,7 @@ def _extract_email_content(msg: Any) -> HumanMessage:
             # Split the email body and extract the first part
             newest_response = re.split(pattern, data)[0]
             message = HumanMessage(
-                content=newest_response, output_metadata={"sender": from_email}
+                content=newest_response, data={"sender": from_email}
             )
             return message
     raise ValueError

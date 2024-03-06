@@ -263,7 +263,7 @@ def test_functions_call_thoughts() -> None:
     message = HumanMessage(content="What's the temperature in Shanghai today?")
     response = chain.batch([{"input": message}])
     assert isinstance(response[0], AIMessage)
-    assert "function_call" in response[0].output_metadata
+    assert "function_call" in response[0].data
 
 
 def test_functions_call() -> None:
@@ -274,7 +274,7 @@ def test_functions_call() -> None:
             HumanMessage(content="What's the temperature in Shanghai today?"),
             AIMessage(
                 content="",
-                output_metadata={
+                data={
                     "function_call": {
                         "name": "get_current_temperature",
                         "thoughts": "i will use get_current_temperature "

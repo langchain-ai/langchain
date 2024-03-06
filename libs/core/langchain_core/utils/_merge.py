@@ -25,7 +25,7 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
             continue
         elif type(merged[k]) != type(v):
             raise TypeError(
-                f'output_metadata["{k}"] already exists in this message,'
+                f'data["{k}"] already exists in this message,'
                 " but with a different type."
             )
         elif isinstance(merged[k], str):

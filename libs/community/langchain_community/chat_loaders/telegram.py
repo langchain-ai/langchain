@@ -73,7 +73,7 @@ class TelegramChatLoader(BaseChatLoader):
             results.append(
                 HumanMessage(
                     content=text,
-                    output_metadata={
+                    data={
                         "sender": from_name,
                         "events": [{"message_time": timestamp}],
                     },
@@ -105,7 +105,7 @@ class TelegramChatLoader(BaseChatLoader):
             results.append(
                 HumanMessage(
                     content=text,
-                    output_metadata={
+                    data={
                         "sender": from_name,
                         "events": [{"message_time": timestamp}],
                     },

@@ -25,13 +25,13 @@ def parse_ai_message_to_openai_tool_action(
     if not isinstance(message, AIMessage):
         raise TypeError(f"Expected an AI message got {type(message)}")
 
-    if not message.output_metadata.get("tool_calls"):
+    if not message.data.get("tool_calls"):
         return AgentFinish(
             return_values={"output": message.content}, log=str(message.content)
         )
 
     actions: List = []
-    for tool_call in message.output_metadata["tool_calls"]:
+    for tool_call in message.data["tool_calls"]:
         function = tool_call["function"]
         function_name = function["name"]
         try:

@@ -47,7 +47,7 @@ class SlackChatLoader(BaseChatLoader):
                 continue
             if sender == previous_sender:
                 results[-1].content += "\n\n" + text
-                results[-1].output_metadata["events"].append(
+                results[-1].data["events"].append(
                     {"message_time": timestamp}
                 )
             else:
@@ -55,7 +55,7 @@ class SlackChatLoader(BaseChatLoader):
                     HumanMessage(
                         role=sender,
                         content=text,
-                        output_metadata={
+                        data={
                             "sender": sender,
                             "events": [{"message_time": timestamp}],
                         },

@@ -84,10 +84,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
         if _dict.get("function_call"):
-            output_metadata = {"function_call": dict(_dict["function_call"])}
+            data = {"function_call": dict(_dict["function_call"])}
         else:
-            output_metadata = {}
-        return AIMessage(content=content, output_metadata=output_metadata)
+            data = {}
+        return AIMessage(content=content, data=data)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     elif role == "function":
@@ -118,14 +118,14 @@ def _convert_delta_to_message_chunk(
     role = _dict.get("role")
     content = _dict.get("content") or ""
     if _dict.get("function_call"):
-        output_metadata = {"function_call": dict(_dict["function_call"])}
+        data = {"function_call": dict(_dict["function_call"])}
     else:
-        output_metadata = {}
+        data = {}
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, output_metadata=output_metadata)
+        return AIMessageChunk(content=content, data=data)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
@@ -143,8 +143,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.output_metadata:
-            message_dict["function_call"] = message.output_metadata["function_call"]
+        if "function_call" in message.data:
+            message_dict["function_call"] = message.data["function_call"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, FunctionMessage):
@@ -155,8 +155,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         }
     else:
         raise ValueError(f"Got unknown type {message}")
-    if "name" in message.output_metadata:
-        message_dict["name"] = message.output_metadata["name"]
+    if "name" in message.data:
+        message_dict["name"] = message.data["name"]
     return message_dict
 
 

@@ -335,12 +335,12 @@ def test_few_shot_chat_message_prompt_template() -> None:
 
     messages = final_prompt.format_messages(input="100 + 1")
     assert messages == [
-        SystemMessage(content="You are a helpful AI Assistant", output_metadata={}),
-        HumanMessage(content="2+2", output_metadata={}, example=False),
-        AIMessage(content="4", output_metadata={}, example=False),
-        HumanMessage(content="2+3", output_metadata={}, example=False),
-        AIMessage(content="5", output_metadata={}, example=False),
-        HumanMessage(content="100 + 1", output_metadata={}, example=False),
+        SystemMessage(content="You are a helpful AI Assistant", data={}),
+        HumanMessage(content="2+2", data={}, example=False),
+        AIMessage(content="4", data={}, example=False),
+        HumanMessage(content="2+3", data={}, example=False),
+        AIMessage(content="5", data={}, example=False),
+        HumanMessage(content="100 + 1", data={}, example=False),
     ]
 
 
@@ -389,10 +389,10 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     )
     messages = final_prompt.format_messages(input="100 + 1")
     assert messages == [
-        SystemMessage(content="You are a helpful AI Assistant", output_metadata={}),
-        HumanMessage(content="2+2", output_metadata={}, example=False),
-        AIMessage(content="4", output_metadata={}, example=False),
-        HumanMessage(content="2+3", output_metadata={}, example=False),
-        AIMessage(content="5", output_metadata={}, example=False),
-        HumanMessage(content="100 + 1", output_metadata={}, example=False),
+        SystemMessage(content="You are a helpful AI Assistant", data={}),
+        HumanMessage(content="2+2", data={}, example=False),
+        AIMessage(content="4", data={}, example=False),
+        HumanMessage(content="2+3", data={}, example=False),
+        AIMessage(content="5", data={}, example=False),
+        HumanMessage(content="100 + 1", data={}, example=False),
     ]

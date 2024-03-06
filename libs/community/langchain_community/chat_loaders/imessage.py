@@ -152,7 +152,7 @@ class IMessageChatLoader(BaseChatLoader):
                 HumanMessage(
                     role=sender,
                     content=content,
-                    output_metadata={
+                    data={
                         "message_time": date,
                         "message_time_as_datetime": nanoseconds_from_2001_to_datetime(
                             date

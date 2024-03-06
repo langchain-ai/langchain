@@ -111,8 +111,8 @@ def test_tools() -> None:
     llm = ChatAnthropicTools(model_name=MODEL_NAME).bind_tools([Person])
     result = llm.invoke("Erick is 27 years old")
     assert result.content == "", f"content should be empty, not {result.content}"
-    assert "tool_calls" in result.output_metadata
-    tool_calls = result.output_metadata["tool_calls"]
+    assert "tool_calls" in result.data
+    tool_calls = result.data["tool_calls"]
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
     assert tool_call["type"] == "function"

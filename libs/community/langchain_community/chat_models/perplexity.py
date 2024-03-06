@@ -175,19 +175,19 @@ class ChatPerplexity(BaseChatModel):
     ) -> BaseMessageChunk:
         role = _dict.get("role")
         content = _dict.get("content") or ""
-        output_metadata: Dict = {}
+        data: Dict = {}
         if _dict.get("function_call"):
             function_call = dict(_dict["function_call"])
             if "name" in function_call and function_call["name"] is None:
                 function_call["name"] = ""
-            output_metadata["function_call"] = function_call
+            data["function_call"] = function_call
         if _dict.get("tool_calls"):
-            output_metadata["tool_calls"] = _dict["tool_calls"]
+            data["tool_calls"] = _dict["tool_calls"]
 
         if role == "user" or default_class == HumanMessageChunk:
             return HumanMessageChunk(content=content)
         elif role == "assistant" or default_class == AIMessageChunk:
-            return AIMessageChunk(content=content, output_metadata=output_metadata)
+            return AIMessageChunk(content=content, data=data)
         elif role == "system" or default_class == SystemMessageChunk:
             return SystemMessageChunk(content=content)
         elif role == "function" or default_class == FunctionMessageChunk:

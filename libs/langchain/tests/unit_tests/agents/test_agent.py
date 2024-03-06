@@ -775,7 +775,7 @@ def _make_func_invocation(name: str, **kwargs: Any) -> AIMessage:
     """
     return AIMessage(
         content="",
-        output_metadata={
+        data={
             "function_call": {
                 "name": name,
                 "arguments": json.dumps(kwargs),
@@ -840,7 +840,7 @@ async def test_openai_agent_with_streaming() -> None:
                     message_log=[
                         AIMessageChunk(
                             content="",
-                            output_metadata={
+                            data={
                                 "function_call": {
                                     "name": "find_pet",
                                     "arguments": '{"pet": "cat"}',
@@ -853,7 +853,7 @@ async def test_openai_agent_with_streaming() -> None:
             "messages": [
                 AIMessageChunk(
                     content="",
-                    output_metadata={
+                    data={
                         "function_call": {
                             "name": "find_pet",
                             "arguments": '{"pet": "cat"}',
@@ -875,7 +875,7 @@ async def test_openai_agent_with_streaming() -> None:
                         message_log=[
                             AIMessageChunk(
                                 content="",
-                                output_metadata={
+                                data={
                                     "function_call": {
                                         "name": "find_pet",
                                         "arguments": '{"pet": "cat"}',
@@ -943,7 +943,7 @@ def _make_tools_invocation(name_to_arguments: Dict[str, Dict[str, Any]]) -> AIMe
 
     return AIMessage(
         content="",
-        output_metadata={
+        data={
             "tool_calls": tool_calls,
         },
     )
@@ -1015,7 +1015,7 @@ async def test_openai_agent_tools_agent() -> None:
                     message_log=[
                         AIMessageChunk(
                             content="",
-                            output_metadata={
+                            data={
                                 "tool_calls": [
                                     {
                                         "function": {
@@ -1041,7 +1041,7 @@ async def test_openai_agent_tools_agent() -> None:
             "messages": [
                 AIMessageChunk(
                     content="",
-                    output_metadata={
+                    data={
                         "tool_calls": [
                             {
                                 "function": {
@@ -1068,7 +1068,7 @@ async def test_openai_agent_tools_agent() -> None:
                     message_log=[
                         AIMessageChunk(
                             content="",
-                            output_metadata={
+                            data={
                                 "tool_calls": [
                                     {
                                         "function": {
@@ -1094,7 +1094,7 @@ async def test_openai_agent_tools_agent() -> None:
             "messages": [
                 AIMessageChunk(
                     content="",
-                    output_metadata={
+                    data={
                         "tool_calls": [
                             {
                                 "function": {
@@ -1125,7 +1125,7 @@ async def test_openai_agent_tools_agent() -> None:
                         message_log=[
                             AIMessageChunk(
                                 content="",
-                                output_metadata={
+                                data={
                                     "tool_calls": [
                                         {
                                             "function": {
@@ -1167,7 +1167,7 @@ async def test_openai_agent_tools_agent() -> None:
                         message_log=[
                             AIMessageChunk(
                                 content="",
-                                output_metadata={
+                                data={
                                     "tool_calls": [
                                         {
                                             "function": {

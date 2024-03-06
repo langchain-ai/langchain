@@ -97,12 +97,12 @@ def _convert_mistral_chat_message_to_message(
     if role == "user":
         return HumanMessage(content=content)
     elif role == "assistant":
-        output_metadata: Dict = {}
+        data: Dict = {}
         if hasattr(_message, "tool_calls") and getattr(_message, "tool_calls"):
-            output_metadata["tool_calls"] = [
+            data["tool_calls"] = [
                 tc.model_dump() for tc in getattr(_message, "tool_calls")
             ]
-        return AIMessage(content=content, output_metadata=output_metadata)
+        return AIMessage(content=content, data=data)
     elif role == "system":
         return SystemMessage(content=content)
     elif role == "tool":
@@ -138,12 +138,12 @@ def _convert_delta_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        output_metadata: Dict = {}
+        data: Dict = {}
         if hasattr(_delta, "tool_calls") and getattr(_delta, "tool_calls"):
-            output_metadata["tool_calls"] = [
+            data["tool_calls"] = [
                 tc.model_dump() for tc in getattr(_delta, "tool_calls")
             ]
-        return AIMessageChunk(content=content, output_metadata=output_metadata)
+        return AIMessageChunk(content=content, data=data)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
@@ -160,14 +160,13 @@ def _convert_message_to_mistral_chat_message(
     elif isinstance(message, HumanMessage):
         mistral_message = MistralChatMessage(role="user", content=message.content)
     elif isinstance(message, AIMessage):
-        if "tool_calls" in message.output_metadata:
+        if "tool_calls" in message.data:
             from mistralai.models.chat_completion import (  # type: ignore[attr-defined]
                 ToolCall as MistralToolCall,
             )
 
             tool_calls = [
-                MistralToolCall.model_validate(tc)
-                for tc in message.output_metadata["tool_calls"]
+                MistralToolCall.model_validate(tc) for tc in message.data["tool_calls"]
             ]
         else:
             tool_calls = None
@@ -505,7 +504,7 @@ class ChatMistralAI(BaseChatModel):
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
-                #     'raw': AIMessage(content='', output_metadata={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'raw': AIMessage(content='', data={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
                 #     'parsing_error': None
                 # }

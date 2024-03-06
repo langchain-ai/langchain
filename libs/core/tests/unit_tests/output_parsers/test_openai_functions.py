@@ -17,7 +17,7 @@ def test_json_output_function_parser() -> None:
     """Test the JSON output function parser is configured with robust defaults."""
     message = AIMessage(
         content="This is a test message",
-        output_metadata={
+        data={
             "function_call": {
                 "name": "function_name",
                 "arguments": '{"arg1": "code\ncode"}',
@@ -38,7 +38,7 @@ def test_json_output_function_parser() -> None:
     assert result == {"arg1": "code\ncode"}
 
     # Verify that the original message is not modified
-    assert message.output_metadata == {
+    assert message.data == {
         "function_call": {
             "name": "function_name",
             "arguments": '{"arg1": "code\ncode"}',
@@ -91,7 +91,7 @@ def test_json_output_function_parser_strictness(config: Dict[str, Any]) -> None:
 
     message = AIMessage(
         content="This is a test message",
-        output_metadata={"function_call": {"name": "function_name", "arguments": args}},
+        data={"function_call": {"name": "function_name", "arguments": args}},
     )
     chat_generation = ChatGeneration(message=message)
 
@@ -112,20 +112,16 @@ def test_json_output_function_parser_strictness(config: Dict[str, Any]) -> None:
         # Human message has no function call
         HumanMessage(content="This is a test message"),
         # AIMessage has no function call information.
-        AIMessage(content="This is a test message", output_metadata={}),
+        AIMessage(content="This is a test message", data={}),
         # Bad function call information (arguments should be a string)
         AIMessage(
             content="This is a test message",
-            output_metadata={
-                "function_call": {"name": "function_name", "arguments": {}}
-            },
+            data={"function_call": {"name": "function_name", "arguments": {}}},
         ),
         # Bad function call information (arguments should be proper json)
         AIMessage(
             content="This is a test message",
-            output_metadata={
-                "function_call": {"name": "function_name", "arguments": "noqweqwe"}
-            },
+            data={"function_call": {"name": "function_name", "arguments": "noqweqwe"}},
         ),
     ],
 )
@@ -141,7 +137,7 @@ def test_pydantic_output_functions_parser() -> None:
     """Test pydantic output functions parser."""
     message = AIMessage(
         content="This is a test message",
-        output_metadata={
+        data={
             "function_call": {
                 "name": "function_name",
                 "arguments": json.dumps({"name": "value", "age": 10}),
@@ -167,7 +163,7 @@ def test_pydantic_output_functions_parser_multiple_schemas() -> None:
 
     message = AIMessage(
         content="This is a test message",
-        output_metadata={
+        data={
             "function_call": {
                 "name": "cookie",
                 "arguments": json.dumps({"name": "value", "age": 10}),
