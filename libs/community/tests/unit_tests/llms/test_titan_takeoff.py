@@ -1,4 +1,4 @@
-"""Test Titan Takeoff wrapper."""
+"""Test Titan Takeoff LLM wrapper."""
 
 
 import responses
@@ -16,15 +16,36 @@ def test_titan_takeoff_call(streaming, takeoff_object) -> None:
     """Test valid call to Titan Takeoff."""
     port = 2345
     url = f"http://localhost:{port}/generate_stream" if streaming else f"http://localhost:{port}/generate"
+    
+    def stream_response(request):
+        payload = json.loads(request.body)
+        headers = {'request-id': '728d329e-0e86-11e4-a748-0c84dc037c13'}
+    
+        return (200, headers, json.dumps({'text': payload['text']}))
 
-    responses.add(responses.POST, url, json={"text": "ask someone else"}, content_type="application/json")
+    if streaming:
+        responses.add_callback(responses.POST, url, callback=stream_response)
+    else:
+        responses.add(responses.POST, url, json={"text": "ask someone else"}, content_type="application/json")
 
     llm = takeoff_object(port=port, streaming=streaming)
-    output = llm("What is 2 + 2?")
-    assert isinstance(output, str)
-    assert len(responses.calls) == 1
-    assert responses.calls[0].request.url == url
-    assert json.loads(responses.calls[0].request.body.decode("utf-8"))["text"] == "What is 2 + 2?"
+    number_of_calls = 0
+    for function_call in [llm, llm.invoke]:
+        number_of_calls += 1
+        output = function_call("What is 2 + 2?")
+        assert isinstance(output, str)
+        assert len(responses.calls) == number_of_calls
+        assert responses.calls[0].request.url == url
+        assert json.loads(responses.calls[0].request.body.decode("utf-8"))["text"] == "What is 2 + 2?"
+    
+    if streaming:
+        output = llm._stream("What is 2 + 2?")
+        for chunk in output:
+            print(chunk.text)
+            assert isinstance(chunk, str)
+        assert len(responses.calls) == number_of_calls + 1
+        assert responses.calls[0].request.url == url
+        assert json.loads(responses.calls[0].request.body.decode("utf-8"))["text"] == "What is 2 + 2?"
 
     
 @responses.activate
@@ -40,7 +61,7 @@ def test_titan_takeoff_bad_call(streaming, takeoff_object) -> None:
 
     llm = takeoff_object(streaming=streaming)
     with pytest.raises(TakeoffError):
-        output = llm("What is 2 + 2?")
+        llm("What is 2 + 2?")
     assert len(responses.calls) == 1
     assert responses.calls[0].request.url == url
     assert json.loads(responses.calls[0].request.body.decode("utf-8"))["text"] == "What is 2 + 2?"
@@ -64,7 +85,7 @@ def test_titan_takeoff_model_initialisation(takeoff_object) -> None:
 
     llm = takeoff_object(port=inf_port, mgmt_port=mgnt_port, models=[reader_1, reader_2])
     output = llm("What is 2 + 2?")
-
+        
     assert isinstance(output, str)
     # Ensure the management api was called to create the reader
     assert len(responses.calls) == 3

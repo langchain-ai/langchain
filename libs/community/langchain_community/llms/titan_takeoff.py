@@ -59,6 +59,7 @@ class TitanTakeoff(LLM):
     """Whether to stream the output. Default = False."""
 
     client: Any = None
+    """Takeoff Client Python SDK used to interact with Takeoff API"""
 
     def __init__(
         self,
