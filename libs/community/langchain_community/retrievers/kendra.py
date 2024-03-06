@@ -1,7 +1,6 @@
 import re
 from abc import ABC, abstractmethod
 from typing import (
-    Annotated,
     Any,
     Callable,
     Dict,
@@ -22,6 +21,7 @@ from langchain_core.pydantic_v1 import (
     validator,
 )
 from langchain_core.retrievers import BaseRetriever
+from typing_extensions import Annotated
 
 
 def clean_excerpt(excerpt: str) -> str:
