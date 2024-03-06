@@ -194,12 +194,12 @@ class ChatAnthropic(BaseChatModel):
             values.get("anthropic_api_key") or os.environ.get("ANTHROPIC_API_KEY") or ""
         )
         values["anthropic_api_key"] = anthropic_api_key
-        values["_client"] = anthropic.Client(
-            api_key=anthropic_api_key.get_secret_value()
-        )
-        values["_async_client"] = anthropic.AsyncClient(
-            api_key=anthropic_api_key.get_secret_value()
-        )
+        api_key = anthropic_api_key.get_secret_value()
+        api_url = values.get("anthropic_api_url")
+        if not api_url:
+            api_url = "https://api.anthropic.com"
+        values["_client"] = anthropic.Client(api_key=api_key, base_url=api_url)
+        values["_async_client"] = anthropic.AsyncClient(api_key=api_key, base_url=api_url)
         return values
 
     def _format_params(
