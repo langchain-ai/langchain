@@ -237,7 +237,7 @@ def _pickle_fn_to_hex_string(fn: Callable) -> str:
     """Pickles a function and returns the hexadecimal string."""
     try:
         import cloudpickle
-        
+
         return cloudpickle.dumps(fn).hex()
     except Exception as e:
         raise ValueError(f"Failed to pickle the function: {e}")

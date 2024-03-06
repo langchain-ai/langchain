@@ -262,7 +262,8 @@ extended_testing = [
  "elasticsearch",
  "hdbcli",
  "oci",
- "rdflib"
+ "rdflib",
+ "cloudpickle",
 ]
 
 [tool.ruff]
