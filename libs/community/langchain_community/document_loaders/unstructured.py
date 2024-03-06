@@ -1,7 +1,7 @@
 """Loader that uses unstructured to load files."""
 import collections
 from abc import ABC, abstractmethod
-from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
@@ -82,12 +82,11 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 element.apply(post_processor)
         return elements
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load file."""
         elements = self._get_elements()
         self._post_process_elements(elements)
         if self.mode == "elements":
-            docs: List[Document] = list()
             for element in elements:
                 metadata = self._get_metadata()
                 # NOTE(MthwRobinson) - the attribute check is for backward compatibility
@@ -96,7 +95,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                     metadata.update(element.metadata.to_dict())
                 if hasattr(element, "category"):
                     metadata["category"] = element.category
-                docs.append(Document(page_content=str(element), metadata=metadata))
+                yield Document(page_content=str(element), metadata=metadata)
         elif self.mode == "paged":
             text_dict: Dict[int, str] = {}
             meta_dict: Dict[int, Dict] = {}
@@ -118,17 +117,14 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                     meta_dict[page_number].update(metadata)
 
             # Convert the dict to a list of Document objects
-            docs = [
-                Document(page_content=text_dict[key], metadata=meta_dict[key])
-                for key in text_dict.keys()
-            ]
+            for key in text_dict.keys():
+                yield Document(page_content=text_dict[key], metadata=meta_dict[key])
         elif self.mode == "single":
             metadata = self._get_metadata()
             text = "\n\n".join([str(el) for el in elements])
-            docs = [Document(page_content=text, metadata=metadata)]
+            yield Document(page_content=text, metadata=metadata)
         else:
             raise ValueError(f"mode of {self.mode} not supported.")
-        return docs
 
 
 class UnstructuredFileLoader(UnstructuredBaseLoader):
