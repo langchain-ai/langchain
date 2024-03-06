@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Iterator, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -55,22 +55,26 @@ class JSONLoader(BaseLoader):
         self._text_content = text_content
         self._json_lines = json_lines
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load and return documents from the JSON file."""
-        docs: List[Document] = []
+        index = 0
         if self._json_lines:
             with self.file_path.open(encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line:
-                        self._parse(line, docs)
+                        for doc in self._parse(line, index):
+                            yield doc
+                            index += 1
         else:
-            self._parse(self.file_path.read_text(encoding="utf-8"), docs)
-        return docs
+            for doc in self._parse(self.file_path.read_text(encoding="utf-8"), index):
+                yield doc
+                index += 1
 
-    def _parse(self, content: str, docs: List[Document]) -> None:
+    def _parse(self, content: str, index: int) -> Iterator[Document]:
         """Convert given content to documents."""
         data = self._jq_schema.input(json.loads(content))
+        seq_num = index
 
         # Perform some validation
         # This is not a perfect validation, but it should catch most cases
@@ -80,12 +84,13 @@ class JSONLoader(BaseLoader):
         if self._metadata_func is not None:
             self._validate_metadata_func(data)
 
-        for i, sample in enumerate(data, len(docs) + 1):
+        for sample in data:
+            seq_num += 1
             text = self._get_text(sample=sample)
             metadata = self._get_metadata(
-                sample=sample, source=str(self.file_path), seq_num=i
+                sample=sample, source=str(self.file_path), seq_num=seq_num
             )
-            docs.append(Document(page_content=text, metadata=metadata))
+            yield Document(page_content=text, metadata=metadata)
 
     def _get_text(self, sample: Any) -> str:
         """Convert sample to string format"""
