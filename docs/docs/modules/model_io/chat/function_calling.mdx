@@ -96,7 +96,7 @@ llm_with_tools.invoke("what's 3 * 12")
 ```
 
 ``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Q8ZQ97Qrj5zalugSkYMGV1Uo', 'function': {'arguments': '{"a":3,"b":12}', 'name': 'Multiply'}, 'type': 'function'}]})
+AIMessage(content='', output_metadata={'tool_calls': [{'id': 'call_Q8ZQ97Qrj5zalugSkYMGV1Uo', 'function': {'arguments': '{"a":3,"b":12}', 'name': 'Multiply'}, 'type': 'function'}]})
 ```
 
 We can add a tool parser to extract the tool calls from the generated
@@ -137,7 +137,7 @@ llm_with_multiply.invoke(
 ```
 
 ``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_f3DApOzb60iYjTfOhVFhDRMI', 'function': {'arguments': '{"a":5,"b":10}', 'name': 'Multiply'}, 'type': 'function'}]})
+AIMessage(content='', output_metadata={'tool_calls': [{'id': 'call_f3DApOzb60iYjTfOhVFhDRMI', 'function': {'arguments': '{"a":5,"b":10}', 'name': 'Multiply'}, 'type': 'function'}]})
 ```
 
 For more see the [ChatOpenAI API
@@ -183,7 +183,7 @@ llm_with_tools.invoke("what's 3 * 12")
 ```
 
 ``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'index': 0, 'id': 'call_qIP2bJugb67LGvc6Zhwkvfqc', 'type': 'function', 'function': {'name': 'Multiply', 'arguments': '{"a": 3, "b": 12}'}}]})
+AIMessage(content='', output_metadata={'tool_calls': [{'index': 0, 'id': 'call_qIP2bJugb67LGvc6Zhwkvfqc', 'type': 'function', 'function': {'name': 'Multiply', 'arguments': '{"a": 3, "b": 12}'}}]})
 ```
 
 We can add a tool parser to extract the tool calls from the generated
@@ -242,7 +242,7 @@ llm_with_tools.invoke("what's 3 * 12")
 ```
 
 ``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'null', 'type': <ToolType.function: 'function'>, 'function': {'name': 'Multiply', 'arguments': '{"a": 3, "b": 12}'}}]})
+AIMessage(content='', output_metadata={'tool_calls': [{'id': 'null', 'type': <ToolType.function: 'function'>, 'function': {'name': 'Multiply', 'arguments': '{"a": 3, "b": 12}'}}]})
 ```
 
 We can add a tool parser to extract the tool calls from the generated
@@ -280,7 +280,7 @@ llm_with_tools.invoke("I don't even want you to use the tool")
 ```
 
 ``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'null', 'type': <ToolType.function: 'function'>, 'function': {'name': 'Multiply', 'arguments': '{"a": 5, "b": 7}'}}]})
+AIMessage(content='', output_metadata={'tool_calls': [{'id': 'null', 'type': <ToolType.function: 'function'>, 'function': {'name': 'Multiply', 'arguments': '{"a": 5, "b": 7}'}}]})
 ```
 
 For more see the [ChatMistralAI API reference](https://api.python.langchain.com/en/latest/chat_models/langchain_mistralai.chat_models.ChatMistralAI.html#langchain_mistralai.chat_models.ChatMistralAI).
@@ -319,7 +319,7 @@ llm_with_tools.invoke("what's 3 * 12")
 ```
 
 ``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_4tc61dp0478zafqe33hfriee', 'function': {'arguments': '{"a":3,"b":12}', 'name': 'Multiply'}, 'type': 'function'}]})
+AIMessage(content='', output_metadata={'tool_calls': [{'id': 'call_4tc61dp0478zafqe33hfriee', 'function': {'arguments': '{"a":3,"b":12}', 'name': 'Multiply'}, 'type': 'function'}]})
 ```
 
 We can add a tool parser to extract the tool calls from the generated
@@ -360,7 +360,7 @@ llm_with_multiply.invoke(
 ```
 
 ``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_6k6d0gr3jhqil2kqf7sgeusl', 'function': {'arguments': '{"a":5,"b":7}', 'name': 'Multiply'}, 'type': 'function'}]})
+AIMessage(content='', output_metadata={'tool_calls': [{'id': 'call_6k6d0gr3jhqil2kqf7sgeusl', 'function': {'arguments': '{"a":5,"b":7}', 'name': 'Multiply'}, 'type': 'function'}]})
 ```
 
 For more see the [ChatOpenAI API
