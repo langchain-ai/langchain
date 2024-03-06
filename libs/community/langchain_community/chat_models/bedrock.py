@@ -204,6 +204,8 @@ class BedrockChat(BaseChatModel, BedrockBase):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         provider = self._get_provider()
+        system = None
+        formatted_messages = None
         if provider == "anthropic":
             prompt = None
             system, formatted_messages = ChatPromptAdapter.format_messages(
