@@ -7,6 +7,8 @@ from langchain_core.documents import Document
 
 
 def format_property_key(s: str) -> str:
+    """Formats a string to be used as a property key."""
+
     words = s.split()
     if not words:
         return s
@@ -16,8 +18,7 @@ def format_property_key(s: str) -> str:
 
 
 class NodesList:
-    """
-    Manages a list of nodes with associated properties.
+    """List of nodes with associated properties.
 
     Attributes:
         nodes (Dict[Tuple, Any]): Stores nodes as keys and their properties as values.
@@ -85,8 +86,7 @@ schema_mapping = [
 
 
 class SimplifiedSchema:
-    """
-    Provides functionality for working with a simplified schema mapping.
+    """Simplified schema mapping.
 
     Attributes:
         schema (Dict): A dictionary containing the mapping to simplified schema types.
@@ -116,7 +116,7 @@ class SimplifiedSchema:
 
 
 class DiffbotGraphTransformer:
-    """Transforms documents into graph documents using Diffbot's NLP API.
+    """Transform documents into graph documents using Diffbot NLP API.
 
     A graph document transformation system takes a sequence of Documents and returns a
     sequence of Graph Documents.

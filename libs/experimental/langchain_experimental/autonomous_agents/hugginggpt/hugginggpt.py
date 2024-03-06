@@ -15,6 +15,8 @@ from langchain_experimental.autonomous_agents.hugginggpt.task_planner import (
 
 
 class HuggingGPT:
+    """Agent for interacting with HuggingGPT."""
+
     def __init__(self, llm: BaseLanguageModel, tools: List[BaseTool]):
         self.llm = llm
         self.tools = tools
