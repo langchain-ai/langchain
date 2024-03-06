@@ -66,7 +66,9 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: Union[str, BytesIO], *, headers: Optional[Dict] = None):
+    def __init__(
+        self, file_path: Union[str, BytesIO], *, headers: Optional[Dict] = None
+    ):
         """Initialize with a file path.
 
         Args:
@@ -83,9 +85,12 @@ class BasePDFLoader(BaseLoader, ABC):
         else:
             if "~" in self.file_path:
                 self.file_path = os.path.expanduser(self.file_path)
-    
-            # If the file is a web path or S3, download it to a temporary file, and use that
-            if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
+
+            # If the file is a web path or S3,
+            # download it to a temporary file, and use that
+            if not os.path.isfile(self.file_path) and self._is_valid_url(
+                self.file_path
+            ):
                 self.temp_dir = tempfile.TemporaryDirectory()
                 _, suffix = os.path.splitext(self.file_path)
                 temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
@@ -97,12 +102,14 @@ class BasePDFLoader(BaseLoader, ABC):
                             "Check the url of your file; returned status code %s"
                             % r.status_code
                         )
-    
+
                     with open(temp_pdf, mode="wb") as f:
                         f.write(r.content)
                     self.file_path = str(temp_pdf)
             elif not os.path.isfile(self.file_path):
-                raise ValueError("File path %s is not a valid file or url" % self.file_path)
+                raise ValueError(
+                    "File path %s is not a valid file or url" % self.file_path
+                )
 
     def __del__(self) -> None:
         if hasattr(self, "temp_dir"):
