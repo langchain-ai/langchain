@@ -198,16 +198,22 @@ class ChatAnthropic(BaseChatModel):
         api_url = values.get("anthropic_api_url")
         if not api_url:
             api_url = "https://api.anthropic.com"
-        values["_client"] = anthropic.Client(api_key=api_key, base_url=api_url)
-        values["_async_client"] = anthropic.AsyncClient(api_key=api_key, base_url=api_url)
+        values["_client"] = anthropic.Client(
+            api_key=api_key,
+            base_url=api_url
+        )
+        values["_async_client"] = anthropic.AsyncClient(
+            api_key=api_key,
+            base_url=api_url
+        )
         return values
 
     def _format_params(
-        self,
-        *,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        **kwargs: Dict,
+            self,
+            *,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            **kwargs: Dict,
     ) -> Dict:
         # get system prompt if any
         system, formatted_messages = _format_messages(messages)
@@ -227,11 +233,11 @@ class ChatAnthropic(BaseChatModel):
         return rtn
 
     def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         with self._client.messages.stream(**params) as stream:
@@ -242,11 +248,11 @@ class ChatAnthropic(BaseChatModel):
                 yield chunk
 
     async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         async with self._async_client.messages.stream(**params) as stream:
@@ -265,22 +271,22 @@ class ChatAnthropic(BaseChatModel):
         )
 
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = self._client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = await self._async_client.messages.create(**params)
