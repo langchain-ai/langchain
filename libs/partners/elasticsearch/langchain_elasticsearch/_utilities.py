@@ -2,6 +2,8 @@ from enum import Enum
 from typing import List, Union
 
 import numpy as np
+from elasticsearch import Elasticsearch
+from langchain_core import __version__ as langchain_version
 
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
 
@@ -15,6 +17,12 @@ class DistanceStrategy(str, Enum):
     DOT_PRODUCT = "DOT_PRODUCT"
     JACCARD = "JACCARD"
     COSINE = "COSINE"
+
+
+def with_user_agent_header(client: Elasticsearch, header_prefix: str) -> Elasticsearch:
+    headers = dict(client._headers)
+    headers.update({"user-agent": f"{header_prefix}/{langchain_version}"})
+    return client.options(headers=headers)
 
 
 def maximal_marginal_relevance(
