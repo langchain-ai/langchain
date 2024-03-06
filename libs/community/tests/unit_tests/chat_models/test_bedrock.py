@@ -58,3 +58,16 @@ def test_different_models_bedrock(model_id: str) -> None:
 
     # should not throw an error
     model.invoke("hello there")
+
+def test_bedrock_anthropic_input() -> None:
+    model = BedrockChat(model_id="anthropic.claude-v2")
+
+    res = model._convert_input([
+        SystemMessage(content="You're an assistant"),
+        HumanMessage(content="Hello"),
+        AIMessage(content="Nice to meet you"),
+    ])
+
+    assert res.text == """System: You're an assistant
+Human: Hello
+Assistant: Nice to meet you"""
