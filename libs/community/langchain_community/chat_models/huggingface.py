@@ -60,7 +60,7 @@ class ChatHuggingFace(BaseChatModel):
         )
 
     @root_validator
-    def validate_llm(self, values: dict) -> dict:
+    def validate_llm(cls, values: dict) -> dict:
         if not isinstance(
             values["llm"],
             (HuggingFaceTextGenInference, HuggingFaceEndpoint, HuggingFaceHub),
