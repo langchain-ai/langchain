@@ -135,8 +135,8 @@ class LLMInputOutputAdapter:
         if (
             provider == "anthropic"
             and "max_tokens_to_sample" not in input_body
-            and (not model_id.startswith("anthropic.claude-3")
-        )):
+            and (not model_id.startswith("anthropic.claude-3"))
+        ):
             input_body["max_tokens_to_sample"] = 256
 
         return input_body
@@ -148,7 +148,7 @@ class LLMInputOutputAdapter:
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
             if model_id.startswith("anthropic.claude-3"):
-                text = response_body.get("content")[0]['text']
+                text = response_body.get("content")[0].get("text")
             else:
                 text = response_body.get("completion")
         else:
