@@ -1,11 +1,22 @@
 import inspect
 import warnings
+from contextlib import contextmanager
 from typing import Any, Dict
+from unittest.mock import patch
 
 import pytest
 
+from langchain_core._api import deprecation
 from langchain_core._api.deprecation import deprecated, warn_deprecated
 from langchain_core.pydantic_v1 import BaseModel
+
+
+@contextmanager
+def surface_internal_warnings() -> None:
+    """Mock surface_langchain_deprecation_warnings."""
+    with patch.object(deprecation, "_get_surface_internal_warnings") as func:
+        func.return_value = True
+        yield func
 
 
 @pytest.mark.parametrize(
@@ -53,14 +64,15 @@ from langchain_core.pydantic_v1 import BaseModel
 )
 def test_warn_deprecated(kwargs: Dict[str, Any], expected_message: str) -> None:
     """Test warn deprecated."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
 
-        warn_deprecated(**kwargs)
+            warn_deprecated(**kwargs)
 
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == expected_message
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
+            assert str(warning) == expected_message
 
 
 def test_undefined_deprecation_schedule() -> None:
@@ -117,143 +129,152 @@ class ClassWithDeprecatedMethods:
 
 def test_deprecated_function() -> None:
     """Test deprecated function."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        assert deprecated_function() == "This is a deprecated function."
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The function `deprecated_function` was deprecated in LangChain 2.0.0 "
-            "and will be removed in 3.0.0"
-        )
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
+            assert deprecated_function() == "This is a deprecated function."
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The function `deprecated_function` was deprecated in LangChain 2.0.0 "
+                "and will be removed in 3.0.0"
+            )
 
-        doc = deprecated_function.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*] original doc")
+            doc = deprecated_function.__doc__
+            assert isinstance(doc, str)
+            assert doc.startswith("[*Deprecated*] original doc")
 
-    assert not inspect.iscoroutinefunction(deprecated_function)
+        assert not inspect.iscoroutinefunction(deprecated_function)
 
 
 @pytest.mark.asyncio
 async def test_deprecated_async_function() -> None:
     """Test deprecated async function."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        assert (
-            await deprecated_async_function() == "This is a deprecated async function."
-        )
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The function `deprecated_async_function` was deprecated "
-            "in LangChain 2.0.0 and will be removed in 3.0.0"
-        )
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
+            assert (
+                await deprecated_async_function()
+                == "This is a deprecated async function."
+            )
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The function `deprecated_async_function` was deprecated "
+                "in LangChain 2.0.0 and will be removed in 3.0.0"
+            )
 
-        doc = deprecated_function.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*] original doc")
+            doc = deprecated_function.__doc__
+            assert isinstance(doc, str)
+            assert doc.startswith("[*Deprecated*] original doc")
 
-    assert inspect.iscoroutinefunction(deprecated_async_function)
+        assert inspect.iscoroutinefunction(deprecated_async_function)
 
 
 def test_deprecated_method() -> None:
     """Test deprecated method."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        obj = ClassWithDeprecatedMethods()
-        assert obj.deprecated_method() == "This is a deprecated method."
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The function `deprecated_method` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
+            obj = ClassWithDeprecatedMethods()
+            assert obj.deprecated_method() == "This is a deprecated method."
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The function `deprecated_method` was deprecated in "
+                "LangChain 2.0.0 and will be removed in 3.0.0"
+            )
 
-        doc = obj.deprecated_method.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*] original doc")
+            doc = obj.deprecated_method.__doc__
+            assert isinstance(doc, str)
+            assert doc.startswith("[*Deprecated*] original doc")
 
-    assert not inspect.iscoroutinefunction(obj.deprecated_method)
+        assert not inspect.iscoroutinefunction(obj.deprecated_method)
 
 
 @pytest.mark.asyncio
 async def test_deprecated_async_method() -> None:
     """Test deprecated async method."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        obj = ClassWithDeprecatedMethods()
-        assert (
-            await obj.deprecated_async_method() == "This is a deprecated async method."
-        )
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The function `deprecated_async_method` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
+            obj = ClassWithDeprecatedMethods()
+            assert (
+                await obj.deprecated_async_method()
+                == "This is a deprecated async method."
+            )
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The function `deprecated_async_method` was deprecated in "
+                "LangChain 2.0.0 and will be removed in 3.0.0"
+            )
 
-        doc = obj.deprecated_method.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*] original doc")
+            doc = obj.deprecated_method.__doc__
+            assert isinstance(doc, str)
+            assert doc.startswith("[*Deprecated*] original doc")
 
-    assert inspect.iscoroutinefunction(obj.deprecated_async_method)
+        assert inspect.iscoroutinefunction(obj.deprecated_async_method)
 
 
 def test_deprecated_classmethod() -> None:
     """Test deprecated classmethod."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        ClassWithDeprecatedMethods.deprecated_classmethod()
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The function `deprecated_classmethod` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
+            ClassWithDeprecatedMethods.deprecated_classmethod()
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The function `deprecated_classmethod` was deprecated in "
+                "LangChain 2.0.0 and will be removed in 3.0.0"
+            )
 
-        doc = ClassWithDeprecatedMethods.deprecated_classmethod.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*] original doc")
+            doc = ClassWithDeprecatedMethods.deprecated_classmethod.__doc__
+            assert isinstance(doc, str)
+            assert doc.startswith("[*Deprecated*] original doc")
 
 
 def test_deprecated_staticmethod() -> None:
     """Test deprecated staticmethod."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        assert (
-            ClassWithDeprecatedMethods.deprecated_staticmethod()
-            == "This is a deprecated staticmethod."
-        )
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
+            assert (
+                ClassWithDeprecatedMethods.deprecated_staticmethod()
+                == "This is a deprecated staticmethod."
+            )
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
 
-        assert str(warning) == (
-            "The function `deprecated_staticmethod` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
-        doc = ClassWithDeprecatedMethods.deprecated_staticmethod.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*] original doc")
+            assert str(warning) == (
+                "The function `deprecated_staticmethod` was deprecated in "
+                "LangChain 2.0.0 and will be removed in 3.0.0"
+            )
+            doc = ClassWithDeprecatedMethods.deprecated_staticmethod.__doc__
+            assert isinstance(doc, str)
+            assert doc.startswith("[*Deprecated*] original doc")
 
 
 def test_deprecated_property() -> None:
     """Test deprecated staticmethod."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
 
-        obj = ClassWithDeprecatedMethods()
-        assert obj.deprecated_property == "This is a deprecated property."
+            obj = ClassWithDeprecatedMethods()
+            assert obj.deprecated_property == "This is a deprecated property."
 
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
 
-        assert str(warning) == (
-            "The function `deprecated_property` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
-        doc = ClassWithDeprecatedMethods.deprecated_property.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*] original doc")
+            assert str(warning) == (
+                "The function `deprecated_property` was deprecated in "
+                "LangChain 2.0.0 and will be removed in 3.0.0"
+            )
+            doc = ClassWithDeprecatedMethods.deprecated_property.__doc__
+            assert isinstance(doc, str)
+            assert doc.startswith("[*Deprecated*] original doc")
 
 
 def test_whole_class_deprecation() -> None:
@@ -271,27 +292,28 @@ def test_whole_class_deprecation() -> None:
             """original doc"""
             return "This is a deprecated method."
 
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
 
-        obj = DeprecatedClass()
-        assert obj.deprecated_method() == "This is a deprecated method."
+            obj = DeprecatedClass()
+            assert obj.deprecated_method() == "This is a deprecated method."
 
-        assert len(warning_list) == 2
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The class `tests.unit_tests._api.test_deprecation.DeprecatedClass` was "
-            "deprecated in tests 2.0.0 and will be removed in 3.0.0"
-        )
+            assert len(warning_list) == 2
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The class `tests.unit_tests._api.test_deprecation.DeprecatedClass` was "
+                "deprecated in tests 2.0.0 and will be removed in 3.0.0"
+            )
 
-        warning = warning_list[1].message
-        assert str(warning) == (
-            "The function `deprecated_method` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
-        # [*Deprecated*] should be inserted only once:
-        if obj.__doc__ is not None:
-            assert obj.__doc__.count("[*Deprecated*]") == 1
+            warning = warning_list[1].message
+            assert str(warning) == (
+                "The function `deprecated_method` was deprecated in "
+                "LangChain 2.0.0 and will be removed in 3.0.0"
+            )
+            # [*Deprecated*] should be inserted only once:
+            if obj.__doc__ is not None:
+                assert obj.__doc__.count("[*Deprecated*]") == 1
 
 
 def test_whole_class_inherited_deprecation() -> None:
@@ -326,51 +348,52 @@ def test_whole_class_inherited_deprecation() -> None:
             """original doc"""
             return "This is a deprecated method."
 
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
 
-        obj = DeprecatedClass()
-        assert obj.deprecated_method() == "This is a deprecated method."
+            obj = DeprecatedClass()
+            assert obj.deprecated_method() == "This is a deprecated method."
 
-        assert len(warning_list) == 2
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The class `tests.unit_tests._api.test_deprecation.DeprecatedClass` was "
-            "deprecated in tests 2.0.0 and will be removed in 3.0.0"
-        )
+            assert len(warning_list) == 2
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The class `tests.unit_tests._api.test_deprecation.DeprecatedClass` was "
+                "deprecated in tests 2.0.0 and will be removed in 3.0.0"
+            )
 
-        warning = warning_list[1].message
-        assert str(warning) == (
-            "The function `deprecated_method` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
-        # if [*Deprecated*] was inserted only once:
-        if obj.__doc__ is not None:
-            assert obj.__doc__.count("[*Deprecated*]") == 1
+            warning = warning_list[1].message
+            assert str(warning) == (
+                "The function `deprecated_method` was deprecated in "
+                "LangChain 2.0.0 and will be removed in 3.0.0"
+            )
+            # if [*Deprecated*] was inserted only once:
+            if obj.__doc__ is not None:
+                assert obj.__doc__.count("[*Deprecated*]") == 1
 
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
 
-        obj = InheritedDeprecatedClass()
-        assert obj.deprecated_method() == "This is a deprecated method."
+            obj = InheritedDeprecatedClass()
+            assert obj.deprecated_method() == "This is a deprecated method."
 
-        assert len(warning_list) == 2
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The class "
-            "`tests.unit_tests._api.test_deprecation.InheritedDeprecatedClass` "
-            "was deprecated in tests 2.2.0 and will be removed in 3.2.0"
-        )
+            assert len(warning_list) == 2
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The class "
+                "`tests.unit_tests._api.test_deprecation.InheritedDeprecatedClass` "
+                "was deprecated in tests 2.2.0 and will be removed in 3.2.0"
+            )
 
-        warning = warning_list[1].message
-        assert str(warning) == (
-            "The function `deprecated_method` was deprecated in "
-            "LangChain 2.2.0 and will be removed in 3.2.0"
-        )
-        # if [*Deprecated*] was inserted only once:
-        if obj.__doc__ is not None:
-            assert obj.__doc__.count("[*Deprecated*]") == 1
-            assert "[*Deprecated*] Inherited deprecated class." in obj.__doc__
+            warning = warning_list[1].message
+            assert str(warning) == (
+                "The function `deprecated_method` was deprecated in "
+                "LangChain 2.2.0 and will be removed in 3.2.0"
+            )
+            # if [*Deprecated*] was inserted only once:
+            if obj.__doc__ is not None:
+                assert obj.__doc__.count("[*Deprecated*]") == 1
+                assert "[*Deprecated*] Inherited deprecated class." in obj.__doc__
 
 
 # Tests with pydantic models
@@ -383,17 +406,18 @@ class MyModel(BaseModel):
 
 def test_deprecated_method_pydantic() -> None:
     """Test deprecated method."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        obj = MyModel()
-        assert obj.deprecated_method() == "This is a deprecated method."
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The function `deprecated_method` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
+    with surface_internal_warnings():
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
+            obj = MyModel()
+            assert obj.deprecated_method() == "This is a deprecated method."
+            assert len(warning_list) == 1
+            warning = warning_list[0].message
+            assert str(warning) == (
+                "The function `deprecated_method` was deprecated in "
+                "LangChain 2.0.0 and will be removed in 3.0.0"
+            )
 
-        doc = obj.deprecated_method.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*] original doc")
+            doc = obj.deprecated_method.__doc__
+            assert isinstance(doc, str)
+            assert doc.startswith("[*Deprecated*] original doc")

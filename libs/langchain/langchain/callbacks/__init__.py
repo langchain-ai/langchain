@@ -9,7 +9,7 @@
 import warnings
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
+from langchain_core._api import caller_aware_warn
 from langchain_core.callbacks import (
     StdOutCallbackHandler,
     StreamingStdOutCallbackHandler,
@@ -34,15 +34,13 @@ def __getattr__(name: str) -> Any:
 
     # If not in interactive env, raise warning.
     if not is_interactive_env():
-        warnings.warn(
+        caller_aware_warn(
             "Importing this callback from langchain is deprecated. Importing it from "
             "langchain will no longer be supported as of langchain==0.2.0. "
             "Please import from langchain-community instead:\n\n"
             f"`from langchain_community.callbacks import {name}`.\n\n"
             "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
         )
-
     return getattr(callbacks, name)
 
 

@@ -246,15 +246,14 @@ def test_chat_valid_infer_variables() -> None:
 
 def test_chat_from_role_strings() -> None:
     """Test instantiation of chat template from role strings."""
-    with pytest.warns(LangChainPendingDeprecationWarning):
-        template = ChatPromptTemplate.from_role_strings(
-            [
-                ("system", "You are a bot."),
-                ("assistant", "hello!"),
-                ("human", "{question}"),
-                ("other", "{quack}"),
-            ]
-        )
+    template = ChatPromptTemplate.from_role_strings(
+        [
+            ("system", "You are a bot."),
+            ("assistant", "hello!"),
+            ("human", "{question}"),
+            ("other", "{quack}"),
+        ]
+    )
 
     messages = template.format_messages(question="How are you?", quack="duck")
     assert messages == [

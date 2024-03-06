@@ -20,7 +20,7 @@ the backbone of a retriever, but there are other types of retrievers as well.
 import warnings
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
+from langchain_core._api import caller_aware_warn
 
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.ensemble import EnsembleRetriever
@@ -43,13 +43,12 @@ def __getattr__(name: str) -> Any:
 
     # If not in interactive env, raise warning.
     if not is_interactive_env():
-        warnings.warn(
+        caller_aware_warn(
             "Importing this retriever from langchain is deprecated. Importing it from "
             "langchain will no longer be supported as of langchain==0.2.0. "
             "Please import from langchain-community instead:\n\n"
             f"`from langchain_community.retrievers import {name}`.\n\n"
             "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
         )
 
     return getattr(retrievers, name)

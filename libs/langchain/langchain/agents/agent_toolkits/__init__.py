@@ -17,7 +17,7 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
+from langchain_core._api import caller_aware_warn
 from langchain_core._api.path import as_import_path
 
 from langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (
@@ -61,13 +61,12 @@ def __getattr__(name: str) -> Any:
 
     # If not in interactive env, raise warning.
     if not is_interactive_env():
-        warnings.warn(
+        caller_aware_warn(
             "Importing this agent toolkit from langchain is deprecated. Importing it "
             "from langchain will no longer be supported as of langchain==0.2.0. "
             "Please import from langchain-community instead:\n\n"
             f"`from langchain_community.agent_toolkits import {name}`.\n\n"
             "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
         )
 
     return getattr(agent_toolkits, name)
