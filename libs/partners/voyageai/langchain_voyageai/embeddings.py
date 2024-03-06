@@ -47,10 +47,7 @@ class VoyageAIEmbeddings(Embeddings):
         self.truncation = truncation
         self.show_progress_bar = show_progress_bar or self.show_progress_bar
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
-        embeddings: List[List[float]] = []
-
+    def _get_batch_iterator(self, texts: List[str]):
         if self.show_progress_bar:
             try:
                 from tqdm.auto import tqdm
@@ -64,6 +61,13 @@ class VoyageAIEmbeddings(Embeddings):
         else:
             _iter = range(0, len(texts), self.batch_size)
 
+        return _iter
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed search docs."""
+        embeddings: List[List[float]] = []
+
+        _iter = self._get_batch_iterator(texts)
         for i in _iter:
             embeddings.extend(
                 self.client.embed(
@@ -82,40 +86,20 @@ class VoyageAIEmbeddings(Embeddings):
             [text], model=self.model, input_type="query", truncation=self.truncation
         ).embeddings[0]
 
-    async def _embed_chunk(
-        self, chunk: List[str], input_type: str
-    ) -> List[List[float]]:
-        r = await self.aclient.embed(
-            chunk,
-            model=self.model,
-            input_type=input_type,
-            truncation=self.truncation,
-        )
-        return r.embeddings
-
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        tasks, results = [], []
+        embeddings: List[List[float]] = []
 
-        for i in range(0, len(texts), self.batch_size):
-            tasks.append(
-                asyncio.create_task(
-                    self._embed_chunk(texts[i : i + self.batch_size], "document")
-                )
+        _iter = self._get_batch_iterator(texts)
+        for i in _iter:
+            r = await self.aclient.embed(
+                texts[i: i + self.batch_size],
+                model=self.model,
+                input_type="document",
+                truncation=self.truncation,
             )
-        if self.show_progress_bar:
-            try:
-                import tqdm.asyncio
-            except ImportError as e:
-                raise ImportError(
-                    "Must have tqdm installed if `show_progress_bar` is set to True. "
-                    "Please install with `pip install tqdm`."
-                ) from e
-            temp_results = await tqdm.asyncio.tqdm.gather(*tasks)
-        else:
-            temp_results = await asyncio.gather(*tasks)
+            embeddings.extend(r.embeddings)
 
-        results = [item for sublist in temp_results for item in sublist]
-        return results
+        return embeddings
 
     async def aembed_query(self, text: str) -> List[float]:
         r = await self.aclient.embed(
