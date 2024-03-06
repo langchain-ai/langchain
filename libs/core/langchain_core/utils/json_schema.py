@@ -37,6 +37,8 @@ def _dereference_refs_helper(obj, full_schema, skip_keys, processed_refs=None):
                 return _dereference_refs_helper(
                     ref, full_schema, skip_keys, processed_refs
                 )
+            elif isinstance(v, (list, dict)):
+                obj_out[k] = _dereference_refs_helper(v, full_schema, skip_keys, processed_refs)
             else:
                 obj_out[k] = v
         return obj_out
