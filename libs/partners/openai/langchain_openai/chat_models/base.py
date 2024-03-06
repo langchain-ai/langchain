@@ -223,19 +223,18 @@ class _AllReturnType(TypedDict):
 
 
 class ChatOpenAI(BaseChatModel):
-    """`OpenAI` Chat large language models API.
+    """OpenAI chat model.
 
-    To use, you should have the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
-
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+    To use, you should have the packages ``openai`` and ``langchain-openai``
+    installed, and the environment variable ``OPENAI_API_KEY`` set with your API key,
+    or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatOpenAI
-            openai = ChatOpenAI(model_name="gpt-3.5-turbo")
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI()
     """
 
     @property
