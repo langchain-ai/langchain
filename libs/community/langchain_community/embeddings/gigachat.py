@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 MAX_BATCH_SIZE_CHARS = 1000000
 MAX_BATCH_SIZE_PARTS = 90
 
+
 class GigaChatEmbeddings(BaseModel, Embeddings):
     """GigaChat Embeddings models.
 
@@ -115,7 +116,10 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
             for text in texts:
                 local_texts.append(text)
                 size += len(text)
-                if size > MAX_BATCH_SIZE_CHARS or len(local_texts) > MAX_BATCH_SIZE_PARTS:
+                if (
+                    size > MAX_BATCH_SIZE_CHARS
+                    or len(local_texts) > MAX_BATCH_SIZE_PARTS
+                ):
                     for embedding in self._client.embeddings(
                         texts=local_texts, model=model
                     ).data:

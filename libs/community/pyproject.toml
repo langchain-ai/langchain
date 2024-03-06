@@ -120,7 +120,7 @@ pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
-gigachat = "^0.1.18"
+gigachat = "^0.1.19"
 gigachain-core = {path = "../core", develop = true}
 
 [tool.poetry.group.codespell]
