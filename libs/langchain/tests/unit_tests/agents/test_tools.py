@@ -84,8 +84,10 @@ def test_load_tools_with_callbacks_is_called() -> None:
     """Test callbacks are called when provided to load_tools fn."""
     callbacks = [FakeCallbackHandler()]
     tools = load_tools(
-        ["requests_get"], callbacks=callbacks, allow_dangerous_tools=True
-    )  # type: ignore
+        ["requests_get"],  # type: ignore
+        callbacks=callbacks,
+        allow_dangerous_tools=True,
+    )
     assert len(tools) == 1
     # Patch the requests.get() method to return a mock response
     with unittest.mock.patch(
