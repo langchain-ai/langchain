@@ -336,7 +336,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         ],
                     },
                     "output_metadata": {
-                        "title": "Additional Kwargs",
+                        "title": "Output Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -373,7 +373,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         ],
                     },
                     "output_metadata": {
-                        "title": "Additional Kwargs",
+                        "title": "Output Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -410,7 +410,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         ],
                     },
                     "output_metadata": {
-                        "title": "Additional Kwargs",
+                        "title": "Output Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -443,7 +443,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         ],
                     },
                     "output_metadata": {
-                        "title": "Additional Kwargs",
+                        "title": "Output Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -475,7 +475,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         ],
                     },
                     "output_metadata": {
-                        "title": "Additional Kwargs",
+                        "title": "Output Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -507,7 +507,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         ],
                     },
                     "output_metadata": {
-                        "title": "Additional Kwargs",
+                        "title": "Output Metadata",
                         "type": "object",
                     },
                     "type": {

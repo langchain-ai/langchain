@@ -176,7 +176,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     ],
                                 },
                                 "output_metadata": {
-                                    "title": "Additional Kwargs",
+                                    "title": "Output Metadata",
                                     "type": "object",
                                 },
                                 "type": {
@@ -216,7 +216,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     ],
                                 },
                                 "output_metadata": {
-                                    "title": "Additional Kwargs",
+                                    "title": "Output Metadata",
                                     "type": "object",
                                 },
                                 "type": {
@@ -256,7 +256,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     ],
                                 },
                                 "output_metadata": {
-                                    "title": "Additional Kwargs",
+                                    "title": "Output Metadata",
                                     "type": "object",
                                 },
                                 "type": {
@@ -292,7 +292,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     ],
                                 },
                                 "output_metadata": {
-                                    "title": "Additional Kwargs",
+                                    "title": "Output Metadata",
                                     "type": "object",
                                 },
                                 "type": {
@@ -327,7 +327,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     ],
                                 },
                                 "output_metadata": {
-                                    "title": "Additional Kwargs",
+                                    "title": "Output Metadata",
                                     "type": "object",
                                 },
                                 "type": {
@@ -362,7 +362,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     ],
                                 },
                                 "output_metadata": {
-                                    "title": "Additional Kwargs",
+                                    "title": "Output Metadata",
                                     "type": "object",
                                 },
                                 "type": {
