@@ -18,6 +18,7 @@ from langchain_community.embeddings.aleph_alpha import (
     AlephAlphaAsymmetricSemanticEmbedding,
     AlephAlphaSymmetricSemanticEmbedding,
 )
+from langchain_community.embeddings.anyscale import AnyscaleEmbeddings
 from langchain_community.embeddings.awa import AwaEmbeddings
 from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain_community.embeddings.baichuan import BaichuanTextEmbeddings
@@ -99,6 +100,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "OpenAIEmbeddings",
     "AzureOpenAIEmbeddings",
+    "AnyscaleEmbeddings",
     "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",

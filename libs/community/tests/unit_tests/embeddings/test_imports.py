@@ -2,6 +2,7 @@ from langchain_community.embeddings import __all__
 
 EXPECTED_ALL = [
     "OpenAIEmbeddings",
+    "AnyscaleEmbeddings",
     "AzureOpenAIEmbeddings",
     "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
