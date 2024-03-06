@@ -1,11 +1,13 @@
-# ChatPrem
+# PremAI
 
 >[PremAI](https://app.premai.io) is an unified platform that let's you build powerful production-ready GenAI powered applications with least effort, so that you can focus more on user experience and overall growth. 
 
 
-This example goes over how to use LangChain to interact with `ChatPrem` models. 
+## ChatPrem
 
-## Installation and setup
+This example goes over how to use LangChain to interact with different chat models with `ChatPrem`
+
+### Installation and setup
 
 We start by installing langchain and premai-sdk. You can type the following command to install:
 
@@ -30,7 +32,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_community.chat_models import ChatPrem
 ```
 
-## Setup ChatPrem instance in LangChain 
+### Setup ChatPrem instance in LangChain 
 
 Once we imported our required modules, let's setup our client. For now let's assume that our `project_id` is 8. But make sure you use your project-id, otherwise it will throw error.
 
@@ -48,7 +50,7 @@ if "PREMAI_API_KEY" not in os.environ:
 chat = ChatPrem(project_id=8)
 ```
 
-## Calling the Model
+### Calling the Model
 
 Now you are all set. We can now start with interacting with our application. `ChatPrem` supports two methods `invoke` (which is same as `generate`) and `stream`. 
 
@@ -110,4 +112,70 @@ for chunk in chat.stream(
 ):
     sys.stdout.write(chunk.content)
     sys.stdout.flush()
+```
+
+## Embedding
+
+In this section we are going to dicuss how we can get access to different embedding model using `PremEmbeddings`. Let's start by doing some imports and define our embedding object
+
+```python
+from langchain_community.embeddings import PremEmbeddings
+```
+
+Once we imported our required modules, let's setup our client. For now let's assume that our `project_id` is 8. But make sure you use your project-id, otherwise it will throw error.
+
+
+```python
+
+import os
+import getpass
+
+if os.environ.get("PREMAI_API_KEY") is None:
+    os.environ["PREMAI_API_KEY"] = getpass.getpass("PremAI API Key:")
+
+# Define a model is a required paramter here, since there is no default embedding model
+
+model = "text-embedding-3-large"
+embedder = PremEmbeddings(project_id=8, model=model)
+```
+
+We have defined our embedding model. We support a lot of embedding models. Here is a table that shows the number of embedding models we support. 
+
+
+| Provider    | Slug                                     | Context Tokens |
+|-------------|------------------------------------------|----------------|
+| cohere      | embed-english-v3.0                       | N/A            |
+| openai      | text-embedding-3-small                   | 8191           |
+| openai      | text-embedding-3-large                   | 8191           |
+| openai      | text-embedding-ada-002                   | 8191           |
+| replicate   | replicate/all-mpnet-base-v2              | N/A            |
+| together    | togethercomputer/Llama-2-7B-32K-Instruct | N/A            |
+| mistralai   | mistral-embed                            | 4096           |
+
+To change the model, you simply need to copy the `slug` and access your embedding model. Now let's start using our embedding model with a single query followed by multiple queries (which is also called as a document)
+
+```python
+query = "Hello, this is a test query"
+query_result = embedder.embed_query(query)
+
+# Let's print the first five elements of the query embedding vector
+
+print(query_result[:5])
+```
+
+Finally let's embed a document
+
+```python
+documents = [
+    "This is document1",
+    "This is document2",
+    "This is document3"
+]
+
+doc_result = embedder.embed_documents(documents)
+
+# Similar to previous result, let's print the first five element
+# of the first document vector
+
+print(doc_result[0][:5])
 ```
