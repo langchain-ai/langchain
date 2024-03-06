@@ -85,7 +85,7 @@ def test_load_tools_with_callbacks_is_called() -> None:
     callbacks = [FakeCallbackHandler()]
     tools = load_tools(
         ["requests_get"],  # type: ignore
-        callbacks=callbacks,
+        callbacks=callbacks,  # type: ignore
         allow_dangerous_tools=True,
     )
     assert len(tools) == 1
