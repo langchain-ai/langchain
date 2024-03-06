@@ -236,6 +236,22 @@ See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_f
 from langchain_community.document_loaders import GCSFileLoader
 ```
 
+### El Carro for Oracle Workloads
+
+> Google [El Carro Oracle Operator](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
+offers a way to run Oracle databases in Kubernetes as a portable, open source,
+community driven, no vendor lock-in container orchestration system.
+
+```bash
+pip install langchain-google-el-carro
+```
+
+See [usage example](/docs/integrations/document_loaders/google_el_carro).
+
+```python
+from langchain_google_el_carro import ElCarroLoader
+```
+
 ### Google Drive
 
 >[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
@@ -313,22 +329,6 @@ See [usage example](/docs/integrations/document_loaders/google_spanner).
 
 ```python
 from langchain_google_spanner import SpannerLoader
-```
-
-## El Carro Oracle Operator
-
-> Google [El Carro Oracle Operator](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
-offers a way to run Oracle databases in Kubernetes as a portable, open source,
-community driven, no vendor lock-in container orchestration system.
-
-```bash
-pip install langchain-google-el-carro
-```
-
-See [usage example](/docs/integrations/document_loaders/google_el_carro).
-
-```python
-from langchain_google_el_carro import ElCarroLoader
 ```
 
 ### Speech-to-Text
@@ -737,7 +737,7 @@ from langchain_community.agent_toolkits import GmailToolkit
 
 ### AlloyDB for PostgreSQL
 
-> [AlloyDB](https://cloud.google.com/alloydb) is a fully managed relational database service that offers high performance, seamless integration, and impressive scalability on Google Cloud. AlloyDB is 100% compatible with PostgreSQL.
+> [AlloyDB for PostgreSQL](https://cloud.google.com/alloydb) is a fully managed relational database service that offers high performance, seamless integration, and impressive scalability on Google Cloud. AlloyDB is 100% compatible with PostgreSQL.
 
 Install the python package:
 
@@ -795,6 +795,22 @@ See [usage example](/docs/integrations/memory/google_cloud_sql_mssql).
 
 ```python
 from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLChatMessageHistory
+```
+
+## El Carro for Oracle Workloads
+
+> Google [El Carro Oracle Operator](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
+offers a way to run Oracle databases in Kubernetes as a portable, open source,
+community driven, no vendor lock-in container orchestration system.
+
+```bash
+pip install langchain-google-el-carro
+```
+
+See [usage example](/docs/integrations/memory/google_el_carro).
+
+```python
+from langchain_google_el_carro import ElCarroChatMessageHistory
 ```
 
 ### Spanner
