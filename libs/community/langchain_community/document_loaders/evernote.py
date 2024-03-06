@@ -40,33 +40,32 @@ class EverNoteLoader(BaseLoader):
         self.file_path = file_path
         self.load_single_document = load_single_document
 
-    def load(self) -> List[Document]:
-        """Load documents from EverNote export file."""
-        documents = [
-            Document(
-                page_content=note["content"],
-                metadata={
-                    **{
-                        key: value
-                        for key, value in note.items()
-                        if key not in ["content", "content-raw", "resource"]
+    def _lazy_load(self) -> Iterator[Document]:
+        for note in self._parse_note_xml(self.file_path):
+            if note.get("content") is not None:
+                yield Document(
+                    page_content=note["content"],
+                    metadata={
+                        **{
+                            key: value
+                            for key, value in note.items()
+                            if key not in ["content", "content-raw", "resource"]
+                        },
+                        **{"source": self.file_path},
                     },
-                    **{"source": self.file_path},
-                },
-            )
-            for note in self._parse_note_xml(self.file_path)
-            if note.get("content") is not None
-        ]
+                )
 
+    def lazy_load(self) -> Iterator[Document]:
+        """Load documents from EverNote export file."""
         if not self.load_single_document:
-            return documents
-
-        return [
-            Document(
-                page_content="".join([document.page_content for document in documents]),
+            yield from self._lazy_load()
+        else:
+            yield Document(
+                page_content="".join(
+                    [document.page_content for document in self._lazy_load()]
+                ),
                 metadata={"source": self.file_path},
             )
-        ]
 
     @staticmethod
     def _parse_content(content: str) -> str:
