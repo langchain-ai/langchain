@@ -177,6 +177,11 @@ class LangChainTracer(BaseTracer):
             run_dict = _run_to_dict(run)
             run_dict["tags"] = self._get_tags(run)
             self.client.update_run(run.id, **run_dict)
+            if run.error is not None and run.parent_run_id is None:
+                dbg_url = self.client.get_run_url(
+                    run=run, project_name=self.project_name
+                )
+                logger.info(f"See trace: {dbg_url}")
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("patch", e)
