@@ -437,8 +437,6 @@ class CouchbaseVectorStore(VectorStore):
             query (str): Query to look up for similar documents
             k (int): Number of Documents to return.
                 Defaults to 4.
-            fetch_k (int): Number of Documents to fetch before passing to vector search.
-                Defaults to 20.
             search_options (Optional[Dict[str, Any]]): Optional search options that are
                 passed to Couchbase search.
                 Defaults to empty dictionary.
@@ -468,8 +466,6 @@ class CouchbaseVectorStore(VectorStore):
             embedding (List[float]): Embedding to look up documents similar to.
             k (int): Number of Documents to return.
                 Defaults to 4.
-            fetch_k (int): Number of Documents to fetch before passing to vector search.
-                Defaults to 20.
             search_options (Optional[Dict[str, Any]]): Optional search options that are
                 passed to Couchbase search.
                 Defaults to empty dictionary.
