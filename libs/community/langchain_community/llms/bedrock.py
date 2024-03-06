@@ -117,6 +117,8 @@ def _prepare_messages_api_input(json_str: str) -> List[Dict[str, Any]]:
                 _human_assistant_format(json_str)
             )
 
+    return []
+
 
 def _human_assistant_format(input_text: str) -> str:
     if input_text.count("Human:") == 0 or (
