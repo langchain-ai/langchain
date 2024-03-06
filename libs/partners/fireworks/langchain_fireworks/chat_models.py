@@ -91,12 +91,12 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Fix for azure
         # Also Fireworks returns None for tool invocations
         content = _dict.get("content", "") or ""
-        additional_kwargs: Dict = {}
+        output_metadata: Dict = {}
         if function_call := _dict.get("function_call"):
-            additional_kwargs["function_call"] = dict(function_call)
+            output_metadata["function_call"] = dict(function_call)
         if tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+            output_metadata["tool_calls"] = tool_calls
+        return AIMessage(content=content, output_metadata=output_metadata)
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
@@ -104,13 +104,13 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             content=_dict.get("content", ""), name=_dict.get("name", "")
         )
     elif role == "tool":
-        additional_kwargs = {}
+        output_metadata = {}
         if "name" in _dict:
-            additional_kwargs["name"] = _dict["name"]
+            output_metadata["name"] = _dict["name"]
         return ToolMessage(
             content=_dict.get("content", ""),
             tool_call_id=_dict.get("tool_call_id", ""),
-            additional_kwargs=additional_kwargs,
+            output_metadata=output_metadata,
         )
     else:
         return ChatMessage(content=_dict.get("content", ""), role=role or "")
@@ -132,13 +132,13 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
+        if "function_call" in message.output_metadata:
+            message_dict["function_call"] = message.output_metadata["function_call"]
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
-        if "tool_calls" in message.additional_kwargs:
-            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+        if "tool_calls" in message.output_metadata:
+            message_dict["tool_calls"] = message.output_metadata["tool_calls"]
             # If tool calls only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
@@ -158,8 +158,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         }
     else:
         raise TypeError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
+    if "name" in message.output_metadata:
+        message_dict["name"] = message.output_metadata["name"]
     return message_dict
 
 
@@ -168,19 +168,19 @@ def _convert_delta_to_message_chunk(
 ) -> BaseMessageChunk:
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
-    additional_kwargs: Dict = {}
+    output_metadata: Dict = {}
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
-        additional_kwargs["function_call"] = function_call
+        output_metadata["function_call"] = function_call
     if _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = _dict["tool_calls"]
+        output_metadata["tool_calls"] = _dict["tool_calls"]
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        return AIMessageChunk(content=content, output_metadata=output_metadata)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
@@ -721,7 +721,7 @@ class ChatFireworks(BaseChatModel):
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'raw': AIMessage(content='', output_metadata={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
                 #     'parsing_error': None
                 # }

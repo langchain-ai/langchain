@@ -77,8 +77,8 @@ def get_buffer_string(
         else:
             raise ValueError(f"Got unsupported message type: {m}")
         message = f"{role}: {m.content}"
-        if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
-            message += f"{m.additional_kwargs['function_call']}"
+        if isinstance(m, AIMessage) and "function_call" in m.output_metadata:
+            message += f"{m.output_metadata['function_call']}"
         string_messages.append(message)
 
     return "\n".join(string_messages)
@@ -151,7 +151,7 @@ def _create_message_from_message_type(
     content: str,
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
-    **additional_kwargs: Any,
+    **output_metadata: Any,
 ) -> BaseMessage:
     """Create a message from a message type and content string.
 
@@ -167,8 +167,8 @@ def _create_message_from_message_type(
         kwargs["name"] = name
     if tool_call_id is not None:
         kwargs["tool_call_id"] = tool_call_id
-    if additional_kwargs:
-        kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
+    if output_metadata:
+        kwargs["output_metadata"] = output_metadata  # type: ignore[assignment]
     if message_type in ("human", "user"):
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):

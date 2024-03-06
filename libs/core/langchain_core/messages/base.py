@@ -20,8 +20,8 @@ class BaseMessage(Serializable):
     content: Union[str, List[Union[str, Dict]]]
     """The string contents of the message."""
 
-    additional_kwargs: dict = Field(default_factory=dict)
-    """Any additional information."""
+    output_metadata: dict = Field(default_factory=dict)
+    """Output metadata."""
 
     type: str
 
@@ -53,6 +53,16 @@ class BaseMessage(Serializable):
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
+
+    # For backwards compatibility.
+    @property
+    def additional_kwargs(self) -> Dict:
+        return self.output_metadata
+
+    # For backwards compatibility.
+    @additional_kwargs.setter
+    def additional_kwargs(self, kwargs: dict) -> None:
+        self.output_metadata = kwargs
 
     def pretty_repr(self, html: bool = False) -> str:
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
@@ -112,7 +122,7 @@ class BaseMessageChunk(BaseMessage):
     def _merge_kwargs_dict(
         self, left: Dict[str, Any], right: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Merge additional_kwargs from another BaseMessageChunk into this one,
+        """Merge output_metadata from another BaseMessageChunk into this one,
         handling specific scenarios where a key exists in both dictionaries
         but has a value of None in 'left'. In such cases, the method uses the
         value from 'right' for that key in the merged dictionary.
@@ -135,7 +145,7 @@ class BaseMessageChunk(BaseMessage):
                 continue
             elif type(merged[k]) != type(v):
                 raise TypeError(
-                    f'additional_kwargs["{k}"] already exists in this message,'
+                    f'output_metadata["{k}"] already exists in this message,'
                     " but with a different type."
                 )
             elif isinstance(merged[k], str):
@@ -165,8 +175,8 @@ class BaseMessageChunk(BaseMessage):
             return self.__class__(
                 id=self.id,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
-                    self.additional_kwargs, other.additional_kwargs
+                output_metadata=self._merge_kwargs_dict(
+                    self.output_metadata, other.output_metadata
                 ),
             )
         else:

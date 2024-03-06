@@ -46,7 +46,7 @@ class BaseModeration:
             that with every chat the chain is invoked we will only check the last
             message. This is assuming that all previous messages have been checked
             already. Only HumanMessage and AIMessage will be checked. We can perhaps
-            loop through and take advantage of the additional_kwargs property in the
+            loop through and take advantage of the output_metadata property in the
             HumanMessage and AIMessage schema to mark messages that have been moderated.
             However that means that this class could generate multiple text chunks
             and moderate() logics would need to be updated. This also means some
@@ -83,13 +83,13 @@ class BaseModeration:
                 messages[self.chat_message_index] = HumanMessage(
                     content=text,
                     example=message.example,
-                    additional_kwargs=message.additional_kwargs,
+                    output_metadata=message.output_metadata,
                 )
             if isinstance(message, AIMessage):
                 messages[self.chat_message_index] = AIMessage(
                     content=text,
                     example=message.example,
-                    additional_kwargs=message.additional_kwargs,
+                    output_metadata=message.output_metadata,
                 )
             return ChatPromptValue(messages=messages)
         else:

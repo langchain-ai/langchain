@@ -39,10 +39,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             _dict["function_call"]["arguments"] = json.dumps(
                 _dict["function_call"]["arguments"]
             )
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
+            output_metadata = {"function_call": dict(_dict["function_call"])}
         else:
-            additional_kwargs = {}
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+            output_metadata = {}
+        return AIMessage(content=content, output_metadata=output_metadata)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     elif role == "function":
@@ -58,8 +58,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
+        if "function_call" in message.output_metadata:
+            message_dict["function_call"] = message.output_metadata["function_call"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, FunctionMessage):
@@ -70,8 +70,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         }
     else:
         raise ValueError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
+    if "name" in message.output_metadata:
+        message_dict["name"] = message.output_metadata["name"]
     return message_dict
 
 

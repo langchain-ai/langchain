@@ -74,7 +74,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                 "sessionId": self._session_id,
                 "type": msg["type"],
                 "content": message.content,
-                "additionalKwargs": json.dumps(message.additional_kwargs),
+                "additionalKwargs": json.dumps(message.output_metadata),
                 "role": msg["data"].get("role"),
                 "name": msg["data"].get("name"),
             },
@@ -103,7 +103,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                         "content": m["content"],
                         "role": m.get("role"),
                         "name": m.get("name"),
-                        "additional_kwargs": json.loads(m["additionalKwargs"]),
+                        "output_metadata": json.loads(m["additionalKwargs"]),
                     },
                 }
                 for m in r["records"]

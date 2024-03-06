@@ -73,7 +73,7 @@ def test_check_package_version(
             pytest.raises(
                 TypeError,
                 match=re.escape(
-                    'additional_kwargs["a"] already exists in this message, '
+                    'output_metadata["a"] already exists in this message, '
                     "but with a different type."
                 ),
             ),

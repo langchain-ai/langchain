@@ -204,7 +204,7 @@ class AnthropicFunctions(BaseChatModel):
                     "arguments": arguments,
                 }
             }
-            message = AIMessage(content="", additional_kwargs=kwargs)
+            message = AIMessage(content="", output_metadata=kwargs)
             return ChatResult(generations=[ChatGeneration(message=message)])
         elif "<tool>" in completion:
             tag_parser = TagParser()
@@ -217,7 +217,7 @@ class AnthropicFunctions(BaseChatModel):
                     "arguments": json.dumps(_destrip(v1)),
                 }
             }
-            message = AIMessage(content=msg, additional_kwargs=kwargs)
+            message = AIMessage(content=msg, output_metadata=kwargs)
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
             response.content = cast(str, response.content).strip()

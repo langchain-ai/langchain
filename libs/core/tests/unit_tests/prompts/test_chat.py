@@ -159,15 +159,13 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
 
     assert messages == [
         SystemMessage(
-            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+            content="You are a helpful AI bot. Your name is Bob.", output_metadata={}
         ),
         HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
+            content="Hello, how are you doing?", output_metadata={}, example=False
         ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        AIMessage(content="I'm doing well, thanks!", output_metadata={}, example=False),
+        HumanMessage(content="What is your name?", output_metadata={}, example=False),
     ]
 
 

@@ -7,34 +7,34 @@ from langchain.agents.format_scratchpad.openai_functions import (
 
 
 def test_calls_convert_agent_action_to_messages() -> None:
-    additional_kwargs1 = {
+    output_metadata1 = {
         "function_call": {
             "name": "tool1",
             "arguments": "input1",
         }
     }
-    message1 = AIMessage(content="", additional_kwargs=additional_kwargs1)
+    message1 = AIMessage(content="", output_metadata=output_metadata1)
     action1 = AgentActionMessageLog(
         tool="tool1", tool_input="input1", log="log1", message_log=[message1]
     )
-    additional_kwargs2 = {
+    output_metadata2 = {
         "function_call": {
             "name": "tool2",
             "arguments": "input2",
         }
     }
-    message2 = AIMessage(content="", additional_kwargs=additional_kwargs2)
+    message2 = AIMessage(content="", output_metadata=output_metadata2)
     action2 = AgentActionMessageLog(
         tool="tool2", tool_input="input2", log="log2", message_log=[message2]
     )
 
-    additional_kwargs3 = {
+    output_metadata3 = {
         "function_call": {
             "name": "tool3",
             "arguments": "input3",
         }
     }
-    message3 = AIMessage(content="", additional_kwargs=additional_kwargs3)
+    message3 = AIMessage(content="", output_metadata=output_metadata3)
     action3 = AgentActionMessageLog(
         tool="tool3", tool_input="input3", log="log3", message_log=[message3]
     )

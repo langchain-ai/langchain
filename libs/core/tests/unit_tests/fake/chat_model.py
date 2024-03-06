@@ -229,8 +229,8 @@ class GenericFakeChatModel(BaseChatModel):
                     run_manager.on_llm_new_token(token, chunk=chunk)
                 yield chunk
 
-        if message.additional_kwargs:
-            for key, value in message.additional_kwargs.items():
+        if message.output_metadata:
+            for key, value in message.output_metadata.items():
                 # We should further break down the additional kwargs into chunks
                 # Special case for function call
                 if key == "function_call":
@@ -242,7 +242,7 @@ class GenericFakeChatModel(BaseChatModel):
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(
                                         content="",
-                                        additional_kwargs={
+                                        output_metadata={
                                             "function_call": {fkey: fvalue_chunk}
                                         },
                                     )
@@ -257,7 +257,7 @@ class GenericFakeChatModel(BaseChatModel):
                             chunk = ChatGenerationChunk(
                                 message=AIMessageChunk(
                                     content="",
-                                    additional_kwargs={"function_call": {fkey: fvalue}},
+                                    output_metadata={"function_call": {fkey: fvalue}},
                                 )
                             )
                             if run_manager:
@@ -268,9 +268,7 @@ class GenericFakeChatModel(BaseChatModel):
                             yield chunk
                 else:
                     chunk = ChatGenerationChunk(
-                        message=AIMessageChunk(
-                            content="", additional_kwargs={key: value}
-                        )
+                        message=AIMessageChunk(content="", output_metadata={key: value})
                     )
                     if run_manager:
                         run_manager.on_llm_new_token(

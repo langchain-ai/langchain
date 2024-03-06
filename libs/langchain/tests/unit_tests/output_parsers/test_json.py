@@ -404,7 +404,7 @@ def test_partial_functions_json_output_parser() -> None:
     def input_iter(_: Any) -> Iterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
             yield AIMessageChunk(
-                content="", additional_kwargs={"function_call": {"arguments": token}}
+                content="", output_metadata={"function_call": {"arguments": token}}
             )
 
     chain = input_iter | JsonOutputFunctionsParser()
@@ -416,7 +416,7 @@ def test_partial_functions_json_output_parser_diff() -> None:
     def input_iter(_: Any) -> Iterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
             yield AIMessageChunk(
-                content="", additional_kwargs={"function_call": {"arguments": token}}
+                content="", output_metadata={"function_call": {"arguments": token}}
             )
 
     chain = input_iter | JsonOutputFunctionsParser(diff=True)
@@ -428,7 +428,7 @@ async def test_partial_functions_json_output_parser_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
             yield AIMessageChunk(
-                content="", additional_kwargs={"function_call": {"arguments": token}}
+                content="", output_metadata={"function_call": {"arguments": token}}
             )
 
     chain = input_iter | JsonOutputFunctionsParser()
@@ -440,7 +440,7 @@ async def test_partial_functions_json_output_parser_diff_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
             yield AIMessageChunk(
-                content="", additional_kwargs={"function_call": {"arguments": token}}
+                content="", output_metadata={"function_call": {"arguments": token}}
             )
 
     chain = input_iter | JsonOutputFunctionsParser(diff=True)

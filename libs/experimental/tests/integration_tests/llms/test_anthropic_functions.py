@@ -45,7 +45,7 @@ class TestAnthropicFunctions(unittest.TestCase):
 
         res = model.invoke("What's the weather in San Francisco?")
 
-        function_call = res.additional_kwargs.get("function_call")
+        function_call = res.output_metadata.get("function_call")
         assert function_call
         self.assertEqual(function_call.get("name"), "get_current_weather")
         self.assertEqual(
@@ -100,7 +100,7 @@ class TestAnthropicFunctions(unittest.TestCase):
 
         res = model.invoke("What's the weather in San Francisco?")
 
-        function_call = res.additional_kwargs.get("function_call")
+        function_call = res.output_metadata.get("function_call")
         assert function_call
         self.assertEqual(function_call.get("name"), "get_current_weather")
         self.assertEqual(

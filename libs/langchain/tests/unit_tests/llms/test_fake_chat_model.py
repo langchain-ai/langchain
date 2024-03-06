@@ -58,17 +58,17 @@ async def test_generic_fake_chat_model_stream() -> None:
 
     # Test streaming of additional kwargs.
     # Relying on insertion order of the additional kwargs dict
-    message = AIMessage(content="", additional_kwargs={"foo": 42, "bar": 24})
+    message = AIMessage(content="", output_metadata={"foo": 42, "bar": 24})
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        AIMessageChunk(content="", additional_kwargs={"foo": 42}),
-        AIMessageChunk(content="", additional_kwargs={"bar": 24}),
+        AIMessageChunk(content="", output_metadata={"foo": 42}),
+        AIMessageChunk(content="", output_metadata={"bar": 24}),
     ]
 
     message = AIMessage(
         content="",
-        additional_kwargs={
+        output_metadata={
             "function_call": {
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
@@ -81,20 +81,20 @@ async def test_generic_fake_chat_model_stream() -> None:
 
     assert chunks == [
         AIMessageChunk(
-            content="", additional_kwargs={"function_call": {"name": "move_file"}}
+            content="", output_metadata={"function_call": {"name": "move_file"}}
         ),
         AIMessageChunk(
             content="",
-            additional_kwargs={
+            output_metadata={
                 "function_call": {"arguments": '{\n  "source_path": "foo"'}
             },
         ),
         AIMessageChunk(
-            content="", additional_kwargs={"function_call": {"arguments": ","}}
+            content="", output_metadata={"function_call": {"arguments": ","}}
         ),
         AIMessageChunk(
             content="",
-            additional_kwargs={
+            output_metadata={
                 "function_call": {"arguments": '\n  "destination_path": "bar"\n}'}
             },
         ),
@@ -109,7 +109,7 @@ async def test_generic_fake_chat_model_stream() -> None:
 
     assert accumulate_chunks == AIMessageChunk(
         content="",
-        additional_kwargs={
+        output_metadata={
             "function_call": {
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'

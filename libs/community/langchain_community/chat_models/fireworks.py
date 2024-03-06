@@ -45,12 +45,12 @@ def _convert_delta_to_message_chunk(
     """Convert a delta response to a message chunk."""
     role = _dict.role
     content = _dict.content or ""
-    additional_kwargs: Dict = {}
+    output_metadata: Dict = {}
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        return AIMessageChunk(content=content, output_metadata=output_metadata)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
@@ -69,8 +69,8 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
         return HumanMessage(content=content)
     elif role == "assistant":
         content = _dict.content
-        additional_kwargs: Dict = {}
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+        output_metadata: Dict = {}
+        return AIMessage(content=content, output_metadata=output_metadata)
     elif role == "system":
         return SystemMessage(content=content)
     elif role == "function":

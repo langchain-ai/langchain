@@ -35,7 +35,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         if not isinstance(message, AIMessage):
             raise TypeError(f"Expected an AI message got {type(message)}")
 
-        function_call = message.additional_kwargs.get("function_call", {})
+        function_call = message.output_metadata.get("function_call", {})
 
         if function_call:
             function_name = function_call["name"]

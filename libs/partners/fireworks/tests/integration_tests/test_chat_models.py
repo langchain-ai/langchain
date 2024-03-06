@@ -38,7 +38,7 @@ def test_tool_choice() -> None:
     resp = with_tool.invoke("Who was the 27 year old named Erick?")
     assert isinstance(resp, AIMessage)
     assert resp.content == ""  # should just be tool call
-    tool_calls = resp.additional_kwargs["tool_calls"]
+    tool_calls = resp.output_metadata["tool_calls"]
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
     assert tool_call["function"]["name"] == "MyTool"
@@ -65,7 +65,7 @@ def test_tool_choice_bool() -> None:
     resp = with_tool.invoke("Who was the 27 year old named Erick?")
     assert isinstance(resp, AIMessage)
     assert resp.content == ""  # should just be tool call
-    tool_calls = resp.additional_kwargs["tool_calls"]
+    tool_calls = resp.output_metadata["tool_calls"]
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
     assert tool_call["function"]["name"] == "MyTool"

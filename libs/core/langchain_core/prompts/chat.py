@@ -162,7 +162,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     prompt: StringPromptTemplate
     """String prompt template."""
-    additional_kwargs: dict = Field(default_factory=dict)
+    output_metadata: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
 
     @classmethod
@@ -281,7 +281,7 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
         """
         text = self.prompt.format(**kwargs)
         return ChatMessage(
-            content=text, role=self.role, additional_kwargs=self.additional_kwargs
+            content=text, role=self.role, output_metadata=self.output_metadata
         )
 
 
@@ -305,7 +305,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         StringPromptTemplate, List[Union[StringPromptTemplate, ImagePromptTemplate]]
     ]
     """Prompt template."""
-    additional_kwargs: dict = Field(default_factory=dict)
+    output_metadata: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
 
     _msg_class: Type[BaseMessage]
@@ -443,9 +443,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         if isinstance(self.prompt, StringPromptTemplate):
             text = self.prompt.format(**kwargs)
-            return self._msg_class(
-                content=text, additional_kwargs=self.additional_kwargs
-            )
+            return self._msg_class(content=text, output_metadata=self.output_metadata)
         else:
             content: List = []
             for prompt in self.prompt:
@@ -457,7 +455,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     formatted = prompt.format(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
             return self._msg_class(
-                content=content, additional_kwargs=self.additional_kwargs
+                content=content, output_metadata=self.output_metadata
             )
 
     def pretty_repr(self, html: bool = False) -> str:

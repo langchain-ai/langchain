@@ -168,9 +168,9 @@ def _parse_lc_message(message: BaseMessage) -> Dict[str, Any]:
     parsed = {"text": message.content, "role": _parse_lc_role(message.type)}
     parsed.update(
         {
-            key: cast(Any, message.additional_kwargs.get(key))
+            key: cast(Any, message.output_metadata.get(key))
             for key in keys
-            if message.additional_kwargs.get(key) is not None
+            if message.output_metadata.get(key) is not None
         }
     )
     return parsed

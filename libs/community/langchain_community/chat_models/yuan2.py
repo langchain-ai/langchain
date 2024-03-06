@@ -483,6 +483,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         }
     else:
         raise ValueError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
+    if "name" in message.output_metadata:
+        message_dict["name"] = message.output_metadata["name"]
     return message_dict

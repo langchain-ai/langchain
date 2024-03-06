@@ -124,7 +124,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
                             FROM {self.location}
                             WHERE _id = :session_id
                         )) AS message
-                        WHERE message.data.additional_kwargs.id = :message_id
+                        WHERE message.data.output_metadata.id = :message_id
                         LIMIT 1
                     """,
                     session_id=self.session_id,
@@ -172,7 +172,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
                     down performance.
             - message_uuid_method: The method that generates message IDs.
                     If set, all messages will have an `id` field within the
-                    `additional_kwargs` property. If this param is not set
+                    `output_metadata` property. If this param is not set
                     and `sync` is `False`, message IDs will not be created.
                     If this param is not set and `sync` is `True`, the
                     `uuid.uuid4` method will be used to create message IDs.
@@ -237,8 +237,8 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         Args:
             message: A BaseMessage object to store.
         """
-        if self.sync and "id" not in message.additional_kwargs:
-            message.additional_kwargs["id"] = self.message_uuid_method()
+        if self.sync and "id" not in message.output_metadata:
+            message.output_metadata["id"] = self.message_uuid_method()
         self.client.Documents.patch_documents(
             collection=self.collection,
             workspace=self.workspace,
@@ -256,7 +256,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
             ],
         )
         if self.sync:
-            self._wait_until_message_added(message.additional_kwargs["id"])
+            self._wait_until_message_added(message.output_metadata["id"])
 
     def clear(self) -> None:
         """Removes all messages from the chat history"""

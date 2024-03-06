@@ -34,7 +34,7 @@ def test_func_call() -> None:
     parser = OpenAIFunctionsAgentOutputParser()
     msg = AIMessage(
         content="LLM thoughts.",
-        additional_kwargs={
+        output_metadata={
             "function_call": {"name": "foo", "arguments": '{"param": 42}'}
         },
     )
@@ -54,7 +54,7 @@ def test_func_call_no_args() -> None:
     parser = OpenAIFunctionsAgentOutputParser()
     msg = AIMessage(
         content="LLM thoughts.",
-        additional_kwargs={"function_call": {"name": "foo", "arguments": ""}},
+        output_metadata={"function_call": {"name": "foo", "arguments": ""}},
     )
     result = parser.invoke(msg)
 
@@ -70,7 +70,7 @@ def test_func_call_oldstyle() -> None:
     parser = OpenAIFunctionsAgentOutputParser()
     msg = AIMessage(
         content="LLM thoughts.",
-        additional_kwargs={
+        output_metadata={
             "function_call": {"name": "foo", "arguments": '{"__arg1": "42"}'}
         },
     )
@@ -88,7 +88,7 @@ def test_func_call_invalid() -> None:
     parser = OpenAIFunctionsAgentOutputParser()
     msg = AIMessage(
         content="LLM thoughts.",
-        additional_kwargs={"function_call": {"name": "foo", "arguments": "{42]"}},
+        output_metadata={"function_call": {"name": "foo", "arguments": "{42]"}},
     )
 
     err = (

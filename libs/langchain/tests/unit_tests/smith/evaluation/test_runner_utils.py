@@ -28,7 +28,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 _CREATED_AT = datetime(2015, 1, 1, 0, 0, 0)
 _TENANT_ID = "7a3d2b56-cd5b-44e5-846f-7eb6e8144ce4"
 _EXAMPLE_MESSAGE = {
-    "data": {"content": "Foo", "example": False, "additional_kwargs": {}},
+    "data": {"content": "Foo", "example": False, "output_metadata": {}},
     "type": "human",
 }
 _VALID_MESSAGES = [

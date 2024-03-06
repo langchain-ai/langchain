@@ -206,16 +206,14 @@ class ErnieBotChat(BaseChatModel):
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         if "function_call" in response:
-            additional_kwargs = {
-                "function_call": dict(response.get("function_call", {}))
-            }
+            output_metadata = {"function_call": dict(response.get("function_call", {}))}
         else:
-            additional_kwargs = {}
+            output_metadata = {}
         generations = [
             ChatGeneration(
                 message=AIMessage(
                     content=response.get("result", ""),
-                    additional_kwargs={**additional_kwargs},
+                    output_metadata={**output_metadata},
                 )
             )
         ]

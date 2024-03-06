@@ -30,7 +30,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
             )
         message = generation.message
         try:
-            func_call = copy.deepcopy(message.additional_kwargs["function_call"])
+            func_call = copy.deepcopy(message.output_metadata["function_call"])
         except KeyError as exc:
             raise OutputParserException(f"Could not parse function call: {exc}")
 
@@ -71,10 +71,10 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                 "This output parser can only be used with a chat generation."
             )
         message = generation.message
-        if "function_call" not in message.additional_kwargs:
+        if "function_call" not in message.output_metadata:
             return None
         try:
-            function_call = message.additional_kwargs["function_call"]
+            function_call = message.output_metadata["function_call"]
         except KeyError as exc:
             if partial:
                 return None
