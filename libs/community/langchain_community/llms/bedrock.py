@@ -41,7 +41,7 @@ def _add_newlines_before_ha(input_text: str) -> str:
     new_text = input_text
     for word in ["Human:", "Assistant:"]:
         new_text = new_text.replace(word, "\n\n" + word)
-        for i in range(2):
+        for _ in range(2):
             new_text = new_text.replace("\n\n\n" + word, "\n\n" + word)
     return new_text
 
@@ -89,6 +89,7 @@ class LLMInputOutputAdapter:
         "amazon": "outputText",
         "cohere": "text",
         "meta": "generation",
+        "mistral": "outputs",
     }
 
     @classmethod
@@ -98,7 +99,7 @@ class LLMInputOutputAdapter:
         input_body = {**model_kwargs}
         if provider == "anthropic":
             input_body["prompt"] = _human_assistant_format(prompt)
-        elif provider in ("ai21", "cohere", "meta"):
+        elif provider in ("ai21", "cohere", "meta", "mistral"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()
@@ -126,6 +127,8 @@ class LLMInputOutputAdapter:
                 text = response_body.get("generations")[0].get("text")
             elif provider == "meta":
                 text = response_body.get("generation")
+            elif provider == "mistral":
+                text = response_body.get("outputs")[0].get("text")
             else:
                 text = response_body.get("results")[0].get("outputText")
 
@@ -161,13 +164,24 @@ class LLMInputOutputAdapter:
                 chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
             ):
                 return
+
+            if (
+                provider == "mistral"
+                and chunk_obj.get(output_key, [{}])[0].get("stop_reason", "") == "stop"
+            ):
+                return
                 # chunk obj format varies with provider
+            output_text = chunk_obj[output_key]
+            if provider == "mistral":
+                output_text = output_text[0]["text"]
             yield GenerationChunk(
-                text=chunk_obj[output_key],
+                text=output_text,
                 generation_info={
-                    GUARDRAILS_BODY_KEY: chunk_obj.get(GUARDRAILS_BODY_KEY)
-                    if GUARDRAILS_BODY_KEY in chunk_obj
-                    else None,
+                    GUARDRAILS_BODY_KEY: (
+                        chunk_obj.get(GUARDRAILS_BODY_KEY)
+                        if GUARDRAILS_BODY_KEY in chunk_obj
+                        else None
+                    ),
                 },
             )
 
@@ -199,7 +213,16 @@ class LLMInputOutputAdapter:
             ):
                 return
 
-            yield GenerationChunk(text=chunk_obj[output_key])
+            if (
+                provider == "mistral"
+                and chunk_obj.get(output_key, [{}])[0].get("stop_reason", "") == "stop"
+            ):
+                return
+
+            output_text = chunk_obj[output_key]
+            if provider == "mistral":
+                output_text = output_text[0]["text"]
+            yield GenerationChunk(text=output_text)
 
 
 class BedrockBase(BaseModel, ABC):
