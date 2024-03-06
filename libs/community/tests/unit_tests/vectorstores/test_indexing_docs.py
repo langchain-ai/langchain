@@ -64,6 +64,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Milvus",
         "MomentoVectorIndex",
         "MyScale",
+        "OpenSearchVectorSearch",
         "PGVector",
         "Pinecone",
         "Qdrant",
