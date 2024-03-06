@@ -1,6 +1,7 @@
 """test Databricks LLM"""
 from typing import Any, Dict
 
+import pytest
 from pytest import MonkeyPatch
 
 from langchain_community.llms.databricks import (
@@ -31,6 +32,7 @@ def transform_input(**request: Any) -> Dict[str, Any]:
     return request
 
 
+@pytest.mark.requires("cloudpickle")
 def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
     import cloudpickle
 
