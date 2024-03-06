@@ -3,30 +3,26 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
     Iterator,
-    List,
     Mapping,
     Optional,
     TypeVar,
 )
 
 import airbyte as ab
+from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
-if TYPE_CHECKING:
-    from langchain_text_splitters import TextSplitter
-
 VST = TypeVar("VST", bound=VectorStore)
 
 
-class AirbyteLoader:
+class AirbyteLoader(BaseLoader):
     """Airbyte Document Loader.
 
     Example:
@@ -54,38 +50,6 @@ class AirbyteLoader:
         self._stream = stream
         self._template = template
         self._include_metadata = include_metadata
-
-    def load(self) -> List[Document]:
-        """Load source data into Document objects."""
-        return list(self.lazy_load())
-
-    def load_and_split(
-        self, text_splitter: Optional[TextSplitter] = None
-    ) -> List[Document]:
-        """Load Documents and split into chunks. Chunks are returned as Documents.
-
-        Args:
-            text_splitter: TextSplitter instance to use for splitting documents.
-              Defaults to RecursiveCharacterTextSplitter.
-
-        Returns:
-            List of Documents.
-        """
-
-        if text_splitter is None:
-            try:
-                from langchain_text_splitters import RecursiveCharacterTextSplitter
-            except ImportError as e:
-                raise ImportError(
-                    "Unable to import from langchain_text_splitters. Please specify "
-                    "text_splitter or install langchain_text_splitters with "
-                    "`pip install -U langchain-text-splitters`."
-                ) from e
-            _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
-        else:
-            _text_splitter = text_splitter
-        docs = self.lazy_load()
-        return _text_splitter.split_documents(docs)
 
     def lazy_load(self) -> Iterator[Document]:
         """A lazy loader for Documents."""
