@@ -33,7 +33,7 @@ class ReaderConfig(BaseModel):
     consumer_group: str = "primary"
     """The consumer group to place the reader into"""
 
-    tensor_parallel: int | None = None
+    tensor_parallel: Optional[int] = None
     """The number of gpus you would like your model to be split across"""
 
     max_seq_length: int = 512
@@ -155,7 +155,7 @@ class TitanTakeoff(LLM):
         response = self.client.generate_stream(prompt, **kwargs)
         buffer = ""
         for text in response:
-            buffer += text
+            buffer += text.data
             if "data:" in buffer:
                 # Remove the first instance of "data:" from the buffer.
                 if buffer.startswith("data:"):
