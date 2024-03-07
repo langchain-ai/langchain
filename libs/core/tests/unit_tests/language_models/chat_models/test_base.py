@@ -202,7 +202,7 @@ async def test_astream_implementation_uses_astream() -> None:
             """Top Level call"""
             raise NotImplementedError()
 
-        async def _stream(
+        async def _astream(
             self,
             messages: List[BaseMessage],
             stop: Optional[List[str]] = None,
