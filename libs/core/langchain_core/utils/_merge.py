@@ -34,7 +34,9 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
         elif isinstance(merged[k], int):
             merged[k] += v
         elif isinstance(merged[k], float):
-            merged[k] += v
+            merged_k = decimal.Decimal(merged[k])
+            merged_k += decimal.Decimal(v)
+            merged[k] = float(merged_k)
         elif isinstance(merged[k], decimal.Decimal):
             merged[k] += v
         elif isinstance(merged[k], dict):
