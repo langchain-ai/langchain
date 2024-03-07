@@ -59,7 +59,7 @@ def optional_enum_field(
     enum_values: Optional[List[str]] = None,
     description: Optional[str] = None,
     **field_kwargs,
-):
+) -> Field:
     """Utility function to conditionally create a field with an enum constraint."""
     if enum_values:
         return Field(
@@ -72,23 +72,46 @@ def optional_enum_field(
         return Field(..., description=description, **field_kwargs)
 
 
+class SimpleNode(BaseModel):
+    """Represents a node in a graph with associated properties."""
+
+    id: str = Field(description="A unique identifier for the node.")
+    type: str = Field(description="The type or label of the node.")
+
+
+class SimpleRelationship(BaseModel):
+    """Represents a directed relationship between two nodes in a graph."""
+
+    source: SimpleNode = Field(description="The source node of the relationship.")
+    target: SimpleNode = Field(description="The target node of the relationship.")
+    type: str = Field(description="The type of the relationship.")
+
+
+class SimpleGraph(BaseModel):
+    """Represents a graph document consisting of nodes and relationships."""
+
+    nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")
+    relationships: Optional[List[SimpleRelationship]] = Field(
+        description="List of relationships"
+    )
+
+
 def create_simple_model(
     node_labels: Optional[List[str]] = None, rel_types: Optional[List[str]] = None
-) -> BaseModel:
+) -> SimpleGraph:
     """
     Simple model allows to limit node and/or relationship types.
     Doesn't have any node or relationship properties.
     """
 
-    class SimpleNode(BaseModel):
+    class DynamicNode(SimpleNode):
         """Represents a node in a graph with associated properties."""
 
-        id: str = Field(description="A unique identifier for the node.")
         type: str = optional_enum_field(
             node_labels, description="The type or label of the node."
         )
 
-    class SimpleRelationship(BaseModel):
+    class DynamicRelationship(SimpleRelationship):
         """Represents a directed relationship between two nodes in a graph."""
 
         source: SimpleNode = Field(description="The source node of the relationship.")
@@ -97,23 +120,23 @@ def create_simple_model(
             rel_types, description="The type of the relationship."
         )
 
-    class SimpleGraph(BaseModel):
+    class DynamicGraph(SimpleGraph):
         """Represents a graph document consisting of nodes and relationships."""
 
-        nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")
-        relationships: Optional[List[SimpleRelationship]] = Field(
+        nodes: Optional[List[DynamicNode]] = Field(description="List of nodes")
+        relationships: Optional[List[DynamicRelationship]] = Field(
             description="List of relationships"
         )
 
-    return SimpleGraph
+    return DynamicGraph
 
 
-def map_to_base_node(node: BaseModel) -> Node:
+def map_to_base_node(node: SimpleNode) -> Node:
     """Map the SimpleNode to the base Node."""
     return Node(id=node.id.title(), type=node.type.capitalize())
 
 
-def map_to_base_relationship(rel: BaseModel) -> Relationship:
+def map_to_base_relationship(rel: SimpleRelationship) -> Relationship:
     """Map the SimpleRelationship to the base Relationship."""
     source = map_to_base_node(rel.source)
     target = map_to_base_node(rel.target)
@@ -136,8 +159,8 @@ class LLMGraphTransformer:
         allowed_relationships (List[str], optional): Specifies which relationship types
         are allowed in the graph. Defaults to an empty list, allowing all relationship
         types.
-        prompt (Optional[str], optional): The prompt to pass to the to the LLM with
-        additional instructions.
+        prompt (Optional[ChatPromptTemplate], optional): The prompt to pass to the to
+        the LLM with additional instructions.
         strict_mode (bool, optional): Determines whether the transformer should apply
         filtering to strictly adhere to `allowed_nodes` and `allowed_relationships`.
         Defaults to True.
@@ -161,7 +184,7 @@ class LLMGraphTransformer:
         llm: BaseLanguageModel,
         allowed_nodes: List[str] = [],
         allowed_relationships: List[str] = [],
-        prompt: Optional[str] = default_prompt,
+        prompt: Optional[ChatPromptTemplate] = default_prompt,
         strict_mode: bool = True,
     ) -> None:
         if not hasattr(llm, "with_structured_output"):
