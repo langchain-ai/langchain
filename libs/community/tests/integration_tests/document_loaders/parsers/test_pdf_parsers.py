@@ -129,5 +129,5 @@ def test_extract_images_text_from_pdf_pymupdfparser() -> None:
 
 
 def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
-    """Test extract image from pdf and recognize text with rapid ocr - PyPDFium2Parser"""
+    """Test extract image from pdf and recognize text with rapid ocr - PyPDFium2Parser"""  # noqa: E501
     _assert_with_parser(PyPDFium2Parser(extract_images=True))
