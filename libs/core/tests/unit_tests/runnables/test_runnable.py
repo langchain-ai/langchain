@@ -5199,7 +5199,8 @@ def test_transform_of_runnable_lambda_with_dicts() -> None:
 
 
 async def test_atransform_of_runnable_lambda_with_dicts() -> None:
-    async def identity(x):
+    async def identity(x: dict) -> dict:
+        """Return x."""
         return x
 
     runnable = RunnableLambda(identity)
@@ -5219,7 +5220,7 @@ def test_default_transform_with_dicts() -> None:
         def invoke(
             self, input: Input, config: Optional[RunnableConfig] = None
         ) -> Output:
-            return input
+            return cast(Output, input)
 
     runnable = CustomRunnable()
     chunks = iter(
@@ -5239,7 +5240,7 @@ async def test_defualt_atransform_with_dicts() -> None:
         def invoke(
             self, input: Input, config: Optional[RunnableConfig] = None
         ) -> Output:
-            return input
+            return cast(Output, input)
 
     runnable = CustomRunnable()
 
