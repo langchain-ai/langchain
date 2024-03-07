@@ -15,3 +15,4 @@ toml
 myst_nb
 sphinx_copybutton
 pydata-sphinx-theme==0.13.1
+semantic-text-splitter==0.6.3
