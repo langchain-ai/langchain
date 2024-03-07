@@ -763,17 +763,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.34.56"
+version = "1.34.57"
 description = "The AWS SDK for Python"
 optional = true
 python-versions = ">= 3.8"
 files = [
-    {file = "boto3-1.34.56-py3-none-any.whl", hash = "sha256:300888f0c1b6f32f27f85a9aa876f50f46514ec619647af7e4d20db74d339714"},
-    {file = "boto3-1.34.56.tar.gz", hash = "sha256:b26928f9a21cf3649cea20a59061340f3294c6e7785ceb6e1a953eb8010dc3ba"},
+    {file = "boto3-1.34.57-py3-none-any.whl", hash = "sha256:f8046e3e2d1186a49b49f7464c4811c265c86001f404dd1a96c4365c773a4245"},
+    {file = "boto3-1.34.57.tar.gz", hash = "sha256:c26c31ceeeb2bc5d2bb96ba0fdc9a04d7b10e6e0b081c55b9cea9069a0be04dd"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.56,<1.35.0"
+botocore = ">=1.34.57,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -782,13 +782,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.34.55"
-description = "Type annotations for boto3 1.34.55 generated with mypy-boto3-builder 7.23.2"
+version = "1.34.57"
+description = "Type annotations for boto3 1.34.57 generated with mypy-boto3-builder 7.23.2"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-stubs-1.34.55.tar.gz", hash = "sha256:cbbae1b811b97e4e1f1d00eba237ff987678e652502226b87e6276f7963935b4"},
-    {file = "boto3_stubs-1.34.55-py3-none-any.whl", hash = "sha256:5ee40bdfba94fcdba26f36869339c849e918827ed1fb2f8e470474e6b1e923ff"},
+    {file = "boto3-stubs-1.34.57.tar.gz", hash = "sha256:2b7271bb6876dc6a6b3f1e6194471da5deaa92ce9c4ee56abf42de0dc39be456"},
+    {file = "boto3_stubs-1.34.57-py3-none-any.whl", hash = "sha256:7a46ee0cf8d068f36cbd08ad1679001fd03f6357d2a6a8e35ad051b00a8e9676"},
 ]
 
 [package.dependencies]
@@ -839,7 +839,7 @@ bedrock-agent = ["mypy-boto3-bedrock-agent (>=1.34.0,<1.35.0)"]
 bedrock-agent-runtime = ["mypy-boto3-bedrock-agent-runtime (>=1.34.0,<1.35.0)"]
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.34.0,<1.35.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.34.0,<1.35.0)"]
-boto3 = ["boto3 (==1.34.55)", "botocore (==1.34.55)"]
+boto3 = ["boto3 (==1.34.57)", "botocore (==1.34.57)"]
 braket = ["mypy-boto3-braket (>=1.34.0,<1.35.0)"]
 budgets = ["mypy-boto3-budgets (>=1.34.0,<1.35.0)"]
 ce = ["mypy-boto3-ce (>=1.34.0,<1.35.0)"]
@@ -1182,13 +1182,13 @@ xray = ["mypy-boto3-xray (>=1.34.0,<1.35.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.56"
+version = "1.34.57"
 description = "Low-level, data-driven core of boto 3."
 optional = true
 python-versions = ">= 3.8"
 files = [
-    {file = "botocore-1.34.56-py3-none-any.whl", hash = "sha256:fff66e22a5589c2d58fba57d1d95c334ce771895e831f80365f6cff6453285ec"},
-    {file = "botocore-1.34.56.tar.gz", hash = "sha256:bffeb71ab21d47d4ecf947d9bdb2fbd1b0bbd0c27742cea7cf0b77b701c41d9f"},
+    {file = "botocore-1.34.57-py3-none-any.whl", hash = "sha256:c8dafe0ad378a88bcf4153e6972870b03fb5aab406b694202307500709940baf"},
+    {file = "botocore-1.34.57.tar.gz", hash = "sha256:9a5aa2034de9f0c367b4b61a92af0fa827f5c21affa19e0a284838a142e71083"},
 ]
 
 [package.dependencies]
@@ -1204,13 +1204,13 @@ crt = ["awscrt (==0.19.19)"]
 
 [[package]]
 name = "botocore-stubs"
-version = "1.34.56"
+version = "1.34.57"
 description = "Type annotations and code completion for botocore"
 optional = true
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "botocore_stubs-1.34.56-py3-none-any.whl", hash = "sha256:25468ba6983987b704b1856bb155f297f576e6d4a690b021ab0c7122889ba907"},
-    {file = "botocore_stubs-1.34.56.tar.gz", hash = "sha256:018e001e3add5eb1828ef444b45fb8c9faf695e08334031bf2d96853cd9af703"},
+    {file = "botocore_stubs-1.34.57-py3-none-any.whl", hash = "sha256:13f133ef244ebde6425cff3b41b43898af709d0fc8a749b26ddf304eff3a6570"},
+    {file = "botocore_stubs-1.34.57.tar.gz", hash = "sha256:2deb03f218469c5a76dfefeb2d1e9f1599914adbb5f8bd8cc0d7ad7d7a07ae33"},
 ]
 
 [package.dependencies]
@@ -3387,13 +3387,13 @@ files = [
 
 [[package]]
 name = "huggingface-hub"
-version = "0.21.3"
+version = "0.21.4"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "huggingface_hub-0.21.3-py3-none-any.whl", hash = "sha256:b183144336fdf2810a8c109822e0bb6ef1fd61c65da6fb60e8c3f658b7144016"},
-    {file = "huggingface_hub-0.21.3.tar.gz", hash = "sha256:26a15b604e4fc7bad37c467b76456543ec849386cbca9cd7e1e135f53e500423"},
+    {file = "huggingface_hub-0.21.4-py3-none-any.whl", hash = "sha256:df37c2c37fc6c82163cdd8a67ede261687d80d1e262526d6c0ce73b6b3630a7b"},
+    {file = "huggingface_hub-0.21.4.tar.gz", hash = "sha256:e1f4968c93726565a80edf6dc309763c7b546d0cfe79aa221206034d50155531"},
 ]
 
 [package.dependencies]
@@ -3807,13 +3807,13 @@ files = [
 
 [[package]]
 name = "json5"
-version = "0.9.20"
+version = "0.9.22"
 description = "A Python implementation of the JSON5 data format."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "json5-0.9.20-py3-none-any.whl", hash = "sha256:f623485b37fad95783233bad9352d21526709cbd9a2ec41ddc3e950fca85b701"},
-    {file = "json5-0.9.20.tar.gz", hash = "sha256:20a255981244081d5aaa4adc90d31cdbf05bed1863993cbf300b8e2cd2b6de88"},
+    {file = "json5-0.9.22-py3-none-any.whl", hash = "sha256:6621007c70897652f8b5d03885f732771c48d1925591ad989aa80c7e0e5ad32f"},
+    {file = "json5-0.9.22.tar.gz", hash = "sha256:b729bde7650b2196a35903a597d2b704b8fdf8648bfb67368cfb79f1174a17bd"},
 ]
 
 [package.extras]
@@ -4279,7 +4279,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.29"
+version = "0.1.30"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -4679,13 +4679,13 @@ files = [
 
 [[package]]
 name = "mlflow-skinny"
-version = "2.11.0"
+version = "2.11.1"
 description = "MLflow: A Platform for ML Development and Productionization"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "mlflow-skinny-2.11.0.tar.gz", hash = "sha256:11681c38f7a46b7da6a11cc7b56a975b516384fcf3b2d05e52971f8a2e846efb"},
-    {file = "mlflow_skinny-2.11.0-py3-none-any.whl", hash = "sha256:ab3f8fb4df4392554901acf74e343b4696618d7b1a9c8cd3e6ab884cbb54ff1d"},
+    {file = "mlflow-skinny-2.11.1.tar.gz", hash = "sha256:dcb45fe3ad24326a6e939c83782708687fc6ca1273af9be2120449bbb7e63b56"},
+    {file = "mlflow_skinny-2.11.1-py3-none-any.whl", hash = "sha256:ab210fd2b6a661e77fdcb1cfb163c55e632dde6b1d3031bdf5423a2edcba2ebf"},
 ]
 
 [package.dependencies]
@@ -6767,13 +6767,13 @@ test = ["flaky", "pretend", "pytest (>=3.0.1)"]
 
 [[package]]
 name = "pyparsing"
-version = "3.1.1"
+version = "3.1.2"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
 optional = true
 python-versions = ">=3.6.8"
 files = [
-    {file = "pyparsing-3.1.1-py3-none-any.whl", hash = "sha256:32c7c0b711493c72ff18a981d24f28aaf9c1fb7ed5e9667c9e84e3db623bdbfb"},
-    {file = "pyparsing-3.1.1.tar.gz", hash = "sha256:ede28a1a32462f5a9705e07aea48001a08f7cf81a021585011deba701581a0db"},
+    {file = "pyparsing-3.1.2-py3-none-any.whl", hash = "sha256:f9db75911801ed778fe61bb643079ff86601aca99fcae6345aa67292038fb742"},
+    {file = "pyparsing-3.1.2.tar.gz", hash = "sha256:a1bac0ce561155ecc3ed78ca94d3c9378656ad4c94c1270de543f621420f94ad"},
 ]
 
 [package.extras]
@@ -9918,4 +9918,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f850f57f0d0888376f0cf084ffc9f912eb497dc11c7366c96e606f617ea16ec8"
+content-hash = "a377a0a6606c6fc921e1fbeafb3b7971a512c8597c12061d5ae095eff6baf88f"
