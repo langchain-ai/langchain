@@ -61,10 +61,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
     return AIMessage(
         content=content,
         additional_kwargs=dict(
-                finish_reason=additional_kwargs["finish_reason"],
-                request_id=additional_kwargs["id"],
-                token_usage=dict(additional_kwargs["usage"]),
-            ),
+            finish_reason=additional_kwargs["finish_reason"],
+            request_id=additional_kwargs["id"],
+            token_usage=dict(additional_kwargs["usage"]),
+        ),
     )
 
 
