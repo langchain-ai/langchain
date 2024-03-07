@@ -204,13 +204,13 @@ async def test_astream_implementation_uses_astream() -> None:
             """Top Level call"""
             raise NotImplementedError()
 
-        async def _astream(
+        async def _astream(  # type: ignore
             self,
             messages: List[BaseMessage],
             stop: Optional[List[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
-        ) -> AsyncIterator[ChatGenerationChunk]:  # type: ignore
+        ) -> AsyncIterator[ChatGenerationChunk]:
             """Stream the output of the model."""
             yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
             yield ChatGenerationChunk(message=AIMessageChunk(content="b"))

@@ -286,7 +286,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _stream_implementation = self._astream
         elif type(self)._stream is not BaseChatModel._stream:
             # Then stream is implemented, so we can create an async iterator from it
-            _stream_implementation = cast(
+            # The typing is hard to type correctly with mypy here, so we cast
+            # and do a type ignore, this code is unit tested and should be fine.
+            _stream_implementation = cast(  # type: ignore
                 Callable[
                     [
                         List[BaseMessage],
@@ -294,7 +296,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         CallbackManagerForLLMRun,
                         Any,
                     ],
-                    AsyncGenerator[ChatGenerationChunk],
+                    AsyncIterator[ChatGenerationChunk],
                 ],
                 _as_async_iterator(self._stream),
             )
