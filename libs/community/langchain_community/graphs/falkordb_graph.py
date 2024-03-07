@@ -58,18 +58,21 @@ class FalkorDBGraph(GraphStore):
     ) -> None:
         """Create a new FalkorDB graph wrapper instance."""
         try:
-            import redis
-            from redis.commands.graph import Graph
+            from falkordb import FalkorDB
         except ImportError:
             raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
+                "Could not import falkordb python package. "
+                "Please install it with `pip install falkordb`."
             )
 
-        self._driver = redis.Redis(
-            host=host, port=port, username=username, password=password, ssl=ssl
-        )
-        self._graph = Graph(self._driver, database)
+        try:
+            self._driver = FalkorDB(
+                host=host, port=port, username=username, password=password, ssl=ssl
+            )
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to FalkorDB: {e}")
+        
+        self._graph = self._driver.select_graph(database)
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
 
