@@ -29,6 +29,7 @@ lxml-stubs = "^0.5.1"
 types-requests = "^2.31.0.20240218"
 tiktoken = "^0.6.0"
 spacy = "^3.7.4"
+semantic-text-splitter = "^0.6.3"
 
 [tool.poetry.group.dev]
 optional = true
