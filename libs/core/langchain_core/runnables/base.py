@@ -1050,12 +1050,22 @@ class Runnable(Generic[Input, Output], ABC):
 
         for chunk in input:
             if not got_first_val:
-                final = chunk
+                if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
+                    final = AddableDict(chunk)
+                else:
+                    final = chunk
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
-                final = final + chunk  # type: ignore[operator]
+                try:
+                    final = final + chunk  # type: ignore[operator]
+                except TypeError:
+                    raise TypeError(
+                        f"Failed while trying to add together "
+                        f"type {type(final)} and {type(chunk)}."
+                        f"These types should be addable for atransform to work."
+                    )
 
         if got_first_val:
             yield from self.stream(final, config, **kwargs)
@@ -1076,12 +1086,22 @@ class Runnable(Generic[Input, Output], ABC):
 
         async for chunk in input:
             if not got_first_val:
-                final = chunk
+                if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
+                    final = AddableDict(chunk)
+                else:
+                    final = chunk
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
-                final = final + chunk  # type: ignore[operator]
+                try:
+                    final = final + chunk  # type: ignore[operator]
+                except TypeError:
+                    raise TypeError(
+                        f"Failed while trying to add together "
+                        f"type {type(final)} and {type(chunk)}."
+                        f"These types should be addable for atransform to work."
+                    )
 
         if got_first_val:
             async for output in self.astream(final, config, **kwargs):

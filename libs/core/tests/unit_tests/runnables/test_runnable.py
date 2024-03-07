@@ -22,6 +22,7 @@ from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 from typing_extensions import TypedDict
 
+from langchain_core.beta.runnables.context import Context
 from langchain_core.callbacks.manager import (
     Callbacks,
     atrace_as_chain_group,
@@ -79,7 +80,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.fake.chat_model import FakeListChatModel
+from tests.unit_tests.fake.chat_model import FakeListChatModel, GenericFakeChatModel
 from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
@@ -5183,3 +5184,43 @@ async def test_astream_log_deep_copies() -> None:
         "name": "add_one",
         "type": "chain",
     }
+
+
+def test_upgrade_to_addable_dict_when_streaming() -> None:
+    """Test was added to test a particular chain that was failing due to lack
+    of automatic upgrade of dict into addable dict in stranform causing
+    streaming to raise a TypeError.
+    """
+    responses = [
+        "hello world",
+    ]
+
+    model = GenericFakeChatModel(messages=iter(responses))
+
+    def to_dict(input):
+        for chunk in input:
+            yield {"foo": chunk}
+
+    chain = Context.setter("input") | model | to_dict | Context.getter("input")
+    chunks = [chunk for chunk in chain.stream("hello")]
+    assert chunks == ["hello"]
+
+
+async def test_upgrade_to_addable_dict_when_streaming_async() -> None:
+    """Test was added to test a particular chain that was failing due to lack
+    of automatic upgrade of dict into addable dict in astranform causing
+    streaming to raise a TypeError.
+    """
+    responses = [
+        "hello world",
+    ]
+
+    model = GenericFakeChatModel(messages=iter(responses))
+
+    async def to_dict(input):
+        async for chunk in input:
+            yield {"foo": chunk}
+
+    chain = Context.setter("input") | model | to_dict | Context.getter("input")
+    chunks = [chunk async for chunk in chain.astream("hello")]
+    assert chunks == ["hello"]
