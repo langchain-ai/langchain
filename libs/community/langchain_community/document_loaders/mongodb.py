@@ -65,9 +65,9 @@ class MongodbLoader(BaseLoader):
         total_docs = await self.collection.count_documents(self.filter_criteria)
 
         # Construct the projection dictionary if field_names are specified
-        projection = {
-            field: 1 for field in self.field_names
-        } if self.field_names else None
+        projection = (
+            {field: 1 for field in self.field_names} if self.field_names else None
+        )
 
         async for doc in self.collection.find(self.filter_criteria, projection):
             metadata = {
