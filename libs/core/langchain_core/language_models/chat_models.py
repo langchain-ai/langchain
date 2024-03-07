@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
     Callable,
     Dict,
@@ -104,7 +105,7 @@ async def agenerate_from_stream(
 def _as_async_iterator(sync_iterator: Callable) -> Callable:
     """Convert a sync iterator into an async iterator."""
 
-    async def _as_sync_iterator(*args: Any, **kwargs: Any) -> Iterator:
+    async def _as_sync_iterator(*args: Any, **kwargs: Any) -> AsyncGenerator:
         iterator = await run_in_executor(None, sync_iterator, *args, **kwargs)
         done = object()
         while True:
