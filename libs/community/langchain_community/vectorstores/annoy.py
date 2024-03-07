@@ -429,6 +429,8 @@ class Annoy(VectorStore):
         cls,
         folder_path: str,
         embeddings: Embeddings,
+        *,
+        allow_dangerous_deserialization: bool = False,
     ) -> Annoy:
         """Load Annoy index, docstore, and index_to_docstore_id to disk.
 
@@ -436,7 +438,25 @@ class Annoy(VectorStore):
             folder_path: folder path to load index, docstore,
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries.
+            allow_dangerous_deserialization: whether to allow deserialization
+                of the data which involves loading a pickle file.
+                Pickle files can be modified by malicious actors to deliver a
+                malicious payload that results in execution of
+                arbitrary code on your machine.
         """
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "The de-serialization relies loading a pickle file. "
+                "Pickle files can be modified to deliver a malicious payload that "
+                "results in execution of arbitrary code on your machine."
+                "You will need to set `allow_dangerous_deserialization` to `True` to "
+                "enable deserialization. If you do this, make sure that you "
+                "trust the source of the data. For example, if you are loading a "
+                "file that you created, and no that no one else has modified the file, "
+                "then this is safe to do. Do not set this to `True` if you are loading "
+                "a file from an untrusted source (e.g., some random site on the "
+                "internet.)."
+            )
         path = Path(folder_path)
         # load index separately since it is not picklable
         annoy = dependable_annoy_import()
