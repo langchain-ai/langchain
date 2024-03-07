@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections import defaultdict
 from functools import partial
 from typing import (
     Any,
@@ -29,6 +30,7 @@ from langchain_core.pydantic_v1 import (
 )
 from langchain_core.utils import get_from_dict_or_env
 from requests.models import Response
+from langchain_nvidia_ai_endpoints._statics import Model, MODEL_SPECS
 
 logger = logging.getLogger(__name__)
 
@@ -462,22 +464,37 @@ class _NVIDIAClient(BaseModel):
     @property
     def available_functions(self) -> List[dict]:
         """Map the available functions that can be invoked."""
-        return self.client.available_functions
+        return self.__cls__.get_available_models(client=self.client)
 
     @property
     def available_models(self) -> dict:
         """Map the available models that can be invoked."""
-        return self.client.available_models
+        return self.__cls__.get_available_models(client=self.client)
 
     @staticmethod
-    def get_available_functions(**kwargs: Any) -> List[dict]:
+    def get_available_functions(**kwargs: Any) -> List[Model]:
         """Map the available functions that can be invoked. Callable from class"""
-        return NVEModel(**kwargs).available_functions
+        if client is None:
+            client = NVEModel(**kwargs)
+        return client.available_functions
 
-    @staticmethod
-    def get_available_models(**kwargs: Any) -> dict:
+    @classmethod
+    def get_available_models(
+        cls,
+        client: Optional[NVEModel] = None,
+        list_all: bool = False,
+        **kwargs: Any,
+    ) -> List[Model]:
         """Map the available models that can be invoked. Callable from class"""
-        return NVEModel(**kwargs).available_models
+        if client is None:
+            client = NVEModel(**kwargs)
+        out = sorted([
+            Model(id=k.replace("playground_", ""), path=v, **MODEL_SPECS.get(k, {}))
+                for k, v in client.available_models.items()
+        ], key=lambda x: f"{x.client or 'Z'}{x.id}{cls}")
+        if not list_all:
+            out = [m for m in out if m.client == cls.__name__ or m.model_type == None]
+        return out
 
     def get_model_details(self, model: Optional[str] = None) -> dict:
         """Get more meta-details about a model retrieved by a given name"""

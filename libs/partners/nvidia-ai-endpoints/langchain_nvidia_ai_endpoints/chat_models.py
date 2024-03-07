@@ -46,6 +46,7 @@ from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 
 from langchain_nvidia_ai_endpoints import _common as nvidia_ai_endpoints
+from langchain_nvidia_ai_endpoints._statics import MODEL_SPECS, Model
 
 _CallbackManager = Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
 _DictOrPydanticClass = Union[Dict[str, Any], Type[BaseModel]]
