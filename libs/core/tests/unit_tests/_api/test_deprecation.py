@@ -75,6 +75,17 @@ def test_warn_deprecated(kwargs: Dict[str, Any], expected_message: str) -> None:
             assert str(warning) == expected_message
 
 
+def test_internal_warnings_disabled() -> None:
+    """Test that internal warnings are disabled properly"""
+    with patch.object(deprecation, "_get_surface_internal_warnings") as func:
+        func.return_value = False
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always")
+            warn_deprecated("1.0.0", pending=True)
+            assert len(warning_list) == 0
+
+
+
 def test_undefined_deprecation_schedule() -> None:
     """This test is expected to fail until we defined a deprecation schedule."""
     with pytest.raises(NotImplementedError):
