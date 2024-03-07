@@ -52,7 +52,7 @@ name = "semantic-text-splitter"
 version = "0.6.3"
 description = "Split text into semantic chunks, up to a desired chunk size. Supports calculating length by characters and tokens (when used with large language models)"
 optional = true
-python-versions = ">=3.9"
+python-versions = ">=3.8"
 files = [
     {file = "semantic_text_splitter-0.6.3-cp38-abi3-win_amd64.whl", hash = "sha256:822d36ec02cf2eceb088ba61ae9460e87a499e22622ae71abe88008e09aceceb"},
     {file = "semantic_text_splitter-0.6.3.tar.gz", hash = "sha256:37907cda192454f73bd9f20ce3f3bebb37d7b2aca2548f06b558876944c74ba8"},
