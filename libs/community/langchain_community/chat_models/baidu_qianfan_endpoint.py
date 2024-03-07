@@ -57,9 +57,14 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             additional_kwargs["function_call"].pop("thoughts")
     else:
         additional_kwargs = {}
+    additional_kwargs = {**_dict.get("body", {}), **additional_kwargs}
     return AIMessage(
         content=content,
-        additional_kwargs={**_dict.get("body", {}), **additional_kwargs},
+        additional_kwargs=dict(
+                finish_reason=additional_kwargs["finish_reason"],
+                request_id=additional_kwargs["id"],
+                token_usage=dict(additional_kwargs["usage"]),
+            ),
     )
 
 

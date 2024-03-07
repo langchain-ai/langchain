@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numbers
+import decimal
 from typing import Any, Dict
 
 
@@ -24,15 +24,18 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
             merged[k] = v
         elif v is None or merged[k] == v:
             continue
-        # TODO Numeric type data is temporarily passed.
-        elif isinstance(v, numbers.Number):
-            continue
         elif type(merged[k]) != type(v):
             raise TypeError(
                 f'additional_kwargs["{k}"] already exists in this message,'
                 " but with a different type."
             )
         elif isinstance(merged[k], str):
+            merged[k] += v
+        elif isinstance(merged[k], int):
+            merged[k] += v
+        elif isinstance(merged[k], float):
+            merged[k] += v
+        elif isinstance(merged[k], decimal.Decimal):
             merged[k] += v
         elif isinstance(merged[k], dict):
             merged[k] = merge_dicts(merged[k], v)

@@ -64,11 +64,16 @@ def test_check_package_version(
         ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}),
         ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}),
         ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}),
-        # Includes numeric types such as timestamps.
+        # Includes number types.
         (
-            {"id": "as-9sqgtsmpdd", "created": 1709634222, "result": "A"},
-            {"id": "as-9sqgtsmpdd", "created": 1709634223, "result": "B"},
-            {"id": "as-9sqgtsmpdd", "created": 1709634222, "result": "AB"},
+            {"id": "as-9sqgtsmpdd", "created": 1, "result": "A"},
+            {"id": "as-9sqgtsmpdd", "created": 2, "result": "B"},
+            {"id": "as-9sqgtsmpdd", "created": 3, "result": "AB"},
+        ),
+        (
+                {"id": "as-9sqgtsmpdd", "created": 1.1, "result": "A"},
+                {"id": "as-9sqgtsmpdd", "created": 2.2, "result": "B"},
+                {"id": "as-9sqgtsmpdd", "created": 3.3, "result": "AB"},
         ),
         #
         # Invalid inputs.
