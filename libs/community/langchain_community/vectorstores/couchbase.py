@@ -340,7 +340,7 @@ class CouchbaseVectorStore(VectorStore):
                 Defaults to empty dictionary.
             fields (Optional[List[str]]): Optional list of fields to include in the
                 metadata of results. Note that these need to be stored in the index.
-                If nothing is specified, defaults to document metadata fields.
+                If nothing is specified, defaults to all the fields stored in the index.
 
         Returns:
             List of (Document, score) that are the most similar to the query vector.
@@ -349,21 +349,18 @@ class CouchbaseVectorStore(VectorStore):
         from couchbase.options import SearchOptions
         from couchbase.vector_search import VectorQuery, VectorSearch
 
-        fields = kwargs.get("fields", [])
-
-        if not fields:
-            fields = [self._text_key, self._metadata_key]
+        fields = kwargs.get("fields", ["*"])
 
         # Document text field needs to be returned from the search
-        if self._text_key not in fields:
+        if fields != ["*"] and self._text_key not in fields:
             fields.append(self._text_key)
 
         search_req = search.SearchRequest.create(
             VectorSearch.from_vector_query(
                 VectorQuery(
-                    field_name=self._embedding_key,
-                    vector=embedding,
-                    num_candidates=k,
+                    self._embedding_key,
+                    embedding,
+                    k,
                 )
             )
         )
@@ -372,8 +369,13 @@ class CouchbaseVectorStore(VectorStore):
                 search_iter = self._scope.search(
                     self._index_name,
                     search_req,
-                    SearchOptions(limit=k, fields=fields, raw=search_options),
+                    SearchOptions(
+                        limit=k,
+                        fields=fields,
+                        raw=search_options,
+                    ),
                 )
+
             else:
                 search_iter = self._cluster.search(
                     index=self._index_name,
@@ -385,8 +387,19 @@ class CouchbaseVectorStore(VectorStore):
 
             # Parse the results
             for row in search_iter.rows():
-                text = row.fields.pop(self._text_key)
-                metadata = row.fields
+                text = row.fields.pop(self._text_key, "")
+
+                # KV subdoc Get for the id for metadata + *
+                metadata = {}
+                for k, v in row.fields.items():
+                    if k.startswith(self._metadata_key):
+                        # Couchbase FTS returns the metadata key with a prefix
+                        # `metadata.` We remove it to get the original metadata key
+                        new_key = k.split(self._metadata_key + ".")[-1]
+                        metadata[new_key] = v
+                    else:
+                        metadata[k] = v
+
                 score = row.score
                 doc = Document(page_content=text, metadata=metadata)
                 docs_with_score.append((doc, score))
@@ -414,13 +427,14 @@ class CouchbaseVectorStore(VectorStore):
                 Defaults to empty dictionary
             fields (Optional[List[str]]): Optional list of fields to include in the
                 metadata of results. Note that these need to be stored in the index.
-                If nothing is specified, defaults to document text and metadata fields.
+                If nothing is specified, defaults to all the fields stored in the index.
 
         Returns:
             List of Documents most similar to the query.
         """
-        docs_with_scores = self.similarity_search_with_score(
-            query, k, search_options, **kwargs
+        query_embedding = self.embeddings.embed_query(query)
+        docs_with_scores = self.similarity_search_with_score_by_vector(
+            query_embedding, k, search_options, **kwargs
         )
         return [doc for doc, _ in docs_with_scores]
 
@@ -510,7 +524,7 @@ class CouchbaseVectorStore(VectorStore):
         collection_name = kwargs.get("collection_name", None)
         index_name = kwargs.get("index_name", None)
         text_key = kwargs.get("text_key", cls._default_text_key)
-        embedding_key = kwargs.get("embedding_key", cls._embedding_key)
+        embedding_key = kwargs.get("embedding_key", cls._default_embedding_key)
         scoped_index = kwargs.get("scoped_index", True)
 
         return cls(
