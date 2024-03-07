@@ -32,6 +32,7 @@ from langchain_community.document_loaders.apify_dataset import ApifyDatasetLoade
 from langchain_community.document_loaders.arcgis_loader import ArcGISLoader
 from langchain_community.document_loaders.arxiv import ArxivLoader
 from langchain_community.document_loaders.assemblyai import (
+    AssemblyAIAudioLoaderById,
     AssemblyAIAudioTranscriptLoader,
 )
 from langchain_community.document_loaders.astradb import AstraDBLoader
@@ -234,6 +235,7 @@ from langchain_community.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
+from langchain_community.document_loaders.yuque import YuqueLoader
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -261,6 +263,7 @@ __all__ = [
     "ApifyDatasetLoader",
     "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
@@ -421,4 +424,5 @@ __all__ = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "YuqueLoader",
 ]
