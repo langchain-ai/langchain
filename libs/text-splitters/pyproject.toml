@@ -12,7 +12,6 @@ repository = "https://github.com/langchain-ai/langchain"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.28"
 lxml = {version = "^5.1.0", optional = true}
-semantic-text-splitter = {version = "^0.6.3", optional = true} 
 
 [tool.poetry.group.lint]
 optional = true
@@ -30,6 +29,8 @@ lxml-stubs = "^0.5.1"
 types-requests = "^2.31.0.20240218"
 tiktoken = "^0.6.0"
 spacy = "^3.7.4"
+semantic-text-splitter = "^0.6.3"
+
 
 [tool.poetry.group.dev]
 optional = true
