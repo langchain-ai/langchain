@@ -476,6 +476,10 @@ def _get_standardized_outputs(
     """
     outputs = load(run.outputs)
     if schema_format == "original":
+        if run.run_type == "prompt" and "output" in outputs:
+            # These were previously dumped before the tracer.
+            # Now we needn't do anything to them.
+            return outputs["output"]
         # Return the old schema, without standardizing anything
         return outputs
 

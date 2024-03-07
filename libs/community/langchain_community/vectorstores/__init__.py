@@ -192,6 +192,14 @@ def _import_docarray_inmemory() -> Any:
     return DocArrayInMemorySearch
 
 
+def _import_documentdb() -> Any:
+    from langchain_community.vectorstores.documentdb import (
+        DocumentDBVectorSearch,
+    )
+
+    return DocumentDBVectorSearch
+
+
 def _import_elasticsearch() -> Any:
     from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
 
@@ -216,10 +224,34 @@ def _import_hanavector() -> Any:
     return HanaDB
 
 
+def _import_kinetica() -> Any:
+    from langchain_community.vectorstores.kinetica import Kinetica
+
+    return Kinetica
+
+
+def _import_kinetica_settings() -> Any:
+    from langchain_community.vectorstores.kinetica import KineticaSettings
+
+    return KineticaSettings
+
+
+def _import_distance_strategy() -> Any:
+    from langchain_community.vectorstores.kinetica import DistanceStrategy
+
+    return DistanceStrategy
+
+
 def _import_hologres() -> Any:
     from langchain_community.vectorstores.hologres import Hologres
 
     return Hologres
+
+
+def _import_infinispanvs() -> Any:
+    from langchain_community.vectorstores.infinispanvs import InfinispanVS
+
+    return InfinispanVS
 
 
 def _import_kdbai() -> Any:
@@ -539,6 +571,8 @@ def __getattr__(name: str) -> Any:
         return _import_dingo()
     elif name == "DocArrayInMemorySearch":
         return _import_docarray_inmemory()
+    elif name == "DocumentDBVectorSearch":
+        return _import_documentdb()
     elif name == "DocArrayHnswSearch":
         return _import_docarray_hnsw()
     elif name == "ElasticsearchStore":
@@ -551,8 +585,16 @@ def __getattr__(name: str) -> Any:
         return _import_hanavector()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "InfinispanVS":
+        return _import_infinispanvs()
     elif name == "KDBAI":
         return _import_kdbai()
+    elif name == "DistanceStrategy":
+        return _import_distance_strategy()
+    elif name == "KineticaSettings":
+        return _import_kinetica_settings()
+    elif name == "Kinetica":
+        return _import_kinetica()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -672,7 +714,11 @@ __all__ = [
     "FAISS",
     "HanaDB",
     "Hologres",
+    "InfinispanVS",
     "KDBAI",
+    "DistanceStrategy",
+    "Kinetica",
+    "KineticaSettings",
     "LanceDB",
     "LLMRails",
     "Marqo",
@@ -718,4 +764,5 @@ __all__ = [
     "VectorStore",
     "NeuralDBVectorStore",
     "Lantern",
+    "DocumentDBVectorSearch",
 ]

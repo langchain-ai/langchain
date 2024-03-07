@@ -1,17 +1,17 @@
 # Fireworks
 
-This page covers how to use [Fireworks](https://app.fireworks.ai/) models within
+This page covers how to use [Fireworks](https://fireworks.ai/) models within
 Langchain.
 
 ## Installation and setup
 
-- Install the Fireworks client library.
+- Install the Fireworks integration package.
 
   ```
-  pip install fireworks-ai
+  pip install langchain-fireworks
   ```
 
-- Get a Fireworks API key by signing up at [app.fireworks.ai](https://app.fireworks.ai).
+- Get a Fireworks API key by signing up at [fireworks.ai](https://fireworks.ai).
 - Authenticate by setting the FIREWORKS_API_KEY environment variable.
 
 ## Authentication
@@ -33,14 +33,14 @@ There are two ways to authenticate using your Fireworks API key:
 ## Using the Fireworks LLM module
 
 Fireworks integrates with Langchain through the LLM module. In this example, we
-will work the llama-v2-13b-chat model. 
+will work the mixtral-8x7b-instruct model. 
 
 ```python
-from langchain_community.llms.fireworks import Fireworks 
+from langchain_fireworks import Fireworks 
 
 llm = Fireworks(
     fireworks_api_key="<KEY>",
-    model="accounts/fireworks/models/llama-v2-13b-chat",
+    model="accounts/fireworks/models/mixtral-8x7b-instruct",
     max_tokens=256)
 llm("Name 3 sports.")
 ```

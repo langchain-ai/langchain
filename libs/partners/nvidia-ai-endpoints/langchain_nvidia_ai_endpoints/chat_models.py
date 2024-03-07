@@ -204,9 +204,9 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
         for response in self.get_stream(inputs=inputs, stop=stop, **kwargs):
             self._set_callback_out(response, run_manager)
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -219,9 +219,9 @@ class ChatNVIDIA(nvidia_ai_endpoints._NVIDIAClient, BaseChatModel):
         async for response in self.get_astream(inputs=inputs, stop=stop, **kwargs):
             self._set_callback_out(response, run_manager)
             chunk = self._get_filled_chunk(self.custom_postprocess(response))
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     def _set_callback_out(
         self,

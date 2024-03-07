@@ -63,6 +63,8 @@ jobs:
       - name: Install the opposite major version of pydantic
         # If normal tests use pydantic v1, here we'll use v2, and vice versa.
         shell: bash
+        # airbyte currently doesn't support pydantic v2
+        if: ${{ !startsWith(inputs.working-directory, 'libs/partners/airbyte') }}
         run: |
           # Determine the major part of pydantic version
           REGULAR_VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
@@ -97,6 +99,8 @@ jobs:
           fi
           echo "Found pydantic version ${CURRENT_VERSION}, as expected"
       - name: Run pydantic compatibility tests
+        # airbyte currently doesn't support pydantic v2
+        if: ${{ !startsWith(inputs.working-directory, 'libs/partners/airbyte') }}
         shell: bash
         run: make test
 
