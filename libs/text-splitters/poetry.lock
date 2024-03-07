@@ -3009,6 +3009,30 @@ files = [
 ]
 
 [[package]]
+name = "semantic-text-splitter"
+version = "0.6.3"
+description = "Split text into semantic chunks, up to a desired chunk size. Supports calculating length by characters and tokens (when used with large language models)."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:c4fbd7337f52b04eccad3d9cfc2a2cb37df88b5c384ddf9ad435d9df339c41c8"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8cd83e8e54278ddd748eaf355269ca316410e184452ea422c75858a7b0a9197d"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:7b812fd927eaa1638237e32abd8f8ceb4622a141bfeff26720f0fc5f512a66c5"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4af7a11720e40ecf73d77dee90837fae1a991fe6a36709a93d2d485f2644d183"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:fa271b51ff44522aa76dfc8d1f0e98a441a27c88410986162106e51e1850dcba"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f8f5af95b62f292797172c5e7b3a215a9f794c9ad89b84288bc40a49e8cc4eb8"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:e33fc5ba8b562d6f5d31fa3a94df76b39195879fe8a61b93e88675ad7dcfb4da"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7e18df47b39a91214a102213377be1defe3f01d9075327471ed5c63b88013ca2"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-win32.whl", hash = "sha256:7694259c27370153ec55ae08e464a013ea92729c2663a650e7e28612d7388884"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-win_amd64.whl", hash = "sha256:822d36ec02cf2eceb088ba61ae9460e87a499e22622ae71abe88008e09aceceb"},
+    {file = "semantic_text_splitter-0.6.3.tar.gz", hash = "sha256:37907cda192454f73bd9f20ce3f3bebb37d7b2aca2548f06b558876944c74ba8"},
+]
+
+[package.extras]
+docs = ["pdoc"]
+test = ["black", "pytest", "tokenizers"]
+
+[[package]]
 name = "send2trash"
 version = "1.8.2"
 description = "Send file to trash natively under Mac OS X, Windows and Linux"
@@ -3391,17 +3415,6 @@ datasets = ["ml-datasets (>=0.2.0,<0.3.0)"]
 mxnet = ["mxnet (>=1.5.1,<1.6.0)"]
 tensorflow = ["tensorflow (>=2.0.0,<2.6.0)"]
 torch = ["torch (>=1.6.0)"]
-
-[[package]]
-name = "semantic-text-splitter"
-version = "0.6.3"
-description = "Split text into semantic chunks, up to a desired chunk size. Supports calculating length by characters and tokens (when used with large language models)"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "semantic_text_splitter-0.6.3-cp38-abi3-win_amd64.whl", hash = "sha256:822d36ec02cf2eceb088ba61ae9460e87a499e22622ae71abe88008e09aceceb"},
-    {file = "semantic_text_splitter-0.6.3.tar.gz", hash = "sha256:37907cda192454f73bd9f20ce3f3bebb37d7b2aca2548f06b558876944c74ba8"},
-]
 
 [[package]]
 name = "tiktoken"
