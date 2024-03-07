@@ -294,7 +294,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         CallbackManagerForLLMRun,
                         Any,
                     ],
-                    AsyncIterator[ChatGenerationChunk],
+                    AsyncGenerator[ChatGenerationChunk],
                 ],
                 _as_async_iterator(self._stream),
             )

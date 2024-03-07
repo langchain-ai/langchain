@@ -1,6 +1,6 @@
 """Test base chat model."""
 
-from typing import Any, Iterator, List, Optional
+from typing import Any, AsyncIterator, Iterator, List, Optional
 
 import pytest
 
@@ -135,6 +135,7 @@ async def test_astream_fallback_to_ainvoke() -> None:
             generation = ChatGeneration(message=message)
             return ChatResult(generations=[generation])
 
+        @property
         def _llm_type(self) -> str:
             return "fake-chat-model"
 
@@ -171,6 +172,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
             yield ChatGenerationChunk(message=AIMessageChunk(content="b"))
 
+        @property
         def _llm_type(self) -> str:
             return "fake-chat-model"
 
@@ -208,11 +210,12 @@ async def test_astream_implementation_uses_astream() -> None:
             stop: Optional[List[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
-        ) -> Iterator[ChatGenerationChunk]:
+        ) -> AsyncIterator[ChatGenerationChunk]:  # type: ignore
             """Stream the output of the model."""
             yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
             yield ChatGenerationChunk(message=AIMessageChunk(content="b"))
 
+        @property
         def _llm_type(self) -> str:
             return "fake-chat-model"
 
