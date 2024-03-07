@@ -259,7 +259,13 @@ class LLMInputOutputAdapter:
             ):
                 return
 
-            yield GenerationChunk(text=chunk_obj[output_key])
+            yield GenerationChunk(
+                text=(
+                    chunk_obj[output_key]
+                    if provider != "mistral"
+                    else chunk_obj[output_key][0]["text"]
+                )
+            )
 
 
 class BedrockBase(BaseModel, ABC):
