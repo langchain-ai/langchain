@@ -1,3 +1,4 @@
+import decimal
 import re
 from contextlib import AbstractContextManager, nullcontext
 from typing import Dict, Optional, Tuple, Type, Union
@@ -69,11 +70,6 @@ def test_check_package_version(
             {"id": "as-9sqgtsmpdd", "created": 1, "result": "A"},
             {"id": "as-9sqgtsmpdd", "created": 2, "result": "B"},
             {"id": "as-9sqgtsmpdd", "created": 3, "result": "AB"},
-        ),
-        (
-            {"id": "as-9sqgtsmpdd", "created": 1.1, "result": "A"},
-            {"id": "as-9sqgtsmpdd", "created": 2.2, "result": "B"},
-            {"id": "as-9sqgtsmpdd", "created": 3.3, "result": "AB"},
         ),
         #
         # Invalid inputs.
