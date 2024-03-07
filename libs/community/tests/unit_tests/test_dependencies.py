@@ -1,4 +1,5 @@
 """A unit test meant to catch accidental introduction of non-optional dependencies."""
+
 from pathlib import Path
 from typing import Any, Dict, Mapping
 
