@@ -2,11 +2,11 @@
 from langchain_text_splitters import (
     Language,
     RecursiveCharacterTextSplitter,
+    SemanticCharacterTextSplitter,
+    SemanticTiktokenTextSplitter,
     TextSplitter,
     Tokenizer,
     TokenTextSplitter,
-    SemanticCharacterTextSplitter,
-    SemanticTiktokenTextSplitter
 )
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
