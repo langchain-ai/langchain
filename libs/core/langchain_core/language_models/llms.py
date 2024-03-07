@@ -932,9 +932,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     )
                 ]
             )
-            run_managers = [r[0] for r in run_managers]
+            run_managers = [r[0] for r in run_managers]  # type: ignore[misc]
             output = await self._agenerate_helper(
-                prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                prompts,
+                stop,
+                run_managers,  # type: ignore[arg-type]
+                bool(new_arg_supported),
+                **kwargs,  # type: ignore[arg-type]
             )
             return output
         if len(missing_prompts) > 0:
@@ -951,15 +955,19 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     for idx in missing_prompt_idxs
                 ]
             )
-            run_managers = [r[0] for r in run_managers]
+            run_managers = [r[0] for r in run_managers]  # type: ignore[misc]
             new_results = await self._agenerate_helper(
-                missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                missing_prompts,
+                stop,
+                run_managers,  # type: ignore[arg-type]
+                bool(new_arg_supported),
+                **kwargs,  # type: ignore[arg-type]
             )
             llm_output = await aupdate_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
             run_info = (
-                [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]
+                [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]  # type: ignore[attr-defined]
                 if run_managers
                 else None
             )

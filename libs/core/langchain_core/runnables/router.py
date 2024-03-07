@@ -63,7 +63,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         self,
         runnables: Mapping[str, Union[Runnable[Any, Output], Callable[[Any], Output]]],
     ) -> None:
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
         )
 

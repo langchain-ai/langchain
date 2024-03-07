@@ -1260,7 +1260,7 @@ class Runnable(Generic[Input, Output], ABC):
             output = cast(
                 Output,
                 context.run(
-                    call_func_with_variable_args,
+                    call_func_with_variable_args,  # type: ignore[arg-type]
                     func,  # type: ignore[arg-type]
                     input,  # type: ignore[arg-type]
                     config,
@@ -1888,7 +1888,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             raise ValueError(
                 f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
             )
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             first=steps_flat[0],
             middle=list(steps_flat[1:-1]),
             last=steps_flat[-1],
@@ -2574,7 +2574,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> None:
         merged = {**__steps} if __steps is not None else {}
         merged.update(kwargs)
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             steps={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
@@ -3001,7 +3001,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             func_for_name: Callable = atransform
 
         if inspect.isasyncgenfunction(transform):
-            self._atransform = transform
+            self._atransform = transform  # type: ignore[assignment]
             func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
             self._transform = transform
@@ -3066,7 +3066,10 @@ class RunnableGenerator(Runnable[Input, Output]):
         if not hasattr(self, "_transform"):
             raise NotImplementedError(f"{repr(self)} only supports async methods.")
         return self._transform_stream_with_config(
-            input, self._transform, config, **kwargs
+            input,
+            self._transform,  # type: ignore[arg-type]
+            config,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     def stream(
@@ -3995,7 +3998,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                 runnable with a custom type.
             **other_kwargs: Unpacked into the base class.
         """
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             bound=bound,
             kwargs=kwargs or {},
             config=config or {},
