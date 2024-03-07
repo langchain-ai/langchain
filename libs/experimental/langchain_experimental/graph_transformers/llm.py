@@ -195,15 +195,32 @@ class LLMGraphTransformer:
             ]
         else:
             relationships = []
-        if self.strict_mode:
-            nodes = [node for node in nodes if node.type in self.allowed_nodes]
-            relationships = [
-                rel
-                for rel in relationships
-                if rel.type in self.allowed_relationships
-                and rel.source.type in self.allowed_nodes
-                and rel.target.type in self.allowed_nodes
-            ]
+
+        # Strict mode filtering
+        if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
+            if self.allowed_relationships and self.allowed_nodes:
+                nodes = [node for node in nodes if node.type in self.allowed_nodes]
+                relationships = [
+                    rel
+                    for rel in relationships
+                    if rel.type in self.allowed_relationships
+                    and rel.source.type in self.allowed_nodes
+                    and rel.target.type in self.allowed_nodes
+                ]
+            elif self.allowed_nodes and not self.allowed_relationships:
+                nodes = [node for node in nodes if node.type in self.allowed_nodes]
+                relationships = [
+                    rel
+                    for rel in relationships
+                    if rel.source.type in self.allowed_nodes
+                    and rel.target.type in self.allowed_nodes
+                ]
+            if self.allowed_relationships and not self.allowed_nodes:
+                relationships = [
+                    rel
+                    for rel in relationships
+                    if rel.type in self.allowed_relationships
+                ]
 
         graph_document = GraphDocument(
             nodes=nodes, relationships=relationships, source=document
