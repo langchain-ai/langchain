@@ -78,11 +78,8 @@ def value_sanitize(d: Union[List, Dict]) -> Union[List, Dict]:
                     key
                 ] = value  # Add the key-value pair if it's not a dict or list
         return new_dict
-    elif isinstance(d, list):
-        if len(d) < LIST_LIMIT:
-            return [
-                value_sanitize(item) for item in d if value_sanitize(item) is not None
-            ]
+    elif isinstance(d, list) and len(d) < LIST_LIMIT:
+        return [value_sanitize(item) for item in d if value_sanitize(item) is not None]
     else:
         return d
 
