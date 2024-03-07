@@ -220,6 +220,35 @@ See a [usage example](/docs/integrations/vectorstores/opensearch#using-aos-amazo
 from langchain_community.vectorstores import OpenSearchVectorSearch
 ```
 
+### Amazon DocumentDB Vector Search
+
+>[Amazon DocumentDB (with MongoDB Compatibility)](https://docs.aws.amazon.com/documentdb/) makes it easy to set up, operate, and scale MongoDB-compatible databases in the cloud.
+> With Amazon DocumentDB, you can run the same application code and use the same drivers and tools that you use with MongoDB.
+> Vector search for Amazon DocumentDB combines the flexibility and rich querying capability of a JSON-based document database with the power of vector search.
+
+#### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/documentdb).
+
+We need to install the `pymongo` python package.
+
+```bash
+pip install pymongo
+```
+
+#### Deploy DocumentDB on AWS
+
+[Amazon DocumentDB (with MongoDB Compatibility)](https://docs.aws.amazon.com/documentdb/) is a fast, reliable, and fully managed database service. Amazon DocumentDB makes it easy to set up, operate, and scale MongoDB-compatible databases in the cloud.
+
+AWS offers services for computing, databases, storage, analytics, and other functionality. For an overview of all AWS services, see [Cloud Computing with Amazon Web Services](https://aws.amazon.com/what-is-aws/).
+
+See a [usage example](/docs/integrations/vectorstores/documentdb).
+
+```python
+from langchain.vectorstores import DocumentDBVectorSearch
+```
+
+
 ## Tools
 
 ### AWS Lambda

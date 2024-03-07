@@ -1,17 +1,19 @@
 from typing import Any, Dict, List, Optional
 
-from langchain_core.utils import get_from_env
+from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
 
 BASE_ENTITY_LABEL = "__Entity__"
+EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
+EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
 
 node_properties_query = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "node" 
-  AND NOT label IN [$BASE_ENTITY_LABEL]
+  AND NOT label IN $EXCLUDED_LABELS
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {labels: nodeLabels, properties: properties} AS output
 
@@ -21,6 +23,7 @@ rel_properties_query = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship"
+      AND NOT label in $EXCLUDED_LABELS
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {type: nodeLabels, properties: properties} AS output
 """
@@ -30,8 +33,8 @@ CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
-WITH * WHERE NOT label IN [$BASE_ENTITY_LABEL] 
-    AND NOT other_node IN [$BASE_ENTITY_LABEL]
+WITH * WHERE NOT label IN $EXCLUDED_LABELS
+    AND NOT other_node IN $EXCLUDED_LABELS
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
@@ -154,7 +157,7 @@ class Neo4jGraph(GraphStore):
         url: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        database: str = "neo4j",
+        database: Optional[str] = None,
         timeout: Optional[float] = None,
         sanitize: bool = False,
     ) -> None:
@@ -167,10 +170,16 @@ class Neo4jGraph(GraphStore):
                 "Please install it with `pip install neo4j`."
             )
 
-        url = get_from_env("url", "NEO4J_URI", url)
-        username = get_from_env("username", "NEO4J_USERNAME", username)
-        password = get_from_env("password", "NEO4J_PASSWORD", password)
-        database = get_from_env("database", "NEO4J_DATABASE", database)
+        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+        username = get_from_dict_or_env(
+            {"username": username}, "username", "NEO4J_USERNAME"
+        )
+        password = get_from_dict_or_env(
+            {"password": password}, "password", "NEO4J_PASSWORD"
+        )
+        database = get_from_dict_or_env(
+            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+        )
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
@@ -237,19 +246,21 @@ class Neo4jGraph(GraphStore):
         node_properties = [
             el["output"]
             for el in self.query(
-                node_properties_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+                node_properties_query,
+                params={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]},
             )
         ]
         rel_properties = [
             el["output"]
             for el in self.query(
-                rel_properties_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+                rel_properties_query, params={"EXCLUDED_LABELS": EXCLUDED_RELS}
             )
         ]
         relationships = [
             el["output"]
             for el in self.query(
-                rel_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+                rel_query,
+                params={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]},
             )
         ]
 

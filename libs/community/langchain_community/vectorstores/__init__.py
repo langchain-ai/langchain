@@ -192,6 +192,14 @@ def _import_docarray_inmemory() -> Any:
     return DocArrayInMemorySearch
 
 
+def _import_documentdb() -> Any:
+    from langchain_community.vectorstores.documentdb import (
+        DocumentDBVectorSearch,
+    )
+
+    return DocumentDBVectorSearch
+
+
 def _import_elasticsearch() -> Any:
     from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
 
@@ -238,6 +246,12 @@ def _import_hologres() -> Any:
     from langchain_community.vectorstores.hologres import Hologres
 
     return Hologres
+
+
+def _import_infinispanvs() -> Any:
+    from langchain_community.vectorstores.infinispanvs import InfinispanVS
+
+    return InfinispanVS
 
 
 def _import_kdbai() -> Any:
@@ -557,6 +571,8 @@ def __getattr__(name: str) -> Any:
         return _import_dingo()
     elif name == "DocArrayInMemorySearch":
         return _import_docarray_inmemory()
+    elif name == "DocumentDBVectorSearch":
+        return _import_documentdb()
     elif name == "DocArrayHnswSearch":
         return _import_docarray_hnsw()
     elif name == "ElasticsearchStore":
@@ -569,6 +585,8 @@ def __getattr__(name: str) -> Any:
         return _import_hanavector()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "InfinispanVS":
+        return _import_infinispanvs()
     elif name == "KDBAI":
         return _import_kdbai()
     elif name == "DistanceStrategy":
@@ -696,6 +714,7 @@ __all__ = [
     "FAISS",
     "HanaDB",
     "Hologres",
+    "InfinispanVS",
     "KDBAI",
     "DistanceStrategy",
     "Kinetica",
@@ -745,4 +764,5 @@ __all__ = [
     "VectorStore",
     "NeuralDBVectorStore",
     "Lantern",
+    "DocumentDBVectorSearch",
 ]
