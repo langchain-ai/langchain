@@ -257,7 +257,7 @@ class ChatAnthropic(BaseChatModel):
                 yield chunk
 
     def _format_output(
-        self, 
+        self,
         data: Any,
         **kwargs: Any,
     ) -> ChatResult:
