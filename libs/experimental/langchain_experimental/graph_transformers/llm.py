@@ -24,10 +24,10 @@ system_prompt = (
     "## 3. Coreference Resolution\n"
     "- **Maintain Entity Consistency**: When extracting entities, it's vital to "
     "ensure consistency.\n"
-    "If an entity, such as \"John Doe\", is mentioned multiple times in the text "
-    "but is referred to by different names or pronouns (e.g., \"Joe\", \"he\"),"
-    "always use the most complete identifier for that entity throughout the 
-    "knowledge graph. In this example, use \"John Doe\" as the entity ID.\n"
+    'If an entity, such as "John Doe", is mentioned multiple times in the text '
+    'but is referred to by different names or pronouns (e.g., "Joe", "he"),'
+    "always use the most complete identifier for that entity throughout the "
+    'knowledge graph. In this example, use "John Doe" as the entity ID.\n'
     "Remember, the knowledge graph should be coherent and easily understandable, "
     "so maintaining consistency in entity references is crucial.\n"
     "## 4. Strict Compliance\n"
@@ -37,11 +37,15 @@ system_prompt = (
 default_prompt = ChatPromptTemplate.from_messages(
     [
         (
-            "system", system_prompt,
+            "system",
+            system_prompt,
         ),
         (
             "human",
-            "Use the given format to extract information from the following input: {input}",
+            (
+                "Use the given format to extract information from the "
+                "following input: {input}"
+            ),
         ),
         (
             "human",
@@ -145,7 +149,7 @@ class LLMGraphTransformer:
 
             llm=ChatOpenAI(temperature=0)
             transformer = LLMGraphTransformer(
-                llm=llm, 
+                llm=llm,
                 allowed_nodes=["Person", "Organization"])
 
             doc = Document(page_content="Elon Musk is suing OpenAI")
