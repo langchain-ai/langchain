@@ -72,46 +72,23 @@ def optional_enum_field(
         return Field(..., description=description, **field_kwargs)
 
 
-class SimpleNode(BaseModel):
-    """Represents a node in a graph with associated properties."""
-
-    id: str = Field(description="A unique identifier for the node.")
-    type: str = Field(description="The type or label of the node.")
-
-
-class SimpleRelationship(BaseModel):
-    """Represents a directed relationship between two nodes in a graph."""
-
-    source: SimpleNode = Field(description="The source node of the relationship.")
-    target: SimpleNode = Field(description="The target node of the relationship.")
-    type: str = Field(description="The type of the relationship.")
-
-
-class SimpleGraph(BaseModel):
-    """Represents a graph document consisting of nodes and relationships."""
-
-    nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")
-    relationships: Optional[List[SimpleRelationship]] = Field(
-        description="List of relationships"
-    )
-
-
 def create_simple_model(
     node_labels: Optional[List[str]] = None, rel_types: Optional[List[str]] = None
-) -> SimpleGraph:
+) -> Any:
     """
     Simple model allows to limit node and/or relationship types.
     Doesn't have any node or relationship properties.
     """
 
-    class DynamicNode(SimpleNode):
+    class SimpleNode(BaseModel):
         """Represents a node in a graph with associated properties."""
 
+        id: str = Field(description="A unique identifier for the node.")
         type: str = optional_enum_field(
             node_labels, description="The type or label of the node."
         )
 
-    class DynamicRelationship(SimpleRelationship):
+    class SimpleRelationship(BaseModel):
         """Represents a directed relationship between two nodes in a graph."""
 
         source: SimpleNode = Field(description="The source node of the relationship.")
@@ -120,23 +97,23 @@ def create_simple_model(
             rel_types, description="The type of the relationship."
         )
 
-    class DynamicGraph(SimpleGraph):
+    class DynamicGraph(BaseModel):
         """Represents a graph document consisting of nodes and relationships."""
 
-        nodes: Optional[List[DynamicNode]] = Field(description="List of nodes")
-        relationships: Optional[List[DynamicRelationship]] = Field(
+        nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")
+        relationships: Optional[List[SimpleRelationship]] = Field(
             description="List of relationships"
         )
 
     return DynamicGraph
 
 
-def map_to_base_node(node: SimpleNode) -> Node:
+def map_to_base_node(node: Any) -> Node:
     """Map the SimpleNode to the base Node."""
     return Node(id=node.id.title(), type=node.type.capitalize())
 
 
-def map_to_base_relationship(rel: SimpleRelationship) -> Relationship:
+def map_to_base_relationship(rel: Any) -> Relationship:
     """Map the SimpleRelationship to the base Relationship."""
     source = map_to_base_node(rel.source)
     target = map_to_base_node(rel.target)
