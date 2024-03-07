@@ -1015,9 +1015,13 @@ class AgentExecutor(Chain):
 
             stream_runnable = values.pop("stream_runnable", True)
             if multi_action:
-                values["agent"] = RunnableMultiActionAgent(runnable=agent, stream_runnable=stream_runnable)
+                values["agent"] = RunnableMultiActionAgent(
+                    runnable=agent, stream_runnable=stream_runnable
+                )
             else:
-                values["agent"] = RunnableAgent(runnable=agent, stream_runnable=stream_runnable)
+                values["agent"] = RunnableAgent(
+                    runnable=agent, stream_runnable=stream_runnable
+                )
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:
