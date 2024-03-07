@@ -123,24 +123,16 @@ class DiffbotGraphTransformer:
 
     Example:
         .. code-block:: python
+            from langchain_experimental.graph_transformers import DiffbotGraphTransformer
+            from langchain_core.documents import Document
 
-            class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
+            diffbot_api_key = "DIFFBOT_API_KEY"
+            diffbot_nlp = DiffbotGraphTransformer(diffbot_api_key=diffbot_api_key)
 
-                def transform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[GraphDocument]:
-                    results = []
+            document = Document(page_content="Mike Tung is the CEO of Diffbot.")
 
-                    for document in documents:
-                        raw_results = self.nlp_request(document.page_content)
-                        graph_document = self.process_response(raw_results, document)
-                        results.append(graph_document)
-                    return results
+            graph_documents = diffbot_nlp.convert_to_graph_documents([document])
 
-                async def atransform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[Document]:
-                    raise NotImplementedError
     """
 
     def __init__(
