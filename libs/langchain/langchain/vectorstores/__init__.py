@@ -18,7 +18,6 @@ and retrieve the data that are 'most similar' to the embedded query.
 
     Embeddings, Document
 """  # noqa: E501
-import warnings
 from typing import Any
 
 from langchain_core._api import caller_aware_warn
