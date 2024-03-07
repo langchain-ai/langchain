@@ -197,7 +197,6 @@ class LLMInputOutputAdapter:
 
             chunk_obj = json.loads(chunk.get("bytes").decode())
 
-          
             if provider == "cohere" and (
                 chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
             ):
@@ -209,7 +208,7 @@ class LLMInputOutputAdapter:
                 return
             elif messages_api and (chunk_obj.get("type") == "content_block_stop"):
                 return
-            
+
             if messages_api and chunk_obj.get("type") in (
                 "message_start",
                 "content_block_start",
