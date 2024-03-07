@@ -256,7 +256,11 @@ class ChatAnthropic(BaseChatModel):
                     await run_manager.on_llm_new_token(text, chunk=chunk)
                 yield chunk
 
-    def _format_output(self, data: Any) -> ChatResult:
+    def _format_output(
+        self, 
+        data: Any,
+        **kwargs: Any,
+    ) -> ChatResult:
         return ChatResult(
             generations=[
                 ChatGeneration(message=AIMessage(content=data.content[0].text))
