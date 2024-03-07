@@ -3066,7 +3066,10 @@ class RunnableGenerator(Runnable[Input, Output]):
         if not hasattr(self, "_transform"):
             raise NotImplementedError(f"{repr(self)} only supports async methods.")
         return self._transform_stream_with_config(
-            input, self._transform, config, **kwargs  # type: ignore[arg-type]
+            input,
+            self._transform,
+            config,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     def stream(

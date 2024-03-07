@@ -504,7 +504,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     *[
                         run_manager.on_llm_end(
                             LLMResult(
-                                generations=[res.generations], llm_output=res.llm_output  # type: ignore[list-item, union-attr]
+                                generations=[res.generations],
+                                llm_output=res.llm_output,  # type: ignore[list-item, union-attr]
                             )
                         )
                         for run_manager, res in zip(run_managers, results)

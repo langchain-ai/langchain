@@ -934,7 +934,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
             run_managers = [r[0] for r in run_managers]  # type: ignore[misc]
             output = await self._agenerate_helper(
-                prompts, stop, run_managers, bool(new_arg_supported), **kwargs  # type: ignore[arg-type]
+                prompts,
+                stop,
+                run_managers,
+                bool(new_arg_supported),
+                **kwargs,  # type: ignore[arg-type]
             )
             return output
         if len(missing_prompts) > 0:
@@ -953,7 +957,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
             run_managers = [r[0] for r in run_managers]  # type: ignore[misc]
             new_results = await self._agenerate_helper(
-                missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs  # type: ignore[arg-type]
+                missing_prompts,
+                stop,
+                run_managers,
+                bool(new_arg_supported),
+                **kwargs,  # type: ignore[arg-type]
             )
             llm_output = await aupdate_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
