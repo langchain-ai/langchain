@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, Any
+from typing import Any, List, Optional, Sequence
 
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
