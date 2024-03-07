@@ -15,8 +15,8 @@ from pymongo.collection import Collection
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from tests.utils import ConsistentFakeEmbeddings
 
-INDEX_NAME = "langchain-test-index"
-NAMESPACE = "langchain_test_db.langchain_test_collection"
+INDEX_NAME = "langchain-test-index-vectorstores"
+NAMESPACE = "langchain_test_db.langchain_test_vectorstores"
 CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 DIMENSIONS = 1536
