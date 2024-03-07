@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -100,12 +101,19 @@ async def agenerate_from_stream(
     )
 
 
-def _as_async_iterator(sync_iterator):
-    async def _as_sync_iterator(*args, **kwargs):
+def _as_async_iterator(sync_iterator: Callable) -> Callable:
+    """Convert a sync iterator into an async iterator."""
+
+    async def _as_sync_iterator(*args: Any, **kwargs: Any) -> Iterator:
         iterator = await run_in_executor(None, sync_iterator, *args, **kwargs)
         done = object()
         while True:
-            doc = await run_in_executor(None, next, iterator, done)  # type: ignore[call-arg, arg-type]
+            doc = await run_in_executor(
+                None,
+                next,
+                iterator,
+                done,  # type: ignore[call-arg, arg-type]
+            )
             if doc is done:
                 break
             yield doc  # type: ignore[misc]
@@ -277,7 +285,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _stream_implementation = self._astream
         elif type(self)._stream is not BaseChatModel._stream:
             # Then stream is implemented, so we can create an async iterator from it
-            _stream_implementation = _as_async_iterator(self._stream)
+            _stream_implementation = cast(
+                Callable[
+                    [
+                        List[BaseMessage],
+                        Optional[List[str]],
+                        CallbackManagerForLLMRun,
+                        Any,
+                    ],
+                    AsyncIterator[ChatGenerationChunk],
+                ],
+                _as_async_iterator(self._stream),
+            )
         else:  # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
