@@ -35,7 +35,7 @@ class SemanticTiktokenTextSplitter(TextSplitter):
         max_characters: int = 200,
         model_name: str = "gpt-3.5-turbo",
         trim_chunks: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
