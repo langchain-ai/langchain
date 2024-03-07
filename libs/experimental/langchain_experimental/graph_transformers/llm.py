@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Any
 
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
@@ -58,8 +58,8 @@ default_prompt = ChatPromptTemplate.from_messages(
 def optional_enum_field(
     enum_values: Optional[List[str]] = None,
     description: Optional[str] = None,
-    **field_kwargs,
-) -> Field:
+    **field_kwargs: Any,
+) -> Any:
     """Utility function to conditionally create a field with an enum constraint."""
     if enum_values:
         return Field(
