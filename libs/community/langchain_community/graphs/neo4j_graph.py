@@ -46,7 +46,7 @@ include_docs_query = (
 )
 
 
-def value_sanitize(d: Union[List, Dict]) -> Union[List, Dict]:
+def value_sanitize(d: Any) -> Any:
     """Sanitize the input dictionary or list.
 
     Sanitizes the input by removing embedding-like values,
@@ -74,13 +74,13 @@ def value_sanitize(d: Union[List, Dict]) -> Union[List, Dict]:
                         new_dict[key] = sanitized_value
                 # Do not include the key if the list is oversized
             else:
-                new_dict[
-                    key
-                ] = value  # Add the key-value pair if it's not a dict or list
+                new_dict[key] = value
         return new_dict
     elif isinstance(d, list):
         if len(d) < LIST_LIMIT:
-            return [value_sanitize(item) for item in d if value_sanitize(item) is not None]
+            return [
+                value_sanitize(item) for item in d if value_sanitize(item) is not None
+            ]
         else:
             return None
     else:
