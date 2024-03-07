@@ -5199,11 +5199,11 @@ def test_transform_of_runnable_lambda_with_dicts() -> None:
 
 
 async def test_atransform_of_runnable_lambda_with_dicts() -> None:
-    async def identity(x: dict) -> dict:
+    async def identity(x: Dict[str, str]) -> Dict[str, str]:
         """Return x."""
         return x
 
-    runnable = RunnableLambda(identity)
+    runnable = RunnableLambda[Dict[str, str], Dict[str, str]](identity)
 
     async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
         yield {"foo": "a"}
@@ -5216,13 +5216,13 @@ async def test_atransform_of_runnable_lambda_with_dicts() -> None:
 def test_default_transform_with_dicts() -> None:
     """Test that default transform works with dicts."""
 
-    class CustomRunnable(RunnableSerializable):
+    class CustomRunnable(RunnableSerializable[Input, Output]):
         def invoke(
             self, input: Input, config: Optional[RunnableConfig] = None
         ) -> Output:
-            return cast(Output, input)
+            return cast(Output, input)  # type: ignore
 
-    runnable = CustomRunnable()
+    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
     chunks = iter(
         [
             {"foo": "a"},
@@ -5236,13 +5236,13 @@ def test_default_transform_with_dicts() -> None:
 async def test_defualt_atransform_with_dicts() -> None:
     """Test that default transform works with dicts."""
 
-    class CustomRunnable(RunnableSerializable):
+    class CustomRunnable(RunnableSerializable[Input, Output]):
         def invoke(
             self, input: Input, config: Optional[RunnableConfig] = None
         ) -> Output:
             return cast(Output, input)
 
-    runnable = CustomRunnable()
+    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
 
     async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
         yield {"foo": "a"}
