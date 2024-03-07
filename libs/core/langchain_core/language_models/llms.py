@@ -936,7 +936,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             output = await self._agenerate_helper(
                 prompts,
                 stop,
-                run_managers,
+                run_managers,  # type: ignore[arg-type]
                 bool(new_arg_supported),
                 **kwargs,  # type: ignore[arg-type]
             )
@@ -959,7 +959,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             new_results = await self._agenerate_helper(
                 missing_prompts,
                 stop,
-                run_managers,
+                run_managers,  # type: ignore[arg-type]
                 bool(new_arg_supported),
                 **kwargs,  # type: ignore[arg-type]
             )

@@ -3067,7 +3067,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             raise NotImplementedError(f"{repr(self)} only supports async methods.")
         return self._transform_stream_with_config(
             input,
-            self._transform,
+            self._transform,  # type: ignore[arg-type]
             config,
             **kwargs,  # type: ignore[arg-type]
         )

@@ -191,7 +191,7 @@ def test_chat_invalid_input_variables_extra() -> None:
     messages = [HumanMessage(content="foo")]
     with pytest.raises(ValueError):
         ChatPromptTemplate(
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
             input_variables=["foo"],
             validate_template=True,  # type: ignore[arg-type]
         )
@@ -205,12 +205,12 @@ def test_chat_invalid_input_variables_missing() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
     with pytest.raises(ValueError):
         ChatPromptTemplate(
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
             input_variables=[],
             validate_template=True,  # type: ignore[arg-type]
         )
     assert ChatPromptTemplate(
-        messages=messages,
+        messages=messages,  # type: ignore[arg-type]
         input_variables=[],  # type: ignore[arg-type]
     ).input_variables == ["foo"]
 
@@ -243,7 +243,7 @@ def test_chat_valid_infer_variables() -> None:
         )
     ]
     prompt = ChatPromptTemplate(  # type: ignore[call-arg]
-        messages=messages,
+        messages=messages,  # type: ignore[arg-type]
         partial_variables={"formatins": "some structure"},  # type: ignore[arg-type]
     )
     assert set(prompt.input_variables) == {"question", "context"}
