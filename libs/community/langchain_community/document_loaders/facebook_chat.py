@@ -1,7 +1,6 @@
 import datetime
 import json
 from pathlib import Path
-from typing import List, Union
 from typing import Iterator, Union
 
 from langchain_core.documents import Document
