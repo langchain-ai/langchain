@@ -71,6 +71,7 @@ from langchain_core.runnables import (
     chain,
 )
 from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -5206,21 +5207,67 @@ def test_upgrade_to_addable_dict_when_streaming() -> None:
     assert chunks == ["hello"]
 
 
-async def test_upgrade_to_addable_dict_when_streaming_async() -> None:
-    """Test was added to test a particular chain that was failing due to lack
-    of automatic upgrade of dict into addable dict in astranform causing
-    streaming to raise a TypeError.
-    """
-    responses = [
-        "hello world",
-    ]
+def test_transform_of_runnable_lambda_with_dicts() -> None:
+    """Test transform of runnable lamdbda."""
+    runnable = RunnableLambda(lambda x: x)
+    chunks = iter(
+        [
+            {"foo": "a"},
+            {"foo": "n"},
+        ]
+    )
+    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
 
-    model = GenericFakeChatModel(messages=iter(responses))
 
-    async def to_dict(input):
-        async for chunk in input:
-            yield {"foo": chunk}
+async def test_atransform_of_runnable_lambda_with_dicts() -> None:
+    async def identity(x):
+        return x
 
-    chain = Context.setter("input") | model | to_dict | Context.getter("input")
-    chunks = [chunk async for chunk in chain.astream("hello")]
-    assert chunks == ["hello"]
+    runnable = RunnableLambda(identity)
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "an"}]
+
+
+def test_default_transform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+
+    class CustomRunnable(RunnableSerializable):
+        def invoke(
+            self, input: Input, config: Optional[RunnableConfig] = None
+        ) -> Output:
+            return input
+
+    runnable = CustomRunnable()
+    chunks = iter(
+        [
+            {"foo": "a"},
+            {"foo": "n"},
+        ]
+    )
+
+    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+
+
+async def test_defualt_atransform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+
+    class CustomRunnable(RunnableSerializable):
+        def invoke(
+            self, input: Input, config: Optional[RunnableConfig] = None
+        ) -> Output:
+            return input
+
+    runnable = CustomRunnable()
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+
+    assert chunks == [{"foo": "an"}]
