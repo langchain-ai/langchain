@@ -633,7 +633,7 @@ class SemanticCharacterTextSplitter(TextSplitter):
                 "text_splitter or install semantic-text-splitter with "
                 "`pip install -U semantic-text-splitter`."
             ) from e
-        # Optionally can also have the splitter not trim whitespace for you
+        # We can also have the splitter not trim whitespace Optionally
         splitter = CharacterTextSplitter(trim_chunks=self.trim_chunks)
         return splitter.chunks(text, self.max_characters)
 
