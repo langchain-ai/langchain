@@ -26,7 +26,7 @@ class CharacterTextSplitter(TextSplitter):
         splits = _split_text_with_regex(text, separator, self._keep_separator)
         _separator = "" if self._keep_separator else self._separator
         return self._merge_splits(splits, _separator)
-        
+
 
 def _split_text_with_regex(
     text: str, separator: str, keep_separator: bool
