@@ -11,6 +11,7 @@ from typing import (
     Optional,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -147,6 +148,11 @@ class _AnthropicCommon(BaseLanguageModel):
         return stop
 
 
+@deprecated(
+    since="0.0.28",
+    removal="0.2",
+    alternative_import="langchain_anthropic.AnthropicLLM",
+)
 class Anthropic(LLM, _AnthropicCommon):
     """Anthropic large language models.
 
