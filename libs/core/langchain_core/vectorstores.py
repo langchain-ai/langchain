@@ -198,21 +198,21 @@ class VectorStore(ABC):
         # This function converts the euclidean norm of normalized embeddings
         # (0 is most similar, sqrt(2) most dissimilar)
         # to a similarity function (0 to 1)
-        return max(1.0 - distance / math.sqrt(2),0)
+        return max(1.0 - distance / math.sqrt(2), 0)
 
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
 
-        return max(1.0 - distance,0)
+        return max(1.0 - distance, 0)
 
     @staticmethod
     def _max_inner_product_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
         if distance > 0:
-            return max(1.0 - distance,0)
+            return max(1.0 - distance, 0)
 
-        return max(-1.0 * distance,0)
+        return max(-1.0 * distance, 0)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
