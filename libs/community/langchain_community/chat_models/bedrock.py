@@ -13,6 +13,7 @@ from langchain_community.chat_models.anthropic import (
     convert_messages_to_prompt_anthropic,
 )
 from langchain_community.chat_models.meta import convert_messages_to_prompt_llama
+from langchain_community.chat_models.mistral import convert_messages_to_prompt_mistral
 from langchain_community.llms.bedrock import BedrockBase
 from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
@@ -137,6 +138,8 @@ class ChatPromptAdapter:
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
         elif provider == "meta":
             prompt = convert_messages_to_prompt_llama(messages=messages)
+        elif provider == "mistral":
+            prompt = convert_messages_to_prompt_mistral(messages=messages)
         elif provider == "amazon":
             prompt = convert_messages_to_prompt_anthropic(
                 messages=messages,
