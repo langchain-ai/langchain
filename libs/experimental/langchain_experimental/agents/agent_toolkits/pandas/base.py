@@ -162,6 +162,7 @@ def create_pandas_dataframe_agent(
     include_df_in_prompt: Optional[bool] = True,
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
+    use_modin: bool = False,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Pandas agent from an LLM and dataframe(s).
@@ -189,6 +190,7 @@ def create_pandas_dataframe_agent(
         number_of_head_rows: Number of initial rows to include in prompt if
             include_df_in_prompt is True.
         extra_tools: Additional tools to give to agent on top of a PythonAstREPLTool.
+        use_modin: Whether to use `modin.pandas` instead of `pandas`
         **kwargs: DEPRECATED. Not used, kept for backwards compatibility.
 
     Returns:
@@ -213,10 +215,14 @@ def create_pandas_dataframe_agent(
 
     """  # noqa: E501
     try:
-        import pandas as pd
+        if use_modin:
+            import modin.pandas as pd
+        else:
+            import pandas as pd
     except ImportError as e:
+        pkg = "modin" if use_modin else "pandas"
         raise ImportError(
-            "pandas package not found, please install with `pip install pandas`"
+            f"`{pkg}` package not found, please install with `pip install {pkg}`"
         ) from e
 
     if is_interactive_env():
