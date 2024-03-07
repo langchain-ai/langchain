@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Iterator, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -35,7 +35,7 @@ class TextLoader(BaseLoader):
         self.encoding = encoding
         self.autodetect_encoding = autodetect_encoding
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load from file path."""
         text = ""
         try:
@@ -58,4 +58,4 @@ class TextLoader(BaseLoader):
             raise RuntimeError(f"Error loading {self.file_path}") from e
 
         metadata = {"source": str(self.file_path)}
-        return [Document(page_content=text, metadata=metadata)]
+        yield Document(page_content=text, metadata=metadata)

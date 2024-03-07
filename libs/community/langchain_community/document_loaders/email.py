@@ -1,6 +1,5 @@
 import os
-from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, Iterator, List, Union
 
 from langchain_core.documents import Document
 
@@ -103,19 +102,16 @@ class OutlookMessageLoader(BaseLoader):
                 "`pip install extract_msg`"
             )
 
-    def load(self) -> List[Document]:
-        """Load data into document objects."""
+    def lazy_load(self) -> Iterator[Document]:
         import extract_msg
 
         msg = extract_msg.Message(self.file_path)
-        return [
-            Document(
-                page_content=msg.body,
-                metadata={
-                    "source": self.file_path,
-                    "subject": msg.subject,
-                    "sender": msg.sender,
-                    "date": msg.date,
-                },
-            )
-        ]
+        yield Document(
+            page_content=msg.body,
+            metadata={
+                "source": self.file_path,
+                "subject": msg.subject,
+                "sender": msg.sender,
+                "date": msg.date,
+            },
+        )

@@ -7,7 +7,7 @@ sidebar_position: 0
 The quick start will cover the basics of working with language models. It will introduce the two different types of models - LLMs and ChatModels. It will then cover how to use PromptTemplates to format the inputs to these models, and how to use Output Parsers to work with the outputs. For a deeper conceptual guide into these topics - please see [this documentation](./concepts)
 
 ## Models
-For this getting started guide, we will provide two options: using OpenAI (a popular model available via API) or using a local open source model.
+For this getting started guide, we will provide a few options: using an API like Anthropic or OpenAI, or using a local open source model via Ollama.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -35,7 +35,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAI
 
 llm = OpenAI()
-chat_model = ChatOpenAI()
+chat_model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 ```
 
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
@@ -65,6 +65,35 @@ chat_model = ChatOllama()
 ```
 
   </TabItem>
+  <TabItem value="anthropic" label="Anthropic (chat model only)">
+
+First we'll need to import the LangChain x Anthropic package.
+
+```shell
+pip install langchain-anthropic
+```
+
+Accessing the API requires an API key, which you can get by creating an account [here](https://claude.ai/login). Once we have a key we'll want to set it as an environment variable by running:
+
+```shell
+export ANTHROPIC_API_KEY="..."
+```
+
+We can then initialize the model:
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+chat_model = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024)
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `anthropic_api_key` named parameter when initiating the Anthropic Chat Model class:
+
+```python
+chat_model = ChatAnthropic(anthropic_api_key="...")
+```
+
+  </TabItem>
   <TabItem value="cohere" label="Cohere">
 
 First we'll need to install their partner package:
@@ -84,7 +113,7 @@ We can then initialize the model:
 ```python
 from langchain_community.chat_models import ChatCohere
 
-llm = ChatCohere()
+chat_model = ChatCohere()
 ```
 
 If you'd prefer not to set an environment variable you can pass the key in directly via the `cohere_api_key` named parameter when initiating the Cohere LLM class:
@@ -92,7 +121,7 @@ If you'd prefer not to set an environment variable you can pass the key in direc
 ```python
 from langchain_community.chat_models import ChatCohere
 
-llm = ChatCohere(cohere_api_key="...")
+chat_model = ChatCohere(cohere_api_key="...")
 ```
 
   </TabItem>

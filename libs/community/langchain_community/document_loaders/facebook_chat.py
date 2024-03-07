@@ -2,6 +2,7 @@ import datetime
 import json
 from pathlib import Path
 from typing import List, Union
+from typing import Iterator, Union
 
 from langchain_core.documents import Document
 
@@ -29,8 +30,7 @@ class FacebookChatLoader(BaseLoader):
         """Initialize with a path."""
         self.file_path = path
 
-    def load(self) -> List[Document]:
-        """Load documents."""
+    def lazy_load(self) -> Iterator[Document]:
         p = Path(self.file_path)
 
         with open(p, encoding="utf8") as f:
@@ -43,4 +43,4 @@ class FacebookChatLoader(BaseLoader):
         )
         metadata = {"source": str(p)}
 
-        return [Document(page_content=text, metadata=metadata)]
+        yield Document(page_content=text, metadata=metadata)

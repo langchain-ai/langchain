@@ -182,10 +182,6 @@ class PyPDFium2Loader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFium2Parser(extract_images=extract_images)
 
-    def load(self) -> List[Document]:
-        """Load given path as pages."""
-        return list(self.lazy_load())
-
     def lazy_load(
         self,
     ) -> Iterator[Document]:
@@ -275,10 +271,6 @@ class PDFMinerLoader(BasePDFLoader):
             extract_images=extract_images, concatenate_pages=concatenate_pages
         )
 
-    def load(self) -> List[Document]:
-        """Eagerly load the content."""
-        return list(self.lazy_load())
-
     def lazy_load(
         self,
     ) -> Iterator[Document]:
@@ -305,7 +297,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 
         super().__init__(file_path, headers=headers)
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load file."""
         from pdfminer.high_level import extract_text_to_fp
         from pdfminer.layout import LAParams
@@ -323,7 +315,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         metadata = {
             "source": self.file_path if self.web_path is None else self.web_path
         }
-        return [Document(page_content=output_string.getvalue(), metadata=metadata)]
+        yield Document(page_content=output_string.getvalue(), metadata=metadata)
 
 
 class PyMuPDFLoader(BasePDFLoader):
@@ -349,8 +341,7 @@ class PyMuPDFLoader(BasePDFLoader):
         self.extract_images = extract_images
         self.text_kwargs = kwargs
 
-    def load(self, **kwargs: Any) -> List[Document]:
-        """Load file."""
+    def _lazy_load(self, **kwargs: Any) -> Iterator[Document]:
         if kwargs:
             logger.warning(
                 f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
@@ -365,7 +356,13 @@ class PyMuPDFLoader(BasePDFLoader):
             blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
         else:
             blob = Blob.from_path(self.file_path)
-        return parser.parse(blob)
+        yield from parser.lazy_parse(blob)
+
+    def load(self, **kwargs: Any) -> List[Document]:
+        return list(self._lazy_load(**kwargs))
+
+    def lazy_load(self) -> Iterator[Document]:
+        yield from self._lazy_load()
 
 
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:

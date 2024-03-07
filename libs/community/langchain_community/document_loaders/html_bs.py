@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, Iterator, Union
 
 from langchain_core.documents import Document
 
@@ -43,7 +43,7 @@ class BSHTMLLoader(BaseLoader):
         self.bs_kwargs = bs_kwargs
         self.get_text_separator = get_text_separator
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load HTML document into document objects."""
         from bs4 import BeautifulSoup
 
@@ -61,4 +61,4 @@ class BSHTMLLoader(BaseLoader):
             "source": str(self.file_path),
             "title": title,
         }
-        return [Document(page_content=text, metadata=metadata)]
+        yield Document(page_content=text, metadata=metadata)
