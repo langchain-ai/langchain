@@ -20,6 +20,13 @@ from langchain_nvidia_ai_endpoints import _common as nvidia_ai_endpoints
 from langchain_nvidia_ai_endpoints._statics import MODEL_SPECS, Model
 
 
+def ImageParser(**kwargs: Any) -> RunnableLambda[str, Image.Image]:
+    return RunnableLambda(
+        lambda x: Image.open(BytesIO(base64.decodebytes(bytes(x, "utf-8")))),
+        **kwargs,
+    )
+
+
 class ImageNVIDIA(_NVIDIAClient, LLM):
     """NVIDIA's AI Foundation Retriever Question-Answering Asymmetric Model."""
 
@@ -56,10 +63,7 @@ class ImageNVIDIA(_NVIDIAClient, LLM):
         base64_str = result.get("b64_json")
         # output = Image.open(BytesIO(base64.decodebytes(bytes(base64_str, "utf-8"))))
         return base64_str
-
-
-def ImageParser(**kwargs: Any) -> RunnableLambda[str, Image.Image]:
-    return RunnableLambda(
-        lambda x: Image.open(BytesIO(base64.decodebytes(bytes(x, "utf-8")))),
-        **kwargs,
-    )
+    
+    def as_pil(self, **kwargs: Any) -> LLM:
+        """Returns a model that outputs a PIL image by default"""
+        return self | ImageParser(**kwargs)
