@@ -603,9 +603,8 @@ class BaseOpenAI(BaseLLM):
 class OpenAI(BaseOpenAI):
     """OpenAI large language model.
 
-    To use, you should have the packages ``openai`` and ``langchain-openai``
-    installed, and the environment variable ``OPENAI_API_KEY`` set with your API key,
-    or pass it as a named parameter to the constructor.
+    To use, you should have the environment variable ``OPENAI_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python

@@ -40,9 +40,8 @@ logger = logging.getLogger(__name__)
 class OpenAIEmbeddings(BaseModel, Embeddings):
     """OpenAI embedding model.
 
-    To use, you should have the packages ``openai`` and ``langchain-openai``
-    installed, and the environment variable ``OPENAI_API_KEY`` set with your API key,
-    or pass it as a named parameter to the constructor.
+    To use, you should have the environment variable ``OPENAI_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
 
     In order to use the library with Microsoft Azure endpoints, use
     AzureOpenAIEmbeddings.
