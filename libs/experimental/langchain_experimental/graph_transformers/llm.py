@@ -9,29 +9,29 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 system_prompt = (
     "# Knowledge Graph Instructions for GPT-4\n"
     "## 1. Overview\n"
-    "You are a top-tier algorithm designed for extracting information in structured formats\n"
-    "to build a knowledge graph.\n"
+    "You are a top-tier algorithm designed for extracting information in structured "
+    "formats to build a knowledge graph.\n"
     "- **Nodes** represent entities and concepts.\n"
     "- The aim is to achieve simplicity and clarity in the knowledge graph, making it\n"
     "accessible for a vast audience.\n"
     "## 2. Labeling Nodes\n"
     "- **Consistency**: Ensure you use available types for node labels.\n"
-    "  - If there are provided available values for node labels, use only those and\n"
-    "nothing else. If the entity doesn't fit any of the included labels, do not return\n"
-    "the entity!\n"
-    "  - **Node IDs**: Never utilize integers as node IDs. Node IDs should be names or\n"
-    "human-readable identifiers found in the text.\n"
+    "  - If there are provided available values for node labels, use only those and "
+    "nothing else. If the entity doesn't fit any of the included labels, do not "
+    "return the entity!\n"
+    "  - **Node IDs**: Never utilize integers as node IDs. Node IDs should be "
+    "names or human-readable identifiers found in the text.\n"
     "## 3. Coreference Resolution\n"
-    "- **Maintain Entity Consistency**: When extracting entities, it's vital to ensure\n"
-    "consistency.\n"
-    "If an entity, such as \"John Doe\", is mentioned multiple times in the text but is\n"
-    "referred to by different names or pronouns (e.g., \"Joe\", \"he\"),\n"
-    "always use the most complete identifier for that entity throughout the knowledge\n"
-    "graph. In this example, use \"John Doe\" as the entity ID.\n"
-    "Remember, the knowledge graph should be coherent and easily understandable, so\n"
-    "maintaining consistency in entity references is crucial.\n"
+    "- **Maintain Entity Consistency**: When extracting entities, it's vital to "
+    "ensure consistency.\n"
+    "If an entity, such as \"John Doe\", is mentioned multiple times in the text "
+    "but is referred to by different names or pronouns (e.g., \"Joe\", \"he\"),"
+    "always use the most complete identifier for that entity throughout the 
+    "knowledge graph. In this example, use \"John Doe\" as the entity ID.\n"
+    "Remember, the knowledge graph should be coherent and easily understandable, "
+    "so maintaining consistency in entity references is crucial.\n"
     "## 4. Strict Compliance\n"
-    "Adhere to the rules strictly. Non-compliance will result in termination.\n"
+    "Adhere to the rules strictly. Non-compliance will result in termination."
 )
 
 default_prompt = ChatPromptTemplate.from_messages(
@@ -135,11 +135,11 @@ class LLMGraphTransformer:
         prompt (Optional[str], optional): The prompt to pass to the to the LLM with
         additional instructions.
         strict_mode (bool, optional): Determines whether the transformer should apply
-        post-filtering to strictly adhere to `allowed_nodes` and `allowed_relationships`.
+        filtering to strictly adhere to `allowed_nodes` and `allowed_relationships`.
         Defaults to True.
     Example:
         .. code-block:: python
-            from langchain_experimental.graph_transformers.llm import LLMGraphTransformer
+            from langchain_experimental.graph_transformers import LLMGraphTransformer
             from langchain_core.documents import Document
             from langchain_openai import ChatOpenAI
 
@@ -162,7 +162,7 @@ class LLMGraphTransformer:
     ) -> None:
         if not hasattr(llm, "with_structured_output"):
             raise ValueError(
-                "The specified LLM does not support the 'with_structured_output' feature. "
+                "The specified LLM does not support the 'with_structured_output'. "
                 "Please ensure you are using an LLM that supports this feature."
             )
         self.allowed_nodes = allowed_nodes
