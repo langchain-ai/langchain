@@ -1,0 +1,209 @@
+from typing import List, Optional, Sequence
+
+from langchain.prompts import ChatPromptTemplate
+from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+default_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """# Knowledge Graph Instructions for GPT-4
+## 1. Overview
+You are a top-tier algorithm designed for extracting information in structured formats to build a knowledge graph.
+- **Nodes** represent entities and concepts.
+- The aim is to achieve simplicity and clarity in the knowledge graph, making it accessible for a vast audience.
+## 2. Labeling Nodes
+- **Consistency**: Ensure you use available types for node labels.
+  - If there are provided available values for node labels, use only those and nothing else. If the entity doesn't fit any of the included labels, do not return the entity!
+  - **Node IDs**: Never utilize integers as node IDs. Node IDs should be names or human-readable identifiers found in the text.
+## 3. Coreference Resolution
+- **Maintain Entity Consistency**: When extracting entities, it's vital to ensure consistency.
+If an entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"),
+always use the most complete identifier for that entity throughout the knowledge graph. In this example, use "John Doe" as the entity ID.
+Remember, the knowledge graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial.
+## 4. Strict Compliance
+Adhere to the rules strictly. Non-compliance will result in termination.
+          """,
+        ),
+        (
+            "human",
+            "Use the given format to extract information from the following input: {input}",
+        ),
+        (
+            "human",
+            "Tip: Make sure to answer in the correct format and do not include any ",
+        ),
+    ]
+)
+
+
+def optional_enum_field(
+    enum_values: Optional[List[str]] = None,
+    description: Optional[str] = None,
+    **field_kwargs,
+):
+    """Utility function to conditionally create a field with an enum constraint."""
+    if enum_values:
+        return Field(
+            ...,
+            enum=enum_values,
+            description=f"{description}. Available options are {enum_values}",
+            **field_kwargs,
+        )
+    else:
+        return Field(..., description=description, **field_kwargs)
+
+
+def create_simple_model(
+    node_labels: Optional[List[str]] = None, rel_types: Optional[List[str]] = None
+) -> BaseModel:
+    """
+    Simple model allows to limit node and/or relationship types.
+    Doesn't have any node or relationship properties.
+    """
+
+    class SimpleNode(BaseModel):
+        """Represents a node in a graph with associated properties."""
+
+        id: str = Field(description="A unique identifier for the node.")
+        type: str = optional_enum_field(
+            node_labels, description="The type or label of the node."
+        )
+
+    class SimpleRelationship(BaseModel):
+        """Represents a directed relationship between two nodes in a graph."""
+
+        source: SimpleNode = Field(description="The source node of the relationship.")
+        target: SimpleNode = Field(description="The target node of the relationship.")
+        type: str = optional_enum_field(
+            rel_types, description="The type of the relationship."
+        )
+
+    class SimpleGraph(BaseModel):
+        """Represents a graph document consisting of nodes and relationships."""
+
+        nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")
+        relationships: Optional[List[SimpleRelationship]] = Field(
+            description="List of relationships"
+        )
+
+    return SimpleGraph
+
+
+def map_to_base_node(node: BaseModel) -> Node:
+    """Map the SimpleNode to the base Node."""
+    return Node(id=node.id.title(), type=node.type.capitalize())
+
+
+def map_to_base_relationship(rel: BaseModel) -> Relationship:
+    """Map the SimpleRelationship to the base Relationship."""
+    source = map_to_base_node(rel.source)
+    target = map_to_base_node(rel.target)
+    return Relationship(
+        source=source, target=target, type=rel.type.replace(" ", "_").upper()
+    )
+
+
+class LLMGraphTransformer:
+    """
+    A class designed to transform documents into graph-based documents using a LLM.
+    It allows specifying constraints on the types of nodes and relationships to include
+    in the output graph. The class doesn't support neither extract and node or
+    relationship properties
+
+    Args:
+        llm (BaseLanguageModel): An instance of a language model supporting structured output.
+        allowed_nodes (List[str], optional): Specifies which node types are allowed in the graph.
+          Defaults to an empty list, allowing all node types.
+        allowed_relationships (List[str], optional): Specifies which relationship types are allowed in the graph.
+          Defaults to an empty list, allowing all relationship types.
+        prompt (Optional[str], optional): The prompt to pass to the to the LLM with additional instructions.
+        strict_mode (bool, optional): Determines whether the transformer should apply post-filtering to strictly
+          adhere to `allowed_nodes` and `allowed_relationships`. Defaults to True.
+    Example:
+        .. code-block:: python
+            from langchain_experimental.graph_transformers.llm import LLMGraphTransformer
+            from langchain_core.documents import Document
+            from langchain_openai import ChatOpenAI
+
+            llm=ChatOpenAI(temperature=0)
+            transformer = LLMGraphTransformer(llm=llm, allowed_nodes=["Person", "Organization"])
+
+            doc = Document(page_content="Elon Musk is suing OpenAI")
+            graph_documents = transformer.convert_to_graph_documents([doc])
+    """
+
+    def __init__(
+        self,
+        llm: BaseLanguageModel,
+        allowed_nodes: List[str] = [],
+        allowed_relationships: List[str] = [],
+        prompt: Optional[str] = default_prompt,
+        strict_mode: bool = True,
+    ) -> None:
+        if not hasattr(llm, "with_structured_output"):
+            raise ValueError(
+                "The specified LLM does not support the 'with_structured_output' feature. "
+                "Please ensure you are using an LLM that supports this feature."
+            )
+        self.allowed_nodes = allowed_nodes
+        self.allowed_relationships = allowed_relationships
+        self.strict_mode = strict_mode
+
+        # Define chain
+        schema = create_simple_model(allowed_nodes, allowed_relationships)
+        structured_llm = llm.with_structured_output(schema)
+        self.chain = prompt | structured_llm
+
+    def process_response(self, document: Document) -> GraphDocument:
+        """
+        Processes a single document, transforming it into a graph document using
+        an LLM based on the model's schema and constraints.
+        """
+        text = document.page_content
+        raw_schema = self.chain.invoke({"input": text})
+        if raw_schema.nodes:
+            nodes = [map_to_base_node(node) for node in raw_schema.nodes]
+        else:
+            nodes = []
+        if raw_schema.relationships:
+            relationships = [
+                map_to_base_relationship(rel) for rel in raw_schema.relationships
+            ]
+        else:
+            relationships = []
+        if self.strict_mode:
+            nodes = [node for node in nodes if node.type in self.allowed_nodes]
+            relationships = [
+                rel
+                for rel in relationships
+                if rel.type in self.allowed_relationships
+                and rel.source.type in self.allowed_nodes
+                and rel.target.type in self.allowed_nodes
+            ]
+
+        graph_document = GraphDocument(
+            nodes=nodes, relationships=relationships, source=document
+        )
+        return graph_document
+
+    def convert_to_graph_documents(
+        self, documents: Sequence[Document]
+    ) -> List[GraphDocument]:
+        """Convert a sequence of documents into graph documents.
+
+        Args:
+            documents (Sequence[Document]): The original documents.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Sequence[GraphDocument]: The transformed documents as graphs.
+        """
+        results = []
+        for document in documents:
+            graph_document = self.process_response(document)
+            results.append(graph_document)
+        return results
