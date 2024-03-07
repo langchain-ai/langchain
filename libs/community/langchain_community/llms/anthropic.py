@@ -11,6 +11,7 @@ from typing import (
     Optional,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -26,7 +27,6 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
-from langchain_core._api.deprecation import deprecated
 
 
 class _AnthropicCommon(BaseLanguageModel):
