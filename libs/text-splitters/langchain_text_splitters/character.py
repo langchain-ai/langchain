@@ -608,8 +608,7 @@ class SemanticTiktokenTextSplitter(TextSplitter):
             ) from e
         # Optionally can also have the splitter not trim whitespace for you
         splitter = TiktokenTextSplitter(self.model_name, trim_chunks=self.trim_chunks)
-        splits = splitter.chunks(text, self.max_characters)
-        return splits
+        return splitter.chunks(text, self.max_characters)
 
 
 class SemanticCharacterTextSplitter(TextSplitter):
@@ -635,6 +634,5 @@ class SemanticCharacterTextSplitter(TextSplitter):
                 "`pip install -U semantic-text-splitter`."
             ) from e
         splitter = CharacterTextSplitter(trim_chunks=self.trim_chunks)
-        splits = splitter.chunks(text, self.max_characters)
-        return splits
+        return splitter.chunks(text, self.max_characters)
 
