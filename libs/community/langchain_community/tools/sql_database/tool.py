@@ -44,7 +44,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[str, Sequence[Dict[str, Any]], Result[Any]]:
+    ) -> Union[str, Sequence[Dict[str, Any]], Result]:
         """Execute the query, return the results or an error message."""
         return self.db.run_no_throw(query)
 
