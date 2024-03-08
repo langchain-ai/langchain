@@ -12,24 +12,25 @@ class Forecast(BaseModel):
     )
     f_or_c: Literal["F", "C"] = Field(description="F for Fareinheit, C for Celsius")
     forecast: str = Field(
-        description="The forecast for the day.", 
-        examples=["Sunny", "Rainy", "Cloudy"]
+        description="The forecast for the day.", examples=["Sunny", "Rainy", "Cloudy"]
     )
 
-    
 
 def test_pydantic_v2_parser_chaining():
-    prompt = PromptTemplate(template="""{{
+    prompt = PromptTemplate(
+        template="""{{
         "temperature": 20,
         "f_or_c": "C",
         "forecast": "Sunny"
-    }}""", input_variables=[])
+    }}""",
+        input_variables=[],
+    )
 
     model = ParrotFakeChatModel()
 
     parser = PydanticOutputParser(pydantic_v2_object=Forecast)
     chain = prompt | model | parser
-    
+
     res = chain.invoke({})
     assert type(res) == Forecast
     assert res.f_or_c == "C"
