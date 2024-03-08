@@ -315,6 +315,7 @@ class BedrockBase(BaseModel, ABC):
         "amazon": "stopSequences",
         "ai21": "stop_sequences",
         "cohere": "stop_sequences",
+        "mistral": "stop_sequences",
     }
 
     guardrails: Optional[Mapping[str, Any]] = {
