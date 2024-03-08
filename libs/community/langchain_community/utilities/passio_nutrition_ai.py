@@ -104,11 +104,16 @@ class ManagedPassioLifeAuth(NoDiskStorage):
         # 5 seconds: approximate time for a token refresh to be processed.
 
 
+DEFAULT_NUTRITIONAI_API_URL = (
+    "https://api.passiolife.com/v2/products/napi/food/search/advanced"
+)
+
+
 class NutritionAIAPI(BaseModel):
     """Wrapper for the Passio Nutrition AI API."""
 
     nutritionai_subscription_key: str
-    nutritionai_api_url: str
+    nutritionai_api_url: str = Field(default=DEFAULT_NUTRITIONAI_API_URL)
     more_kwargs: dict = Field(default_factory=dict)
     auth_: ManagedPassioLifeAuth
 
@@ -150,7 +155,7 @@ class NutritionAIAPI(BaseModel):
             values,
             "nutritionai_api_url",
             "NUTRITIONAI_API_URL",
-            "https://api.passiolife.com/v2/products/napi/food/search/advanced",
+            DEFAULT_NUTRITIONAI_API_URL,
         )
         values["nutritionai_api_url"] = nutritionai_api_url
 
