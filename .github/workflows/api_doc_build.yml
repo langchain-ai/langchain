@@ -24,15 +24,6 @@ jobs:
         with:
           repository: langchain-ai/langchain-datastax
           path: langchain-datastax
-      - name: Move google libs
-        run: |
-          rm -rf \
-            langchain/libs/partners/google-genai \
-            langchain/libs/partners/google-vertexai \
-            langchain/libs/partners/astradb
-          mv langchain-google/libs/genai langchain/libs/partners/google-genai
-          mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
-          mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
 
       - name: Set Git config
         working-directory: langchain
@@ -45,6 +36,16 @@ jobs:
         run: | 
           git fetch origin master
           git merge origin/master -m "Merge master" --allow-unrelated-histories -X theirs
+          
+      - name: Move google libs
+        run: |
+          rm -rf \
+            langchain/libs/partners/google-genai \
+            langchain/libs/partners/google-vertexai \
+            langchain/libs/partners/astradb
+          mv langchain-google/libs/genai langchain/libs/partners/google-genai
+          mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
+          mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./langchain/.github/actions/poetry_setup"
