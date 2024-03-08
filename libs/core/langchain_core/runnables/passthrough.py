@@ -165,7 +165,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             afunc = func
             func = None
 
-        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)
+        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -320,7 +320,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     mapper: RunnableParallel[Dict[str, Any]]
 
     def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
-        super().__init__(mapper=mapper, **kwargs)
+        super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -582,7 +582,7 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     keys: Union[str, List[str]]
 
     def __init__(self, keys: Union[str, List[str]], **kwargs: Any) -> None:
-        super().__init__(keys=keys, **kwargs)
+        super().__init__(keys=keys, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
