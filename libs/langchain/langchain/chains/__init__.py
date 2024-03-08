@@ -20,143 +20,69 @@ The Chain interface makes it easy to create apps that are:
 import importlib
 from typing import Any
 
-_exports = [
-    {"name": "APIChain", "module": "langchain.chains.api.base"},
-    {"name": "OpenAPIEndpointChain", "module": "langchain.chains.api.openapi.chain"},
-    {
-        "name": "AnalyzeDocumentChain",
-        "module": "langchain.chains.combine_documents.base",
-    },
-    {
-        "name": "MapReduceDocumentsChain",
-        "module": "langchain.chains.combine_documents.map_reduce",
-    },
-    {
-        "name": "MapRerankDocumentsChain",
-        "module": "langchain.chains.combine_documents.map_rerank",
-    },
-    {
-        "name": "ReduceDocumentsChain",
-        "module": "langchain.chains.combine_documents.reduce",
-    },
-    {
-        "name": "RefineDocumentsChain",
-        "module": "langchain.chains.combine_documents.refine",
-    },
-    {
-        "name": "StuffDocumentsChain",
-        "module": "langchain.chains.combine_documents.stuff",
-    },
-    {
-        "name": "ConstitutionalChain",
-        "module": "langchain.chains.constitutional_ai.base",
-    },
-    {"name": "ConversationChain", "module": "langchain.chains.conversation.base"},
-    {
-        "name": "ChatVectorDBChain",
-        "module": "langchain.chains.conversational_retrieval.base",
-    },
-    {
-        "name": "ConversationalRetrievalChain",
-        "module": "langchain.chains.conversational_retrieval.base",
-    },
-    {"name": "generate_example", "module": "langchain.chains.example_generator"},
-    {"name": "FlareChain", "module": "langchain.chains.flare.base"},
-    {"name": "ArangoGraphQAChain", "module": "langchain.chains.graph_qa.arangodb"},
-    {"name": "GraphQAChain", "module": "langchain.chains.graph_qa.base"},
-    {"name": "GraphCypherQAChain", "module": "langchain.chains.graph_qa.cypher"},
-    {"name": "FalkorDBQAChain", "module": "langchain.chains.graph_qa.falkordb"},
-    {"name": "HugeGraphQAChain", "module": "langchain.chains.graph_qa.hugegraph"},
-    {"name": "KuzuQAChain", "module": "langchain.chains.graph_qa.kuzu"},
-    {"name": "NebulaGraphQAChain", "module": "langchain.chains.graph_qa.nebulagraph"},
-    {
-        "name": "NeptuneOpenCypherQAChain",
-        "module": "langchain.chains.graph_qa.neptune_cypher",
-    },
-    {
-        "name": "NeptuneSparqlQAChain",
-        "module": "langchain.chains.graph_qa.neptune_sparql",
-    },
-    {
-        "name": "OntotextGraphDBQAChain",
-        "module": "langchain.chains.graph_qa.ontotext_graphdb",
-    },
-    {"name": "GraphSparqlQAChain", "module": "langchain.chains.graph_qa.sparql"},
-    {
-        "name": "create_history_aware_retriever",
-        "module": "langchain.chains.history_aware_retriever",
-    },
-    {"name": "HypotheticalDocumentEmbedder", "module": "langchain.chains.hyde.base"},
-    {"name": "LLMChain", "module": "langchain.chains.llm"},
-    {"name": "LLMCheckerChain", "module": "langchain.chains.llm_checker.base"},
-    {"name": "LLMMathChain", "module": "langchain.chains.llm_math.base"},
-    {"name": "LLMRequestsChain", "module": "langchain.chains.llm_requests"},
-    {
-        "name": "LLMSummarizationCheckerChain",
-        "module": "langchain.chains.llm_summarization_checker.base",
-    },
-    {"name": "load_chain", "module": "langchain.chains.loading"},
-    {"name": "MapReduceChain", "module": "langchain.chains.mapreduce"},
-    {"name": "OpenAIModerationChain", "module": "langchain.chains.moderation"},
-    {"name": "NatBotChain", "module": "langchain.chains.natbot.base"},
-    {
-        "name": "create_citation_fuzzy_match_chain",
-        "module": "langchain.chains.openai_functions",
-    },
-    {"name": "create_extraction_chain", "module": "langchain.chains.openai_functions"},
-    {
-        "name": "create_extraction_chain_pydantic",
-        "module": "langchain.chains.openai_functions",
-    },
-    {
-        "name": "create_qa_with_sources_chain",
-        "module": "langchain.chains.openai_functions",
-    },
-    {
-        "name": "create_qa_with_structure_chain",
-        "module": "langchain.chains.openai_functions",
-    },
-    {"name": "create_tagging_chain", "module": "langchain.chains.openai_functions"},
-    {
-        "name": "create_tagging_chain_pydantic",
-        "module": "langchain.chains.openai_functions",
-    },
-    {"name": "QAGenerationChain", "module": "langchain.chains.qa_generation.base"},
-    {"name": "QAWithSourcesChain", "module": "langchain.chains.qa_with_sources.base"},
-    {
-        "name": "RetrievalQAWithSourcesChain",
-        "module": "langchain.chains.qa_with_sources.retrieval",
-    },
-    {
-        "name": "VectorDBQAWithSourcesChain",
-        "module": "langchain.chains.qa_with_sources.vector_db",
-    },
-    {"name": "create_retrieval_chain", "module": "langchain.chains.retrieval"},
-    {"name": "RetrievalQA", "module": "langchain.chains.retrieval_qa.base"},
-    {"name": "VectorDBQA", "module": "langchain.chains.retrieval_qa.base"},
-    {"name": "LLMRouterChain", "module": "langchain.chains.router"},
-    {"name": "MultiPromptChain", "module": "langchain.chains.router"},
-    {"name": "MultiRetrievalQAChain", "module": "langchain.chains.router"},
-    {"name": "MultiRouteChain", "module": "langchain.chains.router"},
-    {"name": "RouterChain", "module": "langchain.chains.router"},
-    {
-        "name": "SequentialChain",
-        "module": "langchain.chains.sequential",
-    },
-    {
-        "name": "SimpleSequentialChain",
-        "module": "langchain.chains.sequential",
-    },
-    {"name": "create_sql_query_chain", "module": "langchain.chains.sql_database.query"},
-    {
-        "name": "create_structured_output_runnable",
-        "module": "langchain.chains.structured_output",
-    },
-    {"name": "load_summarize_chain", "module": "langchain.chains.summarize"},
-    {"name": "TransformChain", "module": "langchain.chains.transform"},
-]
-
-_module_lookup = {entry["name"]: entry["module"] for entry in _exports}
+_module_lookup = {
+    "APIChain": "langchain.chains.api.base",
+    "OpenAPIEndpointChain": "langchain.chains.api.openapi.chain",
+    "AnalyzeDocumentChain": "langchain.chains.combine_documents.base",
+    "MapReduceDocumentsChain": "langchain.chains.combine_documents.map_reduce",
+    "MapRerankDocumentsChain": "langchain.chains.combine_documents.map_rerank",
+    "ReduceDocumentsChain": "langchain.chains.combine_documents.reduce",
+    "RefineDocumentsChain": "langchain.chains.combine_documents.refine",
+    "StuffDocumentsChain": "langchain.chains.combine_documents.stuff",
+    "ConstitutionalChain": "langchain.chains.constitutional_ai.base",
+    "ConversationChain": "langchain.chains.conversation.base",
+    "ChatVectorDBChain": "langchain.chains.conversational_retrieval.base",
+    "ConversationalRetrievalChain": "langchain.chains.conversational_retrieval.base",
+    "generate_example": "langchain.chains.example_generator",
+    "FlareChain": "langchain.chains.flare.base",
+    "ArangoGraphQAChain": "langchain.chains.graph_qa.arangodb",
+    "GraphQAChain": "langchain.chains.graph_qa.base",
+    "GraphCypherQAChain": "langchain.chains.graph_qa.cypher",
+    "FalkorDBQAChain": "langchain.chains.graph_qa.falkordb",
+    "HugeGraphQAChain": "langchain.chains.graph_qa.hugegraph",
+    "KuzuQAChain": "langchain.chains.graph_qa.kuzu",
+    "NebulaGraphQAChain": "langchain.chains.graph_qa.nebulagraph",
+    "NeptuneOpenCypherQAChain": "langchain.chains.graph_qa.neptune_cypher",
+    "NeptuneSparqlQAChain": "langchain.chains.graph_qa.neptune_sparql",
+    "OntotextGraphDBQAChain": "langchain.chains.graph_qa.ontotext_graphdb",
+    "GraphSparqlQAChain": "langchain.chains.graph_qa.sparql",
+    "create_history_aware_retriever": "langchain.chains.history_aware_retriever",
+    "HypotheticalDocumentEmbedder": "langchain.chains.hyde.base",
+    "LLMChain": "langchain.chains.llm",
+    "LLMCheckerChain": "langchain.chains.llm_checker.base",
+    "LLMMathChain": "langchain.chains.llm_math.base",
+    "LLMRequestsChain": "langchain.chains.llm_requests",
+    "LLMSummarizationCheckerChain": "langchain.chains.llm_summarization_checker.base",
+    "load_chain": "langchain.chains.loading",
+    "MapReduceChain": "langchain.chains.mapreduce",
+    "OpenAIModerationChain": "langchain.chains.moderation",
+    "NatBotChain": "langchain.chains.natbot.base",
+    "create_citation_fuzzy_match_chain": "langchain.chains.openai_functions",
+    "create_extraction_chain": "langchain.chains.openai_functions",
+    "create_extraction_chain_pydantic": "langchain.chains.openai_functions",
+    "create_qa_with_sources_chain": "langchain.chains.openai_functions",
+    "create_qa_with_structure_chain": "langchain.chains.openai_functions",
+    "create_tagging_chain": "langchain.chains.openai_functions",
+    "create_tagging_chain_pydantic": "langchain.chains.openai_functions",
+    "QAGenerationChain": "langchain.chains.qa_generation.base",
+    "QAWithSourcesChain": "langchain.chains.qa_with_sources.base",
+    "RetrievalQAWithSourcesChain": "langchain.chains.qa_with_sources.retrieval",
+    "VectorDBQAWithSourcesChain": "langchain.chains.qa_with_sources.vector_db",
+    "create_retrieval_chain": "langchain.chains.retrieval",
+    "RetrievalQA": "langchain.chains.retrieval_qa.base",
+    "VectorDBQA": "langchain.chains.retrieval_qa.base",
+    "LLMRouterChain": "langchain.chains.router",
+    "MultiPromptChain": "langchain.chains.router",
+    "MultiRetrievalQAChain": "langchain.chains.router",
+    "MultiRouteChain": "langchain.chains.router",
+    "RouterChain": "langchain.chains.router",
+    "SequentialChain": "langchain.chains.sequential",
+    "SimpleSequentialChain": "langchain.chains.sequential",
+    "create_sql_query_chain": "langchain.chains.sql_database.query",
+    "create_structured_output_runnable": "langchain.chains.structured_output",
+    "load_summarize_chain": "langchain.chains.summarize",
+    "TransformChain": "langchain.chains.transform",
+}
 
 
 def __getattr__(name: str) -> Any:
@@ -166,4 +92,4 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = [entry["name"] for entry in _exports]
+__all__ = list(_module_lookup.keys())
