@@ -1,0 +1,21 @@
+# TiDB
+
+> [TiDB](https://github.com/pingcap/tidb) is an open-source, cloud-native, 
+> distributed, MySQL-Compatible database for elastic scale and real-time analytics.
+
+## Installation and Setup
+
+We need to install the  `sqlalchemy` Python package:
+
+```bash
+pip install sqlalchemy
+```
+
+
+## Memory
+
+See a [usage example](/docs/integrations/memory/tidb_chat_message_history).
+
+```python
+from langchain_community.chat_message_histories import TiDBChatMessageHistory
+```
