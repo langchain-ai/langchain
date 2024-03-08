@@ -65,10 +65,10 @@ We will link to relevant docs.
 
 ## LLM Chain
 
-We'll show how to use models available via API, like OpenAI and Cohere, and local open source models, using integrations like Ollama.
+We'll show how to use models available via API, like OpenAI, and local open source models, using integrations like Ollama.
 
 <Tabs>
-  <TabItem value="openai" label="OpenAI (API)" default>
+  <TabItem value="openai" label="OpenAI" default>
 
 First we'll need to import the LangChain x OpenAI integration package.
 
@@ -115,7 +115,36 @@ llm = Ollama(model="llama2")
 ```
 
   </TabItem>
-  <TabItem value="cohere" label="Cohere (API)" default>
+  <TabItem value="anthropic" label="Anthropic">
+
+First we'll need to import the LangChain x Anthropic package.
+
+```shell
+pip install langchain-anthropic
+```
+
+Accessing the API requires an API key, which you can get by creating an account [here](https://claude.ai/login). Once we have a key we'll want to set it as an environment variable by running:
+
+```shell
+export ANTHROPIC_API_KEY="..."
+```
+
+We can then initialize the model:
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024)
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `anthropic_api_key` named parameter when initiating the Anthropic Chat Model class:
+
+```python
+llm = ChatAnthropic(anthropic_api_key="...")
+```
+
+  </TabItem>
+  <TabItem value="cohere" label="Cohere">
 
 First we'll need to import the Cohere SDK package.
 

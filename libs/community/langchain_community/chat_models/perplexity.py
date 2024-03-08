@@ -230,9 +230,9 @@ class ChatPerplexity(BaseChatModel):
             )
             default_chunk_class = chunk.__class__
             chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     def _generate(
         self,
