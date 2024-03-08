@@ -4,6 +4,7 @@ EXPECTED_ALL = [
     "ApproxRetrievalStrategy",
     "ElasticsearchChatMessageHistory",
     "ElasticsearchEmbeddings",
+    "ElasticsearchRetriever",
     "ElasticsearchStore",
     "ExactRetrievalStrategy",
     "SparseRetrievalStrategy",
