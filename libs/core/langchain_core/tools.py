@@ -619,7 +619,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super(Tool, self).__init__(
+        super(Tool, self).__init__(  # type: ignore[call-arg]
             name=name, func=func, description=description, **kwargs
         )
 
@@ -795,7 +795,7 @@ class StructuredTool(BaseTool):
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,
+            args_schema=_args_schema,  # type: ignore[arg-type]
             description=description,
             return_direct=return_direct,
             **kwargs,
