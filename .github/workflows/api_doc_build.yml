@@ -24,6 +24,10 @@ jobs:
         with:
           repository: langchain-ai/langchain-datastax
           path: langchain-datastax
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-nvidia
+          path: langchain-nvidia
 
       - name: Set Git config
         working-directory: langchain
@@ -42,10 +46,14 @@ jobs:
           rm -rf \
             langchain/libs/partners/google-genai \
             langchain/libs/partners/google-vertexai \
-            langchain/libs/partners/astradb
+            langchain/libs/partners/astradb \
+            langchain/libs/partners/nvidia-trt \
+            langchain/libs/partners/nvidia-ai-endpoints
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
+          mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
+          mv langchain-nvidia/libs/trt langchain/libs/partners/nvidia-trt
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./langchain/.github/actions/poetry_setup"
