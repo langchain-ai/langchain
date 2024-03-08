@@ -109,15 +109,15 @@ def _as_async_iterator(sync_iterator: Callable) -> Callable:
         iterator = await run_in_executor(None, sync_iterator, *args, **kwargs)
         done = object()
         while True:
-            doc = await run_in_executor(
+            item = await run_in_executor(
                 None,
                 next,
                 iterator,
                 done,  # type: ignore[call-arg, arg-type]
             )
-            if doc is done:
+            if item is done:
                 break
-            yield doc  # type: ignore[misc]
+            yield item  # type: ignore[misc]
 
     return _as_sync_iterator
 
