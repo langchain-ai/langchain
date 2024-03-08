@@ -8,7 +8,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -20,10 +24,6 @@ from langchain_core.utils import (
     build_extra_kwargs,
     convert_to_secret_str,
     get_pydantic_field_names,
-)
-from langchain_core.language_models.chat_models import (
-    generate_from_stream,
-    agenerate_from_stream,
 )
 
 _message_type_lookups = {"human": "user", "ai": "assistant"}
