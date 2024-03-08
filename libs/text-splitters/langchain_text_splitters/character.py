@@ -603,7 +603,8 @@ class SemanticTiktokenTextSplitter(TextSplitter):
             from semantic_text_splitter import TiktokenTextSplitter
         except ImportError as e:
             raise ImportError(
-                "Unable to import from semantic-text-splitter. Please install semantic-text-splitter with "
+                "Unable to import from semantic-text-splitter."
+                "Please install semantic-text-splitter with "
                 "`pip install -U semantic-text-splitter`."
             ) from e
         # Optionally can also have the splitter not trim whitespace for you
@@ -629,7 +630,8 @@ class SemanticCharacterTextSplitter(TextSplitter):
             from semantic_text_splitter import CharacterTextSplitter
         except ImportError as e:
             raise ImportError(
-                "Unable to import from semantic-text-splitter. Please install semantic-text-splitter with "
+                "Unable to import from semantic-text-splitter."
+                "Please install semantic-text-splitter with "
                 "`pip install -U semantic-text-splitter`."
             ) from e
         splitter = CharacterTextSplitter(trim_chunks=self.trim_chunks)
