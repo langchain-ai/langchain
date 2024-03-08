@@ -1,9 +1,8 @@
+from enum import Enum
 from typing import Any, Dict, List, Optional, Set
 
-from pydantic import BaseModel
-from enum import Enum
-
 from langchain_core.embeddings import Embeddings
+from pydantic import BaseModel
 
 
 class TakeoffEmbeddingException(Exception):
@@ -57,10 +56,10 @@ class TitanTakeoffEmbed(Embeddings):
             embed = TitanTakeoffEmbed(models=[reader_1])
 
             time.sleep(60)  # Wait for the reader to be deployed, time needed depends on the model size and your internet speed
-            
-            # Returns the embedded query, ie a List[float], sent to `embed` consumer group where we just spun up the embedding reader 
+
+            # Returns the embedded query, ie a List[float], sent to `embed` consumer group where we just spun up the embedding reader
             print(embed.embed_query("Where can I see football?", consumer_group="embed"))
-            
+
             # Returns a List of embeddings, ie a List[List[float]], sent to `embed` consumer group where we just spun up the embedding reader
             print(embed.embed_document(["Document1", "Document2"], consumer_group="embed"))
     """
@@ -105,21 +104,24 @@ class TitanTakeoffEmbed(Embeddings):
             from takeoff_client import TakeoffClient
         except ImportError:
             raise ImportError(
-                "takeoff-client is required for TitanTakeoff. " "Please install it with `pip install 'takeoff-client==0.4.0'`."
+                "takeoff-client is required for TitanTakeoff. "
+                "Please install it with `pip install 'takeoff-client==0.4.0'`."
             )
-        self.client = TakeoffClient(self.base_url, port=self.port, mgmt_port=self.mgmt_port)
+        self.client = TakeoffClient(
+            self.base_url, port=self.port, mgmt_port=self.mgmt_port
+        )
         for model in models:
             self.client.create_reader(model)
             self.embed_consumer_groups.add(model["consumer_group"])
         super(TitanTakeoffEmbed, self).__init__()
-        
+
     def _embed(self, input: List[str], consumer_group: Optional[str]) -> Dict[str, Any]:
         """Embed text.
 
         Args:
             input (List[str]): prompt/document or list of prompts/documents to embed
-            consumer_group (Optional[str]): what consumer group to send the embedding request to. If not specified and there is only one 
-            consumer group specified during initialization, it will be used. If there are multiple consumer groups specified during 
+            consumer_group (Optional[str]): what consumer group to send the embedding request to. If not specified and there is only one
+            consumer group specified during initialization, it will be used. If there are multiple consumer groups specified during
             initialization, you must specify which one to use.
 
         Raises:
@@ -132,7 +134,9 @@ class TitanTakeoffEmbed(Embeddings):
             if len(self.embed_consumer_groups) == 1:
                 consumer_group = list(self.embed_consumer_groups)[0]
             elif len(self.embed_consumer_groups) > 1:
-                raise MissingConsumerGroup("TakeoffEmbedding was initialized with multiple embedding reader groups, you must specify which one to use.")
+                raise MissingConsumerGroup(
+                    "TakeoffEmbedding was initialized with multiple embedding reader groups, you must specify which one to use."
+                )
             else:
                 raise MissingConsumerGroup(
                     "You must specify what consumer group you want to send embedding response to as TitanTakeoffEmbed was not initialized with"
@@ -140,7 +144,9 @@ class TitanTakeoffEmbed(Embeddings):
                 )
         return self.client.embed(input, consumer_group)
 
-    def embed_documents(self, texts: List[str], consumer_group: Optional[str] = None) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], consumer_group: Optional[str] = None
+    ) -> List[List[float]]:
         """Embed documents.
 
         Args:
@@ -152,7 +158,9 @@ class TitanTakeoffEmbed(Embeddings):
         """
         return self._embed(texts, consumer_group)["result"]
 
-    def embed_query(self, text: str, consumer_group: Optional[str] = None) -> List[float]:
+    def embed_query(
+        self, text: str, consumer_group: Optional[str] = None
+    ) -> List[float]:
         """Embed query.
 
         Args:

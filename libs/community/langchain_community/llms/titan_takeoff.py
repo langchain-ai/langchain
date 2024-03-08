@@ -1,11 +1,10 @@
-from typing import Any, Iterator, List, Optional, cast
-
-from pydantic import BaseModel
 from enum import Enum
+from typing import Any, Iterator, List, Optional, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
+from pydantic import BaseModel
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -42,8 +41,8 @@ class ReaderConfig(BaseModel):
 
 class TitanTakeoff(LLM):
     """Titan Takeoff is a wrapper to interface with Takeoff Inference API for generative text to text language models.
-    
-    You can use this wrapper to send requests to a generative language model and to deploy readers with Takeoff. 
+
+    You can use this wrapper to send requests to a generative language model and to deploy readers with Takeoff.
 
     Examples:
         This is an example how to deploy a generative language model and send requests.
@@ -61,11 +60,11 @@ class TitanTakeoff(LLM):
             llm = TitanTakeoff(models=[reader_1])
 
             time.sleep(60)  # Wait for the reader to be deployed, time needed depends on the model size and your internet speed
-            
-            # Returns the query, ie a List[float], sent to `llama` consumer group where we just spun up the Llama 7B model 
+
+            # Returns the query, ie a List[float], sent to `llama` consumer group where we just spun up the Llama 7B model
             print(embed.invoke("Where can I see football?", consumer_group="llama"))
-            
-            # You can also send generation parameters to the model, any of the following can be passed in as 
+
+            # You can also send generation parameters to the model, any of the following can be passed in as
             # kwargs: https://docs.titanml.co/docs/next/apis/Takeoff%20inference_REST_API/generate#request for instance:
             print(embed.invoke("Where can I see football?", consumer_group="llama", max_new_tokens=100))
     """
@@ -99,7 +98,7 @@ class TitanTakeoff(LLM):
             base_url (str, optional): The base url where Takeoff Inference Server is listening. Defaults to "http://localhost".
             port (int, optional): What port is Takeoff Inference API listening on. Defaults to 3000.
             mgmt_port (int, optional): What port is Takeoff Management API listening on. Defaults to 3001.
-            streaming (bool, optional): Whether you want to by deafult use the generate_stream endpoint over generate to stream 
+            streaming (bool, optional): Whether you want to by deafult use the generate_stream endpoint over generate to stream
             responses. Defaults to False. In reality this little difference as the streamed response is buffered and returned similar
             to non-streamed response, but the run manager is applied per token generated.
             models (List[ReaderConfig], optional): Any readers you'd like to spin up on. Defaults to [].
@@ -107,14 +106,19 @@ class TitanTakeoff(LLM):
         Raises:
             ImportError: If you haven't installed takeoff-client, you will get an ImportError. To remedy run `pip install 'takeoff-client==0.4.0'`
         """
-        super().__init__(base_url=base_url, port=port, mgmt_port=mgmt_port, streaming=streaming)
+        super().__init__(
+            base_url=base_url, port=port, mgmt_port=mgmt_port, streaming=streaming
+        )
         try:
             from takeoff_client import TakeoffClient
         except ImportError:
             raise ImportError(
-                "takeoff-client is required for TitanTakeoff. " "Please install it with `pip install 'takeoff-client>=0.4.0'`."
+                "takeoff-client is required for TitanTakeoff. "
+                "Please install it with `pip install 'takeoff-client>=0.4.0'`."
             )
-        self.client = TakeoffClient(self.base_url, port=self.port, mgmt_port=self.mgmt_port)
+        self.client = TakeoffClient(
+            self.base_url, port=self.port, mgmt_port=self.mgmt_port
+        )
         for model in models:
             self.client.create_reader(model)
 
@@ -142,11 +146,11 @@ class TitanTakeoff(LLM):
 
         Example:
             .. code-block:: python
-            
+
                 model = TitanTakeoff()
 
                 prompt = "What is the capital of the United Kingdom?"
-                
+
                 # Use of model(prompt), ie `__call__` was deprecated in LangChain 0.1.7, use model.invoke(prompt) instead.
                 response = model.invoke(prompt)
 
@@ -192,11 +196,11 @@ class TitanTakeoff(LLM):
 
                 prompt = "What is the capital of the United Kingdom?"
                 response = model.stream(prompt)
-                
-                # OR 
-                
+
+                # OR
+
                 model = TitanTakeoff(streaming=True)
-                
+
                 response = model.invoke(prompt)
 
         """

@@ -88,11 +88,11 @@ from langchain_community.embeddings.sentence_transformer import (
 from langchain_community.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain_community.embeddings.sparkllm import SparkLLMTextEmbeddings
 from langchain_community.embeddings.tensorflow_hub import TensorflowHubEmbeddings
+from langchain_community.embeddings.titan_takeoff import TitanTakeoffEmbed
 from langchain_community.embeddings.vertexai import VertexAIEmbeddings
 from langchain_community.embeddings.volcengine import VolcanoEmbeddings
 from langchain_community.embeddings.voyageai import VoyageEmbeddings
 from langchain_community.embeddings.xinference import XinferenceEmbeddings
-from langchain_community.embeddings.titan_takeoff import TitanTakeoffEmbed
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +159,7 @@ __all__ = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
-    "TitanTakeoffEmbed"
+    "TitanTakeoffEmbed",
 ]
 
 
