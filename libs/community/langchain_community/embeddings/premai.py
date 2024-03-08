@@ -15,7 +15,7 @@ class PremAIEmbeddings(BaseModel, Embeddings):
     """Prem's Embedding APIs"""
 
     project_id: int
-    """The project ID in which the experiments or deployements are carried out. 
+    """The project ID in which the experiments or deployments are carried out. 
     You can find all your projects here: https://app.premai.io/projects/"""
 
     premai_api_key: Optional[SecretStr] = None
@@ -96,10 +96,10 @@ def create_prem_retry_decorator(
 
 
 def embed_with_retry(
-    embedder: PremAIEmbeddings, 
-    model: str, 
-    project_id: int, 
-    input: Union[str, List[str]]
+    embedder: PremAIEmbeddings,
+    model: str,
+    project_id: int,
+    input: Union[str, List[str]],
 ) -> Any:
     """Using tenacity for retry in embedding calls"""
     retry_decorator = create_prem_retry_decorator(
