@@ -13,8 +13,9 @@ from langchain_mongodb.cache import MongoDBAtlasSemanticCache, MongoDBCache
 from tests.utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM
 
 CONN_STRING = os.environ.get("MONGODB_ATLAS_URI")
-COLLECTION = "default"
-DATABASE = "default"
+INDEX_NAME = "langchain-test-index-semantic-cache"
+DATABASE = "langchain_test_db"
+COLLECTION = "langchain_test_cache"
 
 
 def random_string() -> str:
