@@ -221,7 +221,7 @@ class ChatKonko(ChatOpenAI):
                 message=chunk, generation_info=generation_info
             )
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=cg_chunk)
+                run_manager.on_llm_new_token(cg_chunk.text, chunk=cg_chunk)
             yield cg_chunk
 
     def _generate(

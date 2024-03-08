@@ -165,7 +165,7 @@ class GenericFakeChatModel(BaseChatModel):
       streaming.
     """
 
-    messages: Iterator[AIMessage]
+    messages: Iterator[Union[AIMessage, str]]
     """Get an iterator over messages.
 
     This can be expanded to accept other types like Callables / dicts / strings
@@ -187,7 +187,11 @@ class GenericFakeChatModel(BaseChatModel):
     ) -> ChatResult:
         """Top Level call"""
         message = next(self.messages)
-        generation = ChatGeneration(message=message)
+        if isinstance(message, str):
+            message_ = AIMessage(content=message)
+        else:
+            message_ = message
+        generation = ChatGeneration(message=message_)
         return ChatResult(generations=[generation])
 
     def _stream(
@@ -225,9 +229,9 @@ class GenericFakeChatModel(BaseChatModel):
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
+                yield chunk
 
         if message.additional_kwargs:
             for key, value in message.additional_kwargs.items():
@@ -247,12 +251,12 @@ class GenericFakeChatModel(BaseChatModel):
                                         },
                                     )
                                 )
-                                yield chunk
                                 if run_manager:
                                     run_manager.on_llm_new_token(
                                         "",
                                         chunk=chunk,  # No token for function call
                                     )
+                                yield chunk
                         else:
                             chunk = ChatGenerationChunk(
                                 message=AIMessageChunk(
@@ -260,24 +264,24 @@ class GenericFakeChatModel(BaseChatModel):
                                     additional_kwargs={"function_call": {fkey: fvalue}},
                                 )
                             )
-                            yield chunk
                             if run_manager:
                                 run_manager.on_llm_new_token(
                                     "",
                                     chunk=chunk,  # No token for function call
                                 )
+                            yield chunk
                 else:
                     chunk = ChatGenerationChunk(
                         message=AIMessageChunk(
                             content="", additional_kwargs={key: value}
                         )
                     )
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(
                             "",
                             chunk=chunk,  # No token for function call
                         )
+                    yield chunk
 
     async def _astream(
         self,

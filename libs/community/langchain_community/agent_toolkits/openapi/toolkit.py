@@ -41,15 +41,32 @@ class RequestsToolkit(BaseToolkit):
     """
 
     requests_wrapper: TextRequestsWrapper
+    allow_dangerous_requests: bool = False
+    """Allow dangerous requests. See documentation for details."""
 
     def get_tools(self) -> List[BaseTool]:
         """Return a list of tools."""
         return [
-            RequestsGetTool(requests_wrapper=self.requests_wrapper),
-            RequestsPostTool(requests_wrapper=self.requests_wrapper),
-            RequestsPatchTool(requests_wrapper=self.requests_wrapper),
-            RequestsPutTool(requests_wrapper=self.requests_wrapper),
-            RequestsDeleteTool(requests_wrapper=self.requests_wrapper),
+            RequestsGetTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
+            RequestsPostTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
+            RequestsPatchTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
+            RequestsPutTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
+            RequestsDeleteTool(
+                requests_wrapper=self.requests_wrapper,
+                allow_dangerous_requests=self.allow_dangerous_requests,
+            ),
         ]
 
 
@@ -66,6 +83,8 @@ class OpenAPIToolkit(BaseToolkit):
 
     json_agent: Any
     requests_wrapper: TextRequestsWrapper
+    allow_dangerous_requests: bool = False
+    """Allow dangerous requests. See documentation for details."""
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
@@ -74,7 +93,10 @@ class OpenAPIToolkit(BaseToolkit):
             func=self.json_agent.run,
             description=DESCRIPTION,
         )
-        request_toolkit = RequestsToolkit(requests_wrapper=self.requests_wrapper)
+        request_toolkit = RequestsToolkit(
+            requests_wrapper=self.requests_wrapper,
+            allow_dangerous_requests=self.allow_dangerous_requests,
+        )
         return [*request_toolkit.get_tools(), json_agent_tool]
 
     @classmethod
@@ -83,8 +105,13 @@ class OpenAPIToolkit(BaseToolkit):
         llm: BaseLanguageModel,
         json_spec: JsonSpec,
         requests_wrapper: TextRequestsWrapper,
+        allow_dangerous_requests: bool = False,
         **kwargs: Any,
     ) -> OpenAPIToolkit:
         """Create json agent from llm, then initialize."""
         json_agent = create_json_agent(llm, JsonToolkit(spec=json_spec), **kwargs)
-        return cls(json_agent=json_agent, requests_wrapper=requests_wrapper)
+        return cls(
+            json_agent=json_agent,
+            requests_wrapper=requests_wrapper,
+            allow_dangerous_requests=allow_dangerous_requests,
+        )

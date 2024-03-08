@@ -879,3 +879,90 @@ OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "RunnableRetry",
     ),
 }
+
+_JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+    ("langchain_core", "messages", "AIMessage"): (
+        "langchain_core",
+        "messages",
+        "ai",
+        "AIMessage",
+    ),
+    ("langchain_core", "messages", "AIMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "ai",
+        "AIMessageChunk",
+    ),
+    ("langchain_core", "messages", "BaseMessage"): (
+        "langchain_core",
+        "messages",
+        "base",
+        "BaseMessage",
+    ),
+    ("langchain_core", "messages", "BaseMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "base",
+        "BaseMessageChunk",
+    ),
+    ("langchain_core", "messages", "ChatMessage"): (
+        "langchain_core",
+        "messages",
+        "chat",
+        "ChatMessage",
+    ),
+    ("langchain_core", "messages", "ChatMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "chat",
+        "ChatMessageChunk",
+    ),
+    ("langchain_core", "messages", "FunctionMessage"): (
+        "langchain_core",
+        "messages",
+        "function",
+        "FunctionMessage",
+    ),
+    ("langchain_core", "messages", "FunctionMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "function",
+        "FunctionMessageChunk",
+    ),
+    ("langchain_core", "messages", "HumanMessage"): (
+        "langchain_core",
+        "messages",
+        "human",
+        "HumanMessage",
+    ),
+    ("langchain_core", "messages", "HumanMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "human",
+        "HumanMessageChunk",
+    ),
+    ("langchain_core", "messages", "SystemMessage"): (
+        "langchain_core",
+        "messages",
+        "system",
+        "SystemMessage",
+    ),
+    ("langchain_core", "messages", "SystemMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "system",
+        "SystemMessageChunk",
+    ),
+    ("langchain_core", "messages", "ToolMessage"): (
+        "langchain_core",
+        "messages",
+        "tool",
+        "ToolMessage",
+    ),
+    ("langchain_core", "messages", "ToolMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "tool",
+        "ToolMessageChunk",
+    ),
+}
