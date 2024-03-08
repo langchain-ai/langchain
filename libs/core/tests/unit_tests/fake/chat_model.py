@@ -165,7 +165,7 @@ class GenericFakeChatModel(BaseChatModel):
       streaming.
     """
 
-    messages: Iterator[AIMessage]
+    messages: Iterator[Union[AIMessage, str]]
     """Get an iterator over messages.
 
     This can be expanded to accept other types like Callables / dicts / strings
@@ -187,7 +187,11 @@ class GenericFakeChatModel(BaseChatModel):
     ) -> ChatResult:
         """Top Level call"""
         message = next(self.messages)
-        generation = ChatGeneration(message=message)
+        if isinstance(message, str):
+            message_ = AIMessage(content=message)
+        else:
+            message_ = message
+        generation = ChatGeneration(message=message_)
         return ChatResult(generations=[generation])
 
     def _stream(

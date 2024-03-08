@@ -63,6 +63,8 @@ class BaseLoader(ABC):
     #            implemented in all the existing subclasses.
     def lazy_load(self) -> Iterator[Document]:
         """A lazy loader for Documents."""
+        if type(self).load != BaseLoader.load:
+            return iter(self.load())
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement lazy_load()"
         )

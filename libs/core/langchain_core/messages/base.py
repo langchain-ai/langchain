@@ -51,7 +51,7 @@ class BaseMessage(Serializable):
     def __add__(self, other: Any) -> ChatPromptTemplate:
         from langchain_core.prompts.chat import ChatPromptTemplate
 
-        prompt = ChatPromptTemplate(messages=[self])
+        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
 
     def pretty_repr(self, html: bool = False) -> str:
@@ -162,7 +162,7 @@ class BaseMessageChunk(BaseMessage):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
 
-            return self.__class__(
+            return self.__class__(  # type: ignore[call-arg]
                 id=self.id,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=self._merge_kwargs_dict(

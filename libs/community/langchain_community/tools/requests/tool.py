@@ -28,6 +28,23 @@ class BaseRequestsTool(BaseModel):
 
     requests_wrapper: GenericRequestsWrapper
 
+    allow_dangerous_requests: bool = False
+
+    def __init__(self, **kwargs: Any):
+        """Initialize the tool."""
+        if not kwargs.get("allow_dangerous_requests", False):
+            raise ValueError(
+                "You must set allow_dangerous_requests to True to use this tool. "
+                "Request scan be dangerous and can lead to security vulnerabilities. "
+                "For example, users can ask a server to make a request to an internal"
+                "server. It's recommended to use requests through a proxy server "
+                "and avoid accepting inputs from untrusted sources without proper "
+                "sandboxing."
+                "Please see: https://python.langchain.com/docs/security for "
+                "further security information."
+            )
+        super().__init__(**kwargs)
+
 
 class RequestsGetTool(BaseRequestsTool, BaseTool):
     """Tool for making a GET request to an API endpoint."""

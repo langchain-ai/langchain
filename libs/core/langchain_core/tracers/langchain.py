@@ -122,7 +122,7 @@ class LangChainTracer(BaseTracer):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags,
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
