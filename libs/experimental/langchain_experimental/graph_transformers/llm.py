@@ -1,9 +1,9 @@
 from typing import Any, List, Optional, Sequence
 
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 system_prompt = (
