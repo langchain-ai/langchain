@@ -179,6 +179,10 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "ai",
@@ -217,6 +221,10 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 },
                                 "additional_kwargs": {
                                     "title": "Additional Kwargs",
+                                    "type": "object",
+                                },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
                                     "type": "object",
                                 },
                                 "type": {
@@ -259,6 +267,10 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "chat",
@@ -293,6 +305,10 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 },
                                 "additional_kwargs": {
                                     "title": "Additional Kwargs",
+                                    "type": "object",
+                                },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
                                     "type": "object",
                                 },
                                 "type": {
@@ -330,6 +346,10 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "function",
@@ -363,6 +383,10 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 },
                                 "additional_kwargs": {
                                     "title": "Additional Kwargs",
+                                    "type": "object",
+                                },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
                                     "type": "object",
                                 },
                                 "type": {
