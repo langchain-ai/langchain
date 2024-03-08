@@ -1,10 +1,11 @@
 """Test Base Schema of documents."""
-from typing import Iterator
+from typing import Iterator, List
 
+import pytest
+
+from langchain_core.document_loaders.base import BaseBlobParser, BaseLoader
+from langchain_core.document_loaders.blob_loaders import Blob
 from langchain_core.documents import Document
-
-from langchain_community.document_loaders.base import BaseBlobParser, BaseLoader
-from langchain_community.document_loaders.blob_loaders import Blob
 
 
 def test_base_blob_parser() -> None:
@@ -27,6 +28,28 @@ def test_base_blob_parser() -> None:
     docs = parser.parse(Blob(data="who?"))
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
+
+
+def test_default_lazy_load() -> None:
+    class FakeLoader(BaseLoader):
+        def load(self) -> List[Document]:
+            return [
+                Document(page_content="foo"),
+                Document(page_content="bar"),
+            ]
+
+    loader = FakeLoader()
+    docs = list(loader.lazy_load())
+    assert docs == [Document(page_content="foo"), Document(page_content="bar")]
+
+
+def test_lazy_load_not_implemented() -> None:
+    class FakeLoader(BaseLoader):
+        pass
+
+    loader = FakeLoader()
+    with pytest.raises(NotImplementedError):
+        loader.lazy_load()
 
 
 async def test_default_aload() -> None:
