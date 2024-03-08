@@ -7,7 +7,7 @@ To use this tool, you must first set as environment variables:
     GITHUB_REPOSITORY -> format: {owner}/{repo}
 
 """
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -26,12 +26,10 @@ class GitHubAction(BaseTool):
     args_schema: Optional[Type[BaseModel]] = None
 
     def _run(
-        self,
-        instructions: Optional[str] = "",
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs: Any
     ) -> str:
         """Use the GitHub API to run an operation."""
-        if not instructions or instructions == "{}":
+        if not kwargs or kwargs == {}:
             # Catch other forms of empty input that GPT-4 likes to send.
-            instructions = ""
-        return self.api_wrapper.run(self.mode, instructions)
+            return self.api_wrapper.run(self.mode, "")
+        return self.api_wrapper.run(self.mode, list(kwargs.values())[0])
