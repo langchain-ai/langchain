@@ -30,6 +30,7 @@ from langchain_community.chat_models.ernie import ErnieBotChat
 from langchain_community.chat_models.everlyai import ChatEverlyAI
 from langchain_community.chat_models.fake import FakeListChatModel
 from langchain_community.chat_models.fireworks import ChatFireworks
+from langchain_community.chat_models.friendli import ChatFriendli
 from langchain_community.chat_models.gigachat import GigaChat
 from langchain_community.chat_models.google_palm import ChatGooglePalm
 from langchain_community.chat_models.gpt_router import GPTRouter
@@ -94,6 +95,7 @@ __all__ = [
     "ChatYandexGPT",
     "ChatBaichuan",
     "ChatHunyuan",
+    "ChatFriendli",
     "GigaChat",
     "ChatSparkLLM",
     "VolcEngineMaasChat",
