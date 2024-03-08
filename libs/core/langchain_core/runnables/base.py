@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import collections
 import inspect
+import os
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
@@ -1672,7 +1673,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         dumped = super().to_json()
         try:
             dumped["name"] = self.get_name()
-            dumped["graph"] = self.get_graph().to_json()
+            if os.getenv("LANGCHAIN_INCLUDE_GRAPH") == "true":
+                dumped["graph"] = self.get_graph().to_json()
         except Exception:
             pass
         return dumped
