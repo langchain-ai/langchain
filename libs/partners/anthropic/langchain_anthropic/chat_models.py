@@ -289,7 +289,7 @@ class ChatAnthropic(BaseChatModel):
             return generate_from_stream(stream_iter)
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = self._client.messages.create(**params)
-        return self._format_output(data)
+        return self._format_output(data, **kwargs)
 
     async def _agenerate(
         self,
@@ -305,7 +305,7 @@ class ChatAnthropic(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = await self._async_client.messages.create(**params)
-        return self._format_output(data)
+        return self._format_output(data, **kwargs)
 
 
 @deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")
