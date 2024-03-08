@@ -10,7 +10,7 @@ from langchain_core.pydantic_v2 import BaseModel, ValidationError
 TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 
 
-class PydanticV2OutputParser(JsonOutputParser, Generic[TBaseModel]):
+class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
     pydantic_v2_object: Type[TBaseModel]
