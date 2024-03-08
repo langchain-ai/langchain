@@ -1,23 +1,26 @@
-"""Test ChatPrem from PremAI API wrapper.
+"""Test ChatPremAI from PremAI API wrapper.
 
-Note: This test must be run with the PREMAI_API_KEY environment variable set to a valid API key and a valid project_id. For this we need to have a project setup in PremAI's platform: https://app.premai.io
+Note: This test must be run with the PREMAI_API_KEY environment variable set to a valid 
+API key and a valid project_id. 
+For this we need to have a project setup in PremAI's platform: https://app.premai.io
 """
 
 import pytest
-from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
-from langchain_community.chat_models import ChatPrem
+
+from langchain_community.chat_models import ChatPremAI
 
 
 @pytest.fixture
-def chat() -> ChatPrem:
-    return ChatPrem(project_id=8)
+def chat() -> ChatPremAI:
+    return ChatPremAI(project_id=8)
 
 
 @pytest.mark.scheduled
 def test_chat_premai() -> None:
-    """Test ChatPrem wrapper."""
-    chat = ChatPrem(project_id=8)
+    """Test ChatPremAI wrapper."""
+    chat = ChatPremAI(project_id=8)
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
@@ -26,8 +29,8 @@ def test_chat_premai() -> None:
 
 @pytest.mark.scheduled
 def test_chat_prem_system_message() -> None:
-    """Test ChatPrem wrapper for system message"""
-    chat = ChatPrem(project_id=8)
+    """Test ChatPremAI wrapper for system message"""
+    chat = ChatPremAI(project_id=8)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat([system_message, human_message])
@@ -37,15 +40,15 @@ def test_chat_prem_system_message() -> None:
 
 @pytest.mark.scheduled
 def test_chat_prem_model() -> None:
-    """Test ChatPrem wrapper handles model_name."""
-    chat = ChatPrem(model="foo", project_id=8)
+    """Test ChatPremAI wrapper handles model_name."""
+    chat = ChatPremAI(model="foo", project_id=8)
     assert chat.model == "foo"
 
 
 @pytest.mark.scheduled
 def test_chat_prem_generate() -> None:
-    """Test ChatPrem wrapper with generate."""
-    chat = ChatPrem(project_id=8)
+    """Test ChatPremAI wrapper with generate."""
+    chat = ChatPremAI(project_id=8)
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -58,7 +61,7 @@ def test_chat_prem_generate() -> None:
 
 
 @pytest.mark.scheduled
-async def test_prem_invoke(chat: ChatPrem) -> None:
+async def test_prem_invoke(chat: ChatPremAI) -> None:
     """Tests chat completion with invoke"""
     result = chat.invoke("How is the weather in New York today?")
     assert isinstance(result.content, str)
@@ -67,7 +70,7 @@ async def test_prem_invoke(chat: ChatPrem) -> None:
 @pytest.mark.scheduled
 def test_prem_streaming() -> None:
     """Test streaming tokens from Prem."""
-    chat = ChatPrem(project_id=8, streaming=True)
+    chat = ChatPremAI(project_id=8, streaming=True)
 
     for token in chat.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)

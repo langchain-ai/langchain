@@ -4,18 +4,19 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator, SecretStr
-from langchain_core.utils import get_from_dict_or_env
 from langchain_core.language_models.llms import create_base_retry_decorator
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class PremEmbeddings(BaseModel, Embeddings):
+class PremAIEmbeddings(BaseModel, Embeddings):
     """Prem's Embedding APIs"""
 
     project_id: int
-    """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
+    """The project ID in which the experiments or deployements are carried out. 
+    You can find all your projects here: https://app.premai.io/projects/"""
 
     premai_api_key: Optional[SecretStr] = None
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
@@ -67,7 +68,7 @@ class PremEmbeddings(BaseModel, Embeddings):
 
 
 def create_prem_retry_decorator(
-    embedder: PremEmbeddings,
+    embedder: PremAIEmbeddings,
     *,
     max_retries: int = 1,
 ) -> Callable[[Any], Any]:
@@ -95,7 +96,10 @@ def create_prem_retry_decorator(
 
 
 def embed_with_retry(
-    embedder: PremEmbeddings, model: str, project_id: int, input: Union[str, List[str]]
+    embedder: PremAIEmbeddings, 
+    model: str, 
+    project_id: int, 
+    input: Union[str, List[str]]
 ) -> Any:
     """Using tenacity for retry in embedding calls"""
     retry_decorator = create_prem_retry_decorator(
@@ -104,7 +108,7 @@ def embed_with_retry(
 
     @retry_decorator
     def _embed_with_retry(
-        embedder: PremEmbeddings,
+        embedder: PremAIEmbeddings,
         project_id: int,
         model: str,
         input: Union[str, List[str]],

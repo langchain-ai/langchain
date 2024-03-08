@@ -1,16 +1,17 @@
 """Test PremChat model"""
 
 import pytest
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture
-from langchain_community.chat_models import ChatPrem
-from langchain_community.chat_models.prem import _messages_to_prompt_dict
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
+from langchain_community.chat_models import ChatPremAI
+from langchain_community.chat_models.premai import _messages_to_prompt_dict
 
 
 @pytest.mark.requires("premai")
 def test_api_key_is_string() -> None:
-    llm = ChatPrem(premai_api_key="secret-api-key", project_id=8)
+    llm = ChatPremAI(premai_api_key="secret-api-key", project_id=8)
     assert isinstance(llm.premai_api_key, SecretStr)
 
 
@@ -18,7 +19,7 @@ def test_api_key_is_string() -> None:
 def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
-    llm = ChatPrem(premai_api_key="secret-api-key", project_id=8)
+    llm = ChatPremAI(premai_api_key="secret-api-key", project_id=8)
     print(llm.premai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
@@ -47,21 +48,21 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
 
 
 def test_premchat_raises_with_parameter_n() -> None:
-    """Since param: n is not supported right now, we need to take that edge case under consideration"""
+    # FIXME: n > 1 is not supported at this version 
 
     messages = [[HumanMessage(content="hello")]]
     with pytest.raises(NotImplementedError) as error_msg:
-        ChatPrem(premai_api_key="fake", project_id=8).generate(messages=messages, n=2)
+        ChatPremAI(premai_api_key="fake", project_id=8).generate(messages=messages, n=2)
 
     assert "parameter: n is not supported for now." in str(error_msg)
 
 
 def test_premchat_raises_with_parameter_stop() -> None:
-    """Since param: stop is not supported right now, we need to take that edge case under consideration"""
+    # FIXME: stop paramter with values is not supported currently
 
     messages = [[HumanMessage(content="hello")]]
     with pytest.raises(NotImplementedError) as error_msg:
-        ChatPrem(premai_api_key="fake", project_id=8).generate(
+        ChatPremAI(premai_api_key="fake", project_id=8).generate(
             messages=messages, stop=["stop"]
         )
 

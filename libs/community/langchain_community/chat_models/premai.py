@@ -8,39 +8,40 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Optional,
-    Union,
     Tuple,
-    Iterator,
     Type,
+    Union,
 )
-from langchain_core.language_models.llms import create_base_retry_decorator
+
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
     AIMessageChunk,
-    SystemMessageChunk,
-    HumanMessageChunk,
+    BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, root_validator, Extra, SecretStr
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
-    from premai.models.chat_completion_response import ChatCompletionResponse
     from premai.api.chat_completions.v1_chat_completions_create import (
         ChatCompletionResponseStream,
     )
+    from premai.models.chat_completion_response import ChatCompletionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +130,8 @@ def _convert_delta_response_to_message_chunk(
 def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
 ) -> Tuple[str, List[dict]]:
-    """Converts a list of LangChain Messages into a simple dict which is the message structure in Prem"""
+    """Converts a list of LangChain Messages into a simple dict
+        which is the message structure in Prem"""
 
     system_prompt: str = None
     examples_and_messages: List[Dict[str, str]] = []
@@ -148,28 +150,27 @@ def _messages_to_prompt_dict(
     return system_prompt, examples_and_messages
 
 
-class ChatPrem(BaseChatModel, BaseModel):
+class ChatPremAI(BaseChatModel, BaseModel):
     """Use any LLM provider with Prem and Langchain.
 
     To use, you will need to have an API key. You can find your existing API Key
     or generate a new one here: https://app.premai.io/api_keys/
     """
-    
+
     # TODO: Discussion needed. We can any one the following:
     # TODO: Need to add the default parameters through prem-sdk here
-    
-    # - User can set/override parameters here and then we can set it in additional arguments
-    # - Remove all the optional paramter here and keep it to the kwargs (but that would avoid function defintion)
 
     project_id: int
-    """The project ID in which the experiments or deployements are carried out. You can find all your projects here: https://app.premai.io/projects/"""
+    """The project ID in which the experiments or deployements are carried out. 
+    You can find all your projects here: https://app.premai.io/projects/"""
     premai_api_key: Optional[SecretStr] = None
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
     model: Optional[str] = None
-    """Name of the model. This is an optional paramter. The default model is the one deployed from Prem's LaunchPad: https://app.premai.io/projects/8/launchpad
-    
-    If model name is other than default model then it will override the calls from the model deployed from launchpad."""
+    """Name of the model. This is an optional paramter. 
+    The default model is the one deployed from Prem's LaunchPad: https://app.premai.io/projects/8/launchpad
+    If model name is other than default model then it will override the calls 
+    from the model deployed from launchpad."""
 
     session_id: Optional[str] = None
     """The ID of the session to use. It helps to track the chat history."""
@@ -189,22 +190,25 @@ class ChatPrem(BaseChatModel, BaseModel):
     """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
-    """Acts like a default instruction that helps the LLM act or generate in a specific way. This is an Optional Parameter. By default the system prompt would be using Prem's Launchpad models system prompt: https://app.premai.io/projects/8/launchpad
-    
-    Changing the system prompt would override the default system prompt which was used in LaunchPad model. 
+    """Acts like a default instruction that helps the LLM act or generate 
+    in a specific way.This is an Optional Parameter. By default the 
+    system prompt would be using Prem's Launchpad models system prompt. 
+    Changing the system prompt would override the default system prompt.
     """
 
     streaming: Optional[bool] = False
     """Whether to stream the responses or not."""
 
     tools: Optional[Dict[str, Any]] = None
-    """A list of tools the model may call. Currently, only functions are supported as a tool"""
+    """A list of tools the model may call. Currently, only functions are 
+    supported as a tool"""
 
     frequency_penalty: Optional[float] = None
     """Number between -2.0 and 2.0. Positive values penalize new tokens based"""
 
     presence_penalty: Optional[float] = None
-    """Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far."""
+    """Number between -2.0 and 2.0. Positive values penalize new tokens based 
+    on whether they appear in the text so far."""
 
     logit_bias: Optional[dict] = None
     """JSON object that maps tokens to an associated bias value from -100 to 100."""
@@ -213,7 +217,8 @@ class ChatPrem(BaseChatModel, BaseModel):
     """Up to 4 sequences where the API will stop generating further tokens."""
 
     seed: Optional[int] = None
-    """This feature is in Beta. If specified, our system will make a best effort to sample deterministically."""
+    """This feature is in Beta. If specified, our system will make a best effort 
+    to sample deterministically."""
 
     client: Any
 
@@ -244,22 +249,22 @@ class ChatPrem(BaseChatModel, BaseModel):
 
     @property
     def _llm_type(self) -> str:
-        return "prem"
+        return "premai"
 
     @property
     def _default_params(self) -> Dict[str, Any]:
         # NOTE: n and stop is not supported, so hardcoding to current default value
-        # TODO: We might need to provide default prem-sdk params here too. 
+        # TODO: We might need to provide default prem-sdk params here too.
         return {
             "model": self.model,
-            "system_prompt": self.system_prompt, 
-            "top_p": self.top_p, 
-            "temperature": self.temperature, 
+            "system_prompt": self.system_prompt,
+            "top_p": self.top_p,
+            "temperature": self.temperature,
             "logit_bias": self.logit_bias,
             "max_tokens": self.max_tokens,
             "presence_penalty": self.presence_penalty,
             "frequency_penalty": self.frequency_penalty,
-            "seed": self.seed, 
+            "seed": self.seed,
             "stop": None,
         }
 
@@ -270,12 +275,11 @@ class ChatPrem(BaseChatModel, BaseModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs,
     ) -> ChatResult:
-
         system_prompt, messages = _messages_to_prompt_dict(messages)
 
         # TODO: If any of the kwargs is changed here w.r.t launched default parameters
-        # we need to push a warning message that those are changed. 
-        
+        # we need to push a warning message that those are changed.
+
         if stop is not None:
             kwargs["stop"] = stop
 
@@ -344,12 +348,12 @@ class ChatPrem(BaseChatModel, BaseModel):
                 if run_manager:
                     run_manager.on_llm_new_token(cg_chunk.text, chunk=cg_chunk)
                 yield cg_chunk
-            except Exception as e:
+            except Exception as _:
                 continue
 
 
 def create_prem_retry_decorator(
-    llm: ChatPrem,
+    llm: ChatPremAI,
     *,
     max_retries: int = 1,
     run_manager: Optional[Union[CallbackManagerForLLMRun]] = None,
@@ -378,7 +382,7 @@ def create_prem_retry_decorator(
 
 
 def chat_with_retry(
-    llm: ChatPrem,
+    llm: ChatPremAI,
     project_id: int,
     messages: List[dict],
     stream: bool = False,
