@@ -135,7 +135,7 @@ class ChatPromptAdapter:
     ) -> str:
         if provider == "anthropic":
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
-        elif provider == "meta":
+        elif provider in ("meta", "mistral"):
             prompt = convert_messages_to_prompt_llama(messages=messages)
         elif provider == "amazon":
             prompt = convert_messages_to_prompt_anthropic(
