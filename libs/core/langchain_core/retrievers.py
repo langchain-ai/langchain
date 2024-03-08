@@ -1,3 +1,23 @@
+"""**Retriever** class returns Documents given a text **query**.
+
+It is more general than a vector store. A retriever does not need to be able to
+store documents, only to return (or retrieve) it. Vector stores can be used as
+the backbone of a retriever, but there are other types of retrievers as well.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseRetriever --> <name>Retriever  # Examples: ArxivRetriever, MergerRetriever
+
+**Main helpers:**
+
+.. code-block::
+
+    RetrieverInput, RetrieverOutput, RetrieverLike, RetrieverOutputLike,
+    Document, Serializable, Callbacks,
+    CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
+"""
 from __future__ import annotations
 
 import warnings
@@ -115,7 +135,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         )
 
     def invoke(
-        self, input: str, config: Optional[RunnableConfig] = None
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Document]:
         config = ensure_config(config)
         return self.get_relevant_documents(
@@ -124,13 +144,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            **kwargs,
         )
 
     async def ainvoke(
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        **kwargs: Any,
     ) -> List[Document]:
         config = ensure_config(config)
         return await self.aget_relevant_documents(
@@ -139,6 +160,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            **kwargs,
         )
 
     @abstractmethod
@@ -208,7 +230,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             dumpd(self),
             query,
             name=run_name,
-            **kwargs,
         )
         try:
             _kwargs = kwargs if self._expects_other_args else {}
@@ -224,7 +245,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         else:
             run_manager.on_retriever_end(
                 result,
-                **kwargs,
             )
             return result
 
@@ -266,7 +286,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             dumpd(self),
             query,
             name=run_name,
-            **kwargs,
         )
         try:
             _kwargs = kwargs if self._expects_other_args else {}
@@ -282,6 +301,5 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         else:
             await run_manager.on_retriever_end(
                 result,
-                **kwargs,
             )
             return result

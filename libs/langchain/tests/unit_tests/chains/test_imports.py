@@ -14,6 +14,7 @@ EXPECTED_ALL = [
     "GraphCypherQAChain",
     "GraphQAChain",
     "GraphSparqlQAChain",
+    "OntotextGraphDBQAChain",
     "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
@@ -32,6 +33,7 @@ EXPECTED_ALL = [
     "NatBotChain",
     "NebulaGraphQAChain",
     "NeptuneOpenCypherQAChain",
+    "NeptuneSparqlQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
     "QAGenerationChain",
@@ -60,6 +62,7 @@ EXPECTED_ALL = [
     "create_history_aware_retriever",
     "create_retrieval_chain",
     "load_summarize_chain",
+    "create_structured_output_runnable",
 ]
 
 

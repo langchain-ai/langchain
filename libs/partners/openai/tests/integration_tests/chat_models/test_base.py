@@ -391,3 +391,37 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+
+
+def test_logprobs() -> None:
+    llm = ChatOpenAI()
+    result = llm.generate([[HumanMessage(content="I'm PickleRick")]], logprobs=True)
+    assert result.generations[0][0].generation_info
+    assert "content" in result.generations[0][0].generation_info["logprobs"]
+
+
+async def test_async_logprobs() -> None:
+    llm = ChatOpenAI()
+    result = await llm.agenerate(
+        [[HumanMessage(content="I'm PickleRick")]], logprobs=True
+    )
+    assert result.generations[0][0].generation_info
+    assert "content" in result.generations[0][0].generation_info["logprobs"]
+
+
+def test_logprobs_streaming() -> None:
+    llm = ChatOpenAI()
+    result = llm.generate(
+        [[HumanMessage(content="I'm PickleRick")]], logprobs=True, stream=True
+    )
+    assert result.generations[0][0].generation_info
+    assert "content" in result.generations[0][0].generation_info["logprobs"]
+
+
+async def test_async_logprobs_streaming() -> None:
+    llm = ChatOpenAI()
+    result = await llm.agenerate(
+        [[HumanMessage(content="I'm PickleRick")]], logprobs=True, stream=True
+    )
+    assert result.generations[0][0].generation_info
+    assert "content" in result.generations[0][0].generation_info["logprobs"]

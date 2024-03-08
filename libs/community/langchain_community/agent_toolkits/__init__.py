@@ -1,23 +1,13 @@
-"""Agent toolkits contain integrations with various resources and services.
-
-LangChain has a large ecosystem of integrations with various external resources
-like local and remote file systems, APIs and databases.
-
-These integrations allow developers to create versatile applications that combine the
-power of LLMs with the ability to access, interact with and manipulate external
-resources.
-
-When developing an application, developers should inspect the capabilities and
-permissions of the tools that underlie the given agent toolkit, and determine
-whether permissions of the given toolkit are appropriate for the application.
-
-See [Security](https://python.langchain.com/docs/security) for more information.
+"""**Toolkits** are sets of tools that can be used to interact with
+various services and APIs.
 """
 from langchain_community.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
 from langchain_community.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain_community.agent_toolkits.azure_cognitive_services import (
     AzureCognitiveServicesToolkit,
 )
+from langchain_community.agent_toolkits.cogniswitch.toolkit import CogniswitchToolkit
+from langchain_community.agent_toolkits.connery import ConneryToolkit
 from langchain_community.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
 )
@@ -34,6 +24,7 @@ from langchain_community.agent_toolkits.openapi.toolkit import OpenAPIToolkit
 from langchain_community.agent_toolkits.playwright.toolkit import (
     PlayWrightBrowserToolkit,
 )
+from langchain_community.agent_toolkits.polygon.toolkit import PolygonToolkit
 from langchain_community.agent_toolkits.powerbi.base import create_pbi_agent
 from langchain_community.agent_toolkits.powerbi.chat_base import create_pbi_chat_agent
 from langchain_community.agent_toolkits.powerbi.toolkit import PowerBIToolkit
@@ -49,6 +40,8 @@ __all__ = [
     "AINetworkToolkit",
     "AmadeusToolkit",
     "AzureCognitiveServicesToolkit",
+    "CogniswitchToolkit",
+    "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
     "JiraToolkit",
@@ -59,6 +52,7 @@ __all__ = [
     "O365Toolkit",
     "OpenAPIToolkit",
     "PlayWrightBrowserToolkit",
+    "PolygonToolkit",
     "PowerBIToolkit",
     "SlackToolkit",
     "SteamToolkit",

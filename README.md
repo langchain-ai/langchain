@@ -1,6 +1,6 @@
 # 🦜️🔗 LangChain
 
-⚡ Building applications with LLMs through composability ⚡
+⚡ Build context-aware reasoning applications ⚡
 
 [![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain)](https://github.com/langchain-ai/langchain/releases)
 [![CI](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml)
@@ -18,7 +18,7 @@ Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langc
 
 To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com). 
 [LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications. 
-Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to get off the waitlist or speak with our sales team.
+Fill out [this form](https://www.langchain.com/contact-sales) to speak with our sales team.
 
 ## Quick Install
 
@@ -43,13 +43,14 @@ This framework consists of several parts.
 - **[LangChain Templates](templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
 - **[LangServe](https://github.com/langchain-ai/langserve)**: A library for deploying LangChain chains as a REST API.
 - **[LangSmith](https://smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
+- **[LangGraph](https://python.langchain.com/docs/langgraph)**: LangGraph is a library for building stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain. It extends the LangChain Expression Language with the ability to coordinate multiple chains (or actors) across multiple steps of computation in a cyclic manner. 
 
 The LangChain libraries themselves are made up of several different packages.
 - **[`langchain-core`](libs/core)**: Base abstractions and LangChain Expression Language.
 - **[`langchain-community`](libs/community)**: Third party integrations.
 - **[`langchain`](libs/langchain)**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
-![LangChain Stack](docs/static/img/langchain_stack.png)
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/img/langchain_stack.png "LangChain Architecture Overview")
 
 ## 🧱 What can you build with LangChain?
 **❓ Retrieval augmented generation**

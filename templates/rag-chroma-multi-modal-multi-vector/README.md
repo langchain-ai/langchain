@@ -9,7 +9,7 @@ It uses GPT-4V to create image summaries for each slide, embeds the summaries, a
  
 Given a question, relevat slides are retrieved and passed to GPT-4V for answer synthesis.
 
-![mm-captioning](https://github.com/langchain-ai/langchain/assets/122662504/5277ef6b-d637-43c7-8dc1-9b1567470503)
+![Diagram illustrating the multi-modal LLM process with a slide deck, captioning, storage, question input, and answer synthesis with year-over-year growth percentages.](https://github.com/langchain-ai/langchain/assets/122662504/5277ef6b-d637-43c7-8dc1-9b1567470503 "Multi-modal LLM Process Diagram")
 
 ## Input
 

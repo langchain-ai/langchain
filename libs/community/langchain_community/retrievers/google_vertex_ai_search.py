@@ -1,4 +1,5 @@
 """Retriever wrapper for Google Vertex AI Search."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
@@ -90,9 +91,11 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
         from google.api_core.client_options import ClientOptions
 
         return ClientOptions(
-            api_endpoint=f"{self.location_id}-discoveryengine.googleapis.com"
-            if self.location_id != "global"
-            else None
+            api_endpoint=(
+                f"{self.location_id}-discoveryengine.googleapis.com"
+                if self.location_id != "global"
+                else None
+            )
         )
 
     def _convert_structured_search_response(
@@ -188,9 +191,9 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
                 )
 
         if not documents:
-            print(f"No {chunk_type} could be found.")
+            print(f"No {chunk_type} could be found.")  # noqa: T201
             if chunk_type == "extractive_answers":
-                print(
+                print(  # noqa: T201
                     "Make sure that your data store is using Advanced Website "
                     "Indexing.\n"
                     "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501

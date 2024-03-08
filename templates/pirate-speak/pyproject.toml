@@ -12,7 +12,7 @@ langchain-community = "^0.0.7"
 langchain-core = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 

@@ -18,7 +18,7 @@ Integration with log10 is a simple one-line `log10_callback` integration as show
 
 ```python
 from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage
+from langchain_core.messages import HumanMessage
 
 from log10.langchain import Log10Callback
 from log10.llm import Log10Config
@@ -43,7 +43,7 @@ llm = ChatOpenAI(model_name="gpt-3.5-turbo", callbacks=[log10_callback])
 from langchain_openai import OpenAI
 from langchain_community.chat_models import ChatAnthropic
 from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage
+from langchain_core.messages import HumanMessage
 
 from log10.langchain import Log10Callback
 from log10.llm import Log10Config

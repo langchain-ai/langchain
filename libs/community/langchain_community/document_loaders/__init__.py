@@ -32,10 +32,12 @@ from langchain_community.document_loaders.apify_dataset import ApifyDatasetLoade
 from langchain_community.document_loaders.arcgis_loader import ArcGISLoader
 from langchain_community.document_loaders.arxiv import ArxivLoader
 from langchain_community.document_loaders.assemblyai import (
+    AssemblyAIAudioLoaderById,
     AssemblyAIAudioTranscriptLoader,
 )
 from langchain_community.document_loaders.astradb import AstraDBLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
+from langchain_community.document_loaders.athena import AthenaLoader
 from langchain_community.document_loaders.azlyrics import AZLyricsLoader
 from langchain_community.document_loaders.azure_ai_data import (
     AzureAIDataLoader,
@@ -59,6 +61,7 @@ from langchain_community.document_loaders.blob_loaders import (
 from langchain_community.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain_community.document_loaders.brave_search import BraveSearchLoader
 from langchain_community.document_loaders.browserless import BrowserlessLoader
+from langchain_community.document_loaders.cassandra import CassandraLoader
 from langchain_community.document_loaders.chatgpt import ChatGPTLoader
 from langchain_community.document_loaders.chromium import AsyncChromiumLoader
 from langchain_community.document_loaders.college_confidential import (
@@ -101,7 +104,10 @@ from langchain_community.document_loaders.gcs_file import GCSFileLoader
 from langchain_community.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain_community.document_loaders.git import GitLoader
 from langchain_community.document_loaders.gitbook import GitbookLoader
-from langchain_community.document_loaders.github import GitHubIssuesLoader
+from langchain_community.document_loaders.github import (
+    GithubFileLoader,
+    GitHubIssuesLoader,
+)
 from langchain_community.document_loaders.google_speech_to_text import (
     GoogleSpeechToTextLoader,
 )
@@ -112,6 +118,9 @@ from langchain_community.document_loaders.html import UnstructuredHTMLLoader
 from langchain_community.document_loaders.html_bs import BSHTMLLoader
 from langchain_community.document_loaders.hugging_face_dataset import (
     HuggingFaceDatasetLoader,
+)
+from langchain_community.document_loaders.hugging_face_model import (
+    HuggingFaceModelLoader,
 )
 from langchain_community.document_loaders.ifixit import IFixitLoader
 from langchain_community.document_loaders.image import UnstructuredImageLoader
@@ -155,6 +164,7 @@ from langchain_community.document_loaders.pdf import (
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
+from langchain_community.document_loaders.pebblo import PebbloSafeLoader
 from langchain_community.document_loaders.polars_dataframe import PolarsDataFrameLoader
 from langchain_community.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain_community.document_loaders.psychic import PsychicLoader
@@ -178,8 +188,10 @@ from langchain_community.document_loaders.sitemap import SitemapLoader
 from langchain_community.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain_community.document_loaders.snowflake_loader import SnowflakeLoader
 from langchain_community.document_loaders.spreedly import SpreedlyLoader
+from langchain_community.document_loaders.sql_database import SQLDatabaseLoader
 from langchain_community.document_loaders.srt import SRTLoader
 from langchain_community.document_loaders.stripe import StripeLoader
+from langchain_community.document_loaders.surrealdb import SurrealDBLoader
 from langchain_community.document_loaders.telegram import (
     TelegramChatApiLoader,
     TelegramChatFileLoader,
@@ -192,6 +204,7 @@ from langchain_community.document_loaders.tensorflow_datasets import (
     TensorflowDatasetLoader,
 )
 from langchain_community.document_loaders.text import TextLoader
+from langchain_community.document_loaders.tidb import TiDBLoader
 from langchain_community.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain_community.document_loaders.toml import TomlLoader
 from langchain_community.document_loaders.trello import TrelloLoader
@@ -206,6 +219,7 @@ from langchain_community.document_loaders.unstructured import (
 from langchain_community.document_loaders.url import UnstructuredURLLoader
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain_community.document_loaders.url_selenium import SeleniumURLLoader
+from langchain_community.document_loaders.vsdx import VsdxLoader
 from langchain_community.document_loaders.weather import WeatherDataLoader
 from langchain_community.document_loaders.web_base import WebBaseLoader
 from langchain_community.document_loaders.whatsapp_chat import WhatsAppChatLoader
@@ -221,6 +235,7 @@ from langchain_community.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
+from langchain_community.document_loaders.yuque import YuqueLoader
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -248,9 +263,11 @@ __all__ = [
     "ApifyDatasetLoader",
     "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
+    "AthenaLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
@@ -265,6 +282,7 @@ __all__ = [
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
     "BrowserlessLoader",
+    "CassandraLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
@@ -275,6 +293,7 @@ __all__ = [
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
+    "PebbloSafeLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
@@ -292,6 +311,7 @@ __all__ = [
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
+    "GithubFileLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
@@ -302,6 +322,7 @@ __all__ = [
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
+    "HuggingFaceModelLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
@@ -359,7 +380,9 @@ __all__ = [
     "SlackDirectoryLoader",
     "SnowflakeLoader",
     "SpreedlyLoader",
+    "SQLDatabaseLoader",
     "StripeLoader",
+    "SurrealDBLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
@@ -367,6 +390,7 @@ __all__ = [
     "TencentCOSDirectoryLoader",
     "TencentCOSFileLoader",
     "TextLoader",
+    "TiDBLoader",
     "ToMarkdownLoader",
     "TomlLoader",
     "TrelloLoader",
@@ -392,6 +416,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
     "WhatsAppChatLoader",
@@ -399,4 +424,5 @@ __all__ = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "YuqueLoader",
 ]

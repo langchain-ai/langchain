@@ -2,6 +2,7 @@ import json
 import logging
 from typing import List
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
@@ -15,6 +16,11 @@ DEFAULT_DBNAME = "chat_history"
 DEFAULT_COLLECTION_NAME = "message_store"
 
 
+@deprecated(
+    since="0.0.25",
+    removal="0.2.0",
+    alternative_import="langchain_mongodb.MongoDBChatMessageHistory",
+)
 class MongoDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in MongoDB.
 

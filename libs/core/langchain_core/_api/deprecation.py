@@ -144,6 +144,15 @@ def deprecated(
                 emit_warning()
             return wrapped(*args, **kwargs)
 
+        async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Same as warning_emitting_wrapper, but for async functions."""
+
+            nonlocal warned
+            if not warned and not is_caller_internal():
+                warned = True
+                emit_warning()
+            return await wrapped(*args, **kwargs)
+
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
@@ -236,10 +245,9 @@ def deprecated(
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
+        # old_doc can be None
         if not old_doc:
-            new_doc = "[*Deprecated*]"
-        else:
-            new_doc = f"[*Deprecated*]  {old_doc}"
+            old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
         notes_header = "\nNotes\n-----"
@@ -249,14 +257,19 @@ def deprecated(
             addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
-        new_doc += (
+        package = _name.split(".")[0].replace("_", "-") if "." in _name else None
+        since_str = f"{package}=={since}" if package else since
+        new_doc = (
             f"[*Deprecated*] {old_doc}\n"
             f"{notes_header if notes_header not in old_doc else ''}\n"
-            f".. deprecated:: {since}\n"
+            f".. deprecated:: {since_str}\n"
             f"   {details}"
         )
 
-        return finalize(warning_emitting_wrapper, new_doc)
+        if inspect.iscoroutinefunction(obj):
+            return finalize(awarning_emitting_wrapper, new_doc)
+        else:
+            return finalize(warning_emitting_wrapper, new_doc)
 
     return deprecate
 

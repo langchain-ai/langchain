@@ -1,4 +1,5 @@
 """Test ForeFrontAI LLM"""
+
 from typing import cast
 
 from langchain_core.pydantic_v1 import SecretStr
@@ -19,7 +20,7 @@ def test_forefrontai_api_key_masked_when_passed_from_env(
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("FOREFRONTAI_API_KEY", "secret-api-key")
     llm = ForefrontAI(temperature=0.2)
-    print(llm.forefrontai_api_key, end="")
+    print(llm.forefrontai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -33,7 +34,7 @@ def test_forefrontai_api_key_masked_when_passed_via_constructor(
         forefrontai_api_key="secret-api-key",
         temperature=0.2,
     )
-    print(llm.forefrontai_api_key, end="")
+    print(llm.forefrontai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

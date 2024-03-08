@@ -40,6 +40,22 @@ See a [usage example](/docs/integrations/llms/huggingface_pipelines).
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 ```
 
+To use the OpenVINO backend in local pipeline wrapper, please install the optimum library and set HuggingFacePipeline's backend as `openvino`:
+
+```bash
+pip install --upgrade-strategy eager "optimum[openvino,nncf]"
+```
+
+See a [usage example](/docs/integrations/llms/huggingface_pipelines)
+
+To export your model to the OpenVINO IR format with the CLI:
+
+```bash
+optimum-cli export openvino --model gpt2 ov_model
+```
+
+To apply [weight-only quantization](https://github.com/huggingface/optimum-intel?tab=readme-ov-file#export) when exporting your model.
+
 ### Hugging Face TextGen Inference
 
 >[Text Generation Inference](https://github.com/huggingface/text-generation-inference) is 
@@ -58,30 +74,23 @@ See a [usage example](/docs/integrations/llms/huggingface_textgen_inference).
 from langchain_community.llms import HuggingFaceTextGenInference
 ```
 
+## Chat models
 
+### Models from Hugging Face
 
-## Document Loaders
+We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
 
-### Hugging Face dataset
-
->[Hugging Face Hub](https://huggingface.co/docs/hub/index) is home to over 75,000 
-> [datasets](https://huggingface.co/docs/hub/index#datasets) in more than 100 languages 
-> that can be used for a broad range of tasks across NLP, Computer Vision, and Audio.
-> They used for a diverse range of tasks such as translation, automatic speech 
-> recognition, and image classification.
-
-We need to install `datasets` python package.
+We need to install several python packages.
 
 ```bash
-pip install datasets
+pip install huggingface_hub
+pip install transformers
 ```
-
-See a [usage example](/docs/integrations/document_loaders/hugging_face_dataset).
+See a [usage example](/docs/integrations/chat/huggingface).
 
 ```python
-from langchain_community.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
+from langchain_community.chat_models.huggingface import ChatHuggingFace
 ```
-
 
 ## Embedding Models
 
@@ -125,6 +134,48 @@ See a [usage example](/docs/integrations/text_embedding/bge_huggingface).
 ```python
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 ```
+
+### Hugging Face Text Embeddings Inference (TEI)
+
+>[Hugging Face Text Embeddings Inference (TEI)](https://huggingface.co/docs/text-generation-inference/index) is a toolkit for deploying and serving open-source
+> text embeddings and sequence classification models. `TEI` enables high-performance extraction for the most popular models,
+>including `FlagEmbedding`, `Ember`, `GTE` and `E5`.
+
+We need to install `huggingface-hub` python package.
+
+```bash
+pip install huggingface-hub
+```
+
+See a [usage example](/docs/integrations/text_embedding/text_embeddings_inference).
+
+```python
+from langchain_community.embeddings import HuggingFaceHubEmbeddings
+```
+
+
+## Document Loaders
+
+### Hugging Face dataset
+
+>[Hugging Face Hub](https://huggingface.co/docs/hub/index) is home to over 75,000 
+> [datasets](https://huggingface.co/docs/hub/index#datasets) in more than 100 languages 
+> that can be used for a broad range of tasks across NLP, Computer Vision, and Audio.
+> They used for a diverse range of tasks such as translation, automatic speech 
+> recognition, and image classification.
+
+We need to install `datasets` python package.
+
+```bash
+pip install datasets
+```
+
+See a [usage example](/docs/integrations/document_loaders/hugging_face_dataset).
+
+```python
+from langchain_community.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
+```
+
 
 
 ## Tools

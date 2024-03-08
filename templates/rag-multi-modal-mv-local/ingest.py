@@ -63,7 +63,7 @@ def generate_img_summaries(img_base64_list):
             image_summaries.append(image_summarize(base64_image, prompt))
             processed_images.append(base64_image)
         except Exception as e:
-            print(f"Error with image {i+1}: {e}")
+            print(f"Error with image {i+1}: {e}")  # noqa: T201
 
     return image_summaries, processed_images
 
@@ -162,14 +162,14 @@ def create_multi_vector_retriever(vectorstore, image_summaries, images):
 # Load images
 doc_path = Path(__file__).parent / "docs/"
 rel_doc_path = doc_path.relative_to(Path.cwd())
-print("Read images")
+print("Read images")  # noqa: T201
 pil_images = get_images(rel_doc_path)
 
 # Convert to b64
 images_base_64 = [convert_to_base64(i) for i in pil_images]
 
 # Image summaries
-print("Generate image summaries")
+print("Generate image summaries")  # noqa: T201
 image_summaries, images_base_64_processed = generate_img_summaries(images_base_64)
 
 # The vectorstore to use to index the images summaries

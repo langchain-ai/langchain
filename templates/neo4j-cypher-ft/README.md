@@ -9,7 +9,7 @@ The package utilizes a full-text index for efficient mapping of text values to d
 
 In the provided example, the full-text index is used to map names of people and movies from the user's query to corresponding database entries.
 
-![Workflow diagram](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-ft/static/workflow.png)
+![Workflow diagram showing the process from a user asking a question to generating an answer using the Neo4j knowledge graph and full-text index.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-ft/static/workflow.png "Neo4j Cypher Workflow Diagram")
 
 ## Environment Setup
 

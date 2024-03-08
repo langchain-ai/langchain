@@ -98,7 +98,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
             if self.mode in ["single", "markdown"]:
                 yield from self._generate_docs_single(result)
-            elif self.mode == ["page"]:
+            elif self.mode in ["page"]:
                 yield from self._generate_docs_page(result)
             else:
                 yield from self._generate_docs_object(result)
@@ -116,7 +116,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
         if self.mode in ["single", "markdown"]:
             yield from self._generate_docs_single(result)
-        elif self.mode == ["page"]:
+        elif self.mode in ["page"]:
             yield from self._generate_docs_page(result)
         else:
             yield from self._generate_docs_object(result)

@@ -59,19 +59,20 @@ class GrobidParser(BaseBlobParser):
                     for i, sentence in enumerate(paragraph.find_all("s")):
                         paragraph_text.append(sentence.text)
                         sbboxes = []
-                        for bbox in sentence.get("coords").split(";"):
-                            box = bbox.split(",")
-                            sbboxes.append(
-                                {
-                                    "page": box[0],
-                                    "x": box[1],
-                                    "y": box[2],
-                                    "h": box[3],
-                                    "w": box[4],
-                                }
-                            )
-                        chunk_bboxes.append(sbboxes)
-                        if segment_sentences is True:
+                        if sentence.get("coords") is not None:
+                            for bbox in sentence.get("coords").split(";"):
+                                box = bbox.split(",")
+                                sbboxes.append(
+                                    {
+                                        "page": box[0],
+                                        "x": box[1],
+                                        "y": box[2],
+                                        "h": box[3],
+                                        "w": box[4],
+                                    }
+                                )
+                            chunk_bboxes.append(sbboxes)
+                        if (segment_sentences is True) and (len(sbboxes) > 0):
                             fpage, lpage = sbboxes[0]["page"], sbboxes[-1]["page"]
                             sentence_dict = {
                                 "text": sentence.text,
