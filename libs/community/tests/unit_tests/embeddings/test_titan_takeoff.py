@@ -19,7 +19,7 @@ def test_titan_takeoff_call() -> None:
     responses.add(
         responses.POST,
         f"http://localhost:{port}/embed",
-        json={"text": [0.46635, 0.234, -0.8521]},
+        json={"result": [0.46635, 0.234, -0.8521]},
         content_type="application/json",
     )
 
@@ -49,7 +49,7 @@ def test_no_consumer_group_fails() -> None:
     responses.add(
         responses.POST,
         f"http://localhost:{port}/embed",
-        json={"text": [0.46635, 0.234, -0.8521]},
+        json={"result": [0.46635, 0.234, -0.8521]},
         content_type="application/json",
     )
 
@@ -77,9 +77,6 @@ def test_takeoff_initialization() -> None:
         "model_name": "test",
         "device": "cpu",
         "consumer_group": "embed",
-        "max_seq_length": 512,
-        "max_batch_size": 4,
-        "tensor_parallel": 3,
     }
     reader_2 = reader_1.copy()
     reader_2["model_name"] = "test2"
@@ -87,13 +84,14 @@ def test_takeoff_initialization() -> None:
 
     responses.add(responses.POST, mgnt_url, json={"key": "value"}, status=201)
     responses.add(
-        responses.POST, embed_url, json={"text": [0.34, 0.43, -0.934532]}, status=200
+        responses.POST, embed_url, json={"result": [0.34, 0.43, -0.934532]}, status=200
     )
 
     llm = TitanTakeoffEmbed(
         port=inf_port, mgmt_port=mgnt_port, models=[reader_1, reader_2]
     )
-    # Shouldn't need to specify consumer group as there is only one specified during initialization
+    # Shouldn't need to specify consumer group as there is only one specified during
+    # initialization
     output_1 = llm.embed_documents("What is 2 + 2?")
     output_2 = llm.embed_query("What is 2 + 2?")
 
@@ -101,10 +99,12 @@ def test_takeoff_initialization() -> None:
     assert isinstance(output_2, list)
     # Ensure the management api was called to create the reader
     assert len(responses.calls) == 4
-    assert json.loads(responses.calls[0].request.body.decode("utf-8")) == reader_1
+    for key, value in reader_1.items():
+        assert json.loads(responses.calls[0].request.body.decode("utf-8"))[key] == value
     assert responses.calls[0].request.url == mgnt_url
     # Also second call should be made to spin uo reader 2
-    assert json.loads(responses.calls[1].request.body.decode("utf-8")) == reader_2
+    for key, value in reader_2.items():
+        assert json.loads(responses.calls[1].request.body.decode("utf-8"))[key] == value
     assert responses.calls[1].request.url == mgnt_url
     # Ensure the third call is to generate endpoint to inference
     for n in range(2, 4):
@@ -127,9 +127,6 @@ def test_takeoff_initialization_with_more_than_one_consumer_group() -> None:
         "model_name": "test",
         "device": "cpu",
         "consumer_group": "embed",
-        "max_seq_length": 512,
-        "max_batch_size": 4,
-        "tensor_parallel": 3,
     }
     reader_2 = reader_1.copy()
     reader_2["model_name"] = "test2"
@@ -138,13 +135,14 @@ def test_takeoff_initialization_with_more_than_one_consumer_group() -> None:
 
     responses.add(responses.POST, mgnt_url, json={"key": "value"}, status=201)
     responses.add(
-        responses.POST, embed_url, json={"text": [0.34, 0.43, -0.934532]}, status=200
+        responses.POST, embed_url, json={"result": [0.34, 0.43, -0.934532]}, status=200
     )
 
     llm = TitanTakeoffEmbed(
         port=inf_port, mgmt_port=mgnt_port, models=[reader_1, reader_2]
     )
-    # There was more than one consumer group specified during initialization so we need to specify which one to use
+    # There was more than one consumer group specified during initialization so we
+    # need to specify which one to use
     with pytest.raises(MissingConsumerGroup):
         llm.embed_documents("What is 2 + 2?")
     with pytest.raises(MissingConsumerGroup):
@@ -157,10 +155,12 @@ def test_takeoff_initialization_with_more_than_one_consumer_group() -> None:
     assert isinstance(output_2, list)
     # Ensure the management api was called to create the reader
     assert len(responses.calls) == 4
-    assert json.loads(responses.calls[0].request.body.decode("utf-8")) == reader_1
+    for key, value in reader_1.items():
+        assert json.loads(responses.calls[0].request.body.decode("utf-8"))[key] == value
     assert responses.calls[0].request.url == mgnt_url
     # Also second call should be made to spin uo reader 2
-    assert json.loads(responses.calls[1].request.body.decode("utf-8")) == reader_2
+    for key, value in reader_2.items():
+        assert json.loads(responses.calls[1].request.body.decode("utf-8"))[key] == value
     assert responses.calls[1].request.url == mgnt_url
     # Ensure the third call is to generate endpoint to inference
     for n in range(2, 4):

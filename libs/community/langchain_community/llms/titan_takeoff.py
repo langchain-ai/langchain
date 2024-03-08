@@ -1,10 +1,10 @@
 from enum import Enum
-from typing import Any, Iterator, List, Optional, cast
+from typing import Any, Iterator, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -40,12 +40,15 @@ class ReaderConfig(BaseModel):
 
 
 class TitanTakeoff(LLM):
-    """Titan Takeoff is a wrapper to interface with Takeoff Inference API for generative text to text language models.
+    """Titan Takeoff is a wrapper to interface with Takeoff Inference API for
+    generative text to text language models.
 
-    You can use this wrapper to send requests to a generative language model and to deploy readers with Takeoff.
+    You can use this wrapper to send requests to a generative language model
+    and to deploy readers with Takeoff.
 
     Examples:
-        This is an example how to deploy a generative language model and send requests.
+        This is an example how to deploy a generative language model and send
+        requests.
 
         .. code-block:: python
             # Import the TitanTakeoff class from community package
@@ -53,20 +56,36 @@ class TitanTakeoff(LLM):
             from langchain_community.llms import TitanTakeoff
 
             # Specify the embedding reader you'd like to deploy
-            reader_1 = {"model_name": "TheBloke/Llama-2-7b-Chat-AWQ", "device": "cuda", "tensor_parallel": 1, "consumer_group": "llama"}
+            reader_1 = {
+                "model_name": "TheBloke/Llama-2-7b-Chat-AWQ",
+                "device": "cuda",
+                "tensor_parallel": 1,
+                "consumer_group": "llama"
+            }
 
-            # For every reader you pass into models arg Takeoff will spin up a reader according to the specs you provide.
-            If you don't specify the arg no models are spun up and it assumes you have already done this separately.
+            # For every reader you pass into models arg Takeoff will spin
+            # up a reader according to the specs you provide. If you don't
+            # specify the arg no models are spun up and it assumes you have
+            # already done this separately.
             llm = TitanTakeoff(models=[reader_1])
 
-            time.sleep(60)  # Wait for the reader to be deployed, time needed depends on the model size and your internet speed
+            # Wait for the reader to be deployed, time needed depends on the
+            # model size and your internet speed
+            time.sleep(60)
 
-            # Returns the query, ie a List[float], sent to `llama` consumer group where we just spun up the Llama 7B model
-            print(embed.invoke("Where can I see football?", consumer_group="llama"))
+            # Returns the query, ie a List[float], sent to `llama` consumer group
+            # where we just spun up the Llama 7B model
+            print(embed.invoke(
+                "Where can I see football?", consumer_group="llama"
+            ))
 
-            # You can also send generation parameters to the model, any of the following can be passed in as
-            # kwargs: https://docs.titanml.co/docs/next/apis/Takeoff%20inference_REST_API/generate#request for instance:
-            print(embed.invoke("Where can I see football?", consumer_group="llama", max_new_tokens=100))
+            # You can also send generation parameters to the model, any of the
+            # following can be passed in as kwargs:
+            # https://docs.titanml.co/docs/next/apis/Takeoff%20inference_REST_API/generate#request
+            # for instance:
+            print(embed.invoke(
+                "Where can I see football?", consumer_group="llama", max_new_tokens=100
+            ))
     """
 
     base_url: str = "http://localhost"
@@ -95,16 +114,23 @@ class TitanTakeoff(LLM):
         """Initialize the Titan Takeoff language wrapper.
 
         Args:
-            base_url (str, optional): The base url where Takeoff Inference Server is listening. Defaults to "http://localhost".
-            port (int, optional): What port is Takeoff Inference API listening on. Defaults to 3000.
-            mgmt_port (int, optional): What port is Takeoff Management API listening on. Defaults to 3001.
-            streaming (bool, optional): Whether you want to by deafult use the generate_stream endpoint over generate to stream
-            responses. Defaults to False. In reality this little difference as the streamed response is buffered and returned similar
-            to non-streamed response, but the run manager is applied per token generated.
-            models (List[ReaderConfig], optional): Any readers you'd like to spin up on. Defaults to [].
+            base_url (str, optional): The base url where Takeoff Inference
+                Server is listening. Defaults to "http://localhost".
+            port (int, optional): What port is Takeoff Inference API
+                listening on. Defaults to 3000.
+            mgmt_port (int, optional): What port is Takeoff Management API
+                listening on. Defaults to 3001.
+            streaming (bool, optional): Whether you want to by default use the
+                generate_stream endpoint over generate to stream responses.
+                Defaults to False. In reality this little difference as the
+                streamed response is buffered and returned similar to non-streamed
+                response, but the run manager is applied per token generated.
+            models (List[ReaderConfig], optional): Any readers you'd like to
+                spin up on. Defaults to [].
 
         Raises:
-            ImportError: If you haven't installed takeoff-client, you will get an ImportError. To remedy run `pip install 'takeoff-client==0.4.0'`
+            ImportError: If you haven't installed takeoff-client, you will
+            get an ImportError. To remedy run `pip install 'takeoff-client==0.4.0'`
         """
         super().__init__(
             base_url=base_url, port=port, mgmt_port=mgmt_port, streaming=streaming
@@ -151,7 +177,8 @@ class TitanTakeoff(LLM):
 
                 prompt = "What is the capital of the United Kingdom?"
 
-                # Use of model(prompt), ie `__call__` was deprecated in LangChain 0.1.7, use model.invoke(prompt) instead.
+                # Use of model(prompt), ie `__call__` was deprecated in LangChain 0.1.7,
+                # use model.invoke(prompt) instead.
                 response = model.invoke(prompt)
 
         """

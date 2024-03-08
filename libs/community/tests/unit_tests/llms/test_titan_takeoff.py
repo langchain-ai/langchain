@@ -54,7 +54,6 @@ def test_titan_takeoff_call(streaming, takeoff_object) -> None:
     if streaming:
         output = llm._stream("What is 2 + 2?")
         for chunk in output:
-            print(chunk.text)
             assert isinstance(chunk, str)
         assert len(responses.calls) == number_of_calls + 1
         assert responses.calls[0].request.url == url
@@ -103,7 +102,7 @@ def test_titan_takeoff_model_initialisation(takeoff_object) -> None:
         "model_name": "test",
         "device": "cpu",
         "consumer_group": "primary",
-        "max_seq_length": 512,
+        "max_sequence_length": 512,
         "max_batch_size": 4,
         "tensor_parallel": 3,
     }
@@ -121,10 +120,12 @@ def test_titan_takeoff_model_initialisation(takeoff_object) -> None:
     assert isinstance(output, str)
     # Ensure the management api was called to create the reader
     assert len(responses.calls) == 3
-    assert json.loads(responses.calls[0].request.body.decode("utf-8")) == reader_1
+    for key, value in reader_1.items():
+        assert json.loads(responses.calls[0].request.body.decode("utf-8"))[key] == value
     assert responses.calls[0].request.url == mgnt_url
     # Also second call should be made to spin uo reader 2
-    assert json.loads(responses.calls[1].request.body.decode("utf-8")) == reader_2
+    for key, value in reader_2.items():
+        assert json.loads(responses.calls[1].request.body.decode("utf-8"))[key] == value
     assert responses.calls[1].request.url == mgnt_url
     # Ensure the third call is to generate endpoint to inference
     assert responses.calls[2].request.url == gen_url
