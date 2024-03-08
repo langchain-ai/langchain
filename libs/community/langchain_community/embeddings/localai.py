@@ -32,6 +32,14 @@ from langchain_community.utils.openai import is_openai_v1
 logger = logging.getLogger(__name__)
 
 
+class DataItem(BaseModel):
+    embedding: List[float]
+
+
+class Response(BaseModel):
+    data: List[DataItem]
+
+
 def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], Any]:
     import openai
 
@@ -87,8 +95,8 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
 
 
 # https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
-def _check_response(response: dict) -> dict:
-    if any([len(d.embedding) == 1 for d in response.data]):
+def _check_response(response: Response) -> Response:
+    if any(len(d.embedding) == 1 for d in response.data):
         import openai
 
         raise openai.APIError("LocalAI API returned an empty embedding")
