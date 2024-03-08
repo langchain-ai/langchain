@@ -273,7 +273,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = self._client.messages.create(**params)
-        return self._format_output(data, **kwargs)
+        return self._format_output(data)
 
     async def _agenerate(
         self,
@@ -284,7 +284,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = await self._async_client.messages.create(**params)
-        return self._format_output(data, **kwargs)
+        return self._format_output(data)
 
 
 @deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")

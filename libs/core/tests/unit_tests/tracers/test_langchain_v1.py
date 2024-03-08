@@ -459,8 +459,8 @@ def test_convert_run(
     sample_tracer_session_v1: TracerSessionV1,
 ) -> None:
     """Test converting a run to a V1 run."""
-    llm_run = Run(
-        id="57a08cc4-73d2-4236-8370-549099d07fad",
+    llm_run = Run(  # type: ignore[call-arg]
+        id="57a08cc4-73d2-4236-8370-549099d07fad",  # type: ignore[arg-type]
         name="llm_run",
         execution_order=1,
         child_execution_order=1,
@@ -474,7 +474,7 @@ def test_convert_run(
         run_type="llm",
     )
     chain_run = Run(
-        id="57a08cc4-73d2-4236-8371-549099d07fad",
+        id="57a08cc4-73d2-4236-8371-549099d07fad",  # type: ignore[arg-type]
         name="chain_run",
         execution_order=1,
         start_time=datetime.now(timezone.utc),
@@ -489,7 +489,7 @@ def test_convert_run(
     )
 
     tool_run = Run(
-        id="57a08cc4-73d2-4236-8372-549099d07fad",
+        id="57a08cc4-73d2-4236-8372-549099d07fad",  # type: ignore[arg-type]
         name="tool_run",
         execution_order=1,
         child_execution_order=1,
@@ -503,7 +503,7 @@ def test_convert_run(
         run_type="tool",
     )
 
-    expected_llm_run = LLMRun(
+    expected_llm_run = LLMRun(  # type: ignore[call-arg]
         uuid="57a08cc4-73d2-4236-8370-549099d07fad",
         name="llm_run",
         execution_order=1,
@@ -517,7 +517,7 @@ def test_convert_run(
         extra={},
     )
 
-    expected_chain_run = ChainRun(
+    expected_chain_run = ChainRun(  # type: ignore[call-arg]
         uuid="57a08cc4-73d2-4236-8371-549099d07fad",
         name="chain_run",
         execution_order=1,
@@ -533,7 +533,7 @@ def test_convert_run(
         child_tool_runs=[],
         extra={},
     )
-    expected_tool_run = ToolRun(
+    expected_tool_run = ToolRun(  # type: ignore[call-arg]
         uuid="57a08cc4-73d2-4236-8372-549099d07fad",
         name="tool_run",
         execution_order=1,

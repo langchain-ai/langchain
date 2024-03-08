@@ -7,7 +7,9 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -99,6 +101,26 @@ async def agenerate_from_stream(
             )
         ]
     )
+
+
+def _as_async_iterator(sync_iterator: Callable) -> Callable:
+    """Convert a sync iterator into an async iterator."""
+
+    async def _as_sync_iterator(*args: Any, **kwargs: Any) -> AsyncGenerator:
+        iterator = await run_in_executor(None, sync_iterator, *args, **kwargs)
+        done = object()
+        while True:
+            item = await run_in_executor(
+                None,
+                next,
+                iterator,
+                done,  # type: ignore[call-arg, arg-type]
+            )
+            if item is done:
+                break
+            yield item  # type: ignore[misc]
+
+    return _as_sync_iterator
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
@@ -235,7 +257,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
-                    _cp_gen_info_to_msg(chunk)
+                    chunk.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(chunk)
                     yield chunk.message
                     if generation is None:
                         generation = chunk
@@ -261,58 +283,75 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        if type(self)._astream == BaseChatModel._astream:
-            # model doesn't implement streaming, so use default implementation
+        if type(self)._astream is not BaseChatModel._astream:
+            # Then astream is implemented
+            _stream_implementation = self._astream
+        elif type(self)._stream is not BaseChatModel._stream:
+            # Then stream is implemented, so we can create an async iterator from it
+            # The typing is hard to type correctly with mypy here, so we cast
+            # and do a type ignore, this code is unit tested and should be fine.
+            _stream_implementation = cast(  # type: ignore
+                Callable[
+                    [
+                        List[BaseMessage],
+                        Optional[List[str]],
+                        CallbackManagerForLLMRun,
+                        Any,
+                    ],
+                    AsyncIterator[ChatGenerationChunk],
+                ],
+                _as_async_iterator(self._stream),
+            )
+        else:  # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
                 await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
+            return
+
+        config = ensure_config(config)
+        messages = self._convert_input(input).to_messages()
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        options = {"stop": stop, **kwargs}
+        callback_manager = AsyncCallbackManager.configure(
+            config.get("callbacks"),
+            self.callbacks,
+            self.verbose,
+            config.get("tags"),
+            self.tags,
+            config.get("metadata"),
+            self.metadata,
+        )
+        (run_manager,) = await callback_manager.on_chat_model_start(
+            dumpd(self),
+            [messages],
+            invocation_params=params,
+            options=options,
+            name=config.get("run_name"),
+            batch_size=1,
+        )
+        generation: Optional[ChatGenerationChunk] = None
+        try:
+            async for chunk in _stream_implementation(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                chunk.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(chunk)
+                yield chunk.message
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+        except BaseException as e:
+            await run_manager.on_llm_error(
+                e,
+                response=LLMResult(generations=[[generation]] if generation else []),
+            )
+            raise e
         else:
-            config = ensure_config(config)
-            messages = self._convert_input(input).to_messages()
-            params = self._get_invocation_params(stop=stop, **kwargs)
-            options = {"stop": stop, **kwargs}
-            callback_manager = AsyncCallbackManager.configure(
-                config.get("callbacks"),
-                self.callbacks,
-                self.verbose,
-                config.get("tags"),
-                self.tags,
-                config.get("metadata"),
-                self.metadata,
+            await run_manager.on_llm_end(
+                LLMResult(generations=[[generation]]),
             )
-            (run_manager,) = await callback_manager.on_chat_model_start(
-                dumpd(self),
-                [messages],
-                invocation_params=params,
-                options=options,
-                name=config.get("run_name"),
-                batch_size=1,
-            )
-            generation: Optional[ChatGenerationChunk] = None
-            try:
-                async for chunk in self._astream(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                ):
-                    _cp_gen_info_to_msg(chunk)
-                    yield chunk.message
-                    if generation is None:
-                        generation = chunk
-                    else:
-                        generation += chunk
-                assert generation is not None
-            except BaseException as e:
-                await run_manager.on_llm_error(
-                    e,
-                    response=LLMResult(
-                        generations=[[generation]] if generation else []
-                    ),
-                )
-                raise e
-            else:
-                await run_manager.on_llm_end(
-                    LLMResult(generations=[[generation]]),
-                )
 
     # --- Custom methods ---
 
@@ -410,12 +449,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     run_managers[i].on_llm_error(e, response=LLMResult(generations=[]))
                 raise e
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item]
             for res in results
         ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        output = LLMResult(generations=generations, llm_output=llm_output)
+        output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
         if run_managers:
             run_infos = []
             for manager, flattened_output in zip(run_managers, flattened_outputs):
@@ -507,7 +546,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     *[
                         run_manager.on_llm_end(
                             LLMResult(
-                                generations=[res.generations], llm_output=res.llm_output
+                                generations=[res.generations],  # type: ignore[list-item, union-attr]
+                                llm_output=res.llm_output,  # type: ignore[list-item, union-attr]
                             )
                         )
                         for run_manager, res in zip(run_managers, results)
@@ -516,12 +556,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             raise exceptions[0]
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item, union-attr]
             for res in results
         ]
-        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
-        generations = [res.generations for res in results]
-        output = LLMResult(generations=generations, llm_output=llm_output)
+        llm_output = self._combine_llm_outputs([res.llm_output for res in results])  # type: ignore[union-attr]
+        generations = [res.generations for res in results]  # type: ignore[union-attr]
+        output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
         await asyncio.gather(
             *[
                 run_manager.on_llm_end(flattened_output)
@@ -587,7 +627,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             result = self._generate(messages, stop=stop, **kwargs)
 
-        _update_result_msgs(result)
+        for generation in result.generations:
+            generation.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(
+                generation
+            )
         if check_cache and llm_cache:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
@@ -620,7 +663,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
         else:
             result = await self._agenerate(messages, stop=stop, **kwargs)
-        _update_result_msgs(result)
+        for generation in result.generations:
+            generation.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(
+                generation
+            )
         if check_cache and llm_cache:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
@@ -827,11 +873,13 @@ class SimpleChatModel(BaseChatModel):
 
 def _update_result_msgs(result: ChatResult) -> None:
     for generation in result.generations:
-        _cp_gen_info_to_msg(generation)
+        generation.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(generation)
 
 
-def _cp_gen_info_to_msg(generation: Union[ChatGeneration, ChatGenerationChunk]) -> None:
-    generation.message.additional_kwargs = {
+def _cp_gen_info_to_msg_kwargs(
+    generation: Union[ChatGeneration, ChatGenerationChunk],
+) -> dict:
+    return {
         **(generation.generation_info or {}),
         **generation.message.additional_kwargs,
     }
