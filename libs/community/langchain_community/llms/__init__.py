@@ -600,12 +600,6 @@ def _import_sparkllm() -> Type[BaseLLM]:
     return SparkLLM
 
 
-def _import__prem() -> Type[BaseLLM]:
-    from langchain_community.llms.prem import Prem
-
-    return Prem
-
-
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()
@@ -787,8 +781,6 @@ def __getattr__(name: str) -> Any:
         return _import_yuan2()
     elif name == "VolcEngineMaasLLM":
         return _import_volcengine_maas()
-    elif name == "Prem":
-        return _import__prem()
     elif name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -890,7 +882,6 @@ __all__ = [
     "Yuan2",
     "VolcEngineMaasLLM",
     "SparkLLM",
-    "Prem",
 ]
 
 
@@ -981,5 +972,4 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "yuan2": _import_yuan2,
         "VolcEngineMaasLLM": _import_volcengine_maas,
         "SparkLLM": _import_sparkllm,
-        "Prem": _import__prem,
     }
