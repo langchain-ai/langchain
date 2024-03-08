@@ -490,7 +490,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
             generation: Optional[GenerationChunk] = None
             try:
-                async for chunk in self._astream(
+                async for chunk in await self._astream(
                     prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
                     yield chunk.text
