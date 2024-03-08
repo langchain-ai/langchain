@@ -75,7 +75,7 @@ class TitanTakeoff(LLM):
             from takeoff_client import TakeoffClient
         except ImportError:
             raise ImportError(
-                "takeoff-client is required for TitanTakeoff. " "Please install it with `pip install takeoff-client`."
+                "takeoff-client is required for TitanTakeoff. " "Please install it with `pip install 'takeoff-client>=0.4.0'`."
             )
         self.client = TakeoffClient(self.base_url, port=self.port, mgmt_port=self.mgmt_port)
         for model in models:
