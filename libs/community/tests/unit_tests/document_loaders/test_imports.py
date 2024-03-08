@@ -20,6 +20,7 @@ EXPECTED_ALL = [
     "ApifyDatasetLoader",
     "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
@@ -180,6 +181,7 @@ EXPECTED_ALL = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "YuqueLoader",
 ]
 
 

@@ -15,8 +15,8 @@ from pymongo.collection import Collection
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from tests.utils import ConsistentFakeEmbeddings
 
-INDEX_NAME = "langchain-test-index"
-NAMESPACE = "langchain_test_db.langchain_test_collection"
+INDEX_NAME = "langchain-test-index-vectorstores"
+NAMESPACE = "langchain_test_db.langchain_test_vectorstores"
 CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 DIMENSIONS = 1536
@@ -50,7 +50,8 @@ class TestMongoDBAtlasVectorSearch:
     def setup_class(cls) -> None:
         # insure the test collection is empty
         collection = get_collection()
-        assert collection.count_documents({}) == 0  # type: ignore[index]  # noqa: E501
+        if collection.count_documents({}):
+            collection.delete_many({})  # type: ignore[index]  # noqa: E501
 
     @classmethod
     def teardown_class(cls) -> None:
