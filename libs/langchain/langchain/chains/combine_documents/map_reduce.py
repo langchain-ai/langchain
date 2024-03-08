@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.callbacks import Callbacks
@@ -223,11 +224,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         Combine by mapping first chain over all documents, then reducing the results.
         This reducing can be done recursively if needed (if there are many documents).
         """
-        map_results = self.llm_chain.apply(
+        map_results = self.llm_chain.aapply(
             # FYI - this is parallelized and so it is fast.
             [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
         )
+        map_results = asyncio.run(map_results)
         question_result_key = self.llm_chain.output_key
         result_docs = [
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
