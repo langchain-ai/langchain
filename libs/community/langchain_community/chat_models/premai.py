@@ -131,7 +131,7 @@ def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
 ) -> Tuple[str, List[dict]]:
     """Converts a list of LangChain Messages into a simple dict
-        which is the message structure in Prem"""
+    which is the message structure in Prem"""
 
     system_prompt: str = None
     examples_and_messages: List[Dict[str, str]] = []
@@ -146,7 +146,7 @@ def _messages_to_prompt_dict(
                 {"role": "assistant", "content": input_msg.content}
             )
         else:
-            raise ChatPremAPIError("No such explicite role exists")
+            raise ChatPremAPIError("No such role explicitly exists")
     return system_prompt, examples_and_messages
 
 
@@ -157,17 +157,16 @@ class ChatPremAI(BaseChatModel, BaseModel):
     or generate a new one here: https://app.premai.io/api_keys/
     """
 
-    # TODO: Discussion needed. We can any one the following:
     # TODO: Need to add the default parameters through prem-sdk here
 
     project_id: int
-    """The project ID in which the experiments or deployements are carried out. 
+    """The project ID in which the experiments or deployments are carried out. 
     You can find all your projects here: https://app.premai.io/projects/"""
     premai_api_key: Optional[SecretStr] = None
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
     model: Optional[str] = None
-    """Name of the model. This is an optional paramter. 
+    """Name of the model. This is an optional parameter. 
     The default model is the one deployed from Prem's LaunchPad: https://app.premai.io/projects/8/launchpad
     If model name is other than default model then it will override the calls 
     from the model deployed from launchpad."""
@@ -176,7 +175,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
     """The ID of the session to use. It helps to track the chat history."""
 
     temperature: Optional[float] = None
-    """Model temperature. Value shoud be >= 0 and <= 1.0"""
+    """Model temperature. Value should be >= 0 and <= 1.0"""
 
     top_p: Optional[float] = None
     """top_p adjusts the number of choices for each predicted tokens based on
@@ -253,8 +252,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        # NOTE: n and stop is not supported, so hardcoding to current default value
-        # TODO: We might need to provide default prem-sdk params here too.
+        # FIXME: n and stop is not supported, so hardcoding to current default value
         return {
             "model": self.model,
             "system_prompt": self.system_prompt,
@@ -268,6 +266,13 @@ class ChatPremAI(BaseChatModel, BaseModel):
             "stop": None,
         }
 
+    def _get_all_kwargs(self, **kwargs) -> Dict[str, Any]:
+        all_kwargs = {**self._default_params, **kwargs}
+        for key in list(self._default_params.keys()):
+            if all_kwargs.get(key) is None or all_kwargs.get(key) == "":
+                all_kwargs.pop(key, None)
+        return all_kwargs
+
     def _generate(
         self,
         messages: List[List[BaseMessage]],
@@ -277,28 +282,18 @@ class ChatPremAI(BaseChatModel, BaseModel):
     ) -> ChatResult:
         system_prompt, messages = _messages_to_prompt_dict(messages)
 
-        # TODO: If any of the kwargs is changed here w.r.t launched default parameters
-        # we need to push a warning message that those are changed.
-
-        if stop is not None:
-            kwargs["stop"] = stop
-
-        if stop is not None or "stop" in list(kwargs.keys()):
-            raise NotImplementedError("Parameter: stop has no support yet")
-
-        if system_prompt is not None:
+        kwargs["stop"] = stop
+        if system_prompt is not None and system_prompt != "":
             kwargs["system_prompt"] = system_prompt
 
-        if "n" in list(kwargs.keys()):
-            raise NotImplementedError("parameter: n is not supported for now.")
-
+        all_kwargs = self._get_all_kwargs(**kwargs)
         response = chat_with_retry(
             self,
             project_id=self.project_id,
             messages=messages,
             stream=False,
             run_manager=run_manager,
-            **kwargs,
+            **all_kwargs,
         )
 
         return _response_to_result(response=response, stop=stop)
@@ -311,17 +306,12 @@ class ChatPremAI(BaseChatModel, BaseModel):
         **kwargs,
     ) -> Iterator[ChatGenerationChunk]:
         system_prompt, messages = _messages_to_prompt_dict(messages)
-        if stop is not None:
-            kwargs["stop"] = stop
 
-        if stop is not None or "stop" in list(kwargs.keys()):
-            raise NotImplementedError("Parameter: stop has no support yet")
-
-        if system_prompt is not None:
+        kwargs["stop"] = stop
+        if system_prompt is not None and system_prompt != "":
             kwargs["system_prompt"] = system_prompt
 
-        if "n" in list(kwargs.keys()):
-            raise NotImplementedError("parameter: n is not supported for now.")
+        all_kwargs = self._get_all_kwargs(**kwargs)
 
         default_chunk_class = AIMessageChunk
 
@@ -331,7 +321,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
             messages=messages,
             stream=True,
             run_manager=run_manager,
-            **kwargs,
+            **all_kwargs,
         ):
             try:
                 chunk, finish_reason = _convert_delta_response_to_message_chunk(
