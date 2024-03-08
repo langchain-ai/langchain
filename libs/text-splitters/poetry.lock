@@ -3012,7 +3012,7 @@ files = [
 name = "semantic-text-splitter"
 version = "0.6.3"
 description = "Split text into semantic chunks, up to a desired chunk size. Supports calculating length by characters and tokens (when used with large language models)."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "semantic_text_splitter-0.6.3-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:c4fbd7337f52b04eccad3d9cfc2a2cb37df88b5c384ddf9ad435d9df339c41c8"},
@@ -3802,4 +3802,4 @@ extended-testing = ["lxml"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "baa655a4f038e8c9c577afbf5b5b6a01a93254744073fb14d3382104771838ad"
+content-hash = "41fca6fe4231d88b8a583ce955c8be0f754b2526bde06a59f90b178411b97351"
