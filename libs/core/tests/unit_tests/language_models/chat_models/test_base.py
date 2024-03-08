@@ -1,8 +1,19 @@
 """Test base chat model."""
 
+from typing import Any, AsyncIterator, Iterator, List, Optional
+
 import pytest
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
@@ -106,3 +117,111 @@ async def test_stream_error_callback() -> None:
                 pass
 
             eval_response(cb_sync, i)
+
+
+async def test_astream_fallback_to_ainvoke() -> None:
+    """Test astream uses appropriate implementation."""
+
+    class ModelWithGenerate(BaseChatModel):
+        def _generate(
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call"""
+            message = AIMessage(content="hello")
+            generation = ChatGeneration(message=message)
+            return ChatResult(generations=[generation])
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithGenerate()
+    chunks = [chunk for chunk in model.stream("anything")]
+    assert chunks == [AIMessage(content="hello")]
+
+    chunks = [chunk async for chunk in model.astream("anything")]
+    assert chunks == [AIMessage(content="hello")]
+
+
+async def test_astream_implementation_fallback_to_stream() -> None:
+    """Test astream uses appropriate implementation."""
+
+    class ModelWithSyncStream(BaseChatModel):
+        def _generate(
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call"""
+            raise NotImplementedError()
+
+        def _stream(
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> Iterator[ChatGenerationChunk]:
+            """Stream the output of the model."""
+            yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
+            yield ChatGenerationChunk(message=AIMessageChunk(content="b"))
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithSyncStream()
+    chunks = [chunk for chunk in model.stream("anything")]
+    assert chunks == [
+        AIMessageChunk(content="a"),
+        AIMessageChunk(content="b"),
+    ]
+    assert type(model)._astream == BaseChatModel._astream
+    astream_chunks = [chunk async for chunk in model.astream("anything")]
+    assert astream_chunks == [
+        AIMessageChunk(content="a"),
+        AIMessageChunk(content="b"),
+    ]
+
+
+async def test_astream_implementation_uses_astream() -> None:
+    """Test astream uses appropriate implementation."""
+
+    class ModelWithAsyncStream(BaseChatModel):
+        def _generate(
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call"""
+            raise NotImplementedError()
+
+        async def _astream(  # type: ignore
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> AsyncIterator[ChatGenerationChunk]:
+            """Stream the output of the model."""
+            yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
+            yield ChatGenerationChunk(message=AIMessageChunk(content="b"))
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithAsyncStream()
+    chunks = [chunk async for chunk in model.astream("anything")]
+    assert chunks == [
+        AIMessageChunk(content="a"),
+        AIMessageChunk(content="b"),
+    ]
