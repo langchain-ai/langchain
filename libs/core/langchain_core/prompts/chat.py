@@ -1,4 +1,5 @@
 """Chat prompt template."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -79,7 +80,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         raise NotImplementedError
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Combine two prompt templates.
@@ -90,7 +91,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
-        prompt = ChatPromptTemplate(messages=[self])
+        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
 
 
@@ -543,7 +544,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         raise NotImplementedError
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
 MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate]
@@ -556,7 +557,7 @@ MessageLikeRepresentation = Union[
 
 
 class ChatPromptTemplate(BaseChatPromptTemplate):
-    """A prompt template for chat models.
+    """Prompt template for chat models.
 
     Use to create flexible templated prompts for chat models.
 
@@ -602,17 +603,17 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         # Allow for easy combining
         if isinstance(other, ChatPromptTemplate):
-            return ChatPromptTemplate(messages=self.messages + other.messages)
+            return ChatPromptTemplate(messages=self.messages + other.messages)  # type: ignore[call-arg]
         elif isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
-            return ChatPromptTemplate(messages=self.messages + [other])
+            return ChatPromptTemplate(messages=self.messages + [other])  # type: ignore[call-arg]
         elif isinstance(other, (list, tuple)):
             _other = ChatPromptTemplate.from_messages(other)
-            return ChatPromptTemplate(messages=self.messages + _other.messages)
+            return ChatPromptTemplate(messages=self.messages + _other.messages)  # type: ignore[call-arg]
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
-            return ChatPromptTemplate(messages=self.messages + [prompt])
+            return ChatPromptTemplate(messages=self.messages + [prompt])  # type: ignore[call-arg]
         else:
             raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
 
@@ -671,7 +672,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return cls.from_messages([message])
 
     @classmethod
-    @deprecated("0.0.260", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
@@ -683,7 +684,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template
         """
-        return cls(
+        return cls(  # type: ignore[call-arg]
             messages=[
                 ChatMessagePromptTemplate.from_template(template, role=role)
                 for role, template in string_messages
@@ -691,7 +692,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         )
 
     @classmethod
-    @deprecated("0.0.260", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
     def from_strings(
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:

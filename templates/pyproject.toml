@@ -40,7 +40,7 @@ optional = true
 
 [tool.poetry.group.typing.dependencies]
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes

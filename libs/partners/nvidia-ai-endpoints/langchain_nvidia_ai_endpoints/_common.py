@@ -20,7 +20,6 @@ from typing import (
 
 import aiohttp
 import requests
-from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Field,
@@ -440,10 +439,6 @@ class _NVIDIAClient(BaseModel):
 
     model: str = Field(..., description="Name of the model to invoke")
 
-    temperature: float = Field(0.2, le=1.0, gt=0.0)
-    top_p: float = Field(0.7, le=1.0, ge=0.0)
-    max_tokens: int = Field(1024, le=1024, ge=32)
-
     ####################################################################################
 
     @root_validator(pre=True)
@@ -485,67 +480,3 @@ class _NVIDIAClient(BaseModel):
         known_fns = self.client.available_functions
         fn_spec = [f for f in known_fns if f.get("id") == model_key][0]
         return fn_spec
-
-    def get_generation(
-        self,
-        inputs: Sequence[Dict],
-        labels: Optional[dict] = None,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> dict:
-        """Call to client generate method with call scope"""
-        payload = self.get_payload(inputs=inputs, stream=False, labels=labels, **kwargs)
-        out = self.client.get_req_generation(self.model, stop=stop, payload=payload)
-        return out
-
-    def get_stream(
-        self,
-        inputs: Sequence[Dict],
-        labels: Optional[dict] = None,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> Iterator:
-        """Call to client stream method with call scope"""
-        payload = self.get_payload(inputs=inputs, stream=True, labels=labels, **kwargs)
-        return self.client.get_req_stream(self.model, stop=stop, payload=payload)
-
-    def get_astream(
-        self,
-        inputs: Sequence[Dict],
-        labels: Optional[dict] = None,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator:
-        """Call to client astream methods with call scope"""
-        payload = self.get_payload(inputs=inputs, stream=True, labels=labels, **kwargs)
-        return self.client.get_req_astream(self.model, stop=stop, payload=payload)
-
-    def get_payload(
-        self, inputs: Sequence[Dict], labels: Optional[dict] = None, **kwargs: Any
-    ) -> dict:
-        """Generates payload for the _NVIDIAClient API to send to service."""
-        return {
-            **self.preprocess(inputs=inputs, labels=labels),
-            **kwargs,
-        }
-
-    def preprocess(self, inputs: Sequence[Dict], labels: Optional[dict] = None) -> dict:
-        """Prepares a message or list of messages for the payload"""
-        messages = [self.prep_msg(m) for m in inputs]
-        if labels:
-            # (WFH) Labels are currently (?) always passed as an assistant
-            # suffix message, but this API seems less stable.
-            messages += [{"labels": labels, "role": "assistant"}]
-        return {"messages": messages}
-
-    def prep_msg(self, msg: Union[str, dict, BaseMessage]) -> dict:
-        """Helper Method: Ensures a message is a dictionary with a role and content."""
-        if isinstance(msg, str):
-            # (WFH) this shouldn't ever be reached but leaving this here bcs
-            # it's a Chesterton's fence I'm unwilling to touch
-            return dict(role="user", content=msg)
-        if isinstance(msg, dict):
-            if msg.get("content", None) is None:
-                raise ValueError(f"Message {msg} has no content")
-            return msg
-        raise ValueError(f"Unknown message received: {msg} of type {type(msg)}")

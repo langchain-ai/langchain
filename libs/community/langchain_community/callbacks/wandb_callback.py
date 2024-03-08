@@ -558,8 +558,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 model_artifact.add_file(str(langchain_asset_path))
                 model_artifact.metadata = load_json_to_dict(langchain_asset_path)
             except NotImplementedError as e:
-                print("Could not save model.")
-                print(repr(e))
+                print("Could not save model.")  # noqa: T201
+                print(repr(e))  # noqa: T201
                 pass
             self.run.log_artifact(model_artifact)
 
@@ -577,7 +577,9 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 name=name if name else self.name,
                 notes=notes if notes else self.notes,
                 visualize=visualize if visualize else self.visualize,
-                complexity_metrics=complexity_metrics
-                if complexity_metrics
-                else self.complexity_metrics,
+                complexity_metrics=(
+                    complexity_metrics
+                    if complexity_metrics
+                    else self.complexity_metrics
+                ),
             )

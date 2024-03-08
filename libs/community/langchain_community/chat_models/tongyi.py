@@ -342,9 +342,9 @@ class ChatTongyi(BaseChatModel):
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_qwen_resp(stream_resp, is_chunk=True)
             )
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -360,9 +360,9 @@ class ChatTongyi(BaseChatModel):
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_qwen_resp(stream_resp, is_chunk=True)
             )
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     def _invocation_params(
         self, messages: List[BaseMessage], stop: Any, **kwargs: Any

@@ -20,6 +20,8 @@ from langchain_community.llms.azureml_endpoint import (
 
 
 class LlamaContentFormatter(ContentFormatterBase):
+    """Content formatter for `LLaMA`."""
+
     def __init__(self) -> None:
         raise TypeError(
             "`LlamaContentFormatter` is deprecated for chat models. Use "
@@ -34,7 +36,7 @@ class LlamaChatContentFormatter(ContentFormatterBase):
 
     @staticmethod
     def _convert_message_to_dict(message: BaseMessage) -> Dict:
-        """Converts message to a dict according to role"""
+        """Converts a message to a dict according to a role"""
         content = cast(str, message.content)
         if isinstance(message, HumanMessage):
             return {

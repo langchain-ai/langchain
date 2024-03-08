@@ -11,7 +11,7 @@ if __name__ == "__main__":
             "\n\n1. John Travolta\n2. John McDonough",
         )
     ]
-    print(agent_executor.invoke({"input": original_query}))
-    print(
+    print(agent_executor.invoke({"input": original_query}))  # noqa: T201
+    print(  # noqa: T201
         agent_executor.invoke({"input": followup_query, "chat_history": chat_history})
     )

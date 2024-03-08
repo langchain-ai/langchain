@@ -2,7 +2,7 @@
 """Tools for interacting with a SQL database."""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
-from sqlalchemy import Result
+from sqlalchemy.engine import Result
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
@@ -44,7 +44,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[str, Sequence[Dict[str, Any]], Result[Any]]:
+    ) -> Union[str, Sequence[Dict[str, Any]], Result]:
         """Execute the query, return the results or an error message."""
         return self.db.run_no_throw(query)
 

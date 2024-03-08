@@ -31,11 +31,11 @@ class TestCouchbaseLoader(unittest.TestCase):
             metadata_fields=self.valid_metadata_fields,
         )
         docs = loader.load()
-        print(docs)
+        print(docs)  # noqa: T201
 
         assert len(docs) > 0  # assuming the query returns at least one document
         for doc in docs:
-            print(doc)
+            print(doc)  # noqa: T201
             assert (
                 doc.page_content != ""
             )  # assuming that every document has page_content

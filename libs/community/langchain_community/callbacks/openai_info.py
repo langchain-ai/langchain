@@ -15,6 +15,8 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-32k-0613": 0.06,
     "gpt-4-vision-preview": 0.01,
     "gpt-4-1106-preview": 0.01,
+    "gpt-4-0125-preview": 0.01,
+    "gpt-4-turbo-preview": 0.01,
     # GPT-4 output
     "gpt-4-completion": 0.06,
     "gpt-4-0314-completion": 0.06,
@@ -24,6 +26,8 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-32k-0613-completion": 0.12,
     "gpt-4-vision-preview-completion": 0.03,
     "gpt-4-1106-preview-completion": 0.03,
+    "gpt-4-0125-preview-completion": 0.03,
+    "gpt-4-turbo-preview-completion": 0.03,
     # GPT-3.5 input
     # gpt-3.5-turbo points at gpt-3.5-turbo-0613 until Feb 16, 2024.
     # Switches to gpt-3.5-turbo-0125 after.

@@ -8,6 +8,8 @@ CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 
 class OCIAuthType(Enum):
+    """OCI authentication types as enumerator."""
+
     API_KEY = 1
     SECURITY_TOKEN = 2
     INSTANCE_PRINCIPAL = 3
