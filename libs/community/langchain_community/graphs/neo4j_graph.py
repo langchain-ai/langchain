@@ -46,36 +46,45 @@ include_docs_query = (
 )
 
 
-def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
-    """Sanitize the input dictionary.
+def value_sanitize(d: Any) -> Any:
+    """Sanitize the input dictionary or list.
 
-    Sanitizes the input dictionary by removing embedding-like values,
+    Sanitizes the input by removing embedding-like values,
     lists with more than 128 elements, that are mostly irrelevant for
     generating answers in a LLM context. These properties, if left in
     results, can occupy significant context space and detract from
     the LLM's performance by introducing unnecessary noise and cost.
     """
     LIST_LIMIT = 128
-    # Create a new dictionary to avoid changing size during iteration
-    new_dict = {}
-    for key, value in d.items():
-        if isinstance(value, dict):
-            # Recurse to handle nested dictionaries
-            new_dict[key] = value_sanitize(value)
-        elif isinstance(value, list):
-            # check if it has less than LIST_LIMIT values
-            if len(value) < LIST_LIMIT:
-                # if value is a list, check if it contains dictionaries to clean
-                cleaned_list = []
-                for item in value:
-                    if isinstance(item, dict):
-                        cleaned_list.append(value_sanitize(item))
-                    else:
-                        cleaned_list.append(item)
-                new_dict[key] = cleaned_list  # type: ignore[assignment]
+    if isinstance(d, dict):
+        new_dict = {}
+        for key, value in d.items():
+            if isinstance(value, dict):
+                sanitized_value = value_sanitize(value)
+                if (
+                    sanitized_value is not None
+                ):  # Check if the sanitized value is not None
+                    new_dict[key] = sanitized_value
+            elif isinstance(value, list):
+                if len(value) < LIST_LIMIT:
+                    sanitized_value = value_sanitize(value)
+                    if (
+                        sanitized_value is not None
+                    ):  # Check if the sanitized value is not None
+                        new_dict[key] = sanitized_value
+                # Do not include the key if the list is oversized
+            else:
+                new_dict[key] = value
+        return new_dict
+    elif isinstance(d, list):
+        if len(d) < LIST_LIMIT:
+            return [
+                value_sanitize(item) for item in d if value_sanitize(item) is not None
+            ]
         else:
-            new_dict[key] = value
-    return new_dict
+            return None
+    else:
+        return d
 
 
 def _get_node_import_query(baseEntityLabel: bool, include_source: bool) -> str:
