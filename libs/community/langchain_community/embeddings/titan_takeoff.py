@@ -1,16 +1,10 @@
-from typing import Any, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import logging
 from pydantic import BaseModel
 from enum import Enum
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.embeddings import Embeddings
-from langchain_core.outputs import GenerationChunk
-
-from langchain_community.llms.utils import enforce_stop_tokens
-
-logger = logging.getLogger(__file__)
 
 
 class TakeoffEmbeddingException(Exception):
@@ -83,7 +77,7 @@ class TitanTakeoffEmbed(Embeddings):
             self.embed_consumer_groups.add(model["consumer_group"])
         super(TitanTakeoffEmbed, self).__init__()
         
-    def _embed(self, input: List[str], consumer_group: Optional[str]) -> dict[str, Any]:
+    def _embed(self, input: List[str], consumer_group: Optional[str]) -> Dict[str, Any]:
         """Embed a list of strings."""
         if not consumer_group:
             if len(self.embed_consumer_groups) == 1:
@@ -99,8 +93,8 @@ class TitanTakeoffEmbed(Embeddings):
 
     def embed_documents(self, texts: List[str], consumer_group: Optional[str] = None) -> List[List[float]]:
         """Embed search docs."""
-        return self._embed(texts, consumer_group)["text"]
+        return self._embed(texts, consumer_group)["result"]
 
     def embed_query(self, text: str, consumer_group: Optional[str] = None) -> List[float]:
         """Embed query text."""
-        return self._embed(text, consumer_group)["text"]
+        return self._embed(text, consumer_group)["result"]

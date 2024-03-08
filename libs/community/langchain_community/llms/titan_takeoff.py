@@ -10,8 +10,6 @@ from langchain_core.outputs import GenerationChunk
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
-logger = logging.getLogger(__file__)
-
 
 class Device(str, Enum):
     """The device to use for inference, cuda or cpu"""
