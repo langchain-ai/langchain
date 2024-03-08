@@ -1,3 +1,5 @@
+import warnings
+
 from langchain_core.utils.pydantic import get_pydantic_major_version
 
 ## Create namespaces for pydantic v1 and v2.
@@ -13,9 +15,10 @@ from langchain_core.utils.pydantic import get_pydantic_major_version
 
 
 if get_pydantic_major_version() < 2:
-    raise ImportError(
+    warnings.warn(
         "The pydantic_v2 namespace only supports Pydantic v2 and later. \
-            Please use pydantic_v1 namespace."
+Please use pydantic_v1 namespace.",
+        ImportWarning,
     )
 
 from pydantic import *  # noqa: F403 # type: ignore
