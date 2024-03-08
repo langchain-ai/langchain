@@ -233,8 +233,8 @@ def test_sql_database_compile_command(db: SQLDatabase) -> None:
     )
     assert command == expected_command
     output = db.run(command)
-    expected_output = f"[('bpafoshizle',)]"
-    assert output == expected_output    
+    expected_output = "[('bpafoshizle',)]"
+    assert output == expected_output
 
 
 def test_sql_database_run_update(db: SQLDatabase) -> None:

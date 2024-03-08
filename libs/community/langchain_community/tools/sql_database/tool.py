@@ -76,6 +76,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
             [t.strip() for t in table_names.split(",")]
         )
 
+
 class ColumnCardinalitySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting the cardinality (distinct count) of a column on a table in a database."""
 
@@ -94,6 +95,7 @@ class ColumnCardinalitySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         """Execute the query, return the results or an error message."""
         query = f"SELECT COUNT(DISTINCT {tool_input}) as {tool_input.split('.')[1]} FROM {tool_input.split('.')[0]}"
         return self.db.run_no_throw(query)
+
 
 class DistinctValuesSQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting the distinct values of a column on a table in a database."""

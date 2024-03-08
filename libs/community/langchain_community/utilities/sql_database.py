@@ -391,19 +391,21 @@ class SQLDatabase:
             f"{columns_str}\n"
             f"{sample_rows_str}"
         )
-    
-    def compile(self, command: str, params: Dict ) -> str:
+
+    def compile(self, command: str, params: Dict) -> str:
         """
         Compile SQL text and bind parameters to a valid dialect-specific SQL string..
         Options are passed as a simple { keyword-to-replace: value } dictionary
-        This handles backend-neutral support for bind parameters as well as 
+        This handles backend-neutral support for bind parameters as well as
         backend-neutral limiting of the result set size e.g. LIMIT vs TOP.
         It's also useful for debugging outside of this library as the
         results can be checked and passed directly to the run() method.
         """
         raw_command = text(command)
         bound_command = raw_command.bindparams(**params)
-        compiled_command = bound_command.compile(self._engine, compile_kwargs={"literal_binds": True}).string
+        compiled_command = bound_command.compile(
+            self._engine, compile_kwargs={"literal_binds": True}
+        ).string
         return compiled_command
 
     def _execute(
