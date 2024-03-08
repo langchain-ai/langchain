@@ -1,10 +1,12 @@
 from __future__ import annotations
-
-import base64
-import logging
-import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from enum import Enum
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+from threading import current_thread
 from typing import (
     Any,
     Callable,
@@ -17,21 +19,17 @@ from typing import (
     Type,
     Union,
 )
-
+import base64
+import logging
 import numpy as np
-from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
-
-# from langchain_community.vectorstores.utils import DistanceStrategy
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
+import uuid
 
 try:
     import vdms
 except ImportError:
     raise ImportError(
         "Could not import vdms python package. "
-        "Please install it with `pip install vdms`."
+        "Please install it with `pip install vdms."
     )
 
 
@@ -60,16 +58,26 @@ class IndexEngine(str, Enum):
 DEFAULT_COLLECTION_NAME = "langchain"
 DEFAULT_DISTANCE_METRIC = DistanceMetric.L2
 DEFAULT_INSERT_BATCH_SIZE = 32
+DEFAULT_INSERT_NUM_WORKERS = 1
 DEFAULT_K = 3  # Number of Documents to return.
 DEFAULT_PROPERTIES = ["_distance", "id", "content"]
 DEFAULT_SEARCH_ENGINE = IndexEngine.FaissFlat
-DEFAULT_VDMS_CONNECTION = {"host": "localhost", "port": "55555"}
+DEFAULT_VDMS_CONNECTION = {"host": "localhost", "port": 55555}
 INVALID_DOC_METADATA_KEYS = ["_distance", "content", "blob"]
 INVALID_METADATA_VALUE = ["Missing property", None, {}]
 logger = logging.getLogger(__name__)
 
 
 def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
+    """
+    Check that sizes of two variables are the same
+
+    Args:
+        x: Variable to compare
+        y: Variable to compare
+        x_name: Name for variable x
+        y_name: Name for variable y
+    """
     if isinstance(x, Sized) and isinstance(y, Sized) and len(x) != len(y):
         raise ValueError(
             f"{x_name} and {y_name} expected to be equal length but "
@@ -94,9 +102,9 @@ class VDMS(VectorStore):
         engine: Underlying implementation for indexing and computing distances.
             VDMS supports TileDBDense, TileDBSparse, FaissFlat, FaissIVFFlat,
             and Flinng [Default: FaissFlat]
-        embedding_function: Any embedding function implementing
-            `langchain.embeddings.base.Embeddings` interface.
         connection_args: Dictionary defining "host" and "port" for VDMS server
+        embedding_function: Any embedding function implementing
+            `langchain_core.embeddings.Embeddings` interface.
         relevance_score_fn: Function for obtaining relevance score
 
     Example:
@@ -109,8 +117,8 @@ class VDMS(VectorStore):
                 collection_name="langchain-demo",
                 distance_strategy="L2",
                 engine="FaissFlat"
-                embedding_function=HuggingFaceEmbeddings(),
                 connection_args={"host": "localhost", "port": 55555},
+                embedding_function=HuggingFaceEmbeddings(),
             )
     """
 
@@ -152,10 +160,14 @@ class VDMS(VectorStore):
         elif "host" not in connection_args:
             connection_args["host"] = DEFAULT_VDMS_CONNECTION["host"]
         elif "port" not in connection_args:
-            connection_args["port"] = DEFAULT_VDMS_CONNECTION["port"]
+            connection_args["port"] = int(DEFAULT_VDMS_CONNECTION["port"])
+
+        if not isinstance(connection_args["port"], int):
+            connection_args["port"] = int(connection_args["port"])
 
         self._client = vdms.vdms()
-        self._client.connect(connection_args["host"], int(connection_args["port"]))
+        self._client.connect(connection_args["host"], connection_args["port"])
+        self.connection_args = connection_args
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         if isinstance(self.embedding_function, Embeddings):
@@ -252,8 +264,8 @@ class VDMS(VectorStore):
         texts: Iterable[str],
         embeddings: Iterable[List[float]],
         metadatas: Optional[Iterable[dict]] = None,
-        # metadatas: Optional[List] = None,
         ids: Optional[List[str]] = None,
+        other_client: Optional[vdms.vdms] = None,
     ) -> None:
         _len_check_if_sized(texts, embeddings, "texts", "embeddings")
 
@@ -270,7 +282,8 @@ class VDMS(VectorStore):
             # all_queries = []
             # all_blobs = []
             query, blob = self.__get_add_query(
-                collection_name, metadata=meta, embedding=emb, document=doc, id=id
+                collection_name, metadata=meta, embedding=emb,
+                document=doc, id=id, other_client=other_client
             )
 
             if blob is not None:
@@ -278,9 +291,10 @@ class VDMS(VectorStore):
                 all_blobs.append(blob)
                 inserted_ids.append(id)
 
-        response, response_array = self.__run_vdms_query(all_queries, all_blobs)
+        response, response_array = self.__run_vdms_query(all_queries, all_blobs,
+                                                        other_client=other_client)
 
-        # return inserted_ids
+        return inserted_ids
 
     def __add_set(
         self,
@@ -351,13 +365,14 @@ class VDMS(VectorStore):
         embedding: Optional[Any] = None,
         document: Optional[Any] = None,
         id: Optional[str] = None,
-        # collection_properties: Optional[list] = []
+        other_client: Optional[vdms.vdms] = None,
     ) -> Tuple[Dict[str, Dict[str, Any]], Union[bytes, None]]:
+        client = other_client if other_client is not None else self._client
         if id is None:
             props = {}
         else:
             props = {"id": id}
-            id_exists, query = check_descriptor_exists_by_id(self._client, collection_name, id)
+            id_exists, query = check_descriptor_exists_by_id(client, collection_name, id)
             if id_exists:
                 skipped_value = {
                     prop_key: prop_val[-1]
@@ -371,15 +386,12 @@ class VDMS(VectorStore):
                 return query, None
 
         if metadata:
-            # Validate properties (no arrays accepted)
-            # metadata = validate_vdms_properties(metadata)
             props.update(metadata)
         if document:
             props["content"] = document
 
         for k in props.keys():
             if k not in self.collection_properties:
-                # collection_properties.append(k)
                 self.collection_properties.append(k)
 
         query = add_descriptor("AddDescriptor", collection_name, label=None,
@@ -391,7 +403,7 @@ class VDMS(VectorStore):
         return (
             query,
             blob,
-        )  # collection_properties
+        )
 
     def __get_properties(
         self,
@@ -414,12 +426,14 @@ class VDMS(VectorStore):
         all_queries: Iterable[str],
         all_blobs: Optional[Iterable] = [],
         print_last_response: Optional[bool] = False,
+        other_client: Optional[vdms.vdms] = None
     ):
-        response, response_array = self._client.query(all_queries, all_blobs)
+        client = other_client if other_client is not None else self._client
+        response, response_array = client.query(all_queries, all_blobs)
 
         _ = check_valid_response(all_queries, response)
         if print_last_response:
-            self._client.print_last_response()
+            client.print_last_response()
         return response, response_array
 
     def __update(
@@ -512,6 +526,7 @@ class VDMS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
+        num_workers: int = DEFAULT_INSERT_NUM_WORKERS,
         add_path: Optional[bool] = True,
         **kwargs: Any,
     ) -> List[str]:
@@ -525,6 +540,7 @@ class VDMS(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of unique IDs.
             batch_size (int): Number of concurrent requests to send to the server.
+            num_workers (int): Number of workers to insert data in server.
             add_path: Bool to add image path as metadata
 
         Returns:
@@ -558,6 +574,8 @@ class VDMS(VectorStore):
             ids=ids,
             metadatas=metadatas,
             batch_size=batch_size,
+            num_workers=num_workers,
+            **kwargs,
         )
         return ids
 
@@ -567,6 +585,7 @@ class VDMS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
+        num_workers: int = DEFAULT_INSERT_NUM_WORKERS,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -576,13 +595,13 @@ class VDMS(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of unique IDs.
             batch_size (int): Number of concurrent requests to send to the server.
+            num_workers (int): Number of workers to insert data in server.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
 
         texts = list(texts)
-        # ids = kwargs.get("ids", None)
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
@@ -593,29 +612,43 @@ class VDMS(VectorStore):
         else:
             metadatas = [validate_vdms_properties(m) for m in metadatas]
 
-        # for start_idx in range(0, len(texts), batch_size):
-        #     end_idx = min(start_idx + batch_size, len(texts))
-
-        #     batch_texts = texts[start_idx : end_idx]
-        #     batch_embedding_vectors = embeddings[start_idx : end_idx]
-        #     batch_ids = ids[start_idx : end_idx]
-        #     batch_metadatas = metadatas[start_idx : end_idx]
-
-        #     self.__add(
-        #         self._collection_name,
-        #         embeddings=batch_embedding_vectors,
-        #         texts=batch_texts,
-        #         metadatas=batch_metadatas,
-        #         ids=batch_ids,
-        #     )
-        self.__from(
+        return self.__from(
             texts=texts,
             embeddings=embeddings,
             ids=ids,
             metadatas=metadatas,
             batch_size=batch_size,
+            num_workers=num_workers,
+            **kwargs,
         )
-        return ids
+        # return ids
+
+    def thread_fn(
+        self,
+        batch_texts,
+        batch_embedding_vectors,
+        batch_ids,
+        batch_metadatas,
+        list_of_dbs
+        ):
+
+        if current_thread().name in list_of_dbs:
+            other_client = list_of_dbs[current_thread().name]
+        else:
+            other_client = vdms.vdms()
+            other_client.connect(self.connection_args["host"], self.connection_args["port"])
+            list_of_dbs[current_thread().name] = other_client
+
+        inserted_ids = self.__add(
+            self._collection_name,
+            embeddings=batch_embedding_vectors,
+            texts=batch_texts,
+            metadatas=batch_metadatas,
+            ids=batch_ids,
+            other_client=other_client
+        )
+
+        return inserted_ids
 
     def __from(
         self,
@@ -624,30 +657,52 @@ class VDMS(VectorStore):
         ids: List[str],
         metadatas: Iterable[dict],
         batch_size: int,
+        num_workers: int,
+        **kwargs,
     ) -> None:
         # Get initial properties
         orig_props = self.__get_properties(self._collection_name)
+        list_of_dbs = {}
+        inserted_ids = []
+        with ThreadPoolExecutor(max_workers=num_workers, thread_name_prefix='BatchWorker') as executor:
+            for thread in range(num_workers):
+                other_client = vdms.vdms()
+                other_client.connect(self.connection_args["host"], self.connection_args["port"])
+                list_of_dbs[f"BatchWorker_{thread}"] = other_client
 
-        for start_idx in range(0, len(texts), batch_size):
-            end_idx = min(start_idx + batch_size, len(texts))
+            future_to_db = []
+            for start_idx in range(0, len(texts), batch_size):
+                end_idx = min(start_idx + batch_size, len(texts))
 
-            batch_texts = texts[start_idx:end_idx]
-            batch_embedding_vectors = embeddings[start_idx:end_idx]
-            batch_ids = ids[start_idx:end_idx]
-            batch_metadatas = metadatas[start_idx:end_idx]
+                batch_texts = texts[start_idx:end_idx]
+                batch_embedding_vectors = embeddings[start_idx:end_idx]
+                batch_ids = ids[start_idx:end_idx]
+                batch_metadatas = metadatas[start_idx:end_idx]
 
-            self.__add(
-                self._collection_name,
-                embeddings=batch_embedding_vectors,
-                texts=batch_texts,
-                metadatas=batch_metadatas,
-                ids=batch_ids,
-            )
+                future_to_db.append(
+                    executor.submit(self.thread_fn,
+                                batch_texts,
+                                batch_embedding_vectors,
+                                batch_ids,
+                                batch_metadatas,
+                                list_of_dbs)
+                )
+
+            for future in as_completed(future_to_db):
+                try:
+                    result = future.result()
+                    inserted_ids.extend(result)
+                except Exception as e:
+                    print(f"Exception: {e}")
+
+        for _, other_client in list_of_dbs.items():
+            other_client.disconnect()
 
         # Update Properties
         self.__update_properties(
             self._collection_name, orig_props, self.collection_properties
         )
+        return inserted_ids
 
     def check_required_inputs(self, collection_name):
         # Check Distance Metric
@@ -732,6 +787,7 @@ class VDMS(VectorStore):
         embedding_function: Embeddings,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
+        num_workers: int = DEFAULT_INSERT_NUM_WORKERS,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # Add this line
         connection_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
@@ -740,10 +796,12 @@ class VDMS(VectorStore):
 
         Args:
             collection_name (str): Name of the collection to create.
-            ids (Optional[List[str]]): List of document IDs. Defaults to None.
-            batch_size (int): Number of concurrent requests to send to the server.
+            connection_args: Dictionary defining "host" and "port" for VDMS server
             documents (List[Document]): List of documents to add to vectorstore.
             embedding_function (Embeddings): Embedding function. Defaults to None.
+            ids (Optional[List[str]]): List of document IDs. Defaults to None.
+            batch_size (int): Number of concurrent requests to send to the server.
+            num_workers (int): Number of workers to insert data in server.
 
         Returns:
             VDMS: VDMS vectorstore.
@@ -755,6 +813,7 @@ class VDMS(VectorStore):
             embedding_function=embedding_function,
             ids=ids,
             batch_size=batch_size,
+            num_workers=num_workers,
             collection_name=collection_name,
             connection_args=connection_args,
             **kwargs,
@@ -768,6 +827,7 @@ class VDMS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
+        num_workers: int = DEFAULT_INSERT_NUM_WORKERS,
         collection_name: str = DEFAULT_COLLECTION_NAME,
         connection_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
@@ -780,6 +840,7 @@ class VDMS(VectorStore):
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             batch_size (int): Number of concurrent requests to send to the server.
+            num_workers (int): Number of workers to insert data in server.
             collection_name (str): Name of the collection to create.
 
         Returns:
@@ -794,7 +855,8 @@ class VDMS(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
         vdms_collection.add_texts(
-            texts=texts, metadatas=metadatas, ids=ids, batch_size=batch_size
+            texts=texts, metadatas=metadatas, ids=ids,
+            batch_size=batch_size, num_workers=num_workers,**kwargs
         )
         return vdms_collection
 
@@ -807,17 +869,12 @@ class VDMS(VectorStore):
     ) -> Tuple[Any, Any]:
         """Gets the collection.
         Get embeddings and their associate data from the data store.
-        If no ids or where filter is provided returns all embeddings up to limit.
+        If no constraints provided returns all embeddings up to limit.
 
         Args:
-            ids: The ids of the embeddings to get. Optional.
-            where: A Where type dict used to filter results by.
-                   E.g. `{"color" : "red", "price": 4.20}`. Optional.
+            constraints: A dict used to filter results by.
+                   E.g. `{"color" : ["==", "red"], "price": [">", 4.00]}`. Optional.
             limit: The number of documents to return. Optional.
-            offset: The offset to start returning results from.
-                    Useful for paging results with limit. Optional.
-            where_document: A WhereDocument type dict used to filter by the documents.
-                            E.g. `{$contains: "hello"}`. Optional.
             include: A list of what to include in the results.
                      Can contain `"embeddings"`, `"metadatas"`, `"documents"`.
                      Ids are always included.
@@ -1231,13 +1288,6 @@ class VDMS(VectorStore):
 
         if self.embedding_function is None:
             raise ValueError("Must provide embedding function")
-            # results = self.query_collection_embeddings(
-            #     query_texts=[query],
-            #     n_results=k,
-            #     filter=filter,
-            #     where_document=where_document,
-            #     **kwargs
-            # )
         else:
             query_embedding = self._embed_query(query)
             results = self.query_collection_embeddings(
@@ -1541,7 +1591,7 @@ def check_valid_response(all_queries: List[dict], response: Any) -> bool:
 
 
 def check_descriptor_exists_by_id(
-    db: vdms.vdms,
+    client: vdms.vdms,
     setname: str,
     id: str,
     # k_neighbors: Optional[int] = None,
@@ -1555,14 +1605,14 @@ def check_descriptor_exists_by_id(
         results={"list": ["id"], "count": ""},
     )
     all_queries = [findDescriptor]
-    res, _ = db.query(all_queries)
+    res, _ = client.query(all_queries)
 
     valid_res = check_valid_response(all_queries, res)
     return valid_res, findDescriptor
 
 
 def check_vdms_then_adddescriptor(
-    db: vdms.vdms,
+    client: vdms.vdms,
     setname: str,
     label: Optional[str] = None,
     ref: Optional[int] = None,
@@ -1591,7 +1641,7 @@ def check_vdms_then_adddescriptor(
         results=results,
     )
     all_queries = [findDescriptor]
-    res, _ = db.query(all_queries)
+    res, _ = client.query(all_queries)
     # print(findDescriptor, res)
 
     valid_res = check_valid_response(all_queries, res)
