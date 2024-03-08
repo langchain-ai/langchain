@@ -1,7 +1,7 @@
 """Util that invokes the Passio Nutrition AI API.
 """
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, Union, final
+from typing import Any, Callable, Dict, Optional, final
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
@@ -46,11 +46,13 @@ except ImportError:
 
 
 def is_http_retryable(rsp: requests.Response) -> bool:
-    return rsp and rsp.status_code in [408, 425, 429, 500, 502, 503, 504]
+    return bool(rsp) and rsp.status_code in [408, 425, 429, 500, 502, 503, 504]
 
 
 class ManagedPassioLifeAuth(NoDiskStorage):
     """Manages the token for the NutritionAI API."""
+
+    _access_token_expiry: Optional[datetime]
 
     def __init__(self, subscription_key: str):
         self.subscription_key = subscription_key
@@ -81,7 +83,7 @@ class ManagedPassioLifeAuth(NoDiskStorage):
         stop=stop_after_attempt(4),
         wait=wait_random(0, 0.3) + wait_exponential(multiplier=1, min=0.1, max=2),
     )
-    def _http_get(self, subscription_key) -> requests.Response:
+    def _http_get(self, subscription_key: str) -> requests.Response:
         return requests.get(
             f"https://api.passiolife.com/v2/token-cache/napi/oauth/token/{subscription_key}"
         )
@@ -121,7 +123,7 @@ class NutritionAIAPI(BaseModel):
         stop=stop_after_attempt(4),
         wait=wait_random(0, 0.3) + wait_exponential(multiplier=1, min=0.1, max=2),
     )
-    def _http_get(self, params: dict):
+    def _http_get(self, params: dict) -> requests.Response:
         return requests.get(
             self.nutritionai_api_url,
             headers=self.auth_.headers,
@@ -155,7 +157,7 @@ class NutritionAIAPI(BaseModel):
         values["auth_"] = ManagedPassioLifeAuth(nutritionai_subscription_key)
         return values
 
-    def run(self, query: str) -> Union[Dict, None]:
+    def run(self, query: str) -> Optional[Dict]:
         """Run query through NutrtitionAI API and parse result."""
         results = self._api_call_results(query)
         if results and len(results) < 1:

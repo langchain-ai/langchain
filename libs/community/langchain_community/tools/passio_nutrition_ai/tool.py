@@ -1,6 +1,6 @@
 """Tool for the Passio Nutrition AI API."""
 
-from typing import Optional, Type
+from typing import Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -33,6 +33,6 @@ class NutritionAI(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> Optional[Dict]:
         """Use the tool."""
         return self.api_wrapper.run(query)
