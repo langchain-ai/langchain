@@ -64,6 +64,7 @@ _EXPECTED = [
     "SupabaseVectorStore",
     "SurrealDBStore",
     "Tair",
+    "TiDBVectorStore",
     "TileDB",
     "Tigris",
     "TimescaleVector",
