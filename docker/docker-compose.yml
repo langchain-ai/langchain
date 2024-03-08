@@ -52,6 +52,28 @@ services:
       retries: 60
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  pgvector:
+    # postgres with the pgvector extension
+    image: ankane/pgvector
+    environment:
+      POSTGRES_DB: langchain
+      POSTGRES_USER: langchain
+      POSTGRES_PASSWORD: langchain
+    ports:
+      - "6024:5432"
+    command: |
+      postgres -c log_statement=all
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "psql postgresql://langchain:langchain@localhost/langchain --command 'SELECT 1;' || exit 1",
+        ]
+      interval: 5s
+      retries: 60
+    volumes:
+      - postgres_data_pgvector:/var/lib/postgresql/data
 
 volumes:
   postgres_data:
+  postgres_data_pgvector:
