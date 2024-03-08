@@ -69,6 +69,7 @@ _module_lookup = {
     "RetrievalQAWithSourcesChain": "langchain.chains.qa_with_sources.retrieval",
     "VectorDBQAWithSourcesChain": "langchain.chains.qa_with_sources.vector_db",
     "create_retrieval_chain": "langchain.chains.retrieval",
+    "PebbloRetrievalQA": "langchain.chains.pebblo_retrieval.base",
     "RetrievalQA": "langchain.chains.retrieval_qa.base",
     "VectorDBQA": "langchain.chains.retrieval_qa.base",
     "LLMRouterChain": "langchain.chains.router",

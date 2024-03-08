@@ -25,6 +25,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
+from langchain.chains.pebblo_retrieval.base import PebbloRetrievalQA
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
@@ -475,6 +476,28 @@ def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
     return VectorDBQA(
         combine_documents_chain=combine_documents_chain,  # type: ignore[arg-type]
         vectorstore=vectorstore,
+        **config,
+    )
+
+
+def _load_pebblo_retrieval_qa(config: dict, **kwargs: Any) -> PebbloRetrievalQA:
+    if "auth_context" in kwargs:
+        auth_context = kwargs.pop("auth_context")
+    else:
+        raise ValueError("`auth_context` must be present.")
+    if "combine_documents_chain" in config:
+        combine_documents_chain_config = config.pop("combine_documents_chain")
+        combine_documents_chain = load_chain_from_config(combine_documents_chain_config)
+    elif "combine_documents_chain_path" in config:
+        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"))
+    else:
+        raise ValueError(
+            "One of `combine_documents_chain` or "
+            "`combine_documents_chain_path` must be present."
+        )
+    return PebbloRetrievalQA(
+        combine_documents_chain=combine_documents_chain,
+        auth_context=auth_context,
         **config,
     )
 
