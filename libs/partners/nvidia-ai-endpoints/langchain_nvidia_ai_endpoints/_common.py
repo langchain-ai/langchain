@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections import defaultdict
 from functools import partial
 from typing import (
     Any,
@@ -29,6 +30,7 @@ from langchain_core.pydantic_v1 import (
 )
 from langchain_core.utils import get_from_dict_or_env
 from requests.models import Response
+from langchain_nvidia_ai_endpoints._statics import Model, MODEL_SPECS
 
 logger = logging.getLogger(__name__)
 
@@ -330,13 +332,17 @@ class NVEModel(BaseModel):
         """Dig out relevant details of aggregated message"""
         content_buffer: Dict[str, Any] = dict()
         content_holder: Dict[Any, Any] = dict()
+        usage_holder: Dict[Any, Any] = dict()  ####
         is_stopped = False
         for msg in msg_list:
+            usage_holder = msg.get("usage", {})  ####
             if "choices" in msg:
                 ## Tease out ['choices'][0]...['delta'/'message']
                 msg = msg.get("choices", [{}])[0]
                 is_stopped = msg.get("finish_reason", "") == "stop"
-                msg = msg.get("delta", msg.get("message", {"content": ""}))
+                msg = msg.get("delta", msg.get("message", msg.get("text", "")))
+                if not isinstance(msg, dict):
+                    msg = {"content" : msg}
             elif "data" in msg:
                 ## Tease out ['data'][0]...['embedding']
                 msg = msg.get("data", [{}])[0]
@@ -349,6 +355,7 @@ class NVEModel(BaseModel):
             if is_stopped:
                 break
         content_holder = {**content_holder, **content_buffer}
+        content_holder.update(token_usage=usage_holder)  ####
         return content_holder, is_stopped
 
     def _early_stop_msg(
@@ -379,7 +386,7 @@ class NVEModel(BaseModel):
         self.last_inputs = {
             "url": invoke_url,
             "headers": self.headers["stream"],
-            "json": payload,
+            "json": self.payload_fn(payload),
             "stream": True,
         }
         response = self.get_session_fn().post(**self.last_inputs)
@@ -415,7 +422,7 @@ class NVEModel(BaseModel):
         self.last_inputs = {
             "url": invoke_url,
             "headers": self.headers["stream"],
-            "json": payload,
+            "json": self.payload_fn(payload),
         }
         async with self.get_asession_fn() as session:
             async with session.post(**self.last_inputs) as response:
@@ -446,6 +453,8 @@ class _NVIDIAClient(BaseModel):
         """Validate and update client arguments, including API key and formatting"""
         if not values.get("client"):
             values["client"] = NVEModel(**values)
+        elif isinstance(values["client"], BaseModel.__class__):
+            values["client"] = values["client"](**values["client"])
         return values
 
     @classmethod
@@ -455,22 +464,37 @@ class _NVIDIAClient(BaseModel):
     @property
     def available_functions(self) -> List[dict]:
         """Map the available functions that can be invoked."""
-        return self.client.available_functions
+        return self.__cls__.get_available_models(client=self.client)
 
     @property
     def available_models(self) -> dict:
         """Map the available models that can be invoked."""
-        return self.client.available_models
+        return self.__cls__.get_available_models(client=self.client)
 
     @staticmethod
-    def get_available_functions(**kwargs: Any) -> List[dict]:
+    def get_available_functions(**kwargs: Any) -> List[Model]:
         """Map the available functions that can be invoked. Callable from class"""
-        return NVEModel(**kwargs).available_functions
+        if client is None:
+            client = NVEModel(**kwargs)
+        return client.available_functions
 
-    @staticmethod
-    def get_available_models(**kwargs: Any) -> dict:
+    @classmethod
+    def get_available_models(
+        cls,
+        client: Optional[NVEModel] = None,
+        list_all: bool = False,
+        **kwargs: Any,
+    ) -> List[Model]:
         """Map the available models that can be invoked. Callable from class"""
-        return NVEModel(**kwargs).available_models
+        if client is None:
+            client = NVEModel(**kwargs)
+        out = sorted([
+            Model(id=k.replace("playground_", ""), path=v, **MODEL_SPECS.get(k, {}))
+                for k, v in client.available_models.items()
+        ], key=lambda x: f"{x.client or 'Z'}{x.id}{cls}")
+        if not list_all:
+            out = [m for m in out if m.client == cls.__name__ or m.model_type == None]
+        return out
 
     def get_model_details(self, model: Optional[str] = None) -> dict:
         """Get more meta-details about a model retrieved by a given name"""
