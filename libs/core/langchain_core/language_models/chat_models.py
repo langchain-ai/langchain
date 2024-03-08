@@ -871,11 +871,6 @@ class SimpleChatModel(BaseChatModel):
         )
 
 
-def _update_result_msgs(result: ChatResult) -> None:
-    for generation in result.generations:
-        generation.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(generation)
-
-
 def _cp_gen_info_to_msg_kwargs(
     generation: Union[ChatGeneration, ChatGenerationChunk],
 ) -> dict:
