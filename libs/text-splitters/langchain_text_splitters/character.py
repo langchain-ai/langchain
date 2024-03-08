@@ -584,6 +584,7 @@ class SemanticTiktokenTextSplitter(TextSplitter):
 
     def __init__(
         self,
+        *,
         max_characters: int = 200,
         model_name: str = "gpt-3.5-turbo",
         trim_chunks: bool = False,
