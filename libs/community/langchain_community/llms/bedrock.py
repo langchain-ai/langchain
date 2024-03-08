@@ -201,6 +201,13 @@ class LLMInputOutputAdapter:
                 chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
             ):
                 return
+
+            elif (
+                provider == "mistral"
+                and chunk_obj.get(output_key, [{}])[0].get("stop_reason", "") == "stop"
+            ):
+                return
+
             elif messages_api and (chunk_obj.get("type") == "content_block_stop"):
                 return
 
@@ -256,6 +263,12 @@ class LLMInputOutputAdapter:
 
             if provider == "cohere" and (
                 chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
+            ):
+                return
+
+            if (
+                provider == "mistral"
+                and chunk_obj.get(output_key, [{}])[0].get("stop_reason", "") == "stop"
             ):
                 return
 
