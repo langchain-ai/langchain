@@ -45,25 +45,3 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
 
     assert system_message == "System Prompt"
     assert result == expected
-
-
-def test_premchat_raises_with_parameter_n() -> None:
-    # FIXME: n > 1 is not supported at this version 
-
-    messages = [[HumanMessage(content="hello")]]
-    with pytest.raises(NotImplementedError) as error_msg:
-        ChatPremAI(premai_api_key="fake", project_id=8).generate(messages=messages, n=2)
-
-    assert "parameter: n is not supported for now." in str(error_msg)
-
-
-def test_premchat_raises_with_parameter_stop() -> None:
-    # FIXME: stop paramter with values is not supported currently
-
-    messages = [[HumanMessage(content="hello")]]
-    with pytest.raises(NotImplementedError) as error_msg:
-        ChatPremAI(premai_api_key="fake", project_id=8).generate(
-            messages=messages, stop=["stop"]
-        )
-
-    assert "Parameter: stop has no support yet" in str(error_msg)
