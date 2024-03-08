@@ -22,7 +22,7 @@ from __future__ import annotations
 import inspect
 import warnings
 from abc import abstractmethod
-from inspect import signature
+from inspect import signature, Parameter, Signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from langchain_core.callbacks import (
@@ -54,14 +54,66 @@ from langchain_core.runnables.config import run_in_executor
 
 class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
+    
+
+NoneType = type(None)
+   
+def _parse_parameter(param: Parameter) -> Dict[str, Any]:
+    ret = {}
+    if param != Parameter.empty:
+        ret = _parse_annotation(param.annotation)
+    ret["name"] = param.name
+    if param.default != Parameter.empty:
+        ret["default_value"] = param.default
+    return ret
+
+
+def _parse_annotation(annotation: Parameter) -> Dict[str, Any]:
+    if annotation == Signature.empty:
+        return {"type_": "Any", "is_required": True}
+    if isinstance(annotation, str):
+        return {"type_": annotation, "is_required": True}
+    ret = _parse_internal_annotation(annotation, True)
+    if hasattr(annotation, "__metadata__") and annotation.__metadata__:
+        ret["description"] = annotation.__metadata__[0]
+    return ret
+
+
+def _parse_internal_annotation(annotation: Parameter, required: bool) -> Dict[str, Any]:
+    if hasattr(annotation, "__forward_arg__"):
+        return {"type_": annotation.__forward_arg__, "is_required": required}
+    if getattr(annotation, "__name__", None) == "Optional":
+        required = False
+    if hasattr(annotation, "__args__"):
+        results = [_parse_internal_annotation(arg, required) for arg in annotation.__args__]
+        type_objects = [
+            result["type_object"]
+            for result in results
+            if "type_object" in result and result["type_object"] is not NoneType
+        ]
+        str_results = [result["type_"] for result in results]
+        if "NoneType" in str_results:
+            str_results.remove("NoneType")
+            required = False
+        else:
+            required = not (any(not result["is_required"] for result in results))
+        ret = {"type_": ", ".join(str_results), "is_required": required}
+        if type_objects and len(type_objects) == 1:
+            ret["type_object"] = type_objects[0]
+        return ret
+    return {
+        "type_": getattr(annotation, "__name__", ""),
+        "type_object": annotation,
+        "is_required": required,
+    }
 
 
 def _create_subset_model(
-    name: str, model: Type[BaseModel], field_names: list
+    name: str, model: Type[BaseModel], fields_details: Dict
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
-    for field_name in field_names:
+    for field_name, field_info in fields_details.items():
         field = model.__fields__[field_name]
         t = (
             # this isn't perfect but should work for most functions
@@ -69,6 +121,7 @@ def _create_subset_model(
             if field.required and not field.allow_none
             else Optional[field.outer_type_]
         )
+        field.field_info.description = field_info["description"]
         fields[field_name] = (t, field.field_info)
     rtn = create_model(name, **fields)  # type: ignore
     return rtn
@@ -81,7 +134,7 @@ def _get_filtered_args(
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
-    return {k: schema[k] for k in valid_keys if k not in ("run_manager", "callbacks")}
+    return {k: {**schema[k], **{"description": _parse_parameter(signature(func).parameters[k])["description"]}} for k in valid_keys if k not in ("run_manager", "callbacks")}
 
 
 class _SchemaConfig:
@@ -111,8 +164,9 @@ def create_schema_from_function(
         del inferred_model.__fields__["callbacks"]
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func)
+
     return _create_subset_model(
-        f"{model_name}Schema", inferred_model, list(valid_properties)
+        f"{model_name}Schema", inferred_model, valid_properties
     )
 
 
@@ -142,10 +196,10 @@ class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
             # TODO: Use get_args / get_origin and fully
             # specify valid annotations.
             typehint_mandate = """
-class ChildTool(BaseTool):
-    ...
-    args_schema: Type[BaseModel] = SchemaClass
-    ..."""
+                class ChildTool(BaseTool):
+                    ...
+                    args_schema: Type[BaseModel] = SchemaClass
+                    ..."""
             name = cls.__name__
             raise SchemaAnnotationError(
                 f"Tool definition for {name} must include valid type annotations"
@@ -619,7 +673,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super(Tool, self).__init__(  # type: ignore[call-arg]
+        super(Tool, self).__init__(
             name=name, func=func, description=description, **kwargs
         )
 
@@ -795,7 +849,7 @@ class StructuredTool(BaseTool):
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,  # type: ignore[arg-type]
+            args_schema=_args_schema,
             description=description,
             return_direct=return_direct,
             **kwargs,
