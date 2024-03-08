@@ -178,13 +178,13 @@ class ChatMlflow(BaseChatModel):
         else:
             raise ValueError(f"Got unknown message type: {message}")
 
-        if "function_call" in message.additional_kwargs:
+        if "function_call" in message.data:
             ChatMlflow._raise_functions_not_supported()
-        if message.additional_kwargs:
+        if message.data:
             logger.warning(
                 "Additional message arguments are unsupported by Databricks"
                 " and will be ignored: %s",
-                message.additional_kwargs,
+                message.data,
             )
         return message_dict
 

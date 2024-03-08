@@ -336,8 +336,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -373,8 +373,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -410,8 +410,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -443,8 +443,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -475,8 +475,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {
@@ -507,8 +507,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                             },
                         ],
                     },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
+                    "data": {
+                        "title": "Data",
                         "type": "object",
                     },
                     "type": {

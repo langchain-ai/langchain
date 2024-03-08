@@ -41,7 +41,7 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
             )
         message = generation.message
         try:
-            tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
+            tool_calls = copy.deepcopy(message.data["tool_calls"])
         except KeyError:
             return []
 

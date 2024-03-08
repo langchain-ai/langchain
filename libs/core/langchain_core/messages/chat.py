@@ -47,17 +47,13 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
             return self.__class__(
                 role=self.role,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
-                    self.additional_kwargs, other.additional_kwargs
-                ),
+                data=self._merge_kwargs_dict(self.data, other.data),
             )
         elif isinstance(other, BaseMessageChunk):
             return self.__class__(
                 role=self.role,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
-                    self.additional_kwargs, other.additional_kwargs
-                ),
+                data=self._merge_kwargs_dict(self.data, other.data),
             )
         else:
             return super().__add__(other)

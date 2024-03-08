@@ -30,9 +30,8 @@ def merge_chat_runs_in_session(
             messages.append(deepcopy(message))
         elif (
             isinstance(message, type(messages[-1]))
-            and messages[-1].additional_kwargs.get("sender") is not None
-            and messages[-1].additional_kwargs["sender"]
-            == message.additional_kwargs.get("sender")
+            and messages[-1].data.get("sender") is not None
+            and messages[-1].data["sender"] == message.data.get("sender")
         ):
             if not isinstance(messages[-1].content, str):
                 raise ValueError(
@@ -42,9 +41,7 @@ def merge_chat_runs_in_session(
             messages[-1].content = (
                 messages[-1].content + delimiter + message.content
             ).strip()
-            messages[-1].additional_kwargs.get("events", []).extend(
-                message.additional_kwargs.get("events") or []
-            )
+            messages[-1].data.get("events", []).extend(message.data.get("events") or [])
         else:
             messages.append(deepcopy(message))
     return ChatSession(messages=messages)
@@ -73,10 +70,10 @@ def map_ai_messages_in_session(chat_sessions: ChatSession, sender: str) -> ChatS
     messages = []
     num_converted = 0
     for message in chat_sessions["messages"]:
-        if message.additional_kwargs.get("sender") == sender:
+        if message.data.get("sender") == sender:
             message = AIMessage(
                 content=message.content,
-                additional_kwargs=message.additional_kwargs.copy(),
+                data=message.data.copy(),
                 example=getattr(message, "example", None),
             )
             num_converted += 1

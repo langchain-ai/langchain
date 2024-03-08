@@ -31,8 +31,8 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
+        if "function_call" in message.data:
+            message_dict["function_call"] = message.data["function_call"]
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
@@ -51,15 +51,15 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
     content = _dict.get("result", "") or ""
     if _dict.get("function_call"):
-        additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        if "thoughts" in additional_kwargs["function_call"]:
+        data = {"function_call": dict(_dict["function_call"])}
+        if "thoughts" in data["function_call"]:
             # align to api sample, which affects the llm function_call output
-            additional_kwargs["function_call"].pop("thoughts")
+            data["function_call"].pop("thoughts")
     else:
-        additional_kwargs = {}
+        data = {}
     return AIMessage(
         content=content,
-        additional_kwargs={**_dict.get("body", {}), **additional_kwargs},
+        data={**_dict.get("body", {}), **data},
     )
 
 
@@ -251,7 +251,7 @@ class QianfanChatEndpoint(BaseChatModel):
                     else chat_generation_info
                 )
                 completion += chunk.text
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+            lc_msg = AIMessage(content=completion, data={})
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -296,7 +296,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 )
                 completion += chunk.text
 
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+            lc_msg = AIMessage(content=completion, data={})
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -336,15 +336,15 @@ class QianfanChatEndpoint(BaseChatModel):
         for res in self.client.do(**params):
             if res:
                 msg = _convert_dict_to_message(res)
-                additional_kwargs = msg.additional_kwargs.get("function_call", {})
+                data = msg.data.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
                     message=AIMessageChunk(
                         content=msg.content,
                         role="assistant",
-                        additional_kwargs=additional_kwargs,
+                        data=data,
                     ),
-                    generation_info=msg.additional_kwargs,
+                    generation_info=msg.data,
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text, chunk=chunk)
@@ -362,15 +362,15 @@ class QianfanChatEndpoint(BaseChatModel):
         async for res in await self.client.ado(**params):
             if res:
                 msg = _convert_dict_to_message(res)
-                additional_kwargs = msg.additional_kwargs.get("function_call", {})
+                data = msg.data.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
                     message=AIMessageChunk(
                         content=msg.content,
                         role="assistant",
-                        additional_kwargs=additional_kwargs,
+                        data=data,
                     ),
-                    generation_info=msg.additional_kwargs,
+                    generation_info=msg.data,
                 )
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text, chunk=chunk)

@@ -47,9 +47,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
-                    self.additional_kwargs, other.additional_kwargs
-                ),
+                data=self._merge_kwargs_dict(self.data, other.data),
             )
 
         return super().__add__(other)

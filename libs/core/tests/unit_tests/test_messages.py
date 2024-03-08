@@ -34,38 +34,30 @@ def test_message_chunks() -> None:
         == AIMessageChunk(content="I am indeed.")
     ), "MessageChunk + MessageChunk should be a MessageChunk of same class as the left side"  # noqa: E501
 
-    assert (
-        AIMessageChunk(content="", additional_kwargs={"foo": "bar"})
-        + AIMessageChunk(content="", additional_kwargs={"baz": "foo"})
-        == AIMessageChunk(content="", additional_kwargs={"foo": "bar", "baz": "foo"})
-    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
+    assert AIMessageChunk(content="", data={"foo": "bar"}) + AIMessageChunk(
+        content="", data={"baz": "foo"}
+    ) == AIMessageChunk(
+        content="", data={"foo": "bar", "baz": "foo"}
+    ), "MessageChunk + MessageChunk should be a MessageChunk with merged data"  # noqa: E501
 
-    assert (
-        AIMessageChunk(
-            content="", additional_kwargs={"function_call": {"name": "web_search"}}
-        )
-        + AIMessageChunk(
-            content="", additional_kwargs={"function_call": {"arguments": None}}
-        )
-        + AIMessageChunk(
-            content="", additional_kwargs={"function_call": {"arguments": "{\n"}}
-        )
-        + AIMessageChunk(
-            content="",
-            additional_kwargs={
-                "function_call": {"arguments": '  "query": "turtles"\n}'}
-            },
-        )
-        == AIMessageChunk(
-            content="",
-            additional_kwargs={
-                "function_call": {
-                    "name": "web_search",
-                    "arguments": '{\n  "query": "turtles"\n}',
-                }
-            },
-        )
-    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
+    assert AIMessageChunk(
+        content="", data={"function_call": {"name": "web_search"}}
+    ) + AIMessageChunk(
+        content="", data={"function_call": {"arguments": None}}
+    ) + AIMessageChunk(
+        content="", data={"function_call": {"arguments": "{\n"}}
+    ) + AIMessageChunk(
+        content="",
+        data={"function_call": {"arguments": '  "query": "turtles"\n}'}},
+    ) == AIMessageChunk(
+        content="",
+        data={
+            "function_call": {
+                "name": "web_search",
+                "arguments": '{\n  "query": "turtles"\n}',
+            }
+        },
+    ), "MessageChunk + MessageChunk should be a MessageChunk with merged data"  # noqa: E501
 
 
 def test_chat_message_chunks() -> None:
@@ -180,7 +172,7 @@ class TestGetBufferString(unittest.TestCase):
 
 
 def test_multiple_msg() -> None:
-    human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
+    human_msg = HumanMessage(content="human", data={"key": "value"})
     ai_msg = AIMessage(content="ai")
     sys_msg = SystemMessage(content="sys")
 
@@ -193,9 +185,7 @@ def test_multiple_msg() -> None:
 
 
 def test_multiple_msg_with_name() -> None:
-    human_msg = HumanMessage(
-        content="human", additional_kwargs={"key": "value"}, name="human erick"
-    )
+    human_msg = HumanMessage(content="human", data={"key": "value"}, name="human erick")
     ai_msg = AIMessage(content="ai", name="ai erick")
     sys_msg = SystemMessage(content="sys", name="sys erick")
 
@@ -209,8 +199,8 @@ def test_multiple_msg_with_name() -> None:
 
 def test_message_chunk_to_message() -> None:
     assert message_chunk_to_message(
-        AIMessageChunk(content="I am", additional_kwargs={"foo": "bar"})
-    ) == AIMessage(content="I am", additional_kwargs={"foo": "bar"})
+        AIMessageChunk(content="I am", data={"foo": "bar"})
+    ) == AIMessage(content="I am", data={"foo": "bar"})
     assert message_chunk_to_message(HumanMessageChunk(content="I am")) == HumanMessage(
         content="I am"
     )
@@ -227,7 +217,7 @@ def test_tool_calls_merge() -> None:
         dict(content=""),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 0,
@@ -240,7 +230,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 0,
@@ -253,7 +243,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 0,
@@ -266,7 +256,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 0,
@@ -279,7 +269,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 0,
@@ -292,7 +282,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 0,
@@ -305,7 +295,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 0,
@@ -318,7 +308,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 1,
@@ -331,7 +321,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 1,
@@ -344,7 +334,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 1,
@@ -357,7 +347,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 1,
@@ -370,7 +360,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 1,
@@ -383,7 +373,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 1,
@@ -396,7 +386,7 @@ def test_tool_calls_merge() -> None:
         ),
         dict(
             content="",
-            additional_kwargs={
+            data={
                 "tool_calls": [
                     {
                         "index": 1,
@@ -421,7 +411,7 @@ def test_tool_calls_merge() -> None:
 
     assert final == AIMessageChunk(
         content="",
-        additional_kwargs={
+        data={
             "tool_calls": [
                 {
                     "index": 0,
@@ -471,9 +461,7 @@ def test_convert_to_messages() -> None:
         AIMessage(
             content="Hi!",
             name="JaneBot",
-            additional_kwargs={
-                "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'}
-            },
+            data={"function_call": {"name": "greet", "arguments": '{"name": "Jane"}'}},
         ),
         FunctionMessage(name="greet", content="Hi!"),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),

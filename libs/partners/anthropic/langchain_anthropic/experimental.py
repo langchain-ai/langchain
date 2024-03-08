@@ -284,7 +284,7 @@ class ChatAnthropicTools(ChatAnthropic):
         text = data.content[0].text
         tools = kwargs.get("tools", None)
 
-        additional_kwargs: Dict[str, Any] = {}
+        msg_data: Dict[str, Any] = {}
 
         if tools:
             # parse out the xml from the text
@@ -295,16 +295,14 @@ class ChatAnthropicTools(ChatAnthropic):
                 xml_text = text[start:end]
 
                 xml = self._xmllib.fromstring(xml_text)
-                additional_kwargs["tool_calls"] = _xml_to_tool_calls(xml, tools)
+                msg_data["tool_calls"] = _xml_to_tool_calls(xml, tools)
                 text = ""
             except Exception:
                 pass
 
         return ChatResult(
             generations=[
-                ChatGeneration(
-                    message=AIMessage(content=text, additional_kwargs=additional_kwargs)
-                )
+                ChatGeneration(message=AIMessage(content=text, data=msg_data))
             ],
             llm_output=data,
         )

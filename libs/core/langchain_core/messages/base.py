@@ -20,8 +20,11 @@ class BaseMessage(Serializable):
     content: Union[str, List[Union[str, Dict]]]
     """The string contents of the message."""
 
-    additional_kwargs: dict = Field(default_factory=dict)
-    """Any additional information."""
+    data: dict = Field(default_factory=dict)
+    """Reserved for additional payload data associated with the message.
+
+    For example, for a message from an AI, this could include tool calls.
+    """
 
     type: str
 
@@ -36,7 +39,14 @@ class BaseMessage(Serializable):
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg."""
-        return super().__init__(content=content, **kwargs)
+        # Handle additional_kwargs for backwards compatible ser/des
+        if "additional_kwargs" in kwargs:
+            kwargs["data"] = {
+                **kwargs.pop("additional_kwargs"),
+                **kwargs.get("data", {}),
+            }
+        super().__init__(content=content, **kwargs)
+        self._lc_kwargs["additional_kwargs"] = self.data
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -53,6 +63,16 @@ class BaseMessage(Serializable):
 
         prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
+
+    # For backwards compatibility.
+    @property
+    def additional_kwargs(self) -> Dict:
+        return self.data
+
+    # For backwards compatibility.
+    @additional_kwargs.setter
+    def additional_kwargs(self, kwargs: dict) -> None:
+        self.data = kwargs
 
     def pretty_repr(self, html: bool = False) -> str:
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
@@ -112,7 +132,7 @@ class BaseMessageChunk(BaseMessage):
     def _merge_kwargs_dict(
         self, left: Dict[str, Any], right: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Merge additional_kwargs from another BaseMessageChunk into this one,
+        """Merge data from another BaseMessageChunk into this one,
         handling specific scenarios where a key exists in both dictionaries
         but has a value of None in 'left'. In such cases, the method uses the
         value from 'right' for that key in the merged dictionary.
@@ -135,7 +155,7 @@ class BaseMessageChunk(BaseMessage):
                 continue
             elif type(merged[k]) != type(v):
                 raise TypeError(
-                    f'additional_kwargs["{k}"] already exists in this message,'
+                    f'data["{k}"] already exists in this message,'
                     " but with a different type."
                 )
             elif isinstance(merged[k], str):
@@ -165,9 +185,7 @@ class BaseMessageChunk(BaseMessage):
             return self.__class__(  # type: ignore[call-arg]
                 id=self.id,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
-                    self.additional_kwargs, other.additional_kwargs
-                ),
+                data=self._merge_kwargs_dict(self.data, other.data),
             )
         else:
             raise TypeError(
