@@ -51,6 +51,9 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
+                ),
             )
         elif isinstance(other, BaseMessageChunk):
             return self.__class__(
@@ -58,6 +61,9 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 content=merge_content(self.content, other.content),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
+                ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
                 ),
             )
         else:

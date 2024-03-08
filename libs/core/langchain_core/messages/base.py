@@ -126,6 +126,9 @@ class BaseMessageChunk(BaseMessage):
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
+                ),
             )
         else:
             raise TypeError(

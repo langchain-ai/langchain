@@ -257,7 +257,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
-                    chunk.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(chunk)
+                    chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     yield chunk.message
                     if generation is None:
                         generation = chunk
@@ -335,7 +335,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             async for chunk in _stream_implementation(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             ):
-                chunk.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(chunk)
+                chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 yield chunk.message
                 if generation is None:
                     generation = chunk
@@ -628,7 +628,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             result = self._generate(messages, stop=stop, **kwargs)
 
         for generation in result.generations:
-            generation.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(
+            generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
         if check_cache and llm_cache:
@@ -664,7 +664,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             result = await self._agenerate(messages, stop=stop, **kwargs)
         for generation in result.generations:
-            generation.message.additional_kwargs = _cp_gen_info_to_msg_kwargs(
+            generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
         if check_cache and llm_cache:
@@ -871,10 +871,10 @@ class SimpleChatModel(BaseChatModel):
         )
 
 
-def _cp_gen_info_to_msg_kwargs(
+def _gen_info_and_msg_metadata(
     generation: Union[ChatGeneration, ChatGenerationChunk],
 ) -> dict:
     return {
         **(generation.generation_info or {}),
-        **generation.message.additional_kwargs,
+        **generation.message.response_metadata,
     }
