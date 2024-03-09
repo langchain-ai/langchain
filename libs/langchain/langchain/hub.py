@@ -82,9 +82,6 @@ def pull(
     client = _get_client(api_url=api_url, api_key=api_key)
     res_dict = client.pull_repo(owner_repo_commit)
     obj = loads(json.dumps(res_dict["manifest"]))
-    import pdb
-
-    pdb.set_trace()
     if isinstance(obj, BasePromptTemplate):
         if obj.metadata is None:
             obj.metadata = {}
@@ -93,3 +90,4 @@ def pull(
             "repo": res_dict["repo"],
             "commit_hash": res_dict["commit_hash"],
         }
+    return obj
