@@ -1,10 +1,13 @@
 """test Databricks LLM"""
-import pickle
 from typing import Any, Dict
 
+import pytest
 from pytest import MonkeyPatch
 
-from langchain_community.llms.databricks import Databricks
+from langchain_community.llms.databricks import (
+    Databricks,
+    _load_pickled_fn_from_hex_string,
+)
 
 
 class MockDatabricksServingEndpointClient:
@@ -29,7 +32,10 @@ def transform_input(**request: Any) -> Dict[str, Any]:
     return request
 
 
+@pytest.mark.requires("cloudpickle")
 def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
+    import cloudpickle
+
     monkeypatch.setattr(
         "langchain_community.llms.databricks._DatabricksServingEndpointClient",
         MockDatabricksServingEndpointClient,
@@ -38,9 +44,14 @@ def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("DATABRICKS_TOKEN", "my-default-token")
 
     llm = Databricks(
-        endpoint_name="databricks-mixtral-8x7b-instruct",
+        endpoint_name="some_end_point_name",  # Value should not matter for this test
         transform_input_fn=transform_input,
+        allow_dangerous_deserialization=True,
     )
     params = llm._default_params
-    pickled_string = pickle.dumps(transform_input).hex()
+    pickled_string = cloudpickle.dumps(transform_input).hex()
     assert params["transform_input_fn"] == pickled_string
+
+    request = {"prompt": "What is the meaning of life?"}
+    fn = _load_pickled_fn_from_hex_string(params["transform_input_fn"])
+    assert fn(**request) == transform_input(**request)

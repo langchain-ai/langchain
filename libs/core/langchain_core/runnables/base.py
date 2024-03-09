@@ -1050,12 +1050,19 @@ class Runnable(Generic[Input, Output], ABC):
 
         for chunk in input:
             if not got_first_val:
-                final = chunk
+                final = _adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
-                final = final + chunk  # type: ignore[operator]
+                try:
+                    final = final + chunk  # type: ignore[operator]
+                except TypeError:
+                    raise TypeError(
+                        f"Failed while trying to add together "
+                        f"type {type(final)} and {type(chunk)}."
+                        f"These types should be addable for transform to work."
+                    )
 
         if got_first_val:
             yield from self.stream(final, config, **kwargs)
@@ -1076,12 +1083,19 @@ class Runnable(Generic[Input, Output], ABC):
 
         async for chunk in input:
             if not got_first_val:
-                final = chunk
+                final = _adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
-                final = final + chunk  # type: ignore[operator]
+                try:
+                    final = final + chunk  # type: ignore[operator]
+                except TypeError:
+                    raise TypeError(
+                        f"Failed while trying to add together "
+                        f"type {type(final)} and {type(chunk)}."
+                        f"These types should be addable for atransform to work."
+                    )
 
         if got_first_val:
             async for output in self.astream(final, config, **kwargs):
@@ -1260,7 +1274,7 @@ class Runnable(Generic[Input, Output], ABC):
             output = cast(
                 Output,
                 context.run(
-                    call_func_with_variable_args,
+                    call_func_with_variable_args,  # type: ignore[arg-type]
                     func,  # type: ignore[arg-type]
                     input,  # type: ignore[arg-type]
                     config,
@@ -1272,7 +1286,7 @@ class Runnable(Generic[Input, Output], ABC):
             run_manager.on_chain_error(e)
             raise
         else:
-            run_manager.on_chain_end(dumpd(output))
+            run_manager.on_chain_end(output)
             return output
 
     async def _acall_with_config(
@@ -1315,7 +1329,7 @@ class Runnable(Generic[Input, Output], ABC):
             await run_manager.on_chain_error(e)
             raise
         else:
-            await run_manager.on_chain_end(dumpd(output))
+            await run_manager.on_chain_end(output)
             return output
 
     def _batch_with_config(
@@ -1379,7 +1393,7 @@ class Runnable(Generic[Input, Output], ABC):
                     first_exception = first_exception or out
                     run_manager.on_chain_error(out)
                 else:
-                    run_manager.on_chain_end(dumpd(out))
+                    run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], output)
             else:
@@ -1454,7 +1468,7 @@ class Runnable(Generic[Input, Output], ABC):
                     first_exception = first_exception or out
                     coros.append(run_manager.on_chain_error(out))
                 else:
-                    coros.append(run_manager.on_chain_end(dumpd(out)))
+                    coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], output)
@@ -1888,7 +1902,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             raise ValueError(
                 f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
             )
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             first=steps_flat[0],
             middle=list(steps_flat[1:-1]),
             last=steps_flat[-1],
@@ -2238,7 +2252,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     first_exception = first_exception or out
                     run_manager.on_chain_error(out)
                 else:
-                    run_manager.on_chain_end(dumpd(out))
+                    run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], inputs)
             else:
@@ -2363,7 +2377,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     first_exception = first_exception or out
                     coros.append(run_manager.on_chain_error(out))
                 else:
-                    coros.append(run_manager.on_chain_end(dumpd(out)))
+                    coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], inputs)
@@ -2574,7 +2588,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> None:
         merged = {**__steps} if __steps is not None else {}
         merged.update(kwargs)
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             steps={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
@@ -3001,7 +3015,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             func_for_name: Callable = atransform
 
         if inspect.isasyncgenfunction(transform):
-            self._atransform = transform
+            self._atransform = transform  # type: ignore[assignment]
             func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
             self._transform = transform
@@ -3066,7 +3080,10 @@ class RunnableGenerator(Runnable[Input, Output]):
         if not hasattr(self, "_transform"):
             raise NotImplementedError(f"{repr(self)} only supports async methods.")
         return self._transform_stream_with_config(
-            input, self._transform, config, **kwargs
+            input,
+            self._transform,  # type: ignore[arg-type]
+            config,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     def stream(
@@ -3557,7 +3574,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         for ichunk in input:
             if final is None:
-                final = ichunk
+                final = _adapt_first_streaming_chunk(ichunk)  # type: ignore
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3641,7 +3658,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         async for ichunk in input:
             if final is None:
-                final = ichunk
+                final = _adapt_first_streaming_chunk(ichunk)
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3995,17 +4012,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                 runnable with a custom type.
             **other_kwargs: Unpacked into the base class.
         """
-        config = config or {}
-        # config_specs contains the list of valid `configurable` keys
-        if configurable := config.get("configurable", None):
-            allowed_keys = set(s.id for s in bound.config_specs)
-            for key in configurable:
-                if key not in allowed_keys:
-                    raise ValueError(
-                        f"Configurable key '{key}' not found in runnable with"
-                        f" config keys: {allowed_keys}"
-                    )
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             bound=bound,
             kwargs=kwargs or {},
             config=config or {},
@@ -4452,3 +4459,11 @@ def chain(
                 yield chunk
     """
     return RunnableLambda(func)
+
+
+def _adapt_first_streaming_chunk(chunk: Any) -> Any:
+    """This might transform the first chunk of a stream into an AddableDict."""
+    if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
+        return AddableDict(chunk)
+    else:
+        return chunk
