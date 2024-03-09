@@ -10,7 +10,6 @@ from different APIs and services.
     Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
 """
 
-
 import logging
 from typing import Any
 
@@ -74,6 +73,7 @@ from langchain_community.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.embeddings.optimum_intel import QuantizedBiEncoderEmbeddings
+from langchain_community.embeddings.premai import PremAIEmbeddings
 from langchain_community.embeddings.sagemaker_endpoint import (
     SagemakerEndpointEmbeddings,
 )
@@ -158,6 +158,7 @@ __all__ = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
+    "PremAIEmbeddings",
 ]
 
 

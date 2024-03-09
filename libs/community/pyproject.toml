@@ -95,6 +95,7 @@ oci = {version = "^2.119.1", optional = true}
 rdflib = {version = "7.0.0", optional = true}
 nvidia-riva-client = {version = "^2.14.0", optional = true}
 llmlingua = {version = "^0.1.6", optional = true}
+premai = {version = "^0.3.15", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -153,6 +154,7 @@ tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
+premai = "^0.3.15"
 
 [tool.poetry.group.lint]
 optional = true
@@ -261,7 +263,8 @@ extended_testing = [
  "hdbcli",
  "oci",
  "rdflib",
- "llmlingua"
+ "llmlingua",
+ "premai"
 ]
 
 [tool.ruff]
