@@ -794,32 +794,32 @@ files = [
 
 [[package]]
 name = "importlib-metadata"
-version = "7.0.1"
+version = "7.0.2"
 description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "importlib_metadata-7.0.1-py3-none-any.whl", hash = "sha256:4805911c3a4ec7c3966410053e9ec6a1fecd629117df5adee56dfc9432a1081e"},
-    {file = "importlib_metadata-7.0.1.tar.gz", hash = "sha256:f238736bb06590ae52ac1fab06a3a9ef1d8dce2b7a35b5ab329371d6c8f5d2cc"},
+    {file = "importlib_metadata-7.0.2-py3-none-any.whl", hash = "sha256:f4bc4c0c070c490abf4ce96d715f68e95923320370efb66143df00199bb6c100"},
+    {file = "importlib_metadata-7.0.2.tar.gz", hash = "sha256:198f568f3230878cb1b44fbd7975f87906c22336dba2e4a7f05278c281fbd792"},
 ]
 
 [package.dependencies]
 zipp = ">=0.5"
 
 [package.extras]
-docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (<7.2.5)", "sphinx (>=3.5)", "sphinx-lint"]
+docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
 perf = ["ipython"]
-testing = ["flufl.flake8", "importlib-resources (>=1.3)", "packaging", "pyfakefs", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy (>=0.9.1)", "pytest-perf (>=0.9.2)", "pytest-ruff"]
+testing = ["flufl.flake8", "importlib-resources (>=1.3)", "packaging", "pyfakefs", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy", "pytest-perf (>=0.9.2)", "pytest-ruff (>=0.2.1)"]
 
 [[package]]
 name = "importlib-resources"
-version = "6.1.2"
+version = "6.1.3"
 description = "Read resources from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "importlib_resources-6.1.2-py3-none-any.whl", hash = "sha256:9a0a862501dc38b68adebc82970140c9e4209fc99601782925178f8386339938"},
-    {file = "importlib_resources-6.1.2.tar.gz", hash = "sha256:308abf8474e2dba5f867d279237cd4076482c3de7104a40b41426370e891549b"},
+    {file = "importlib_resources-6.1.3-py3-none-any.whl", hash = "sha256:4c0269e3580fe2634d364b39b38b961540a7738c02cb984e98add8b4221d793d"},
+    {file = "importlib_resources-6.1.3.tar.gz", hash = "sha256:56fb4525197b78544a3354ea27793952ab93f935bb4bf746b846bb1015020f2b"},
 ]
 
 [package.dependencies]
@@ -827,7 +827,7 @@ zipp = {version = ">=3.1.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
 docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (<7.2.5)", "sphinx (>=3.5)", "sphinx-lint"]
-testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy", "pytest-ruff (>=0.2.1)", "zipp (>=3.17)"]
+testing = ["jaraco.collections", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy", "pytest-ruff (>=0.2.1)", "zipp (>=3.17)"]
 
 [[package]]
 name = "iniconfig"
@@ -985,13 +985,13 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "json5"
-version = "0.9.17"
+version = "0.9.22"
 description = "A Python implementation of the JSON5 data format."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "json5-0.9.17-py2.py3-none-any.whl", hash = "sha256:f8ec1ecf985951d70f780f6f877c4baca6a47b6e61e02c4cd190138d10a7805a"},
-    {file = "json5-0.9.17.tar.gz", hash = "sha256:717d99d657fa71b7094877b1d921b1cce40ab444389f6d770302563bb7dfd9ae"},
+    {file = "json5-0.9.22-py3-none-any.whl", hash = "sha256:6621007c70897652f8b5d03885f732771c48d1925591ad989aa80c7e0e5ad32f"},
+    {file = "json5-0.9.22.tar.gz", hash = "sha256:b729bde7650b2196a35903a597d2b704b8fdf8648bfb67368cfb79f1174a17bd"},
 ]
 
 [package.extras]
@@ -1182,13 +1182,13 @@ test = ["click", "pre-commit", "pytest (>=7.0)", "pytest-asyncio (>=0.19.0)", "p
 
 [[package]]
 name = "jupyter-lsp"
-version = "2.2.3"
+version = "2.2.4"
 description = "Multi-Language Server WebSocket proxy for Jupyter Notebook/Lab server"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "jupyter-lsp-2.2.3.tar.gz", hash = "sha256:33dbcbc5df24237ff5c8b696b04ff4689fcd316cb8d4957d620fe5504d7d2c3f"},
-    {file = "jupyter_lsp-2.2.3-py3-none-any.whl", hash = "sha256:57dd90d0a2e2530831793550846168c81c952b49e187aa339e455027a5f0fd2e"},
+    {file = "jupyter-lsp-2.2.4.tar.gz", hash = "sha256:5e50033149344065348e688608f3c6d654ef06d9856b67655bd7b6bac9ee2d59"},
+    {file = "jupyter_lsp-2.2.4-py3-none-any.whl", hash = "sha256:da61cb63a16b6dff5eac55c2699cc36eac975645adee02c41bdfc03bf4802e77"},
 ]
 
 [package.dependencies]
@@ -1197,13 +1197,13 @@ jupyter-server = ">=1.1.2"
 
 [[package]]
 name = "jupyter-server"
-version = "2.12.5"
+version = "2.13.0"
 description = "The backend—i.e. core services, APIs, and REST endpoints—to Jupyter web applications."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "jupyter_server-2.12.5-py3-none-any.whl", hash = "sha256:184a0f82809a8522777cfb6b760ab6f4b1bb398664c5860a27cec696cb884923"},
-    {file = "jupyter_server-2.12.5.tar.gz", hash = "sha256:0edb626c94baa22809be1323f9770cf1c00a952b17097592e40d03e6a3951689"},
+    {file = "jupyter_server-2.13.0-py3-none-any.whl", hash = "sha256:77b2b49c3831fbbfbdb5048cef4350d12946191f833a24e5f83e5f8f4803e97b"},
+    {file = "jupyter_server-2.13.0.tar.gz", hash = "sha256:c80bfb049ea20053c3d9641c2add4848b38073bf79f1729cea1faed32fc1c78e"},
 ]
 
 [package.dependencies]
@@ -1229,7 +1229,7 @@ websocket-client = "*"
 
 [package.extras]
 docs = ["ipykernel", "jinja2", "jupyter-client", "jupyter-server", "myst-parser", "nbformat", "prometheus-client", "pydata-sphinx-theme", "send2trash", "sphinx-autodoc-typehints", "sphinxcontrib-github-alt", "sphinxcontrib-openapi (>=0.8.0)", "sphinxcontrib-spelling", "sphinxemoji", "tornado", "typing-extensions"]
-test = ["flaky", "ipykernel", "pre-commit", "pytest (>=7.0)", "pytest-console-scripts", "pytest-jupyter[server] (>=0.4)", "pytest-timeout", "requests"]
+test = ["flaky", "ipykernel", "pre-commit", "pytest (>=7.0)", "pytest-console-scripts", "pytest-jupyter[server] (>=0.7)", "pytest-timeout", "requests"]
 
 [[package]]
 name = "jupyter-server-terminals"
@@ -1252,13 +1252,13 @@ test = ["jupyter-server (>=2.0.0)", "pytest (>=7.0)", "pytest-jupyter[server] (>
 
 [[package]]
 name = "jupyterlab"
-version = "4.1.2"
+version = "4.1.4"
 description = "JupyterLab computational environment"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "jupyterlab-4.1.2-py3-none-any.whl", hash = "sha256:aa88193f03cf4d3555f6712f04d74112b5eb85edd7d222c588c7603a26d33c5b"},
-    {file = "jupyterlab-4.1.2.tar.gz", hash = "sha256:5d6348b3ed4085181499f621b7dfb6eb0b1f57f3586857aadfc8e3bf4c4885f9"},
+    {file = "jupyterlab-4.1.4-py3-none-any.whl", hash = "sha256:f92c3f2b12b88efcf767205f49be9b2f86b85544f9c4f342bb5e9904a16cf931"},
+    {file = "jupyterlab-4.1.4.tar.gz", hash = "sha256:e03c82c124ad8a0892e498b9dde79c50868b2c267819aca3f55ce47c57ebeb1d"},
 ]
 
 [package.dependencies]
@@ -1334,7 +1334,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.28"
+version = "0.1.30"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1374,13 +1374,13 @@ data = ["language-data (>=1.1,<2.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.1.10"
+version = "0.1.23"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.1.10-py3-none-any.whl", hash = "sha256:2997a80aea60ed235d83502a7ccdc1f62ffb4dd6b3b7dd4218e8fa4de68a6725"},
-    {file = "langsmith-0.1.10.tar.gz", hash = "sha256:13e7e8b52e694aa4003370cefbb9e79cce3540c65dbf1517902bf7aa4dbbb653"},
+    {file = "langsmith-0.1.23-py3-none-any.whl", hash = "sha256:69984268b9867cb31b875965b3f86b6f56ba17dd5454d487d3a1a999bdaeea69"},
+    {file = "langsmith-0.1.23.tar.gz", hash = "sha256:327c66ec0de8c1bc57bfa47bbc70a29ef749e97c3e5571b9baf754d1e0644220"},
 ]
 
 [package.dependencies]
@@ -1633,38 +1633,38 @@ files = [
 
 [[package]]
 name = "mypy"
-version = "1.8.0"
+version = "1.9.0"
 description = "Optional static typing for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "mypy-1.8.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:485a8942f671120f76afffff70f259e1cd0f0cfe08f81c05d8816d958d4577d3"},
-    {file = "mypy-1.8.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:df9824ac11deaf007443e7ed2a4a26bebff98d2bc43c6da21b2b64185da011c4"},
-    {file = "mypy-1.8.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2afecd6354bbfb6e0160f4e4ad9ba6e4e003b767dd80d85516e71f2e955ab50d"},
-    {file = "mypy-1.8.0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:8963b83d53ee733a6e4196954502b33567ad07dfd74851f32be18eb932fb1cb9"},
-    {file = "mypy-1.8.0-cp310-cp310-win_amd64.whl", hash = "sha256:e46f44b54ebddbeedbd3d5b289a893219065ef805d95094d16a0af6630f5d410"},
-    {file = "mypy-1.8.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:855fe27b80375e5c5878492f0729540db47b186509c98dae341254c8f45f42ae"},
-    {file = "mypy-1.8.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4c886c6cce2d070bd7df4ec4a05a13ee20c0aa60cb587e8d1265b6c03cf91da3"},
-    {file = "mypy-1.8.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d19c413b3c07cbecf1f991e2221746b0d2a9410b59cb3f4fb9557f0365a1a817"},
-    {file = "mypy-1.8.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:9261ed810972061388918c83c3f5cd46079d875026ba97380f3e3978a72f503d"},
-    {file = "mypy-1.8.0-cp311-cp311-win_amd64.whl", hash = "sha256:51720c776d148bad2372ca21ca29256ed483aa9a4cdefefcef49006dff2a6835"},
-    {file = "mypy-1.8.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:52825b01f5c4c1c4eb0db253ec09c7aa17e1a7304d247c48b6f3599ef40db8bd"},
-    {file = "mypy-1.8.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f5ac9a4eeb1ec0f1ccdc6f326bcdb464de5f80eb07fb38b5ddd7b0de6bc61e55"},
-    {file = "mypy-1.8.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:afe3fe972c645b4632c563d3f3eff1cdca2fa058f730df2b93a35e3b0c538218"},
-    {file = "mypy-1.8.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:42c6680d256ab35637ef88891c6bd02514ccb7e1122133ac96055ff458f93fc3"},
-    {file = "mypy-1.8.0-cp312-cp312-win_amd64.whl", hash = "sha256:720a5ca70e136b675af3af63db533c1c8c9181314d207568bbe79051f122669e"},
-    {file = "mypy-1.8.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:028cf9f2cae89e202d7b6593cd98db6759379f17a319b5faf4f9978d7084cdc6"},
-    {file = "mypy-1.8.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:4e6d97288757e1ddba10dd9549ac27982e3e74a49d8d0179fc14d4365c7add66"},
-    {file = "mypy-1.8.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7f1478736fcebb90f97e40aff11a5f253af890c845ee0c850fe80aa060a267c6"},
-    {file = "mypy-1.8.0-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:42419861b43e6962a649068a61f4a4839205a3ef525b858377a960b9e2de6e0d"},
-    {file = "mypy-1.8.0-cp38-cp38-win_amd64.whl", hash = "sha256:2b5b6c721bd4aabaadead3a5e6fa85c11c6c795e0c81a7215776ef8afc66de02"},
-    {file = "mypy-1.8.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:5c1538c38584029352878a0466f03a8ee7547d7bd9f641f57a0f3017a7c905b8"},
-    {file = "mypy-1.8.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:4ef4be7baf08a203170f29e89d79064463b7fc7a0908b9d0d5114e8009c3a259"},
-    {file = "mypy-1.8.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7178def594014aa6c35a8ff411cf37d682f428b3b5617ca79029d8ae72f5402b"},
-    {file = "mypy-1.8.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:ab3c84fa13c04aeeeabb2a7f67a25ef5d77ac9d6486ff33ded762ef353aa5592"},
-    {file = "mypy-1.8.0-cp39-cp39-win_amd64.whl", hash = "sha256:99b00bc72855812a60d253420d8a2eae839b0afa4938f09f4d2aa9bb4654263a"},
-    {file = "mypy-1.8.0-py3-none-any.whl", hash = "sha256:538fd81bb5e430cc1381a443971c0475582ff9f434c16cd46d2c66763ce85d9d"},
-    {file = "mypy-1.8.0.tar.gz", hash = "sha256:6ff8b244d7085a0b425b56d327b480c3b29cafbd2eff27316a004f9a7391ae07"},
+    {file = "mypy-1.9.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:f8a67616990062232ee4c3952f41c779afac41405806042a8126fe96e098419f"},
+    {file = "mypy-1.9.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d357423fa57a489e8c47b7c85dfb96698caba13d66e086b412298a1a0ea3b0ed"},
+    {file = "mypy-1.9.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:49c87c15aed320de9b438ae7b00c1ac91cd393c1b854c2ce538e2a72d55df150"},
+    {file = "mypy-1.9.0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:48533cdd345c3c2e5ef48ba3b0d3880b257b423e7995dada04248725c6f77374"},
+    {file = "mypy-1.9.0-cp310-cp310-win_amd64.whl", hash = "sha256:4d3dbd346cfec7cb98e6cbb6e0f3c23618af826316188d587d1c1bc34f0ede03"},
+    {file = "mypy-1.9.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:653265f9a2784db65bfca694d1edd23093ce49740b2244cde583aeb134c008f3"},
+    {file = "mypy-1.9.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:3a3c007ff3ee90f69cf0a15cbcdf0995749569b86b6d2f327af01fd1b8aee9dc"},
+    {file = "mypy-1.9.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2418488264eb41f69cc64a69a745fad4a8f86649af4b1041a4c64ee61fc61129"},
+    {file = "mypy-1.9.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:68edad3dc7d70f2f17ae4c6c1b9471a56138ca22722487eebacfd1eb5321d612"},
+    {file = "mypy-1.9.0-cp311-cp311-win_amd64.whl", hash = "sha256:85ca5fcc24f0b4aeedc1d02f93707bccc04733f21d41c88334c5482219b1ccb3"},
+    {file = "mypy-1.9.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:aceb1db093b04db5cd390821464504111b8ec3e351eb85afd1433490163d60cd"},
+    {file = "mypy-1.9.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:0235391f1c6f6ce487b23b9dbd1327b4ec33bb93934aa986efe8a9563d9349e6"},
+    {file = "mypy-1.9.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d4d5ddc13421ba3e2e082a6c2d74c2ddb3979c39b582dacd53dd5d9431237185"},
+    {file = "mypy-1.9.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:190da1ee69b427d7efa8aa0d5e5ccd67a4fb04038c380237a0d96829cb157913"},
+    {file = "mypy-1.9.0-cp312-cp312-win_amd64.whl", hash = "sha256:fe28657de3bfec596bbeef01cb219833ad9d38dd5393fc649f4b366840baefe6"},
+    {file = "mypy-1.9.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:e54396d70be04b34f31d2edf3362c1edd023246c82f1730bbf8768c28db5361b"},
+    {file = "mypy-1.9.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:5e6061f44f2313b94f920e91b204ec600982961e07a17e0f6cd83371cb23f5c2"},
+    {file = "mypy-1.9.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:81a10926e5473c5fc3da8abb04119a1f5811a236dc3a38d92015cb1e6ba4cb9e"},
+    {file = "mypy-1.9.0-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:b685154e22e4e9199fc95f298661deea28aaede5ae16ccc8cbb1045e716b3e04"},
+    {file = "mypy-1.9.0-cp38-cp38-win_amd64.whl", hash = "sha256:5d741d3fc7c4da608764073089e5f58ef6352bedc223ff58f2f038c2c4698a89"},
+    {file = "mypy-1.9.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:587ce887f75dd9700252a3abbc9c97bbe165a4a630597845c61279cf32dfbf02"},
+    {file = "mypy-1.9.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:f88566144752999351725ac623471661c9d1cd8caa0134ff98cceeea181789f4"},
+    {file = "mypy-1.9.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:61758fabd58ce4b0720ae1e2fea5cfd4431591d6d590b197775329264f86311d"},
+    {file = "mypy-1.9.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:e49499be624dead83927e70c756970a0bc8240e9f769389cdf5714b0784ca6bf"},
+    {file = "mypy-1.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:571741dc4194b4f82d344b15e8837e8c5fcc462d66d076748142327626a1b6e9"},
+    {file = "mypy-1.9.0-py3-none-any.whl", hash = "sha256:a260627a570559181a9ea5de61ac6297aa5af202f06fd7ab093ce74e7181e43e"},
+    {file = "mypy-1.9.0.tar.gz", hash = "sha256:3cc5da0127e6a478cddd906068496a97a7618a21ce9b54bde5bf7e539c7af974"},
 ]
 
 [package.dependencies]
@@ -1713,13 +1713,13 @@ test = ["flaky", "ipykernel (>=6.19.3)", "ipython", "ipywidgets", "nbconvert (>=
 
 [[package]]
 name = "nbconvert"
-version = "7.16.1"
+version = "7.16.2"
 description = "Converting Jupyter Notebooks (.ipynb files) to other formats.  Output formats include asciidoc, html, latex, markdown, pdf, py, rst, script.  nbconvert can be used both as a Python library (`import nbconvert`) or as a command line tool (invoked as `jupyter nbconvert ...`)."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "nbconvert-7.16.1-py3-none-any.whl", hash = "sha256:3188727dffadfdc9c6a1c7250729063d7bc78b355ad7aa023138afa030d1cd07"},
-    {file = "nbconvert-7.16.1.tar.gz", hash = "sha256:e79e6a074f49ba3ed29428ed86487bf51509d9aab613bd8522ac08f6d28fd7fd"},
+    {file = "nbconvert-7.16.2-py3-none-any.whl", hash = "sha256:0c01c23981a8de0220255706822c40b751438e32467d6a686e26be08ba784382"},
+    {file = "nbconvert-7.16.2.tar.gz", hash = "sha256:8310edd41e1c43947e4ecf16614c61469ebc024898eb808cce0999860fc9fb16"},
 ]
 
 [package.dependencies]
@@ -2432,13 +2432,13 @@ watchdog = ">=2.0.0"
 
 [[package]]
 name = "python-dateutil"
-version = "2.8.2"
+version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
-    {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
-    {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
+    {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
+    {file = "python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"},
 ]
 
 [package.dependencies]
@@ -3007,6 +3007,30 @@ files = [
     {file = "ruff-0.1.15-py3-none-win_arm64.whl", hash = "sha256:9a933dfb1c14ec7a33cceb1e49ec4a16b51ce3c20fd42663198746efc0427360"},
     {file = "ruff-0.1.15.tar.gz", hash = "sha256:f6dfa8c1b21c913c326919056c390966648b680966febcb796cc9d1aaab8564e"},
 ]
+
+[[package]]
+name = "semantic-text-splitter"
+version = "0.6.3"
+description = "Split text into semantic chunks, up to a desired chunk size. Supports calculating length by characters and tokens (when used with large language models)."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:c4fbd7337f52b04eccad3d9cfc2a2cb37df88b5c384ddf9ad435d9df339c41c8"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8cd83e8e54278ddd748eaf355269ca316410e184452ea422c75858a7b0a9197d"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:7b812fd927eaa1638237e32abd8f8ceb4622a141bfeff26720f0fc5f512a66c5"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4af7a11720e40ecf73d77dee90837fae1a991fe6a36709a93d2d485f2644d183"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:fa271b51ff44522aa76dfc8d1f0e98a441a27c88410986162106e51e1850dcba"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f8f5af95b62f292797172c5e7b3a215a9f794c9ad89b84288bc40a49e8cc4eb8"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:e33fc5ba8b562d6f5d31fa3a94df76b39195879fe8a61b93e88675ad7dcfb4da"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7e18df47b39a91214a102213377be1defe3f01d9075327471ed5c63b88013ca2"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-win32.whl", hash = "sha256:7694259c27370153ec55ae08e464a013ea92729c2663a650e7e28612d7388884"},
+    {file = "semantic_text_splitter-0.6.3-cp38-abi3-win_amd64.whl", hash = "sha256:822d36ec02cf2eceb088ba61ae9460e87a499e22622ae71abe88008e09aceceb"},
+    {file = "semantic_text_splitter-0.6.3.tar.gz", hash = "sha256:37907cda192454f73bd9f20ce3f3bebb37d7b2aca2548f06b558876944c74ba8"},
+]
+
+[package.extras]
+docs = ["pdoc"]
+test = ["black", "pytest", "tokenizers"]
 
 [[package]]
 name = "send2trash"
@@ -3778,4 +3802,4 @@ extended-testing = ["lxml"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2091dd8bede19182cda2c2d8a7b21977da03e5636e8228b9dc652f9f45ff46ee"
+content-hash = "41fca6fe4231d88b8a583ce955c8be0f754b2526bde06a59f90b178411b97351"
