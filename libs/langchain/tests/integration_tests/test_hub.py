@@ -6,6 +6,7 @@ from langchain import hub
 def test_hub_pull_public_prompt() -> None:
     prompt = hub.pull("efriis/my-first-prompt")
     assert isinstance(prompt, ChatPromptTemplate)
+    assert "lc_hub" in prompt.metadata
     hub_md = prompt.metadata["lc_hub"]
     assert hub_md
     assert hub_md["owner"] == "efriis"
