@@ -11,6 +11,7 @@ langchain = "^0.1"
 openai = "<2"
 chromadb = "^0.4.15"
 tiktoken = "^0.5.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"

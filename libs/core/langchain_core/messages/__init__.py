@@ -1,3 +1,19 @@
+"""**Messages** are objects used in prompts and chat conversations.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseMessage --> SystemMessage, AIMessage, HumanMessage, ChatMessage, FunctionMessage, ToolMessage
+                --> BaseMessageChunk --> SystemMessageChunk, AIMessageChunk, HumanMessageChunk, ChatMessageChunk, FunctionMessageChunk, ToolMessageChunk
+
+**Main helpers:**
+
+.. code-block::
+
+    ChatPromptTemplate
+
+"""  # noqa: E501
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk

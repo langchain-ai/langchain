@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import openai
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_openai.chat_models.base import ChatOpenAI
@@ -209,9 +209,11 @@ class AzureChatOpenAI(ChatOpenAI):
             "openai_api_version": self.openai_api_version,
         }
 
-    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
+    def _create_chat_result(
+        self, response: Union[dict, openai.BaseModel]
+    ) -> ChatResult:
         if not isinstance(response, dict):
-            response = response.dict()
+            response = response.model_dump()
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 raise ValueError(

@@ -1,4 +1,6 @@
-"""Print information about the system and langchain packages for debugging purposes."""
+"""**sys_info** prints information about the system and langchain packages
+for debugging purposes.
+"""
 
 from typing import Sequence
 

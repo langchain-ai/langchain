@@ -181,6 +181,7 @@ jobs:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
@@ -190,6 +191,11 @@ jobs:
           ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
           ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
           ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+          ES_URL: ${{ secrets.ES_URL }}
+          ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
+          ES_API_KEY: ${{ secrets.ES_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for airbyte
+          MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
