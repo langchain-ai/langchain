@@ -1,3 +1,4 @@
+from hashlib import md5
 from typing import Any, Dict, List, Optional
 
 from langchain_core.utils import get_from_dict_or_env
@@ -39,7 +40,7 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 include_docs_query = (
-    "CREATE (d:Document) "
+    "MERGE (d:Document {id:$document.metadata.id}) "
     "SET d.text = $document.page_content "
     "SET d += $document.metadata "
     "WITH d "
@@ -339,7 +340,10 @@ class Neo4jGraph(GraphStore):
         including nodes, relationships, and the source document information.
         - include_source (bool, optional): If True, stores the source document
         and links it to nodes in the graph using the MENTIONS relationship.
-        This is useful for tracing back the origin of data. Defaults to False.
+        This is useful for tracing back the origin of data. Merges source
+        documents based on the `id` property from the source document metadata
+        if available; otherwise it calculates the MD5 hash of `page_content`
+        for merging process. Defaults to False.
         - baseEntityLabel (bool, optional): If True, each newly created node
         gets a secondary __Entity__ label, which is indexed and improves import
         speed and performance. Defaults to False.
@@ -365,6 +369,11 @@ class Neo4jGraph(GraphStore):
         node_import_query = _get_node_import_query(baseEntityLabel, include_source)
         rel_import_query = _get_rel_import_query(baseEntityLabel)
         for document in graph_documents:
+            if not document.source.metadata.get("id"):
+                document.source.metadata["id"] = md5(
+                    document.source.page_content.encode("utf-8")
+                ).hexdigest()
+
             # Import nodes
             self.query(
                 node_import_query,
