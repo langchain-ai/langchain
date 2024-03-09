@@ -74,6 +74,12 @@ def _import_annoy() -> Any:
     return Annoy
 
 
+def _import_apache_doris() -> Any:
+    from langchain_community.vectorstores.apache_doris import ApacheDoris
+
+    return ApacheDoris
+
+
 def _import_atlas() -> Any:
     from langchain_community.vectorstores.atlas import AtlasDB
 
@@ -186,6 +192,14 @@ def _import_docarray_inmemory() -> Any:
     return DocArrayInMemorySearch
 
 
+def _import_documentdb() -> Any:
+    from langchain_community.vectorstores.documentdb import (
+        DocumentDBVectorSearch,
+    )
+
+    return DocumentDBVectorSearch
+
+
 def _import_elasticsearch() -> Any:
     from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
 
@@ -210,10 +224,34 @@ def _import_hanavector() -> Any:
     return HanaDB
 
 
+def _import_kinetica() -> Any:
+    from langchain_community.vectorstores.kinetica import Kinetica
+
+    return Kinetica
+
+
+def _import_kinetica_settings() -> Any:
+    from langchain_community.vectorstores.kinetica import KineticaSettings
+
+    return KineticaSettings
+
+
+def _import_distance_strategy() -> Any:
+    from langchain_community.vectorstores.kinetica import DistanceStrategy
+
+    return DistanceStrategy
+
+
 def _import_hologres() -> Any:
     from langchain_community.vectorstores.hologres import Hologres
 
     return Hologres
+
+
+def _import_infinispanvs() -> Any:
+    from langchain_community.vectorstores.infinispanvs import InfinispanVS
+
+    return InfinispanVS
 
 
 def _import_kdbai() -> Any:
@@ -398,6 +436,12 @@ def _import_tencentvectordb() -> Any:
     return TencentVectorDB
 
 
+def _import_tidb_vectorstore() -> Any:
+    from langchain_community.vectorstores.tidb_vector import TiDBVectorStore
+
+    return TiDBVectorStore
+
+
 def _import_tiledb() -> Any:
     from langchain_community.vectorstores.tiledb import TileDB
 
@@ -497,6 +541,8 @@ def __getattr__(name: str) -> Any:
         return _import_elastic_vector_search()
     elif name == "Annoy":
         return _import_annoy()
+    elif name == "ApacheDoris":
+        return _import_apache_doris()
     elif name == "AtlasDB":
         return _import_atlas()
     elif name == "AwaDB":
@@ -531,6 +577,8 @@ def __getattr__(name: str) -> Any:
         return _import_dingo()
     elif name == "DocArrayInMemorySearch":
         return _import_docarray_inmemory()
+    elif name == "DocumentDBVectorSearch":
+        return _import_documentdb()
     elif name == "DocArrayHnswSearch":
         return _import_docarray_hnsw()
     elif name == "ElasticsearchStore":
@@ -543,8 +591,16 @@ def __getattr__(name: str) -> Any:
         return _import_hanavector()
     elif name == "Hologres":
         return _import_hologres()
+    elif name == "InfinispanVS":
+        return _import_infinispanvs()
     elif name == "KDBAI":
         return _import_kdbai()
+    elif name == "DistanceStrategy":
+        return _import_distance_strategy()
+    elif name == "KineticaSettings":
+        return _import_kinetica_settings()
+    elif name == "Kinetica":
+        return _import_kinetica()
     elif name == "LanceDB":
         return _import_lancedb()
     elif name == "LLMRails":
@@ -601,6 +657,8 @@ def __getattr__(name: str) -> Any:
         return _import_tair()
     elif name == "TencentVectorDB":
         return _import_tencentvectordb()
+    elif name == "TiDBVectorStore":
+        return _import_tidb_vectorstore()
     elif name == "TileDB":
         return _import_tiledb()
     elif name == "Tigris":
@@ -640,6 +698,7 @@ __all__ = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
+    "ApacheDoris",
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
@@ -663,7 +722,11 @@ __all__ = [
     "FAISS",
     "HanaDB",
     "Hologres",
+    "InfinispanVS",
     "KDBAI",
+    "DistanceStrategy",
+    "Kinetica",
+    "KineticaSettings",
     "LanceDB",
     "LLMRails",
     "Marqo",
@@ -691,6 +754,7 @@ __all__ = [
     "SupabaseVectorStore",
     "SurrealDBStore",
     "Tair",
+    "TiDBVectorStore",
     "TileDB",
     "Tigris",
     "TimescaleVector",
@@ -709,4 +773,5 @@ __all__ = [
     "VectorStore",
     "NeuralDBVectorStore",
     "Lantern",
+    "DocumentDBVectorSearch",
 ]

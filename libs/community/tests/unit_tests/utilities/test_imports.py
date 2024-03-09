@@ -29,6 +29,7 @@ EXPECTED_ALL = [
     "NVIDIARivaStream",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",
+    "NutritionAIAPI",
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",

@@ -30,6 +30,7 @@ EXPECT_ALL = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
+    "Friendli",
     "GigaChat",
     "GPT4All",
     "GooglePalm",
@@ -90,6 +91,7 @@ EXPECT_ALL = [
     "Yuan2",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
+    "SparkLLM",
 ]
 
 
