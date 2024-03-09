@@ -85,9 +85,7 @@ def pull(
     if isinstance(obj, BasePromptTemplate):
         if obj.metadata is None:
             obj.metadata = {}
-        obj.metadata["lc_hub"] = {
-            "owner": res_dict["owner"],
-            "repo": res_dict["repo"],
-            "commit_hash": res_dict["commit_hash"],
-        }
+        obj.metadata["lc_hub_owner"] = res_dict["owner"]
+        obj.metadata["lc_hub_repo"] = res_dict["repo"]
+        obj.metadata["lc_hub_commit_hash"] = res_dict["commit_hash"]
     return obj
