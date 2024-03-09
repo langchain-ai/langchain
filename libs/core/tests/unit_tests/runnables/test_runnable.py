@@ -70,6 +70,7 @@ from langchain_core.runnables import (
     chain,
 )
 from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -339,12 +340,17 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "ai",
                         "enum": ["ai"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                     "example": {
                         "title": "Example",
@@ -375,12 +381,17 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "human",
                         "enum": ["human"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                     "example": {
                         "title": "Example",
@@ -411,12 +422,17 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "chat",
                         "enum": ["chat"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                     "role": {"title": "Role", "type": "string"},
                 },
@@ -443,12 +459,17 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "system",
                         "enum": ["system"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                 },
                 "required": ["content"],
@@ -474,12 +495,17 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "function",
                         "enum": ["function"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                 },
                 "required": ["content", "name"],
@@ -505,12 +531,17 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "tool",
                         "enum": ["tool"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                     "tool_call_id": {"title": "Tool Call Id", "type": "string"},
                 },
@@ -1271,9 +1302,6 @@ def test_configurable_fields_example() -> None:
             },
         },
     }
-
-    with pytest.raises(ValueError):
-        chain_configurable.with_config(configurable={"llm123": "chat"})
 
     assert (
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
@@ -3424,6 +3452,26 @@ def test_bind_bind() -> None:
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
 
 
+def test_bind_with_lambda() -> None:
+    def my_function(*args: Any, **kwargs: Any) -> int:
+        return 3 + kwargs.get("n", 0)
+
+    runnable = RunnableLambda(my_function).bind(n=1)
+    assert 4 == runnable.invoke({})
+    chunks = list(runnable.stream({}))
+    assert [4] == chunks
+
+
+async def test_bind_with_lambda_async() -> None:
+    def my_function(*args: Any, **kwargs: Any) -> int:
+        return 3 + kwargs.get("n", 0)
+
+    runnable = RunnableLambda(my_function).bind(n=1)
+    assert 4 == await runnable.ainvoke({})
+    chunks = [item async for item in runnable.astream({})]
+    assert [4] == chunks
+
+
 def test_deep_stream() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -5160,3 +5208,70 @@ async def test_astream_log_deep_copies() -> None:
         "name": "add_one",
         "type": "chain",
     }
+
+
+def test_transform_of_runnable_lambda_with_dicts() -> None:
+    """Test transform of runnable lamdbda."""
+    runnable = RunnableLambda(lambda x: x)
+    chunks = iter(
+        [
+            {"foo": "a"},
+            {"foo": "n"},
+        ]
+    )
+    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+
+
+async def test_atransform_of_runnable_lambda_with_dicts() -> None:
+    async def identity(x: Dict[str, str]) -> Dict[str, str]:
+        """Return x."""
+        return x
+
+    runnable = RunnableLambda[Dict[str, str], Dict[str, str]](identity)
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "an"}]
+
+
+def test_default_transform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+
+    class CustomRunnable(RunnableSerializable[Input, Output]):
+        def invoke(
+            self, input: Input, config: Optional[RunnableConfig] = None
+        ) -> Output:
+            return cast(Output, input)  # type: ignore
+
+    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
+    chunks = iter(
+        [
+            {"foo": "a"},
+            {"foo": "n"},
+        ]
+    )
+
+    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+
+
+async def test_defualt_atransform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+
+    class CustomRunnable(RunnableSerializable[Input, Output]):
+        def invoke(
+            self, input: Input, config: Optional[RunnableConfig] = None
+        ) -> Output:
+            return cast(Output, input)
+
+    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+
+    assert chunks == [{"foo": "an"}]

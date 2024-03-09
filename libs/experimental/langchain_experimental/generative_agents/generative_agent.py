@@ -11,7 +11,7 @@ from langchain_experimental.pydantic_v1 import BaseModel, Field
 
 
 class GenerativeAgent(BaseModel):
-    """An Agent as a character with memory and innate characteristics."""
+    """Agent as a character with memory and innate characteristics."""
 
     name: str
     """The character's name."""
@@ -48,6 +48,8 @@ class GenerativeAgent(BaseModel):
         return [re.sub(r"^\s*\d+\.\s*", "", line).strip() for line in lines]
 
     def chain(self, prompt: PromptTemplate) -> LLMChain:
+        """Create a chain with the same settings as the agent."""
+
         return LLMChain(
             llm=self.llm, prompt=prompt, verbose=self.verbose, memory=self.memory
         )

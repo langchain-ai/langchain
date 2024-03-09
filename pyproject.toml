@@ -31,6 +31,7 @@ nbdoc = "^0.0.82"
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.5"
 langchain-core = { path = "libs/core/", develop = true }
+langchain-text-splitters = { path = "libs/text-splitters", develop = true }
 langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
@@ -42,10 +43,12 @@ codespell = "^2.2.0"
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = { path = "libs/core/", develop = true }
+langchain-text-splitters = { path = "libs/text-splitters", develop = true }
 langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
+ipykernel = "^6.29.2"
 
 [tool.poetry.group.test.dependencies]
 
