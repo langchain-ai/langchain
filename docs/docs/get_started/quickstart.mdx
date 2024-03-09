@@ -58,14 +58,14 @@ LangChain enables building application that connect external sources of data and
 In this quickstart, we will walk through a few different ways of doing that.
 We will start with a simple LLM chain, which just relies on information in the prompt template to respond.
 Next, we will build a retrieval chain, which fetches data from a separate database and passes that into the prompt template.
-We will then add in chat history, to create a conversation retrieval chain. This allows you interact in a chat manner with this LLM, so it remembers previous questions.
+We will then add in chat history, to create a conversation retrieval chain. This allows you to interact in a chat manner with this LLM, so it remembers previous questions.
 Finally, we will build an agent - which utilizes an LLM to determine whether or not it needs to fetch data to answer questions.
 We will cover these at a high level, but there are lot of details to all of these!
 We will link to relevant docs.
 
 ## LLM Chain
 
-For this getting started guide, we will provide two options: using OpenAI (a popular model available via API) or using a local open source model.
+We'll show how to use models available via API, like OpenAI, and local open source models, using integrations like Ollama.
 
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
@@ -99,7 +99,7 @@ llm = ChatOpenAI(openai_api_key="...")
 ```
 
   </TabItem>
-  <TabItem value="local" label="Local">
+  <TabItem value="local" label="Local (using Ollama)">
 
 [Ollama](https://ollama.ai/) allows you to run open-source large language models, such as Llama 2, locally.
 
@@ -112,6 +112,66 @@ Then, make sure the Ollama server is running. After that, you can do:
 ```python
 from langchain_community.llms import Ollama
 llm = Ollama(model="llama2")
+```
+
+  </TabItem>
+  <TabItem value="anthropic" label="Anthropic">
+
+First we'll need to import the LangChain x Anthropic package.
+
+```shell
+pip install langchain-anthropic
+```
+
+Accessing the API requires an API key, which you can get by creating an account [here](https://claude.ai/login). Once we have a key we'll want to set it as an environment variable by running:
+
+```shell
+export ANTHROPIC_API_KEY="..."
+```
+
+We can then initialize the model:
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024)
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `anthropic_api_key` named parameter when initiating the Anthropic Chat Model class:
+
+```python
+llm = ChatAnthropic(anthropic_api_key="...")
+```
+
+  </TabItem>
+  <TabItem value="cohere" label="Cohere">
+
+First we'll need to import the Cohere SDK package.
+
+```shell
+pip install cohere
+```
+
+Accessing the API requires an API key, which you can get by creating an account and heading [here](https://dashboard.cohere.com/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+
+```shell
+export COHERE_API_KEY="..."
+```
+
+We can then initialize the model:
+
+```python
+from langchain_community.chat_models import ChatCohere
+
+llm = ChatCohere()
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `cohere_api_key` named parameter when initiating the Cohere LLM class:
+
+```python
+from langchain_community.chat_models import ChatCohere
+
+llm = ChatCohere(cohere_api_key="...")
 ```
 
   </TabItem>
@@ -193,17 +253,17 @@ After that, we can import and use WebBaseLoader.
 
 ```python
 from langchain_community.document_loaders import WebBaseLoader
-loader = WebBaseLoader("https://docs.smith.langchain.com")
+loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
 
 docs = loader.load()
 ```
 
 Next, we need to index it into a vectorstore. This requires a few components, namely an [embedding model](/docs/modules/data_connection/text_embedding) and a [vectorstore](/docs/modules/data_connection/vectorstores).
 
-For embedding models, we once again provide examples for accessing via OpenAI or via local models.
+For embedding models, we once again provide examples for accessing via API or by running local models.
 
 <Tabs>
-  <TabItem value="openai" label="OpenAI" default>
+  <TabItem value="openai" label="OpenAI (API)" default>
   
 Make sure you have the `langchain_openai` package installed an the appropriate environment variables set (these are the same as needed for the LLM).
 
@@ -214,7 +274,7 @@ embeddings = OpenAIEmbeddings()
 ```
 
 </TabItem>
-<TabItem value="local" label="Local">
+<TabItem value="local" label="Local (using Ollama)">
 
 Make sure you have Ollama running (same set up as with the LLM).
 
@@ -224,6 +284,17 @@ from langchain_community.embeddings import OllamaEmbeddings
 embeddings = OllamaEmbeddings()
 ```
   </TabItem>
+<TabItem value="cohere" label="Cohere (API)" default>
+
+Make sure you have the `cohere` package installed an the appropriate environment variables set (these are the same as needed for the LLM).
+
+```python
+from langchain_community.embeddings import CohereEmbeddings
+
+embeddings = CohereEmbeddings()
+```
+
+</TabItem>
 </Tabs>
 
 Now, we can use this embedding model to ingest documents into a vectorstore.
@@ -239,7 +310,7 @@ Then we can build our index:
 
 ```python
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 text_splitter = RecursiveCharacterTextSplitter()
@@ -374,7 +445,7 @@ The final thing we will create is an agent - where the LLM decides what steps to
 **NOTE: for this example we will only show how to create an agent using OpenAI models, as local models are not reliable enough yet.**
 
 One of the first things to do when building an agent is to decide what tools it should have access to.
-For this example, we will give the agent access two tools:
+For this example, we will give the agent access to two tools:
 
 1. The retriever we just created. This will let it easily answer questions about LangSmith
 2. A search tool. This will let it easily answer questions that require up to date information.
@@ -489,7 +560,7 @@ from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_openai import ChatOpenAI
@@ -501,7 +572,7 @@ from langchain_core.messages import BaseMessage
 from langserve import add_routes
 
 # 1. Load Retriever
-loader = WebBaseLoader("https://docs.smith.langchain.com/overview")
+loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
 docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
