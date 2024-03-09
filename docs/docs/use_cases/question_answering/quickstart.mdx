@@ -248,12 +248,12 @@ In
 ### Go deeper
 
 `DocumentLoader`: Object that loads data from a source as list of
-`Documents`. -
-[Docs](../../../docs/modules/data_connection/document_loaders/):
-Detailed documentation on how to use `DocumentLoaders`. -
-[Integrations](../../../docs/integrations/document_loaders/): 160+
-integrations to choose from. -
-[Interface](https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.base.BaseLoader.html):
+`Documents`. 
+- [Docs](../../../docs/modules/data_connection/document_loaders/):
+Detailed documentation on how to use `DocumentLoaders`. 
+- [Integrations](../../../docs/integrations/document_loaders/): 160+
+integrations to choose from. 
+- [Interface](https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.base.BaseLoader.html):
 API reference  for the base interface.
 
 ## 2. Indexing: Split {#indexing-split}
@@ -318,24 +318,19 @@ all_splits[10].metadata
 ### Go deeper
 
 `TextSplitter`: Object that splits a list of `Document`s into smaller
-chunks. Subclass of `DocumentTransformer`s. - Explore
-`Context-aware splitters`, which keep the location (“context”) of each
+chunks. Subclass of `DocumentTransformer`s. 
+- Explore `Context-aware splitters`, which keep the location (“context”) of each
 split in the original `Document`: - [Markdown
-files](../../../docs/modules/data_connection/document_transformers/markdown_header_metadata) -
-[Code (py or
-js)](../../../docs/integrations/document_loaders/source_code) -
-[Scientific
-papers](../../../docs/integrations/document_loaders/grobid) -
-[Interface](https://api.python.langchain.com/en/latest/text_splitter/langchain_text_splitters.TextSplitter.html):
-API reference for the base interface.
+files](../../../docs/modules/data_connection/document_transformers/markdown_header_metadata) 
+- [Code (py or js)](../../../docs/integrations/document_loaders/source_code) 
+- [Scientific papers](../../../docs/integrations/document_loaders/grobid) 
+- [Interface](https://api.python.langchain.com/en/latest/text_splitter/langchain_text_splitters.TextSplitter.html): API reference for the base interface.
 
 `DocumentTransformer`: Object that performs a transformation on a list
-of `Document`s. -
-[Docs](../../../docs/modules/data_connection/document_transformers/):
-Detailed documentation on how to use `DocumentTransformers` -
-[Integrations](../../../docs/integrations/document_transformers/) -
-[Interface](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.transformers.BaseDocumentTransformer.html):
-API reference for the base interface.
+of `Document`s. 
+- [Docs](../../../docs/modules/data_connection/document_transformers/): Detailed documentation on how to use `DocumentTransformers` 
+- [Integrations](../../../docs/integrations/document_transformers/) 
+- [Interface](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.transformers.BaseDocumentTransformer.html): API reference for the base interface.
 
 ## 3. Indexing: Store {#indexing-store}
 
@@ -365,22 +360,16 @@ vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbedd
 ### Go deeper
 
 `Embeddings`: Wrapper around a text embedding model, used for converting
-text to embeddings. -
-[Docs](../../../docs/modules/data_connection/text_embedding): Detailed
-documentation on how to use embeddings. -
-[Integrations](../../../docs/integrations/text_embedding/): 30+
-integrations to choose from. -
-[Interface](https://api.python.langchain.com/en/latest/embeddings/langchain_core.embeddings.Embeddings.html):
-API reference for the base interface.
+text to embeddings. 
+- [Docs](../../../docs/modules/data_connection/text_embedding): Detailed documentation on how to use embeddings. 
+- [Integrations](../../../docs/integrations/text_embedding/): 30+ integrations to choose from. 
+- [Interface](https://api.python.langchain.com/en/latest/embeddings/langchain_core.embeddings.Embeddings.html): API reference for the base interface.
 
 `VectorStore`: Wrapper around a vector database, used for storing and
-querying embeddings. -
-[Docs](../../../docs/modules/data_connection/vectorstores/): Detailed
-documentation on how to use vector stores. -
-[Integrations](../../../docs/integrations/vectorstores/): 40+
-integrations to choose from. -
-[Interface](https://api.python.langchain.com/en/latest/vectorstores/langchain_core.vectorstores.VectorStore.html):
-API reference for the base interface.
+querying embeddings. 
+- [Docs](../../../docs/modules/data_connection/vectorstores/): Detailed documentation on how to use vector stores. 
+- [Integrations](../../../docs/integrations/vectorstores/): 40+ integrations to choose from. 
+- [Interface](https://api.python.langchain.com/en/latest/vectorstores/langchain_core.vectorstores.VectorStore.html): API reference for the base interface.
 
 This completes the **Indexing** portion of the pipeline. At this point
 we have a query-able vector store containing the chunked contents of our
@@ -572,19 +561,15 @@ trace](https://smith.langchain.com/public/1799e8db-8a6d-4eb2-84d5-46e8d7d5a99b/r
 #### Choosing a model
 
 `ChatModel`: An LLM-backed chat model. Takes in a sequence of messages
-and returns a message. - [Docs](../../../docs/modules/model_io/chat/):
-Detailed documentation on -
-[Integrations](../../../docs/integrations/chat/): 25+ integrations to
-choose from. -
-[Interface](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.chat_models.BaseChatModel.html):
-API reference for the base interface.
+and returns a message. 
+- [Docs](../../../docs/modules/model_io/chat/)
+- [Integrations](../../../docs/integrations/chat/): 25+ integrations to choose from. 
+- [Interface](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.chat_models.BaseChatModel.html): API reference for the base interface.
 
-`LLM`: A text-in-text-out LLM. Takes in a string and returns a string. -
-[Docs](../../../docs/modules/model_io/llms) -
-[Integrations](../../../docs/integrations/llms): 75+ integrations to
-choose from. -
-[Interface](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.llms.BaseLLM.html):
-API reference for the base interface.
+`LLM`: A text-in-text-out LLM. Takes in a string and returns a string. 
+- [Docs](../../../docs/modules/model_io/llms) 
+- [Integrations](../../../docs/integrations/llms): 75+ integrations to choose from. 
+- [Interface](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.llms.BaseLLM.html): API reference for the base interface.
 
 See a guide on RAG with locally-running models
 [here](../../../docs/use_cases/question_answering/local_retrieval_qa).

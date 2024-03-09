@@ -4021,6 +4021,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             custom_output_type=custom_output_type,
             **other_kwargs,
         )
+        # if we don't explicitly set config to the TypedDict here,
+        # the pydantic init above will strip out any of the "extra"
+        # fields even though total=False on the typed dict.
+        self.config = config or {}
 
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
