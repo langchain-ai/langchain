@@ -189,11 +189,12 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
 
 class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
-    """HuggingFace BGE sentence_transformers embedding models.
+    """HuggingFace sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers`` python package installed.
+    To use Nomic, make sure the version of ``sentence_transformers`` >= 2.3.0.
 
-    Example:
+    Bge Example:
         .. code-block:: python
 
             from langchain_community.embeddings import HuggingFaceBgeEmbeddings
@@ -205,6 +206,24 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
                 model_name=model_name,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
+            )
+     Nomic Example:
+        .. code-block:: python
+
+            from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+
+            model_name = "nomic-ai/nomic-embed-text-v1"
+            model_kwargs = {
+                'device': 'cpu',
+                'trust_remote_code':True
+                }
+            encode_kwargs = {'normalize_embeddings': True}
+            hf = HuggingFaceBgeEmbeddings(
+                model_name=model_name,
+                model_kwargs=model_kwargs,
+                encode_kwargs=encode_kwargs,
+                query_instruction = "search_query:",
+                embed_instruction = "search_document:"
             )
     """
 
@@ -220,6 +239,8 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """Keyword arguments to pass when calling the `encode` method of the model."""
     query_instruction: str = DEFAULT_QUERY_BGE_INSTRUCTION_EN
     """Instruction to use for embedding query."""
+    embed_instruction: str = ""
+    """Instruction to use for embedding document."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -253,7 +274,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        texts = [t.replace("\n", " ") for t in texts]
+        texts = [self.embed_instruction + t.replace("\n", " ") for t in texts]
         embeddings = self.client.encode(texts, **self.encode_kwargs)
         return embeddings.tolist()
 
