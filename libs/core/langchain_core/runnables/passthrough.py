@@ -1,4 +1,5 @@
 """Implementation of the RunnablePassthrough."""
+
 from __future__ import annotations
 
 import asyncio
@@ -315,6 +316,39 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
+
+    The `RunnableAssign` class takes input dictionaries and, through a
+    `RunnableParallel` instance, applies transformations, then combines
+    these with the original data, introducing new key-value pairs based
+    on the mapper's logic.
+
+    Examples:
+        .. code-block:: python
+
+            # This is a RunnableAssign
+            from typing import Dict
+            from langchain_core.runnables.passthrough import (
+                RunnableAssign,
+                RunnableParallel,
+            )
+            from langchain_core.runnables.base import RunnableLambda
+
+            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+                return {"added": x["input"] + 10}
+
+            mapper = RunnableParallel(
+                {"add_step": RunnableLambda(add_ten),}
+            )
+
+            runnable_assign = RunnableAssign(mapper)
+
+            # Synchronous example
+            runnable_assign.invoke({"input": 5})
+            # returns {'input': 5, 'add_step': {'added': 15}}
+
+            # Asynchronous example
+            await runnable_assign.ainvoke({"input": 5})
+            # returns {'input': 5, 'add_step': {'added': 15}}
     """
 
     mapper: RunnableParallel[Dict[str, Any]]
