@@ -65,9 +65,9 @@ default_prompt = ChatPromptTemplate.from_messages(
 
 
 def optional_enum_field(
-    enum_values: Optional[List[str]] = None,
-    description: Optional[str] = None,
+    description: str = "",
     is_rel: bool = False,
+    enum_values: Optional[List[str]] = None,
     **field_kwargs: Any,
 ) -> Any:
     """Utility function to conditionally create a field with an enum constraint."""
@@ -82,8 +82,8 @@ def optional_enum_field(
         node_info = (
             "Ensure you use basic or elementary types for node labels.\n"
             "For example, when you identify an entity representing a person, "
-            "always label it as **'person'**. Avoid using more specific terms "
-            "like 'mathematician' or 'scientist'"
+            "always label it as **'Person'**. Avoid using more specific terms "
+            "like 'Mathematician' or 'Scientist'"
         )
         rel_info = (
             "Instead of using specific and momentary types such as "
