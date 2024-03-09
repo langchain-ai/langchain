@@ -65,9 +65,9 @@ default_prompt = ChatPromptTemplate.from_messages(
 
 
 def optional_enum_field(
+    enum_values: Optional[List[str]] = None,
     description: str = "",
     is_rel: bool = False,
-    enum_values: Optional[List[str]] = None,
     **field_kwargs: Any,
 ) -> Any:
     """Utility function to conditionally create a field with an enum constraint."""
