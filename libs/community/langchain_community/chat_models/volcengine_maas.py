@@ -117,9 +117,9 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
             if res:
                 msg = convert_dict_to_message(res)
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=msg.content))
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(cast(str, msg.content), chunk=chunk)
+                yield chunk
 
     def _generate(
         self,
