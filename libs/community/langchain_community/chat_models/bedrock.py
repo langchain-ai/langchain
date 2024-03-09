@@ -198,8 +198,8 @@ class BedrockChat(BaseChatModel, BedrockBase):
         extra = Extra.forbid
 
     def _prepare_input_for_chat(
-            self, messages: List[BaseMessage]
-    ) -> Tuple[Optional[str], List[Dict], str]:
+        self, messages: List[BaseMessage]
+    ) -> Tuple[Optional[str], Optional[List[Dict[Any, Any]]], Optional[str]]:
         provider = self._get_provider()
         system = None
         formatted_messages = None

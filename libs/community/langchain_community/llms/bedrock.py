@@ -11,6 +11,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Tuple,
 )
 
 from langchain_core.callbacks import (
@@ -471,7 +472,7 @@ class BedrockBase(BaseModel, ABC):
             "body": body,
             "modelId": self.model_id,
             "accept": accept,
-            "contentType": content_type
+            "contentType": content_type,
         }
 
         if self._guardrails_enabled:
@@ -485,11 +486,9 @@ class BedrockBase(BaseModel, ABC):
         self,
         response: Any,
         stop: Optional[List[str]] = None,
-    ) -> str:
+    ) -> Tuple[str, Dict[str, Any]]:
         provider = self._get_provider()
-        text, body = LLMInputOutputAdapter.prepare_output(
-            provider, response
-        ).values()
+        text, body = LLMInputOutputAdapter.prepare_output(provider, response).values()
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
@@ -511,10 +510,7 @@ class BedrockBase(BaseModel, ABC):
         **kwargs: Any,
     ) -> str:
         request_options = self._prepare_input(
-            prompt=prompt,
-            system=system,
-            messages=messages,
-            **kwargs
+            prompt=prompt, system=system, messages=messages, **kwargs
         )
 
         try:
@@ -544,10 +540,7 @@ class BedrockBase(BaseModel, ABC):
         **kwargs: Any,
     ) -> str:
         request_options = self._prepare_input(
-            prompt=prompt,
-            system=system,
-            messages=messages,
-            **kwargs
+            prompt=prompt, system=system, messages=messages, **kwargs
         )
 
         try:
@@ -702,7 +695,9 @@ class BedrockBase(BaseModel, ABC):
         try:
             response = await asyncio.get_running_loop().run_in_executor(
                 None,
-                lambda: self.client.invoke_model_with_response_stream(**request_options),
+                lambda: self.client.invoke_model_with_response_stream(
+                    **request_options
+                ),
             )
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
