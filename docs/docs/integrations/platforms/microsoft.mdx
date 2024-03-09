@@ -2,6 +2,15 @@
 
 All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
+## LLMs
+### Azure OpenAI
+
+See a [usage example](/docs/integrations/llms/azure_openai).
+
+```python
+from langchain_openai import AzureOpenAI
+```
+
 ## Chat Models
 ### Azure OpenAI
 
@@ -29,22 +38,13 @@ See a [usage example](/docs/integrations/chat/azure_chat_openai)
 from langchain_openai import AzureChatOpenAI
 ```
 
-## Text Embedding Models
+## Embedding Models
 ### Azure OpenAI
 
 See a [usage example](/docs/integrations/text_embedding/azureopenai)
 
 ```python
 from langchain_openai import AzureOpenAIEmbeddings
-```
-
-## LLMs
-### Azure OpenAI
-
-See a [usage example](/docs/integrations/llms/azure_openai).
-
-```python
-from langchain_openai import AzureOpenAI
 ```
 
 ## Document loaders
@@ -209,7 +209,6 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
-
 ## Vector stores
 
 ### Azure Cosmos DB
@@ -262,19 +261,6 @@ See a [usage example](/docs/integrations/retrievers/azure_cognitive_search).
 from langchain.retrievers import AzureCognitiveSearchRetriever
 ```
 
-## Utilities
-
-### Bing Search API
-
->[Microsoft Bing](https://www.bing.com/), commonly referred to as `Bing` or `Bing Search`, 
-> is a web search engine owned and operated by `Microsoft`.
-
-See a [usage example](/docs/integrations/tools/bing_search).
-
-```python
-from langchain_community.utilities import BingSearchAPIWrapper
-```
-
 ## Toolkits
 
 ### Azure Cognitive Services
@@ -318,6 +304,19 @@ See a [usage example](/docs/integrations/toolkits/powerbi).
 ```python
 from langchain_community.agent_toolkits import PowerBIToolkit
 from langchain_community.utilities.powerbi import PowerBIDataset
+```
+
+## Utilities
+
+### Bing Search API
+
+>[Microsoft Bing](https://www.bing.com/), commonly referred to as `Bing` or `Bing Search`, 
+> is a web search engine owned and operated by `Microsoft`.
+
+See a [usage example](/docs/integrations/tools/bing_search).
+
+```python
+from langchain_community.utilities import BingSearchAPIWrapper
 ```
 
 ## More
