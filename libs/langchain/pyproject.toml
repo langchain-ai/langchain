@@ -172,6 +172,7 @@ anthropic = "^0.3.11"
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
 langchain-text-splitters = {path = "../text-splitters", develop = true}
+langchainhub = "^0.1.15"
 
 [tool.poetry.group.lint]
 optional = true
