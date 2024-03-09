@@ -5,7 +5,14 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Extra
 
@@ -18,6 +25,27 @@ from langchain_community.utilities.anthropic import (
     get_num_tokens_anthropic,
     get_token_ids_anthropic,
 )
+
+
+def _convert_one_message_to_text_mistral(message: BaseMessage) -> str:
+    if isinstance(message, ChatMessage):
+        message_text = f"\n\n{message.role.capitalize()}: {message.content}"
+    elif isinstance(message, HumanMessage):
+        message_text = f"[INST] {message.content} [/INST]"
+    elif isinstance(message, AIMessage):
+        message_text = f"{message.content}"
+    elif isinstance(message, SystemMessage):
+        message_text = f"<<SYS>> {message.content} <</SYS>>"
+    else:
+        raise ValueError(f"Got unknown type {message}")
+    return message_text
+
+
+def convert_messages_to_prompt_mistral(messages: List[BaseMessage]) -> str:
+    """Convert a list of messages to a prompt for mistral."""
+    return "\n".join(
+        [_convert_one_message_to_text_mistral(message) for message in messages]
+    )
 
 
 def _format_image(image_url: str) -> Dict:
@@ -137,6 +165,8 @@ class ChatPromptAdapter:
             prompt = convert_messages_to_prompt_anthropic(messages=messages)
         elif provider == "meta":
             prompt = convert_messages_to_prompt_llama(messages=messages)
+        elif provider == "mistral":
+            prompt = convert_messages_to_prompt_mistral(messages=messages)
         elif provider == "amazon":
             prompt = convert_messages_to_prompt_anthropic(
                 messages=messages,
