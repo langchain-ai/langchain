@@ -16,6 +16,7 @@ from typing import Callable, List, Sequence, Union, cast
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.stores import BaseStore, ByteStore
+from langchain_core.utils.iter import batch_iterate
 
 from langchain.storage.encoder_backed import EncoderBackedStore
 
@@ -84,7 +85,8 @@ class CacheBackedEmbeddings(Embeddings):
         self,
         underlying_embeddings: Embeddings,
         document_embedding_store: BaseStore[str, List[float]],
-        batch_size: int = 100,
+        *,
+        batch_size: Optional[int] = None,
     ) -> None:
         """Initialize the embedder.
 
@@ -118,9 +120,7 @@ class CacheBackedEmbeddings(Embeddings):
             i for i, vector in enumerate(vectors) if vector is None
         ]
 
-        while all_missing_indices:
-            missing_indices = [all_missing_indices.pop(0)
-                    for _ in range(min(self.batch_size, len(all_missing_indices)))]
+        for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
             self.document_embedding_store.mset(
@@ -153,9 +153,7 @@ class CacheBackedEmbeddings(Embeddings):
             i for i, vector in enumerate(vectors) if vector is None
         ]
 
-        while all_missing_indices:
-            missing_indices = [all_missing_indices.pop(0)
-                    for _ in range(min(self.batch_size, len(all_missing_indices)))]
+        for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = await self.underlying_embeddings.aembed_documents(
                 missing_texts
@@ -215,20 +213,20 @@ class CacheBackedEmbeddings(Embeddings):
         cls,
         underlying_embeddings: Embeddings,
         document_embedding_cache: ByteStore,
-        batch_size: int = 100,
         *,
         namespace: str = "",
+        batch_size: Optional[int] = None,
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 
         Args:
             underlying_embeddings: The embedder to use for embedding.
             document_embedding_cache: The cache to use for storing document embeddings.
-            batch_size: The number of documents to embed between store updates.
             *,
             namespace: The namespace to use for document cache.
                        This namespace is used to avoid collisions with other caches.
                        For example, set it to the name of the embedding model used.
+            batch_size: The number of documents to embed between store updates.
         """
         namespace = namespace
         key_encoder = _create_key_encoder(namespace)
@@ -238,4 +236,4 @@ class CacheBackedEmbeddings(Embeddings):
             _value_serializer,
             _value_deserializer,
         )
-        return cls(underlying_embeddings, encoder_backed_store, batch_size)
+        return cls(underlying_embeddings, encoder_backed_store, batch_size=batch_size)
