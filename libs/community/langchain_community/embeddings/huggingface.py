@@ -191,7 +191,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
-    To use, you should have the ``sentence_transformers`` python package installed. 
+    To use, you should have the ``sentence_transformers`` python package installed.
     To use Nomic, make sure the version of ``sentence_transformers`` >= 2.3.0.
 
     Bge Example:
@@ -215,7 +215,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             model_name = "nomic-ai/nomic-embed-text-v1"
             model_kwargs = {
                 'device': 'cpu',
-                'trust_remote_code':True 
+                'trust_remote_code':True
                 }
             encode_kwargs = {'normalize_embeddings': True}
             hf = HuggingFaceBgeEmbeddings(
@@ -292,7 +292,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             self.query_instruction + text, **self.encode_kwargs
         )
         return embedding.tolist()
-    
+
 
 class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     """Embed texts using the HuggingFace API.
