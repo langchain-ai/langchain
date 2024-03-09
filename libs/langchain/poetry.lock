@@ -3524,6 +3524,21 @@ type = "directory"
 url = "../text-splitters"
 
 [[package]]
+name = "langchainhub"
+version = "0.1.15"
+description = "The LangChain Hub API client"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = [
+    {file = "langchainhub-0.1.15-py3-none-any.whl", hash = "sha256:89a0951abd1db255e91c6d545d092a598fc255aa865d1ffc3ce8f93bbeae60e7"},
+    {file = "langchainhub-0.1.15.tar.gz", hash = "sha256:fa3ff81a31946860f84c119f1e2f6b7c7707e2bd7ed2394a7313b286d59f3bda"},
+]
+
+[package.dependencies]
+requests = ">=2,<3"
+types-requests = ">=2.31.0.2,<3.0.0.0"
+
+[[package]]
 name = "langsmith"
 version = "0.1.17"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
@@ -9159,4 +9174,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2ae3ce56a55cf274b9a22afab29637260681470c1f27517540bf1770cc9563b0"
+content-hash = "2624db6d40913f97c10fbc494886435849e70d20c59eb1c5a44b95856cd39857"
