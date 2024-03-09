@@ -635,7 +635,7 @@ class AzureSearch(VectorStore):
             azure_search_key,
             index_name,
             embedding,
-            fields = fields
+            fields=fields,
         )
         azure_search.add_texts(texts, metadatas, **kwargs)
         return azure_search
