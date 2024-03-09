@@ -6,7 +6,17 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
 from urllib.parse import urlparse
 
 import requests
@@ -25,6 +35,9 @@ from langchain_community.document_loaders.parsers.pdf import (
     PyPDFParser,
 )
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
+
+if TYPE_CHECKING:
+    from textractor.data.text_linearization_config import TextLinearizationConfig
 
 logger = logging.getLogger(__file__)
 
@@ -586,6 +599,8 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         region_name: Optional[str] = None,
         endpoint_url: Optional[str] = None,
         headers: Optional[Dict] = None,
+        *,
+        linearization_config: Optional["TextLinearizationConfig"] = None,
     ) -> None:
         """Initialize the loader.
 
@@ -598,7 +613,9 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             credentials_profile_name: AWS profile name, if not default (Optional)
             region_name: AWS region, eg us-east-1 (Optional)
             endpoint_url: endpoint url for the textract service (Optional)
-
+            linearization_config: Config to be used for linearization of the output
+                                  should be an instance of TextLinearizationConfig from
+                                  the `textractor` pkg
         """
         super().__init__(file_path, headers=headers)
 
@@ -643,7 +660,11 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                     "Please check that credentials in the specified "
                     "profile name are valid."
                 ) from e
-        self.parser = AmazonTextractPDFParser(textract_features=features, client=client)
+        self.parser = AmazonTextractPDFParser(
+            textract_features=features,
+            client=client,
+            linearization_config=linearization_config,
+        )
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
