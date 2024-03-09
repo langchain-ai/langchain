@@ -12,7 +12,7 @@ ARG PYTHON_VIRTUALENV_HOME=/home/vscode/langchain-py-env \
     POETRY_VERSION=1.3.2
 
 ENV POETRY_VIRTUALENVS_IN_PROJECT=false \
-    POETRY_NO_INTERACTION=true
+    POETRY_NO_INTERACTION=true 
 
 # Create a Python virtual environment for Poetry and install it
 RUN python3 -m venv ${PYTHON_VIRTUALENV_HOME} && \
