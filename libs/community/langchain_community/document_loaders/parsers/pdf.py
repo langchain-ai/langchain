@@ -454,8 +454,9 @@ class AmazonTextractPDFParser(BaseBlobParser):
     def __init__(
         self,
         textract_features: Optional[Sequence[int]] = None,
-        linearization_config: Optional["TextLinearizationConfig"] = None,
         client: Optional[Any] = None,
+        *,
+        linearization_config: Optional["TextLinearizationConfig"] = None,
     ) -> None:
         """Initializes the parser.
 
@@ -463,10 +464,10 @@ class AmazonTextractPDFParser(BaseBlobParser):
             textract_features: Features to be used for extraction, each feature
                                should be passed as an int that conforms to the enum
                                `Textract_Features`, see `amazon-textract-caller` pkg
+            client: boto3 textract client
             linearization_config: Config to be used for linearization of the output
                                   should be an instance of TextLinearizationConfig from
                                   the `textractor` pkg
-            client: boto3 textract client
         """
 
         try:

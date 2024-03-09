@@ -594,12 +594,13 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         self,
         file_path: str,
         textract_features: Optional[Sequence[str]] = None,
-        linearization_config: Optional["TextLinearizationConfig"] = None,
         client: Optional[Any] = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
         endpoint_url: Optional[str] = None,
         headers: Optional[Dict] = None,
+        *,
+        linearization_config: Optional["TextLinearizationConfig"] = None,
     ) -> None:
         """Initialize the loader.
 
@@ -608,14 +609,13 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             textract_features: Features to be used for extraction, each feature
                                should be passed as a str that conforms to the enum
                                `Textract_Features`, see `amazon-textract-caller` pkg
-            linearization_config: Config to be used for linearization of the output
-                                  should be an instance of TextLinearizationConfig from
-                                  the `textractor` pkg
             client: boto3 textract client (Optional)
             credentials_profile_name: AWS profile name, if not default (Optional)
             region_name: AWS region, eg us-east-1 (Optional)
             endpoint_url: endpoint url for the textract service (Optional)
-
+            linearization_config: Config to be used for linearization of the output
+                                  should be an instance of TextLinearizationConfig from
+                                  the `textractor` pkg
         """
         super().__init__(file_path, headers=headers)
 
@@ -662,8 +662,8 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 ) from e
         self.parser = AmazonTextractPDFParser(
             textract_features=features,
-            linearization_config=linearization_config,
             client=client,
+            linearization_config=linearization_config,
         )
 
     def load(self) -> List[Document]:
