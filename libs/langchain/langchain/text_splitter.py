@@ -25,6 +25,7 @@ from langchain_text_splitters.sentence_transformers import (
 )
 from langchain_text_splitters.spacy import SpacyTextSplitter
 
+
 __all__ = [
     "TokenTextSplitter",
     "TextSplitter",
