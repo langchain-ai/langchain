@@ -56,10 +56,6 @@ default_prompt = ChatPromptTemplate.from_messages(
                 "following input: {input}"
             ),
         ),
-        (
-            "human",
-            "Tip: Make sure to answer in the correct format and do not include any ",
-        ),
     ]
 )
 
