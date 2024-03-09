@@ -57,6 +57,22 @@
       "destination":  "/docs/use_cases/graph/integrations/neptune_sparql_qa"
     },
     {
+      "source": "/docs/integrations/memory/google_cloud_sql_mssql",
+      "destination": "/docs/integrations/memory/google_sql_mssql"
+    },
+    {
+      "source": "/docs/integrations/memory/google_cloud_sql_mysql",
+      "destination": "/docs/integrations/memory/google_sql_mysql"
+    },
+    {
+      "source": "/docs/integrations/memory/google_cloud_sql_pg",
+      "destination": "/docs/integrations/memory/google_sql_pg"
+    },
+    {
+      "source": "/docs/integrations/memory/google_datastore",
+      "destination": "/docs/integrations/memory/google_firestore_datastore"
+    },
+    {
       "source": "/docs/integrations/llms/huggingface_textgen_inference",
       "destination": "/docs/integrations/llms/huggingface_endpoint"
     },
