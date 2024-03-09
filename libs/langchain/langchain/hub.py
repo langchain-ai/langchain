@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core.load.dump import dumps
-from langchain_core.load.load import loads, load
+from langchain_core.load.load import load, loads
 
 if TYPE_CHECKING:
     from langchainhub import Client
