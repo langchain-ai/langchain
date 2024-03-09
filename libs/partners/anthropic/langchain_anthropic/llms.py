@@ -185,6 +185,26 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         """Return type of llm."""
         return "anthropic-llm"
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
+
+    def is_lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model,
+            "max_tokens": self.max_tokens_to_sample,
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "model_kwargs": self.model_kwargs,
+            "streaming": self.streaming,
+        }
+
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
             raise NameError("Please ensure the anthropic package is loaded")

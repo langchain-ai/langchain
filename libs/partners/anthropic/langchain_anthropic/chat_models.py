@@ -186,6 +186,26 @@ class ChatAnthropic(BaseChatModel):
         """Return type of chat model."""
         return "anthropic-chat"
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
+
+    def is_lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "model_kwargs": self.model_kwargs,
+            "streaming": self.streaming,
+        }
+
     @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
         extra = values.get("model_kwargs", {})
