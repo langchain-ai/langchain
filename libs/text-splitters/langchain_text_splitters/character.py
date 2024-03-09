@@ -636,4 +636,3 @@ class SemanticCharacterTextSplitter(TextSplitter):
             ) from e
         splitter = CharacterTextSplitter(trim_chunks=self.trim_chunks)
         return splitter.chunks(text, self.max_characters)
-    
