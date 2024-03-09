@@ -6,7 +6,8 @@ def default_preprocessing_func(text: str) -> List[str]:
 
 class LTORQueryExpansion():
 
-    def __init__(self, model_name_fwd='Helsinki-NLP/opus-mt-en-es', model_name_reverse='Helsinki-NLP/opus-mt-es-en'):
+    def __init__(self, model_name_fwd='Helsinki-NLP/opus-mt-en-es',
+                 model_name_reverse='Helsinki-NLP/opus-mt-es-en'):
 
         try:
             from transformers import MarianMTModel, MarianTokenizer
@@ -36,7 +37,8 @@ class LTORQueryExpansion():
             tokenizer = self.tokenizer_reverse
             model = self.model_reverse.to(self.device)
         # Tokenize input texts
-        input_ids = tokenizer.batch_encode_plus(texts, return_tensors='pt', padding=True, truncation=True)['input_ids']
+        input_ids = tokenizer.batch_encode_plus(texts, return_tensors='pt',
+                                                padding=True, truncation=True)['input_ids']
 
         input_ids = input_ids.to(self.device)
         # Perform translation
@@ -58,7 +60,8 @@ class LTORQueryExpansion():
             queries.append(rev_pass_text)
         return queries
 
-    def _get_expanded_queries_ltor(self, query, iteration=1, language_pair=None)-> List[Document]:
+    def _get_expanded_queries_ltor(self, query, iteration=1
+                                   )-> List[Document]:
         expanded_queries = self.rephrase_using_translation(query, iteration)
         list_of_queries = {}
         for _, i in enumerate(expanded_queries):
@@ -75,7 +78,7 @@ class LTORQueryExpansion():
         relevant_documents = []
         for qry_id, i in enumerate(queries):
             relevant_documents_per_qry = []
-            for ex_qry in  i:
+            for ex_qry in i:
                 relevant_documents_per_qry.extend(retriever.get_relevant_documents(ex_qry))
 
             relevant_documents_per_qry = self._remove_duplicates(relevant_documents_per_qry)
