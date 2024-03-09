@@ -10,6 +10,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_anthropic.experimental import ChatAnthropicTools
 
 MODEL_NAME = "claude-3-sonnet-20240229"
+BIG_MODEL_NAME = "claude-3-opus-20240229"
 
 #####################################
 ### Test Basic features, no tools ###
@@ -108,7 +109,9 @@ def test_tools() -> None:
         name: str
         age: int
 
-    llm = ChatAnthropicTools(model_name=MODEL_NAME).bind_tools([Person])
+    llm = ChatAnthropicTools(model_name=BIG_MODEL_NAME, temperature=0).bind_tools(
+        [Person]
+    )
     result = llm.invoke("Erick is 27 years old")
     assert result.content == "", f"content should be empty, not {result.content}"
     assert "tool_calls" in result.additional_kwargs
@@ -126,7 +129,9 @@ def test_with_structured_output() -> None:
         name: str
         age: int
 
-    chain = ChatAnthropicTools(model_name=MODEL_NAME).with_structured_output(Person)
+    chain = ChatAnthropicTools(
+        model_name=BIG_MODEL_NAME, temperature=0
+    ).with_structured_output(Person)
     result = chain.invoke("Erick is 27 years old")
     assert isinstance(result, Person)
     assert result.name == "Erick"
@@ -167,7 +172,7 @@ def test_anthropic_complex_structured_output() -> None:
         ]
     )
 
-    llm = ChatAnthropicTools(temperature=0, model_name="claude-3-sonnet-20240229")
+    llm = ChatAnthropicTools(temperature=0, model_name=BIG_MODEL_NAME)
 
     extraction_chain = prompt | llm.with_structured_output(Email)
 

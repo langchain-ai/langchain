@@ -626,6 +626,7 @@ class AzureSearch(VectorStore):
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
+        fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
     ) -> AzureSearch:
         # Creating a new Azure Search instance
@@ -634,6 +635,7 @@ class AzureSearch(VectorStore):
             azure_search_key,
             index_name,
             embedding,
+            fields=fields,
         )
         azure_search.add_texts(texts, metadatas, **kwargs)
         return azure_search

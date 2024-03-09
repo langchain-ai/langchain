@@ -9,13 +9,20 @@ from sqlalchemy.orm import Session
 from langchain_community.vectorstores.pgvector import PGVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
+# The connection string matches the default settings in the docker-compose file
+# located in the root of the repository: [root]/docker/docker-compose.yml
+# Non-standard ports are used to avoid conflicts with other local postgres
+# instances.
+# To spin up postgres with the pgvector extension:
+# cd [root]/docker/docker-compose.yml
+# docker compose up pgvector
 CONNECTION_STRING = PGVector.connection_string_from_db_params(
     driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg2"),
     host=os.environ.get("TEST_PGVECTOR_HOST", "localhost"),
-    port=int(os.environ.get("TEST_PGVECTOR_PORT", "5432")),
-    database=os.environ.get("TEST_PGVECTOR_DATABASE", "postgres"),
-    user=os.environ.get("TEST_PGVECTOR_USER", "postgres"),
-    password=os.environ.get("TEST_PGVECTOR_PASSWORD", "postgres"),
+    port=int(os.environ.get("TEST_PGVECTOR_PORT", "6024")),
+    database=os.environ.get("TEST_PGVECTOR_DATABASE", "langchain"),
+    user=os.environ.get("TEST_PGVECTOR_USER", "langchain"),
+    password=os.environ.get("TEST_PGVECTOR_PASSWORD", "langchain"),
 )
 
 ADA_TOKEN_COUNT = 1536

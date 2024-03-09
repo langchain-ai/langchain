@@ -1,20 +1,21 @@
 # Zep
 
-## [Fast, Scalable Building Blocks for LLM Apps](http://www.getzep.com)
-Zep is an open source platform for productionizing LLM apps. Go from a prototype
+>[Zep](http://www.getzep.com) is an open source platform for productionizing LLM apps. Go from a prototype
 built in LangChain or LlamaIndex, or a custom app, to production in minutes without
 rewriting code.
 
-Key Features:
+>Key Features:
+>
+>- **Fast!** Zep operates independently of the your chat loop, ensuring a snappy user experience.
+>- **Chat History Memory, Archival, and Enrichment**, populate your prompts with relevant chat history, sumamries, named entities, intent data, and more.
+>- **Vector Search over Chat History and Documents** Automatic embedding of documents, chat histories, and summaries. Use Zep's similarity or native MMR Re-ranked search to find the most relevant.
+>- **Manage Users and their Chat Sessions** Users and their Chat Sessions are first-class citizens in Zep, allowing you to manage user interactions with your bots or agents easily.
+>- **Records Retention and Privacy Compliance** Comply with corporate and regulatory mandates for records retention while ensuring compliance with privacy regulations such as CCPA and GDPR. Fulfill *Right To Be Forgotten* requests with a single API call
 
-- **Fast!** Zep operates independently of the your chat loop, ensuring a snappy user experience.
-- **Chat History Memory, Archival, and Enrichment**, populate your prompts with relevant chat history, sumamries, named entities, intent data, and more.
-- **Vector Search over Chat History and Documents** Automatic embedding of documents, chat histories, and summaries. Use Zep's similarity or native MMR Re-ranked search to find the most relevant.
-- **Manage Users and their Chat Sessions** Users and their Chat Sessions are first-class citizens in Zep, allowing you to manage user interactions with your bots or agents easily.
-- **Records Retention and Privacy Compliance** Comply with corporate and regulatory mandates for records retention while ensuring compliance with privacy regulations such as CCPA and GDPR. Fulfill *Right To Be Forgotten* requests with a single API call
+>Zep project: [https://github.com/getzep/zep](https://github.com/getzep/zep)
+>
+>Docs: [https://docs.getzep.com/](https://docs.getzep.com/)
 
-Zep project: [https://github.com/getzep/zep](https://github.com/getzep/zep)
-Docs: [https://docs.getzep.com/](https://docs.getzep.com/)
 
 ## Installation and Setup
 
@@ -26,7 +27,7 @@ Docs: [https://docs.getzep.com/](https://docs.getzep.com/)
 pip install zep_python
 ```
 
-## Zep Memory
+## Memory
 
 Zep's [Memory API](https://docs.getzep.com/sdk/chat_history/) persists your app's chat history and metadata to a Session, enriches the memory, automatically generates summaries, and enables vector similarity search over historical chat messages and summaries.
 
@@ -43,7 +44,7 @@ from langchain.memory import ZepMemory
 
 See a [RAG App Example here](/docs/integrations/memory/zep_memory).
 
-## Memory Retriever
+## Retriever
 
 Zep's Memory Retriever is a LangChain Retriever that enables you to retrieve messages from a Zep Session and use them to construct your prompt.
 
@@ -54,10 +55,10 @@ Zep's Memory Retriever supports both similarity search and [Maximum Marginal Rel
 See a [usage example](/docs/integrations/retrievers/zep_memorystore).
 
 ```python
-from langchain.retrievers import ZepRetriever
+from langchain_community.retrievers import ZepRetriever
 ```
 
-## Zep VectorStore
+## Vector store
 
 Zep's [Document VectorStore API](https://docs.getzep.com/sdk/documents/) enables you to store and retrieve documents using vector similarity search. Zep doesn't require you to understand 
 distance functions, types of embeddings, or indexing best practices. You just pass in your chunked documents, and Zep handles the rest.
@@ -66,7 +67,7 @@ Zep supports both similarity search and [Maximum Marginal Relevance (MMR) rerank
 MMR search is useful for ensuring that the retrieved documents are diverse and not too similar to each other.
 
 ```python
-from langchain_community.vectorstores.zep import ZepVectorStore
+from langchain_community.vectorstores import ZepVectorStore
 ```
 
 See a [usage example](/docs/integrations/vectorstores/zep).

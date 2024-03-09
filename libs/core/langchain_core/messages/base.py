@@ -21,7 +21,12 @@ class BaseMessage(Serializable):
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
-    """Any additional information."""
+    """Reserved for additional payload data associated with the message.
+    
+    For example, for a message from an AI, this could include tool calls."""
+
+    response_metadata: dict = Field(default_factory=dict)
+    """Response metadata. For example: response headers, logprobs, token counts."""
 
     type: str
 

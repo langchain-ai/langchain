@@ -220,6 +220,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "ai",
@@ -274,6 +278,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -332,6 +340,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "chat",
@@ -388,6 +400,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "system",
@@ -437,6 +453,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -489,6 +509,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -686,6 +710,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "ai",
@@ -740,6 +768,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -798,6 +830,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "chat",
@@ -854,6 +890,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "system",
@@ -903,6 +943,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -955,6 +999,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -1260,6 +1308,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "ai",
@@ -1314,6 +1366,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1372,6 +1428,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "chat",
@@ -1428,6 +1488,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "system",
@@ -1477,6 +1541,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1529,6 +1597,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1726,6 +1798,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "ai",
@@ -1780,6 +1856,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1838,6 +1918,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "chat",
@@ -1894,6 +1978,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "system",
@@ -1943,6 +2031,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1995,6 +2087,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -2721,6 +2817,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -2775,6 +2875,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -2833,6 +2937,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -2889,6 +2997,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -2938,6 +3050,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -2990,6 +3106,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -3209,6 +3329,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -3263,6 +3387,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -3321,6 +3449,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -3377,6 +3509,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -3426,6 +3562,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -3478,6 +3618,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -3699,6 +3843,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "ai",
@@ -3753,6 +3901,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -3811,6 +3963,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "chat",
@@ -3867,6 +4023,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "system",
@@ -3916,6 +4076,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -3968,6 +4132,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -4199,6 +4367,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -4253,6 +4425,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -4311,6 +4487,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -4367,6 +4547,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -4416,6 +4600,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -4468,6 +4656,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -4687,6 +4879,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -4741,6 +4937,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -4799,6 +4999,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -4855,6 +5059,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -4904,6 +5112,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -4956,6 +5168,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -5174,6 +5390,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -5228,6 +5448,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -5286,6 +5510,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -5342,6 +5570,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -5391,6 +5623,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -5443,6 +5679,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -5664,6 +5904,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "ai",
@@ -5718,6 +5962,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -5776,6 +6024,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "chat",
@@ -5832,6 +6084,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "system",
@@ -5881,6 +6137,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -5933,6 +6193,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {

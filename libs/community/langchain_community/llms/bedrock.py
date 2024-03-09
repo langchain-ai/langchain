@@ -104,6 +104,7 @@ class LLMInputOutputAdapter:
         "amazon": "outputText",
         "cohere": "text",
         "meta": "generation",
+        "mistral": "outputs",
     }
 
     @classmethod
@@ -128,7 +129,7 @@ class LLMInputOutputAdapter:
                 input_body["prompt"] = _human_assistant_format(prompt)
                 if "max_tokens_to_sample" not in input_body:
                     input_body["max_tokens_to_sample"] = 1024
-        elif provider in ("ai21", "cohere", "meta"):
+        elif provider in ("ai21", "cohere", "meta", "mistral"):
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()
@@ -157,6 +158,8 @@ class LLMInputOutputAdapter:
                 text = response_body.get("generations")[0].get("text")
             elif provider == "meta":
                 text = response_body.get("generation")
+            elif provider == "mistral":
+                text = response_body.get("outputs")[0].get("text")
             else:
                 text = response_body.get("results")[0].get("outputText")
 
@@ -199,6 +202,13 @@ class LLMInputOutputAdapter:
                 chunk_obj["is_finished"] or chunk_obj[output_key] == "<EOS_TOKEN>"
             ):
                 return
+
+            elif (
+                provider == "mistral"
+                and chunk_obj.get(output_key, [{}])[0].get("stop_reason", "") == "stop"
+            ):
+                return
+
             elif messages_api and (chunk_obj.get("type") == "content_block_stop"):
                 return
 
@@ -215,11 +225,17 @@ class LLMInputOutputAdapter:
             else:
                 # chunk obj format varies with provider
                 yield GenerationChunk(
-                    text=chunk_obj[output_key],
+                    text=(
+                        chunk_obj[output_key]
+                        if provider != "mistral"
+                        else chunk_obj[output_key][0]["text"]
+                    ),
                     generation_info={
-                        GUARDRAILS_BODY_KEY: chunk_obj.get(GUARDRAILS_BODY_KEY)
-                        if GUARDRAILS_BODY_KEY in chunk_obj
-                        else None,
+                        GUARDRAILS_BODY_KEY: (
+                            chunk_obj.get(GUARDRAILS_BODY_KEY)
+                            if GUARDRAILS_BODY_KEY in chunk_obj
+                            else None
+                        ),
                     },
                 )
 
@@ -283,6 +299,7 @@ class BedrockBase(BaseModel, ABC):
         "amazon": "stopSequences",
         "ai21": "stop_sequences",
         "cohere": "stop_sequences",
+        "mistral": "stop_sequences",
     }
 
     guardrails: Optional[Mapping[str, Any]] = {

@@ -97,7 +97,7 @@ export default function Feedback() {
   const [feedbackSent, setFeedbackSent] = useState(false);
 
   /**
-   * @param {"yes" | "no"} feedback
+   * @param {"good" | "bad"} feedback
    */
   const handleFeedback = (feedback) => {
     const cookieName = `${FEEDBACK_COOKIE_PREFIX}_${window.location.pathname}`;
@@ -105,15 +105,12 @@ export default function Feedback() {
       return;
     }
 
-    const feedbackType =
+    const feedbackEnv =
       process.env.NODE_ENV === "production"
         ? "page_feedback"
         : "page_feedback_dev";
 
-    gtag("event", feedbackType, {
-      url: window.location.pathname,
-      feedback,
-    });
+    gtag("event", `${feedbackEnv}_${feedback}`, {});
     // Set a cookie to prevent feedback from being sent multiple times
     setCookie(cookieName, window.location.pathname, 1);
     setFeedbackSent(true);
@@ -168,12 +165,12 @@ export default function Feedback() {
                 // Handle keyboard interaction
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  handleFeedback("yes");
+                  handleFeedback("good");
                 }
               }}
               onClick={(e) => {
                 e.preventDefault();
-                handleFeedback("yes");
+                handleFeedback("good");
               }}
             >
               <SvgThumbsUp />
@@ -186,12 +183,12 @@ export default function Feedback() {
                 // Handle keyboard interaction
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  handleFeedback("no");
+                  handleFeedback("bad");
                 }
               }}
               onClick={(e) => {
                 e.preventDefault();
-                handleFeedback("no");
+                handleFeedback("bad");
               }}
             >
               <SvgThumbsDown />
