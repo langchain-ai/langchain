@@ -1,10 +1,11 @@
 """Interface with the LangChain Hub."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core.load.dump import dumps
-from langchain_core.load.load import loads
+from langchain_core.load.load import loads, load
 
 if TYPE_CHECKING:
     from langchainhub import Client
@@ -77,5 +78,16 @@ def pull(
     :param api_key: The API key to use to authenticate with the LangChain Hub API.
     """
     client = _get_client(api_url=api_url, api_key=api_key)
-    resp: str = client.pull(owner_repo_commit)
+    try:
+        res_dict = client.pull_repo(owner_repo_commit)
+        resp: str = res_dict["manifest"]
+        obj = load(res_dict["manifest"])
+        if hasattr(obj, "metadata"):
+            if obj.metadata is None:
+                setattr(obj, "metadata", {})
+            obj.metadata["hub_version"] = res_dict["commit_hash"]
+        return obj
+    except:  # noqa
+        # Older versions of LangChain Hub lack the `pull_repo` method
+        resp: str = client.pull(owner_repo_commit)
     return loads(resp)
