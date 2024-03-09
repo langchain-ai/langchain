@@ -1,6 +1,7 @@
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.runnables.config import RunnableConfig, merge_configs
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
@@ -32,3 +33,11 @@ def test_merge_config_callbacks() -> None:
     assert len(merged) == 2
     assert isinstance(merged[0], ConsoleCallbackHandler)
     assert isinstance(merged[1], StreamingStdOutCallbackHandler)
+
+
+def test_config_arbitrary_keys() -> None:
+    base = RunnablePassthrough()
+    bound = base.with_config(my_custom_key="my custom value")
+    config = bound.config
+
+    assert config.get("my_custom_key") == "my custom value"
