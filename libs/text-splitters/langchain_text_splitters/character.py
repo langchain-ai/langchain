@@ -578,6 +578,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 f"Please choose from {list(Language)}"
             )
 
+
 class SemanticTiktokenTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
 
@@ -635,3 +636,4 @@ class SemanticCharacterTextSplitter(TextSplitter):
             ) from e
         splitter = CharacterTextSplitter(trim_chunks=self.trim_chunks)
         return splitter.chunks(text, self.max_characters)
+    
