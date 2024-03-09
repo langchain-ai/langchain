@@ -1112,7 +1112,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         # Sadly Unpack is not well supported by mypy so this will have to be untyped
         **kwargs: Any,
-    ) -> RunnableBinding[Input, Output]:
+    ) -> Runnable[Input, Output]:
         """
         Bind config to a Runnable, returning a new Runnable.
         """
