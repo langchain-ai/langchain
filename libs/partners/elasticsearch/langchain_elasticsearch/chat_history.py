@@ -1,7 +1,7 @@
 import json
 import logging
 from time import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -9,6 +9,9 @@ from langchain_core.messages import (
     message_to_dict,
     messages_from_dict,
 )
+
+from langchain_elasticsearch._utilities import with_user_agent_header
+from langchain_elasticsearch.client import create_elasticsearch_client
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -51,22 +54,26 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
 
         # Initialize Elasticsearch client from passed client arg or connection info
         if es_connection is not None:
-            self.client = es_connection.options(
-                headers={"user-agent": self.get_user_agent()}
-            )
+            self.client = es_connection
         elif es_url is not None or es_cloud_id is not None:
-            self.client = ElasticsearchChatMessageHistory.connect_to_elasticsearch(
-                es_url=es_url,
-                username=es_user,
-                password=es_password,
-                cloud_id=es_cloud_id,
-                api_key=es_api_key,
-            )
+            try:
+                self.client = create_elasticsearch_client(
+                    url=es_url,
+                    username=es_user,
+                    password=es_password,
+                    cloud_id=es_cloud_id,
+                    api_key=es_api_key,
+                )
+            except Exception as err:
+                logger.error(f"Error connecting to Elasticsearch: {err}")
+                raise err
         else:
             raise ValueError(
                 """Either provide a pre-existing Elasticsearch connection, \
                 or valid credentials for creating a new connection."""
             )
+
+        self.client = with_user_agent_header(self.client, "langchain-py-ms")
 
         if self.client.indices.exists(index=index):
             logger.debug(
@@ -85,60 +92,6 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                     }
                 },
             )
-
-    @staticmethod
-    def get_user_agent() -> str:
-        from langchain_core import __version__
-
-        return f"langchain-py-ms/{__version__}"
-
-    @staticmethod
-    def connect_to_elasticsearch(
-        *,
-        es_url: Optional[str] = None,
-        cloud_id: Optional[str] = None,
-        api_key: Optional[str] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-    ) -> "Elasticsearch":
-        try:
-            import elasticsearch
-        except ImportError:
-            raise ImportError(
-                "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticsearch`."
-            )
-
-        if es_url and cloud_id:
-            raise ValueError(
-                "Both es_url and cloud_id are defined. Please provide only one."
-            )
-
-        connection_params: Dict[str, Any] = {}
-
-        if es_url:
-            connection_params["hosts"] = [es_url]
-        elif cloud_id:
-            connection_params["cloud_id"] = cloud_id
-        else:
-            raise ValueError("Please provide either elasticsearch_url or cloud_id.")
-
-        if api_key:
-            connection_params["api_key"] = api_key
-        elif username and password:
-            connection_params["basic_auth"] = (username, password)
-
-        es_client = elasticsearch.Elasticsearch(
-            **connection_params,
-            headers={"user-agent": ElasticsearchChatMessageHistory.get_user_agent()},
-        )
-        try:
-            es_client.info()
-        except Exception as err:
-            logger.error(f"Error connecting to Elasticsearch: {err}")
-            raise err
-
-        return es_client
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore[override]

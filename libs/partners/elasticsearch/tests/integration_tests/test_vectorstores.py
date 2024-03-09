@@ -7,7 +7,6 @@ import uuid
 from typing import Any, Dict, Generator, List, Union
 
 import pytest
-from elastic_transport import Transport
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import BulkIndexError
 from langchain_core.documents import Document
@@ -18,12 +17,13 @@ from ..fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
 )
+from ._test_utilities import clear_test_indices, requests_saving_es_client
 
 logging.basicConfig(level=logging.DEBUG)
 
 """
-cd tests/integration_tests/vectorstores/docker-compose
-docker-compose -f elasticsearch.yml up
+cd tests/integration_tests
+docker-compose up elasticsearch
 
 By default runs against local docker instance of Elasticsearch.
 To run against Elastic Cloud, set the following environment variables:
@@ -74,12 +74,8 @@ class TestElasticsearch:
             es = Elasticsearch(hosts=es_url)
             yield {"es_url": es_url}
 
-        # Clear all indexes
-        index_names = es.indices.get(index="_all").keys()
-        for index_name in index_names:
-            if index_name.startswith("test_"):
-                es.indices.delete(index=index_name)
-        es.indices.refresh(index="_all")
+        # clear indices
+        clear_test_indices(es)
 
         # clear all test pipelines
         try:
@@ -94,32 +90,11 @@ class TestElasticsearch:
         except Exception:
             pass
 
+        return None
+
     @pytest.fixture(scope="function")
     def es_client(self) -> Any:
-        class CustomTransport(Transport):
-            requests = []
-
-            def perform_request(self, *args, **kwargs):  # type: ignore
-                self.requests.append(kwargs)
-                return super().perform_request(*args, **kwargs)
-
-        es_url = os.environ.get("ES_URL", "http://localhost:9200")
-        cloud_id = os.environ.get("ES_CLOUD_ID")
-        api_key = os.environ.get("ES_API_KEY")
-
-        if cloud_id:
-            # Running this integration test with Elastic Cloud
-            # Required for in-stack inference testing (ELSER + model_id)
-            es = Elasticsearch(
-                cloud_id=cloud_id,
-                api_key=api_key,
-                transport_class=CustomTransport,
-            )
-            return es
-        else:
-            # Running this integration test with local docker instance
-            es = Elasticsearch(hosts=es_url, transport_class=CustomTransport)
-            return es
+        return requests_saving_es_client()
 
     @pytest.fixture(scope="function")
     def index_name(self) -> str:
@@ -887,11 +862,8 @@ class TestElasticsearch:
         )
 
         user_agent = es_client.transport.requests[0]["headers"]["User-Agent"]
-        pattern = r"^langchain-py-vs/\d+\.\d+\.\d+$"
-        match = re.match(pattern, user_agent)
-
         assert (
-            match is not None
+            re.match(r"^langchain-py-vs/\d+\.\d+\.\d+$", user_agent) is not None
         ), f"The string '{user_agent}' does not match the expected pattern."
 
     def test_elasticsearch_with_internal_user_agent(
@@ -908,15 +880,12 @@ class TestElasticsearch:
         )
 
         user_agent = store.client._headers["User-Agent"]
-        pattern = r"^langchain-py-vs/\d+\.\d+\.\d+$"
-        match = re.match(pattern, user_agent)
-
         assert (
-            match is not None
+            re.match(r"^langchain-py-vs/\d+\.\d+\.\d+$", user_agent) is not None
         ), f"The string '{user_agent}' does not match the expected pattern."
 
     def test_bulk_args(self, es_client: Any, index_name: str) -> None:
-        """Test to make sure the user-agent is set correctly."""
+        """Test to make sure the bulk arguments work as expected."""
 
         texts = ["foo", "bob", "baz"]
         ElasticsearchStore.from_texts(
