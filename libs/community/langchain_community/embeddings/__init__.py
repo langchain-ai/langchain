@@ -51,10 +51,13 @@ from langchain_community.embeddings.huggingface import (
 )
 from langchain_community.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain_community.embeddings.infinity import InfinityEmbeddings
+from langchain_community.embeddings.infinity_local import InfinityEmbeddingsLocal
 from langchain_community.embeddings.javelin_ai_gateway import JavelinAIGatewayEmbeddings
 from langchain_community.embeddings.jina import JinaEmbeddings
 from langchain_community.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
+from langchain_community.embeddings.laser import LaserEmbeddings
 from langchain_community.embeddings.llamacpp import LlamaCppEmbeddings
+from langchain_community.embeddings.llamafile import LlamafileEmbeddings
 from langchain_community.embeddings.llm_rails import LLMRailsEmbeddings
 from langchain_community.embeddings.localai import LocalAIEmbeddings
 from langchain_community.embeddings.minimax import MiniMaxEmbeddings
@@ -105,9 +108,12 @@ __all__ = [
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "InfinityEmbeddings",
+    "InfinityEmbeddingsLocal",
     "GradientEmbeddings",
     "JinaEmbeddings",
+    "LaserEmbeddings",
     "LlamaCppEmbeddings",
+    "LlamafileEmbeddings",
     "LLMRailsEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowEmbeddings",

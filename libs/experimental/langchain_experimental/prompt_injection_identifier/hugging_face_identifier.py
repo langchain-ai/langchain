@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 
 class PromptInjectionException(ValueError):
+    """Exception raised when prompt injection attack is detected."""
+
     def __init__(
         self, message: str = "Prompt injection attack detected", score: float = 1.0
     ):
@@ -48,7 +50,8 @@ def _model_default_factory(
 
 
 class HuggingFaceInjectionIdentifier(BaseTool):
-    """Tool that uses HF model to detect prompt injection attacks."""
+    """Tool that uses HuggingFace Prompt Injection to
+    detect prompt injection attacks."""
 
     name: str = "hugging_face_injection_identifier"
     description: str = (

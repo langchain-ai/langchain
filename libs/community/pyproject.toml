@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.21"
+version = "0.0.27"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.24,<0.2"
+langchain-core = "^0.1.30"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -81,6 +81,7 @@ hologres-vector = {version = "^0.0.6", optional = true}
 praw = {version = "^7.7.1", optional = true}
 msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
+cloudpickle = {version = ">=2.0.0", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
 tree-sitter = {version = "^0.20.2", optional = true}
@@ -94,6 +95,8 @@ hdbcli = {version = "^2.19.21", optional = true}
 oci = {version = "^2.119.1", optional = true}
 rdflib = {version = "7.0.0", optional = true}
 nvidia-riva-client = {version = "^2.14.0", optional = true}
+tidb-vector = {version = ">=0.0.3,<1.0.0", optional = true}
+friendli-client = {version = "^1.2.4", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -169,6 +172,7 @@ types-chardet = "^5.0.4.6"
 types-redis = "^4.3.21.6"
 mypy-protobuf = "^3.0.0"
 langchain-core = {path = "../core", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
@@ -248,6 +252,7 @@ extended_testing = [
  "hologres-vector",
  "praw",
  "databricks-vectorsearch",
+ "cloudpickle",
  "dgml-utils",
  "cohere",
  "tree-sitter",
@@ -259,7 +264,10 @@ extended_testing = [
  "elasticsearch",
  "hdbcli",
  "oci",
- "rdflib"
+ "rdflib",
+ "tidb-vector",
+ "cloudpickle",
+ "friendli-client"
 ]
 
 [tool.ruff]

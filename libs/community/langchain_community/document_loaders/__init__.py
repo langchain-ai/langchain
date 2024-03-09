@@ -32,6 +32,7 @@ from langchain_community.document_loaders.apify_dataset import ApifyDatasetLoade
 from langchain_community.document_loaders.arcgis_loader import ArcGISLoader
 from langchain_community.document_loaders.arxiv import ArxivLoader
 from langchain_community.document_loaders.assemblyai import (
+    AssemblyAIAudioLoaderById,
     AssemblyAIAudioTranscriptLoader,
 )
 from langchain_community.document_loaders.astradb import AstraDBLoader
@@ -118,6 +119,9 @@ from langchain_community.document_loaders.html_bs import BSHTMLLoader
 from langchain_community.document_loaders.hugging_face_dataset import (
     HuggingFaceDatasetLoader,
 )
+from langchain_community.document_loaders.hugging_face_model import (
+    HuggingFaceModelLoader,
+)
 from langchain_community.document_loaders.ifixit import IFixitLoader
 from langchain_community.document_loaders.image import UnstructuredImageLoader
 from langchain_community.document_loaders.image_captions import ImageCaptionLoader
@@ -184,6 +188,7 @@ from langchain_community.document_loaders.sitemap import SitemapLoader
 from langchain_community.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain_community.document_loaders.snowflake_loader import SnowflakeLoader
 from langchain_community.document_loaders.spreedly import SpreedlyLoader
+from langchain_community.document_loaders.sql_database import SQLDatabaseLoader
 from langchain_community.document_loaders.srt import SRTLoader
 from langchain_community.document_loaders.stripe import StripeLoader
 from langchain_community.document_loaders.surrealdb import SurrealDBLoader
@@ -199,6 +204,7 @@ from langchain_community.document_loaders.tensorflow_datasets import (
     TensorflowDatasetLoader,
 )
 from langchain_community.document_loaders.text import TextLoader
+from langchain_community.document_loaders.tidb import TiDBLoader
 from langchain_community.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain_community.document_loaders.toml import TomlLoader
 from langchain_community.document_loaders.trello import TrelloLoader
@@ -229,6 +235,7 @@ from langchain_community.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
+from langchain_community.document_loaders.yuque import YuqueLoader
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -256,6 +263,7 @@ __all__ = [
     "ApifyDatasetLoader",
     "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
@@ -314,6 +322,7 @@ __all__ = [
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
+    "HuggingFaceModelLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
@@ -371,6 +380,7 @@ __all__ = [
     "SlackDirectoryLoader",
     "SnowflakeLoader",
     "SpreedlyLoader",
+    "SQLDatabaseLoader",
     "StripeLoader",
     "SurrealDBLoader",
     "TelegramChatApiLoader",
@@ -380,6 +390,7 @@ __all__ = [
     "TencentCOSDirectoryLoader",
     "TencentCOSFileLoader",
     "TextLoader",
+    "TiDBLoader",
     "ToMarkdownLoader",
     "TomlLoader",
     "TrelloLoader",
@@ -413,4 +424,5 @@ __all__ = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "YuqueLoader",
 ]
