@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
+import json
 
 
 class NeptuneQueryException(Exception):
@@ -23,14 +24,15 @@ class NeptuneGraph:
     """Neptune wrapper for graph operations.
 
     Args:
-        host: endpoint for the database instance
-        port: port number for the database instance, default is 8182
-        use_https: whether to use secure connection, default is True
+        host: endpoint for the Neptune Database instance.  Ignored for Neptune Analytics
+        port: port number for the  Neptune Database instance, default is 8182.  Ignored for Neptune Analytics
+        use_https: whether to use secure connection, default is True.  Ignored for Neptune Analytics
         client: optional boto3 Neptune client
         credentials_profile_name: optional AWS profile name
         region_name: optional AWS region, e.g., us-west-2
-        service: optional service name, default is neptunedata
-        sign: optional, whether to sign the request payload, default is True
+        service: optional service name, default is neptunedata, may also be neptune-graph for Neptune Analytics
+        sign: optional, whether to sign the request payload, default is True.  Ignored for Neptune Analytics
+        graphIdentifier: the graph identifier for a Neptune Analytics graph.  Ignored for Neptune Database
 
     Example:
         .. code-block:: python
@@ -52,9 +54,11 @@ class NeptuneGraph:
         See https://python.langchain.com/docs/security for more information.
     """
 
+    __isNeptuneAnalytics = False
+
     def __init__(
         self,
-        host: str,
+        host: str = None,
         port: int = 8182,
         use_https: bool = True,
         client: Any = None,
@@ -62,6 +66,7 @@ class NeptuneGraph:
         region_name: Optional[str] = None,
         service: str = "neptunedata",
         sign: bool = True,
+        graphIdentifier: str = None,
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
 
@@ -71,11 +76,26 @@ class NeptuneGraph:
             else:
                 import boto3
 
+                if service == "neptune-graph":
+                    self.__isNeptuneAnalytics = True
+                    if graphIdentifier is None:
+                        raise AttributeError(
+                            "When using the neptune-graph service the graphIdentifier parameter is required."
+                        )
+                else:
+                    if host is None:
+                        raise AttributeError(
+                            "When using the neptunedata service the host parameter is required."
+                        )
+
                 if credentials_profile_name is not None:
                     session = boto3.Session(profile_name=credentials_profile_name)
                 else:
                     # use default credentials
                     session = boto3.Session()
+
+                if graphIdentifier:
+                    self.graphIdentifier = graphIdentifier
 
                 client_params = {}
                 if region_name:
@@ -85,8 +105,8 @@ class NeptuneGraph:
 
                 client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
 
-                if sign:
-                    self.client = session.client(service, **client_params)
+                if sign or service == "neptune-graph":
+                    self.client = session.client(service, region_name=region_name)
                 else:
                     from botocore import UNSIGNED
                     from botocore.config import Config
@@ -104,10 +124,16 @@ class NeptuneGraph:
             )
         except Exception as e:
             if type(e).__name__ == "UnknownServiceError":
-                raise ModuleNotFoundError(
-                    "NeptuneGraph requires a boto3 version 1.28.38 or greater."
-                    "Please install it with `pip install -U boto3`."
-                ) from e
+                if service == "neptune-graph":
+                    raise ModuleNotFoundError(
+                        "NeptuneGraph requires a boto3 version 1.34.40 or greater."
+                        "Please install it with `pip install -U boto3`."
+                    ) from e
+                else:
+                    raise ModuleNotFoundError(
+                        "NeptuneGraph requires a boto3 version 1.28.38 or greater."
+                        "Please install it with `pip install -U boto3`."
+                    ) from e
             else:
                 raise ValueError(
                     "Could not load credentials to authenticate with AWS client. "
@@ -133,7 +159,16 @@ class NeptuneGraph:
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune database."""
         try:
-            return self.client.execute_open_cypher_query(openCypherQuery=query)
+            if self.__isNeptuneAnalytics:
+                resp = self.client.execute_query(
+                    graphIdentifier=self.graphIdentifier,
+                    queryString=query,
+                    parameters=params,
+                    language="OPEN_CYPHER",
+                )
+                return json.loads(resp["payload"].read().decode())
+            else:
+                return self.client.execute_open_cypher_query(openCypherQuery=query)
         except Exception as e:
             raise NeptuneQueryException(
                 {
@@ -143,21 +178,38 @@ class NeptuneGraph:
             )
 
     def _get_summary(self) -> Dict:
-        try:
-            response = self.client.get_propertygraph_summary()
-        except Exception as e:
-            raise NeptuneQueryException(
-                {
-                    "message": (
-                        "Summary API is not available for this instance of Neptune,"
-                        "ensure the engine version is >=1.2.1.0"
-                    ),
-                    "details": str(e),
-                }
-            )
 
         try:
-            summary = response["payload"]["graphSummary"]
+            if self.__isNeptuneAnalytics:
+                response = self.client.get_graph_summary(
+                    graphIdentifier=self.graphIdentifier, mode="detailed"
+                )
+            else:
+                response = self.client.get_propertygraph_summary()
+        except Exception as e:
+            if self.__isNeptuneAnalytics:
+                raise NeptuneQueryException(
+                    {
+                        "message": ("Summary API error ocurred on Neptune Analytics"),
+                        "details": str(e),
+                    }
+                )
+            else:
+                raise NeptuneQueryException(
+                    {
+                        "message": (
+                            "Summary API is not available for this instance of Neptune,"
+                            "ensure the engine version is >=1.2.1.0"
+                        ),
+                        "details": str(e),
+                    }
+                )
+
+        try:
+            if self.__isNeptuneAnalytics:
+                summary = response["graphSummary"]
+            else:
+                summary = response["payload"]["graphSummary"]
         except Exception:
             raise NeptuneQueryException(
                 {
