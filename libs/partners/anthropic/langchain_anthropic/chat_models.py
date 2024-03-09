@@ -190,7 +190,8 @@ class ChatAnthropic(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
 
-    def is_lc_serializable(self) -> bool:
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
         return True
 
     @property

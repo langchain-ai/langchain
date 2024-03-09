@@ -174,6 +174,15 @@ class ChatAnthropicTools(ChatAnthropic):
 
     _xmllib: Any = Field(default=None)
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "anthropic-chat-tools"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @root_validator()
     def check_xml_lib(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         try:
