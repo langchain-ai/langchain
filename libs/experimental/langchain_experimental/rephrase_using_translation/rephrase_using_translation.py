@@ -1,13 +1,10 @@
 from langchain_core.documents import Document
-from typing import Any, Callable, Dict, Iterable, List, Optional
-
-
+from typing import List
 
 def default_preprocessing_func(text: str) -> List[str]:
     return text.split()
 
-class TranslateQueryExpansionRetriever():
-
+class LTORQueryExpansion():
 
     def __init__(self, model_name_fwd='Helsinki-NLP/opus-mt-en-es', model_name_reverse='Helsinki-NLP/opus-mt-es-en'):
 

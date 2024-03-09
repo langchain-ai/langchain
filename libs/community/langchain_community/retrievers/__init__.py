@@ -65,7 +65,6 @@ from langchain_community.retrievers.remote_retriever import RemoteLangChainRetri
 from langchain_community.retrievers.svm import SVMRetriever
 from langchain_community.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain_community.retrievers.tfidf import TFIDFRetriever
-from langchain_community.retrievers.ltor_retriever import TranslateQueryExpansionRetriever
 from langchain_community.retrievers.vespa_retriever import VespaRetriever
 from langchain_community.retrievers.weaviate_hybrid_search import (
     WeaviateHybridSearchRetriever,
@@ -106,7 +105,6 @@ __all__ = [
     "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
-    "TranslateQueryExpansionRetriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
     "WikipediaRetriever",
