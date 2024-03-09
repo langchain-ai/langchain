@@ -25,8 +25,12 @@ test_script = """
 
     # Use message setter
     if st.checkbox("Override messages"):
-        memory.chat_memory.messages = [BaseMessage(content="A basic message", type="basic")]
-        st.session_state["langchain_messages"].append(BaseMessage(content="extra cool message", type="basic"))
+        memory.chat_memory.messages = [
+            BaseMessage(content="A basic message", type="basic")
+        ]
+        st.session_state["langchain_messages"].append(
+            BaseMessage(content="extra cool message", type="basic")
+        )
 
     # Write the output to st.code as a json blob for inspection
     messages = memory.chat_memory.messages
@@ -42,7 +46,7 @@ def test_memory_with_message_store() -> None:
     except ModuleNotFoundError:
         pytest.skip("Incorrect version of Streamlit installed")
 
-    at = AppTest.from_string(test_script).run()
+    at = AppTest.from_string(test_script).run(timeout=10)
 
     # Initial run should write two messages
     messages_json = at.get("text")[-1].value
