@@ -66,7 +66,8 @@ default_prompt = ChatPromptTemplate.from_messages(
 
 def optional_enum_field(
     enum_values: Optional[List[str]] = None,
-    description: Optional[str] = None,
+    description: str = "",
+    is_rel: bool = False,
     **field_kwargs: Any,
 ) -> Any:
     """Utility function to conditionally create a field with an enum constraint."""
@@ -78,7 +79,19 @@ def optional_enum_field(
             **field_kwargs,
         )
     else:
-        return Field(..., description=description, **field_kwargs)
+        node_info = (
+            "Ensure you use basic or elementary types for node labels.\n"
+            "For example, when you identify an entity representing a person, "
+            "always label it as **'Person'**. Avoid using more specific terms "
+            "like 'Mathematician' or 'Scientist'"
+        )
+        rel_info = (
+            "Instead of using specific and momentary types such as "
+            "'BECAME_PROFESSOR', use more general and timeless relationship types like "
+            "'PROFESSOR'. However, do not sacrifice any accuracy for generality"
+        )
+        additional_info = rel_info if is_rel else node_info
+        return Field(..., description=description + additional_info, **field_kwargs)
 
 
 def create_simple_model(
@@ -92,7 +105,7 @@ def create_simple_model(
     class SimpleNode(BaseModel):
         """Represents a node in a graph with associated properties."""
 
-        id: str = Field(description="A unique identifier for the node.")
+        id: str = Field(description="Name or human-readable unique identifier.")
         type: str = optional_enum_field(
             node_labels, description="The type or label of the node."
         )
@@ -103,7 +116,7 @@ def create_simple_model(
         source: SimpleNode = Field(description="The source node of the relationship.")
         target: SimpleNode = Field(description="The target node of the relationship.")
         type: str = optional_enum_field(
-            rel_types, description="The type of the relationship."
+            rel_types, description="The type of the relationship.", is_rel=True
         )
 
     class DynamicGraph(BaseModel):
