@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 import numpy as np
@@ -32,21 +33,29 @@ logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
 
 
-def _results_to_docs(results: Any) -> List[Document]:
-    return [doc for doc, _ in _results_to_docs_and_scores(results)]
+def _results_to_batch_docs(results: Any) -> List[List[Document]]:
+    batch_docs_and_scores = _results_to_batch_docs_and_scores(results)
+    return [[doc for doc, _ in d_and_s] for d_and_s in batch_docs_and_scores]
 
 
-def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
-    return [
-        # TODO: Chroma can do batch querying,
-        # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
-        for result in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
+# make docstrings
+def _results_to_batch_docs_and_scores(
+    results: Any,
+) -> List[List[Tuple[Document, float]]]:
+    batch_docs_and_scores = []
+    for i in range(len(results["documents"])):
+        batch_docs_and_scores.append(
+            [
+                (Document(page_content=content, metadata=metadata or {}), distance)
+                for content, metadata, distance in zip(
+                    results["documents"][i],
+                    results["metadatas"][i],
+                    results["distances"][i],
+                )
+            ]
         )
-    ]
+
+    return batch_docs_and_scores
 
 
 class Chroma(VectorStore):
@@ -330,41 +339,60 @@ class Chroma(VectorStore):
 
     def similarity_search(
         self,
-        query: str,
+        query: Union[str, List[str]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> Union[List[Document], List[List[Document]]]:
         """Run similarity search with Chroma.
+        This function supports both single and batch queries.
 
         Args:
-            query (str): Query text to search for.
+            query (str | list[str]): The query or a list of queries to search for.
             k (int): Number of results to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Document]: List of documents most similar to the query text.
+            If a single query is provided:
+                List[Document]: List of documents most similar to the query text.
+            If a list of queries is provided:
+                List[List[Document]]: List where is element ia a List of documents
+                most similar to the query text.
+
         """
         docs_and_scores = self.similarity_search_with_score(
             query, k, filter=filter, **kwargs
         )
-        return [doc for doc, _ in docs_and_scores]
+        is_batch = isinstance(query, list)
+
+        if is_batch:
+            return [[doc for doc, _ in d_and_s] for d_and_s in docs_and_scores]
+        else:
+            return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], List[List[float]]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> Union[List[Document], List[List[Document]]]:
         """Return docs most similar to embedding vector.
+        This function supports both single and batch queries.
+
         Args:
-            embedding (List[float]): Embedding to look up documents similar to.
+            embedding (List[float] | List[List[float]]): Embedding or list
+            of embeddings to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
-            List of Documents most similar to the query vector.
+            If a single embedding is provided:
+                List of Documents most similar to the query vector.
+            If a list of embeddings are provided:
+                List where each element is a List of Documents most similar
+                to the query vector.
+
         """
         results = self.__query_collection(
             query_embeddings=embedding,
@@ -373,28 +401,44 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs(results)
+        batch_docs = _results_to_batch_docs(results)
+
+        is_batch = isinstance(embedding[0], list)
+
+        if is_batch:
+            return batch_docs
+        else:
+            return batch_docs[0]
 
     def similarity_search_by_vector_with_relevance_scores(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], List[List[float]]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> Union[List[Tuple[Document, float]], List[List[Tuple[Document, float]]]]:
         """
         Return docs most similar to embedding vector and similarity score.
+        This function supports both single and batch queries.
 
         Args:
-            embedding (List[float]): Embedding to look up documents similar to.
+            embedding (List[float] | List[List[float]]): Embedding or list
+            of embeddings to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Tuple[Document, float]]: List of documents most similar to
-            the query text and cosine distance in float for each.
-            Lower score represents more similarity.
+            If a single embedding is provided:
+                List[Tuple[Document, float]]: List of documents most similar
+                to the query text and cosine distance in float for each. Lower
+                score represents more similarity.
+            If a list of embeddings are provided:
+                List[List[Tuple[Document, float]]]: List where each element
+                is a list of documents most similar to the query text and
+                cosine distance in float for each. Lower score represents more
+                similarity.
+
         """
         results = self.__query_collection(
             query_embeddings=embedding,
@@ -403,47 +447,69 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs_and_scores(results)
+        batch_docs_and_scores = _results_to_batch_docs_and_scores(results)
+
+        is_batch = isinstance(embedding[0], list)
+
+        if is_batch:
+            return batch_docs_and_scores
+        else:
+            return batch_docs_and_scores[0]
 
     def similarity_search_with_score(
         self,
-        query: str,
+        query: Union[str, list[str]],
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> Union[List[Tuple[Document, float]], List[List[Tuple[Document, float]]]]:
         """Run similarity search with Chroma with distance.
+        The function supports both single and batch queries.
 
         Args:
-            query (str): Query text to search for.
+            query (str | list[str]): The query or a list of queries to search for.
             k (int): Number of results to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Tuple[Document, float]]: List of documents most similar to
-            the query text and cosine distance in float for each.
-            Lower score represents more similarity.
+            If a single query is provided:
+                List[Tuple[Document, float]]: List of documents most similar to
+                the query text and cosine distance in float for each.
+                Lower score represents more similarity.
+            If a list of queries is provided:
+                List[List[Tuple[Document, float]]]: A list where each element
+                is a list of tuples, as described above, corresponding to each
+                query in the batch.
         """
+        is_batch = isinstance(query, list)
+
+        queries = query if is_batch else [query]
+
         if self._embedding_function is None:
             results = self.__query_collection(
-                query_texts=[query],
+                query_texts=queries,
                 n_results=k,
                 where=filter,
                 where_document=where_document,
                 **kwargs,
             )
         else:
-            query_embedding = self._embedding_function.embed_query(query)
+            query_embeddings = self._embedding_function.embed_documents(queries)
             results = self.__query_collection(
-                query_embeddings=[query_embedding],
+                query_embeddings=query_embeddings,
                 n_results=k,
                 where=filter,
                 where_document=where_document,
                 **kwargs,
             )
 
-        return _results_to_docs_and_scores(results)
+        batch_docs_and_scores = _results_to_batch_docs_and_scores(results)
+
+        if is_batch:
+            return batch_docs_and_scores
+        else:
+            return batch_docs_and_scores[0]
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -479,20 +545,21 @@ class Chroma(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], List[List[float]]],
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
+    ) -> Union[List[Document], List[List[Document]]]:
+        """Return docs or list of docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
-        among selected documents.
+        among selected documents. The function supports both single and batch queries.
 
         Args:
-            embedding: Embedding to look up documents similar to.
+            embedding (List[float] | List[List[float]]): Embedding or list
+            of embeddingsto look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
@@ -502,45 +569,70 @@ class Chroma(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            If a single embedding is provided:
+                List of Documents selected by maximal marginal relevance.
+            If a list of embeddings are provided:
+                List where each element is a list of Documents selected by
+                maximal marginal relevance.
         """
+        is_batch = isinstance(embedding[0], list)
+
+        query_embeddings = embedding if is_batch else [embedding]
 
         results = self.__query_collection(
-            query_embeddings=embedding,
+            query_embeddings=query_embeddings,
             n_results=fetch_k,
             where=filter,
             where_document=where_document,
             include=["metadatas", "documents", "distances", "embeddings"],
             **kwargs,
         )
-        mmr_selected = maximal_marginal_relevance(
-            np.array(embedding, dtype=np.float32),
-            results["embeddings"][0],
-            k=k,
-            lambda_mult=lambda_mult,
-        )
 
-        candidates = _results_to_docs(results)
+        batch_results = [
+            {
+                "documents": [results["documents"][i]],
+                "metadatas": [results["metadatas"][i]],
+                "distances": [results["distances"][i]],
+                "embeddings": [results["embeddings"][i]],
+            }
+            for i in range(len(query_embeddings))
+        ]
 
-        selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
-        return selected_results
+        batch_selected_results = []
+
+        for i in range(len(batch_results)):
+            mmr_selected = maximal_marginal_relevance(
+                np.array(query_embeddings[i], dtype=np.float32),
+                batch_results[i]["embeddings"][0],
+                k=k,
+                lambda_mult=lambda_mult,
+            )
+            candidates = _results_to_batch_docs(batch_results[i])[0]
+
+            selected_results = [
+                r for i, r in enumerate(candidates) if i in mmr_selected
+            ]
+            batch_selected_results.append(selected_results)
+
+        return batch_selected_results if is_batch else batch_selected_results[0]
 
     def max_marginal_relevance_search(
         self,
-        query: str,
+        query: Union[str, List[str]],
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
-        Maximal marginal relevance optimizes for similarity to query AND diversity
-        among selected documents.
+    ) -> Union[List[Document], List[List[Document]]]:
+        """Return docs or list of docs selected using the maximal marginal
+        relevance. Maximal marginal relevance optimizes for similarity to
+        query AND diversity among selected documents. This function supports
+        both single and batch queries.
 
         Args:
-            query: Text to look up documents similar to.
+            query (str | List[str]): query or a list of queries to search for.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
@@ -550,23 +642,30 @@ class Chroma(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            If a single query is provided:
+                List of Documents selected by maximal marginal relevance.
+            If a list of queries is provided:
+                List where each element is a list of Documents selected bt
+                maximal marginal relevance.
         """
         if self._embedding_function is None:
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
+        is_batch = isinstance(query, list)
 
-        embedding = self._embedding_function.embed_query(query)
+        queries = query if is_batch else [query]
+
+        embeddings = self._embedding_function.embed_documents(queries)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding,
+            embeddings,
             k,
             fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
             where_document=where_document,
         )
-        return docs
+        return docs if is_batch else docs[0]
 
     def delete_collection(self) -> None:
         """Delete the collection."""
