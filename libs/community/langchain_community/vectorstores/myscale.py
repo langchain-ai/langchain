@@ -247,7 +247,7 @@ class MyScale(VectorStore):
         column_names = {
             colmap_["id"]: ids,
             colmap_["text"]: texts,
-            colmap_["vector"]: map(self._embeddings.embed_query, texts),
+            colmap_["vector"]: self._embeddings.embed_documents(texts),
         }
         metadatas = metadatas or [{} for _ in texts]
         column_names[colmap_["metadata"]] = map(json.dumps, metadatas)
