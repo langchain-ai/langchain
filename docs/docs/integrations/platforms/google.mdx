@@ -20,25 +20,9 @@ See a [usage example](/docs/integrations/llms/google_ai).
 from langchain_google_genai import GoogleGenerativeAI
 ```
 
-### Vertex AI
+### Vertex AI Model Garden
 
-Access to `Gemini` and `PaLM` LLMs (like `text-bison` and `code-bison`) via `Vertex AI` on Google Cloud.
-
-We need to install `langchain-google-vertexai` python package.
-
-```bash
-pip install langchain-google-vertexai
-```
-
-See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
-
-```python
-from langchain_google_vertexai import VertexAI
-```
-
-### Model Garden
-
-Access PaLM and hundreds of OSS models via `Vertex AI Model Garden` on Google Cloud.
+Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
 
 We need to install `langchain-google-vertexai` python package.
 
@@ -51,6 +35,7 @@ See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model
 ```python
 from langchain_google_vertexai import VertexAIModelGarden
 ```
+
 
 ## Chat models
 
@@ -117,6 +102,40 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 
 ```python
 from langchain_google_vertexai import ChatVertexAI
+```
+
+## Embedding models
+
+### Google Generative AI Embeddings
+
+See a [usage example](/docs/integrations/text_embedding/google_generative_ai).
+
+```bash
+pip install -U langchain-google-genai
+```
+
+Configure your API key.
+
+```bash
+export GOOGLE_API_KEY=your-api-key
+```
+
+```python
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+```
+
+### Vertex AI
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/text_embedding/google_vertex_ai_palm).
+
+```python
+from langchain_google_vertexai import VertexAIEmbeddings
 ```
 
 ## Document Loaders
@@ -797,22 +816,6 @@ See [usage example](/docs/integrations/memory/google_cloud_sql_mssql).
 from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLChatMessageHistory
 ```
 
-## El Carro for Oracle Workloads
-
-> Google [El Carro Oracle Operator](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
-offers a way to run Oracle databases in Kubernetes as a portable, open source,
-community driven, no vendor lock-in container orchestration system.
-
-```bash
-pip install langchain-google-el-carro
-```
-
-See [usage example](/docs/integrations/memory/google_el_carro).
-
-```python
-from langchain_google_el_carro import ElCarroChatMessageHistory
-```
-
 ### Spanner
 
 > [Google Cloud Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
@@ -889,10 +892,10 @@ See [usage example](/docs/integrations/memory/google_datastore).
 from langchain_google_datastore import DatastoreChatMessageHistory
 ```
 
-## El Carro Oracle Operator
+### El Carro: The Oracle Operator for Kubernetes
 
-> Google [El Carro Oracle Operator](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
-offers a way to run Oracle databases in Kubernetes as a portable, open source,
+> Google [El Carro Oracle Operator for Kubernetes](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
+offers a way to run `Oracle` databases in `Kubernetes` as a portable, open source,
 community driven, no vendor lock-in container orchestration system.
 
 ```bash
