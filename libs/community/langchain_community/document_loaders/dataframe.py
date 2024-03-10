@@ -50,7 +50,7 @@ class DataFrameLoader(BaseDataFrameLoader):
                 import modin.pandas as pd
             else:
                 raise ValueError(
-                    f"Unsupported engine {engine}. It must be one of 'pandas', or 'modin'."
+                    f"Unsupported engine {engine}. Must be one of 'pandas', or 'modin'."
                 )
         except ImportError as e:
             raise ImportError(
