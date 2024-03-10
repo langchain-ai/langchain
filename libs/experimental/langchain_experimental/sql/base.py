@@ -121,7 +121,7 @@ class SQLDatabaseChain(Chain):
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_info,
-            "stop": ["\nSQLResult:"],
+            "stop": ["\nSQLResult:", "\nQuestion:"],
         }
         if self.memory is not None:
             for k in self.memory.memory_variables:
