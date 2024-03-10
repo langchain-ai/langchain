@@ -16,6 +16,19 @@ class ConversationTokenBufferMemory(BaseChatMemory):
     max_token_limit: int = 2000
 
     @property
+    def messages(self) -> List[BaseMessage]:
+        """List of messages in memory."""
+        # Prune buffer if it exceeds max token limit
+        buffer = self.chat_memory.messages
+        curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+        if curr_buffer_length > self.max_token_limit:
+            while curr_buffer_length > self.max_token_limit:
+                buffer.pop(0)
+                curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+
+        return buffer
+
+    @property
     def buffer(self) -> Any:
         """String buffer of memory."""
         return self.buffer_as_messages if self.return_messages else self.buffer_as_str
@@ -24,7 +37,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
     def buffer_as_str(self) -> str:
         """Exposes the buffer as a string in case return_messages is False."""
         return get_buffer_string(
-            self.chat_memory.messages,
+            self.messages,
             human_prefix=self.human_prefix,
             ai_prefix=self.ai_prefix,
         )
@@ -32,7 +45,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
     @property
     def buffer_as_messages(self) -> List[BaseMessage]:
         """Exposes the buffer as a list of messages in case return_messages is True."""
-        return self.chat_memory.messages
+        return self.messages
 
     @property
     def memory_variables(self) -> List[str]:
@@ -45,15 +58,3 @@ class ConversationTokenBufferMemory(BaseChatMemory):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
-
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Save context from this conversation to buffer. Pruned."""
-        super().save_context(inputs, outputs)
-        # Prune buffer if it exceeds max token limit
-        buffer = self.chat_memory.messages
-        curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
-        if curr_buffer_length > self.max_token_limit:
-            pruned_memory = []
-            while curr_buffer_length > self.max_token_limit:
-                pruned_memory.append(buffer.pop(0))
-                curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
