@@ -17,6 +17,7 @@ EXPECTED_ALL = [
     "JinaEmbeddings",
     "LaserEmbeddings",
     "LlamaCppEmbeddings",
+    "LlamafileEmbeddings",
     "LLMRailsEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowAIGatewayEmbeddings",
