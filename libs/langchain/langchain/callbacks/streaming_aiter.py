@@ -69,3 +69,17 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
 
             # Otherwise, the extracted value is a token, which we yield
             yield token_or_done
+
+class ChunkAsyncIteratorCallbackHandler(AsyncIteratorCallbackHandler):
+    """Callback handler that returns an async iterator."""
+    def __init__(self, chunk_size=10) -> None:
+        super().__init__()
+        self.chunk :List[str] = []
+        self.chunk_size = chunk_size
+    async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        if token is not None and token != "":
+            if len(self.chunk) < self.chunk_size:
+                self.chunk.append(token)
+            else:
+                self.queue.put_nowait("".join(self.chunk))
+                self.chunk = [token]
