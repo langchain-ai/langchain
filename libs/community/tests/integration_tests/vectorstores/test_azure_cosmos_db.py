@@ -913,6 +913,7 @@ class TestAzureCosmosDBVectorSearch:
                 NAMESPACE,
                 azure_openai_embeddings,
                 index_name=INDEX_NAME,
+                application_name=application_name,
             )
         )
 
@@ -928,6 +929,7 @@ class TestAzureCosmosDBVectorSearch:
                 NAMESPACE,
                 azure_openai_embeddings,
                 index_name=INDEX_NAME,
+                application_name=application_name,
             )
         )
 
