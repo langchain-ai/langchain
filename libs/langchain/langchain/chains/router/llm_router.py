@@ -58,7 +58,8 @@ class LLMRouterChain(RouterChain):
         callbacks = _run_manager.get_child()
         output = cast(
             Dict[str, Any],
-            self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs),
+            self.llm_chain.prompt.output_parser.parse(self.llm_chain.predict(callbacks=callbacks, **inputs)),
+
         )
         return output
 
