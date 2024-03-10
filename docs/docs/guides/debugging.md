@@ -12,7 +12,7 @@ Platforms with tracing capabilities like [LangSmith](/docs/langsmith/) and [Wand
 
 For anyone building production-grade LLM applications, we highly recommend using a platform like this.
 
-![LangSmith run](../../static/img/run_details.png)
+![Screenshot of the LangSmith debugging interface showing an AgentExecutor run with input and output details, and a run tree visualization.](../../static/img/run_details.png "LangSmith Debugging Interface")
 
 ## `set_debug` and `set_verbose`
 
@@ -25,7 +25,7 @@ Let's suppose we have a simple agent, and want to visualize the actions it takes
 
 ```python
 from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(model_name="gpt-4", temperature=0)
 tools = load_tools(["ddg-search", "llm-math"], llm=llm)
@@ -656,6 +656,6 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 ## Other callbacks
 
-`Callbacks` are what we use to execute any functionality within a component outside the primary component logic. All of the above solutions use `Callbacks` under the hood to log intermediate steps of components. There are a number of `Callbacks` relevant for debugging that come with LangChain out of the box, like the [FileCallbackHandler](/docs/modules/callbacks/how_to/filecallbackhandler). You can also implement your own callbacks to execute custom functionality.
+`Callbacks` are what we use to execute any functionality within a component outside the primary component logic. All of the above solutions use `Callbacks` under the hood to log intermediate steps of components. There are a number of `Callbacks` relevant for debugging that come with LangChain out of the box, like the [FileCallbackHandler](/docs/modules/callbacks/filecallbackhandler). You can also implement your own callbacks to execute custom functionality.
 
 See here for more info on [Callbacks](/docs/modules/callbacks/), how to use them, and customize them.

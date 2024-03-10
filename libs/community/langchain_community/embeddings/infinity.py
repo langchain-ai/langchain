@@ -28,14 +28,14 @@ class InfinityEmbeddings(BaseModel, Embeddings):
             from langchain_community.embeddings import InfinityEmbeddings
             InfinityEmbeddings(
                 model="BAAI/bge-small",
-                infinity_api_url="http://localhost:7797/v1",
+                infinity_api_url="http://localhost:7997",
             )
     """
 
     model: str
     "Underlying Infinity model id."
 
-    infinity_api_url: str = "http://localhost:7797/v1"
+    infinity_api_url: str = "http://localhost:7997"
     """Endpoint URL to use."""
 
     client: Any = None  #: :meta private:

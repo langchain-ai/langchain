@@ -22,7 +22,7 @@ pip install pyairtable
 
 
 ```python
-from langchain.document_loaders import AirtableLoader
+from langchain_community.document_loaders import AirtableLoader
 ```
 
 See an [example](/docs/integrations/document_loaders/airtable).

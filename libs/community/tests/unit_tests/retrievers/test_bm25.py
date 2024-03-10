@@ -32,3 +32,14 @@ def test_from_documents() -> None:
     bm25_retriever = BM25Retriever.from_documents(documents=input_docs)
     assert len(bm25_retriever.docs) == 3
     assert bm25_retriever.vectorizer.doc_len == [4, 5, 4]
+
+
+@pytest.mark.requires("rank_bm25")
+def test_repr() -> None:
+    input_docs = [
+        Document(page_content="I have a pen."),
+        Document(page_content="Do you have a pen?"),
+        Document(page_content="I have a bag."),
+    ]
+    bm25_retriever = BM25Retriever.from_documents(documents=input_docs)
+    assert "I have a pen" not in repr(bm25_retriever)

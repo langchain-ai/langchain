@@ -20,8 +20,8 @@ To start, get your Portkey API key by [signing up here](https://app.portkey.ai/l
 
 For OpenAI, a simple integration with logging feature would look like this:
 ```python
-from langchain.llms import OpenAI
-from langchain.utilities import Portkey
+from langchain_openai import OpenAI
+from langchain_community.utilities import Portkey
 
 # Add the Portkey API Key from your account
 headers = Portkey.Config(
@@ -39,8 +39,8 @@ A common Portkey X Langchain use case is to **trace a chain or an agent** and vi
 
 ```python
 from langchain.agents import AgentType, initialize_agent, load_tools  
-from langchain.llms import OpenAI
-from langchain.utilities import Portkey
+from langchain_openai import OpenAI
+from langchain_community.utilities import Portkey
 
 # Add the Portkey API Key from your account
 headers = Portkey.Config(

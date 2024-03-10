@@ -39,8 +39,8 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
 
 
 class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
+    """Volc Engine Maas hosts a plethora of models.
 
-    """volc engine maas hosts a plethora of models.
     You can utilize these models through this class.
 
     To use, you should have the ``volcengine`` python package installed.
@@ -116,9 +116,10 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
         for res in self.client.stream_chat(params):
             if res:
                 msg = convert_dict_to_message(res)
-                yield ChatGenerationChunk(message=AIMessageChunk(content=msg.content))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=msg.content))
                 if run_manager:
-                    run_manager.on_llm_new_token(cast(str, msg.content))
+                    run_manager.on_llm_new_token(cast(str, msg.content), chunk=chunk)
+                yield chunk
 
     def _generate(
         self,

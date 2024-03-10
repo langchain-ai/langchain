@@ -14,9 +14,12 @@ from langchain.output_parsers.json import parse_json_markdown
 class ConvoOutputParser(AgentOutputParser):
     """Output parser for the conversational agent."""
 
+    format_instructions: str = FORMAT_INSTRUCTIONS
+    """Default formatting instructions"""
+
     def get_format_instructions(self) -> str:
         """Returns formatting instructions for the given output parser."""
-        return FORMAT_INSTRUCTIONS
+        return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         """Attempts to parse the given text into an AgentAction or AgentFinish.

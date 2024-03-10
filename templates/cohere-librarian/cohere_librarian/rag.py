@@ -1,5 +1,5 @@
-from langchain.chat_models import ChatCohere
 from langchain.retrievers import CohereRagRetriever
+from langchain_community.chat_models import ChatCohere
 
 rag = CohereRagRetriever(llm=ChatCohere())
 

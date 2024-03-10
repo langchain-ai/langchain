@@ -105,7 +105,7 @@ class _BaseStoryElementChain(Chain):
 
 
 class NarrativeChain(_BaseStoryElementChain):
-    """Decompose the narrative into its story elements
+    """Decompose the narrative into its story elements.
 
     - causal model
     - query

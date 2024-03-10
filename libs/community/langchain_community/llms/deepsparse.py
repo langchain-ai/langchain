@@ -177,7 +177,7 @@ class DeepSparse(LLM):
                 )
                 for chunk in llm.stream("Tell me a joke",
                         stop=["'","\n"]):
-                    print(chunk, end='', flush=True)
+                    print(chunk, end='', flush=True)  # noqa: T201
         """
         inference = self.pipeline(
             sequences=prompt, streaming=True, **self.generation_config
@@ -215,7 +215,7 @@ class DeepSparse(LLM):
                 )
                 for chunk in llm.stream("Tell me a joke",
                         stop=["'","\n"]):
-                    print(chunk, end='', flush=True)
+                    print(chunk, end='', flush=True)  # noqa: T201
         """
         inference = self.pipeline(
             sequences=prompt, streaming=True, **self.generation_config

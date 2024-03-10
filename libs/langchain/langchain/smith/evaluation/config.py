@@ -1,12 +1,14 @@
 """Configuration for run evaluators."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langsmith import RunEvaluator
+from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
+from langsmith.schemas import Example, Run
 
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import (
@@ -16,6 +18,14 @@ from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
+
+RUN_EVALUATOR_LIKE = Callable[
+    [Run, Optional[Example]], Union[EvaluationResult, EvaluationResults, dict]
+]
+BATCH_EVALUATOR_LIKE = Callable[
+    [Sequence[Run], Optional[Sequence[Example]]],
+    Union[EvaluationResult, EvaluationResults, dict],
+]
 
 
 class EvalConfig(BaseModel):
@@ -76,12 +86,16 @@ class SingleKeyEvalConfig(EvalConfig):
         return kwargs
 
 
+CUSTOM_EVALUATOR_TYPE = Union[RUN_EVALUATOR_LIKE, RunEvaluator, StringEvaluator]
+SINGLE_EVAL_CONFIG_TYPE = Union[EvaluatorType, str, EvalConfig]
+
+
 class RunEvalConfig(BaseModel):
     """Configuration for a run evaluation.
 
     Parameters
     ----------
-    evaluators : List[Union[EvaluatorType, EvalConfig]]
+    evaluators : List[Union[EvaluatorType, EvalConfig, RunEvaluator, Callable]]
         Configurations for which evaluators to apply to the dataset run.
         Each can be the string of an :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
         as EvaluatorType.QA, the evaluator type string ("qa"), or a configuration for a
@@ -107,9 +121,12 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """  # noqa: E501
 
-    evaluators: List[Union[EvaluatorType, str, EvalConfig]] = Field(
-        default_factory=list
-    )
+    evaluators: List[
+        Union[
+            SINGLE_EVAL_CONFIG_TYPE,
+            CUSTOM_EVALUATOR_TYPE,
+        ]
+    ] = Field(default_factory=list)
     """Configurations for which evaluators to apply to the dataset run.
     Each can be the string of an
     :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
@@ -117,8 +134,15 @@ class RunEvalConfig(BaseModel):
     given evaluator
     (e.g., 
     :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""  # noqa: E501
-    custom_evaluators: Optional[List[Union[RunEvaluator, StringEvaluator]]] = None
+    custom_evaluators: Optional[List[CUSTOM_EVALUATOR_TYPE]] = None
     """Custom evaluators to apply to the dataset run."""
+    batch_evaluators: Optional[List[BATCH_EVALUATOR_LIKE]] = None
+    """Evaluators that run on an aggregate/batch level.
+
+    These generate 1 or more metrics that are assigned to the full test run.
+    As a result, they are not associated with individual traces.
+    """
+
     reference_key: Optional[str] = None
     """The key in the dataset run to use as the reference string.
     If not provided, we will attempt to infer automatically."""
@@ -296,7 +320,7 @@ class RunEvalConfig(BaseModel):
             Whether to ignore numbers when comparing strings.
         """
 
-        evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
+        evaluator_type: EvaluatorType = EvaluatorType.EXACT_MATCH
         ignore_case: bool = False
         ignore_punctuation: bool = False
         ignore_numbers: bool = False

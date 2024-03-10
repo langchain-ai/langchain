@@ -145,14 +145,14 @@ def test_mathpix_loader() -> None:
     docs = loader.load()
 
     assert len(docs) == 1
-    print(docs[0].page_content)
+    print(docs[0].page_content)  # noqa: T201
 
     file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
     loader = MathpixPDFLoader(str(file_path))
 
     docs = loader.load()
     assert len(docs) == 1
-    print(docs[0].page_content)
+    print(docs[0].page_content)  # noqa: T201
 
 
 @pytest.mark.parametrize(
@@ -230,7 +230,7 @@ def test_amazontextract_loader(
     else:
         loader = AmazonTextractPDFLoader(file_path, textract_features=features)
     docs = loader.load()
-    print(docs)
+    print(docs)  # noqa: T201
 
     assert len(docs) == docs_length
 

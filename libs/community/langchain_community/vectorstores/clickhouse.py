@@ -205,8 +205,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         )
         # Enable JSON type
         self.client.command("SET allow_experimental_object_type=1")
-        # Enable Annoy index
-        self.client.command("SET allow_experimental_annoy_index=1")
+        # Enable index
+        self.client.command(f"SET allow_experimental_{self.config.index_type}_index=1")
         self.client.command(self.schema)
 
     @property

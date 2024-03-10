@@ -18,6 +18,8 @@ SENTINEL = object()
 
 
 class PickBestSelected(base.Selected):
+    """Selected class for PickBest chain."""
+
     index: Optional[int]
     probability: Optional[float]
     score: Optional[float]
@@ -34,6 +36,8 @@ class PickBestSelected(base.Selected):
 
 
 class PickBestEvent(base.Event[PickBestSelected]):
+    """Event class for PickBest chain."""
+
     def __init__(
         self,
         inputs: Dict[str, Any],
@@ -47,8 +51,8 @@ class PickBestEvent(base.Event[PickBestSelected]):
 
 
 class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
-    """
-    Text Embedder class that embeds the `BasedOn` and `ToSelectFrom` inputs into a format that can be used by the learning policy
+    """Embed the `BasedOn` and `ToSelectFrom` inputs into a format that can be used
+    by the learning policy.
 
     Attributes:
         model name (Any, optional): The type of embeddings to be used for feature representation. Defaults to BERT SentenceTransformer.
@@ -225,6 +229,8 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
 
 
 class PickBestRandomPolicy(base.Policy[PickBestEvent]):
+    """Random policy for PickBest chain."""
+
     def __init__(self, feature_embedder: base.Embedder, **kwargs: Any):
         self.feature_embedder = feature_embedder
 
@@ -240,8 +246,8 @@ class PickBestRandomPolicy(base.Policy[PickBestEvent]):
 
 
 class PickBest(base.RLChain[PickBestEvent]):
-    """
-    `PickBest` is a class designed to leverage the Vowpal Wabbit (VW) model for reinforcement learning with a context, with the goal of modifying the prompt before the LLM call.
+    """Chain that leverages the Vowpal Wabbit (VW) model for reinforcement learning
+    with a context, with the goal of modifying the prompt before the LLM call.
 
     Each invocation of the chain's `run()` method should be equipped with a set of potential actions (`ToSelectFrom`) and will result in the selection of a specific action based on the `BasedOn` input. This chosen action then informs the LLM (Language Model) prompt for the subsequent response generation.
 

@@ -4,6 +4,7 @@ EXPECTED_ALL = [
     "AINetworkToolkit",
     "AmadeusToolkit",
     "AzureCognitiveServicesToolkit",
+    "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
     "JiraToolkit",
@@ -14,6 +15,7 @@ EXPECTED_ALL = [
     "O365Toolkit",
     "OpenAPIToolkit",
     "PlayWrightBrowserToolkit",
+    "PolygonToolkit",
     "PowerBIToolkit",
     "SlackToolkit",
     "SteamToolkit",
@@ -26,6 +28,7 @@ EXPECTED_ALL = [
     "create_pbi_chat_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
+    "CogniswitchToolkit",
 ]
 
 

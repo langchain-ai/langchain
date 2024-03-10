@@ -48,7 +48,7 @@ class BraveSearchWrapper(BaseModel):
         results = self._search_request(query)
         return [
             Document(
-                page_content=item.get("description"),
+                page_content=item.get("description"),  # type: ignore[arg-type]
                 metadata={"title": item.get("title"), "link": item.get("url")},
             )
             for item in results

@@ -1,6 +1,6 @@
 import itertools
 import re
-from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from langchain_core.documents import Document
@@ -182,7 +182,7 @@ class SitemapLoader(WebBaseLoader):
             els.extend(self.parse_sitemap(soup_child))
         return els
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load sitemap."""
         if self.is_local:
             try:
@@ -211,10 +211,8 @@ class SitemapLoader(WebBaseLoader):
 
         results = self.scrape_all([el["loc"].strip() for el in els if "loc" in el])
 
-        return [
-            Document(
-                page_content=self.parsing_function(results[i]),
-                metadata=self.meta_function(els[i], results[i]),
+        for i, result in enumerate(results):
+            yield Document(
+                page_content=self.parsing_function(result),
+                metadata=self.meta_function(els[i], result),
             )
-            for i in range(len(results))
-        ]

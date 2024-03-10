@@ -1,8 +1,9 @@
 """Integration test for self ask with search."""
 
+from langchain_community.llms.openai import OpenAI
+
 from langchain.agents.react.base import ReActChain
 from langchain.docstore.wikipedia import Wikipedia
-from langchain.llms.openai import OpenAI
 
 
 def test_react() -> None:

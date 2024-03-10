@@ -1,6 +1,6 @@
-from langchain.chat_models import ChatAnthropic
-from langchain.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatAnthropic
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import ConfigurableField
 

@@ -1,4 +1,6 @@
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
+
+import pytest
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -12,11 +14,22 @@ from langchain.retrievers.self_query.milvus import MilvusTranslator
 DEFAULT_TRANSLATOR = MilvusTranslator()
 
 
-def test_visit_comparison() -> None:
-    comp = Comparison(comparator=Comparator.LT, attribute="foo", value=4)
-    expected = "( foo < 4 )"
+@pytest.mark.parametrize(
+    "triplet",
+    [
+        (Comparator.EQ, 2, "( foo == 2 )"),
+        (Comparator.GT, 2, "( foo > 2 )"),
+        (Comparator.GTE, 2, "( foo >= 2 )"),
+        (Comparator.LT, 2, "( foo < 2 )"),
+        (Comparator.LTE, 2, "( foo <= 2 )"),
+        (Comparator.IN, ["bar", "abc"], "( foo in ['bar', 'abc'] )"),
+        (Comparator.LIKE, "bar", '( foo like "bar%" )'),
+    ],
+)
+def test_visit_comparison(triplet: Tuple[Comparator, Any, str]) -> None:
+    comparator, value, expected = triplet
+    comp = Comparison(comparator=comparator, attribute="foo", value=value)
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
-
     assert expected == actual
 
 

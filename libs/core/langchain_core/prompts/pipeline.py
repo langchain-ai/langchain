@@ -11,7 +11,7 @@ def _get_inputs(inputs: dict, input_variables: List[str]) -> dict:
 
 
 class PipelinePromptTemplate(BasePromptTemplate):
-    """A prompt template for composing multiple prompt templates together.
+    """Prompt template for composing multiple prompt templates together.
 
     This can be useful when you want to reuse parts of prompts.
     A PipelinePrompt consists of two main parts:

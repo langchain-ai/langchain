@@ -25,7 +25,7 @@ def test_octoai_endpoint_text_generation() -> None:
     )
 
     output = llm("Which state is Los Angeles in?")
-    print(output)
+    print(output)  # noqa: T201
     assert isinstance(output, str)
 
 

@@ -8,7 +8,7 @@ from langchain_core.messages.base import (
 
 
 class FunctionMessage(BaseMessage):
-    """A Message for passing the result of executing a function back to a model."""
+    """Message for passing the result of executing a function back to a model."""
 
     name: str
     """The name of the function that was executed."""
@@ -25,7 +25,7 @@ FunctionMessage.update_forward_refs()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
-    """A Function Message chunk."""
+    """Function Message chunk."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the

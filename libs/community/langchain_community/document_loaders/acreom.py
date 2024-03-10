@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Iterator, List
+from typing import Iterator
 
 from langchain_core.documents import Document
 
@@ -74,6 +74,3 @@ class AcreomLoader(BaseLoader):
             }
 
             yield Document(page_content=text, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())

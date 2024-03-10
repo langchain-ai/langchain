@@ -32,7 +32,7 @@ class LocalFileStore(ByteStore):
 
             # Iterate over keys
             for key in file_store.yield_keys():
-                print(key)
+                print(key)  # noqa: T201
 
     """
 

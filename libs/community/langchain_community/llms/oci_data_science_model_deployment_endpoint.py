@@ -228,7 +228,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import ModelDeploymentTGI
+            from langchain_community.llms import ModelDeploymentTGI
 
             oci_md = ModelDeploymentTGI(endpoint="https://<MD_OCID>/predict")
 
@@ -294,7 +294,7 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OCIModelDeploymentVLLM
+            from langchain_community.llms import OCIModelDeploymentVLLM
 
             oci_md = OCIModelDeploymentVLLM(
                 endpoint="https://<MD_OCID>/predict",

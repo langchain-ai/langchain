@@ -416,15 +416,25 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self._run.close()
             self.reset_callback_meta()
         if reset:
-            self.__init__(  # type: ignore
-                repo=repo if repo else self.repo,
-                experiment_name=experiment_name
-                if experiment_name
-                else self.experiment_name,
-                system_tracking_interval=system_tracking_interval
-                if system_tracking_interval
-                else self.system_tracking_interval,
-                log_system_params=log_system_params
-                if log_system_params
-                else self.log_system_params,
+            aim = import_aim()
+            self.repo = repo if repo else self.repo
+            self.experiment_name = (
+                experiment_name if experiment_name else self.experiment_name
             )
+            self.system_tracking_interval = (
+                system_tracking_interval
+                if system_tracking_interval
+                else self.system_tracking_interval
+            )
+            self.log_system_params = (
+                log_system_params if log_system_params else self.log_system_params
+            )
+
+            self._run = aim.Run(
+                repo=self.repo,
+                experiment=self.experiment_name,
+                system_tracking_interval=self.system_tracking_interval,
+                log_system_params=self.log_system_params,
+            )
+            self._run_hash = self._run.hash
+            self.action_records = []

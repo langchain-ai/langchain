@@ -1,4 +1,5 @@
 """Prompt template that contains few shot examples."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -98,7 +99,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     prefix: str = ""
     """A prompt template string to put before the examples."""
 
-    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
+    template_format: Literal["f-string", "jinja2"] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     @root_validator()
@@ -277,7 +278,7 @@ class FewShotChatMessagePromptTemplate(
                 + HumanMessagePromptTemplate.from_template("{input}")
             )
             # Show the prompt
-            print(final_prompt.format_messages(input="What's 3+3?"))
+            print(final_prompt.format_messages(input="What's 3+3?"))  # noqa: T201
 
             # Use within an LLM
             from langchain_core.chat_models import ChatAnthropic
@@ -340,3 +341,6 @@ class FewShotChatMessagePromptTemplate(
         """
         messages = self.format_messages(**kwargs)
         return get_buffer_string(messages)
+
+    def pretty_repr(self, html: bool = False) -> str:
+        raise NotImplementedError()

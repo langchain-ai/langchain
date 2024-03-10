@@ -91,6 +91,3 @@ class JoplinLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         yield from self._get_notes()
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())

@@ -65,7 +65,7 @@ class PromptTemplate(StringPromptTemplate):
     template: str
     """The prompt template."""
 
-    template_format: Union[Literal["f-string"], Literal["jinja2"]] = "f-string"
+    template_format: Literal["f-string", "jinja2"] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     validate_template: bool = False
@@ -255,7 +255,7 @@ class PromptTemplate(StringPromptTemplate):
         return cls(
             input_variables=input_variables,
             template=template,
-            template_format=template_format,
+            template_format=template_format,  # type: ignore[arg-type]
             partial_variables=_partial_variables,
             **kwargs,
         )

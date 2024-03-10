@@ -109,7 +109,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     .. code-block:: python
 
         from langchain.agents import AgentType, initialize_agent
-        from langchain.chat_models import ChatOpenAI
+        from langchain_community.chat_models import ChatOpenAI
         from langchain.evaluation import TrajectoryEvalChain
         from langchain.tools import tool
 
@@ -139,7 +139,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
             prediction=response["output"],
             reference="Paris",
         )
-        print(result["score"])
+        print(result["score"])  # noqa: T201
         # 0
     """  # noqa: E501
 

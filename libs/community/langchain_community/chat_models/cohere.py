@@ -105,9 +105,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
             from langchain_community.chat_models import ChatCohere
             from langchain_core.messages import HumanMessage
 
-            chat = ChatCohere(model="foo")
-            result = chat([HumanMessage(content="Hello")])
-            print(result.content)
+            chat = ChatCohere(model="command", max_tokens=256, temperature=0.75)
+
+            messages = [HumanMessage(content="knock knock")]
+            chat.invoke(messages)
     """
 
     class Config:
@@ -146,9 +147,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
         for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
-                    run_manager.on_llm_new_token(delta)
+                    run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
 
     async def _astream(
         self,
@@ -163,9 +165,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
         async for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
-                    await run_manager.on_llm_new_token(delta)
+                    await run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
 
     def _get_generation_info(self, response: Any) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""

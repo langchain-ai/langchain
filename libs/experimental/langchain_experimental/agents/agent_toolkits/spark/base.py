@@ -5,7 +5,7 @@ from langchain.agents.agent import AgentExecutor
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
+from langchain_core.language_models import BaseLLM
 
 from langchain_experimental.agents.agent_toolkits.spark.prompt import PREFIX, SUFFIX
 from langchain_experimental.tools.python.tool import PythonAstREPLTool

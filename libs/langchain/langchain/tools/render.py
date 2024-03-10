@@ -4,21 +4,25 @@ Depending on the LLM you are using and the prompting strategy you are using,
 you may want Tools to be rendered in a different way.
 This module contains various ways to render tools.
 """
-from typing import List
+from typing import Callable, List
 
 # For backwards compatibility
-from langchain_community.tools.convert_to_openai import (
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import (
     format_tool_to_openai_function,
     format_tool_to_openai_tool,
 )
-from langchain_core.tools import BaseTool
 
 __all__ = [
+    "ToolsRenderer",
     "render_text_description",
     "render_text_description_and_args",
     "format_tool_to_openai_tool",
     "format_tool_to_openai_function",
 ]
+
+
+ToolsRenderer = Callable[[List[BaseTool]], str]
 
 
 def render_text_description(tools: List[BaseTool]) -> str:

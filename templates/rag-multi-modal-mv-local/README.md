@@ -1,7 +1,7 @@
 
 # rag-multi-modal-mv-local
 
-Visual search is a famililar application to many with iPhones or Android devices. It allows user to serch photos using natural language. 
+Visual search is a famililar application to many with iPhones or Android devices. It allows user to search photos using natural language.
   
 With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself for your own private photo collection.
 
@@ -11,7 +11,7 @@ It uses an open source multi-modal LLM of your choice to create image summaries 
  
 Given a question, relevat photos are retrieved and passed to the multi-modal LLM for answer synthesis.
 
-![mm-caption-local](https://github.com/langchain-ai/langchain/assets/122662504/cd9b3d82-9b06-4a39-8490-7482466baf43)
+![Diagram illustrating the visual search process with food pictures, captioning, a database, a question input, and the synthesis of an answer using a multi-modal LLM.](https://github.com/langchain-ai/langchain/assets/122662504/cd9b3d82-9b06-4a39-8490-7482466baf43 "Visual Search Process Diagram")
 
 ## Input
 

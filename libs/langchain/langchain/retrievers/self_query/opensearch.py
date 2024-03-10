@@ -58,11 +58,25 @@ class OpenSearchTranslator(Visitor):
             Comparator.GT,
             Comparator.GTE,
         ]:
-            return {
-                "range": {
-                    field: {self._format_func(comparison.comparator): comparison.value}
+            if isinstance(comparison.value, dict):
+                if "date" in comparison.value:
+                    return {
+                        "range": {
+                            field: {
+                                self._format_func(
+                                    comparison.comparator
+                                ): comparison.value["date"]
+                            }
+                        }
+                    }
+            else:
+                return {
+                    "range": {
+                        field: {
+                            self._format_func(comparison.comparator): comparison.value
+                        }
+                    }
                 }
-            }
 
         if comparison.comparator == Comparator.LIKE:
             return {
@@ -70,7 +84,12 @@ class OpenSearchTranslator(Visitor):
                     field: {"value": comparison.value}
                 }
             }
+
         field = f"{field}.keyword" if isinstance(comparison.value, str) else field
+
+        if isinstance(comparison.value, dict):
+            if "date" in comparison.value:
+                comparison.value = comparison.value["date"]
 
         return {self._format_func(comparison.comparator): {field: comparison.value}}
 
@@ -81,4 +100,5 @@ class OpenSearchTranslator(Visitor):
             kwargs = {}
         else:
             kwargs = {"filter": structured_query.filter.accept(self)}
+
         return structured_query.query, kwargs

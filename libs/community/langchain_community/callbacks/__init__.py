@@ -14,6 +14,7 @@ from langchain_community.callbacks.arthur_callback import ArthurCallbackHandler
 from langchain_community.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain_community.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain_community.callbacks.context_callback import ContextCallbackHandler
+from langchain_community.callbacks.fiddler_callback import FiddlerCallbackHandler
 from langchain_community.callbacks.flyte_callback import FlyteCallbackHandler
 from langchain_community.callbacks.human import HumanApprovalCallbackHandler
 from langchain_community.callbacks.infino_callback import InfinoCallbackHandler
@@ -63,4 +64,5 @@ __all__ = [
     "SageMakerCallbackHandler",
     "LabelStudioCallbackHandler",
     "TrubricsCallbackHandler",
+    "FiddlerCallbackHandler",
 ]

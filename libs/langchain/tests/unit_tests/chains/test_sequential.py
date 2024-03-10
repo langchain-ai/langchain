@@ -1,4 +1,5 @@
 """Test pipeline functionality."""
+
 from typing import Dict, List, Optional
 
 import pytest
@@ -107,7 +108,7 @@ def test_sequential_internal_chain_use_memory() -> None:
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
     output = chain({"foo": "123"})
-    print("HEYYY OUTPUT", output)
+    print("HEYYY OUTPUT", output)  # noqa: T201
     expected_output = {"foo": "123", "baz": "123 Human: yo\nAI: yafoofoo"}
     assert output == expected_output
 

@@ -1,4 +1,5 @@
 """Integration test for Arxiv API Wrapper."""
+
 from typing import Any, List
 
 import pytest
@@ -136,7 +137,7 @@ def test_load_returns_full_set_of_metadata() -> None:
         assert set(doc.metadata).issuperset(
             {"Published", "Title", "Authors", "Summary"}
         )
-        print(doc.metadata)
+        print(doc.metadata)  # noqa: T201
         assert len(set(doc.metadata)) > 4
 
 

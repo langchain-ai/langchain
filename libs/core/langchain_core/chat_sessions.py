@@ -1,3 +1,6 @@
+"""**Chat Sessions** are a collection of messages and function calls.
+
+"""
 from typing import Sequence, TypedDict
 
 from langchain_core.messages import BaseMessage

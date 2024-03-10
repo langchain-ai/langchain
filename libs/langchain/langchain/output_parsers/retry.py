@@ -56,7 +56,7 @@ class RetryOutputParser(BaseOutputParser[T]):
         prompt: BasePromptTemplate = NAIVE_RETRY_PROMPT,
         max_retries: int = 1,
     ) -> RetryOutputParser[T]:
-        """Create an OutputFixingParser from a language model and a parser.
+        """Create an RetryOutputParser from a language model and a parser.
 
         Args:
             llm: llm to use for fixing

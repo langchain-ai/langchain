@@ -347,7 +347,7 @@ class AnalyticDB(VectorStore):
                     conn.execute(chunks_table.delete().where(delete_condition))
                     return True
         except Exception as e:
-            print("Delete operation failed:", str(e))
+            print("Delete operation failed:", str(e))  # noqa: T201
             return False
 
     @classmethod

@@ -1,10 +1,10 @@
 from typing import Any, Dict, Optional, Type, Union
 
 from langchain.chains.openai_functions import create_structured_output_chain
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate
+from langchain_community.chat_models import ChatOpenAI
 
 from langchain_experimental.tabular_synthetic_data.base import SyntheticDataGenerator
 

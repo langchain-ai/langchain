@@ -25,7 +25,7 @@ def get_abbr(s: str) -> str:
 
 
 @pytest.fixture(scope="function")
-def vectara1():
+def vectara1():  # type: ignore[no-untyped-def]
     # Set up code
     # create a new Vectara instance
     vectara1: Vectara = Vectara()
@@ -54,7 +54,7 @@ def vectara1():
         vectara1._delete_doc(doc_id)
 
 
-def test_vectara_add_documents(vectara1) -> None:
+def test_vectara_add_documents(vectara1) -> None:  # type: ignore[no-untyped-def]
     """Test add_documents."""
 
     # test without filter
@@ -164,7 +164,7 @@ models can greatly improve the training of DNNs and other deep discriminative mo
 
 
 @pytest.fixture(scope="function")
-def vectara3():
+def vectara3():  # type: ignore[no-untyped-def]
     # Set up code
     vectara3: Vectara = Vectara()
 
@@ -210,7 +210,7 @@ def vectara3():
         vectara3._delete_doc(doc_id)
 
 
-def test_vectara_mmr(vectara3) -> None:
+def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
     # test max marginal relevance
     output1 = vectara3.max_marginal_relevance_search(
         "generative AI",
@@ -241,7 +241,7 @@ def test_vectara_mmr(vectara3) -> None:
     )
 
 
-def test_vectara_with_summary(vectara3) -> None:
+def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]
     """Test vectara summary."""
     # test summarization
     num_results = 10

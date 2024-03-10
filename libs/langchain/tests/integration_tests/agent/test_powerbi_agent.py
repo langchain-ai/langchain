@@ -1,8 +1,8 @@
 import pytest
+from langchain_community.agent_toolkits import PowerBIToolkit, create_pbi_agent
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.utilities.powerbi import PowerBIDataset
 
-from langchain.agents.agent_toolkits import PowerBIToolkit, create_pbi_agent
-from langchain.chat_models import ChatOpenAI
-from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utils import get_from_env
 
 
@@ -13,7 +13,7 @@ def azure_installed() -> bool:
 
         return True
     except Exception as e:
-        print(f"azure not installed, skipping test {e}")
+        print(f"azure not installed, skipping test {e}")  # noqa: T201
         return False
 
 

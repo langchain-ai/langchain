@@ -19,7 +19,7 @@ google-auth-httplib2 = "^0.1.1"
 bs4 = "^0.0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "openai_functions_agent"

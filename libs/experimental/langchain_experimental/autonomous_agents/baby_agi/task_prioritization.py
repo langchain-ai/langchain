@@ -1,6 +1,6 @@
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 
 class TaskPrioritizationChain(LLMChain):

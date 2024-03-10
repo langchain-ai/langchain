@@ -28,7 +28,7 @@ class TestGitbookLoader:
         loader = GitbookLoader(
             web_page, load_all_paths=load_all_paths, base_url=base_url
         )
-        print(loader.__dict__)
+        print(loader.__dict__)  # noqa: T201
         assert (
             loader.base_url == (base_url or web_page)[:-1]
             if (base_url or web_page).endswith("/")
@@ -52,5 +52,5 @@ class TestGitbookLoader:
     def test_load_multiple_pages(self, web_page: str) -> None:
         loader = GitbookLoader(web_page, load_all_paths=True)
         result = loader.load()
-        print(len(result))
+        print(len(result))  # noqa: T201
         assert len(result) > 10

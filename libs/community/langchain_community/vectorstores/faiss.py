@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import operator
 import os
 import pickle
 import uuid
 import warnings
-from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -24,6 +22,7 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.docstore.base import AddableMixin, Docstore
@@ -191,6 +190,9 @@ class FAISS(VectorStore):
         _len_check_if_sized(documents, embeddings, "documents", "embeddings")
         _len_check_if_sized(documents, ids, "documents", "ids")
 
+        if ids and len(ids) != len(set(ids)):
+            raise ValueError("Duplicate ids found in the ids list.")
+
         # Add to the index.
         vector = np.array(embeddings, dtype=np.float32)
         if self._normalize_L2:
@@ -274,7 +276,7 @@ class FAISS(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -283,7 +285,9 @@ class FAISS(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, Any]]): Filter by metadata. Defaults to None.
+            filter (Optional[Union[Callable, Dict[str, Any]]]): Filter by metadata.
+                Defaults to None. If a callable, it must take as input the
+                metadata dict of Document and return a bool.
             fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
                       Defaults to 20.
             **kwargs: kwargs to be passed to similarity search. Can include:
@@ -300,6 +304,27 @@ class FAISS(VectorStore):
             faiss.normalize_L2(vector)
         scores, indices = self.index.search(vector, k if filter is None else fetch_k)
         docs = []
+
+        if filter is not None:
+            if isinstance(filter, dict):
+
+                def filter_func(metadata):  # type: ignore[no-untyped-def]
+                    if all(
+                        metadata.get(key) in value
+                        if isinstance(value, list)
+                        else metadata.get(key) == value
+                        for key, value in filter.items()
+                    ):
+                        return True
+                    return False
+            elif callable(filter):
+                filter_func = filter
+            else:
+                raise ValueError(
+                    "filter must be a dict of metadata or "
+                    f"a callable, not {type(filter)}"
+                )
+
         for j, i in enumerate(indices[0]):
             if i == -1:
                 # This happens when not enough docs are returned.
@@ -309,11 +334,7 @@ class FAISS(VectorStore):
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
             if filter is not None:
-                filter = {
-                    key: [value] if not isinstance(value, list) else value
-                    for key, value in filter.items()
-                }
-                if all(doc.metadata.get(key) in value for key, value in filter.items()):
+                if filter_func(doc.metadata):
                     docs.append((doc, scores[0][j]))
             else:
                 docs.append((doc, scores[0][j]))
@@ -337,7 +358,7 @@ class FAISS(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -346,7 +367,10 @@ class FAISS(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, Any]]): Filter by metadata. Defaults to None.
+            filter (Optional[Dict[str, Any]]): Filter by metadata.
+                Defaults to None. If a callable, it must take as input the
+                metadata dict of Document and return a bool.
+
             fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
                       Defaults to 20.
             **kwargs: kwargs to be passed to similarity search. Can include:
@@ -359,7 +383,8 @@ class FAISS(VectorStore):
         """
 
         # This is a temporary workaround to make the similarity search asynchronous.
-        func = partial(
+        return await run_in_executor(
+            None,
             self.similarity_search_with_score_by_vector,
             embedding,
             k=k,
@@ -367,13 +392,12 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def similarity_search_with_score(
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -382,7 +406,10 @@ class FAISS(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            filter (Optional[Dict[str, str]]): Filter by metadata.
+                Defaults to None. If a callable, it must take as input the
+                metadata dict of Document and return a bool.
+
             fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
                       Defaults to 20.
 
@@ -404,7 +431,7 @@ class FAISS(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -413,7 +440,10 @@ class FAISS(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            filter (Optional[Dict[str, str]]): Filter by metadata.
+                Defaults to None. If a callable, it must take as input the
+                metadata dict of Document and return a bool.
+
             fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
                       Defaults to 20.
 
@@ -444,7 +474,10 @@ class FAISS(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            filter (Optional[Dict[str, str]]): Filter by metadata.
+                Defaults to None. If a callable, it must take as input the
+                metadata dict of Document and return a bool.
+
             fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
                       Defaults to 20.
 
@@ -464,7 +497,7 @@ class FAISS(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Document]:
@@ -473,7 +506,10 @@ class FAISS(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            filter (Optional[Dict[str, str]]): Filter by metadata.
+                Defaults to None. If a callable, it must take as input the
+                metadata dict of Document and return a bool.
+
             fetch_k: (Optional[int]) Number of Documents to fetch before filtering.
                       Defaults to 20.
 
@@ -493,7 +529,7 @@ class FAISS(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Document]:
@@ -518,7 +554,7 @@ class FAISS(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Document]:
@@ -546,7 +582,7 @@ class FAISS(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores selected using the maximal marginal
             relevance.
@@ -573,6 +609,24 @@ class FAISS(VectorStore):
         )
         if filter is not None:
             filtered_indices = []
+            if isinstance(filter, dict):
+
+                def filter_func(metadata):  # type: ignore[no-untyped-def]
+                    if all(
+                        metadata.get(key) in value
+                        if isinstance(value, list)
+                        else metadata.get(key) == value
+                        for key, value in filter.items()
+                    ):
+                        return True
+                    return False
+            elif callable(filter):
+                filter_func = filter
+            else:
+                raise ValueError(
+                    "filter must be a dict of metadata or "
+                    f"a callable, not {type(filter)}"
+                )
             for i in indices[0]:
                 if i == -1:
                     # This happens when not enough docs are returned.
@@ -581,12 +635,7 @@ class FAISS(VectorStore):
                 doc = self.docstore.search(_id)
                 if not isinstance(doc, Document):
                     raise ValueError(f"Could not find document for id {_id}, got {doc}")
-                if all(
-                    doc.metadata.get(key) in value
-                    if isinstance(value, list)
-                    else doc.metadata.get(key) == value
-                    for key, value in filter.items()
-                ):
+                if filter_func(doc.metadata):
                     filtered_indices.append(i)
             indices = np.array([filtered_indices])
         # -1 happens when not enough docs are returned.
@@ -618,7 +667,7 @@ class FAISS(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores selected using the maximal marginal
             relevance asynchronously.
@@ -640,7 +689,8 @@ class FAISS(VectorStore):
                 relevance and score for each.
         """
         # This is a temporary workaround to make the similarity search asynchronous.
-        func = partial(
+        return await run_in_executor(
+            None,
             self.max_marginal_relevance_search_with_score_by_vector,
             embedding,
             k=k,
@@ -648,7 +698,6 @@ class FAISS(VectorStore):
             lambda_mult=lambda_mult,
             filter=filter,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -656,7 +705,7 @@ class FAISS(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -687,7 +736,7 @@ class FAISS(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance asynchronously.
@@ -720,7 +769,7 @@ class FAISS(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -757,7 +806,7 @@ class FAISS(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance asynchronously.
@@ -872,11 +921,13 @@ class FAISS(VectorStore):
         else:
             # Default to L2, currently other metric types not initialized.
             index = faiss.IndexFlatL2(len(embeddings[0]))
+        docstore = kwargs.pop("docstore", InMemoryDocstore())
+        index_to_docstore_id = kwargs.pop("index_to_docstore_id", {})
         vecstore = cls(
             embedding,
             index,
-            InMemoryDocstore(),
-            {},
+            docstore,
+            index_to_docstore_id,
             normalize_L2=normalize_L2,
             distance_strategy=distance_strategy,
             **kwargs,
@@ -987,11 +1038,10 @@ class FAISS(VectorStore):
                 text_embedding_pairs = zip(texts, text_embeddings)
                 faiss = FAISS.from_embeddings(text_embedding_pairs, embeddings)
         """
-        texts = [t[0] for t in text_embeddings]
-        embeddings = [t[1] for t in text_embeddings]
+        texts, embeddings = zip(*text_embeddings)
         return cls.__from(
-            texts,
-            embeddings,
+            list(texts),
+            list(embeddings),
             embedding,
             metadatas=metadatas,
             ids=ids,
@@ -1043,6 +1093,8 @@ class FAISS(VectorStore):
         folder_path: str,
         embeddings: Embeddings,
         index_name: str = "index",
+        *,
+        allow_dangerous_deserialization: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id from disk.
@@ -1052,8 +1104,26 @@ class FAISS(VectorStore):
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
+            allow_dangerous_deserialization: whether to allow deserialization
+                of the data which involves loading a pickle file.
+                Pickle files can be modified by malicious actors to deliver a
+                malicious payload that results in execution of
+                arbitrary code on your machine.
             asynchronous: whether to use async version or not
         """
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "The de-serialization relies loading a pickle file. "
+                "Pickle files can be modified to deliver a malicious payload that "
+                "results in execution of arbitrary code on your machine."
+                "You will need to set `allow_dangerous_deserialization` to `True` to "
+                "enable deserialization. If you do this, make sure that you "
+                "trust the source of the data. For example, if you are loading a "
+                "file that you created, and no that no one else has modified the file, "
+                "then this is safe to do. Do not set this to `True` if you are loading "
+                "a file from an untrusted source (e.g., some random site on the "
+                "internet.)."
+            )
         path = Path(folder_path)
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()
@@ -1112,7 +1182,7 @@ class FAISS(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -1141,7 +1211,7 @@ class FAISS(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
         fetch_k: int = 20,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:

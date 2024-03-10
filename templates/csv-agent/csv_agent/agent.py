@@ -2,11 +2,11 @@ from pathlib import Path
 
 import pandas as pd
 from langchain.agents import AgentExecutor, OpenAIFunctionsAgent
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools.retriever import create_retriever_tool
-from langchain.vectorstores import FAISS
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_experimental.tools import PythonAstREPLTool
 

@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -16,6 +17,9 @@ from langchain_community.utilities.requests import Requests
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.12", removal="0.2", alternative_import="langchain_together.Together"
+)
 class Together(LLM):
     """LLM models from `Together`.
 

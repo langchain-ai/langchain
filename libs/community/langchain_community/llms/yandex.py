@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -9,8 +9,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -25,10 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 class _BaseYandexGPT(Serializable):
-    iam_token: str = ""
+    iam_token: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud IAM token for service or user account
     with the `ai.languageModels.user` role"""
-    api_key: str = ""
+    api_key: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
     folder_id: str = ""
@@ -52,13 +52,16 @@ class _BaseYandexGPT(Serializable):
     """The url of the API."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
+    sleep_interval: float = 1.0
+    """Delay between API requests"""
+    _grpc_metadata: Sequence
 
     @property
     def _llm_type(self) -> str:
         return "yandex_gpt"
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model_uri": self.model_uri,
@@ -72,24 +75,28 @@ class _BaseYandexGPT(Serializable):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
-        iam_token = get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN", "")
+        iam_token = convert_to_secret_str(
+            get_from_dict_or_env(values, "iam_token", "YC_IAM_TOKEN", "")
+        )
         values["iam_token"] = iam_token
-        api_key = get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
+        api_key = convert_to_secret_str(
+            get_from_dict_or_env(values, "api_key", "YC_API_KEY", "")
+        )
         values["api_key"] = api_key
         folder_id = get_from_dict_or_env(values, "folder_id", "YC_FOLDER_ID", "")
         values["folder_id"] = folder_id
-        if api_key == "" and iam_token == "":
+        if api_key.get_secret_value() == "" and iam_token.get_secret_value() == "":
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
 
         if values["iam_token"]:
             values["_grpc_metadata"] = [
-                ("authorization", f"Bearer {values['iam_token']}")
+                ("authorization", f"Bearer {values['iam_token'].get_secret_value()}")
             ]
             if values["folder_id"]:
                 values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
         else:
             values["_grpc_metadata"] = (
-                ("authorization", f"Api-Key {values['api_key']}"),
+                ("authorization", f"Api-Key {values['api_key'].get_secret_value()}"),
             )
         if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
@@ -191,7 +198,8 @@ def _make_request(
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     channel_credentials = grpc.ssl_channel_credentials()
     channel = grpc.secure_channel(self.url, channel_credentials)
@@ -204,7 +212,7 @@ def _make_request(
         messages=[Message(role="user", text=prompt)],
     )
     stub = TextGenerationServiceStub(channel)
-    res = stub.Completion(request, metadata=self._grpc_metadata)
+    res = stub.Completion(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
     return list(res)[0].alternatives[0].message.text
 
 
@@ -231,7 +239,8 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     operation_api_url = "operation.api.cloud.yandex.net:443"
     channel_credentials = grpc.ssl_channel_credentials()
@@ -245,7 +254,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
             messages=[Message(role="user", text=prompt)],
         )
         stub = TextGenerationAsyncServiceStub(channel)
-        operation = await stub.Completion(request, metadata=self._grpc_metadata)
+        operation = await stub.Completion(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
         async with grpc.aio.secure_channel(
             operation_api_url, channel_credentials
         ) as operation_channel:
@@ -254,7 +263,8 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
                 await asyncio.sleep(1)
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
-                    operation_request, metadata=self._grpc_metadata
+                    operation_request,
+                    metadata=self._grpc_metadata,  # type: ignore[attr-defined]
                 )
 
         completion_response = CompletionResponse()
@@ -265,7 +275,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
 def _create_retry_decorator(llm: YandexGPT) -> Callable[[Any], Any]:
     from grpc import RpcError
 
-    min_seconds = 1
+    min_seconds = llm.sleep_interval
     max_seconds = 60
     return retry(
         reraise=True,

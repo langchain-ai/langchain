@@ -2,7 +2,7 @@
 import logging
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -177,7 +177,22 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
+        return list(self.lazy_load(query))
+
+    def lazy_load(self, query: str) -> Iterator[Document]:
+        """
+        Run Arxiv search and get the article texts plus the article meta information.
+        See https://lukasschwab.me/arxiv.py/index.html#Search
+
+        Returns: documents with the document.page_content in text format
+
+        Performs an arxiv search, downloads the top k results as PDFs, loads
+        them as Documents, and returns them.
+
+        Args:
+            query: a plaintext search query
+        """
         try:
             import fitz
         except ImportError:
@@ -200,9 +215,8 @@ class ArxivAPIWrapper(BaseModel):
                 ).results()
         except self.arxiv_exceptions as ex:
             logger.debug("Error on arxiv: %s", ex)
-            return []
+            return
 
-        docs: List[Document] = []
         for result in results:
             try:
                 doc_file_name: str = result.download_pdf()
@@ -231,9 +245,7 @@ class ArxivAPIWrapper(BaseModel):
                 "Summary": result.summary,
                 **extra_metadata,
             }
-            doc = Document(
+            yield Document(
                 page_content=text[: self.doc_content_chars_max], metadata=metadata
             )
-            docs.append(doc)
             os.remove(doc_file_name)
-        return docs

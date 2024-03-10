@@ -25,6 +25,7 @@
     "@docusaurus/theme-mermaid": "2.4.3",
     "@mdx-js/react": "^1.6.22",
     "clsx": "^1.2.1",
+    "cookie": "^0.6.0",
     "json-loader": "^0.5.7",
     "process": "^0.11.10",
     "react": "^17.0.2",
@@ -45,7 +46,8 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^2.7.1",
     "typedoc": "^0.24.4",
-    "typedoc-plugin-markdown": "next"
+    "typedoc-plugin-markdown": "next",
+    "yaml-loader": "^0.8.0"
   },
   "browserslist": {
     "production": [

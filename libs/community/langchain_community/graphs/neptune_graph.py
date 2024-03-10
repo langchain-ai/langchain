@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 class NeptuneQueryException(Exception):
-    """A class to handle queries that fail to execute"""
+    """Exception for the Neptune queries."""
 
     def __init__(self, exception: Union[str, Dict]):
         if isinstance(exception, dict):

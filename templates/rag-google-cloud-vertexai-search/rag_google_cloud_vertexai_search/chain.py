@@ -1,9 +1,9 @@
 import os
 
-from langchain.chat_models import ChatVertexAI
-from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers import GoogleVertexAISearchRetriever
+from langchain_community.chat_models import ChatVertexAI
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 

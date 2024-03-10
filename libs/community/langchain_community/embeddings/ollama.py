@@ -97,7 +97,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     will give more diverse answers, while a lower value (e.g. 10)
     will be more conservative. (Default: 40)"""
 
-    top_p: Optional[int] = None
+    top_p: Optional[float] = None
     """Works together with top-k. A higher value (e.g., 0.95) will lead
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""

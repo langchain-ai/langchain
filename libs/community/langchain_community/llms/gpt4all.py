@@ -111,6 +111,7 @@ class GPT4All(LLM):
             "n_batch",
             "repeat_penalty",
             "repeat_last_n",
+            "streaming",
         }
 
     def _default_params(self) -> Dict[str, Any]:
@@ -123,6 +124,7 @@ class GPT4All(LLM):
             "n_batch": self.n_batch,
             "repeat_penalty": self.repeat_penalty,
             "repeat_last_n": self.repeat_last_n,
+            "streaming": self.streaming,
         }
 
     @root_validator()

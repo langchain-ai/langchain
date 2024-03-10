@@ -1,4 +1,5 @@
-from langchain.utils import __all__
+from langchain import utils
+from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "StrictFormatter",
@@ -25,4 +26,5 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(utils.__all__) == set(EXPECTED_ALL)
+    assert_all_importable(utils)

@@ -1,4 +1,5 @@
 """Callback Handler that prints to std out."""
+import threading
 from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -14,6 +15,8 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-32k-0613": 0.06,
     "gpt-4-vision-preview": 0.01,
     "gpt-4-1106-preview": 0.01,
+    "gpt-4-0125-preview": 0.01,
+    "gpt-4-turbo-preview": 0.01,
     # GPT-4 output
     "gpt-4-completion": 0.06,
     "gpt-4-0314-completion": 0.06,
@@ -23,8 +26,13 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-32k-0613-completion": 0.12,
     "gpt-4-vision-preview-completion": 0.03,
     "gpt-4-1106-preview-completion": 0.03,
+    "gpt-4-0125-preview-completion": 0.03,
+    "gpt-4-turbo-preview-completion": 0.03,
     # GPT-3.5 input
+    # gpt-3.5-turbo points at gpt-3.5-turbo-0613 until Feb 16, 2024.
+    # Switches to gpt-3.5-turbo-0125 after.
     "gpt-3.5-turbo": 0.0015,
+    "gpt-3.5-turbo-0125": 0.0005,
     "gpt-3.5-turbo-0301": 0.0015,
     "gpt-3.5-turbo-0613": 0.0015,
     "gpt-3.5-turbo-1106": 0.001,
@@ -32,7 +40,10 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-16k": 0.003,
     "gpt-3.5-turbo-16k-0613": 0.003,
     # GPT-3.5 output
+    # gpt-3.5-turbo points at gpt-3.5-turbo-0613 until Feb 16, 2024.
+    # Switches to gpt-3.5-turbo-0125 after.
     "gpt-3.5-turbo-completion": 0.002,
+    "gpt-3.5-turbo-0125-completion": 0.0015,
     "gpt-3.5-turbo-0301-completion": 0.002,
     "gpt-3.5-turbo-0613-completion": 0.002,
     "gpt-3.5-turbo-1106-completion": 0.002,
@@ -67,10 +78,12 @@ MODEL_COST_PER_1K_TOKENS = {
     "babbage-002-finetuned": 0.0016,
     "davinci-002-finetuned": 0.012,
     "gpt-3.5-turbo-0613-finetuned": 0.012,
+    "gpt-3.5-turbo-1106-finetuned": 0.012,
     # Fine Tuned output
     "babbage-002-finetuned-completion": 0.0016,
     "davinci-002-finetuned-completion": 0.012,
     "gpt-3.5-turbo-0613-finetuned-completion": 0.016,
+    "gpt-3.5-turbo-1106-finetuned-completion": 0.016,
     # Azure Fine Tuned input
     "babbage-002-azure-finetuned": 0.0004,
     "davinci-002-azure-finetuned": 0.002,
@@ -154,6 +167,10 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     successful_requests: int = 0
     total_cost: float = 0.0
 
+    def __init__(self) -> None:
+        super().__init__()
+        self._lock = threading.Lock()
+
     def __repr__(self) -> str:
         return (
             f"Tokens Used: {self.total_tokens}\n"
@@ -182,9 +199,13 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Collect token usage."""
         if response.llm_output is None:
             return None
-        self.successful_requests += 1
+
         if "token_usage" not in response.llm_output:
+            with self._lock:
+                self.successful_requests += 1
             return None
+
+        # compute tokens and cost for this request
         token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
@@ -194,10 +215,17 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 model_name, completion_tokens, is_completion=True
             )
             prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
+        else:
+            completion_cost = 0
+            prompt_cost = 0
+
+        # update shared state behind lock
+        with self._lock:
             self.total_cost += prompt_cost + completion_cost
-        self.total_tokens += token_usage.get("total_tokens", 0)
-        self.prompt_tokens += prompt_tokens
-        self.completion_tokens += completion_tokens
+            self.total_tokens += token_usage.get("total_tokens", 0)
+            self.prompt_tokens += prompt_tokens
+            self.completion_tokens += completion_tokens
+            self.successful_requests += 1
 
     def __copy__(self) -> "OpenAICallbackHandler":
         """Return a copy of the callback handler."""

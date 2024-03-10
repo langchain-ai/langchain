@@ -36,7 +36,11 @@ langchain.llm_cache = UpstashRedisCache(redis_=Redis(url=URL, token=TOKEN))
 ```
 
 ### Memory
-Upstash Redis can be used to persist LLM conversations.
 
-#### Chat Message History Memory
-An example of Upstash Redis for caching conversation message history can be seen in [this notebook](/docs/integrations/memory/upstash_redis_chat_message_history).
+See a [usage example](/docs/integrations/memory/upstash_redis_chat_message_history).
+
+```python
+from langchain_community.chat_message_histories import (
+    UpstashRedisChatMessageHistory,
+)
+```

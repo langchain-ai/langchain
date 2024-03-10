@@ -1,7 +1,7 @@
 """Base callback handler that can be used to handle callbacks in langchain."""
 from __future__ import annotations
 
-from langchain_core.callbacks.base import (
+from langchain_core.callbacks import (
     AsyncCallbackHandler,
     BaseCallbackHandler,
     BaseCallbackManager,

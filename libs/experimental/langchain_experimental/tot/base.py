@@ -1,14 +1,3 @@
-"""
-This a Tree of Thought (ToT) chain based on the paper "Large Language Model
-Guided Tree-of-Thought"
-
-https://arxiv.org/pdf/2305.08291.pdf
-
-The Tree of Thought (ToT) chain uses a tree structure to explore the space of
-possible solutions to a problem.
-
-"""
-
 from __future__ import annotations
 
 from textwrap import indent
@@ -34,7 +23,7 @@ from langchain_experimental.tot.thought_generation import (
 
 class ToTChain(Chain):
     """
-    A Chain implementing the Tree of Thought (ToT).
+    Chain implementing the Tree of Thought (ToT).
     """
 
     llm: BaseLanguageModel

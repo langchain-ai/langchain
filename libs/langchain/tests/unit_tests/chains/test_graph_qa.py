@@ -1,6 +1,8 @@
 from typing import Any, Dict, List
 
 import pandas as pd
+from langchain_community.graphs.graph_document import GraphDocument
+from langchain_community.graphs.graph_store import GraphStore
 from langchain_core.prompts import PromptTemplate
 
 from langchain.chains.graph_qa.cypher import (
@@ -10,8 +12,6 @@ from langchain.chains.graph_qa.cypher import (
 )
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
-from langchain.graphs.graph_document import GraphDocument
-from langchain.graphs.graph_store import GraphStore
 from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

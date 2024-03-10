@@ -1,17 +1,34 @@
 # Anyscale
 
-This page covers how to use the Anyscale ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Anyscale wrappers.
+>[Anyscale](https://www.anyscale.com) is a platform to run, fine tune and scale LLMs via production-ready APIs.
+> [Anyscale Endpoints](https://docs.anyscale.com/endpoints/overview) serve many open-source models in a cost-effective way.
+
+`Anyscale` also provides [an example](https://docs.anyscale.com/endpoints/model-serving/examples/langchain-integration) 
+how to setup `LangChain` with `Anyscale` for advanced chat agents.
 
 ## Installation and Setup
+
 - Get an Anyscale Service URL, route and API key and set them as environment variables (`ANYSCALE_SERVICE_URL`,`ANYSCALE_SERVICE_ROUTE`, `ANYSCALE_SERVICE_TOKEN`). 
-- Please see [the Anyscale docs](https://docs.anyscale.com/productionize/services-v2/get-started) for more details.
+- Please see [the Anyscale docs](https://www.anyscale.com/get-started) for more details.
 
-## Wrappers
+We have to install the `openai` package:
 
-### LLM
+```bash
+pip install openai
+```
 
-There exists an Anyscale LLM wrapper, which you can access with 
+## LLM
+
+See a [usage example](/docs/integrations/llms/anyscale).
+
 ```python
-from langchain.llms import Anyscale
+from langchain_community.llms.anyscale import Anyscale
+```
+
+## Chat Models
+
+See a [usage example](/docs/integrations/chat/anyscale).
+
+```python
+from langchain_community.chat_models.anyscale import ChatAnyscale
 ```

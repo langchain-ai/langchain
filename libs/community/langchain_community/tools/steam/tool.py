@@ -12,7 +12,7 @@ class SteamWebAPIQueryRun(BaseTool):
     """Tool that searches the Steam Web API."""
 
     mode: str
-    name: str = "Steam"
+    name: str = "steam"
     description: str = (
         "A wrapper around Steam Web API."
         "Steam Tool is useful for fetching User profiles and stats, Game data and more!"

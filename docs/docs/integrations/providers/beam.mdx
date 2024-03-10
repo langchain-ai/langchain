@@ -18,7 +18,7 @@ It is broken into two parts: installation and setup, and then references to spec
 There exists a Beam LLM wrapper, which you can access with
 
 ```python
-from langchain.llms.beam import Beam
+from langchain_community.llms.beam import Beam
 ```
 
 ## Define your Beam app.
@@ -64,7 +64,7 @@ response = llm._call("Running machine learning on a remote GPU")
 An example script which deploys the model and calls it would be:
 
 ```python
-from langchain.llms.beam import Beam
+from langchain_community.llms.beam import Beam
 import time
 
 llm = Beam(model_name="gpt2",

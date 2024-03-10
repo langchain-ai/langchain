@@ -9,9 +9,7 @@
 We need to install several python packages.
 
 ```bash
-pip install openai
 pip install psycopg2-binary
-pip install tiktoken
 ```
 
 ## Vector Store
@@ -19,6 +17,6 @@ pip install tiktoken
 See a [usage example](/docs/integrations/vectorstores/pgembedding).
 
 ```python
-from langchain.vectorstores import PGEmbedding
+from langchain_community.vectorstores import PGEmbedding
 ```
 

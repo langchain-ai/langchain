@@ -96,26 +96,6 @@ def test_prompt_missing_input_variables() -> None:
     ).input_variables == ["foo"]
 
 
-def test_prompt_extra_input_variables() -> None:
-    """Test error is raised when there are too many input variables."""
-    template = "This is a {foo} test."
-    input_variables = ["foo", "bar"]
-    with pytest.raises(ValueError):
-        FewShotPromptTemplate(
-            input_variables=input_variables,
-            suffix=template,
-            examples=[],
-            example_prompt=EXAMPLE_PROMPT,
-            validate_template=True,
-        )
-    assert FewShotPromptTemplate(
-        input_variables=input_variables,
-        suffix=template,
-        examples=[],
-        example_prompt=EXAMPLE_PROMPT,
-    ).input_variables == ["foo"]
-
-
 def test_few_shot_functionality() -> None:
     """Test that few shot works with examples."""
     prefix = "This is a test about {content}."

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import functools
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -17,14 +15,17 @@ from typing import (
 
 from typing_extensions import get_args
 
+from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
+from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
 
 T = TypeVar("T")
+OutputParserLike = Runnable[LanguageModelOutput, T]
 
 
 class BaseLLMOutputParser(Generic[T], ABC):
@@ -54,13 +55,11 @@ class BaseLLMOutputParser(Generic[T], ABC):
         Returns:
             Structured output.
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self.parse_result, result
-        )
+        return await run_in_executor(None, self.parse_result, result)
 
 
 class BaseGenerationOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
+    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call."""
 
@@ -96,7 +95,7 @@ class BaseGenerationOutputParser(
 
     async def ainvoke(
         self,
-        input: str | BaseMessage,
+        input: Union[str, BaseMessage],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
@@ -119,7 +118,7 @@ class BaseGenerationOutputParser(
 
 
 class BaseOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
+    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call.
 
@@ -142,9 +141,9 @@ class BaseOutputParser(
                         )
                     return cleaned_text == self.true_val.upper()
 
-                    @property
-                    def _type(self) -> str:
-                            return "boolean_output_parser"
+                @property
+                def _type(self) -> str:
+                    return "boolean_output_parser"
     """  # noqa: E501
 
     @property
@@ -185,7 +184,7 @@ class BaseOutputParser(
 
     async def ainvoke(
         self,
-        input: str | BaseMessage,
+        input: Union[str, BaseMessage],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
@@ -247,9 +246,7 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return await asyncio.get_running_loop().run_in_executor(
-            None, functools.partial(self.parse_result, partial=partial), result
-        )
+        return await run_in_executor(None, self.parse_result, result, partial=partial)
 
     async def aparse(self, text: str) -> T:
         """Parse a single string model output into some structure.
@@ -260,7 +257,7 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return await asyncio.get_running_loop().run_in_executor(None, self.parse, text)
+        return await run_in_executor(None, self.parse, text)
 
     # TODO: rename 'completion' -> 'text'.
     def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:

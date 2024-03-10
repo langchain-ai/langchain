@@ -100,9 +100,6 @@ class RocksetLoader(BaseLoader):
             # ignore
             pass
 
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
-
     def lazy_load(self) -> Iterator[Document]:
         query_results = self.client.Queries.query(
             sql=self.query

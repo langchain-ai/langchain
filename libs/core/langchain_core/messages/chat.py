@@ -8,7 +8,7 @@ from langchain_core.messages.base import (
 
 
 class ChatMessage(BaseMessage):
-    """A Message that can be assigned an arbitrary speaker (i.e. role)."""
+    """Message that can be assigned an arbitrary speaker (i.e. role)."""
 
     role: str
     """The speaker / role of the Message."""
@@ -25,7 +25,7 @@ ChatMessage.update_forward_refs()
 
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
-    """A Chat Message chunk."""
+    """Chat Message chunk."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the

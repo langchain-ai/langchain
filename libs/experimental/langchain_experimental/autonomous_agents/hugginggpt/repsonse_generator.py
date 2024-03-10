@@ -25,6 +25,8 @@ class ResponseGenerationChain(LLMChain):
 
 
 class ResponseGenerator:
+    """Generates a response based on the input."""
+
     def __init__(self, llm_chain: LLMChain, stop: Optional[List] = None):
         self.llm_chain = llm_chain
         self.stop = stop
@@ -36,6 +38,8 @@ class ResponseGenerator:
 
 
 def load_response_generator(llm: BaseLanguageModel) -> ResponseGenerator:
+    """Load the ResponseGenerator."""
+
     llm_chain = ResponseGenerationChain.from_llm(llm)
     return ResponseGenerator(
         llm_chain=llm_chain,

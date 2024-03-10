@@ -3,16 +3,16 @@ from __future__ import annotations
 from typing import List, Optional
 
 from langchain.chains.llm import LLMChain
-from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ChatMessageHistory
 from langchain.schema import (
     BaseChatMessageHistory,
     Document,
 )
-from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
-from langchain.schema.vectorstore import VectorStoreRetriever
 from langchain.tools.base import BaseTool
-from langchain.tools.human.tool import HumanInputRun
+from langchain_community.tools.human.tool import HumanInputRun
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.output_parser import (
     AutoGPTOutputParser,
@@ -26,7 +26,7 @@ from langchain_experimental.pydantic_v1 import ValidationError
 
 
 class AutoGPT:
-    """Agent class for interacting with Auto-GPT."""
+    """Agent for interacting with AutoGPT."""
 
     def __init__(
         self,
@@ -98,7 +98,7 @@ class AutoGPT:
             )
 
             # Print Assistant thoughts
-            print(assistant_reply)
+            print(assistant_reply)  # noqa: T201
             self.chat_history_memory.add_message(HumanMessage(content=user_input))
             self.chat_history_memory.add_message(AIMessage(content=assistant_reply))
 
@@ -135,7 +135,7 @@ class AutoGPT:
             if self.feedback_tool is not None:
                 feedback = f"\n{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
-                    print("EXITING")
+                    print("EXITING")  # noqa: T201
                     return "EXITING"
                 memory_to_add += feedback
 

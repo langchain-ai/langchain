@@ -1,5 +1,5 @@
 """Unsupervised learning based memorization."""
 
-from langchain.tools.memorize.tool import Memorize
+from langchain_community.tools.memorize.tool import Memorize
 
 __all__ = ["Memorize"]

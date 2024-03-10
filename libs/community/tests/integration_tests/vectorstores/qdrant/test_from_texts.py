@@ -10,7 +10,10 @@ from langchain_community.vectorstores.qdrant import QdrantException
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
-from tests.integration_tests.vectorstores.qdrant.common import qdrant_is_not_running
+from tests.integration_tests.vectorstores.qdrant.common import (
+    assert_documents_equals,
+    qdrant_is_not_running,
+)
 
 
 def test_qdrant_from_texts_stores_duplicated_texts() -> None:
@@ -257,7 +260,9 @@ def test_qdrant_from_texts_stores_metadatas(
         batch_size=batch_size,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert_documents_equals(
+        output, [Document(page_content="foo", metadata={"page": 0})]
+    )
 
 
 @pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")

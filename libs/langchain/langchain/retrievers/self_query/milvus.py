@@ -16,28 +16,36 @@ COMPARATOR_TO_BER = {
     Comparator.GTE: ">=",
     Comparator.LT: "<",
     Comparator.LTE: "<=",
+    Comparator.IN: "in",
+    Comparator.LIKE: "like",
 }
 
 UNARY_OPERATORS = [Operator.NOT]
 
 
-def process_value(value: Union[int, float, str]) -> str:
+def process_value(value: Union[int, float, str], comparator: Comparator) -> str:
     """Convert a value to a string and add double quotes if it is a string.
 
     It required for comparators involving strings.
 
     Args:
         value: The value to convert.
+        comparator: The comparator.
 
     Returns:
         The converted value as a string.
     """
     #
     if isinstance(value, str):
-        # If the value is already a string, add double quotes
-        return f'"{value}"'
+        if comparator is Comparator.LIKE:
+            # If the comparator is LIKE, add a percent sign after it for prefix matching
+            # and add double quotes
+            return f'"{value}%"'
+        else:
+            # If the value is already a string, add double quotes
+            return f'"{value}"'
     else:
-        # If the valueis not a string, convert it to a string without double quotes
+        # If the value is not a string, convert it to a string without double quotes
         return str(value)
 
 
@@ -54,6 +62,8 @@ class MilvusTranslator(Visitor):
         Comparator.GTE,
         Comparator.LT,
         Comparator.LTE,
+        Comparator.IN,
+        Comparator.LIKE,
     ]
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
@@ -78,7 +88,7 @@ class MilvusTranslator(Visitor):
 
     def visit_comparison(self, comparison: Comparison) -> str:
         comparator = self._format_func(comparison.comparator)
-        processed_value = process_value(comparison.value)
+        processed_value = process_value(comparison.value, comparison.comparator)
         attribute = comparison.attribute
 
         return "( " + attribute + " " + comparator + " " + processed_value + " )"

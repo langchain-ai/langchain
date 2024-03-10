@@ -9,7 +9,7 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 def _display_prompt(prompt: str) -> None:
     """Displays the given prompt to the user."""
-    print(f"\n{prompt}")
+    print(f"\n{prompt}")  # noqa: T201
 
 
 def _collect_user_input(

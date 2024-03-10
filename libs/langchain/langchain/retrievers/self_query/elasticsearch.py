@@ -61,11 +61,10 @@ class ElasticsearchTranslator(Visitor):
         ]
 
         if is_range_comparator:
-            return {
-                "range": {
-                    field: {self._format_func(comparison.comparator): comparison.value}
-                }
-            }
+            value = comparison.value
+            if isinstance(comparison.value, dict) and "date" in comparison.value:
+                value = comparison.value["date"]
+            return {"range": {field: {self._format_func(comparison.comparator): value}}}
 
         if comparison.comparator == Comparator.CONTAIN:
             return {
@@ -84,6 +83,10 @@ class ElasticsearchTranslator(Visitor):
         # we assume that if the value is a string,
         # we want to use the keyword field
         field = f"{field}.keyword" if isinstance(comparison.value, str) else field
+
+        if isinstance(comparison.value, dict):
+            if "date" in comparison.value:
+                comparison.value = comparison.value["date"]
 
         return {self._format_func(comparison.comparator): {field: comparison.value}}
 

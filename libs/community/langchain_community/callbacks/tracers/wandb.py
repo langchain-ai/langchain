@@ -489,11 +489,10 @@ class WandbTracer(BaseTracer):
         If not, will start a new run with the provided run_args.
         """
         if self._wandb.run is None:
-            run_args = self._run_args or {}  # type: ignore
-            run_args: dict = {**run_args}  # type: ignore
+            run_args: Dict = {**(self._run_args or {})}
 
-            if "settings" not in run_args:  # type: ignore
-                run_args["settings"] = {"silent": True}  # type: ignore
+            if "settings" not in run_args:
+                run_args["settings"] = {"silent": True}
 
             self._wandb.init(**run_args)
         if self._wandb.run is not None:

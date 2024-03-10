@@ -6,7 +6,7 @@ LangChain template that uses [Anthropic's Claude on Amazon Bedrock](https://aws.
 
 > I am the Fred Astaire of Chatbots! 🕺
 
-'![JCVD](https://media.tenor.com/CVp9l7g3axwAAAAj/jean-claude-van-damme-jcvd.gif)
+'![Animated GIF of Jean-Claude Van Damme dancing.](https://media.tenor.com/CVp9l7g3axwAAAAj/jean-claude-van-damme-jcvd.gif "Jean-Claude Van Damme Dancing")
 
 ## Environment Setup
 
@@ -78,4 +78,4 @@ We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/d
 
 We can also access the playground at [http://127.0.0.1:8000/bedrock-jcvd/playground](http://127.0.0.1:8000/bedrock-jcvd/playground)
 
-![JCVD Playground](jcvd_langserve.png)
+![Screenshot of the LangServe Playground interface with an example input and output demonstrating a Jean-Claude Van Damme voice imitation.](jcvd_langserve.png "JCVD Playground")

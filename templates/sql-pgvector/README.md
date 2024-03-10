@@ -2,7 +2,7 @@
 
 This template enables user to use `pgvector` for combining postgreSQL with semantic search / RAG. 
 
-It uses [PGVector](https://github.com/pgvector/pgvector) extension as shown in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb)
+It uses [PGVector](https://github.com/pgvector/pgvector) extension as shown in the [RAG empowered SQL cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/retrieval_in_sql.ipynb)
 
 ## Environment Setup
 

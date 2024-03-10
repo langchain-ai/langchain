@@ -117,7 +117,7 @@ class MyScaleTranslator(Visitor):
     def visit_structured_query(
         self, structured_query: StructuredQuery
     ) -> Tuple[str, dict]:
-        print(structured_query)
+        print(structured_query)  # noqa: T201
         if structured_query.filter is None:
             kwargs = {}
         else:

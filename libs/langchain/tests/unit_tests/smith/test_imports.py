@@ -1,4 +1,5 @@
-from langchain.smith import __all__
+from langchain import smith
+from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "arun_on_dataset",
@@ -8,4 +9,5 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(smith.__all__) == set(EXPECTED_ALL)
+    assert_all_importable(smith)
