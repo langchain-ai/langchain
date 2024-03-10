@@ -127,11 +127,11 @@ class SelfHostedPipeline(LLM):
         """
         super().__init__(**kwargs)
 
-        remote_load_fn = self.model_load_fn
-        _load_fn_kwargs = self.load_fn_kwargs or {}
-        self.pipeline_ref = remote_load_fn.remote(**_load_fn_kwargs)
+        # remote_load_fn = self.model_load_fn
+        # _load_fn_kwargs = self.load_fn_kwargs or {}
+        # # self.pipeline_ref = remote_load_fn.remote(**_load_fn_kwargs)
 
-        self.inference_fn = self.inference_fn
+        #self.inference_fn = self.inference_fn
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
