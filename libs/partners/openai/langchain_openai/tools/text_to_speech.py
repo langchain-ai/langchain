@@ -64,9 +64,10 @@ class OpenAITextToSpeechTool(BaseTool):
     voice: OpenAISpeechVoice
     speed: float
     format: OpenAISpeechFormat
+    output_dir: str
 
     _DEFAULT_SPEED = 1.0
-    _DEFAULT_OUTPUT_DIR = "./tts/"
+    _DEFAULT_OUTPUT_DIR = "tts_output"
     _DEFAULT_OUTPUT_NAME_PREFIX = "output"
     # https://platform.openai.com/docs/api-reference/audio/createSpeech#audio-createspeech-input
     _MAX_CHARACTER_LENGTH = 4096
@@ -87,6 +88,7 @@ class OpenAITextToSpeechTool(BaseTool):
         voice: Optional[OpenAISpeechVoice] = None,
         speed: Optional[float] = None,
         format: Optional[OpenAISpeechFormat] = None,
+        output_dir: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initializes private fields."""
@@ -95,13 +97,15 @@ class OpenAITextToSpeechTool(BaseTool):
             voice=voice if voice is not None else OpenAISpeechVoice.DEFAULT,
             speed=speed if speed is not None else OpenAITextToSpeechTool._DEFAULT_SPEED,
             format=format if format is not None else OpenAISpeechFormat.DEFAULT,
+            output_dir=output_dir
+            if output_dir is not None
+            else OpenAITextToSpeechTool._DEFAULT_OUTPUT_DIR,
             **kwargs,
         )
 
     def _run(
         self,
         input: str,
-        output_dir: Optional[str] = None,
         output_name: Optional[str] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
@@ -112,12 +116,10 @@ class OpenAITextToSpeechTool(BaseTool):
                 f"Max input character length is {self._MAX_CHARACTER_LENGTH}."
             )
 
-        output_dir = output_dir if output_dir is not None else self._DEFAULT_OUTPUT_DIR
         output_name = (
             output_name if output_name is not None else self._default_output_name()
         )
-
-        output_path = f"{output_dir}/{output_name}.{self.format.value}"
+        output_path = path.join(self.output_dir, f"{output_name}.{self.format.value}")
 
         if path.exists(output_path):
             raise ValueError(

@@ -20,17 +20,17 @@ def test_openai_tts_invalid_speed() -> None:
 
 
 def test_openai_tts_run() -> None:
-    tts = OpenAITextToSpeechTool()
-    input = "Dumby input"
     output_dir, output_name = "test", "test_output"
+    input = "Dumby input"
     expected_output_path = f"{output_dir}/{output_name}.mp3"
+
+    tts = OpenAITextToSpeechTool(output_dir=output_dir)
 
     with patch("openai.audio.speech.create") as mock_tts:
         mock_tts.return_value = Mock()
 
         output_path = tts._run(
             input=input,
-            output_dir=output_dir,
             output_name=output_name,
         )
 
