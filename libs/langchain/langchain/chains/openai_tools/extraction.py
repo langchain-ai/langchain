@@ -4,7 +4,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
-from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
+from langchain_core.utils.function_calling import convert_pydantic_to_openai_tool
 
 from langchain.output_parsers import PydanticToolsParser
 
@@ -34,8 +34,7 @@ def create_extraction_chain_pydantic(
     prompt = ChatPromptTemplate.from_messages(
         [("system", system_message), ("user", "{input}")]
     )
-    functions = [convert_pydantic_to_openai_function(p) for p in pydantic_schemas]
-    tools = [{"type": "function", "function": d} for d in functions]
+    tools = [convert_pydantic_to_openai_tool(p) for p in pydantic_schemas]
     model = llm.bind(tools=tools)
     chain = prompt | model | PydanticToolsParser(tools=pydantic_schemas)
     return chain
