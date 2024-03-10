@@ -1851,6 +1851,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
 
     DEFAULT_DATABASE_NAME = "CosmosMongoVCoreCacheDB"
     DEFAULT_COLLECTION_NAME = "CosmosMongoVCoreCacheColl"
+    APPLICATION_NAME = "LANGCHAIN_CACHING_PYTHON"
 
     def __init__(
         self,
@@ -1933,6 +1934,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         self.ef_search = ef_search
         self.score_threshold = score_threshold
         self._cache_dict: Dict[str, AzureCosmosDBVectorSearch] = {}
+        self.application_name = application_name or self.APPLICATION_NAME
 
     def _index_name(self, llm_string: str) -> str:
         hashed_index = _hash(llm_string)
@@ -1963,7 +1965,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 namespace=namespace,
                 embedding=self.embedding,
                 index_name=index_name,
-                application_name=application_name
+                application_name=self.application_name,
             )
 
         # create index for the vectorstore

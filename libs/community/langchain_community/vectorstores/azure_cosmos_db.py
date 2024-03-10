@@ -52,7 +52,7 @@ CosmosDBDocumentType = TypeVar("CosmosDBDocumentType", bound=Dict[str, Any])
 logger = logging.getLogger(__name__)
 
 DEFAULT_INSERT_BATCH_SIZE = 128
-APPLICATION_NAME = "PYTHON_LANGCHAIN"
+APPLICATION_NAME = "LANGCHAIN_PYTHON"
 
 
 class AzureCosmosDBVectorSearch(VectorStore):
@@ -143,7 +143,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
                 "`pip install pymongo`."
             )
         appname = application_name if application_name else APPLICATION_NAME
-        client: MongoClient = MongoClient(connection_string,appname=appname)
+        client: MongoClient = MongoClient(connection_string, appname=appname)
         db_name, collection_name = namespace.split(".")
         collection = client[db_name][collection_name]
         return cls(collection, embedding, **kwargs)
