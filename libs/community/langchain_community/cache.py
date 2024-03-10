@@ -1868,6 +1868,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         ef_construction: int = 64,
         ef_search: int = 40,
         score_threshold: Optional[float] = None,
+        application_name: str,
     ):
         """
         Args:
@@ -1909,6 +1910,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
                        (40 by default). A higher value provides better
                        recall at the cost of speed.
             score_threshold: Maximum score used to filter the vector search documents.
+            application_name: Application name for the client for tracking and logging
         """
 
         self._validate_enum_value(similarity, CosmosDBSimilarityType)
@@ -1961,6 +1963,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 namespace=namespace,
                 embedding=self.embedding,
                 index_name=index_name,
+                application_name=application_name
             )
 
         # create index for the vectorstore
