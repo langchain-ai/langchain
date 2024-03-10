@@ -35,8 +35,9 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
         elif isinstance(merged[k], list):
             merged[k] = merged[k] + v
         else:
-            raise TypeError(
-                f"Additional kwargs key {k} already exists in left dict and value has "
-                f"unsupported type {type(merged[k])}."
-            )
+            merged[k]=v
+            # raise TypeError(
+            #    f"Additional kwargs key {k} already exists in left dict and value has "
+            #    f"unsupported type {type(merged[k])}."
+            # )
     return merged
