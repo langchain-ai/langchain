@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING, Tuple
 
 from langchain.chains.query_constructor.ir import (
@@ -65,6 +66,12 @@ class QdrantTranslator(Visitor):
             ) from e
 
         self._validate_func(comparison.comparator)
+        if isinstance(comparison.value, datetime.date):
+            # ISO 8601 date format YYYY-MM-DD
+            comparison.value = comparison.value.strftime("%Y-%m-%d")
+        elif isinstance(comparison.value, datetime.datetime):
+            # ISO 8601 timestamp, formatted as RFC3339
+            comparison.value = comparison.value.strftime("%Y-%m-%dT%H:%M:%SZ")
         attribute = self.metadata_key + "." + comparison.attribute
         if comparison.comparator == Comparator.EQ:
             return rest.FieldCondition(
