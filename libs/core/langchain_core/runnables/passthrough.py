@@ -612,7 +612,9 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
     Runnable that picks keys from Dict[str, Any] inputs.
 
-    `RunnablePick` class represents a runnable that selectively picks keys from a dictionary input. It allows you to specify one or more keys to extract from the input dictionary and returns a new dictionary containing only the selected keys.
+    RunnablePick class represents a runnable that selectively picks keys from a dictionary input. 
+    It allows you to specify one or more keys to extract from the input dictionary.
+    It returns a new dictionary containing only the selected keys.
 
     Example : 
     .. code-block:: python
