@@ -36,6 +36,16 @@
   --ifm-color-primary-lightest: #4fddbf;
 }
 
+.theme-dark .input {
+  background-color: #333333; /* Darker background for input blocks in dark mode */
+  border: 1px solid #444444; /* Border to distinguish blocks */
+}
+
+.theme-dark .output {
+  background-color: #222222; /* Even darker background for output blocks in dark mode */
+  border: 1px solid #333333; /* Border to distinguish blocks */
+}
+
 .footer__links {
   margin-top: 1rem;
   margin-bottom: 3rem;
