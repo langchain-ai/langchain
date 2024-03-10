@@ -1,6 +1,8 @@
 import importlib.util
 import logging
-from typing import Any, Callable, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
+import runhouse as rh
+from langchain_core.language_models.llms import LLM
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.pydantic_v1 import Extra
@@ -8,7 +10,7 @@ from langchain_core.pydantic_v1 import Extra
 from langchain_community.llms.self_hosted import SelfHostedPipeline
 from langchain_community.llms.utils import enforce_stop_tokens
 
-DEFAULT_MODEL_ID = "gpt2"
+DEFAULT_MODEL_ID = "google/gemma-2b-it"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
@@ -127,11 +129,11 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
 
             from langchain_community.llms import SelfHostedHuggingFaceLLM
             import runhouse as rh
-            gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
+            gpu = rh.cluster(name="rh-a10x", instance_type="g5.2xlarge")
+            model_env = rh.env(reqs=["transformers", "torch"])
             hf = SelfHostedHuggingFaceLLM(
-                model_id="google/flan-t5-large", task="text2text-generation",
-                hardware=gpu
-            )
+                model_id="google/gemma-2b-it", task="text2text-generation").to(gpu, env=model_env)
+
     Example passing fn that generates a pipeline (bc the pipeline is not serializable):
         .. code-block:: python
 
@@ -147,26 +149,25 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
                     "text-generation", model=model, tokenizer=tokenizer
                 )
                 return pipe
+            load_pipeline_remote = rh.function(fn=get_pipeline).to(gpu, env=model_env)
             hf = SelfHostedHuggingFaceLLM(
-                model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu)
+                model_load_fn=get_pipeline, model_id="gpt2").to(gpu, env=model_env)
     """
 
+    name: Optional[str] = DEFAULT_MODEL_ID
     model_id: str = DEFAULT_MODEL_ID
     """Hugging Face model_id to load the model."""
     task: str = DEFAULT_TASK
-    """Hugging Face task ("text-generation", "text2text-generation" or
-    "summarization")."""
+    """Hugging Face task ("text-generation", "text2text-generation" or "summarization")."""
     device: int = 0
     """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
-    hardware: Any
-    """Remote hardware to send the inference function to."""
-    model_reqs: List[str] = ["./", "transformers", "torch"]
-    """Requirements to install on hardware to inference the model."""
-    model_load_fn: Callable = _load_transformer
+    model_load_fn: rh.Function
+    # model_load_fn: Callable = _load_transformer
     """Function to load the model remotely on the server."""
-    inference_fn: Callable = _generate_text  #: :meta private:
+    inference_fn: rh.Function  #: :meta private:
+    # inference_fn: Callable = _generate_text  #: :meta private:
     """Inference function to send to the remote hardware."""
 
     class Config:
@@ -182,12 +183,15 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
         Then, initialize the remote inference function.
         """
         load_fn_kwargs = {
-            "model_id": kwargs.get("model_id", DEFAULT_MODEL_ID),
-            "task": kwargs.get("task", DEFAULT_TASK),
-            "device": kwargs.get("device", 0),
-            "model_kwargs": kwargs.get("model_kwargs", None),
+            "model_id": kwargs.get("model_id"),
+            "device": kwargs.get("device", 0),  # TODO: set to auto according to the api or remove
+            #"task": kwargs.get("task", DEFAULT_TASK),
+            "inference_fn": kwargs.get("inference_fn", None),
+            "model_load_fn": kwargs.get("model_load_fn", None),
+            "load_fn_kwargs": kwargs.get("model_kwargs", None)
         }
-        super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
+        super().__init__(**load_fn_kwargs)
+
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -208,6 +212,8 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        return self.client(
-            pipeline=self.pipeline_ref, prompt=prompt, stop=stop, **kwargs
+        if not self.pipeline_ref:
+            self._pipeline = self.model_load_fn()
+        return self.inference_fn(
+            pipeline=self._pipeline, prompt=prompt, stop=stop, **kwargs
         )

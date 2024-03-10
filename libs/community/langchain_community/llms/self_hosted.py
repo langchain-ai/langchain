@@ -1,7 +1,10 @@
 import importlib.util
 import logging
 import pickle
-from typing import Any, Callable, List, Mapping, Optional
+import runhouse as rh
+from typing import Any, List, Mapping, Optional
+from pydantic import Field
+
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -11,13 +14,14 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MODEL_ID = "google/gemma-2b-it"
 
 def _generate_text(
-    pipeline: Any,
-    prompt: str,
-    *args: Any,
-    stop: Optional[List[str]] = None,
-    **kwargs: Any,
+        pipeline: Any,
+        prompt: str,
+        *args: Any,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
 ) -> str:
     """Inference function to send to the remote hardware.
 
@@ -78,69 +82,36 @@ class SelfHostedPipeline(LLM):
             from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
             import runhouse as rh
 
+            gpu = rh.ondemand_cluster(name="rh-a10x", instance_type="g5.2xlarge")
+            my_env = rh.env(reqs=["transformers", "torch"])
+
             def load_pipeline():
-                tokenizer = AutoTokenizer.from_pretrained("gpt2")
-                model = AutoModelForCausalLM.from_pretrained("gpt2")
+                tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b-it")
+                model = AutoModelForCausalLM.from_pretrained("google/gemma-2b-it")
                 return pipeline(
                     "text-generation", model=model, tokenizer=tokenizer,
                     max_new_tokens=10
                 )
+            load_pipeline_remote = rh.function(fn=load_pipeline).to(gpu, env=model_env)
+
             def inference_fn(pipeline, prompt, stop = None):
                 return pipeline(prompt)[0]["generated_text"]
+            inference_fn_remote = rh.function(fn=inference_fn).to(gpu, env=model_env)
 
-            gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
-            llm = SelfHostedPipeline(
-                model_load_fn=load_pipeline,
-                hardware=gpu,
-                model_reqs=model_reqs, inference_fn=inference_fn
-            )
-    Example for <2GB model (can be serialized and sent directly to the server):
-        .. code-block:: python
+            llm = SelfHostedHuggingFaceLLM(
+                model_load_fn=load_pipeline_remote, inference_fn=inference_fn_remote).to(gpu, env=model_env)
 
-            from langchain_community.llms import SelfHostedPipeline
-            import runhouse as rh
-            gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
-            my_model = ...
-            llm = SelfHostedPipeline.from_pipeline(
-                pipeline=my_model,
-                hardware=gpu,
-                model_reqs=["./", "torch", "transformers"],
-            )
-    Example passing model path for larger models:
-        .. code-block:: python
-
-            from langchain_community.llms import SelfHostedPipeline
-            import runhouse as rh
-            import pickle
-            from transformers import pipeline
-
-            generator = pipeline(model="gpt2")
-            rh.blob(pickle.dumps(generator), path="models/pipeline.pkl"
-                ).save().to(gpu, path="models")
-            llm = SelfHostedPipeline.from_pipeline(
-                pipeline="models/pipeline.pkl",
-                hardware=gpu,
-                model_reqs=["./", "torch", "transformers"],
-            )
     """
 
-    pipeline_ref: Any  #: :meta private:
-    client: Any  #: :meta private:
-    inference_fn: Callable = _generate_text  #: :meta private:
+    model_id: str = DEFAULT_MODEL_ID
+    device: int = 0
+    """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
+    inference_fn: rh.Function  #: :meta private:
     """Inference function to send to the remote hardware."""
-    hardware: Any
-    """Remote hardware to send the inference function to."""
-    model_load_fn: Callable
+    model_load_fn: rh.Function
     """Function to load the model remotely on the server."""
     load_fn_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model load function."""
-    model_reqs: List[str] = ["./", "torch"]
-    """Requirements to install on hardware to inference the model."""
-
-    allow_dangerous_deserialization: bool = False
-    """Allow deserialization using pickle which can be dangerous if 
-    loading compromised data.
-    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -154,69 +125,19 @@ class SelfHostedPipeline(LLM):
         and run on the server, i.e. in a module and not a REPL or closure.
         Then, initialize the remote inference function.
         """
-        if not kwargs.get("allow_dangerous_deserialization"):
-            raise ValueError(
-                "SelfHostedPipeline relies on the pickle module. "
-                "You will need to set allow_dangerous_deserialization=True "
-                "if you want to opt-in to allow deserialization of data using pickle."
-                "Data can be compromised by a malicious actor if "
-                "not handled properly to include "
-                "a malicious payload that when deserialized with "
-                "pickle can execute arbitrary code. "
-            )
         super().__init__(**kwargs)
-        try:
-            import runhouse as rh
 
-        except ImportError:
-            raise ImportError(
-                "Could not import runhouse python package. "
-                "Please install it with `pip install runhouse`."
-            )
-
-        remote_load_fn = rh.function(fn=self.model_load_fn).to(
-            self.hardware, reqs=self.model_reqs
-        )
+        remote_load_fn = self.model_load_fn
         _load_fn_kwargs = self.load_fn_kwargs or {}
         self.pipeline_ref = remote_load_fn.remote(**_load_fn_kwargs)
 
-        self.client = rh.function(fn=self.inference_fn).to(
-            self.hardware, reqs=self.model_reqs
-        )
-
-    @classmethod
-    def from_pipeline(
-        cls,
-        pipeline: Any,
-        hardware: Any,
-        model_reqs: Optional[List[str]] = None,
-        device: int = 0,
-        **kwargs: Any,
-    ) -> LLM:
-        """Init the SelfHostedPipeline from a pipeline object or string."""
-        if not isinstance(pipeline, str):
-            logger.warning(
-                "Serializing pipeline to send to remote hardware. "
-                "Note, it can be quite slow"
-                "to serialize and send large models with each execution. "
-                "Consider sending the pipeline"
-                "to the cluster and passing the path to the pipeline instead."
-            )
-
-        load_fn_kwargs = {"pipeline": pipeline, "device": device}
-        return cls(
-            load_fn_kwargs=load_fn_kwargs,
-            model_load_fn=_send_pipeline_to_device,
-            hardware=hardware,
-            model_reqs=["transformers", "torch"] + (model_reqs or []),
-            **kwargs,
-        )
+        self.inference_fn = self.inference_fn
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"hardware": self.hardware},
+            **{"hardware": self.system},
         }
 
     @property
@@ -224,12 +145,14 @@ class SelfHostedPipeline(LLM):
         return "self_hosted_llm"
 
     def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> str:
-        return self.client(
-            pipeline=self.pipeline_ref, prompt=prompt, stop=stop, **kwargs
+        if not self.pipeline_ref:
+            self._pipeline = self.model_load_fn.remote()
+        return self.inference_fn(
+            pipeline=self._pipeline, prompt=prompt, stop=stop, **kwargs
         )
