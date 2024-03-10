@@ -47,7 +47,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Number of threads to use. If None, the number 
     of threads is automatically determined."""
 
-    n_batch: Optional[int] = Field(8, alias="n_batch")
+    n_batch: Optional[int] = Field(512, alias="n_batch")
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
