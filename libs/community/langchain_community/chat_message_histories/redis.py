@@ -47,7 +47,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         return self.key_prefix + self.session_id
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Redis"""
         _items = self.redis_client.lrange(self.key, 0, -1)
         items = [json.loads(m.decode("utf-8")) for m in _items[::-1]]

@@ -61,7 +61,7 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         ).summary
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Neo4j"""
         query = (
             f"MATCH (s:`{self._node_label}`)-[:LAST_MESSAGE]->(last_message) "
