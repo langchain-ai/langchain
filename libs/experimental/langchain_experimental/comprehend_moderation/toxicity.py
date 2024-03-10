@@ -157,7 +157,7 @@ class ComprehendToxicity:
             if self.callback and self.callback.toxicity_callback:
                 if toxicity_found:
                     self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
-                asyncio.create_task(
+                asyncio.run(
                     self.callback.on_after_toxicity(
                         self.moderation_beacon, self.unique_id
                     )
