@@ -13,7 +13,7 @@ EXPECT_ALL = [
     "Aviary",
     "AzureMLOnlineEndpoint",
     "AzureOpenAI",
-    'BaichuanLLM',
+    "BaichuanLLM",
     "Banana",
     "Baseten",
     "Beam",
