@@ -1,6 +1,7 @@
 /* eslint-disable no-return-assign, react/jsx-props-no-spreading */
 import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 
 const useCookie = () => {
   /**
@@ -110,6 +111,7 @@ const getIpAddress = async () => {
 export default function Feedback() {
   const { setCookie, checkCookie } = useCookie();
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const { siteConfig } = useDocusaurusContext();
 
   /** @param {"good" | "bad"} feedback */
   const handleFeedback = async (feedback) => {
@@ -125,8 +127,8 @@ export default function Feedback() {
 
     /** @type {Database} */
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY
+      siteConfig.customFields.supabaseUrl,
+      siteConfig.customFields.supabasePublicKey
     );
     try {
       const ipAddress = await getIpAddress();
