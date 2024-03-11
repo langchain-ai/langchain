@@ -1,5 +1,5 @@
 """Test Anthropic API wrapper."""
-from typing import List
+from typing import Any, Dict, List, Union
 
 import pytest
 from langchain_core.callbacks import CallbackManager
@@ -92,7 +92,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 def test_anthropic_image_call() -> None:
     """Test that the Anthropic image API wrapper works."""
     chat = ChatAnthropic(model="test")
-    content = [
+    content: List[Union[str, Dict[str, Any]]] = [
         {
             "type": "image",
             "source": {
