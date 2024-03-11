@@ -122,6 +122,7 @@ EXPECTED_ALL = [
     "PyPDFium2Loader",
     "PySparkDataFrameLoader",
     "PythonLoader",
+    "QuipLoader",
     "RSSFeedLoader",
     "ReadTheDocsLoader",
     "RecursiveUrlLoader",

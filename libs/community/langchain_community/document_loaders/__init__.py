@@ -173,6 +173,7 @@ from langchain_community.document_loaders.pyspark_dataframe import (
     PySparkDataFrameLoader,
 )
 from langchain_community.document_loaders.python import PythonLoader
+from langchain_community.document_loaders.quip import QuipLoader
 from langchain_community.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain_community.document_loaders.reddit import RedditPostsLoader
@@ -365,6 +366,7 @@ __all__ = [
     "PyPDFium2Loader",
     "PySparkDataFrameLoader",
     "PythonLoader",
+    "QuipLoader",
     "RSSFeedLoader",
     "ReadTheDocsLoader",
     "RecursiveUrlLoader",
