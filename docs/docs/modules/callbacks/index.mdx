@@ -59,7 +59,7 @@ class BaseCallbackHandler:
     ) -> Any:
         """Run when tool starts running."""
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> Any:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> Any:
         """Run when tool ends running."""
 
     def on_tool_error(
