@@ -1,7 +1,6 @@
 from typing import Dict
 
 from langchain.chains.openai_functions import create_structured_output_runnable
-from langchain.schema import Document
 from langchain.schema.runnable import (
     RunnableLambda,
     RunnableParallel,
@@ -35,7 +34,7 @@ def add_graph_documents(params: Dict) -> str:
 
     Returns:
     str: A confirmation message indicating the completion of the graph construction.
-    """
+    """  # noqa: E501
 
     data = params["data"]
     text = params["context"]["input"]
