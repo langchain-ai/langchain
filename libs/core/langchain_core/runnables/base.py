@@ -1272,7 +1272,7 @@ class Runnable(Generic[Input, Output], ABC):
             run_manager.on_chain_error(e)
             raise
         else:
-            run_manager.on_chain_end(dumpd(output))
+            run_manager.on_chain_end(output)
             return output
 
     async def _acall_with_config(
@@ -1315,7 +1315,7 @@ class Runnable(Generic[Input, Output], ABC):
             await run_manager.on_chain_error(e)
             raise
         else:
-            await run_manager.on_chain_end(dumpd(output))
+            await run_manager.on_chain_end(output)
             return output
 
     def _batch_with_config(
@@ -1379,7 +1379,7 @@ class Runnable(Generic[Input, Output], ABC):
                     first_exception = first_exception or out
                     run_manager.on_chain_error(out)
                 else:
-                    run_manager.on_chain_end(dumpd(out))
+                    run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], output)
             else:
@@ -1454,7 +1454,7 @@ class Runnable(Generic[Input, Output], ABC):
                     first_exception = first_exception or out
                     coros.append(run_manager.on_chain_error(out))
                 else:
-                    coros.append(run_manager.on_chain_end(dumpd(out)))
+                    coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], output)
@@ -2238,7 +2238,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     first_exception = first_exception or out
                     run_manager.on_chain_error(out)
                 else:
-                    run_manager.on_chain_end(dumpd(out))
+                    run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], inputs)
             else:
@@ -2363,7 +2363,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     first_exception = first_exception or out
                     coros.append(run_manager.on_chain_error(out))
                 else:
-                    coros.append(run_manager.on_chain_end(dumpd(out)))
+                    coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
                 return cast(List[Output], inputs)
@@ -3995,16 +3995,6 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                 runnable with a custom type.
             **other_kwargs: Unpacked into the base class.
         """
-        config = config or {}
-        # config_specs contains the list of valid `configurable` keys
-        if configurable := config.get("configurable", None):
-            allowed_keys = set(s.id for s in bound.config_specs)
-            for key in configurable:
-                if key not in allowed_keys:
-                    raise ValueError(
-                        f"Configurable key '{key}' not found in runnable with"
-                        f" config keys: {allowed_keys}"
-                    )
         super().__init__(
             bound=bound,
             kwargs=kwargs or {},

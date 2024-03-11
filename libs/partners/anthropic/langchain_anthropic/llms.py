@@ -35,7 +35,7 @@ class _AnthropicCommon(BaseLanguageModel):
     model: str = Field(default="claude-2", alias="model_name")
     """Model name to use."""
 
-    max_tokens_to_sample: int = Field(default=256, alias="max_tokens")
+    max_tokens_to_sample: int = Field(default=1024, alias="max_tokens")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -300,9 +300,10 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             prompt=self._wrap_prompt(prompt), stop_sequences=stop, stream=True, **params
         ):
             chunk = GenerationChunk(text=token.completion)
-            yield chunk
+
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -336,9 +337,10 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             **params,
         ):
             chunk = GenerationChunk(text=token.completion)
-            yield chunk
+
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""

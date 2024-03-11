@@ -176,9 +176,9 @@ class TritonTensorRTLLM(BaseLLM):
         result_queue = self._invoke_triton(self.model_name, inputs, outputs, stop_words)
 
         for token in result_queue:
-            yield GenerationChunk(text=token)
             if run_manager:
                 run_manager.on_llm_new_token(token)
+            yield GenerationChunk(text=token)
 
         self.client.stop_stream()
 
