@@ -287,6 +287,7 @@ def convert_to_openai_function(
     elif isinstance(function, dict) and all(
         k in function for k in ("title", "description", "properties")
     ):
+        function = function.copy()
         return {
             "name": function.pop("title"),
             "description": function.pop("description"),
@@ -300,7 +301,7 @@ def convert_to_openai_function(
         return convert_python_function_to_openai_function(function)
     else:
         raise ValueError(
-            f"Unsupported function {function}. Functions must be passed in"
+            f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
             " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
             " either be in OpenAI function format or valid JSON schema with top-level"
             " 'title' and 'description' keys."
@@ -322,7 +323,7 @@ def convert_to_openai_tool(
         A dict version of the passed in tool which is compatible with the
             OpenAI tool-calling API.
     """
-    if isinstance(tool, dict) and "type" in tool:
+    if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
     function = convert_to_openai_function(tool)
     return {"type": "function", "function": function}
