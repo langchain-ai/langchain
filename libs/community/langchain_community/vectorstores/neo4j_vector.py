@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import logging
 import os
-import uuid
+from hashlib import md5
 from typing import (
     Any,
     Callable,
@@ -434,7 +434,7 @@ class Neo4jVector(VectorStore):
         **kwargs: Any,
     ) -> Neo4jVector:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -501,7 +501,7 @@ class Neo4jVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]

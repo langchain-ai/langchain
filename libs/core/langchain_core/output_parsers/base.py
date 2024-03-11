@@ -141,9 +141,9 @@ class BaseOutputParser(
                         )
                     return cleaned_text == self.true_val.upper()
 
-                    @property
-                    def _type(self) -> str:
-                            return "boolean_output_parser"
+                @property
+                def _type(self) -> str:
+                    return "boolean_output_parser"
     """  # noqa: E501
 
     @property
