@@ -1,9 +1,14 @@
+import asyncio
 import logging
 import os
+from functools import partial
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
 from ibm_watsonx_ai.foundation_models import Model, ModelInference  # type: ignore
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
@@ -386,6 +391,31 @@ class WatsonxLLM(BaseLLM):
                 prompt=prompts, params=params, **kwargs
             )
             return self._create_llm_result(response)
+
+    async def _agenerate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Call the IBM watsonx.ai inference endpoint which then generate
+        the async response.
+        Args:
+            prompts: List of strings (prompts) to pass into the model.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager.
+        Returns:
+            The full LLMResult output.
+        Example:
+            .. code-block:: python
+
+                response = watsonx_llm.agenerate(["What is a molecule"])
+        """
+        # Change implementation if integration natively supports async generation.
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self._generate, **kwargs), prompts, stop, run_manager
+        )
 
     def _stream(
         self,

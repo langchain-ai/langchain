@@ -197,3 +197,26 @@ def test_watsonxllm_invoke_from_wx_model_inference_with_params_as_enum() -> None
     print(f"\nResponse: {response}")
     assert isinstance(response, str)
     assert len(response) > 0
+
+
+async def test_watsonx_ainvoke() -> None:
+    watsonxllm = WatsonxLLM(
+        model_id="google/flan-ul2",
+        url="https://us-south.ml.cloud.ibm.com",
+        project_id=WX_PROJECT_ID,
+    )
+    response = await watsonxllm.ainvoke("What color sunflower is?")
+    assert isinstance(response, str)
+
+
+async def test_watsonx_agenerate() -> None:
+    watsonxllm = WatsonxLLM(
+        model_id="google/flan-ul2",
+        url="https://us-south.ml.cloud.ibm.com",
+        project_id=WX_PROJECT_ID,
+    )
+    response = await watsonxllm.agenerate(
+        ["What color sunflower is?", "What color turtle is?"]
+    )
+    assert len(response.generations) > 0
+    assert response.llm_output["token_usage"]["generated_token_count"] != 0  # type: ignore
