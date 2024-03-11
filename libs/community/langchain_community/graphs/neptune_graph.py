@@ -94,28 +94,28 @@ class NeptuneGraph:
                     # use default credentials
                     session = boto3.Session()
 
-                if graphIdentifier:
+                if service == "neptune-graph":
                     self.graphIdentifier = graphIdentifier
-
-                client_params = {}
-                if region_name:
-                    client_params["region_name"] = region_name
-
-                protocol = "https" if use_https else "http"
-
-                client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
-
-                if sign or service == "neptune-graph":
                     self.client = session.client(service, region_name=region_name)
                 else:
-                    from botocore import UNSIGNED
-                    from botocore.config import Config
+                    client_params = {}
+                    if region_name:
+                        client_params["region_name"] = region_name
 
-                    self.client = session.client(
-                        service,
-                        **client_params,
-                        config=Config(signature_version=UNSIGNED),
-                    )
+                    protocol = "https" if use_https else "http"
+
+                    client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
+                    if sign:
+                        self.client = session.client(service, **client_params)
+                    else:
+                        from botocore import UNSIGNED
+                        from botocore.config import Config
+
+                        self.client = session.client(
+                            service,
+                            **client_params,
+                            config=Config(signature_version=UNSIGNED),
+                        )
 
         except ImportError:
             raise ModuleNotFoundError(
