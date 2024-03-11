@@ -56,7 +56,9 @@ def _format_image(image_url: str) -> Dict:
         "data": match.group("data"),
     }
 
+
 _message_type_lookups = {"human": "user", "ai": "assistant"}
+
 
 def format_messages_anthropic(
     messages: List[BaseMessage],
@@ -179,7 +181,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         system, formatted_messages = format_messages_anthropic(messages)
         rtn = {
             "messages": formatted_messages,
-            "system" : system,
+            "system": system,
             "stop_sequences": stop,
             **self._default_params,
             **kwargs,
