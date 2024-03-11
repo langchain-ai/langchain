@@ -109,14 +109,6 @@ export default function Feedback() {
    * @param {"good" | "bad"} feedback
    */
   const handleFeedback = async (feedback) => {
-    if (
-      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      !process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY
-    ) {
-      console.error("Supabase not configured", process.env);
-      return;
-    }
-
     if (process.env.NODE_ENV !== "production") {
       console.log("Feedback (dev)");
       return;
