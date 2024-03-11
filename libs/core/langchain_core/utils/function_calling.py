@@ -315,7 +315,8 @@ def convert_to_openai_tool(
     Args:
         tool: Either a dictionary, a pydantic.BaseModel class, Python function, or
             BaseTool. If a dictionary is passed in, it is assumed to already be a valid
-            OpenAI tool or OpenAI function.
+            OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
+            'description' keys specified.
 
     Returns:
         A dict version of the passed in tool which is compatible with the
