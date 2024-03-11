@@ -8,6 +8,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
 from langchain_core._api.deprecation import deprecated
@@ -24,10 +25,65 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain_community.llms.anthropic import _AnthropicCommon
+
+
+def _convert_one_message_to_text(
+    message: BaseMessage,
+    human_prompt: str,
+    ai_prompt: str,
+) -> str:
+    content = cast(str, message.content)
+    if isinstance(message, ChatMessage):
+        message_text = f"\n\n{message.role.capitalize()}: {content}"
+    elif isinstance(message, HumanMessage):
+        message_text = f"{human_prompt} {content}"
+    elif isinstance(message, AIMessage):
+        message_text = f"{ai_prompt} {content}"
+    elif isinstance(message, SystemMessage):
+        message_text = content
+    else:
+        raise ValueError(f"Got unknown type {message}")
+    return message_text
+
+
+# We now use Anthropic's messages API, so we don't need to convert
+# messages to a single string prompt.
+@deprecated(
+    since="0.1.11",
+)
+def convert_messages_to_prompt_anthropic(
+    messages: List[BaseMessage],
+    *,
+    human_prompt: str = "\n\nHuman:",
+    ai_prompt: str = "\n\nAssistant:",
+) -> str:
+    """Format a list of messages into a full prompt for the Anthropic model
+    Args:
+        messages (List[BaseMessage]): List of BaseMessage to combine.
+        human_prompt (str, optional): Human prompt tag. Defaults to "\n\nHuman:".
+        ai_prompt (str, optional): AI prompt tag. Defaults to "\n\nAssistant:".
+    Returns:
+        str: Combined string with necessary human_prompt and ai_prompt tags.
+    """
+
+    messages = messages.copy()  # don't mutate the original list
+    if not isinstance(messages[-1], AIMessage):
+        messages.append(AIMessage(content=""))
+
+    text = "".join(
+        _convert_one_message_to_text(message, human_prompt, ai_prompt)
+        for message in messages
+    )
+
+    # trim off the trailing ' ' that might come from the "Assistant: "
+    return text.rstrip()
 
 
 def _format_image(image_url: str) -> Dict:
@@ -56,7 +112,9 @@ def _format_image(image_url: str) -> Dict:
         "data": match.group("data"),
     }
 
+
 _message_type_lookups = {"human": "user", "ai": "assistant"}
+
 
 def format_messages_anthropic(
     messages: List[BaseMessage],
@@ -179,7 +237,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         system, formatted_messages = format_messages_anthropic(messages)
         rtn = {
             "messages": formatted_messages,
-            "system" : system,
+            "system": system,
             "stop_sequences": stop,
             **self._default_params,
             **kwargs,
