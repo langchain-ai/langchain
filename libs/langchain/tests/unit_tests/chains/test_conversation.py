@@ -14,14 +14,22 @@ def test_memory_ai_prefix() -> None:
     """Test that ai_prefix in the memory component works."""
     memory = ConversationBufferMemory(memory_key="foo", ai_prefix="Assistant")
     memory.save_context({"input": "bar"}, {"output": "foo"})
-    assert memory.buffer == "Human: bar\nAssistant: foo"
+    assert memory.load_memory_variables({}) == {"foo": "Human: bar\nAssistant: foo"}
 
 
 def test_memory_human_prefix() -> None:
     """Test that human_prefix in the memory component works."""
     memory = ConversationBufferMemory(memory_key="foo", human_prefix="Friend")
     memory.save_context({"input": "bar"}, {"output": "foo"})
-    assert memory.buffer == "Friend: bar\nAI: foo"
+    assert memory.load_memory_variables({}) == {"foo": "Friend: bar\nAI: foo"}
+
+
+async def test_memory_async() -> None:
+    memory = ConversationBufferMemory(memory_key="foo", ai_prefix="Assistant")
+    await memory.asave_context({"input": "bar"}, {"output": "foo"})
+    assert await memory.aload_memory_variables({}) == {
+        "foo": "Human: bar\nAssistant: foo"
+    }
 
 
 def test_conversation_chain_works() -> None:
@@ -100,3 +108,23 @@ def test_clearing_conversation_memory(memory: BaseMemory) -> None:
 
     memory.clear()
     assert memory.load_memory_variables({}) == {"baz": ""}
+
+
+@pytest.mark.parametrize(
+    "memory",
+    [
+        ConversationBufferMemory(memory_key="baz"),
+        ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
+        ConversationBufferWindowMemory(memory_key="baz"),
+    ],
+)
+async def test_clearing_conversation_memory_async(memory: BaseMemory) -> None:
+    """Test clearing the conversation memory."""
+    # This is a good input because the input is not the same as baz.
+    good_inputs = {"foo": "bar", "baz": "foo"}
+    # This is a good output because there is one variable.
+    good_outputs = {"bar": "foo"}
+    await memory.asave_context(good_inputs, good_outputs)
+
+    await memory.aclear()
+    assert await memory.aload_memory_variables({}) == {"baz": ""}

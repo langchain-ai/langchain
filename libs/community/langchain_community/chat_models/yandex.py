@@ -210,7 +210,8 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
                 await asyncio.sleep(1)
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
-                    operation_request, metadata=self._grpc_metadata
+                    operation_request,
+                    metadata=self._grpc_metadata,
                 )
 
         completion_response = CompletionResponse()

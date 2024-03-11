@@ -1,4 +1,5 @@
 """Test AI21 llm"""
+
 from typing import cast
 
 from langchain_core.pydantic_v1 import SecretStr
@@ -18,7 +19,7 @@ def test_api_key_masked_when_passed_from_env(
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("AI21_API_KEY", "secret-api-key")
     llm = AI21()
-    print(llm.ai21_api_key, end="")
+    print(llm.ai21_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -29,7 +30,7 @@ def test_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = AI21(ai21_api_key="secret-api-key")
-    print(llm.ai21_api_key, end="")
+    print(llm.ai21_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

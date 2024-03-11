@@ -187,7 +187,7 @@ class Beam(LLM):
               do_sample=True, pad_token_id=tokenizer.eos_token_id)
             output = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-            print(output)
+            print(output)  # noqa: T201
             return {{"text": output}}
 
         """

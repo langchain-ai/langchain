@@ -62,7 +62,7 @@ def test_custom_formatter() -> None:
         content_type = "application/json"
         accepts = "application/json"
 
-        def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+        def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:  # type: ignore[override]
             input_str = json.dumps(
                 {
                     "inputs": [prompt],
@@ -72,7 +72,7 @@ def test_custom_formatter() -> None:
             )
             return input_str.encode("utf-8")
 
-        def format_response_payload(self, output: bytes) -> str:
+        def format_response_payload(self, output: bytes) -> str:  # type: ignore[override]
             response_json = json.loads(output)
             return response_json[0]["summary_text"]
 
@@ -104,7 +104,7 @@ def test_invalid_request_format() -> None:
         content_type = "application/json"
         accepts = "application/json"
 
-        def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+        def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:  # type: ignore[override]
             input_str = json.dumps(
                 {
                     "incorrect_input": {"input_string": [prompt]},
@@ -113,7 +113,7 @@ def test_invalid_request_format() -> None:
             )
             return str.encode(input_str)
 
-        def format_response_payload(self, output: bytes) -> str:
+        def format_response_payload(self, output: bytes) -> str:  # type: ignore[override]
             response_json = json.loads(output)
             return response_json[0]["0"]
 

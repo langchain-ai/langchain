@@ -6,6 +6,7 @@ EXPECTED_ALL = [
     "Neo4jGraph",
     "NebulaGraph",
     "NeptuneGraph",
+    "NeptuneRdfGraph",
     "KuzuGraph",
     "HugeGraph",
     "RdfGraph",
@@ -13,6 +14,7 @@ EXPECTED_ALL = [
     "FalkorDBGraph",
     "TigerGraph",
     "OntotextGraphDBGraph",
+    "GremlinGraph",
 ]
 
 

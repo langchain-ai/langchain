@@ -15,12 +15,13 @@ from typing import (
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
-from langchain_core.pydantic_v1 import BaseModel, create_model
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
+    create_model,
     get_unique_config_specs,
 )
 
@@ -35,21 +36,21 @@ GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
-    """A runnable that manages chat message history for another runnable.
+    """Runnable that manages chat message history for another Runnable.
 
     A chat message history is a sequence of messages that represent a conversation.
 
-    RunnableWithMessageHistory wraps another runnable and manages the chat message
+    RunnableWithMessageHistory wraps another Runnable and manages the chat message
     history for it; it is responsible for reading and updating the chat message
     history.
 
-    The formats supports for the inputs and outputs of the wrapped runnable
+    The formats supports for the inputs and outputs of the wrapped Runnable
     are described below.
 
     RunnableWithMessageHistory must always be called with a config that contains
     the appropriate parameters for the chat message history factory.
 
-    By default the runnable is expected to take a single configuration parameter
+    By default the Runnable is expected to take a single configuration parameter
     called `session_id` which is a string. This parameter is used to create a new
     or look up an existing chat message history that matches the given session_id.
 
@@ -96,9 +97,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             messages: List[BaseMessage] = Field(default_factory=list)
 
-            def add_message(self, message: BaseMessage) -> None:
-                \"\"\"Add a self-created message to the store\"\"\"
-                self.messages.append(message)
+            def add_messages(self, messages: List[BaseMessage]) -> None:
+                \"\"\"Add a list of messages to the store\"\"\"
+                self.messages.extend(messages)
 
             def clear(self) -> None:
                 self.messages = []
@@ -115,7 +116,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         history = get_by_session_id("1")
         history.add_message(AIMessage(content="hello"))
-        print(store)
+        print(store)  # noqa: T201
 
 
     Example where the wrapped Runnable takes a dictionary input:
@@ -146,20 +147,20 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 history_messages_key="history",
             )
 
-            print(chain_with_history.invoke(
+            print(chain_with_history.invoke(  # noqa: T201
                 {"ability": "math", "question": "What does cosine mean?"},
                 config={"configurable": {"session_id": "foo"}}
             ))
 
             # Uses the store defined in the example above.
-            print(store)
+            print(store)  # noqa: T201
 
-            print(chain_with_history.invoke(
+            print(chain_with_history.invoke(  # noqa: T201
                 {"ability": "math", "question": "What's its inverse"},
                 config={"configurable": {"session_id": "foo"}}
             ))
 
-            print(store)
+            print(store)  # noqa: T201
 
 
     Example where the session factory takes two keys, user_id and conversation id):
@@ -341,7 +342,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         super_schema = super().get_input_schema(config)
-        if super_schema.__custom_root_type__ is not None:
+        if super_schema.__custom_root_type__ or not super_schema.schema().get(
+            "properties"
+        ):
             from langchain_core.messages import BaseMessage
 
             fields: Dict = {}
@@ -417,7 +420,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         return await run_in_executor(config, self._enter_history, input, config)
 
     def _exit_history(self, run: Run, config: RunnableConfig) -> None:
-        hist = config["configurable"]["message_history"]
+        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
         inputs = load(run.inputs)
@@ -433,9 +436,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # Get the output messages
         output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
-
-        for m in input_messages + output_messages:
-            hist.add_message(m)
+        hist.add_messages(input_messages + output_messages)
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = super()._merge_configs(*configs)

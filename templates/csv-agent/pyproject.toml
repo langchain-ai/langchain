@@ -18,7 +18,7 @@ pydantic = "<2"
 langchain-experimental = ">=0.0.37"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "csv_agent"

@@ -222,7 +222,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             # Changing this to "chat_model" may break triggering on_llm_start
             run_type="chat_model",
             tags=tags,
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
@@ -259,7 +259,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags or [],
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(llm_run)
         self._on_llm_start(llm_run)
@@ -390,7 +390,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             child_runs=[],
             run_type=run_type or "chain",
-            name=name,
+            name=name,  # type: ignore[arg-type]
             tags=tags or [],
         )
         self._start_trace(chain_run)
@@ -498,14 +498,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_runs=[],
             run_type="tool",
             tags=tags or [],
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(tool_run)
         self._on_tool_start(tool_run)
         return tool_run
 
-    def on_tool_end(self, output: str, *, run_id: UUID, **kwargs: Any) -> Run:
+    def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for a tool run."""
+        output = str(output)
         tool_run = self._get_run(run_id, run_type="tool")
         tool_run.outputs = {"output": output}
         tool_run.end_time = datetime.now(timezone.utc)
