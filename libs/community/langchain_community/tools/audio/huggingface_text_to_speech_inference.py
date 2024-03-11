@@ -26,7 +26,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
     name: str = "openai_text_to_speech"
     description: str = "A wrapper around OpenAI Text-to-Speech API. "
 
-    model_name: str
+    model: str
     api_url: str
     huggingface_api_key: SecretStr
     format: HuggingFaceSupportedAudioFormat
@@ -39,7 +39,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
 
     def __init__(
         self,
-        model_name: str,
+        model: str,
         format: HuggingFaceSupportedAudioFormat,
         huggingface_api_key: Optional[SecretStr] = None,
         output_dir: Optional[str] = None,
@@ -59,9 +59,9 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
             )
 
         super().__init__(
-            model_name=model_name,
+            model=model,
             format=format,
-            api_url=f"{self._HUGGINGFACE_API_URL_ROOT}/{model_name}",
+            api_url=f"{self._HUGGINGFACE_API_URL_ROOT}/{model}",
             huggingface_api_key=huggingface_api_key,
             output_dir=output_dir if output_dir else self._DEFAULT_OUTPUT_DIR,
         )
@@ -90,7 +90,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
         if os.path.exists(output_path):
             raise ValueError("Output name must be unique")
 
-        with open(output_path, mode="bx") as f:
+        with open(output_path, mode="wb") as f:
             f.write(audio_bytes)
 
         return output_path
