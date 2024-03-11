@@ -1,4 +1,4 @@
-from typing import Literal, Type
+from typing import Literal, Type, Union
 
 import pytest
 
@@ -22,7 +22,7 @@ class Forecast(BaseModel):
     forecast: str
 
 
-TBaseModel = Type[BaseModel] | Type[V2BaseModel]
+TBaseModel = Union[Type[BaseModel], Type[V2BaseModel]]
 
 
 @pytest.mark.parametrize("pydantic_object", [ForecastV2, Forecast])

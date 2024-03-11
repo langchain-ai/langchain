@@ -1,5 +1,5 @@
 import json
-from typing import Generic, List, Type, TypeVar
+from typing import Generic, List, Type, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
@@ -11,7 +11,7 @@ from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 PydanticBaseModel = BaseModel
 if PYDANTIC_MAJOR_VERSION == 2:
-    PydanticBaseModel = BaseModel | V2BaseModel  # type: ignore
+    PydanticBaseModel = Union[BaseModel, V2BaseModel]  # type: ignore
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
