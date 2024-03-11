@@ -200,7 +200,7 @@ class ChatAnthropic(BaseChatModel):
         return ["langchain", "chat_models", "anthropic"]
 
     @property
-    def identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model": self.model,
