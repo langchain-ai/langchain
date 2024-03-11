@@ -5,7 +5,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "rm -rf ./docs/api && docusaurus start",
-    "build": "bash vercel_build.sh && rm -rf ./build && yarn gen && docusaurus build",
+    "build": "bash vercel_build.sh && rm -rf ./build && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
