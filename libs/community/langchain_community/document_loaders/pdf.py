@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import tempfile
 import time
 from abc import ABC
@@ -96,6 +97,8 @@ class BasePDFLoader(BaseLoader, ABC):
         if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
             self.temp_dir = tempfile.TemporaryDirectory()
             _, suffix = os.path.splitext(self.file_path)
+            if self._is_s3_presigned_url(self.file_path):
+                suffix = urlparse(self.file_path).path.split("/")[-1]
             temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
             self.web_path = self.file_path
             if not self._is_s3_url(self.file_path):
@@ -130,6 +133,15 @@ class BasePDFLoader(BaseLoader, ABC):
             if result.scheme == "s3" and result.netloc:
                 return True
             return False
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _is_s3_presigned_url(url: str) -> bool:
+        """Check if the url is a presigned S3 url."""
+        try:
+            result = urlparse(url)
+            return bool(re.search(r"\.s3\.amazonaws\.com$", result.netloc))
         except ValueError:
             return False
 
