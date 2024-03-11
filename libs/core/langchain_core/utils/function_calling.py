@@ -270,7 +270,8 @@ def convert_to_openai_function(
     Args:
         function: Either a dictionary, a pydantic.BaseModel class, or a Python function.
             If a dictionary is passed in, it is assumed to already be a valid OpenAI
-            function.
+            function or a JSON schema with top-level 'title' and 'description' keys
+            specified.
 
     Returns:
         A dict version of the passed in function which is compatible with the
