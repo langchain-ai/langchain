@@ -17,8 +17,10 @@ class HuggingFaceTextToSpeechModelInference(AudioTool):
     """
     HuggingFace Text-to-Speech Model Inference.
 
-    Required: environment variable ``HUGGINGFACE_API_TOKEN`` must be set with your API token,
-    or given as a named parameter to the constructor.
+    Requirements:
+
+        - Environment variable ``HUGGINGFACE_API_TOKEN`` must be set,
+          or passed to the constructor.
     """
 
     name: str = "openai_text_to_speech"
