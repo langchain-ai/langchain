@@ -51,7 +51,7 @@ async def _collect_events(events: AsyncIterator[StreamEvent]) -> List[StreamEven
 
 
 async def test_event_stream_with_simple_function_tool() -> None:
-    """Test the event stream with a funtion and tool"""
+    """Test the event stream with a function and tool"""
 
     def foo(x):
         return {"x": 5}
