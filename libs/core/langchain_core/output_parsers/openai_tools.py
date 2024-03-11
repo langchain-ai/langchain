@@ -132,7 +132,7 @@ class PydanticToolsParser(JsonOutputToolsParser):
             try:
                 if not isinstance(res["args"], dict):
                     raise ValueError(
-                        f"Tool arguments must be specificed as a dict, receieved: "
+                        f"Tool arguments must be specified as a dict, received: "
                         f"{res['args']}"
                     )
                 pydantic_objects.append(name_dict[res["type"]](**res["args"]))
