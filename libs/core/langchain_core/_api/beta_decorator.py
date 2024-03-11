@@ -206,10 +206,9 @@ def beta(
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
+        # old_doc can be None
         if not old_doc:
-            new_doc = "[*Beta*]"
-        else:
-            new_doc = f"[*Beta*]  {old_doc}"
+            old_doc = ""
 
         # Modify the docstring to include a beta notice.
         notes_header = "\nNotes\n-----"
@@ -218,7 +217,7 @@ def beta(
             addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
-        new_doc += (
+        new_doc = (
             f"[*Beta*] {old_doc}\n"
             f"{notes_header if notes_header not in old_doc else ''}\n"
             f".. beta::\n"

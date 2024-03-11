@@ -190,6 +190,9 @@ class FAISS(VectorStore):
         _len_check_if_sized(documents, embeddings, "documents", "embeddings")
         _len_check_if_sized(documents, ids, "documents", "ids")
 
+        if ids and len(ids) != len(set(ids)):
+            raise ValueError("Duplicate ids found in the ids list.")
+
         # Add to the index.
         vector = np.array(embeddings, dtype=np.float32)
         if self._normalize_L2:
@@ -305,7 +308,7 @@ class FAISS(VectorStore):
         if filter is not None:
             if isinstance(filter, dict):
 
-                def filter_func(metadata):
+                def filter_func(metadata):  # type: ignore[no-untyped-def]
                     if all(
                         metadata.get(key) in value
                         if isinstance(value, list)
@@ -330,8 +333,9 @@ class FAISS(VectorStore):
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            if filter is not None and filter_func(doc.metadata):
-                docs.append((doc, scores[0][j]))
+            if filter is not None:
+                if filter_func(doc.metadata):
+                    docs.append((doc, scores[0][j]))
             else:
                 docs.append((doc, scores[0][j]))
 
@@ -607,7 +611,7 @@ class FAISS(VectorStore):
             filtered_indices = []
             if isinstance(filter, dict):
 
-                def filter_func(metadata):
+                def filter_func(metadata):  # type: ignore[no-untyped-def]
                     if all(
                         metadata.get(key) in value
                         if isinstance(value, list)
@@ -917,11 +921,13 @@ class FAISS(VectorStore):
         else:
             # Default to L2, currently other metric types not initialized.
             index = faiss.IndexFlatL2(len(embeddings[0]))
+        docstore = kwargs.pop("docstore", InMemoryDocstore())
+        index_to_docstore_id = kwargs.pop("index_to_docstore_id", {})
         vecstore = cls(
             embedding,
             index,
-            InMemoryDocstore(),
-            {},
+            docstore,
+            index_to_docstore_id,
             normalize_L2=normalize_L2,
             distance_strategy=distance_strategy,
             **kwargs,
@@ -1087,6 +1093,8 @@ class FAISS(VectorStore):
         folder_path: str,
         embeddings: Embeddings,
         index_name: str = "index",
+        *,
+        allow_dangerous_deserialization: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id from disk.
@@ -1096,8 +1104,26 @@ class FAISS(VectorStore):
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
+            allow_dangerous_deserialization: whether to allow deserialization
+                of the data which involves loading a pickle file.
+                Pickle files can be modified by malicious actors to deliver a
+                malicious payload that results in execution of
+                arbitrary code on your machine.
             asynchronous: whether to use async version or not
         """
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "The de-serialization relies loading a pickle file. "
+                "Pickle files can be modified to deliver a malicious payload that "
+                "results in execution of arbitrary code on your machine."
+                "You will need to set `allow_dangerous_deserialization` to `True` to "
+                "enable deserialization. If you do this, make sure that you "
+                "trust the source of the data. For example, if you are loading a "
+                "file that you created, and no that no one else has modified the file, "
+                "then this is safe to do. Do not set this to `True` if you are loading "
+                "a file from an untrusted source (e.g., some random site on the "
+                "internet.)."
+            )
         path = Path(folder_path)
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()

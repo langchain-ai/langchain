@@ -91,7 +91,9 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
 
 
 async def astream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
-    """Because the dashscope SDK doesn't provide an async API,
+    """Async version of `stream_generate_with_retry`.
+
+    Because the dashscope SDK doesn't provide an async API,
     we wrap `stream_generate_with_retry` with an async generator."""
 
     class _AioTongyiGenerator:
@@ -283,13 +285,13 @@ class Tongyi(BaseLLM):
         )
         for stream_resp in stream_generate_with_retry(self, prompt=prompt, **params):
             chunk = GenerationChunk(**self._generation_from_qwen_resp(stream_resp))
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
                 )
+            yield chunk
 
     async def _astream(
         self,
@@ -305,13 +307,13 @@ class Tongyi(BaseLLM):
             self, prompt=prompt, **params
         ):
             chunk = GenerationChunk(**self._generation_from_qwen_resp(stream_resp))
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
                 )
+            yield chunk
 
     def _invocation_params(self, stop: Any, **kwargs: Any) -> Dict[str, Any]:
         params = {

@@ -1,4 +1,22 @@
-"""Base implementation for tools or skills."""
+"""**Tools** are classes that an Agent uses to interact with the world.
+
+Each tool has a **description**. Agent uses the description to choose the right
+tool for the job.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    RunnableSerializable --> BaseTool --> <name>Tool  # Examples: AIPluginTool, BaseGraphQLTool
+                                          <name>      # Examples: BraveSearch, HumanInputRun
+
+**Main helpers:**
+
+.. code-block::
+
+    CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
+"""  # noqa: E501
+
 from __future__ import annotations
 
 import inspect
@@ -20,6 +38,7 @@ from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
+    ValidationError,
     create_model,
     root_validator,
     validate_arguments,
@@ -38,14 +57,21 @@ class SchemaAnnotationError(TypeError):
 
 
 def _create_subset_model(
-    name: str, model: BaseModel, field_names: list
+    name: str, model: Type[BaseModel], field_names: list
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
     for field_name in field_names:
         field = model.__fields__[field_name]
-        fields[field_name] = (field.outer_type_, field.field_info)
-    return create_model(name, **fields)  # type: ignore
+        t = (
+            # this isn't perfect but should work for most functions
+            field.outer_type_
+            if field.required and not field.allow_none
+            else Optional[field.outer_type_]
+        )
+        fields[field_name] = (t, field.field_info)
+    rtn = create_model(name, **fields)  # type: ignore
+    return rtn
 
 
 def _get_filtered_args(
@@ -91,10 +117,10 @@ def create_schema_from_function(
 
 
 class ToolException(Exception):
-    """An optional exception that tool throws when execution error occurs.
+    """Optional exception that tool throws when execution error occurs.
 
     When this exception is thrown, the agent will not stop working,
-    but will handle the exception according to the handle_tool_error
+    but it will handle the exception according to the handle_tool_error
     variable of the tool, and the processing result will be returned
     to the agent as observation, and printed in red on the console.
     """
@@ -168,6 +194,11 @@ class ChildTool(BaseTool):
         Union[bool, str, Callable[[ToolException], str]]
     ] = False
     """Handle the content of the ToolException thrown."""
+
+    handle_validation_error: Optional[
+        Union[bool, str, Callable[[ValidationError], str]]
+    ] = False
+    """Handle the content of the ValidationError thrown."""
 
     class Config(Serializable.Config):
         """Configuration for this pydantic object."""
@@ -346,6 +377,21 @@ class ChildTool(BaseTool):
                 if new_arg_supported
                 else self._run(*tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 run_manager.on_tool_error(e)
@@ -364,17 +410,13 @@ class ChildTool(BaseTool):
                     f"Got unexpected type of `handle_tool_error`. Expected bool, str "
                     f"or callable. Received: {self.handle_tool_error}"
                 )
-            run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color="red", name=self.name, **kwargs)
             return observation
         except (Exception, KeyboardInterrupt) as e:
             run_manager.on_tool_error(e)
             raise e
         else:
-            run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color=color, name=self.name, **kwargs)
             return observation
 
     async def arun(
@@ -422,6 +464,21 @@ class ChildTool(BaseTool):
                 if new_arg_supported
                 else await self._arun(*tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 await run_manager.on_tool_error(e)
@@ -441,7 +498,7 @@ class ChildTool(BaseTool):
                     f"or callable. Received: {self.handle_tool_error}"
                 )
             await run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
+                observation, color="red", name=self.name, **kwargs
             )
             return observation
         except (Exception, KeyboardInterrupt) as e:
@@ -449,7 +506,7 @@ class ChildTool(BaseTool):
             raise e
         else:
             await run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
+                observation, color=color, name=self.name, **kwargs
             )
             return observation
 
@@ -558,7 +615,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super(Tool, self).__init__(
+        super(Tool, self).__init__(  # type: ignore[call-arg]
             name=name, func=func, description=description, **kwargs
         )
 
@@ -728,12 +785,13 @@ class StructuredTool(BaseTool):
         description = f"{name}{sig} - {description.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
-            _args_schema = create_schema_from_function(f"{name}Schema", source_function)
+            # schema name is appended within function
+            _args_schema = create_schema_from_function(name, source_function)
         return cls(
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,
+            args_schema=_args_schema,  # type: ignore[arg-type]
             description=description,
             return_direct=return_direct,
             **kwargs,
