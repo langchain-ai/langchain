@@ -28,7 +28,7 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
                 f'additional_kwargs["{k}"] already exists in this message,'
                 " but with a different type."
             )
-        elif isinstance(merged[k], str):
+        elif isinstance(merged[k], str) or isinstance(merged[k], int):
             merged[k] += v
         elif isinstance(merged[k], dict):
             merged[k] = merge_dicts(merged[k], v)
