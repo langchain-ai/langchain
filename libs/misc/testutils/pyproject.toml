@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "langchain-testutils"
+version = "0.1.0"
+description = ""
+authors = ["Erick Friis <erick@langchain.dev>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain-core = "^0.1.25"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
