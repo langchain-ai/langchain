@@ -70,11 +70,6 @@ class ReActSingleInputOutputParser(AgentOutputParser):
 
             return AgentAction(action, tool_input, text)
 
-        elif includes_answer:
-            return AgentFinish(
-                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
-            )
-
         if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
             raise OutputParserException(
                 f"Could not parse LLM output: `{text}`",
