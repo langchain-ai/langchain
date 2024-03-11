@@ -278,8 +278,20 @@ def convert_to_openai_function(
     """
     from langchain_core.tools import BaseTool
 
-    if isinstance(function, dict):
+    # already in OpenAI function format
+    if isinstance(function, dict) and all(
+        k in function for k in ("name", "description", "parameters")
+    ):
         return function
+    # a JSON schema with title and description
+    elif isinstance(function, dict) and all(
+        k in function for k in ("title", "description", "properties")
+    ):
+        return {
+            "name": function.pop("title"),
+            "description": function.pop("description"),
+            "parameters": function,
+        }
     elif isinstance(function, type) and issubclass(function, BaseModel):
         return cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
@@ -288,8 +300,10 @@ def convert_to_openai_function(
         return convert_python_function_to_openai_function(function)
     else:
         raise ValueError(
-            f"Unsupported function type {type(function)}. Functions must be passed in"
-            f" as Dict, pydantic.BaseModel, or Callable."
+            f"Unsupported function {function}. Functions must be passed in"
+            " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
+            " either be in OpenAI function format or valid JSON schema with top-level"
+            " 'title' and 'description' keys."
         )
 
 
