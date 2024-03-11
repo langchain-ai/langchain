@@ -15,6 +15,25 @@ class DuckDB(VectorStore):
     This integration requires the `duckdb` Python package.
     You can install it with `pip install duckdb`.
 
+    *Security Notice*:  This class enables direct interactions with the file system 
+    through DuckDB's functionalities, such as reading from and writing to local 
+    files. This capability poses security considerations when integrating this class 
+    into applications, particularly those accessible by third-party users or systems.
+
+    By **default**, DuckDB can interact with files across the entire file system, 
+    which includes abilities to read, write, and list files and directories.
+
+    To mitigate potential security risks, consider implementing the 
+    following measures:
+    - Limit access to particular directories using `root_dir`.
+    - Use filesystem permissions to restrict access and permissions to only
+        the files and directories required by the agent.
+    - Limit the tools available to the agent to only the file operations
+        necessary for the agent's intended use.
+    - Sandbox the agent by running it in a container.
+
+    See https://python.langchain.com/docs/security for more information.
+
     Args:
         connection: Optional DuckDB connection. If not provided, a new connection will be created.
         embedding: The embedding function or model to use for generating embeddings.
