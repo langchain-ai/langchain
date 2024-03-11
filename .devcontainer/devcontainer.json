@@ -5,17 +5,27 @@
 	"name": "langchain",
 
 	// Point to a Docker Compose file
-	"dockerComposeFile": "./docker-compose.yaml",
+	// "dockerComposeFile": "./docker-compose.yaml",
+
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.11-bullseye",
+	
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers-contrib/features/poetry:2": {
+			"version": "1.6.1" // Matches version mentioned in lock files.
+		}
+	},
 
 	// Required when using Docker Compose. The name of the service to connect to once running
-	"service": "langchain",
+	// "service": "langchain",
 
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
-	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	// "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
 	// Prevent the container from shutting down
-	"overrideCommand": true
+	// "overrideCommand": true
 
 	// Features to add to the dev container. More info: https://containers.dev/features
 	// "features": {
@@ -33,4 +43,5 @@
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
+	"postCreateCommand": "./.devcontainer/setup.sh"
 }
