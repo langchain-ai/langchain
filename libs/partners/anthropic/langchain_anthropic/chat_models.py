@@ -194,6 +194,11 @@ class ChatAnthropic(BaseChatModel):
     def is_lc_serializable(cls) -> bool:
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "anthropic"]
+
     @property
     def identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
