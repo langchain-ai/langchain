@@ -45,8 +45,7 @@ def get_sync_redis(*, ttl: Optional[int] = 1) -> Generator[RedisCache, None, Non
 
 @asynccontextmanager
 async def get_async_redis(
-    *,
-    ttl: Optional[int] = 1,
+    *, ttl: Optional[int] = 1
 ) -> AsyncGenerator[AsyncRedisCache, None]:
     """Get an async RedisCache instance."""
     from redis.asyncio import Redis
