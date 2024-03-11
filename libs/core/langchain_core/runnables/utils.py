@@ -5,6 +5,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
@@ -21,10 +22,13 @@ from typing import (
     Protocol,
     Sequence,
     Set,
+    Type,
     TypeVar,
     Union,
 )
 
+from langchain_core.pydantic_v1 import BaseConfig, BaseModel
+from langchain_core.pydantic_v1 import create_model as _create_model_base
 from langchain_core.runnables.schema import StreamEvent
 
 Input = TypeVar("Input", contravariant=True)
@@ -46,7 +50,15 @@ async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
 
 
 async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> list:
-    """Gather coroutines with a limit on the number of concurrent coroutines."""
+    """Gather coroutines with a limit on the number of concurrent coroutines.
+
+    Args:
+        n: The number of coroutines to run concurrently.
+        coros: The coroutines to run.
+
+    Returns:
+        The results of the coroutines.
+    """
     if n is None:
         return await asyncio.gather(*coros)
 
@@ -254,7 +266,6 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
                             vv = getattr(vv, part)
                     else:
                         values.append(vv)
-                    values.append(vv)
         return values
     except (SyntaxError, TypeError, OSError):
         return []
@@ -345,7 +356,7 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
 
 
 class ConfigurableField(NamedTuple):
-    """A field that can be configured by the user."""
+    """Field that can be configured by the user."""
 
     id: str
 
@@ -359,7 +370,7 @@ class ConfigurableField(NamedTuple):
 
 
 class ConfigurableFieldSingleOption(NamedTuple):
-    """A field that can be configured by the user with a default value."""
+    """Field that can be configured by the user with a default value."""
 
     id: str
     options: Mapping[str, Any]
@@ -374,7 +385,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
 
 class ConfigurableFieldMultiOption(NamedTuple):
-    """A field that can be configured by the user with multiple default values."""
+    """Field that can be configured by the user with multiple default values."""
 
     id: str
     options: Mapping[str, Any]
@@ -394,7 +405,7 @@ AnyConfigurableField = Union[
 
 
 class ConfigurableFieldSpec(NamedTuple):
-    """A field that can be configured by the user. It is a specification of a field."""
+    """Field that can be configured by the user. It is a specification of a field."""
 
     id: str
     annotation: Any
@@ -482,3 +493,31 @@ class _RootEventFilter:
             )
 
         return include
+
+
+class _SchemaConfig(BaseConfig):
+    arbitrary_types_allowed = True
+    frozen = True
+
+
+def create_model(
+    __model_name: str,
+    **field_definitions: Any,
+) -> Type[BaseModel]:
+    try:
+        return _create_model_cached(__model_name, **field_definitions)
+    except TypeError:
+        # something in field definitions is not hashable
+        return _create_model_base(
+            __model_name, __config__=_SchemaConfig, **field_definitions
+        )
+
+
+@lru_cache(maxsize=256)
+def _create_model_cached(
+    __model_name: str,
+    **field_definitions: Any,
+) -> Type[BaseModel]:
+    return _create_model_base(
+        __model_name, __config__=_SchemaConfig, **field_definitions
+    )

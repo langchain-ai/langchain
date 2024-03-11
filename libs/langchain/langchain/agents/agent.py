@@ -185,7 +185,7 @@ class BaseSingleActionAgent(BaseModel):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
@@ -310,7 +310,7 @@ class BaseMultiActionAgent(BaseModel):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
@@ -345,6 +345,14 @@ class RunnableAgent(BaseSingleActionAgent):
     """Runnable to call to get agent action."""
     input_keys_arg: List[str] = []
     return_keys_arg: List[str] = []
+    stream_runnable: bool = True
+    """Whether to stream from the runnable or not. 
+
+    If True then underlying LLM is invoked in a streaming fashion to make it possible 
+        to get access to the individual LLM tokens when using stream_log with the Agent 
+        Executor. If False then LLM is invoked in a non-streaming fashion and 
+        individual LLM tokens will not be available in stream_log.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -378,17 +386,21 @@ class RunnableAgent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
-        # Use streaming to make sure that the underlying LLM is invoked in a streaming
-        # fashion to make it possible to get access to the individual LLM tokens
-        # when using stream_log with the Agent Executor.
-        # Because the response from the plan is not a generator, we need to
-        # accumulate the output into final output and return that.
         final_output: Any = None
-        for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
-            if final_output is None:
-                final_output = chunk
-            else:
-                final_output += chunk
+        if self.stream_runnable:
+            # Use streaming to make sure that the underlying LLM is invoked in a
+            # streaming
+            # fashion to make it possible to get access to the individual LLM tokens
+            # when using stream_log with the Agent Executor.
+            # Because the response from the plan is not a generator, we need to
+            # accumulate the output into final output and return that.
+            for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        else:
+            final_output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
 
         return final_output
 
@@ -414,18 +426,24 @@ class RunnableAgent(BaseSingleActionAgent):
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
         final_output: Any = None
-        # Use streaming to make sure that the underlying LLM is invoked in a streaming
-        # fashion to make it possible to get access to the individual LLM tokens
-        # when using stream_log with the Agent Executor.
-        # Because the response from the plan is not a generator, we need to
-        # accumulate the output into final output and return that.
-        async for chunk in self.runnable.astream(
-            inputs, config={"callbacks": callbacks}
-        ):
-            if final_output is None:
-                final_output = chunk
-            else:
-                final_output += chunk
+        if self.stream_runnable:
+            # Use streaming to make sure that the underlying LLM is invoked in a
+            # streaming
+            # fashion to make it possible to get access to the individual LLM tokens
+            # when using stream_log with the Agent Executor.
+            # Because the response from the plan is not a generator, we need to
+            # accumulate the output into final output and return that.
+            async for chunk in self.runnable.astream(
+                inputs, config={"callbacks": callbacks}
+            ):
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        else:
+            final_output = await self.runnable.ainvoke(
+                inputs, config={"callbacks": callbacks}
+            )
         return final_output
 
 
@@ -436,6 +454,14 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     """Runnable to call to get agent actions."""
     input_keys_arg: List[str] = []
     return_keys_arg: List[str] = []
+    stream_runnable: bool = True
+    """Whether to stream from the runnable or not. 
+    
+    If True then underlying LLM is invoked in a streaming fashion to make it possible 
+        to get access to the individual LLM tokens when using stream_log with the Agent 
+        Executor. If False then LLM is invoked in a non-streaming fashion and 
+        individual LLM tokens will not be available in stream_log.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -477,17 +503,21 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             Action specifying what tool to use.
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
-        # Use streaming to make sure that the underlying LLM is invoked in a streaming
-        # fashion to make it possible to get access to the individual LLM tokens
-        # when using stream_log with the Agent Executor.
-        # Because the response from the plan is not a generator, we need to
-        # accumulate the output into final output and return that.
         final_output: Any = None
-        for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
-            if final_output is None:
-                final_output = chunk
-            else:
-                final_output += chunk
+        if self.stream_runnable:
+            # Use streaming to make sure that the underlying LLM is invoked in a
+            # streaming
+            # fashion to make it possible to get access to the individual LLM tokens
+            # when using stream_log with the Agent Executor.
+            # Because the response from the plan is not a generator, we need to
+            # accumulate the output into final output and return that.
+            for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        else:
+            final_output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
 
         return final_output
 
@@ -512,19 +542,25 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             Action specifying what tool to use.
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
-        # Use streaming to make sure that the underlying LLM is invoked in a streaming
-        # fashion to make it possible to get access to the individual LLM tokens
-        # when using stream_log with the Agent Executor.
-        # Because the response from the plan is not a generator, we need to
-        # accumulate the output into final output and return that.
         final_output: Any = None
-        async for chunk in self.runnable.astream(
-            inputs, config={"callbacks": callbacks}
-        ):
-            if final_output is None:
-                final_output = chunk
-            else:
-                final_output += chunk
+        if self.stream_runnable:
+            # Use streaming to make sure that the underlying LLM is invoked in a
+            # streaming
+            # fashion to make it possible to get access to the individual LLM tokens
+            # when using stream_log with the Agent Executor.
+            # Because the response from the plan is not a generator, we need to
+            # accumulate the output into final output and return that.
+            async for chunk in self.runnable.astream(
+                inputs, config={"callbacks": callbacks}
+            ):
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        else:
+            final_output = await self.runnable.ainvoke(
+                inputs, config={"callbacks": callbacks}
+            )
 
         return final_output
 
@@ -977,10 +1013,15 @@ class AgentExecutor(Chain):
             else:
                 multi_action = output_type == Union[List[AgentAction], AgentFinish]
 
+            stream_runnable = values.pop("stream_runnable", True)
             if multi_action:
-                values["agent"] = RunnableMultiActionAgent(runnable=agent)
+                values["agent"] = RunnableMultiActionAgent(
+                    runnable=agent, stream_runnable=stream_runnable
+                )
             else:
-                values["agent"] = RunnableAgent(runnable=agent)
+                values["agent"] = RunnableAgent(
+                    runnable=agent, stream_runnable=stream_runnable
+                )
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -1179,37 +1220,48 @@ class AgentExecutor(Chain):
         for agent_action in actions:
             yield agent_action
         for agent_action in actions:
-            if run_manager:
-                run_manager.on_agent_action(agent_action, color="green")
-            # Otherwise we lookup the tool
-            if agent_action.tool in name_to_tool_map:
-                tool = name_to_tool_map[agent_action.tool]
-                return_direct = tool.return_direct
-                color = color_mapping[agent_action.tool]
-                tool_run_kwargs = self.agent.tool_run_logging_kwargs()
-                if return_direct:
-                    tool_run_kwargs["llm_prefix"] = ""
-                # We then call the tool on the tool input to get an observation
-                observation = tool.run(
-                    agent_action.tool_input,
-                    verbose=self.verbose,
-                    color=color,
-                    callbacks=run_manager.get_child() if run_manager else None,
-                    **tool_run_kwargs,
-                )
-            else:
-                tool_run_kwargs = self.agent.tool_run_logging_kwargs()
-                observation = InvalidTool().run(
-                    {
-                        "requested_tool_name": agent_action.tool,
-                        "available_tool_names": list(name_to_tool_map.keys()),
-                    },
-                    verbose=self.verbose,
-                    color=None,
-                    callbacks=run_manager.get_child() if run_manager else None,
-                    **tool_run_kwargs,
-                )
-            yield AgentStep(action=agent_action, observation=observation)
+            yield self._perform_agent_action(
+                name_to_tool_map, color_mapping, agent_action, run_manager
+            )
+
+    def _perform_agent_action(
+        self,
+        name_to_tool_map: Dict[str, BaseTool],
+        color_mapping: Dict[str, str],
+        agent_action: AgentAction,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> AgentStep:
+        if run_manager:
+            run_manager.on_agent_action(agent_action, color="green")
+        # Otherwise we lookup the tool
+        if agent_action.tool in name_to_tool_map:
+            tool = name_to_tool_map[agent_action.tool]
+            return_direct = tool.return_direct
+            color = color_mapping[agent_action.tool]
+            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            if return_direct:
+                tool_run_kwargs["llm_prefix"] = ""
+            # We then call the tool on the tool input to get an observation
+            observation = tool.run(
+                agent_action.tool_input,
+                verbose=self.verbose,
+                color=color,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **tool_run_kwargs,
+            )
+        else:
+            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            observation = InvalidTool().run(
+                {
+                    "requested_tool_name": agent_action.tool,
+                    "available_tool_names": list(name_to_tool_map.keys()),
+                },
+                verbose=self.verbose,
+                color=None,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **tool_run_kwargs,
+            )
+        return AgentStep(action=agent_action, observation=observation)
 
     async def _atake_next_step(
         self,
@@ -1303,51 +1355,60 @@ class AgentExecutor(Chain):
         for agent_action in actions:
             yield agent_action
 
-        async def _aperform_agent_action(
-            agent_action: AgentAction,
-        ) -> AgentStep:
-            if run_manager:
-                await run_manager.on_agent_action(
-                    agent_action, verbose=self.verbose, color="green"
-                )
-            # Otherwise we lookup the tool
-            if agent_action.tool in name_to_tool_map:
-                tool = name_to_tool_map[agent_action.tool]
-                return_direct = tool.return_direct
-                color = color_mapping[agent_action.tool]
-                tool_run_kwargs = self.agent.tool_run_logging_kwargs()
-                if return_direct:
-                    tool_run_kwargs["llm_prefix"] = ""
-                # We then call the tool on the tool input to get an observation
-                observation = await tool.arun(
-                    agent_action.tool_input,
-                    verbose=self.verbose,
-                    color=color,
-                    callbacks=run_manager.get_child() if run_manager else None,
-                    **tool_run_kwargs,
-                )
-            else:
-                tool_run_kwargs = self.agent.tool_run_logging_kwargs()
-                observation = await InvalidTool().arun(
-                    {
-                        "requested_tool_name": agent_action.tool,
-                        "available_tool_names": list(name_to_tool_map.keys()),
-                    },
-                    verbose=self.verbose,
-                    color=None,
-                    callbacks=run_manager.get_child() if run_manager else None,
-                    **tool_run_kwargs,
-                )
-            return AgentStep(action=agent_action, observation=observation)
-
         # Use asyncio.gather to run multiple tool.arun() calls concurrently
         result = await asyncio.gather(
-            *[_aperform_agent_action(agent_action) for agent_action in actions]
+            *[
+                self._aperform_agent_action(
+                    name_to_tool_map, color_mapping, agent_action, run_manager
+                )
+                for agent_action in actions
+            ],
         )
 
         # TODO This could yield each result as it becomes available
         for chunk in result:
             yield chunk
+
+    async def _aperform_agent_action(
+        self,
+        name_to_tool_map: Dict[str, BaseTool],
+        color_mapping: Dict[str, str],
+        agent_action: AgentAction,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> AgentStep:
+        if run_manager:
+            await run_manager.on_agent_action(
+                agent_action, verbose=self.verbose, color="green"
+            )
+        # Otherwise we lookup the tool
+        if agent_action.tool in name_to_tool_map:
+            tool = name_to_tool_map[agent_action.tool]
+            return_direct = tool.return_direct
+            color = color_mapping[agent_action.tool]
+            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            if return_direct:
+                tool_run_kwargs["llm_prefix"] = ""
+            # We then call the tool on the tool input to get an observation
+            observation = await tool.arun(
+                agent_action.tool_input,
+                verbose=self.verbose,
+                color=color,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **tool_run_kwargs,
+            )
+        else:
+            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            observation = await InvalidTool().arun(
+                {
+                    "requested_tool_name": agent_action.tool,
+                    "available_tool_names": list(name_to_tool_map.keys()),
+                },
+                verbose=self.verbose,
+                color=None,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **tool_run_kwargs,
+            )
+        return AgentStep(action=agent_action, observation=observation)
 
     def _call(
         self,

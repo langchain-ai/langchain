@@ -13,6 +13,7 @@ from typing import (
     Mapping,
     Optional,
     Union,
+    cast,
 )
 
 from langchain_core.callbacks import (
@@ -197,7 +198,7 @@ class ChatTongyi(BaseChatModel):
         return {
             "model": self.model_name,
             "top_p": self.top_p,
-            "api_key": self.dashscope_api_key.get_secret_value(),
+            "api_key": cast(SecretStr, self.dashscope_api_key).get_secret_value(),
             "result_format": "message",
             **self.model_kwargs,
         }
@@ -341,9 +342,9 @@ class ChatTongyi(BaseChatModel):
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_qwen_resp(stream_resp, is_chunk=True)
             )
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -359,9 +360,9 @@ class ChatTongyi(BaseChatModel):
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_qwen_resp(stream_resp, is_chunk=True)
             )
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     def _invocation_params(
         self, messages: List[BaseMessage], stop: Any, **kwargs: Any

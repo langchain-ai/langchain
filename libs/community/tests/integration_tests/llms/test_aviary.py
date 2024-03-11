@@ -7,5 +7,5 @@ def test_aviary_call() -> None:
     """Test valid call to Anyscale."""
     llm = Aviary()
     output = llm("Say bar:")
-    print(f"llm answer:\n{output}")
+    print(f"llm answer:\n{output}")  # noqa: T201
     assert isinstance(output, str)

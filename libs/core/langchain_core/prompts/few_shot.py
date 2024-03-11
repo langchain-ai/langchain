@@ -1,4 +1,5 @@
 """Prompt template that contains few shot examples."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -277,7 +278,7 @@ class FewShotChatMessagePromptTemplate(
                 + HumanMessagePromptTemplate.from_template("{input}")
             )
             # Show the prompt
-            print(final_prompt.format_messages(input="What's 3+3?"))
+            print(final_prompt.format_messages(input="What's 3+3?"))  # noqa: T201
 
             # Use within an LLM
             from langchain_core.chat_models import ChatAnthropic

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class VikingDBConfig(object):
-    def __init__(self, host="host", region="region", ak="ak", sk="sk", scheme="http"):
+    def __init__(self, host="host", region="region", ak="ak", sk="sk", scheme="http"):  # type: ignore[no-untyped-def]
         self.host = host
         self.region = region
         self.ak = ak
@@ -47,11 +47,11 @@ class VikingDB(VectorStore):
         self.index_params = index_params
         self.drop_old = drop_old
         self.service = VikingDBService(
-            connection_args.host,
-            connection_args.region,
-            connection_args.ak,
-            connection_args.sk,
-            connection_args.scheme,
+            connection_args.host,  # type: ignore[union-attr]
+            connection_args.region,  # type: ignore[union-attr]
+            connection_args.ak,  # type: ignore[union-attr]
+            connection_args.sk,  # type: ignore[union-attr]
+            connection_args.scheme,  # type: ignore[union-attr]
         )
 
         try:
@@ -143,7 +143,7 @@ class VikingDB(VectorStore):
             scalar_index=scalar_index,
         )
 
-    def add_texts(
+    def add_texts(  # type: ignore[override]
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
@@ -183,7 +183,7 @@ class VikingDB(VectorStore):
             if metadatas is not None and index < len(metadatas):
                 names = list(metadatas[index].keys())
                 for name in names:
-                    field[name] = metadatas[index].get(name)
+                    field[name] = metadatas[index].get(name)  # type: ignore[assignment]
             data.append(Data(field))
 
         total_count = len(data)
@@ -191,10 +191,10 @@ class VikingDB(VectorStore):
             end = min(i + batch_size, total_count)
             insert_data = data[i:end]
             # print(insert_data)
-            self.collection.upsert_data(insert_data)
+            self.collection.upsert_data(insert_data)  # type: ignore[union-attr]
         return pks
 
-    def similarity_search(
+    def similarity_search(  # type: ignore[override]
         self,
         query: str,
         params: Optional[dict] = None,
@@ -216,7 +216,7 @@ class VikingDB(VectorStore):
         )
         return res
 
-    def similarity_search_by_vector(
+    def similarity_search_by_vector(  # type: ignore[override]
         self,
         embedding: List[float],
         params: Optional[dict] = None,
@@ -251,7 +251,7 @@ class VikingDB(VectorStore):
             if params.get("partition") is not None:
                 partition = params["partition"]
 
-        res = self.index.search_by_vector(
+        res = self.index.search_by_vector(  # type: ignore[union-attr]
             embedding,
             filter=filter,
             limit=limit,
@@ -269,7 +269,7 @@ class VikingDB(VectorStore):
             ret.append(pair)
         return ret
 
-    def max_marginal_relevance_search(
+    def max_marginal_relevance_search(  # type: ignore[override]
         self,
         query: str,
         k: int = 4,
@@ -286,7 +286,7 @@ class VikingDB(VectorStore):
             **kwargs,
         )
 
-    def max_marginal_relevance_search_by_vector(
+    def max_marginal_relevance_search_by_vector(  # type: ignore[override]
         self,
         embedding: List[float],
         k: int = 4,
@@ -311,7 +311,7 @@ class VikingDB(VectorStore):
             if params.get("partition") is not None:
                 partition = params["partition"]
 
-        res = self.index.search_by_vector(
+        res = self.index.search_by_vector(  # type: ignore[union-attr]
             embedding,
             filter=filter,
             limit=limit,
@@ -347,10 +347,10 @@ class VikingDB(VectorStore):
     ) -> None:
         if self.collection is None:
             logger.debug("No existing collection to search.")
-        self.collection.delete_data(ids)
+        self.collection.delete_data(ids)  # type: ignore[union-attr]
 
     @classmethod
-    def from_texts(
+    def from_texts(  # type: ignore[no-untyped-def, override]
         cls,
         texts: List[str],
         embedding: Embeddings,

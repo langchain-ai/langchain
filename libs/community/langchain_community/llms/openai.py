@@ -770,6 +770,7 @@ class AzureOpenAI(BaseOpenAI):
         .. code-block:: python
 
             from langchain_community.llms import AzureOpenAI
+
             openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 

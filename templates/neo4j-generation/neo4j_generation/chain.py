@@ -10,6 +10,7 @@ from langchain.schema.runnable import (
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.graphs.graph_document import GraphDocument
+from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 
 from neo4j_generation.utils import (

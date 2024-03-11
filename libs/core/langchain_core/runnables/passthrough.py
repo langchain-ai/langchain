@@ -1,4 +1,5 @@
 """Implementation of the RunnablePassthrough."""
+
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +21,7 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, create_model
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -36,7 +37,11 @@ from langchain_core.runnables.config import (
     patch_config,
 )
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.utils import AddableDict, ConfigurableFieldSpec
+from langchain_core.runnables.utils import (
+    AddableDict,
+    ConfigurableFieldSpec,
+    create_model,
+)
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
 
@@ -48,23 +53,23 @@ if TYPE_CHECKING:
 
 
 def identity(x: Other) -> Other:
-    """An identity function"""
+    """Identity function"""
     return x
 
 
 async def aidentity(x: Other) -> Other:
-    """An async identity function"""
+    """Async identity function"""
     return x
 
 
 class RunnablePassthrough(RunnableSerializable[Other, Other]):
-    """A runnable to passthrough inputs unchanged or with additional keys.
+    """Runnable to passthrough inputs unchanged or with additional keys.
 
     This runnable behaves almost like the identity function, except that it
     can be configured to add additional keys to the output, if the input is a
     dict.
 
-    The examples below demonstrate this runnable works using a few simple
+    The examples below demonstrate this Runnable works using a few simple
     chains. The chains rely on simple lambdas to make the examples easy to execute
     and experiment with.
 
@@ -161,7 +166,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             afunc = func
             func = None
 
-        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)
+        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -311,12 +316,45 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
+
+    The `RunnableAssign` class takes input dictionaries and, through a
+    `RunnableParallel` instance, applies transformations, then combines
+    these with the original data, introducing new key-value pairs based
+    on the mapper's logic.
+
+    Examples:
+        .. code-block:: python
+
+            # This is a RunnableAssign
+            from typing import Dict
+            from langchain_core.runnables.passthrough import (
+                RunnableAssign,
+                RunnableParallel,
+            )
+            from langchain_core.runnables.base import RunnableLambda
+
+            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+                return {"added": x["input"] + 10}
+
+            mapper = RunnableParallel(
+                {"add_step": RunnableLambda(add_ten),}
+            )
+
+            runnable_assign = RunnableAssign(mapper)
+
+            # Synchronous example
+            runnable_assign.invoke({"input": 5})
+            # returns {'input': 5, 'add_step': {'added': 15}}
+
+            # Asynchronous example
+            await runnable_assign.ainvoke({"input": 5})
+            # returns {'input': 5, 'add_step': {'added': 15}}
     """
 
     mapper: RunnableParallel[Dict[str, Any]]
 
     def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
-        super().__init__(mapper=mapper, **kwargs)
+        super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -572,13 +610,13 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
 class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
-    A runnable that picks keys from Dict[str, Any] inputs.
+    Runnable that picks keys from Dict[str, Any] inputs.
     """
 
     keys: Union[str, List[str]]
 
     def __init__(self, keys: Union[str, List[str]], **kwargs: Any) -> None:
-        super().__init__(keys=keys, **kwargs)
+        super().__init__(keys=keys, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

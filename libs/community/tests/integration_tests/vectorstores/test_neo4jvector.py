@@ -678,3 +678,66 @@ def test_hybrid_score_normalization() -> None:
     # Both FT and Vector must return 1.0 score
     assert output == [{"text": "foo", "score": 1.0}, {"text": "foo", "score": 1.0}]
     drop_vector_indexes(docsearch)
+
+
+def test_index_fetching() -> None:
+    """testing correct index creation and fetching"""
+    embeddings = FakeEmbeddings()
+
+    def create_store(
+        node_label: str, index: str, text_properties: List[str]
+    ) -> Neo4jVector:
+        return Neo4jVector.from_existing_graph(
+            embedding=embeddings,
+            url=url,
+            username=username,
+            password=password,
+            index_name=index,
+            node_label=node_label,
+            text_node_properties=text_properties,
+            embedding_node_property="embedding",
+        )
+
+    def fetch_store(index_name: str) -> Neo4jVector:
+        store = Neo4jVector.from_existing_index(
+            embedding=embeddings,
+            url=url,
+            username=username,
+            password=password,
+            index_name=index_name,
+        )
+        return store
+
+    # create index 0
+    index_0_str = "index0"
+    create_store("label0", index_0_str, ["text"])
+
+    # create index 1
+    index_1_str = "index1"
+    create_store("label1", index_1_str, ["text"])
+
+    index_1_store = fetch_store(index_1_str)
+    assert index_1_store.index_name == index_1_str
+
+    index_0_store = fetch_store(index_0_str)
+    assert index_0_store.index_name == index_0_str
+
+
+def test_retrieval_params() -> None:
+    """Test if we use parameters in retrieval query"""
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        pre_delete_collection=True,
+        retrieval_query="""
+        RETURN $test as text, score, {test: $test1} AS metadata
+        """,
+    )
+
+    output = docsearch.similarity_search(
+        "Foo", k=2, params={"test": "test", "test1": "test1"}
+    )
+    assert output == [
+        Document(page_content="test", metadata={"test": "test1"}),
+        Document(page_content="test", metadata={"test": "test1"}),
+    ]

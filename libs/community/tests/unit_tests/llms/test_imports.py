@@ -30,6 +30,7 @@ EXPECT_ALL = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
+    "Friendli",
     "GigaChat",
     "GPT4All",
     "GooglePalm",
@@ -41,6 +42,7 @@ EXPECT_ALL = [
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
     "KoboldApiLLM",
+    "Konko",
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
@@ -51,6 +53,7 @@ EXPECT_ALL = [
     "Nebula",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
+    "OCIGenAI",
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
@@ -85,8 +88,10 @@ EXPECT_ALL = [
     "JavelinAIGateway",
     "QianfanLLMEndpoint",
     "YandexGPT",
+    "Yuan2",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
+    "SparkLLM",
 ]
 
 

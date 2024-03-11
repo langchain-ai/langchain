@@ -15,7 +15,7 @@ langchainhub = ">=0.1.13"
 langchain-experimental = "^0.0.36"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "extraction_anthropic_functions"
