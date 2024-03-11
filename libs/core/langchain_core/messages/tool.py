@@ -8,6 +8,7 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_co
 class ToolCall(Serializable):
     name: str
     args: dict
+    raw_args: Any = None
     id: Optional[str] = None
 
 
