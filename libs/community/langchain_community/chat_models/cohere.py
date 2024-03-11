@@ -141,7 +141,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._identifying_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, **self._identifying_params, **kwargs
+        )
         stream = self.client.chat(**request, stream=True)
         for data in stream:
             if data.event_type == "text-generation":
@@ -153,10 +155,11 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 generation_info = self._get_generation_info(stream)
                 yield ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content="",
-                        additional_kwargs=generation_info),
-                        generation_info=generation_info)
-            else: 
+                        content="", additional_kwargs=generation_info
+                    ),
+                    generation_info=generation_info,
+                )
+            else:
                 yield ChatGenerationChunk(message=AIMessageChunk(content=""))
 
     async def _astream(
@@ -166,7 +169,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._identifying_params,**kwargs)
+        request = get_cohere_chat_request(
+            messages, **self._identifying_params, **kwargs
+        )
         stream = await self.async_client.chat(**request, stream=True)
 
         async for data in stream:
@@ -179,12 +184,12 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 generation_info = self._get_generation_info(stream)
                 yield ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content="",
-                        additional_kwargs=generation_info),
-                        generation_info=generation_info)
-            else: 
+                        content="", additional_kwargs=generation_info
+                    ),
+                    generation_info=generation_info,
+                )
+            else:
                 yield ChatGenerationChunk(message=AIMessageChunk(content=""))
-
 
     def _get_generation_info(self, response: Any) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""
@@ -212,7 +217,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return generate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._identifying_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, **self._identifying_params, **kwargs
+        )
         response = self.client.chat(**request)
 
         generation_info = self._get_generation_info(response)
@@ -236,7 +243,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return await agenerate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._identifying_params,**kwargs)
+        request = get_cohere_chat_request(
+            messages, **self._identifying_params, **kwargs
+        )
         response = self.client.chat(**request, stream=False)
 
         generation_info = self._get_generation_info(response)
