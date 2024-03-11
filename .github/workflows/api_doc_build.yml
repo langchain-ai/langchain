@@ -38,8 +38,9 @@ jobs:
       - name: Merge master
         working-directory: langchain
         run: | 
-          git fetch origin master
-          git merge origin/master -m "Merge master" --allow-unrelated-histories -X theirs
+	  git remote add upstream https://github.com/langchain-ai/langchain.git
+          git fetch upstream master
+          git merge upstream/master -m "Merge master" --allow-unrelated-histories -X theirs
           
       - name: Move google libs
         run: |
