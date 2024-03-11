@@ -46,7 +46,6 @@ _EXPECTED = [
     "PGEmbedding",
     "PGVector",
     "PathwayVectorClient",
-    "PathwayVectorServer",
     "Pinecone",
     "Qdrant",
     "Redis",

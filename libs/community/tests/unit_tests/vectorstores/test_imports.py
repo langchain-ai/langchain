@@ -11,6 +11,5 @@ def test_all_imports() -> None:
             "ClickhouseSettings",
             "MyScaleSettings",
             "PathwayVectorClient",
-            "PathwayVectorServer",
         ]:
             assert issubclass(getattr(vectorstores, cls), VectorStore)

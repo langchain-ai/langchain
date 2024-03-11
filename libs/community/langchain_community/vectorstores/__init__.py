@@ -302,12 +302,6 @@ def _import_pathway_vector_client() -> Any:
     return PathwayVectorClient
 
 
-def _import_pathway_vector_server() -> Any:
-    from langchain_community.vectorstores.pathway import PathwayVectorServer
-
-    return PathwayVectorServer
-
-
 def _import_pgembedding() -> Any:
     from langchain_community.vectorstores.pgembedding import PGEmbedding
 
@@ -583,8 +577,6 @@ def __getattr__(name: str) -> Any:
         return _import_opensearch_vector_search()
     elif name == "PathwayVectorClient":
         return _import_pathway_vector_client()
-    elif name == "PathwayVectorServer":
-        return _import_pathway_vector_server()
     elif name == "PGEmbedding":
         return _import_pgembedding()
     elif name == "PGVector":
@@ -693,7 +685,6 @@ __all__ = [
     "Neo4jVector",
     "OpenSearchVectorSearch",
     "PathwayVectorClient",
-    "PathwayVectorServer",
     "PGEmbedding",
     "PGVector",
     "Pinecone",
