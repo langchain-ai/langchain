@@ -1,7 +1,7 @@
 import pytest
 import duckdb
 import os
-from langchain_core.vectorstores import DuckDB
+from langchain_community.vectorstores import DuckDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 @pytest.fixture

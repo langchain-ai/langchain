@@ -199,6 +199,11 @@ def _import_documentdb() -> Any:
 
     return DocumentDBVectorSearch
 
+def _import_duckdb() -> Any:
+    from langchain_community.vectorstores.duckdb import DuckDB
+
+    return DuckDB
+
 
 def _import_elasticsearch() -> Any:
     from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
@@ -581,6 +586,8 @@ def __getattr__(name: str) -> Any:
         return _import_documentdb()
     elif name == "DocArrayHnswSearch":
         return _import_docarray_hnsw()
+    elif name == "DuckDB":
+        return _import_duckdb()
     elif name == "ElasticsearchStore":
         return _import_elasticsearch()
     elif name == "Epsilla":
@@ -715,6 +722,7 @@ __all__ = [
     "Dingo",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
+    "DuckDB",
     "ElasticKnnSearch",
     "ElasticVectorSearch",
     "ElasticsearchStore",
