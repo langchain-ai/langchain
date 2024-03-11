@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from typing import Any, List, Optional, Tuple, cast, Mapping
+from typing import Any, List, Mapping, Optional, Tuple, cast
 
 from ai21.models import ChatMessage, Penalty, RoleType
 from langchain_core.callbacks import (

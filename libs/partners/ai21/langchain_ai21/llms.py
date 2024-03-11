@@ -3,8 +3,8 @@ from functools import partial
 from typing import (
     Any,
     List,
-    Optional,
     Mapping,
+    Optional,
 )
 
 from ai21.models import CompletionsResponse, Penalty
@@ -103,7 +103,9 @@ class AI21LLM(BaseLLM, AI21Base):
 
         return base_params
 
-    def _build_params_for_request(self, stop: Optional[List[str]] = None, **kwargs: Any) -> Mapping[str, Any]:
+    def _build_params_for_request(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> Mapping[str, Any]:
         params = {}
 
         if stop is not None:
@@ -130,9 +132,7 @@ class AI21LLM(BaseLLM, AI21Base):
         params = self._build_params_for_request(stop=stop, **kwargs)
 
         for prompt in prompts:
-            response = self._invoke_completion(
-                prompt=prompt, **params
-            )
+            response = self._invoke_completion(prompt=prompt, **params)
             generation = self._response_to_generation(response)
             generations.append(generation)
             token_count += self.client.count_tokens(prompt)
