@@ -49,7 +49,6 @@
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^2.7.1",
-    "supabase": "^1.148.6",
     "typedoc": "^0.24.4",
     "typedoc-plugin-markdown": "next",
     "yaml-loader": "^0.8.0"
