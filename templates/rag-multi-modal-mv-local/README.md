@@ -1,7 +1,7 @@
 
 # rag-multi-modal-mv-local
 
-Visual search is a famililar application to many with iPhones or Android devices. It allows user to serch photos using natural language. 
+Visual search is a famililar application to many with iPhones or Android devices. It allows user to search photos using natural language.
   
 With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself for your own private photo collection.
 

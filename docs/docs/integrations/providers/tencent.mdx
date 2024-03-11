@@ -23,27 +23,6 @@ For more information, see [this notebook](/docs/integrations/chat/tencent_hunyua
 from langchain_community.chat_models import ChatHunyuan
 ```
 
-## Vector Store
-
->[Tencent Cloud VectorDB](https://www.tencentcloud.com/products/vdb) is a fully managed, 
-> self-developed enterprise-level distributed database service
->dedicated to storing, retrieving, and analyzing multidimensional vector data. The database supports a variety of index
->types and similarity calculation methods, and a single index supports 1 billion vectors, millions of QPS, and
->millisecond query latency. `Tencent Cloud Vector Database` can not only provide an external knowledge base for large
->models and improve the accuracy of large models' answers, but also be widely used in AI fields such as
->recommendation systems, NLP services, computer vision, and intelligent customer service.
-
-Install the Python SDK:
-
-```bash
-pip install tcvectordb
-```
-
-For more information, see [this notebook](/docs/integrations/vectorstores/tencentvectordb)
-
-```python
-from langchain_community.vectorstores import TencentVectorDB
-```
 
 ## Document Loaders
 
@@ -80,3 +59,37 @@ For more information, see [this notebook](/docs/integrations/document_loaders/te
 from langchain_community.document_loaders import TencentCOSFileLoader
 from qcloud_cos import CosConfig
 ```
+
+## Vector Store
+
+### Tencent VectorDB
+
+>[Tencent Cloud VectorDB](https://www.tencentcloud.com/products/vdb) is a fully managed, 
+> self-developed enterprise-level distributed database service
+>dedicated to storing, retrieving, and analyzing multidimensional vector data. The database supports a variety of index
+>types and similarity calculation methods, and a single index supports 1 billion vectors, millions of QPS, and
+>millisecond query latency. `Tencent Cloud Vector Database` can not only provide an external knowledge base for large
+>models and improve the accuracy of large models' answers, but also be widely used in AI fields such as
+>recommendation systems, NLP services, computer vision, and intelligent customer service.
+
+Install the Python SDK:
+
+```bash
+pip install tcvectordb
+```
+
+For more information, see [this notebook](/docs/integrations/vectorstores/tencentvectordb)
+
+```python
+from langchain_community.vectorstores import TencentVectorDB
+```
+
+## Chat loader
+
+### WeChat
+
+>[WeChat](https://www.wechat.com/) or `Weixin` in Chinese is a Chinese 
+> instant messaging, social media, and mobile payment app developed by `Tencent`.
+
+See a [usage example](/docs/integrations/chat_loaders/wechat).
+
