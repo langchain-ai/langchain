@@ -601,7 +601,7 @@ class BaseOpenAI(BaseLLM):
 
 
 class OpenAI(BaseOpenAI):
-    """OpenAI large language model.
+    """OpenAI large language models.
 
     To use, you should have the environment variable ``OPENAI_API_KEY``
     set with your API key, or pass it as a named parameter to the constructor.
@@ -611,7 +611,7 @@ class OpenAI(BaseOpenAI):
 
             from langchain_openai import OpenAI
 
-            model = OpenAI()
+            model = OpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
     @classmethod

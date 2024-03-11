@@ -223,7 +223,7 @@ class _AllReturnType(TypedDict):
 
 
 class ChatOpenAI(BaseChatModel):
-    """OpenAI chat model.
+    """`OpenAI` Chat large language models API.
 
     To use, you should have the environment variable ``OPENAI_API_KEY``
     set with your API key, or pass it as a named parameter to the constructor.
@@ -233,7 +233,7 @@ class ChatOpenAI(BaseChatModel):
 
             from langchain_openai import ChatOpenAI
 
-            model = ChatOpenAI()
+            model = ChatOpenAI(model_name="gpt-3.5-turbo")
     """
 
     @property
