@@ -1,6 +1,16 @@
 import json
 import warnings
-from typing import Any, Dict, List, Optional, cast, Iterator, AsyncIterator, Type, Mapping
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    cast,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -14,14 +24,15 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    FunctionMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
 from langchain_community.llms.azureml_endpoint import (
     AzureMLBaseEndpoint,
     AzureMLEndpointApiType,
@@ -92,10 +103,13 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
     ) -> bytes:
         """Formats the request according to the chosen api"""
         chat_messages = [
-            CustomOpenAIContentFormatter._convert_message_to_dict(message)
+            CustomOpenAIChatContentFormatter._convert_message_to_dict(message)
             for message in messages
         ]
-        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:
+        if api_type in [
+            AzureMLEndpointApiType.dedicated,
+            AzureMLEndpointApiType.realtime
+        ]:
             request_payload = json.dumps(
                 {
                     "input_data": {
@@ -118,7 +132,10 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
         api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.dedicated,
     ) -> ChatGeneration:
         """Formats response"""
-        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:
+        if api_type in [
+            AzureMLEndpointApiType.dedicated,
+            AzureMLEndpointApiType.realtime
+        ]:
             try:
                 choice = json.loads(output)["output"]
             except (KeyError, IndexError, TypeError) as e:
@@ -248,7 +265,10 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         }
         
         client = openai.OpenAI(**client_params)
-        message_dicts = [CustomOpenAIChatContentFormatter._convert_message_to_dict(m) for m in messages]
+        message_dicts = [
+            CustomOpenAIChatContentFormatter._convert_message_to_dict(m) 
+            for m in messages
+        ]
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
@@ -297,11 +317,17 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         }
         
         async_client = openai.AsyncOpenAI(**client_params)
-        message_dicts = [CustomOpenAIChatContentFormatter._convert_message_to_dict(m) for m in messages]
+        message_dicts = [
+            CustomOpenAIChatContentFormatter._convert_message_to_dict(m) 
+            for m in messages
+        ]
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await async_client.chat.completions.create(messages=message_dicts, **params):
+        async for chunk in await async_client.chat.completions.create(
+            messages=message_dicts,
+            **params
+        ):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:

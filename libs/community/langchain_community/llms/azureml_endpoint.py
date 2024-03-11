@@ -269,7 +269,10 @@ class CustomOpenAIContentFormatter(ContentFormatterBase):
     ) -> bytes:
         """Formats the request according to the chosen api"""
         prompt = ContentFormatterBase.escape_special_characters(prompt)
-        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:
+        if api_type in [
+            AzureMLEndpointApiType.dedicated,
+            AzureMLEndpointApiType.realtime
+        ]:
             request_payload = json.dumps(
                 {
                     "input_data": {
@@ -290,7 +293,10 @@ class CustomOpenAIContentFormatter(ContentFormatterBase):
         self, output: bytes, api_type: AzureMLEndpointApiType
     ) -> Generation:
         """Formats response"""
-        if api_type in [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.realtime]:
+        if api_type in [
+            AzureMLEndpointApiType.dedicated,
+            AzureMLEndpointApiType.realtime
+        ]:
             try:
                 choice = json.loads(output)[0]["0"]
             except (KeyError, IndexError, TypeError) as e:
@@ -417,8 +423,10 @@ class AzureMLBaseEndpoint(BaseModel):
     ) -> AzureMLEndpointApiType:
         """Validate that endpoint api type is compatible with the URL format."""
         endpoint_url = values.get("endpoint_url")
-        if (field_value == AzureMLEndpointApiType.dedicated or field_value == AzureMLEndpointApiType.realtime)  and not endpoint_url.endswith(  # type: ignore[union-attr]
-            "/score"
+        if (
+            (field_value == AzureMLEndpointApiType.dedicated or
+            field_value == AzureMLEndpointApiType.realtime) and
+            not endpoint_url.endswith("/score")  # type: ignore[union-attr]
         ):
             raise ValueError(
                 "Endpoints of type `dedicated` should follow the format "
