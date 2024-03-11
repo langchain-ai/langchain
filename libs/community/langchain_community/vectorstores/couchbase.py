@@ -322,6 +322,26 @@ class CouchbaseVectorStore(VectorStore):
         """Return the query embedding object."""
         return self._embedding_function
 
+    def _format_metadata(self, row_fields: Dict[str, Any]) -> Dict[str, Any]:
+        """Helper method to format the metadata from the Couchbase FTS.
+        Args:
+            row_fields (Dict[str, Any]): The fields to format.
+
+        Returns:
+            Dict[str, Any]: The formatted metadata.
+        """
+        metadata = {}
+        for key, value in row_fields.items():
+            # Couchbase FTS returns the metadata key with a prefix
+            # `metadata.` We remove it to get the original metadata key
+            if key.startswith(self._metadata_key):
+                new_key = key.split(self._metadata_key + ".")[-1]
+                metadata[new_key] = value
+            else:
+                metadata[key] = value
+
+        return metadata
+
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -389,16 +409,8 @@ class CouchbaseVectorStore(VectorStore):
             for row in search_iter.rows():
                 text = row.fields.pop(self._text_key, "")
 
-                # KV subdoc Get for the id for metadata + *
-                metadata = {}
-                for k, v in row.fields.items():
-                    if k.startswith(self._metadata_key):
-                        # Couchbase FTS returns the metadata key with a prefix
-                        # `metadata.` We remove it to get the original metadata key
-                        new_key = k.split(self._metadata_key + ".")[-1]
-                        metadata[new_key] = v
-                    else:
-                        metadata[k] = v
+                # Format the metadata from Couchbase
+                metadata = self._format_metadata(row.fields)
 
                 score = row.score
                 doc = Document(page_content=text, metadata=metadata)
