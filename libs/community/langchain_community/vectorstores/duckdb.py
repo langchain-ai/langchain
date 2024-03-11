@@ -47,12 +47,6 @@ class DuckDB(VectorStore):
         """Initialize with DuckDB connection and setup for vector storage."""
         try:
             import duckdb
-            from duckdb import (
-                ConstantExpression,
-                ColumnExpression,
-                FunctionExpression,
-                StarExpression
-            )
         except ImportError:
             raise ImportError(
                 "Could not import duckdb package. "
@@ -94,29 +88,25 @@ class DuckDB(VectorStore):
         Returns:
             List of ids of the added texts.
         """
-        # Generate unique IDs if not provided
-        if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
-        
-        # Ensure metadatas have the correct defaults if not provided
-        if metadatas is None:
-            metadatas = [{} for _ in texts]
-
-        # Generate embeddings for the provided texts
-        embeddings = self._embedding.embed_documents(list(texts))  # type: ignore
-
-        # Prepare the DataFrame for insertion
-        data = {
-            self._id_key: ids,
-            self._text_key: texts,
-            self._vector_key: embeddings,
-            'metadata': [json.dumps(metadata) for metadata in metadatas]  # Serialize metadata to JSON string
-        }
-        df = pd.DataFrame(data)
-
-        # Insert DataFrame into DuckDB
-
-        self._table.insert(df)
+        # Embed texts and create documents
+        docs = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        embeddings = self._embedding.embed_documents(list(texts))
+        for idx, text in enumerate(texts):
+            embedding = embeddings[idx]
+            # Serialize metadata if present, else default to None
+            metadata = json.dumps(metadatas[idx]) if metadatas and idx < len(metadatas) else None
+            doc = {
+                self._id_key: ids[idx],
+                self._text_key: text,
+                self._vector_key: embedding,
+                "metadata": metadata,
+            }
+            docs.append(doc)
+        df = pd.DataFrame(docs)
+        print(df['embedding'])
+        # self._table.insert(df)
+        self._connection.sql(f"INSERT INTO {self._table_name} SELECT * FROM df")
         return ids
 
     def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
@@ -130,15 +120,21 @@ class DuckDB(VectorStore):
             A list of Documents most similar to the query.
         """
         embedding = self._embedding.embed_query(query)  # type: ignore
-        list_cosine_similarity = FunctionExpression('list_cosine_similarity', ColumnExpression(self._vector_key), ConstantExpression(embedding))
+        list_cosine_similarity = self.duckdb.FunctionExpression('list_cosine_similarity', self.duckdb.ColumnExpression(self._vector_key), self.duckdb.ConstantExpression(embedding))
         docs = (self._table.
-            select(*[StarExpression(),list_cosine_similarity.alias("similarity")]).
+            select(*[self.duckdb.StarExpression(),list_cosine_similarity.alias("similarity")]).
             order("similarity desc").
             limit(k).
-            select(StarExpression(exclude=["similarity", self._vector_key])).
+            select(self.duckdb.StarExpression(exclude=["similarity", self._vector_key])).
             fetchdf()
         )
-        return [Document.from_dict(doc) for doc in docs.to_dict(orient='records')]
+        return [
+            Document(
+                page_content=docs[self._text_key][idx],
+                metadata=json.loads(docs["metadata"][idx]) if docs["metadata"][idx] else {},
+            )
+            for idx in range(len(docs))
+        ]
 
     @classmethod
     def from_texts(
