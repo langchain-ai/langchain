@@ -780,3 +780,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         """Lazy load given path as pages."""
         blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
+
+
+# Legacy: only for backwards compatibility. Use PyPDFLoader instead
+PagedPDFSplitter = PyPDFLoader
