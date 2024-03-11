@@ -335,10 +335,6 @@ const config = {
       src: "https://www.googletagmanager.com/gtag/js?id=G-9B66JQQH2F",
       async: true,
     },
-    {
-      src: "https://www.googletagmanager.com/gtag/js?id=G-WFT0J048RF",
-      async: true,
-    }
   ],
   
 };
