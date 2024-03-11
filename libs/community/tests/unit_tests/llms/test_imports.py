@@ -13,6 +13,7 @@ EXPECT_ALL = [
     "Aviary",
     "AzureMLOnlineEndpoint",
     "AzureOpenAI",
+    'BaichuanLLM',
     "Banana",
     "Baseten",
     "Beam",
@@ -21,6 +22,7 @@ EXPECT_ALL = [
     "CTranslate2",
     "CerebriumAI",
     "ChatGLM",
+    "ChatMlflow",
     "Clarifai",
     "Cohere",
     "Databricks",
@@ -44,9 +46,11 @@ EXPECT_ALL = [
     "KoboldApiLLM",
     "Konko",
     "LlamaCpp",
+    "Llamafile",
     "TextGen",
     "ManifestWrapper",
     "Minimax",
+    "Mlflow",
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
@@ -77,6 +81,7 @@ EXPECT_ALL = [
     "StochasticAI",
     "TitanTakeoff",
     "TitanTakeoffPro",
+    "Together",
     "Tongyi",
     "VertexAI",
     "VertexAIModelGarden",
@@ -92,11 +97,17 @@ EXPECT_ALL = [
     "VolcEngineMaasLLM",
     "WatsonxLLM",
     "SparkLLM",
+    "ChatDatabricks",
 ]
 
 
 def test_all_imports() -> None:
     """Simple test to make sure all things can be imported."""
+    from langchain_core.language_models import BaseChatModel
+
     for cls in llms.__all__:
-        assert issubclass(getattr(llms, cls), BaseLLM)
+        if cls in ["ChatDatabricks", "ChatMlflow"]:
+            assert issubclass(getattr(llms, cls), BaseChatModel)
+        else:
+            assert issubclass(getattr(llms, cls), BaseLLM)
     assert set(llms.__all__) == set(EXPECT_ALL)
