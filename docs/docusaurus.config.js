@@ -4,7 +4,7 @@
 // Note: type annotations allow type checking and IDEs autocompletion
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { ProvidePlugin } = require("webpack");
-const path = require("path");
+require("dotenv").config();
 
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
@@ -73,12 +73,6 @@ const config = {
         },
       }),
     }),
-    [
-      "docusaurus2-dotenv",
-      {
-        systemvars: true,
-      },
-    ],
   ],
 
   presets: [

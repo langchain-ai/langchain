@@ -5760,7 +5760,7 @@ __metadata:
     clsx: ^1.2.1
     cookie: ^0.6.0
     docusaurus-plugin-typedoc: next
-    docusaurus2-dotenv: ^1.4.0
+    dotenv: ^16.4.5
     eslint: ^8.19.0
     eslint-config-airbnb: ^19.0.4
     eslint-config-prettier: ^8.5.0
@@ -5807,15 +5807,6 @@ __metadata:
   peerDependencies:
     typedoc-plugin-markdown: ">=4.0.0-next.45"
   checksum: 94873f8b44373e01a5d5603a7a37f3a48485bd20c9d7a244d4fb80033e336fbbebad2e9cec5624a6aaf6ade38d869433f1d9f4c6506ef92706a871427951fffe
-  languageName: node
-  linkType: hard
-
-"docusaurus2-dotenv@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "docusaurus2-dotenv@npm:1.4.0"
-  dependencies:
-    dotenv-webpack: 1.7.0
-  checksum: 5589ab71fe4de7bf53ebca47b6763d4dc37708df8171dd515a0464c4509f0bcc78d0cc823a31f32bcd0ba28873d7f4c946a47e61f9ad26104a2eac57f9f29224
   languageName: node
   linkType: hard
 
@@ -5923,30 +5914,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv-defaults@npm:^1.0.2":
-  version: 1.1.1
-  resolution: "dotenv-defaults@npm:1.1.1"
-  dependencies:
-    dotenv: ^6.2.0
-  checksum: 623749be33fc30b686ff910522e4c222a08aa4d0011ff40b4354baee5db796f00eb42e818425667db2ffe9d8d2ae5f597a5e5b066b797f7aab9e06e515088fd6
-  languageName: node
-  linkType: hard
-
-"dotenv-webpack@npm:1.7.0":
-  version: 1.7.0
-  resolution: "dotenv-webpack@npm:1.7.0"
-  dependencies:
-    dotenv-defaults: ^1.0.2
-  peerDependencies:
-    webpack: ^1 || ^2 || ^3 || ^4
-  checksum: b5039955cff5961dae690bc779b928ac3ec637ba4223032c62c7bb4d034756d8074aaf4990c2199b87806ce51bf73019349c9930dd8872062427dcd492b37bb3
-  languageName: node
-  linkType: hard
-
-"dotenv@npm:^6.2.0":
-  version: 6.2.0
-  resolution: "dotenv@npm:6.2.0"
-  checksum: d4aa189741ff45553038b0436dfdb79143c29760d3481b4b19d9f1c59fb8cc69190ab83674e07b32b3dd2ae477579619cde9f7586ea82086151dbbac5626c54c
+"dotenv@npm:^16.4.5":
+  version: 16.4.5
+  resolution: "dotenv@npm:16.4.5"
+  checksum: 301a12c3d44fd49888b74eb9ccf9f07a1f5df43f489e7fcb89647a2edcd84c42d6bc349dc8df099cd18f07c35c7b04685c1a4f3e6a6a9e6b30f8d48c15b7f49c
   languageName: node
   linkType: hard
 

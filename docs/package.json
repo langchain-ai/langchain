@@ -39,7 +39,7 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.18.2",
     "docusaurus-plugin-typedoc": "next",
-    "docusaurus2-dotenv": "^1.4.0",
+    "dotenv": "^16.4.5",
     "eslint": "^8.19.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.5.0",
