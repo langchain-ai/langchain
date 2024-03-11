@@ -6,15 +6,14 @@ from typing import Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import SecretStr
-
-from langchain_community.tools.audio import AudioTool
+from langchain_core.tools import BaseTool
 
 
 class HuggingFaceSupportedAudioFormat(Enum):
     WAV = WAVE = WAVEFORM = "wav"
 
 
-class HuggingFaceTextToSpeechModelInference(AudioTool):
+class HuggingFaceTextToSpeechModelInference(BaseTool):
     """
     HuggingFace Text-to-Speech Model Inference.
 
