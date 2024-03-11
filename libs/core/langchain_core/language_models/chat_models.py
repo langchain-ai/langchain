@@ -54,12 +54,6 @@ if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
 
 
-def _get_verbosity() -> bool:
-    from langchain_core.globals import get_verbose
-
-    return get_verbose()
-
-
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     """Generate from a stream."""
 
@@ -125,18 +119,8 @@ def _as_async_iterator(sync_iterator: Callable) -> Callable:
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for Chat models."""
 
-    cache: Optional[bool] = None
-    """Whether to cache the response."""
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
-    callbacks: Callbacks = Field(default=None, exclude=True)
-    """Callbacks to add to the run trace."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
-    tags: Optional[List[str]] = Field(default=None, exclude=True)
-    """Tags to add to the run trace."""
-    metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
-    """Metadata to add to the run trace."""
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -815,11 +799,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             _stop = list(stop)
         return await self._call_async(messages, stop=_stop, **kwargs)
-
-    @property
-    def _identifying_params(self) -> Dict[str, Any]:
-        """Get the identifying parameters."""
-        return {}
 
     @property
     @abstractmethod
