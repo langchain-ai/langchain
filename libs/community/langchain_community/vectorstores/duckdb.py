@@ -25,7 +25,8 @@ class DuckDB(VectorStore):
 
     To mitigate potential security risks, consider implementing the 
     following measures:
-    - Limit access to particular directories using `root_dir`.
+    - Limit access to particular directories using `home_directory`.
+    - Consider setting `enable_external_access` to `false` in the connection
     - Use filesystem permissions to restrict access and permissions to only
         the files and directories required by the agent.
     - Limit the tools available to the agent to only the file operations
@@ -81,7 +82,7 @@ class DuckDB(VectorStore):
         if self._embedding is None:
             raise ValueError("An embedding function or model must be provided.")
 
-        self._connection = connection or self.duckdb.connect(database=':memory:')
+        self._connection = connection or self.duckdb.connect(database=':memory:',config={'enable_external_access': 'false'})
         self._ensure_table()
         self._table = self._connection.table(self._table_name)
 
@@ -118,16 +119,7 @@ class DuckDB(VectorStore):
             embedding = embeddings[idx]
             # Serialize metadata if present, else default to None
             metadata = json.dumps(metadatas[idx]) if metadatas and idx < len(metadatas) else None
-            doc = {
-                self._id_key: ids[idx],
-                self._text_key: text,
-                self._vector_key: embedding,
-                "metadata": metadata,
-            }
-            docs.append(doc)
-        df = pd.DataFrame(docs)
-        # self._table.insert(df)
-        self._connection.sql(f"INSERT INTO {self._table_name} SELECT * FROM df")
+            self._connection.execute(f"INSERT INTO {self._table_name} VALUES (?,?,?,?)",[ids[idx],text,embedding,metadata])
         return ids
 
     def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
