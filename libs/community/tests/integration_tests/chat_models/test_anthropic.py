@@ -86,3 +86,25 @@ async def test_anthropic_async_streaming_callback() -> None:
         assert isinstance(response, ChatGeneration)
         assert isinstance(response.text, str)
         assert response.text == response.message.content
+
+
+@pytest.mark.scheduled
+def test_anthropic_image_call() -> None:
+    """Test that the Anthropic image API wrapper works."""
+    chat = ChatAnthropic(model="test")
+    content = [
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/jpeg",
+                # Black capital A on white background
+                "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAUABQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD313WNGd2CooyzMcAD1NNt7iG7t47i2mjmglUPHLGwZXUjIII4IPrWV4oiubrQpbC0UmW9ZbYt5ZdURzh2YAjgJu7jnAyM1H4Wt7uwsrvTrwAta3UgjlSExxyI+JBsBJ+Vd5TqcbKAN2iiigAooooAKKKKAP/Z",  # noqa: E501
+            },
+        },
+        {"type": "text", "text": "What letter is this?"},
+    ]
+    message = HumanMessage(content=content)
+    response = chat([message])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)

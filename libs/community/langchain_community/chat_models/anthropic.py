@@ -1,4 +1,14 @@
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
+import re
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
@@ -14,61 +24,105 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.prompt_values import PromptValue
 
 from langchain_community.llms.anthropic import _AnthropicCommon
 
 
-def _convert_one_message_to_text(
-    message: BaseMessage,
-    human_prompt: str,
-    ai_prompt: str,
-) -> str:
-    content = cast(str, message.content)
-    if isinstance(message, ChatMessage):
-        message_text = f"\n\n{message.role.capitalize()}: {content}"
-    elif isinstance(message, HumanMessage):
-        message_text = f"{human_prompt} {content}"
-    elif isinstance(message, AIMessage):
-        message_text = f"{ai_prompt} {content}"
-    elif isinstance(message, SystemMessage):
-        message_text = content
-    else:
-        raise ValueError(f"Got unknown type {message}")
-    return message_text
-
-
-def convert_messages_to_prompt_anthropic(
-    messages: List[BaseMessage],
-    *,
-    human_prompt: str = "\n\nHuman:",
-    ai_prompt: str = "\n\nAssistant:",
-) -> str:
-    """Format a list of messages into a full prompt for the Anthropic model
-    Args:
-        messages (List[BaseMessage]): List of BaseMessage to combine.
-        human_prompt (str, optional): Human prompt tag. Defaults to "\n\nHuman:".
-        ai_prompt (str, optional): AI prompt tag. Defaults to "\n\nAssistant:".
-    Returns:
-        str: Combined string with necessary human_prompt and ai_prompt tags.
+def _format_image(image_url: str) -> Dict:
     """
+    Formats an image of format data:image/jpeg;base64,{b64_string}
+    to a dict for anthropic api
 
-    messages = messages.copy()  # don't mutate the original list
-    if not isinstance(messages[-1], AIMessage):
-        messages.append(AIMessage(content=""))
+    {
+      "type": "base64",
+      "media_type": "image/jpeg",
+      "data": "/9j/4AAQSkZJRg...",
+    }
 
-    text = "".join(
-        _convert_one_message_to_text(message, human_prompt, ai_prompt)
-        for message in messages
-    )
+    And throws an error if it's not a b64 image
+    """
+    regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
+    match = re.match(regex, image_url)
+    if match is None:
+        raise ValueError(
+            "Anthropic only supports base64-encoded images currently."
+            " Example: data:image/png;base64,'/9j/4AAQSk'..."
+        )
+    return {
+        "type": "base64",
+        "media_type": match.group("media_type"),
+        "data": match.group("data"),
+    }
 
-    # trim off the trailing ' ' that might come from the "Assistant: "
-    return text.rstrip()
+_message_type_lookups = {"human": "user", "ai": "assistant"}
+
+def format_messages_anthropic(
+    messages: List[BaseMessage],
+) -> Tuple[Optional[str], List[Dict]]:
+    """Format messages for the messages API."""
+    system: Optional[str] = None
+    formatted_messages: List[Dict] = []
+    for i, message in enumerate(messages):
+        if message.type == "system":
+            if i != 0:
+                raise ValueError("System message must be at beginning of message list.")
+            if not isinstance(message.content, str):
+                raise ValueError(
+                    "System message must be a string, "
+                    f"instead was: {type(message.content)}"
+                )
+            system = message.content
+            continue
+
+        role = _message_type_lookups[message.type]
+        content: Union[str, List[Dict]]
+
+        if not isinstance(message.content, str):
+            # parse as dict
+            assert isinstance(
+                message.content, list
+            ), "Anthropic message content must be str or list of dicts"
+
+            # populate content
+            content = []
+            for item in message.content:
+                if isinstance(item, str):
+                    content.append(
+                        {
+                            "type": "text",
+                            "text": item,
+                        }
+                    )
+                elif isinstance(item, dict):
+                    if "type" not in item:
+                        raise ValueError("Dict content item must have a type key")
+                    if item["type"] == "image_url":
+                        # convert format
+                        source = _format_image(item["image_url"]["url"])
+                        content.append(
+                            {
+                                "type": "image",
+                                "source": source,
+                            }
+                        )
+                    else:
+                        content.append(item)
+                else:
+                    raise ValueError(
+                        f"Content items must be str or dict, instead was: {type(item)}"
+                    )
+        else:
+            content = message.content
+
+        formatted_messages.append(
+            {
+                "role": role,
+                "content": content,
+            }
+        )
+    return system, formatted_messages
 
 
 @deprecated(
@@ -116,22 +170,27 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "anthropic"]
 
-    def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
-        """Format a list of messages into a full prompt for the Anthropic model
-        Args:
-            messages (List[BaseMessage]): List of BaseMessage to combine.
-        Returns:
-            str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
-        """
-        prompt_params = {}
-        if self.HUMAN_PROMPT:
-            prompt_params["human_prompt"] = self.HUMAN_PROMPT
-        if self.AI_PROMPT:
-            prompt_params["ai_prompt"] = self.AI_PROMPT
-        return convert_messages_to_prompt_anthropic(messages=messages, **prompt_params)
-
-    def convert_prompt(self, prompt: PromptValue) -> str:
-        return self._convert_messages_to_prompt(prompt.to_messages())
+    def _format_params(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Dict,
+    ) -> Dict[str, Any]:
+        system, formatted_messages = format_messages_anthropic(messages)
+        rtn = {
+            "messages": formatted_messages,
+            "system" : system,
+            "stop_sequences": stop,
+            **self._default_params,
+            **kwargs,
+        }
+        if "max_tokens_to_sample" in rtn:
+            if "max_tokens" not in rtn:
+                rtn["max_tokens"] = rtn.pop("max_tokens_to_sample")
+            else:
+                del rtn["max_tokens_to_sample"]
+        rtn = {k: v for k, v in rtn.items() if v is not None}
+        return rtn
 
     def _stream(
         self,
@@ -140,18 +199,13 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        prompt = self._convert_messages_to_prompt(messages)
-        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
-        if stop:
-            params["stop_sequences"] = stop
-
-        stream_resp = self.client.completions.create(**params, stream=True)
-        for data in stream_resp:
-            delta = data.completion
-            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-            if run_manager:
-                run_manager.on_llm_new_token(delta, chunk=chunk)
-            yield chunk
+        params = self._format_params(messages=messages, stop=stop, **kwargs)
+        with self.client.messages.stream(**params) as stream_resp:
+            for delta in stream_resp.text_stream:
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                if run_manager:
+                    run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
 
     async def _astream(
         self,
@@ -160,18 +214,13 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        prompt = self._convert_messages_to_prompt(messages)
-        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
-        if stop:
-            params["stop_sequences"] = stop
-
-        stream_resp = await self.async_client.completions.create(**params, stream=True)
-        async for data in stream_resp:
-            delta = data.completion
-            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-            if run_manager:
-                await run_manager.on_llm_new_token(delta, chunk=chunk)
-            yield chunk
+        params = self._format_params(messages=messages, stop=stop, **kwargs)
+        async with self.async_client.messages.stream(**params) as stream_resp:
+            async for delta in stream_resp.text_stream:
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                if run_manager:
+                    await run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
 
     def _generate(
         self,
@@ -185,19 +234,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-        prompt = self._convert_messages_to_prompt(
-            messages,
-        )
-        params: Dict[str, Any] = {
-            "prompt": prompt,
-            **self._default_params,
-            **kwargs,
-        }
-        if stop:
-            params["stop_sequences"] = stop
-        response = self.client.completions.create(**params)
-        completion = response.completion
-        message = AIMessage(content=completion)
+        params = self._format_params(messages=messages, stop=stop, **kwargs)
+        data = self.client.messages.create(**params)
+        message = AIMessage(content=data.content[0].text)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     async def _agenerate(
@@ -212,19 +251,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
-        prompt = self._convert_messages_to_prompt(
-            messages,
-        )
-        params: Dict[str, Any] = {
-            "prompt": prompt,
-            **self._default_params,
-            **kwargs,
-        }
-        if stop:
-            params["stop_sequences"] = stop
-        response = await self.async_client.completions.create(**params)
-        completion = response.completion
-        message = AIMessage(content=completion)
+        params = self._format_params(messages=messages, stop=stop, **kwargs)
+        data = await self.async_client.messages.create(**params)
+        message = AIMessage(content=data.content[0].text)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     def get_num_tokens(self, text: str) -> int:

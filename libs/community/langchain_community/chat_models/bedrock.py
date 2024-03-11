@@ -1,5 +1,4 @@
-import re
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, cast
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -16,9 +15,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Extra
 
-from langchain_community.chat_models.anthropic import (
-    convert_messages_to_prompt_anthropic,
-)
+from langchain_community.chat_models.anthropic import format_messages_anthropic
 from langchain_community.chat_models.meta import convert_messages_to_prompt_llama
 from langchain_community.llms.bedrock import BedrockBase
 from langchain_community.utilities.anthropic import (
@@ -48,108 +45,51 @@ def convert_messages_to_prompt_mistral(messages: List[BaseMessage]) -> str:
     )
 
 
-def _format_image(image_url: str) -> Dict:
-    """
-    Formats an image of format data:image/jpeg;base64,{b64_string}
-    to a dict for anthropic api
-
-    {
-      "type": "base64",
-      "media_type": "image/jpeg",
-      "data": "/9j/4AAQSkZJRg...",
-    }
-
-    And throws an error if it's not a b64 image
-    """
-    regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
-    match = re.match(regex, image_url)
-    if match is None:
-        raise ValueError(
-            "Anthropic only supports base64-encoded images currently."
-            " Example: data:image/png;base64,'/9j/4AAQSk'..."
-        )
-    return {
-        "type": "base64",
-        "media_type": match.group("media_type"),
-        "data": match.group("data"),
-    }
+def _convert_one_message_to_text_amazon(
+    message: BaseMessage,
+    human_prompt: str,
+    ai_prompt: str,
+) -> str:
+    content = cast(str, message.content)
+    if isinstance(message, ChatMessage):
+        message_text = f"\n\n{message.role.capitalize()}: {content}"
+    elif isinstance(message, HumanMessage):
+        message_text = f"{human_prompt} {content}"
+    elif isinstance(message, AIMessage):
+        message_text = f"{ai_prompt} {content}"
+    elif isinstance(message, SystemMessage):
+        message_text = content
+    else:
+        raise ValueError(f"Got unknown type {message}")
+    return message_text
 
 
-def _format_anthropic_messages(
+def convert_messages_to_prompt_amazon(
     messages: List[BaseMessage],
-) -> Tuple[Optional[str], List[Dict]]:
-    """Format messages for anthropic."""
-
+    *,
+    human_prompt: str = "\n\nUser:",
+    ai_prompt: str = "\n\nBot:",
+) -> str:
+    """Format a list of messages into a full prompt for the Amazon model
+    Args:
+        messages (List[BaseMessage]): List of BaseMessage to combine.
+        human_prompt (str, optional): Human prompt tag. Defaults to "\n\nUser:".
+        ai_prompt (str, optional): AI prompt tag. Defaults to "\n\nBot:".
+    Returns:
+        str: Combined string with necessary human_prompt and ai_prompt tags.
     """
-    [
-        {
-            "role": _message_type_lookups[m.type],
-            "content": [_AnthropicMessageContent(text=m.content).dict()],
-        }
-        for m in messages
-    ]
-    """
-    system: Optional[str] = None
-    formatted_messages: List[Dict] = []
-    for i, message in enumerate(messages):
-        if message.type == "system":
-            if i != 0:
-                raise ValueError("System message must be at beginning of message list.")
-            if not isinstance(message.content, str):
-                raise ValueError(
-                    "System message must be a string, "
-                    f"instead was: {type(message.content)}"
-                )
-            system = message.content
-            continue
 
-        role = _message_type_lookups[message.type]
-        content: Union[str, List[Dict]]
+    messages = messages.copy()  # don't mutate the original list
+    if not isinstance(messages[-1], AIMessage):
+        messages.append(AIMessage(content=""))
 
-        if not isinstance(message.content, str):
-            # parse as dict
-            assert isinstance(
-                message.content, list
-            ), "Anthropic message content must be str or list of dicts"
+    text = "".join(
+        _convert_one_message_to_text_amazon(message, human_prompt, ai_prompt)
+        for message in messages
+    )
 
-            # populate content
-            content = []
-            for item in message.content:
-                if isinstance(item, str):
-                    content.append(
-                        {
-                            "type": "text",
-                            "text": item,
-                        }
-                    )
-                elif isinstance(item, dict):
-                    if "type" not in item:
-                        raise ValueError("Dict content item must have a type key")
-                    if item["type"] == "image_url":
-                        # convert format
-                        source = _format_image(item["image_url"]["url"])
-                        content.append(
-                            {
-                                "type": "image",
-                                "source": source,
-                            }
-                        )
-                    else:
-                        content.append(item)
-                else:
-                    raise ValueError(
-                        f"Content items must be str or dict, instead was: {type(item)}"
-                    )
-        else:
-            content = message.content
-
-        formatted_messages.append(
-            {
-                "role": role,
-                "content": content,
-            }
-        )
-    return system, formatted_messages
+    # trim off the trailing ' ' that might come from the "Assistant: "
+    return text.rstrip()
 
 
 class ChatPromptAdapter:
@@ -161,18 +101,12 @@ class ChatPromptAdapter:
     def convert_messages_to_prompt(
         cls, provider: str, messages: List[BaseMessage]
     ) -> str:
-        if provider == "anthropic":
-            prompt = convert_messages_to_prompt_anthropic(messages=messages)
-        elif provider == "meta":
+        if provider == "meta":
             prompt = convert_messages_to_prompt_llama(messages=messages)
         elif provider == "mistral":
             prompt = convert_messages_to_prompt_mistral(messages=messages)
         elif provider == "amazon":
-            prompt = convert_messages_to_prompt_anthropic(
-                messages=messages,
-                human_prompt="\n\nUser:",
-                ai_prompt="\n\nBot:",
-            )
+            prompt = convert_messages_to_prompt_amazon(messages=messages)
         else:
             raise NotImplementedError(
                 f"Provider {provider} model does not support chat."
@@ -184,7 +118,7 @@ class ChatPromptAdapter:
         cls, provider: str, messages: List[BaseMessage]
     ) -> Tuple[Optional[str], List[Dict]]:
         if provider == "anthropic":
-            return _format_anthropic_messages(messages)
+            return format_messages_anthropic(messages)
 
         raise NotImplementedError(
             f"Provider {provider} not supported for format_messages"

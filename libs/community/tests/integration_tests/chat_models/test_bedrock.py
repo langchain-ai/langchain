@@ -80,7 +80,7 @@ def test_chat_bedrock_streaming_generation_info() -> None:
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
-    assert generation.generations[0][0].text == " Hello!"
+    assert generation.generations[0][0].text.strip() == "Hello!"
 
 
 @pytest.mark.scheduled
