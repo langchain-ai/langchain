@@ -32,11 +32,6 @@ _module_lookup = {
     "SlackChatLoader": "langchain_community.chat_loaders.slack",
     "TelegramChatLoader": "langchain_community.chat_loaders.telegram",
     "WhatsAppChatLoader": "langchain_community.chat_loaders.whatsapp",
-    "map_ai_messages": "langchain_community.chat_loaders.utils",
-    "map_ai_messages_in_session": "langchain_community.chat_loaders.utils",
-    "merge_chat_runs": "langchain_community.chat_loaders.utils",
-    "merge_chat_runs_in_session": "langchain_community.chat_loaders.utils",
-    "nanoseconds_from_2001_to_datetime": "langchain_community.chat_loaders.imessage",
 }
 
 
