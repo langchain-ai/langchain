@@ -212,11 +212,11 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return generate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params,**self._identifying_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._identifying_params, **kwargs)
         response = self.client.chat(**request)
 
-        message = AIMessage(content=response.text, additional_kwargs=response)
         generation_info = self._get_generation_info(response)
+        message = AIMessage(content=response.text, additional_kwargs=generation_info)
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
@@ -239,8 +239,8 @@ class ChatCohere(BaseChatModel, BaseCohere):
         request = get_cohere_chat_request(messages, **self._identifying_params,**kwargs)
         response = self.client.chat(**request, stream=False)
 
-        message = AIMessage(content=response.text, additional_kwargs=response)
         generation_info = self._get_generation_info(response)
+        message = AIMessage(content=response.text, additional_kwargs=generation_info)
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
