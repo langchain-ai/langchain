@@ -92,7 +92,7 @@ function SvgThumbsDown() {
 
 /**
  * Generated type for the Supabase DB schema.
- * @typedef {import('../../supabase').Database} Database
+ * @typedef {import('../supabase').Database} Database
  */
 
 const FEEDBACK_COOKIE_PREFIX = "feedbackSent";

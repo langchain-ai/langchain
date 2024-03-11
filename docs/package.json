@@ -18,7 +18,7 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,md,mdx}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,md,mdx}\"",
     "gen": "yarn gen:supabase",
-    "gen:supabase": "npx supabase gen types typescript --project-id 'xsqpnijvmbodcxyapnyq' --schema public > ./supabase.d.ts"
+    "gen:supabase": "npx supabase gen types typescript --project-id 'xsqpnijvmbodcxyapnyq' --schema public > ./src/supabase.d.ts"
   },
   "dependencies": {
     "@docusaurus/core": "2.4.3",

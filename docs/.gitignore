@@ -1,2 +1,2 @@
 /.quarto/
-supabase.d.ts
+src/supabase.d.ts
