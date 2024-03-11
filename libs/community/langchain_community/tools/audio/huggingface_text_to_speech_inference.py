@@ -4,13 +4,14 @@ from enum import Enum
 from typing import Optional
 
 import requests
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_community.tools.audio import AudioTool
 
 
 class HuggingFaceSupportedAudioFormat(Enum):
-    WAV, WAVE, WAVEFORM = "wav"
+    WAV = WAVE = WAVEFORM = "wav"
 
 
 class HuggingFaceTextToSpeechModelInference(AudioTool):
@@ -19,7 +20,7 @@ class HuggingFaceTextToSpeechModelInference(AudioTool):
 
     Requirements:
 
-        - Environment variable ``HUGGINGFACE_API_TOKEN`` must be set,
+        - Environment variable ``HUGGINGFACE_API_KEY`` must be set,
           or passed to the constructor.
     """
 
@@ -28,13 +29,13 @@ class HuggingFaceTextToSpeechModelInference(AudioTool):
 
     model_name: str
     api_url: str
-    huggingface_api_token: SecretStr
+    huggingface_api_key: SecretStr
     format: HuggingFaceSupportedAudioFormat
     output_dir: str
 
     _DEFAULT_OUTPUT_DIR = "tts_output"
     _DEFAULT_OUTPUT_NAME = "output"
-    _HUGGINGFACE_API_TOKEN_ENV_NAME = "HUGGINGFACE_API_KEY"
+    _HUGGINGFACE_API_KEY_ENV_NAME = "HUGGINGFACE_API_KEY"
     _HUGGINGFACE_API_URL_ROOT = "https://api-inference.huggingface.co/models"
 
     def __init__(
@@ -45,13 +46,18 @@ class HuggingFaceTextToSpeechModelInference(AudioTool):
         output_dir: Optional[str] = None,
     ) -> None:
         if not huggingface_api_key:
-            SecretStr(os.getenv(self._HUGGINGFACE_API_TOKEN_ENV_NAME))
+            huggingface_api_key = SecretStr(
+                os.getenv(self._HUGGINGFACE_API_KEY_ENV_NAME, "")
+            )
 
         if (
-            not huggingface_api_key.get_secret_value()
+            not huggingface_api_key
+            or not huggingface_api_key.get_secret_value()
             or huggingface_api_key.get_secret_value() == ""
         ):
-            raise ValueError(f"'{self.HUGGINGFACE_API_KEY}' must be or set or passed")
+            raise ValueError(
+                f"'{self._HUGGINGFACE_API_KEY_ENV_NAME}' must be or set or passed"
+            )
 
         super().__init__(
             model_name=model_name,
@@ -61,7 +67,12 @@ class HuggingFaceTextToSpeechModelInference(AudioTool):
             output_dir=output_dir if output_dir else self._DEFAULT_OUTPUT_DIR,
         )
 
-    def _run(self, query: str, output_name: Optional[str] = None) -> str:
+    def _run(
+        self,
+        query: str,
+        output_name: Optional[str] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         response = requests.post(
             self.api_url,
             headers={
@@ -87,4 +98,4 @@ class HuggingFaceTextToSpeechModelInference(AudioTool):
 
     def _default_output_name(self) -> str:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"{self._DEFAULT_OUTPUT_NAME_PREFIX}_{timestamp}"
+        return f"{self._DEFAULT_OUTPUT_NAME}_{timestamp}"

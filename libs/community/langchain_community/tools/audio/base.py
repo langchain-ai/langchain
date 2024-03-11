@@ -12,6 +12,9 @@ class AudioTool(BaseTool):
 
     @abstractmethod
     def _run(
-        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
+        self,
+        query: str,
+        output_name: Optional[str] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         pass
