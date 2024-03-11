@@ -1,13 +1,16 @@
 """
-Pathway vector store server and client.
+Pathway Vector Store client.
 
 
-The PathwayVectorServer builds a pipeline which indexes all files in a given folder,
-embeds them and builds a vector index. The pipeline reacts to changes in source files,
-automatically updating appropriate index entries.
+The Pathway Vector Server is a pipeline written in the Pathway framweork which indexes
+all files in a given folder, embeds them, and builds a vector index. The pipeline reacts
+to changes in source files, automatically updating appropriate index entries.
 
 The PathwayVectorClient implements the LangChain VectorStore interface and queries the
 PathwayVectorServer to retrieve up-to-date documents.
+
+You can use the client with managed instances of Pathway Vector Store, or run your own 
+instance as described at https://pathway.com/developers/user-guide/llm-xpack/vectorstore_pipeline/
 
 """
 
