@@ -232,7 +232,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        **kwargs: Dict,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         system, formatted_messages = format_messages_anthropic(messages)
         rtn = {
