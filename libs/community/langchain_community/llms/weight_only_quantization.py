@@ -113,11 +113,11 @@ class WeightOnlyQuantPipeline(LLM):
                 "Please install it with `pip install transformers` "
                 "and `pip install intel-extension-for-transformers`."
             )
-        if (isinstance(device, int) and device >= 0):
+        if isinstance(device, int) and device >= 0:
             if not is_ipex_available():
                 raise ValueError("Don't find out Intel GPU on this machine!")
             device_map = "xpu:" + str(device)
-        elif (isinstance(device, int) and device < 0):
+        elif isinstance(device, int) and device < 0:
             device = None
 
         if device is None:
