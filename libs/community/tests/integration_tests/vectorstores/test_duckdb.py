@@ -21,6 +21,10 @@ def embeddings():
 def texts():
     return ["text 1", "text 2", "item 3"]
 
+@pytest.fixture
+def metadatas():
+    return [{"source": "Document 1"}, {"source": "Document 2"}, {"source": "Document 3"}]
+
 @pytest.mark.requires("duckdb")
 def test_duckdb_with_connection(duckdb_connection, embeddings, texts):
     store = DuckDB(connection=duckdb_connection, embedding=embeddings, table_name="test_table")
@@ -82,3 +86,25 @@ def test_duckdb_add_texts_with_predefined_ids(duckdb_connection, embeddings):
         
         found_texts = [doc.page_content for doc in result]
         assert text in found_texts, f"Text '{text}' was not found in the search results."
+
+@pytest.mark.requires("duckdb")
+def test_duckdb_from_texts(duckdb_connection, embeddings, texts, metadatas):
+    # Initialize DuckDB from texts using the from_texts class method
+    store = DuckDB.from_texts(
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+        connection=duckdb_connection,
+        table_name="test_from_texts_table"
+    )
+
+    # Perform a similarity search to retrieve the documents
+    query_text = "sample text"
+    result = store.similarity_search(query_text, k=2)
+
+    # Verify that the vector store was populated and can return results
+    assert len(result) > 0, "Should return at least one result"
+
+    # Optionally, check that metadata is correctly associated with the texts
+    for doc in result:
+        assert "source" in doc.metadata, "Document metadata should include 'source' key"

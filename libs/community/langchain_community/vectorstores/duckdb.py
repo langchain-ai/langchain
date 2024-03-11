@@ -3,12 +3,11 @@ from __future__ import annotations
 import uuid
 import pandas as pd
 import json
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
-
+from langchain_core.vectorstores import VST, VectorStore
 
 class DuckDB(VectorStore):
     """`DuckDB` vector store.
@@ -37,12 +36,13 @@ class DuckDB(VectorStore):
 
     def __init__(
         self,
+        *,
         connection: Optional[Any] = None,
-        embedding: Optional[Embeddings] = None,
-        vector_key: Optional[str] = "embedding",
-        id_key: Optional[str] = "id",
-        text_key: Optional[str] = "text",
-        table_name: Optional[str] = "vectorstore",
+        embedding: Embeddings,
+        vector_key: str = "embedding",
+        id_key: str = "id",
+        text_key: str = "text",
+        table_name: str = "vectorstore",
     ):
         """Initialize with DuckDB connection and setup for vector storage."""
         try:
@@ -75,7 +75,6 @@ class DuckDB(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Turn texts into embedding and add it to the database using Pandas DataFrame
@@ -83,11 +82,15 @@ class DuckDB(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            ids: Optional list of ids to associate with the texts.
+            kwargs: Additional parameters including optional 'ids' to associate with the texts.
 
         Returns:
             List of ids of the added texts.
         """
+
+        # Extract ids from kwargs or generate new ones if not provided
+        ids = kwargs.pop('ids', [str(uuid.uuid4()) for _ in texts])
+
         # Embed texts and create documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
@@ -104,7 +107,6 @@ class DuckDB(VectorStore):
             }
             docs.append(doc)
         df = pd.DataFrame(docs)
-        print(df['embedding'])
         # self._table.insert(df)
         self._connection.sql(f"INSERT INTO {self._table_name} SELECT * FROM df")
         return ids
@@ -138,40 +140,44 @@ class DuckDB(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        connection: Any = None,
-        vector_key: Optional[str] = "vector",
-        id_key: Optional[str] = "id",
-        text_key: Optional[str] = "text",
-        table_name: Optional[str] = "embeddings",
         **kwargs: Any,
-    ) -> DuckDB:
+    ) -> VST:
         """Creates an instance of DuckDB and populates it with texts and their embeddings.
 
         Args:
             texts: List of strings to add to the vector store.
             embedding: The embedding function or model to use for generating embeddings.
             metadatas: Optional list of metadata dictionaries associated with the texts.
-            connection: DuckDB connection. If not provided, a new connection will be created.
-            vector_key: The column name for storing vectors. Defaults to "vector".
-            id_key: The column name for storing unique identifiers. Defaults to "id".
-            text_key: The column name for storing text. Defaults to "text".
-            table_name: The name of the table to use for storing embeddings. Defaults to "embeddings".
-        
+            **kwargs: Additional keyword arguments including:
+                - connection: DuckDB connection. If not provided, a new connection will be created.
+                - vector_key: The column name for storing vectors. Defaults to "vector".
+                - id_key: The column name for storing unique identifiers. Defaults to "id".
+                - text_key: The column name for storing text. Defaults to "text".
+                - table_name: The name of the table to use for storing embeddings. Defaults to "embeddings".
+            
         Returns:
             An instance of DuckDB with the provided texts and their embeddings added.
         """
+
+        # Extract kwargs for DuckDB instance creation
+        connection = kwargs.get('connection', None)
+        vector_key = kwargs.get('vector_key', "vector")
+        id_key = kwargs.get('id_key', "id")
+        text_key = kwargs.get('text_key', "text")
+        table_name = kwargs.get('table_name', "embeddings")
+        
         # Create an instance of DuckDB
         instance = DuckDB(
-            connection,
-            embedding,
-            vector_key,
-            id_key,
-            text_key,
-            table_name,
+            connection = connection,
+            embedding = embedding,
+            vector_key = vector_key,
+            id_key = id_key,
+            text_key = text_key,
+            table_name = table_name,
         )
         # Add texts and their embeddings to the DuckDB vector store
         instance.add_texts(texts, metadatas=metadatas, **kwargs)
