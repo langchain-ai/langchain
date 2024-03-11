@@ -53,6 +53,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Bagel",
         "Cassandra",
         "Chroma",
+        "CouchbaseVectorStore",
         "DashVector",
         "DatabricksVectorSearch",
         "TiDBVectorStore",
