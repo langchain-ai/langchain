@@ -50,11 +50,9 @@ def test_huggingface_tts_run_with_requests_mock() -> None:
 
     test_audio_content = b"test_audio_bytes"
 
-    with (
-        tempfile.TemporaryDirectory() as tmp_dir,
-        patch("requests.post") as mock_inference,
-        patch("builtins.open", mock_open()) as mock_file,
-    ):
+    with tempfile.TemporaryDirectory() as tmp_dir, patch(
+        "requests.post"
+    ) as mock_inference, patch("builtins.open", mock_open()) as mock_file:
         expected_output_path = os.path.join(tmp_dir, f"{output_name}.wav")
 
         tts = HuggingFaceTextToSpeechModelInference(
