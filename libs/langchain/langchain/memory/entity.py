@@ -77,6 +77,12 @@ class UpstashRedisEntityStore(BaseEntityStore):
     that TTL is extended by 3 days every time the entity is read back.
     """
 
+    redis_client: Any
+    session_id: str = "default"
+    key_prefix: str = "memory_store"
+    ttl: Optional[int] = 60 * 60 * 24
+    recall_ttl: Optional[int] = 60 * 60 * 24 * 3
+
     def __init__(
         self,
         session_id: str = "default",
