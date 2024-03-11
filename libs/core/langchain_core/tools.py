@@ -410,17 +410,13 @@ class ChildTool(BaseTool):
                     f"Got unexpected type of `handle_tool_error`. Expected bool, str "
                     f"or callable. Received: {self.handle_tool_error}"
                 )
-            run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color="red", name=self.name, **kwargs)
             return observation
         except (Exception, KeyboardInterrupt) as e:
             run_manager.on_tool_error(e)
             raise e
         else:
-            run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color=color, name=self.name, **kwargs)
             return observation
 
     async def arun(
@@ -502,7 +498,7 @@ class ChildTool(BaseTool):
                     f"or callable. Received: {self.handle_tool_error}"
                 )
             await run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
+                observation, color="red", name=self.name, **kwargs
             )
             return observation
         except (Exception, KeyboardInterrupt) as e:
@@ -510,7 +506,7 @@ class ChildTool(BaseTool):
             raise e
         else:
             await run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
+                observation, color=color, name=self.name, **kwargs
             )
             return observation
 
