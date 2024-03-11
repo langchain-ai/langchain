@@ -84,6 +84,7 @@ from langchain.agents.structured_chat.base import (
 )
 from langchain.agents.tools import Tool, tool
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
+from langchain.agents.cohere_tools_agent.base import create_cohere_tools_agent
 
 DEPRECATED_CODE = [
     "create_csv_agent",
@@ -154,4 +155,5 @@ __all__ = [
     "create_self_ask_with_search_agent",
     "create_json_chat_agent",
     "create_structured_chat_agent",
+    "create_cohere_tools_agent",
 ]

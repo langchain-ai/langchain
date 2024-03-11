@@ -141,16 +141,23 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._identifying_params, **kwargs)
         stream = self.client.chat(**request, stream=True)
-
         for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
-                    run_manager.on_llm_new_token(delta, chunk=chunk)
-                yield chunk
+                    run_manager.on_llm_new_token(delta)
+            elif data.event_type == "stream-end":
+                generation_info = self._get_generation_info(stream)
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="",
+                        additional_kwargs=generation_info),
+                        generation_info=generation_info)
+            else: 
+                yield ChatGenerationChunk(message=AIMessageChunk(content=""))
 
     async def _astream(
         self,
@@ -159,25 +166,37 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._identifying_params,**kwargs)
         stream = await self.async_client.chat(**request, stream=True)
 
         async for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
-                    await run_manager.on_llm_new_token(delta, chunk=chunk)
-                yield chunk
+                    await run_manager.on_llm_new_token(delta)
+            elif data.event_type == "stream-end":
+                generation_info = self._get_generation_info(stream)
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="",
+                        additional_kwargs=generation_info),
+                        generation_info=generation_info)
+            else: 
+                yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+
 
     def _get_generation_info(self, response: Any) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""
         return {
+            "tool_calls": response.tool_calls,
             "documents": response.documents,
             "citations": response.citations,
             "search_results": response.search_results,
             "search_queries": response.search_queries,
+            "is_search_required": response.is_search_required,
             "token_count": response.token_count,
+            "generation_id": response.generation_id,
         }
 
     def _generate(
@@ -193,13 +212,11 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return generate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params,**self._identifying_params, **kwargs)
         response = self.client.chat(**request)
 
-        message = AIMessage(content=response.text)
-        generation_info = None
-        if hasattr(response, "documents"):
-            generation_info = self._get_generation_info(response)
+        message = AIMessage(content=response.text, additional_kwargs=response)
+        generation_info = self._get_generation_info(response)
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
@@ -219,13 +236,11 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return await agenerate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._identifying_params,**kwargs)
         response = self.client.chat(**request, stream=False)
 
-        message = AIMessage(content=response.text)
-        generation_info = None
-        if hasattr(response, "documents"):
-            generation_info = self._get_generation_info(response)
+        message = AIMessage(content=response.text, additional_kwargs=response)
+        generation_info = self._get_generation_info(response)
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
