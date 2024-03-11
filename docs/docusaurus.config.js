@@ -338,9 +338,8 @@ const config = {
   ],
 
   customFields: {
-    NEXT_PUBLIC_SUPABASE_PUBLIC_KEY:
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY,
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    supabasePublicKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   },
 };
 
