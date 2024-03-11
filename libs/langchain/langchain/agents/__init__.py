@@ -55,6 +55,7 @@ from langchain.agents.agent_toolkits.vectorstore.base import (
     create_vectorstore_router_agent,
 )
 from langchain.agents.agent_types import AgentType
+from langchain.agents.cohere_tools_agent.base import create_cohere_tools_agent
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.initialize import initialize_agent
@@ -84,7 +85,6 @@ from langchain.agents.structured_chat.base import (
 )
 from langchain.agents.tools import Tool, tool
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
-from langchain.agents.cohere_tools_agent.base import create_cohere_tools_agent
 
 DEPRECATED_CODE = [
     "create_csv_agent",
