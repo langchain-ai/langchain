@@ -40,7 +40,7 @@ Enable them by adding the model name to the modelsDeployed list below.
 """
 
 modelsDeployed: List[str] = [
-    # "elser",
+    # ".elser_model_1",
     # "sentence-transformers__all-minilm-l6-v2",
 ]
 
@@ -709,7 +709,7 @@ class TestElasticsearch:
         assert output == [Document(page_content="bar")]
 
     @pytest.mark.skipif(
-        "elser" not in modelsDeployed,
+        ".elser_model_1" not in modelsDeployed,
         reason="ELSER not deployed in ML Node, skipping test",
     )
     def test_similarity_search_with_sparse_infer_instack(
