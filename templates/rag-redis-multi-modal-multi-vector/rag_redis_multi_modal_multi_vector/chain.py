@@ -2,11 +2,11 @@ import base64
 import io
 
 from langchain.pydantic_v1 import BaseModel
-from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_openai import ChatOpenAI
 from PIL import Image
 
 from rag_redis_multi_modal_multi_vector.utils import make_mv_retriever
