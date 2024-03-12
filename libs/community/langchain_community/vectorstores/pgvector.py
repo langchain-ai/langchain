@@ -12,14 +12,13 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
 )
 
 import numpy as np
 import sqlalchemy
-from sqlalchemy import SQLColumnExpression, Text, cast, delete, func, quoted_name, text
+from sqlalchemy import SQLColumnExpression, delete
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
@@ -657,7 +656,8 @@ class PGVector(VectorStore):
             # Verify that that operator is an operator
             if operator not in SUPPORTED_OPERATORS:
                 raise ValueError(
-                    f"Invalid operator: {operator}. Expected one of {SUPPORTED_OPERATORS}"
+                    f"Invalid operator: {operator}. "
+                    f"Expected one of {SUPPORTED_OPERATORS}"
                 )
         else:  # Then we assume an equality operator
             operator = "$eq"
@@ -677,12 +677,12 @@ class PGVector(VectorStore):
                 # rather than single quote.
                 # we need the double quote for the jsonpath operations.
                 sanitized_value = _sanitized_double_quoted_string(filter_value)
-                path_value = text(
+                path_value = sqlalchemy.text(
                     f"'$.{field} {native} {sanitized_value}'",
                 )
             else:
                 placeholder_name = f"filter_value_{counter.increment()}"
-                path_value = text(
+                path_value = sqlalchemy.text(
                     f"'$.{field} {native} :{placeholder_name}'",
                 ).bindparams(**{placeholder_name: filter_value})
             return json_path_operation(path_value)
@@ -690,12 +690,12 @@ class PGVector(VectorStore):
             # Use AND with two comparisons
             low, high = filter_value
             placeholder_name = f"value_{counter.increment()}"
-            lower_bound = text(
+            lower_bound = sqlalchemy.text(
                 f"'$.{field} >= :{placeholder_name}'",
             ).bindparams(**{placeholder_name: low})
 
             placeholder_name = f"value_{counter.increment()}"
-            upper_bound = text(
+            upper_bound = sqlalchemy.text(
                 f"'$.{field} <= :{placeholder_name}'",
             ).bindparams(**{placeholder_name: high})
             # and
@@ -815,7 +815,7 @@ class PGVector(VectorStore):
                         "but got an empty dictionary"
                     )
             else:
-                raise ValueError(f"Got an empty dictionary for filters.")
+                raise ValueError("Got an empty dictionary for filters.")
         else:
             raise ValueError(
                 f"Invalid type: Expected a dictionary but got type: {type(filters)}"

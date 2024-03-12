@@ -559,7 +559,8 @@ def test_evil_code(
             # Please note that this might not be super optimized
             # Another way to phrase the query is as
             # langchain_pg_embedding.cmetadata @@ '($.id == 1 || $.id == 2)'
-            "(langchain_pg_embedding.cmetadata @@ '$.id == 1') OR (langchain_pg_embedding.cmetadata @@ '$.id == 2')",
+            "(langchain_pg_embedding.cmetadata @@ '$.id == 1') "
+            "OR (langchain_pg_embedding.cmetadata @@ '$.id == 2')",
         ),
     ],
 )
