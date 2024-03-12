@@ -135,7 +135,8 @@ class PydanticToolsParser(JsonOutputToolsParser):
                         f"Tool arguments must be specified as a dict, received: "
                         f"{res['args']}"
                     )
-                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+                pydantic_cls = name_dict[res["type"]]
+                pydantic_objects.append(pydantic_cls.construct(**res["args"]))
             except (ValidationError, ValueError) as e:
                 if partial:
                     continue
