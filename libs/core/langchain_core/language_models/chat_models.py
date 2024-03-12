@@ -15,6 +15,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Union,
     cast,
 )
 
@@ -240,6 +241,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
+                    chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     yield chunk.message
                     if generation is None:
                         generation = chunk
@@ -317,6 +319,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             async for chunk in _stream_implementation(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             ):
+                chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 yield chunk.message
                 if generation is None:
                     generation = chunk
@@ -586,38 +589,35 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        new_arg_supported = inspect.signature(self._generate).parameters.get(
-            "run_manager"
-        )
-        disregard_cache = self.cache is not None and not self.cache
         llm_cache = get_llm_cache()
-        if llm_cache is None or disregard_cache:
-            # This happens when langchain.cache is None, but self.cache is True
-            if self.cache is not None and self.cache:
+        check_cache = self.cache or self.cache is None
+        if check_cache:
+            if llm_cache:
+                llm_string = self._get_llm_string(stop=stop, **kwargs)
+                prompt = dumps(messages)
+                cache_val = llm_cache.lookup(prompt, llm_string)
+                if isinstance(cache_val, list):
+                    return ChatResult(generations=cache_val)
+            elif self.cache is None:
+                pass
+            else:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            if new_arg_supported:
-                return self._generate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                return self._generate(messages, stop=stop, **kwargs)
+        if inspect.signature(self._generate).parameters.get("run_manager"):
+            result = self._generate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            llm_string = self._get_llm_string(stop=stop, **kwargs)
-            prompt = dumps(messages)
-            cache_val = llm_cache.lookup(prompt, llm_string)
-            if isinstance(cache_val, list):
-                return ChatResult(generations=cache_val)
-            else:
-                if new_arg_supported:
-                    result = self._generate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                else:
-                    result = self._generate(messages, stop=stop, **kwargs)
-                llm_cache.update(prompt, llm_string, result.generations)
-                return result
+            result = self._generate(messages, stop=stop, **kwargs)
+
+        for generation in result.generations:
+            generation.message.response_metadata = _gen_info_and_msg_metadata(
+                generation
+            )
+        if check_cache and llm_cache:
+            llm_cache.update(prompt, llm_string, result.generations)
+        return result
 
     async def _agenerate_with_cache(
         self,
@@ -626,38 +626,34 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        new_arg_supported = inspect.signature(self._agenerate).parameters.get(
-            "run_manager"
-        )
-        disregard_cache = self.cache is not None and not self.cache
         llm_cache = get_llm_cache()
-        if llm_cache is None or disregard_cache:
-            # This happens when langchain.cache is None, but self.cache is True
-            if self.cache is not None and self.cache:
+        check_cache = self.cache or self.cache is None
+        if check_cache:
+            if llm_cache:
+                llm_string = self._get_llm_string(stop=stop, **kwargs)
+                prompt = dumps(messages)
+                cache_val = await llm_cache.alookup(prompt, llm_string)
+                if isinstance(cache_val, list):
+                    return ChatResult(generations=cache_val)
+            elif self.cache is None:
+                pass
+            else:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            if new_arg_supported:
-                return await self._agenerate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                return await self._agenerate(messages, stop=stop, **kwargs)
+        if inspect.signature(self._agenerate).parameters.get("run_manager"):
+            result = await self._agenerate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            llm_string = self._get_llm_string(stop=stop, **kwargs)
-            prompt = dumps(messages)
-            cache_val = await llm_cache.alookup(prompt, llm_string)
-            if isinstance(cache_val, list):
-                return ChatResult(generations=cache_val)
-            else:
-                if new_arg_supported:
-                    result = await self._agenerate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                else:
-                    result = await self._agenerate(messages, stop=stop, **kwargs)
-                await llm_cache.aupdate(prompt, llm_string, result.generations)
-                return result
+            result = await self._agenerate(messages, stop=stop, **kwargs)
+        for generation in result.generations:
+            generation.message.response_metadata = _gen_info_and_msg_metadata(
+                generation
+            )
+        if check_cache and llm_cache:
+            await llm_cache.aupdate(prompt, llm_string, result.generations)
+        return result
 
     @abstractmethod
     def _generate(
@@ -852,3 +848,12 @@ class SimpleChatModel(BaseChatModel):
             run_manager=run_manager.get_sync() if run_manager else None,
             **kwargs,
         )
+
+
+def _gen_info_and_msg_metadata(
+    generation: Union[ChatGeneration, ChatGenerationChunk],
+) -> dict:
+    return {
+        **(generation.generation_info or {}),
+        **generation.message.response_metadata,
+    }
