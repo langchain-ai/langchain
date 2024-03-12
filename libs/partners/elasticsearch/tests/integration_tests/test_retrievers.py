@@ -90,7 +90,7 @@ class TestElasticsearchRetriever:
             index_name=index_name,
             body_func=body_func,
             content_field=text_field,
-            **config,
+            **config,  # type: ignore[arg-type]
         )
 
         index_test_data(retriever.es_client, index_name, text_field)
