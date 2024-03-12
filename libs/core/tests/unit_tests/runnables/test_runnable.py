@@ -143,6 +143,12 @@ class FakeTracer(BaseTracer):
             if parent.child_runs:
                 q.extend(parent.child_runs)
         return result
+    
+    @property
+    def run_ids(self) -> List[uuid.UUID]:
+        runs = self.flattened_runs()
+        uuids_map = {v: k for k, v in self.uuids_map.items()}
+        return [uuids_map.get(r.id) for r in runs]
 
 
 class FakeRunnable(Runnable[str, int]):
@@ -4770,7 +4776,7 @@ async def test_runnable_gen_context_config() -> None:
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
-    run_ids = [r.id for r in tracer.flattened_runs()]
+    run_ids = tracer.run_ids
     assert run_id in run_ids
     assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
@@ -4790,7 +4796,7 @@ async def test_runnable_gen_context_config() -> None:
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
-    run_ids = [r.id for r in tracer.flattened_runs()]
+    run_ids = tracer.run_ids
     assert run_id in run_ids
     assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
@@ -4827,7 +4833,7 @@ async def test_runnable_gen_context_config() -> None:
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
-    run_ids = [r.id for r in tracer.flattened_runs()]
+    run_ids = tracer.run_ids
     assert run_id in run_ids
     assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
@@ -4852,7 +4858,7 @@ async def test_runnable_gen_context_config() -> None:
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
-    run_ids = [r.id for r in tracer.flattened_runs()]
+    run_ids = tracer.run_ids
     assert run_id in run_ids
     assert len(run_ids) == len(set(run_ids))
 
