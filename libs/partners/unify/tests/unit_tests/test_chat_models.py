@@ -26,7 +26,7 @@ def test_unify_initialization() -> None:
     """Test ChatUnify initialization."""
     # Verify that ChatUnify can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
-    ChatUnify(model="test", mistral_api_key="test")
+    ChatUnify(model="test", unify_api_key="test")
 
 
 @pytest.mark.parametrize(
