@@ -143,9 +143,9 @@ class FakeTracer(BaseTracer):
             if parent.child_runs:
                 q.extend(parent.child_runs)
         return result
-    
+
     @property
-    def run_ids(self) -> List[uuid.UUID]:
+    def run_ids(self) -> List[Optional[uuid.UUID]]:
         runs = self.flattened_runs()
         uuids_map = {v: k for k, v in self.uuids_map.items()}
         return [uuids_map.get(r.id) for r in runs]
@@ -4802,7 +4802,12 @@ async def test_runnable_gen_context_config() -> None:
     tracer.runs.clear()
 
     tracer = FakeTracer()
-    assert runnable.batch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    run_id = uuid.uuid4()
+
+    with pytest.warns(UserWarning):
+        assert runnable.batch(
+            [None, None], {"callbacks": [tracer], "run_id": run_id}
+        ) == [6, 6]
     assert len(tracer.runs) == 2
     assert tracer.runs[0].outputs == {"output": 6}
     assert tracer.runs[1].outputs == {"output": 6}
@@ -4863,7 +4868,11 @@ async def test_runnable_gen_context_config() -> None:
     assert len(run_ids) == len(set(run_ids))
 
     tracer = FakeTracer()
-    assert await arunnable.abatch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    run_id = uuid.uuid4()
+    with pytest.warns(UserWarning):
+        assert await arunnable.abatch(
+            [None, None], {"callbacks": [tracer], "run_id": run_id}
+        ) == [6, 6]
     assert len(tracer.runs) == 2
     assert tracer.runs[0].outputs == {"output": 6}
     assert tracer.runs[1].outputs == {"output": 6}
