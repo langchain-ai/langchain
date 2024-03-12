@@ -16,7 +16,7 @@ class CouchbaseVectorStore(VectorStore):
 
     To use it, you need
     - a recent installation of the `couchbase` library
-    - a Couchbase database wih a pre-defined FTS index with support for vector fields
+    - a Couchbase database with a pre-defined Search index with support for vector fields
 
     Example:
         .. code-block:: python
@@ -97,7 +97,7 @@ class CouchbaseVectorStore(VectorStore):
         return True
 
     def _check_index_exists(self) -> bool:
-        """Check if the FTS index exists in the linked Couchbase cluster
+        """Check if the Search index exists in the linked Couchbase cluster
         Raises a ValueError if the index does not exist"""
         if self._scoped_index:
             all_indexes = [
@@ -143,7 +143,7 @@ class CouchbaseVectorStore(VectorStore):
             scope_name (str): name of scope in the bucket to store documents in.
             collection_name (str): name of collection in the scope to store documents in
             embedding (Embeddings): embedding function to use.
-            index_name (str): name of the FTS index to use.
+            index_name (str): name of the Search index to use.
             text_key (optional[str]): key in document to use as text.
                 Set to text by default.
             embedding_key (optional[str]): key in document to use for the embeddings.
@@ -323,7 +323,7 @@ class CouchbaseVectorStore(VectorStore):
         return self._embedding_function
 
     def _format_metadata(self, row_fields: Dict[str, Any]) -> Dict[str, Any]:
-        """Helper method to format the metadata from the Couchbase FTS.
+        """Helper method to format the metadata from the Couchbase Search API.
         Args:
             row_fields (Dict[str, Any]): The fields to format.
 
@@ -332,7 +332,7 @@ class CouchbaseVectorStore(VectorStore):
         """
         metadata = {}
         for key, value in row_fields.items():
-            # Couchbase FTS returns the metadata key with a prefix
+            # Couchbase Search returns the metadata key with a prefix
             # `metadata.` We remove it to get the original metadata key
             if key.startswith(self._metadata_key):
                 new_key = key.split(self._metadata_key + ".")[-1]
