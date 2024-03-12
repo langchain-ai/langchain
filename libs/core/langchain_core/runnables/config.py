@@ -169,7 +169,7 @@ def get_config_list(
 
     if isinstance(config, list):
         return list(map(ensure_config, config))
-    if isinstance(config, dict) and config.get("run_id") is not None:
+    if length > 1 and isinstance(config, dict) and config.get("run_id") is not None:
         warnings.warn(
             "Provided run_id be used only for the first element of the batch.",
             category=RuntimeWarning,
