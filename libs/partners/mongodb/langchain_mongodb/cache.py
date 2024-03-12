@@ -21,6 +21,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
+from pymongo.results import DeleteResult
 
 from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
 
@@ -201,7 +202,7 @@ class MongoDBCache(BaseCache):
         """Create keyed fields for local caching layer"""
         return f"{prompt}#{llm_string}"
 
-    def clear(self, **kwargs: Any) -> None:
+    def clear(self, **kwargs: Any) -> DeleteResult:  # type: ignore
         """Clear cache that can take additional keyword arguments.
         Any additional arguments will propagate as filtration criteria for
         what gets deleted.
@@ -210,7 +211,7 @@ class MongoDBCache(BaseCache):
             # Delete only entries that have llm_string as "fake-model"
             self.clear(llm_string="fake-model")
         """
-        self.collection.delete_many({**kwargs})
+        return self.collection.delete_many({**kwargs})
 
 
 class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
@@ -299,7 +300,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         """Create keyed fields for local caching layer"""
         return f"{prompt}#{llm_string}"
 
-    def clear(self, **kwargs: Any) -> None:
+    def clear(self, **kwargs: Any) -> DeleteResult:  # type: ignore
         """Clear cache that can take additional keyword arguments.
         Any additional arguments will propagate as filtration criteria for
         what gets deleted. It will delete any locally cached content regardless
@@ -308,5 +309,4 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
             # Delete only entries that have llm_string as "fake-model"
             self.clear(llm_string="fake-model")
         """
-        self.collection.delete_many({**kwargs})
-        self._local_cache.clear()
+        return self.collection.delete_many({**kwargs})
