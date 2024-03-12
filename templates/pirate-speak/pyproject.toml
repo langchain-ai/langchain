@@ -8,8 +8,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 openai = "<2"
-langchain-community = "^0.0.7"
-langchain-core = "^0.1.4"
+langchain-community = ">=0.0.7,<0.2"
+langchain-core = ">=0.1.4,<0.2"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
