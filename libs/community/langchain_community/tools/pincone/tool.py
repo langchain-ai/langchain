@@ -23,7 +23,7 @@ class PineconeTool(BasePineconeTool, BaseTool):
 
     name: str = "pinecone-search"
     description: str = (
-        "pinecone-search searchs from vector database"
+        "pinecone-search searches from vector database"
         "This tool is will search answer for user's query from Pincone"
         "Input should be a search query."
     )
