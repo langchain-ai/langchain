@@ -31,21 +31,23 @@ class QuantizedBgeEmbeddings(BaseModel, Embeddings):
             (default "int8-model.onnx")
 
     Example:
+        .. code-block:: python
 
-    from langchain_community.embeddings import QuantizedBgeEmbeddings
+            from langchain_community.embeddings import QuantizedBgeEmbeddings
 
-    model_name = "Intel/bge-small-en-v1.5-sts-int8-static-inc"
-    encode_kwargs = {'normalize_embeddings': True}
-    hf = QuantizedBgeEmbeddings(
-        model_name,
-        encode_kwargs=encode_kwargs,
-        query_instruction="Represent this sentence for searching relevant passages: "
-    )
-    """
+            model_name = "Intel/bge-small-en-v1.5-sts-int8-static-inc"
+            encode_kwargs = {'normalize_embeddings': True}
+            hf = QuantizedBgeEmbeddings(
+                model_name,
+                encode_kwargs=encode_kwargs,
+                query_instruction="Represent this sentence for searching relevant passages: "
+            )
+    """  # noqa: E501
 
     def __init__(
         self,
         model_name: str,
+        *,
         max_seq_len: int = 512,
         pooling_strategy: str = "mean",  # "mean" or "cls"
         query_instruction: Optional[str] = None,
