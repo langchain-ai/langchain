@@ -799,7 +799,8 @@ class ChatOpenAI(BaseChatModel):
                 the model output will be a dict. With a Pydantic class the returned
                 attributes will be validated, whereas with a dict they will not be. If
                 `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec.
+                must match the OpenAI function-calling spec or be a valid JSON schema
+                with top level 'title' and 'description' keys specified.
             method: The method for steering model generation, either "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
