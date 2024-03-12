@@ -67,7 +67,7 @@ def create_chat_prompt_template() -> ChatPromptTemplate:
     """Create a chat prompt template."""
     return ChatPromptTemplate(
         input_variables=["foo", "bar", "context"],
-        messages=create_messages(),
+        messages=create_messages(),  # type: ignore[arg-type]
     )
 
 
@@ -191,10 +191,12 @@ def test_chat_invalid_input_variables_extra() -> None:
     messages = [HumanMessage(content="foo")]
     with pytest.raises(ValueError):
         ChatPromptTemplate(
-            messages=messages, input_variables=["foo"], validate_template=True
+            messages=messages,  # type: ignore[arg-type]
+            input_variables=["foo"],
+            validate_template=True,  # type: ignore[arg-type]
         )
     assert (
-        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables
+        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables  # type: ignore[arg-type]
         == []
     )
 
@@ -203,16 +205,19 @@ def test_chat_invalid_input_variables_missing() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
     with pytest.raises(ValueError):
         ChatPromptTemplate(
-            messages=messages, input_variables=[], validate_template=True
+            messages=messages,  # type: ignore[arg-type]
+            input_variables=[],
+            validate_template=True,  # type: ignore[arg-type]
         )
     assert ChatPromptTemplate(
-        messages=messages, input_variables=[]
+        messages=messages,  # type: ignore[arg-type]
+        input_variables=[],  # type: ignore[arg-type]
     ).input_variables == ["foo"]
 
 
 def test_infer_variables() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
-    prompt = ChatPromptTemplate(messages=messages)
+    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
     assert prompt.input_variables == ["foo"]
 
 
@@ -223,7 +228,7 @@ def test_chat_valid_with_partial_variables() -> None:
         )
     ]
     prompt = ChatPromptTemplate(
-        messages=messages,
+        messages=messages,  # type: ignore[arg-type]
         input_variables=["question", "context"],
         partial_variables={"formatins": "some structure"},
     )
@@ -237,8 +242,9 @@ def test_chat_valid_infer_variables() -> None:
             "Do something with {question} using {context} giving it like {formatins}"
         )
     ]
-    prompt = ChatPromptTemplate(
-        messages=messages, partial_variables={"formatins": "some structure"}
+    prompt = ChatPromptTemplate(  # type: ignore[call-arg]
+        messages=messages,  # type: ignore[arg-type]
+        partial_variables={"formatins": "some structure"},  # type: ignore[arg-type]
     )
     assert set(prompt.input_variables) == {"question", "context"}
     assert prompt.partial_variables == {"formatins": "some structure"}

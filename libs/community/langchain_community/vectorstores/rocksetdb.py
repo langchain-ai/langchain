@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple
 
@@ -123,7 +124,7 @@ class Rockset(VectorStore):
                 batch = []
             doc = {}
             if metadatas and len(metadatas) > i:
-                doc = metadatas[i]
+                doc = deepcopy(metadatas[i])
             if ids and len(ids) > i:
                 doc["_id"] = ids[i]
             doc[self._text_key] = text

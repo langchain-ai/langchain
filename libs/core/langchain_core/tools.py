@@ -1,4 +1,22 @@
-"""Base implementation for tools or skills."""
+"""**Tools** are classes that an Agent uses to interact with the world.
+
+Each tool has a **description**. Agent uses the description to choose the right
+tool for the job.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    RunnableSerializable --> BaseTool --> <name>Tool  # Examples: AIPluginTool, BaseGraphQLTool
+                                          <name>      # Examples: BraveSearch, HumanInputRun
+
+**Main helpers:**
+
+.. code-block::
+
+    CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
+"""  # noqa: E501
+
 from __future__ import annotations
 
 import inspect
@@ -392,17 +410,13 @@ class ChildTool(BaseTool):
                     f"Got unexpected type of `handle_tool_error`. Expected bool, str "
                     f"or callable. Received: {self.handle_tool_error}"
                 )
-            run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color="red", name=self.name, **kwargs)
             return observation
         except (Exception, KeyboardInterrupt) as e:
             run_manager.on_tool_error(e)
             raise e
         else:
-            run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color=color, name=self.name, **kwargs)
             return observation
 
     async def arun(
@@ -484,7 +498,7 @@ class ChildTool(BaseTool):
                     f"or callable. Received: {self.handle_tool_error}"
                 )
             await run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
+                observation, color="red", name=self.name, **kwargs
             )
             return observation
         except (Exception, KeyboardInterrupt) as e:
@@ -492,7 +506,7 @@ class ChildTool(BaseTool):
             raise e
         else:
             await run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
+                observation, color=color, name=self.name, **kwargs
             )
             return observation
 
@@ -601,7 +615,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super(Tool, self).__init__(
+        super(Tool, self).__init__(  # type: ignore[call-arg]
             name=name, func=func, description=description, **kwargs
         )
 
@@ -777,7 +791,7 @@ class StructuredTool(BaseTool):
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,
+            args_schema=_args_schema,  # type: ignore[arg-type]
             description=description,
             return_direct=return_direct,
             **kwargs,
