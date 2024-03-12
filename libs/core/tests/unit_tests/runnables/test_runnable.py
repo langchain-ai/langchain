@@ -1,4 +1,5 @@
 import sys
+import uuid
 from functools import partial
 from operator import itemgetter
 from typing import (
@@ -132,6 +133,16 @@ class FakeTracer(BaseTracer):
         """Persist a run."""
 
         self.runs.append(self._copy_run(run))
+
+    def flattened_runs(self) -> List[Run]:
+        q = [] + self.runs
+        result = []
+        while q:
+            parent = q.pop()
+            result.append(parent)
+            if parent.child_runs:
+                q.extend(parent.child_runs)
+        return result
 
 
 class FakeRunnable(Runnable[str, int]):
@@ -4752,24 +4763,37 @@ async def test_runnable_gen_context_config() -> None:
     }
 
     tracer = FakeTracer()
-    assert runnable.invoke(None, {"callbacks": [tracer]}) == 6
+    run_id = uuid.uuid4()
+    assert runnable.invoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = [r.id for r in tracer.flattened_runs()]
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert list(runnable.stream(None)) == [1, 2, 3]
     assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
 
     tracer = FakeTracer()
-    assert list(runnable.stream(None, {"callbacks": [tracer]})) == [1, 2, 3]
+    run_id = uuid.uuid4()
+    assert list(runnable.stream(None, {"callbacks": [tracer], "run_id": run_id})) == [
+        1,
+        2,
+        3,
+    ]
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = [r.id for r in tracer.flattened_runs()]
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
+    tracer.runs.clear()
 
     tracer = FakeTracer()
     assert runnable.batch([None, None], {"callbacks": [tracer]}) == [6, 6]
@@ -4795,19 +4819,30 @@ async def test_runnable_gen_context_config() -> None:
     arunnable = RunnableGenerator(agen)
 
     tracer = FakeTracer()
-    assert await arunnable.ainvoke(None, {"callbacks": [tracer]}) == 6
+
+    run_id = uuid.uuid4()
+    assert await arunnable.ainvoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = [r.id for r in tracer.flattened_runs()]
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
 
     tracer = FakeTracer()
-    assert [p async for p in arunnable.astream(None, {"callbacks": [tracer]})] == [
+    run_id = uuid.uuid4()
+    assert [
+        p
+        async for p in arunnable.astream(
+            None, {"callbacks": [tracer], "run_id": run_id}
+        )
+    ] == [
         1,
         2,
         3,
@@ -4817,6 +4852,9 @@ async def test_runnable_gen_context_config() -> None:
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = [r.id for r in tracer.flattened_runs()]
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
 
     tracer = FakeTracer()
     assert await arunnable.abatch([None, None], {"callbacks": [tracer]}) == [6, 6]
