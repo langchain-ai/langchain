@@ -758,6 +758,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if run_id is None:
             return [None] * len(prompts)
         if isinstance(run_id, list):
+            if len(run_id) != len(prompts):
+                raise ValueError(
+                    "Number of manually provided run_id's does not match batch length."
+                    f" {len(run_id)} != {len(prompts)}"
+                )
             return run_id
         return [run_id] + [None] * (len(prompts) - 1)
 
