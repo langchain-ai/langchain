@@ -35,7 +35,7 @@ class _AnthropicCommon(BaseLanguageModel):
     model: str = Field(default="claude-2", alias="model_name")
     """Model name to use."""
 
-    max_tokens_to_sample: int = Field(default=256, alias="max_tokens")
+    max_tokens_to_sample: int = Field(default=1024, alias="max_tokens")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -175,7 +175,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "
-            "Please use `from langchain_community.chat_models import ChatAnthropic` "
+            "Please use `from langchain_anthropic import ChatAnthropic` "
             "instead"
         )
         return values

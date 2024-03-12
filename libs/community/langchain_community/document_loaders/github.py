@@ -217,9 +217,7 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
 
         return ""
 
-    def load(self) -> List[Document]:
-        documents = []
-
+    def lazy_load(self) -> Iterator[Document]:
         files = self.get_file_paths()
         for file in files:
             content = self.get_file_content_by_path(file["path"])
@@ -232,6 +230,4 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
                 "source": f"{self.github_api_url}/{self.repo}/{file['type']}/"
                 f"{self.branch}/{file['path']}",
             }
-            documents.append(Document(page_content=content, metadata=metadata))
-
-        return documents
+            yield Document(page_content=content, metadata=metadata)

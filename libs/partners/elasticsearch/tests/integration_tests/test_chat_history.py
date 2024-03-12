@@ -10,8 +10,8 @@ from langchain_core.messages import message_to_dict
 from langchain_elasticsearch.chat_history import ElasticsearchChatMessageHistory
 
 """
-cd tests/integration_tests/memory/docker-compose
-docker-compose -f elasticsearch.yml up
+cd tests/integration_tests
+docker-compose up elasticsearch
 
 By default runs against local docker instance of Elasticsearch.
 To run against Elastic Cloud, set the following environment variables:
