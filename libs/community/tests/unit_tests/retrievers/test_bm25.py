@@ -52,7 +52,7 @@ def test_k() -> None:
         Document(page_content="Do you have a pen?"),
         Document(page_content="I have a bag."),
         Document(page_content="Do you have a dog?"),
-        Document(page_content="I have a cat.")
+        Document(page_content="I have a cat."),
     ]
     bm25_retriever = BM25Retriever.from_documents(documents=input_docs)
 
