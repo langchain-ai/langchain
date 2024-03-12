@@ -62,6 +62,7 @@ from langchain_core.output_parsers import (
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
+    JsonOutputToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -102,8 +103,19 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
-        if tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            parser = JsonOutputToolsParser(return_id=True)
+            try:
+                tool_calls = parser.parse_tool_calls(raw_tool_calls)
+            except Exception:
+                tool_calls = []
+            return ToolMessage(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                id=id_,
+                tool_calls=tool_calls,
+            )
         return AIMessage(content=content, additional_kwargs=additional_kwargs, id=id_)
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""), id=id_)

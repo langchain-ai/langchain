@@ -7,12 +7,16 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_co
 
 class ToolCall(Serializable):
     name: str
-    args: Any
+    args: dict
     id: Optional[str] = None
 
 
 class ToolCallsMessage(AIMessage):
     tool_calls: List[ToolCall]
+
+
+class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
+    ...
 
 
 ToolCallsMessage.update_forward_refs()
@@ -26,11 +30,6 @@ class ToolOutputMessage(BaseMessage):
 
     type: Literal["tool"] = "tool"
 
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
-
 
 ToolOutputMessage.update_forward_refs()
 ToolMessage = ToolOutputMessage
@@ -43,11 +42,6 @@ class ToolOutputMessageChunk(ToolOutputMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["ToolOutputMessageChunk"] = "ToolOutputMessageChunk"  # type: ignore[assignment]
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ToolOutputMessageChunk):
