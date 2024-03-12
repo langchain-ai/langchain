@@ -1,13 +1,26 @@
 """Test PGVector functionality."""
 import os
-from typing import List
+from typing import Any, Dict, List, Type, Union
 
+import pytest
 import sqlalchemy
 from langchain_core.documents import Document
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
-from langchain_community.vectorstores.pgvector import PGVector
+from langchain_community.vectorstores.pgvector import (
+    SUPPORTED_OPERATORS,
+    PGVector,
+)
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    DOCUMENTS,
+    TYPE_1_FILTERING_TEST_CASES,
+    TYPE_2_FILTERING_TEST_CASES,
+    TYPE_3_FILTERING_TEST_CASES,
+    TYPE_4_FILTERING_TEST_CASES,
+    TYPE_5_FILTERING_TEST_CASES,
+)
 
 # The connection string matches the default settings in the docker-compose file
 # located in the root of the repository: [root]/docker/docker-compose.yml
@@ -375,3 +388,212 @@ def test_pgvector_with_custom_engine_args() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
+
+
+# We should re-use this test-case across other integrations
+# Add database fixture using pytest
+@pytest.fixture
+def pgvector() -> PGVector:
+    """Create a PGVector instance."""
+    store = PGVector.from_documents(
+        documents=DOCUMENTS,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+        relevance_score_fn=lambda d: d * 0,
+        use_jsonb=True,
+    )
+    yield store
+    # Do clean up
+    store.drop_tables()
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
+def test_pgvector_with_with_metadata_filters_1(
+    pgvector: PGVector,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    """Test end to end construction and search."""
+    docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
+    assert [doc.metadata["id"] for doc in docs] == expected_ids, test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_2_FILTERING_TEST_CASES)
+def test_pgvector_with_with_metadata_filters_2(
+    pgvector: PGVector,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    """Test end to end construction and search."""
+    docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
+    assert [doc.metadata["id"] for doc in docs] == expected_ids, test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_3_FILTERING_TEST_CASES)
+def test_pgvector_with_with_metadata_filters_3(
+    pgvector: PGVector,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    """Test end to end construction and search."""
+    docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
+    assert [doc.metadata["id"] for doc in docs] == expected_ids, test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_4_FILTERING_TEST_CASES)
+def test_pgvector_with_with_metadata_filters_4(
+    pgvector: PGVector,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    """Test end to end construction and search."""
+    docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
+    assert [doc.metadata["id"] for doc in docs] == expected_ids, test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_5_FILTERING_TEST_CASES)
+def test_pgvector_with_with_metadata_filters_5(
+    pgvector: PGVector,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    """Test end to end construction and search."""
+    docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
+    assert [doc.metadata["id"] for doc in docs] == expected_ids, test_filter
+
+
+@pytest.mark.parametrize(
+    "invalid_filter",
+    [
+        ["hello"],
+        {
+            "id": 2,
+            "$name": "foo",
+        },
+        {"$or": {}},
+        {"$and": {}},
+        {"$between": {}},
+        {"$eq": {}},
+    ],
+)
+def test_invalid_filters(pgvector: PGVector, invalid_filter: Any) -> None:
+    """Verify that invalid filters raise an error."""
+    with pytest.raises(ValueError):
+        pgvector._create_filter_clause(invalid_filter)
+
+
+@pytest.mark.parametrize(
+    "filter,compiled",
+    [
+        ({"id 'evil code'": 2}, ValueError),
+        (
+            {"id": "'evil code' == 2"},
+            "langchain_pg_embedding.cmetadata @@ '$.id == \"''evil code'' == 2\"'",
+        ),
+    ],
+)
+def test_evil_code(
+    pgvector: PGVector, filter: Any, compiled: Union[Type[Exception], str]
+) -> None:
+    """Test evil code."""
+    if isinstance(compiled, str):
+        clause = pgvector._create_filter_clause(filter)
+        compiled_stmt = str(
+            clause.compile(
+                dialect=postgresql.dialect(),
+                compile_kwargs={
+                    # This substitutes the parameters with their actual values
+                    "literal_binds": True
+                },
+            )
+        )
+        assert compiled_stmt == compiled
+    else:
+        with pytest.raises(compiled):
+            pgvector._create_filter_clause(filter)
+
+
+@pytest.mark.parametrize(
+    "filter,compiled",
+    [
+        ({"id": 2}, "langchain_pg_embedding.cmetadata @@ '$.id == 2'"),
+        (
+            {"id": {"$eq": 2}},
+            "langchain_pg_embedding.cmetadata @@ '$.id == 2'",
+        ),
+        ({"name": "foo"}, "langchain_pg_embedding.cmetadata @@ '$.name == \"foo\"'"),
+        (
+            {"id": {"$ne": 2}},
+            "langchain_pg_embedding.cmetadata @@ '$.id != 2'",
+        ),
+        (
+            {"id": {"$gt": 2}},
+            "langchain_pg_embedding.cmetadata @@ '$.id > 2'",
+        ),
+        (
+            {"id": {"$gte": 2}},
+            "langchain_pg_embedding.cmetadata @@ '$.id >= 2'",
+        ),
+        (
+            {"id": {"$lt": 2}},
+            "langchain_pg_embedding.cmetadata @@ '$.id < 2'",
+        ),
+        (
+            {"id": {"$lte": 2}},
+            "langchain_pg_embedding.cmetadata @@ '$.id <= 2'",
+        ),
+        (
+            {"name": {"$ilike": "foo"}},
+            "CAST(jsonb_path_query_first(langchain_pg_embedding.cmetadata"
+            ", '$.name') AS TEXT) ILIKE 'foo'",
+        ),
+        (
+            {"name": {"$like": "foo"}},
+            "CAST(jsonb_path_query_first(langchain_pg_embedding.cmetadata"
+            ", '$.name') AS TEXT) LIKE 'foo'",
+        ),
+        (
+            {"$or": [{"id": 1}, {"id": 2}]},
+            # Please note that this might not be super optimized
+            # Another way to phrase the query is as
+            # langchain_pg_embedding.cmetadata @@ '($.id == 1 || $.id == 2)'
+            "(langchain_pg_embedding.cmetadata @@ '$.id == 1') OR (langchain_pg_embedding.cmetadata @@ '$.id == 2')",
+        ),
+    ],
+)
+def test_pgvector_query_compilation(
+    pgvector: PGVector, filter: Any, compiled: str
+) -> None:
+    """Test translation from IR to SQL"""
+    clause = pgvector._create_filter_clause(filter)
+    compiled_stmt = str(
+        clause.compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={
+                # This substitutes the parameters with their actual values
+                "literal_binds": True
+            },
+        )
+    )
+    assert compiled_stmt == compiled
+
+
+def test_validate_operators() -> None:
+    """Verify that all operators have been categorized."""
+    assert sorted(SUPPORTED_OPERATORS) == [
+        "$and",
+        "$between",
+        "$eq",
+        "$gt",
+        "$gte",
+        "$ilike",
+        "$in",
+        "$like",
+        "$lt",
+        "$lte",
+        "$ne",
+        "$nin",
+        "$or",
+    ]
