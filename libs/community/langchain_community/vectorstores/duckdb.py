@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import uuid
-import pandas as pd
 import json
+import uuid
 from typing import Any, Iterable, List, Optional, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
+
 
 class DuckDB(VectorStore):
     """`DuckDB` vector store.
@@ -15,15 +15,15 @@ class DuckDB(VectorStore):
     This integration requires the `duckdb` Python package.
     You can install it with `pip install duckdb`.
 
-    *Security Notice*:  This class enables direct interactions with the file system 
-    through DuckDB's functionalities, such as reading from and writing to local 
-    files. This capability poses security considerations when integrating this class 
+    *Security Notice*:  This class enables direct interactions with the file system
+    through DuckDB's functionalities, such as reading from and writing to local
+    files. This capability poses security considerations when integrating this class
     into applications, particularly those accessible by third-party users or systems.
 
-    By **default**, DuckDB can interact with files across the entire file system, 
+    By **default**, DuckDB can interact with files across the entire file system,
     which includes abilities to read, write, and list files and directories.
 
-    To mitigate potential security risks, consider implementing the 
+    To mitigate potential security risks, consider implementing the
     following measures:
     - Limit access to particular directories using `home_directory`.
     - Consider setting `enable_external_access` to `false` in the connection
@@ -36,12 +36,14 @@ class DuckDB(VectorStore):
     See https://python.langchain.com/docs/security for more information.
 
     Args:
-        connection: Optional DuckDB connection. If not provided, a new connection will be created.
+        connection: Optional DuckDB connection. If not provided, a new connection will
+          be created.
         embedding: The embedding function or model to use for generating embeddings.
         vector_key: The column name for storing vectors. Defaults to `embedding`.
         id_key: The column name for storing unique identifiers. Defaults to `id`.
         text_key: The column name for storing text. Defaults to `text`.
-        table_name: The name of the table to use for storing embeddings. Defaults to `embeddings`.
+        table_name: The name of the table to use for storing embeddings. Defaults to
+          `embeddings`.
 
     Example:
         .. code-block:: python
@@ -82,7 +84,9 @@ class DuckDB(VectorStore):
         if self._embedding is None:
             raise ValueError("An embedding function or model must be provided.")
 
-        self._connection = connection or self.duckdb.connect(database=':memory:',config={'enable_external_access': 'false'})
+        self._connection = connection or self.duckdb.connect(
+            database=":memory:", config={"enable_external_access": "false"}
+        )
         self._ensure_table()
         self._table = self._connection.table(self._table_name)
 
@@ -102,27 +106,36 @@ class DuckDB(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            kwargs: Additional parameters including optional 'ids' to associate with the texts.
+            kwargs: Additional parameters including optional 'ids' to associate 
+              with the texts.
 
         Returns:
             List of ids of the added texts.
         """
 
         # Extract ids from kwargs or generate new ones if not provided
-        ids = kwargs.pop('ids', [str(uuid.uuid4()) for _ in texts])
+        ids = kwargs.pop("ids", [str(uuid.uuid4()) for _ in texts])
 
         # Embed texts and create documents
-        docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         embeddings = self._embedding.embed_documents(list(texts))
         for idx, text in enumerate(texts):
             embedding = embeddings[idx]
             # Serialize metadata if present, else default to None
-            metadata = json.dumps(metadatas[idx]) if metadatas and idx < len(metadatas) else None
-            self._connection.execute(f"INSERT INTO {self._table_name} VALUES (?,?,?,?)",[ids[idx],text,embedding,metadata])
+            metadata = (
+                json.dumps(metadatas[idx])
+                if metadatas and idx < len(metadatas)
+                else None
+            )
+            self._connection.execute(
+                f"INSERT INTO {self._table_name} VALUES (?,?,?,?)",
+                [ids[idx], text, embedding, metadata],
+            )
         return ids
 
-    def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Performs a similarity search for a given query string.
 
         Args:
@@ -133,18 +146,31 @@ class DuckDB(VectorStore):
             A list of Documents most similar to the query.
         """
         embedding = self._embedding.embed_query(query)  # type: ignore
-        list_cosine_similarity = self.duckdb.FunctionExpression('list_cosine_similarity', self.duckdb.ColumnExpression(self._vector_key), self.duckdb.ConstantExpression(embedding))
-        docs = (self._table.
-            select(*[self.duckdb.StarExpression(),list_cosine_similarity.alias("similarity")]).
-            order("similarity desc").
-            limit(k).
-            select(self.duckdb.StarExpression(exclude=["similarity", self._vector_key])).
-            fetchdf()
+        list_cosine_similarity = self.duckdb.FunctionExpression(
+            "list_cosine_similarity",
+            self.duckdb.ColumnExpression(self._vector_key),
+            self.duckdb.ConstantExpression(embedding),
+        )
+        docs = (
+            self._table.select(
+                *[
+                    self.duckdb.StarExpression(),
+                    list_cosine_similarity.alias("similarity"),
+                ]
+            )
+            .order("similarity desc")
+            .limit(k)
+            .select(
+                self.duckdb.StarExpression(exclude=["similarity", self._vector_key])
+            )
+            .fetchdf()
         )
         return [
             Document(
                 page_content=docs[self._text_key][idx],
-                metadata=json.loads(docs["metadata"][idx]) if docs["metadata"][idx] else {},
+                metadata=json.loads(docs["metadata"][idx])
+                if docs["metadata"][idx]
+                else {},
             )
             for idx in range(len(docs))
         ]
@@ -157,38 +183,41 @@ class DuckDB(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> VST:
-        """Creates an instance of DuckDB and populates it with texts and their embeddings.
+        """Creates an instance of DuckDB and populates it with texts and 
+          their embeddings.
 
         Args:
             texts: List of strings to add to the vector store.
             embedding: The embedding function or model to use for generating embeddings.
             metadatas: Optional list of metadata dictionaries associated with the texts.
             **kwargs: Additional keyword arguments including:
-                - connection: DuckDB connection. If not provided, a new connection will be created.
-                - vector_key: The column name for storing vectors. Defaults to "vector".
-                - id_key: The column name for storing unique identifiers. Defaults to "id".
+                - connection: DuckDB connection. If not provided, a new connection will
+                  be created.
+                - vector_key: The column name for storing vectors. Default "vector".
+                - id_key: The column name for storing unique identifiers. Default "id".
                 - text_key: The column name for storing text. Defaults to "text".
-                - table_name: The name of the table to use for storing embeddings. Defaults to "embeddings".
-            
+                - table_name: The name of the table to use for storing embeddings. 
+                    Defaults to "embeddings".
+
         Returns:
             An instance of DuckDB with the provided texts and their embeddings added.
         """
 
         # Extract kwargs for DuckDB instance creation
-        connection = kwargs.get('connection', None)
-        vector_key = kwargs.get('vector_key', "vector")
-        id_key = kwargs.get('id_key', "id")
-        text_key = kwargs.get('text_key', "text")
-        table_name = kwargs.get('table_name', "embeddings")
-        
+        connection = kwargs.get("connection", None)
+        vector_key = kwargs.get("vector_key", "vector")
+        id_key = kwargs.get("id_key", "id")
+        text_key = kwargs.get("text_key", "text")
+        table_name = kwargs.get("table_name", "embeddings")
+
         # Create an instance of DuckDB
         instance = DuckDB(
-            connection = connection,
-            embedding = embedding,
-            vector_key = vector_key,
-            id_key = id_key,
-            text_key = text_key,
-            table_name = table_name,
+            connection=connection,
+            embedding=embedding,
+            vector_key=vector_key,
+            id_key=id_key,
+            text_key=text_key,
+            table_name=table_name,
         )
         # Add texts and their embeddings to the DuckDB vector store
         instance.add_texts(texts, metadatas=metadatas, **kwargs)
@@ -206,4 +235,3 @@ class DuckDB(VectorStore):
         )
         """
         self._connection.execute(create_table_sql)
-
