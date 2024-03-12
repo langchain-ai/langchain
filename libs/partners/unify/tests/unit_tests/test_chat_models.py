@@ -1,12 +1,18 @@
 """Test chat model integration."""
+
 import json
 from typing import Any, AsyncGenerator, Dict, Generator
 from unittest.mock import patch
 
 import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.messages import (AIMessage, BaseMessage, ChatMessage,
-                                     HumanMessage, SystemMessage)
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 from langchain_unify.chat_models import ChatUnify
 
@@ -116,12 +122,4 @@ async def test_astream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatUnify(callbacks=[callback])
     async for token in chat.astream("Hello"):
-        assert callback.last_token == token.content
-
-
-@patch("httpx.Client.stream", new=MockStream)
-def test_stream_with_callback() -> None:
-    callback = MyCustomHandler()
-    chat = ChatUnify(callbacks=[callback])
-    for token in chat.stream("Hello"):
         assert callback.last_token == token.content

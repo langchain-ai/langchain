@@ -1,4 +1,5 @@
 """Test ChatUnify chat model."""
+
 from langchain_unify.chat_models import ChatUnify
 
 

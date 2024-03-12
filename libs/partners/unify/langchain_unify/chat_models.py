@@ -2,30 +2,59 @@ import json
 import os
 import posixpath
 from operator import itemgetter
-from typing import (Any, AsyncIterator, Callable, Dict, Iterator, List,
-                    Optional, Sequence, Type, Union, cast)
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
-from httpx import (AsyncClient, AsyncHTTPTransport, Client, HTTPTransport,
-                   Limits, Response)
+from httpx import (
+    AsyncClient,
+    AsyncHTTPTransport,
+    Client,
+    HTTPTransport,
+    Limits,
+    Response,
+)
 from langchain_core._api import beta
-from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
-                                      CallbackManagerForLLMRun)
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (BaseChatModel,
-                                                        agenerate_from_stream,
-                                                        generate_from_stream)
-from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
-                                     BaseMessageChunk, ChatMessage,
-                                     ChatMessageChunk, HumanMessage,
-                                     HumanMessageChunk, SystemMessage,
-                                     SystemMessageChunk, ToolMessage)
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+    ToolMessage,
+)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser, PydanticToolsParser)
-from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
-                                    ChatResult)
-from langchain_core.pydantic_v1 import (BaseModel, Field, SecretStr,
-                                        root_validator)
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str

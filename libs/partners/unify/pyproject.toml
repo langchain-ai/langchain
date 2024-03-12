@@ -14,6 +14,8 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
 httpx = "^0.27.0"
+ruff = "^0.3.2"
+codespell = "^2.2.6"
 
 [tool.poetry.group.test]
 optional = true
@@ -42,7 +44,7 @@ optional = true
 optional = true
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.3.2"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
