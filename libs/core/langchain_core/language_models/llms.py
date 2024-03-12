@@ -250,6 +250,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 tags=config.get("tags"),
                 metadata=config.get("metadata"),
                 run_name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 **kwargs,
             )
             .generations[0][0]
@@ -402,6 +403,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 batch_size=1,
             )
             generation: Optional[GenerationChunk] = None
@@ -459,6 +461,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 batch_size=1,
             )
             generation: Optional[GenerationChunk] = None

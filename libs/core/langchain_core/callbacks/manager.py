@@ -1183,6 +1183,7 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[CallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1198,7 +1199,11 @@ class CallbackManager(BaseCallbackManager):
         """
         managers = []
         for prompt in prompts:
-            run_id_ = uuid.uuid4()
+            if run_id is not None:
+                run_id_ = run_id
+                run_id = None
+            else:
+                run_id_ = uuid.uuid4()
             handle_event(
                 self.handlers,
                 "on_llm_start",
@@ -1231,6 +1236,7 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[CallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1247,7 +1253,11 @@ class CallbackManager(BaseCallbackManager):
 
         managers = []
         for message_list in messages:
-            run_id_ = uuid.uuid4()
+            if run_id is not None:
+                run_id_ = run_id
+                run_id = None
+            else:
+                run_id_ = uuid.uuid4()
             handle_event(
                 self.handlers,
                 "on_chat_model_start",
@@ -1520,6 +1530,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1539,7 +1550,11 @@ class AsyncCallbackManager(BaseCallbackManager):
         managers = []
 
         for prompt in prompts:
-            run_id_ = uuid.uuid4()
+            if run_id is not None:
+                run_id_ = run_id
+                run_id = None
+            else:
+                run_id_ = uuid.uuid4()
 
             tasks.append(
                 ahandle_event(
@@ -1577,6 +1592,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1595,7 +1611,11 @@ class AsyncCallbackManager(BaseCallbackManager):
         managers = []
 
         for message_list in messages:
-            run_id_ = uuid.uuid4()
+            if run_id is not None:
+                run_id_ = run_id
+                run_id = None
+            else:
+                run_id_ = uuid.uuid4()
 
             tasks.append(
                 ahandle_event(

@@ -1266,6 +1266,7 @@ class Runnable(Generic[Input, Output], ABC):
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1313,6 +1314,7 @@ class Runnable(Generic[Input, Output], ABC):
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1365,6 +1367,7 @@ class Runnable(Generic[Input, Output], ABC):
                 input,
                 run_type=run_type,
                 name=config.get("run_name") or self.get_name(),
+                run_id=config.pop("run_id", None),
             )
             for callback_manager, input, config in zip(
                 callback_managers, input, configs
@@ -1437,6 +1440,7 @@ class Runnable(Generic[Input, Output], ABC):
                     input,
                     run_type=run_type,
                     name=config.get("run_name") or self.get_name(),
+                    run_id=config.pop("run_id", None),
                 )
                 for callback_manager, input, config in zip(
                     callback_managers, input, configs
@@ -1512,6 +1516,7 @@ class Runnable(Generic[Input, Output], ABC):
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1599,6 +1604,7 @@ class Runnable(Generic[Input, Output], ABC):
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -2080,7 +2086,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
 
         # invoke all steps in sequence
@@ -2114,7 +2123,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
 
         # invoke all steps in sequence
@@ -2172,6 +2184,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 dumpd(self),
                 input,
                 name=config.get("run_name") or self.get_name(),
+                run_id=config.pop("run_id", None),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
@@ -2296,6 +2309,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     dumpd(self),
                     input,
                     name=config.get("run_name") or self.get_name(),
+                    run_id=config.pop("run_id", None),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
             )
@@ -2703,7 +2717,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
 
         # gather results from all steps
@@ -2743,7 +2760,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
 
         # gather results from all steps

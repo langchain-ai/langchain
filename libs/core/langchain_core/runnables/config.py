@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
+import warnings
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
@@ -95,6 +97,12 @@ class RunnableConfig(TypedDict, total=False):
     configurable.
     """
 
+    run_id: Optional[uuid.UUID]
+    """
+    Unique identifier for the tracer run for this call. If not provided, a new UUID
+        will be generated.
+    """
+
 
 var_child_runnable_config = ContextVar(
     "child_runnable_config", default=RunnableConfig()
@@ -116,6 +124,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         metadata={},
         callbacks=None,
         recursion_limit=25,
+        run_id=None,
     )
     if var_config := var_child_runnable_config.get():
         empty.update(
@@ -156,6 +165,11 @@ def get_config_list(
         raise ValueError(
             f"config must be a list of the same length as inputs, "
             f"but got {len(config)} configs for {length} inputs"
+        )
+    if isinstance(config, dict) and config.get("run_id") is not None:
+        warnings.warn(
+            "Provided run_id will be ignored when merging configs",
+            category=RuntimeWarning,
         )
 
     return (
