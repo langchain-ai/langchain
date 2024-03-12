@@ -3,21 +3,24 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.outputs import Generation
+from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.tools import BaseTool
 
-from langchain.agents.agent import AgentOutputParser
+from langchain.agents.agent import MultiActionAgentOutputParser
 
 
 def create_cohere_tools_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ) -> Runnable:
     def llm_with_tools(input: Dict) -> Runnable:
+        tool_results = input["tool_results"] if len(input["tool_results"]) > 0 else None
+        tools = input["tools"] if len(input["tools"]) > 0 else None
         return RunnableLambda(lambda x: x["input"]) | llm.bind(
-            tools=input["tools"], tool_results=input["tool_results"]
+            tools=tools, tool_results=tool_results
         )
 
     agent = (
@@ -41,12 +44,12 @@ def create_cohere_tools_agent(
 def format_to_cohere_tools(
     tools: Sequence[BaseTool],
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
-) -> Dict[str, Any]:
+) -> List[Dict[str, Any]]:
     if (
         len(intermediate_steps) == 1
         and intermediate_steps[0][0].tool == "directly_answer"
     ):
-        return None
+        return []
     return [convert_to_cohere_tool(tool) for tool in tools]
 
 
@@ -55,7 +58,7 @@ def format_to_cohere_tools_messages(
 ) -> list:
     """Convert (AgentAction, tool output) tuples into tool messages."""
     if len(intermediate_steps) == 0:
-        return None
+        return []
     tool_results = []
     for agent_action, observation in intermediate_steps:
         if agent_action.tool == "directly_answer":
@@ -90,12 +93,14 @@ def convert_to_cohere_tool(
         )
 
 
-class CohereToolsAgentOutputParser(AgentOutputParser):
+class CohereToolsAgentOutputParser(MultiActionAgentOutputParser):
     """Parses a message into agent actions/finish."""
 
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> Union[List[AgentAction], AgentFinish]:
+        if not isinstance(result[0], ChatGeneration):
+            raise ValueError(f"Expected ChatGeneration, got {type(result)}")
         if result[0].message.additional_kwargs["tool_calls"]:
             return [
                 AgentAction(
