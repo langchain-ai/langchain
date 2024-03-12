@@ -40,7 +40,7 @@ class CouchbaseVectorStore(VectorStore):
             embeddings = OpenAIEmbeddings()
 
             vectorstore = CouchbaseVectorStore(
-                client=cluster,
+                cluster=cluster,
                 bucket_name="",
                 scope_name="",
                 collection_name="",
