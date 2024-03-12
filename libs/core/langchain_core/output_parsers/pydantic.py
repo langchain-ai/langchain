@@ -58,8 +58,14 @@ class PydanticOutputParser(BaseCumulativeTransformOutputParser[TBaseModel]):
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> TBaseModel:
-        json_object = super().parse_result(result)
-        return self._parse_obj(json_object)
+        json_parser = JsonOutputParser()
+        json_object = json_parser.parse_result(result)
+        try:
+            return self._parse_obj(json_object)
+        except ValidationError as e:
+            name = self.pydantic_object.__name__
+            msg = f"Failed to parse {name} from completion {json_object}. Got: {e}"
+            raise OutputParserException(msg, llm_output=json.dumps(json_object))
 
     def parse(self, text: str) -> TBaseModel:
         return self.parse_result([Generation(text=text)])
