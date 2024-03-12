@@ -166,17 +166,20 @@ def get_config_list(
             f"config must be a list of the same length as inputs, "
             f"but got {len(config)} configs for {length} inputs"
         )
+
+    if isinstance(config, list):
+        return list(map(ensure_config, config))
     if isinstance(config, dict) and config.get("run_id") is not None:
         warnings.warn(
-            "Provided run_id will be ignored when merging configs",
+            "Provided run_id be used only for the first element of the batch.",
             category=RuntimeWarning,
         )
-
-    return (
-        list(map(ensure_config, config))
-        if isinstance(config, list)
-        else [ensure_config(config) for _ in range(length)]
-    )
+        subsequent: RunnableConfig = {k: v for k, v in config.items() if k != "run_id"}
+        return [
+            ensure_config(subsequent) if i else ensure_config(config)
+            for i in range(length)
+        ]
+    return [ensure_config(config) for i in range(length)]
 
 
 def patch_config(
