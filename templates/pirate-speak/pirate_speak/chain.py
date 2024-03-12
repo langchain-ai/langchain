@@ -1,5 +1,5 @@
 from langchain_community.chat_models import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 _prompt = ChatPromptTemplate.from_messages(
     [
@@ -7,6 +7,7 @@ _prompt = ChatPromptTemplate.from_messages(
             "system",
             "Translate user input into pirate speak",
         ),
+        MessagesPlaceholder("chat_history"),
         ("human", "{text}"),
     ]
 )

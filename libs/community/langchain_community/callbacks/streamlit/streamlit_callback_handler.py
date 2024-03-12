@@ -183,13 +183,13 @@ class LLMThought:
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         color: Optional[str] = None,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        self._container.markdown(f"**{output}**")
+        self._container.markdown(f"**{str(output)}**")
 
     def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         self._container.markdown("**Tool encountered an error...**")
@@ -363,12 +363,13 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         color: Optional[str] = None,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
+        output = str(output)
         self._require_current_thought().on_tool_end(
             output, color, observation_prefix, llm_prefix, **kwargs
         )

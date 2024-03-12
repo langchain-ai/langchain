@@ -1,10 +1,10 @@
 """Test AzureChatOpenAI wrapper."""
 import os
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import BaseMessage, BaseMessageChunk, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 
 from langchain_openai import AzureChatOpenAI
@@ -164,16 +164,20 @@ async def test_async_chat_openai_streaming() -> None:
 @pytest.mark.scheduled
 def test_openai_streaming(llm: AzureChatOpenAI) -> None:
     """Test streaming tokens from OpenAI."""
-
-    for token in llm.stream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("I'm Pickle Rick"):
+        assert isinstance(chunk.content, str)
+        full = chunk if full is None else full + chunk
 
 
 @pytest.mark.scheduled
 async def test_openai_astream(llm: AzureChatOpenAI) -> None:
     """Test streaming tokens from OpenAI."""
-    async for token in llm.astream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
+
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream("I'm Pickle Rick"):
+        assert isinstance(chunk.content, str)
+        full = chunk if full is None else full + chunk
 
 
 @pytest.mark.scheduled

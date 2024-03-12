@@ -6,7 +6,6 @@
 
 ## Installation and Setup
 
-
 ```bash
 pip install pandas
 ```
@@ -25,6 +24,15 @@ with Discord. That email will have a download button using which you would be ab
 
 See a [usage example](/docs/integrations/document_loaders/discord).
 
+**NOTE:** The  `DiscordChatLoader` is not the `ChatLoader` but a `DocumentLoader`. 
+It is used to load the data from the `Discord` data dump.
+For the `ChatLoader` see Chat Loader section below.
+
 ```python
 from langchain_community.document_loaders import DiscordChatLoader
 ```
+
+## Chat Loader
+
+See a [usage example](/docs/integrations/chat_loaders/discord).
+

@@ -44,16 +44,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     environment variable ``OPENAI_API_KEY`` set with your API key or pass it
     as a named parameter to the constructor.
 
+    In order to use the library with Microsoft Azure endpoints, use
+    AzureOpenAIEmbeddings.
+
     Example:
         .. code-block:: python
 
             from langchain_openai import OpenAIEmbeddings
 
-            openai = OpenAIEmbeddings(model="text-embedding-3-large")
-
-    In order to use the library with Microsoft Azure endpoints, use
-        AzureOpenAIEmbeddings.
-
+            model = OpenAIEmbeddings(model="text-embedding-3-large")
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:

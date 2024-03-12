@@ -2,27 +2,25 @@
 
 All functionality related to the [Hugging Face Platform](https://huggingface.co/).
 
-## LLMs
+## Chat models
 
-### Hugging Face Hub
+### Models from Hugging Face
 
->The [Hugging Face Hub](https://huggingface.co/docs/hub/index) is a platform 
-> with over 350k models, 75k datasets, and 150k demo apps (Spaces), all open source 
-> and publicly available, in an online platform where people can easily 
-> collaborate and build ML together. The Hub works as a central place where anyone 
-> can explore, experiment, collaborate, and build technology with Machine Learning.
+We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
 
-To use, we should have the `huggingface_hub` python [package installed](https://huggingface.co/docs/huggingface_hub/installation).
+We need to install several python packages.
 
 ```bash
 pip install huggingface_hub
+pip install transformers
 ```
-
-See a [usage example](/docs/integrations/llms/huggingface_hub).
+See a [usage example](/docs/integrations/chat/huggingface).
 
 ```python
-from langchain_community.llms import HuggingFaceHub
+from langchain_community.chat_models.huggingface import ChatHuggingFace
 ```
+
+## LLMs
 
 ### Hugging Face Local Pipelines
 
@@ -56,41 +54,6 @@ optimum-cli export openvino --model gpt2 ov_model
 
 To apply [weight-only quantization](https://github.com/huggingface/optimum-intel?tab=readme-ov-file#export) when exporting your model.
 
-### Hugging Face TextGen Inference
-
->[Text Generation Inference](https://github.com/huggingface/text-generation-inference) is 
-> a Rust, Python and gRPC server for text generation inference. Used in production at 
-> [HuggingFace](https://huggingface.co/) to power LLMs api-inference widgets.
-
-We need to install `text_generation` python package.
-
-```bash
-pip install text_generation
-```
-
-See a [usage example](/docs/integrations/llms/huggingface_textgen_inference).
-
-```python
-from langchain_community.llms import HuggingFaceTextGenInference
-```
-
-## Chat models
-
-### Models from Hugging Face
-
-We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
-
-We need to install several python packages.
-
-```bash
-pip install huggingface_hub
-pip install transformers
-```
-See a [usage example](/docs/integrations/chat/huggingface).
-
-```python
-from langchain_community.chat_models.huggingface import ChatHuggingFace
-```
 
 ## Embedding Models
 

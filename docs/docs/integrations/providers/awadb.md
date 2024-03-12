@@ -9,8 +9,7 @@ pip install awadb
 ```
 
 
-## Vector Store
-
+## Vector store
 
 ```python
 from langchain_community.vectorstores import AwaDB
@@ -19,7 +18,7 @@ from langchain_community.vectorstores import AwaDB
 See a [usage example](/docs/integrations/vectorstores/awadb).
 
 
-## Text Embedding Model
+## Embedding models
 
 ```python
 from langchain_community.embeddings import AwaEmbeddings

@@ -59,7 +59,7 @@ class BaseCallbackHandler:
     ) -> Any:
         """Run when tool starts running."""
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> Any:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> Any:
         """Run when tool ends running."""
 
     def on_tool_error(
@@ -79,15 +79,15 @@ class BaseCallbackHandler:
 
 ## Get started
 
-LangChain provides a few built-in handlers that you can use to get started. These are available in the `langchain/callbacks` module. The most basic handler is the `StdOutCallbackHandler`, which simply logs all events to `stdout`.
+LangChain provides a few built-in handlers that you can use to get started. These are available in the `langchain_core/callbacks` module. The most basic handler is the `StdOutCallbackHandler`, which simply logs all events to `stdout`.
 
 **Note**: when the `verbose` flag on the object is set to true, the `StdOutCallbackHandler` will be invoked even without being explicitly passed in.
 
 ```python
-from langchain.callbacks import StdOutCallbackHandler
+from langchain_core.callbacks import StdOutCallbackHandler
 from langchain.chains import LLMChain
 from langchain_openai import OpenAI
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 handler = StdOutCallbackHandler()
 llm = OpenAI()
@@ -160,5 +160,5 @@ The `verbose` argument is available on most objects throughout the API (Chains, 
 ### When do you want to use each of these?
 
 - Constructor callbacks are most useful for use cases such as logging, monitoring, etc., which are _not specific to a single request_, but rather to the entire chain. For example, if you want to log all the requests made to an `LLMChain`, you would pass a handler to the constructor.
-- Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `call()` method
+- Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `invoke()` method
 

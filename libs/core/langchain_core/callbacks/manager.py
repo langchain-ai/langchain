@@ -976,14 +976,15 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         **kwargs: Any,
     ) -> None:
         """Run when tool ends running.
 
         Args:
-            output (str): The output of the tool.
+            output (Any): The output of the tool.
         """
+        output = str(output)
         handle_event(
             self.handlers,
             "on_tool_end",
@@ -1038,12 +1039,13 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
         )
 
     @shielded
-    async def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    async def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running.
 
         Args:
-            output (str): The output of the tool.
+            output (Any): The output of the tool.
         """
+        output = str(output)
         await ahandle_event(
             self.handlers,
             "on_tool_end",

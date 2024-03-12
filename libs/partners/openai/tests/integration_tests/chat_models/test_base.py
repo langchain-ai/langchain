@@ -1,9 +1,15 @@
 """Test ChatOpenAI chat model."""
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
@@ -99,7 +105,7 @@ def test_chat_openai_streaming() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 
@@ -336,16 +342,20 @@ def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = ChatOpenAI()
 
-    for token in llm.stream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("I'm Pickle Rick"):
+        assert isinstance(chunk.content, str)
+        full = chunk if full is None else full + chunk
 
 
 async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = ChatOpenAI()
 
-    async for token in llm.astream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream("I'm Pickle Rick"):
+        assert isinstance(chunk.content, str)
+        full = chunk if full is None else full + chunk
 
 
 async def test_abatch() -> None:
@@ -395,33 +405,33 @@ def test_invoke() -> None:
 
 def test_logprobs() -> None:
     llm = ChatOpenAI()
-    result = llm.generate([[HumanMessage(content="I'm PickleRick")]], logprobs=True)
-    assert result.generations[0][0].generation_info
-    assert "content" in result.generations[0][0].generation_info["logprobs"]
+    result = llm.invoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
+    assert result.response_metadata
+    assert "content" in result.response_metadata["logprobs"]
 
 
 async def test_async_logprobs() -> None:
     llm = ChatOpenAI()
-    result = await llm.agenerate(
-        [[HumanMessage(content="I'm PickleRick")]], logprobs=True
-    )
-    assert result.generations[0][0].generation_info
-    assert "content" in result.generations[0][0].generation_info["logprobs"]
+    result = await llm.ainvoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
+    assert result.response_metadata
+    assert "content" in result.response_metadata["logprobs"]
 
 
 def test_logprobs_streaming() -> None:
     llm = ChatOpenAI()
-    result = llm.generate(
-        [[HumanMessage(content="I'm PickleRick")]], logprobs=True, stream=True
-    )
-    assert result.generations[0][0].generation_info
-    assert "content" in result.generations[0][0].generation_info["logprobs"]
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("I'm Pickle Rick", logprobs=True):
+        assert isinstance(chunk.content, str)
+        full = chunk if full is None else full + chunk
+    assert cast(BaseMessageChunk, full).response_metadata
+    assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
 
 
 async def test_async_logprobs_streaming() -> None:
     llm = ChatOpenAI()
-    result = await llm.agenerate(
-        [[HumanMessage(content="I'm PickleRick")]], logprobs=True, stream=True
-    )
-    assert result.generations[0][0].generation_info
-    assert "content" in result.generations[0][0].generation_info["logprobs"]
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream("I'm Pickle Rick", logprobs=True):
+        assert isinstance(chunk.content, str)
+        full = chunk if full is None else full + chunk
+    assert cast(BaseMessageChunk, full).response_metadata
+    assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]

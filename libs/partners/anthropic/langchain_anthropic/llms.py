@@ -175,7 +175,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "
-            "Please use `from langchain_community.chat_models import ChatAnthropic` "
+            "Please use `from langchain_anthropic import ChatAnthropic` "
             "instead"
         )
         return values

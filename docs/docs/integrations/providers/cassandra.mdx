@@ -7,7 +7,7 @@ The integrations outlined in this page can be used with `Cassandra` as well as o
 i.e. those using the `Cassandra Query Language` protocol.
 
 
-### Setup
+## Installation and Setup
 
 Install the following Python package:
 
@@ -15,15 +15,10 @@ Install the following Python package:
 pip install "cassio>=0.1.4"
 ```
 
-
 ## Vector Store
 
 ```python
 from langchain_community.vectorstores import Cassandra
-vector_store = Cassandra(
-    embedding=my_embedding,
-    table_name="my_store",
-)
 ```
 
 Learn more in the [example notebook](/docs/integrations/vectorstores/cassandra).
@@ -32,7 +27,6 @@ Learn more in the [example notebook](/docs/integrations/vectorstores/cassandra).
 
 ```python
 from langchain_community.chat_message_histories import CassandraChatMessageHistory
-message_history = CassandraChatMessageHistory(session_id="my-session")
 ```
 
 Learn more in the [example notebook](/docs/integrations/memory/cassandra_chat_message_history).
@@ -66,12 +60,11 @@ Learn more in the [example notebook](/docs/integrations/llms/llm_caching#cassand
 
 ```python
 from langchain_community.document_loaders import CassandraLoader
-loader = CassandraLoader(table="my_table")
-docs = loader.load()
 ```
 
 Learn more in the [example notebook](/docs/integrations/document_loaders/cassandra).
 
 #### Attribution statement
 
-> Apache Cassandra, Cassandra and Apache are either registered trademarks or trademarks of the [Apache Software Foundation](http://www.apache.org/) in the United States and/or other countries.
+> Apache Cassandra, Cassandra and Apache are either registered trademarks or trademarks of 
+> the [Apache Software Foundation](http://www.apache.org/) in the United States and/or other countries.
