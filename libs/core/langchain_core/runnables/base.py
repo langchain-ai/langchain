@@ -459,7 +459,35 @@ class Runnable(Generic[Input, Output], ABC):
         ],
     ) -> RunnableSerializable[Any, Any]:
         """Assigns new fields to the dict output of this runnable.
-        Returns a new runnable."""
+        Returns a new runnable.
+
+        .. code-block:: python
+
+            from langchain_community.llms.fake import FakeStreamingListLLM
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import SystemMessagePromptTemplate
+            from langchain_core.runnables import Runnable
+            from operator import itemgetter
+
+            prompt = (
+                SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+                + "{question}"
+            )
+            llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+            chain: Runnable = prompt | llm | {"str": StrOutputParser()}
+
+            chain_with_assign = chain.assign(hello=itemgetter("str") | llm)
+
+            print(chain_with_assign.input_schema.schema())
+            # {'title': 'PromptInput', 'type': 'object', 'properties':
+            {'question': {'title': 'Question', 'type': 'string'}}}
+            print(chain_with_assign.output_schema.schema()) #
+            {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
+            {'str': {'title': 'Str',
+            'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
+
+        """
         from langchain_core.runnables.passthrough import RunnableAssign
 
         return self | RunnableAssign(RunnableParallel(kwargs))
