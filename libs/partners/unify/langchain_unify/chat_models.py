@@ -46,21 +46,24 @@ class ChatUnify(BaseChatModel):
 
     client: Client = Field(default=None)
     async_client: AsyncClient = Field(default=None)
-    unify_api_key: Optional[SecretStr] = None
+    unify_api_key: Optional[SecretStr] = "U3xZq5M5A5HvMJ6Vw6jM-STyPOW3pGmZ0pEIvYIvbig="
     unify_api_url: str = "https://api.unify.ai/v0/"
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 128
 
     model: str = "llama-2-70b-chat@lowest-input-cost"
-    temperature: float = 0.7
-    max_tokens: Optional[int] = None
-    random_seed: Optional[int] = None
 
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "unify-chat"
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        return {
+            "model": self.model,
+        }
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -69,12 +72,10 @@ class ChatUnify(BaseChatModel):
         )
         values["unify_api_key"] = unify_api_key
         values["client"] = Client(
-            follow_redirects=True,
             timeout=values.get("timeout"),
             transport=HTTPTransport(retries=values.get("max_retries")),
         )
         values["async_client"] = AsyncClient(
-            follow_redirects=True,
             timeout=values.get("timeout"),
             limits=Limits(max_connections=values.get("max_concurrent_requests")),
             transport=AsyncHTTPTransport(retries=values.get("max_retries")),
@@ -82,11 +83,16 @@ class ChatUnify(BaseChatModel):
         return values
 
     def _check_response(self, response: Response) -> None:
+        aread = False
+        if isinstance(self.client, AsyncClient):
+            aread = True
         if response.status_code >= 500:
             raise Exception(f"Unify Server: Error {response.status}")
         elif response.status_code >= 400:
+            response.aread() if aread else response.read()
             raise ValueError(f"Unify received an invalid payload: {response.text}")
         elif response.status_code != 200:
+            response.aread() if aread else response.read()
             raise Exception(
                 f"Unify returned an unexpected response with status "
                 f"{response.status}: {response.text}"
@@ -143,6 +149,17 @@ class ChatUnify(BaseChatModel):
         else:
             return default_class(content=content)
 
+    def parse_response_stream(self, default_chunk_class, line: str) -> ChatMessageChunk:
+        response_dict = line.removeprefix("data: ")
+        response_json = json.loads(response_dict)
+        choices = response_json["choices"][0]
+        if not choices:
+            return None
+        delta = choices["delta"]
+        if not delta.get("content"):
+            return None
+        return self._convert_delta_to_message_chunk(delta, default_chunk_class)
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -151,9 +168,14 @@ class ChatUnify(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         headers = self._get_request_headers(True)
-        if "model" not in kwargs:
-            kwargs["model"] = self.model
-        body = {"messages": self._format_messages(messages), "stream": True, **kwargs}
+        default_params = self._default_params
+        body = {
+            "messages": self._format_messages(messages),
+            "stop": stop,
+            "stream": True,
+            **default_params,
+            **kwargs,
+        }
         url = posixpath.join(self.unify_api_url, "chat/completions")
         with self.client.stream("post", url, headers=headers, json=body) as response:
             self._check_response(response)
@@ -161,15 +183,10 @@ class ChatUnify(BaseChatModel):
             for line in response.iter_lines():
                 if not line:
                     continue
-                response_dict = line.removeprefix("data: ")
-                response_json = json.loads(response_dict)
-                choices = response_json["choices"][0]
-                if not choices:
+                chunk = self.parse_response_stream(default_chunk_class, line)
+                if not chunk:
                     continue
-                delta = choices["delta"]
-                chunk = self._convert_delta_to_message_chunk(delta, default_chunk_class)
                 default_chunk_class = chunk.__class__
-
                 if run_manager:
                     run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
                 yield ChatGenerationChunk(message=chunk)
@@ -193,9 +210,14 @@ class ChatUnify(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         headers = self._get_request_headers(True)
-        if "model" not in kwargs:
-            kwargs["model"] = self.model
-        body = {"messages": self._format_messages(messages), "stream": True, **kwargs}
+        default_params = self._default_params
+        body = {
+            "messages": self._format_messages(messages),
+            "stop": stop,
+            "stream": True,
+            **default_params,
+            **kwargs,
+        }
         url = posixpath.join(self.unify_api_url, "chat/completions")
         async with self.async_client.stream(
             "post", url, headers=headers, json=body
@@ -205,13 +227,9 @@ class ChatUnify(BaseChatModel):
             async for line in response.aiter_lines():
                 if not line:
                     continue
-                response_dict = line.removeprefix("data: ")
-                response_json = json.loads(response_dict)
-                choices = response_json["choices"][0]
-                if not choices:
+                chunk = self.parse_response_stream(default_chunk_class, line)
+                if not chunk:
                     continue
-                delta = choices["delta"]
-                chunk = self._convert_delta_to_message_chunk(delta, default_chunk_class)
                 default_chunk_class = chunk.__class__
 
                 if run_manager:
@@ -259,15 +277,15 @@ class ChatUnify(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else False
+        default_params = self._default_params
+        params = {**default_params, **kwargs}
         if should_stream:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages, stop=stop, run_manager=run_manager, **params
             )
             return generate_from_stream(stream_iter)
         headers = self._get_request_headers(False)
-        if "model" not in kwargs:
-            kwargs["model"] = self.model
-        body = {"messages": self._format_messages(messages), **kwargs}
+        body = {"messages": self._format_messages(messages), **params}
         url = posixpath.join(self.unify_api_url, "chat/completions")
         response = self.client.post(url, headers=headers, json=body)
         self._check_response(response)
@@ -282,15 +300,15 @@ class ChatUnify(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else False
+        default_params = self._default_params
+        params = {**default_params, **kwargs}
         if should_stream:
             stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages, stop=stop, run_manager=run_manager, **params
             )
             return await agenerate_from_stream(stream_iter)
         headers = self._get_request_headers(False)
-        if "model" not in kwargs:
-            kwargs["model"] = self.model
-        body = {"messages": self._format_messages(messages), **kwargs}
+        body = {"messages": self._format_messages(messages), **params}
         url = posixpath.join(self.unify_api_url, "chat/completions")
         response = await self.async_client.post(url, headers=headers, json=body)
         self._check_response(response)
