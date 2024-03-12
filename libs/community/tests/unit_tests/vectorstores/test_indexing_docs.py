@@ -51,6 +51,8 @@ def test_compatible_vectorstore_documentation() -> None:
         "AzureCosmosDBVectorSearch",
         "AwaDB",
         "Bagel",
+        "BESVectorStore",
+        "BigQueryVectorSearch",
         "Cassandra",
         "Chroma",
         "DashVector",
