@@ -91,7 +91,8 @@ class SolarCommon(BaseModel):
 
 class Solar(SolarCommon, LLM):
     """Solar large language models.
-    To use, you should have the environment variable ``SOLAR_API_KEY`` set with your API key.
+    To use, you should have the environment variable
+    ``SOLAR_API_KEY`` set with your API key.
     Referenced from https://console.upstage.ai/services/solar
     """
 
