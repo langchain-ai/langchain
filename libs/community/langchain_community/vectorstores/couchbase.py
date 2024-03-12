@@ -16,7 +16,8 @@ class CouchbaseVectorStore(VectorStore):
 
     To use it, you need
     - a recent installation of the `couchbase` library
-    - a Couchbase database with a pre-defined Search index with support for vector fields
+    - a Couchbase database with a pre-defined Search index with support for
+        vector fields
 
     Example:
         .. code-block:: python
