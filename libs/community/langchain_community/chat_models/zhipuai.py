@@ -14,7 +14,9 @@ from langchain_core.language_models.chat_models import (
 )
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic.v1 import SecretStr
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +57,7 @@ class ChatZhipuAI(BaseChatModel):
     """
 
     zhipuai: Any
-    zhipuai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    zhipuai_api_key: Optional[SecretStr] = None
     """Automatically inferred from env var `ZHIPUAI_API_KEY` if not provided."""
 
     model: str = Field("chatglm_turbo")
@@ -165,67 +167,57 @@ class ChatZhipuAI(BaseChatModel):
 
         return attributes
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key and python package exists in environment."""
+        values["zhipuai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "zhipuai_api_key", "ZHIPUAI_API_KEY")
+        )
         try:
-            import zhipuai
-
-            self.zhipuai = zhipuai
-            self.zhipuai.api_key = self.zhipuai_api_key
+            from zhipuai import ZhipuAI
         except ImportError:
-            raise RuntimeError(
+            raise ImportError(
+                "Could not import dashscope python package. "
+                "Please install it with `pip install dashscope --upgrade`."
+            )
+        try:
+            values["client"] = ZhipuAI
+        except AttributeError:
+            raise ValueError(
                 "Could not import zhipuai package. "
                 "Please install it via 'pip install zhipuai'"
             )
 
-    def invoke(self, prompt: Any) -> Any:  # type: ignore[override]
-        if self.model == "chatglm_turbo":
-            return self.zhipuai.model_api.invoke(
-                model=self.model,
-                prompt=prompt,
-                top_p=self.top_p,
-                temperature=self.temperature,
-                request_id=self.request_id,
-                return_type=self.return_type,
-            )
-        elif self.model == "characterglm":
-            _meta = cast(meta, self.meta).dict()
-            return self.zhipuai.model_api.invoke(
-                model=self.model,
-                meta=_meta,
-                prompt=prompt,
-                request_id=self.request_id,
-                return_type=self.return_type,
-            )
-        return None
+        return values
+
+    def _chat(self, prompt: Any) -> Any:
+        return self.zhipuai.chat.completions.create(
+            model=self.model,
+            prompt=prompt,
+            top_p=self.top_p,
+            temperature=self.temperature,
+            request_id=self.request_id,
+            return_type=self.return_type,
+        )
 
     def sse_invoke(self, prompt: Any) -> Any:
-        if self.model == "chatglm_turbo":
-            return self.zhipuai.model_api.sse_invoke(
-                model=self.model,
-                prompt=prompt,
-                top_p=self.top_p,
-                temperature=self.temperature,
-                request_id=self.request_id,
-                return_type=self.return_type,
-                incremental=self.incremental,
-            )
-        elif self.model == "characterglm":
-            _meta = cast(meta, self.meta).dict()
-            return self.zhipuai.model_api.sse_invoke(
-                model=self.model,
-                prompt=prompt,
-                meta=_meta,
-                request_id=self.request_id,
-                return_type=self.return_type,
-                incremental=self.incremental,
-            )
-        return None
+        self.zhipuai.client.chat.completions.create(
+            model=self.model,
+            prompt=prompt,
+            top_p=self.top_p,
+            temperature=self.temperature,
+            request_id=self.request_id,
+            return_type=self.return_type,
+            incremental=self.incremental,
+            stream=True,
+        )
 
     async def async_invoke(self, prompt: Any) -> Any:
         loop = asyncio.get_running_loop()
         partial_func = partial(
-            self.zhipuai.model_api.async_invoke, model=self.model, prompt=prompt
+            self.zhipuai.client.chat.async_completions.create,
+            model=self.model,
+            prompt=prompt,
         )
         response = await loop.run_in_executor(
             None,
@@ -237,7 +229,7 @@ class ChatZhipuAI(BaseChatModel):
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
             None,
-            self.zhipuai.model_api.query_async_invoke_result,
+            self.zhipuai.client.chat.async_completions.retrieve_completion_result,
             task_id,
         )
         return response
@@ -262,7 +254,7 @@ class ChatZhipuAI(BaseChatModel):
 
         should_stream = stream if stream is not None else self.streaming
         if not should_stream:
-            response = self.invoke(prompt)
+            response = self._chat(prompt)
 
             if response["code"] != 200:
                 raise RuntimeError(response)
