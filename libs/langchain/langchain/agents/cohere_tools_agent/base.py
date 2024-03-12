@@ -55,7 +55,7 @@ def format_to_cohere_tools_messages(
 ) -> list:
     """Convert (AgentAction, tool output) tuples into tool messages."""
     if len(intermediate_steps) == 0:
-        return []
+        return None
     tool_results = []
     for agent_action, observation in intermediate_steps:
         if agent_action.tool == "directly_answer":

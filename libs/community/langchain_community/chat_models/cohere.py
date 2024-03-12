@@ -144,6 +144,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         request = get_cohere_chat_request(
             messages, **self._identifying_params, **kwargs
         )
+
         stream = self.client.chat(**request, stream=True)
         for data in stream:
             if data.event_type == "text-generation":
