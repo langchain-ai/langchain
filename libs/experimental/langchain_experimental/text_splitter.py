@@ -1,11 +1,20 @@
 import copy
 import re
-from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 import numpy as np
-from langchain_community.utils.math import (
-    cosine_similarity,
-)
+from langchain_community.utils.math import cosine_similarity
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
 
@@ -81,6 +90,7 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
     # sentences[-1]['distance_to_next'] = None  # or a default value
 
     return distances, sentences
+
 
 def default_split_sentences_func(text: str) -> List[str]:
     """Default function to split text into sentences.
