@@ -174,7 +174,9 @@ def get_config_list(
             "Provided run_id be used only for the first element of the batch.",
             category=RuntimeWarning,
         )
-        subsequent: RunnableConfig = {k: v for k, v in config.items() if k != "run_id"}
+        subsequent = cast(
+            RunnableConfig, {k: v for k, v in config.items() if k != "run_id"}
+        )
         return [
             ensure_config(subsequent) if i else ensure_config(config)
             for i in range(length)

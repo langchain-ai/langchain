@@ -1490,6 +1490,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                run_id=None,
             ),
         ),
         mocker.call(
@@ -1499,6 +1500,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                run_id=None,
             ),
         ),
     ]
@@ -1568,6 +1570,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 recursion_limit=25,
+                run_id=None,
             ),
         ),
         mocker.call(
@@ -1577,6 +1580,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 recursion_limit=25,
+                run_id=None,
             ),
         ),
     ]
@@ -4805,7 +4809,7 @@ async def test_runnable_gen_context_config() -> None:
     tracer = FakeTracer()
     run_id = uuid.uuid4()
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(RuntimeWarning):
         assert runnable.batch(
             [None, None], {"callbacks": [tracer], "run_id": run_id}
         ) == [6, 6]
@@ -4870,7 +4874,7 @@ async def test_runnable_gen_context_config() -> None:
 
     tracer = FakeTracer()
     run_id = uuid.uuid4()
-    with pytest.warns(UserWarning):
+    with pytest.warns(RuntimeWarning):
         assert await arunnable.abatch(
             [None, None], {"callbacks": [tracer], "run_id": run_id}
         ) == [6, 6]
