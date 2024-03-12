@@ -16,7 +16,9 @@
     "lint:fix": "yarn lint --fix",
     "precommit": "lint-staged",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,md,mdx}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,md,mdx}\""
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,md,mdx}\"",
+    "gen": "yarn gen:supabase",
+    "gen:supabase": "npx supabase gen types typescript --project-id 'xsqpnijvmbodcxyapnyq' --schema public > ./src/supabase.d.ts"
   },
   "dependencies": {
     "@docusaurus/core": "2.4.3",
@@ -24,6 +26,7 @@
     "@docusaurus/remark-plugin-npm2yarn": "^2.4.3",
     "@docusaurus/theme-mermaid": "2.4.3",
     "@mdx-js/react": "^1.6.22",
+    "@supabase/supabase-js": "^2.39.7",
     "clsx": "^1.2.1",
     "cookie": "^0.6.0",
     "json-loader": "^0.5.7",
@@ -36,6 +39,7 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.18.2",
     "docusaurus-plugin-typedoc": "next",
+    "dotenv": "^16.4.5",
     "eslint": "^8.19.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.5.0",
@@ -45,6 +49,7 @@
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^2.7.1",
+    "supabase": "^1.148.6",
     "typedoc": "^0.24.4",
     "typedoc-plugin-markdown": "next",
     "yaml-loader": "^0.8.0"
