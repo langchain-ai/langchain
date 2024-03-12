@@ -56,6 +56,11 @@ def test_save_local_load_local() -> None:
         loaded_tfidf_retriever = TFIDFRetriever.load_local(
             folder_path=temp_folder,
             file_name=file_name,
+            # Not a realistic security risk in this case.
+            # OK to allow for testing purposes.
+            # If the file has been compromised during this test, there's
+            # a much bigger problem.
+            allow_dangerous_deserialization=True,
         )
     assert len(loaded_tfidf_retriever.docs) == 3
     assert loaded_tfidf_retriever.tfidf_array.toarray().shape == (3, 5)
