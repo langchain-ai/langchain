@@ -1,7 +1,7 @@
 import copy
 import json
 from json import JSONDecodeError
-from typing import Any, List, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseGenerationOutputParser
@@ -41,13 +41,24 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
             )
         message = generation.message
         try:
-            tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
+            raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
         except KeyError:
             return []
+        tool_calls = self.parse_tool_calls(raw_tool_calls)
+        # for backwards compatibility
+        for tc in tool_calls:
+            tc["type"] = tc.pop("name")
 
+        if self.first_tool_only:
+            return tool_calls[0] if tool_calls else None
+        return tool_calls
+
+    def parse_tool_calls(
+        self, raw_tool_calls: List[dict], *, partial: bool = False
+    ) -> List[dict]:
         final_tools = []
         exceptions = []
-        for tool_call in tool_calls:
+        for tool_call in raw_tool_calls:
             if "function" not in tool_call:
                 continue
             try:
@@ -67,7 +78,7 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
                 )
                 continue
             parsed = {
-                "type": tool_call["function"]["name"],
+                "name": tool_call["function"]["name"],
                 "args": function_args,
             }
             if self.return_id:
@@ -75,8 +86,6 @@ class JsonOutputToolsParser(BaseGenerationOutputParser[Any]):
             final_tools.append(parsed)
         if exceptions:
             raise OutputParserException("\n\n".join(exceptions))
-        if self.first_tool_only:
-            return final_tools[0] if final_tools else None
         return final_tools
 
 

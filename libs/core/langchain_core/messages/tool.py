@@ -1,13 +1,28 @@
-from typing import Any, List, Literal
+from typing import Any, List, Literal, Optional
 
-from langchain_core.messages.base import (
-    BaseMessage,
-    BaseMessageChunk,
-    merge_content,
-)
+from langchain_core.load import Serializable
+from langchain_core.messages.ai import AIMessage
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 
 
-class ToolMessage(BaseMessage):
+class ToolCall(Serializable):
+    name: str
+    args: dict
+    id: Optional[str] = None
+
+
+class ToolCallsMessage(AIMessage):
+    tool_calls: List[ToolCall]
+
+
+class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
+    ...
+
+
+ToolCallsMessage.update_forward_refs()
+
+
+class ToolOutputMessage(BaseMessage):
     """Message for passing the result of executing a tool back to a model."""
 
     tool_call_id: str
@@ -15,33 +30,24 @@ class ToolMessage(BaseMessage):
 
     type: Literal["tool"] = "tool"
 
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
+
+ToolOutputMessage.update_forward_refs()
+ToolMessage = ToolOutputMessage
 
 
-ToolMessage.update_forward_refs()
-
-
-class ToolMessageChunk(ToolMessage, BaseMessageChunk):
+class ToolOutputMessageChunk(ToolOutputMessage, BaseMessageChunk):
     """Tool Message chunk."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
+    type: Literal["ToolOutputMessageChunk"] = "ToolOutputMessageChunk"  # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
-        if isinstance(other, ToolMessageChunk):
+        if isinstance(other, ToolOutputMessageChunk):
             if self.tool_call_id != other.tool_call_id:
                 raise ValueError(
-                    "Cannot concatenate ToolMessageChunks with different names."
+                    "Cannot concatenate ToolOutputMessageChunks with different names."
                 )
 
             return self.__class__(
@@ -53,3 +59,6 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             )
 
         return super().__add__(other)
+
+
+ToolMessageChunk = ToolOutputMessageChunk
