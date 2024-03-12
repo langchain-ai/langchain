@@ -15,6 +15,7 @@ from typing import (
     cast,
 )
 from uuid import UUID
+import uuid
 
 import pytest
 from freezegun import freeze_time
@@ -132,6 +133,16 @@ class FakeTracer(BaseTracer):
         """Persist a run."""
 
         self.runs.append(self._copy_run(run))
+    
+    def flattened_runs(self) -> List[Run]:
+        q = [] + self.runs
+        result = []
+        while q:
+            parent = q.pop()
+            result.append(parent)
+            if parent.child_runs:
+                q.extend(parent.child_runs)
+        return result
 
 
 class FakeRunnable(Runnable[str, int]):
@@ -4752,12 +4763,16 @@ async def test_runnable_gen_context_config() -> None:
     }
 
     tracer = FakeTracer()
-    assert runnable.invoke(None, {"callbacks": [tracer]}) == 6
+    run_id = uuid.uuid4()
+    assert runnable.invoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = [r.id for r in tracer.flattened_runs()]
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert list(runnable.stream(None)) == [1, 2, 3]
