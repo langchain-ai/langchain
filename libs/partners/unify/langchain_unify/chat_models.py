@@ -1,23 +1,35 @@
 import json
 import os
 import posixpath
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Type
+from operator import itemgetter
+from typing import (Any, AsyncIterator, Callable, Dict, Iterator, List,
+                    Optional, Sequence, Type, Union, cast)
 
 from httpx import (AsyncClient, AsyncHTTPTransport, Client, HTTPTransport,
                    Limits, Response)
+from langchain_core._api import beta
 from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
                                       CallbackManagerForLLMRun)
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (BaseChatModel,
                                                         agenerate_from_stream,
                                                         generate_from_stream)
 from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
                                      BaseMessageChunk, ChatMessage,
                                      ChatMessageChunk, HumanMessage,
-                                     HumanMessageChunk, SystemMessageChunk)
+                                     HumanMessageChunk, SystemMessage,
+                                     SystemMessageChunk, ToolMessage)
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser, PydanticToolsParser)
 from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
                                     ChatResult)
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (BaseModel, Field, SecretStr,
+                                        root_validator)
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
 class ChatUnify(BaseChatModel):
@@ -96,7 +108,18 @@ class ChatUnify(BaseChatModel):
             elif isinstance(message, HumanMessage):
                 formatted_message["role"] = "user"
             elif isinstance(message, AIMessage):
+                if "tool_calls" in message.additional_kwargs:
+                    formatted_message["tool_calls"] = message.additional_kwargs[
+                        "tool_calls"
+                    ]
                 formatted_message["role"] = "assistant"
+            elif isinstance(message, SystemMessage):
+                formatted_message["role"] = "system"
+            elif isinstance(message, ToolMessage):
+                formatted_message["role"] = "tool"
+                formatted_message["name"] = message.name
+            else:
+                raise ValueError(f"Unsupported message type {message}")
             formatted_message["content"] = message.content
             formatted_messages.append(formatted_message)
         return formatted_messages
@@ -109,7 +132,10 @@ class ChatUnify(BaseChatModel):
         if role == "user" or default_class == HumanMessageChunk:
             return HumanMessageChunk(content=content)
         elif role == "assistant" or default_class == AIMessageChunk:
-            return AIMessageChunk(content=content)
+            additional_kwargs: Dict = {}
+            if _delta.get("tool_calls"):
+                additional_kwargs["tool_calls"] = _delta.get("tool_calls")
+            return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
         elif role == "system" or default_class == SystemMessageChunk:
             return SystemMessageChunk(content=content)
         elif role or default_class == ChatMessageChunk:
@@ -148,6 +174,17 @@ class ChatUnify(BaseChatModel):
                     run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
                 yield ChatGenerationChunk(message=chunk)
 
+    async def _acheck_response(self, response: Response) -> None:
+        if response.status_code >= 500:
+            raise Exception(f"Unify Server: Error {response.status}")
+        elif response.status_code >= 400:
+            raise ValueError(f"Unify received an invalid payload: {response.text}")
+        elif response.status_code != 200:
+            raise Exception(
+                f"Unify returned an unexpected response with status "
+                f"{response.status}: {response.text}"
+            )
+
     async def _astream(
         self,
         messages: List[BaseMessage],
@@ -156,34 +193,61 @@ class ChatUnify(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         headers = self._get_request_headers(True)
-        body = {"messages": self._formatted_messages(messages), **kwargs}
+        if "model" not in kwargs:
+            kwargs["model"] = self.model
+        body = {"messages": self._format_messages(messages), "stream": True, **kwargs}
         url = posixpath.join(self.unify_api_url, "chat/completions")
-        async with self.client.stream(
+        async with self.async_client.stream(
             "post", url, headers=headers, json=body
         ) as response:
-            self._check_response(response)
+            await self._acheck_response(response)
+            default_chunk_class = AIMessageChunk
             async for line in response.aiter_lines():
                 if not line:
                     continue
                 response_dict = line.removeprefix("data: ")
                 response_json = json.loads(response_dict)
-                delta = response_json["choices"][0]["delta"]
-                content = delta["content"]
-                if not content:
+                choices = response_json["choices"][0]
+                if not choices:
                     continue
-                chunk = ChatGenerationChunk(message=AIMessage(content=content))
+                delta = choices["delta"]
+                chunk = self._convert_delta_to_message_chunk(delta, default_chunk_class)
+                default_chunk_class = chunk.__class__
+
                 if run_manager:
-                    await run_manager.on_llm_new_token(content, chunk=chunk)
-                yield chunk
+                    await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
+                yield ChatGenerationChunk(message=chunk)
+
+    def _convert_to_message(self, _message: Dict[str, Any]) -> BaseMessage:
+        role = _message.get("role")
+        content = cast(Union[str, List], _message.get("content", ""))
+        if role == "user":
+            return HumanMessage(content=content)
+        elif role == "assistant":
+            additional_kwargs: Dict = {}
+            if _message.get("tool_calls"):
+                additional_kwargs["tool_calls"] = _message.get("tool_calls")
+            return AIMessage(content=content, additional_kwargs=additional_kwargs)
+        elif role == "system":
+            return SystemMessage(content=content)
+        elif role == "tool":
+            return ToolMessage(content=content, name=_message.get("name"))
+        else:
+            return ChatMessage(content=content, role=role)
 
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+        generations = []
+        for res in data["choices"]:
+            finish_reason = res.get("finish_reason")
+            gen = ChatGeneration(
+                message=self._convert_to_message(res["message"]),
+                generation_info={"finish_reason": finish_reason},
+            )
+            generations.append(gen)
+        usage = data.get("usage")
         return ChatResult(
-            generations=[
-                ChatGeneration(
-                    message=AIMessage(content=data["choices"][0]["message"]["content"])
-                )
-            ],
-            llm_output=data,
+            generations=generations,
+            llm_output={"usage": usage, "model": self.model},
         )
 
     def _generate(
@@ -231,3 +295,45 @@ class ChatUnify(BaseChatModel):
         response = await self.async_client.post(url, headers=headers, json=body)
         self._check_response(response)
         return self._format_output(response.json(), **kwargs)
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)
+
+    @beta()
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]],
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        llm = self.bind_tools([schema], tool_choice="any")
+        if is_pydantic_schema:
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
+            )
+        else:
+            key_name = convert_to_openai_tool(schema)["function"]["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
