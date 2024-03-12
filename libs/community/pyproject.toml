@@ -269,7 +269,7 @@ extended_testing = [
  "oci",
  "rdflib",
  "llmlingua",
- "premai"
+ "premai",
  "tidb-vector",
  "cloudpickle",
  "friendli-client"
