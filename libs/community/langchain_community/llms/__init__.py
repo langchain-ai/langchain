@@ -631,7 +631,7 @@ def __getattr__(name: str) -> Any:
         return _import_aviary()
     elif name == "AzureMLOnlineEndpoint":
         return _import_azureml_endpoint()
-    elif name == "BaichuanLLM":
+    elif name == "BaichuanLLM" or name == "Baichuan":
         return _import_baichuan()
     elif name == "QianfanLLMEndpoint":
         return _import_baidu_qianfan_endpoint()
