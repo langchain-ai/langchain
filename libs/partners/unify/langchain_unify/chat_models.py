@@ -70,7 +70,9 @@ class ChatUnify(BaseChatModel):
             from langchain_unify import ChatUnify
 
 
-            model = ChatUnify()
+            model = ChatUnify(api_key="your-api-key")
+            model.invoke("Hello, how are you?")
+
     """
 
     client: Client = Field(default=None)
