@@ -184,3 +184,31 @@ def test_anthropic_multimodal() -> None:
     response = chat.invoke(messages)
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
+
+def test_streaming() -> None:
+    """Test streaming tokens from Anthropic."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+
+    llm = ChatAnthropicMessages(
+        model_name=MODEL_NAME, streaming=True, callback_manager=callback_manager
+    )
+
+    response = llm.generate([[HumanMessage(content="I'm Pickle Rick")]])
+    assert callback_handler.llm_streams > 0
+    assert isinstance(response, LLMResult)
+
+
+async def test_astreaming() -> None:
+    """Test streaming tokens from Anthropic."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+
+    llm = ChatAnthropicMessages(
+        model_name=MODEL_NAME, streaming=True, callback_manager=callback_manager
+    )
+
+    response = await llm.agenerate([[HumanMessage(content="I'm Pickle Rick")]])
+    assert callback_handler.llm_streams > 0
+    assert isinstance(response, LLMResult)

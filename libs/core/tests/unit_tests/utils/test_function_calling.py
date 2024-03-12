@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Literal, Optional, Type
+from typing import Any, Callable, Dict, List, Literal, Optional, Type
 
 import pytest
 
@@ -49,8 +49,29 @@ def dummy_tool() -> BaseTool:
     return DummyFunction()
 
 
+@pytest.fixture()
+def json_schema() -> Dict:
+    return {
+        "title": "dummy_function",
+        "description": "dummy function",
+        "type": "object",
+        "properties": {
+            "arg1": {"description": "foo", "type": "integer"},
+            "arg2": {
+                "description": "one of 'bar', 'baz'",
+                "enum": ["bar", "baz"],
+                "type": "string",
+            },
+        },
+        "required": ["arg1", "arg2"],
+    }
+
+
 def test_convert_to_openai_function(
-    pydantic: Type[BaseModel], function: Callable, dummy_tool: BaseTool
+    pydantic: Type[BaseModel],
+    function: Callable,
+    dummy_tool: BaseTool,
+    json_schema: Dict,
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -69,7 +90,7 @@ def test_convert_to_openai_function(
         },
     }
 
-    for fn in (pydantic, function, dummy_tool, expected):
+    for fn in (pydantic, function, dummy_tool, json_schema, expected):
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
 
