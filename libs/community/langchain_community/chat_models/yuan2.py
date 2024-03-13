@@ -302,10 +302,10 @@ class ChatYuan2(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
+    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
-            response = response.model_dump()
+            response = response.dict()
         logger.debug(f"type(response): {type(response)}; response: {response}")
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
