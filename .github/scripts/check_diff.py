@@ -47,7 +47,7 @@ if __name__ == "__main__":
                     found = True
                 if found:
                     dirs_to_run["extended-test"].add(dir_)
-        if file.startswith("libs/cli"):
+        elif file.startswith("libs/cli"):
             dirs_to_run["lint"].add("libs/cli")
             dirs_to_run["test"].add("libs/cli")
         elif file.startswith("libs/partners"):
