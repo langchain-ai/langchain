@@ -537,7 +537,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> Iterator[Tuple[Input, Output]]:
+    ) -> Iterator[Tuple[int, Output]]:
         """Run invoke in parallel on a list of inputs,
         yielding results as they complete."""
 
@@ -546,7 +546,9 @@ class Runnable(Generic[Input, Output], ABC):
 
         configs = get_config_list(config, len(inputs))
 
-        def invoke(input: Input, config: RunnableConfig) -> Union[Output, Exception]:
+        def invoke(
+            i: int, input: Input, config: RunnableConfig
+        ) -> Union[Tuple[int, Output], Exception]:
             if return_exceptions:
                 try:
                     out = self.invoke(input, config, **kwargs)
@@ -555,16 +557,16 @@ class Runnable(Generic[Input, Output], ABC):
             else:
                 out = self.invoke(input, config, **kwargs)
 
-            return (input, out)
+            return (i, out)
 
         if len(inputs) == 1:
-            yield (inputs[0], invoke(inputs[0], configs[0]))
+            yield (0, invoke(inputs[0], configs[0]))
             return
 
         with get_executor_for_config(configs[0]) as executor:
             futures = [
-                executor.submit(invoke, input, config)
-                for input, config in zip(inputs, configs)
+                executor.submit(invoke, i, input, config)
+                for i, (input, config) in enumerate(zip(inputs, configs))
             ]
 
             try:
@@ -617,7 +619,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[Input, Output]]:
+    ) -> AsyncIterator[Tuple[int, Output]]:
         """Run ainvoke in parallel on a list of inputs,
         yielding results as they complete."""
 
@@ -627,8 +629,8 @@ class Runnable(Generic[Input, Output], ABC):
         configs = get_config_list(config, len(inputs))
 
         async def ainvoke(
-            input: Input, config: RunnableConfig
-        ) -> Union[Output, Exception]:
+            i: int, input: Input, config: RunnableConfig
+        ) -> Union[Tuple[int, Output], Exception]:
             if return_exceptions:
                 try:
                     out = await self.ainvoke(input, config, **kwargs)
@@ -637,9 +639,9 @@ class Runnable(Generic[Input, Output], ABC):
             else:
                 out = await self.ainvoke(input, config, **kwargs)
 
-            return (input, out)
+            return (i, out)
 
-        coros = map(ainvoke, inputs, configs)
+        coros = map(ainvoke, range(len(inputs)), inputs, configs)
 
         for coro in asyncio.as_completed(coros):
             yield await coro
@@ -4228,6 +4230,51 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             return_exceptions=return_exceptions,
             **{**self.kwargs, **kwargs},
         )
+
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Tuple[int, Output]]:
+        if isinstance(config, list):
+            configs = cast(
+                List[RunnableConfig],
+                [self._merge_configs(conf) for conf in config],
+            )
+        else:
+            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+        yield from self.bound.batch_as_completed(
+            inputs,
+            configs,
+            return_exceptions=return_exceptions,
+            **{**self.kwargs, **kwargs},
+        )
+
+    async def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Output]]:
+        if isinstance(config, list):
+            configs = cast(
+                List[RunnableConfig],
+                [self._merge_configs(conf) for conf in config],
+            )
+        else:
+            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+        async for item in self.bound.abatch_as_completed(
+            inputs,
+            configs,
+            return_exceptions=return_exceptions,
+            **{**self.kwargs, **kwargs},
+        ):
+            yield item
 
     def stream(
         self,
