@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "ChatCohere",
     "CohereVectorStore",
     "CohereEmbeddings",
+    "CohereRagRetriever",
 ]
 
 
