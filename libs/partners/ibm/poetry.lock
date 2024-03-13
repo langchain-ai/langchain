@@ -245,13 +245,13 @@ ibm-cos-sdk-core = "2.13.4"
 
 [[package]]
 name = "ibm-watson-machine-learning"
-version = "1.0.349"
+version = "1.0.352"
 description = "IBM Watson Machine Learning API Client"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ibm_watson_machine_learning-1.0.349-py3-none-any.whl", hash = "sha256:b5bc4cdec2a9cda1c9fa6681558f721a7a3058937257ae3040618c7183fe2f55"},
-    {file = "ibm_watson_machine_learning-1.0.349.tar.gz", hash = "sha256:46dd3d67bee39c3e84b047e651bafa06dfb0cb973354c4e2c582928340b51a17"},
+    {file = "ibm_watson_machine_learning-1.0.352-py3-none-any.whl", hash = "sha256:be233468bdd8e11ee57975310febefd013bcae35b7d153053e064f0be6a00242"},
+    {file = "ibm_watson_machine_learning-1.0.352.tar.gz", hash = "sha256:937b339c76d4ea143439f98ea60cfabacf802102e39873f361ece82174a791d3"},
 ]
 
 [package.dependencies]
@@ -274,13 +274,13 @@ fl-rt23-1-py3-10 = ["GPUtil", "cloudpickle (==1.3.0)", "cryptography (==39.0.1)"
 
 [[package]]
 name = "ibm-watsonx-ai"
-version = "0.2.0"
+version = "0.2.2"
 description = "IBM watsonx.ai API Client"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ibm_watsonx_ai-0.2.0-py3-none-any.whl", hash = "sha256:75234916b2cd9accedb401a3c11925845efa08361cff4978589f58e39dad48f6"},
-    {file = "ibm_watsonx_ai-0.2.0.tar.gz", hash = "sha256:9af9e402c6f0c74e30ac11c0ae1b80e55e21fb2b2d7c546fc506ab1b9be4851e"},
+    {file = "ibm_watsonx_ai-0.2.2-py3-none-any.whl", hash = "sha256:e2fff3ed3d35be037548a96f6fea211ab1b9cef6a7c1c66c2f5479aafa868e9e"},
+    {file = "ibm_watsonx_ai-0.2.2.tar.gz", hash = "sha256:00e0d1b46742a6a1b08b2923a8134033f17c2800d347ea06548bc2b649eab78f"},
 ]
 
 [package.dependencies]
@@ -372,7 +372,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.30"
+version = "0.1.31"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -398,13 +398,13 @@ url = "../../core"
 
 [[package]]
 name = "langsmith"
-version = "0.1.23"
+version = "0.1.24"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.1.23-py3-none-any.whl", hash = "sha256:69984268b9867cb31b875965b3f86b6f56ba17dd5454d487d3a1a999bdaeea69"},
-    {file = "langsmith-0.1.23.tar.gz", hash = "sha256:327c66ec0de8c1bc57bfa47bbc70a29ef749e97c3e5571b9baf754d1e0644220"},
+    {file = "langsmith-0.1.24-py3-none-any.whl", hash = "sha256:898ef5265bca8fc912f7fbf207e1d69cacd86055faecf6811bd42641e6319840"},
+    {file = "langsmith-0.1.24.tar.gz", hash = "sha256:432b829e763f5077df411bc59bb35449813f18174d2ebc8bbbb38427071d5e7d"},
 ]
 
 [package.dependencies]
@@ -666,13 +666,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pydantic"
-version = "2.6.3"
+version = "2.6.4"
 description = "Data validation using Python type hints"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
-    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
+    {file = "pydantic-2.6.4-py3-none-any.whl", hash = "sha256:cc46fce86607580867bdc3361ad462bab9c222ef042d3da86f2fb333e1d916c5"},
+    {file = "pydantic-2.6.4.tar.gz", hash = "sha256:b1704e0847db01817624a6b86766967f552dd9dbf3afba4004409f908dcc84e6"},
 ]
 
 [package.dependencies]
@@ -1136,18 +1136,18 @@ watchmedo = ["PyYAML (>=3.10)"]
 
 [[package]]
 name = "zipp"
-version = "3.17.0"
+version = "3.18.0"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "zipp-3.17.0-py3-none-any.whl", hash = "sha256:0e923e726174922dce09c53c59ad483ff7bbb8e572e00c7f7c46b88556409f31"},
-    {file = "zipp-3.17.0.tar.gz", hash = "sha256:84e64a1c28cf7e91ed2078bb8cc8c259cb19b76942096c8d7b84947690cabaf0"},
+    {file = "zipp-3.18.0-py3-none-any.whl", hash = "sha256:c1bb803ed69d2cce2373152797064f7e79bc43f0a3748eb494096a867e0ebf79"},
+    {file = "zipp-3.18.0.tar.gz", hash = "sha256:df8d042b02765029a09b157efd8e820451045890acc30f8e37dd2f94a060221f"},
 ]
 
 [package.extras]
-docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (<7.2.5)", "sphinx (>=3.5)", "sphinx-lint"]
-testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy (>=0.9.1)", "pytest-ruff"]
+docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
+testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [metadata]
 lock-version = "2.0"
