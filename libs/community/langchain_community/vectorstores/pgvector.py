@@ -179,7 +179,7 @@ def _get_embedding_collection_store(
     else:
         # For backwards comaptibilty with older versions of pgvector
         # This should be removed in the future (remove during migration)
-        class EmbeddingStore(BaseModel):
+        class EmbeddingStore(BaseModel):  # type: ignore[no-redef]
             """Embedding store."""
 
             __tablename__ = "langchain_pg_embedding"
