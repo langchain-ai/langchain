@@ -1,5 +1,4 @@
 """Test PGVector functionality."""
-import contextlib
 import os
 from typing import Any, Dict, List, Type, Union
 
@@ -116,7 +115,6 @@ def test_pgvector_with_metadatas_with_scores() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
-
 
 
 def test_pgvector_with_filter_match() -> None:
@@ -406,9 +404,11 @@ def pgvector() -> PGVector:
         relevance_score_fn=lambda d: d * 0,
         use_jsonb=True,
     )
-    yield store
+    try:
+        yield store
     # Do clean up
-    store.drop_tables()
+    finally:
+        store.drop_tables()
 
 
 # We should re-use this test-case across other integrations
@@ -567,13 +567,11 @@ def test_evil_code(
         ),
         (
             {"name": {"$ilike": "foo"}},
-            "CAST(jsonb_path_query_first(langchain_pg_embedding.cmetadata"
-            ", '$.name') AS TEXT) ILIKE 'foo'",
+            "langchain_pg_embedding.cmetadata ->> 'name' ILIKE 'foo'",
         ),
         (
             {"name": {"$like": "foo"}},
-            "CAST(jsonb_path_query_first(langchain_pg_embedding.cmetadata"
-            ", '$.name') AS TEXT) LIKE 'foo'",
+            "langchain_pg_embedding.cmetadata ->> 'name' LIKE 'foo'",
         ),
         (
             {"$or": [{"id": 1}, {"id": 2}]},

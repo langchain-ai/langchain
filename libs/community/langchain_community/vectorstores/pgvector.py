@@ -4,7 +4,6 @@ import contextlib
 import enum
 import logging
 import uuid
-from langchain_core._api import warn_deprecated
 from typing import (
     Any,
     Callable,
@@ -19,6 +18,7 @@ from typing import (
 
 import numpy as np
 import sqlalchemy
+from langchain_core._api import warn_deprecated
 from sqlalchemy import SQLColumnExpression, delete
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
@@ -245,6 +245,11 @@ class PGVector(VectorStore):
         pre_delete_collection: If True, will delete the collection if it exists.
             (default: False). Useful for testing.
         engine_args: SQLAlchemy's create engine arguments.
+        use_jsonb: Use JSONB instead of JSON for metadata. (default: True)
+            Strongly discouraged from using JSON as it's not as efficient
+            for querying.
+            It's provided here for backwards compatibility with older versions,
+            and will be removed in the future.
 
     Example:
         .. code-block:: python
@@ -260,9 +265,8 @@ class PGVector(VectorStore):
                 documents=docs,
                 collection_name=COLLECTION_NAME,
                 connection_string=CONNECTION_STRING,
+                use_jsonb=True,
             )
-
-
     """
 
     def __init__(
@@ -281,15 +285,7 @@ class PGVector(VectorStore):
         engine_args: Optional[dict[str, Any]] = None,
         use_jsonb: bool = False,
     ) -> None:
-        """Initialize the PGVector store.
-
-        Args:
-            use_jsonb: Use JSONB instead of JSON for metadata. (default: True)
-                Strongly discouraged from using JSON as it's not as efficient
-                for querying.
-                It's provided here for backwards compatibility with older versions,
-                and will be removed in the future.
-        """
+        """Initialize the PGVector store."""
         self.connection_string = connection_string
         self.embedding_function = embedding_function
         self._embedding_length = embedding_length
@@ -916,7 +912,9 @@ class PGVector(VectorStore):
                             f"Invalid filter condition. Expected a field but got: {key}"
                         )
                 # These should all be fields and combined using an $and operator
-                and_ = [self._handle_field_filter({k: v}) for k, v in filters.items()]
+                and_ = [
+                    self._handle_field_filter(k, v, counter) for k, v in filters.items()
+                ]
                 if len(and_) > 1:
                     return sqlalchemy.and_(*and_)
                 elif len(and_) == 1:
