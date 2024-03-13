@@ -7,9 +7,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
-from langchain.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
-)
+from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 
 
 class ContextualCompressionRetriever(BaseRetriever):

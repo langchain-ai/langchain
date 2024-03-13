@@ -12,6 +12,8 @@
 
     Serializable, Generation, PromptValue
 """  # noqa: E501
+from langchain_community.output_parsers.rail_parser import GuardrailsOutputParser
+
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.combining import CombiningOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser
@@ -30,7 +32,6 @@ from langchain.output_parsers.openai_tools import (
 )
 from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.output_parsers.rail_parser import GuardrailsOutputParser
 from langchain.output_parsers.regex import RegexParser
 from langchain.output_parsers.regex_dict import RegexDictParser
 from langchain.output_parsers.retry import RetryOutputParser, RetryWithErrorOutputParser

@@ -20,6 +20,7 @@ the backbone of a retriever, but there are other types of retrievers as well.
 import warnings
 from typing import Any
 
+from langchain_community.retrievers.outline import OutlineRetriever
 from langchain_core._api import LangChainDeprecationWarning
 
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
@@ -27,7 +28,6 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.retrievers.outline import OutlineRetriever
 from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
 from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever

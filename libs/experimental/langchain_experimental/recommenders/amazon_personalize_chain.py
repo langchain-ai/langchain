@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, cast
 
-from langchain.callbacks.manager import (
-    CallbackManagerForChainRun,
-)
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
 from langchain.prompts.prompt import PromptTemplate
