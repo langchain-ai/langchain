@@ -77,7 +77,7 @@ class ChatUnify(BaseChatModel):
 
     client: Client = Field(default=None)
     async_client: AsyncClient = Field(default=None)
-    unify_api_key: Optional[SecretStr] = "U3xZq5M5A5HvMJ6Vw6jM-STyPOW3pGmZ0pEIvYIvbig="
+    unify_api_key: Optional[SecretStr] = None
     unify_api_url: str = "https://api.unify.ai/v0/"
     max_retries: int = 5
     timeout: int = 120
