@@ -41,7 +41,7 @@ class Yuan2(LLM):
     top_p: Optional[float] = 0.9
     """The top-p value to use for sampling."""
 
-    top_k: Optional[int] = 40
+    top_k: Optional[int] = 0
     """The top-k value to use for sampling."""
 
     do_sample: bool = False
@@ -86,12 +86,13 @@ class Yuan2(LLM):
 
     def _default_params(self) -> Dict[str, Any]:
         return {
+            "do_sample": self.do_sample,
             "infer_api": self.infer_api,
             "max_tokens": self.max_tokens,
+            "repeat_penalty": self.repeat_penalty,
             "temp": self.temp,
             "top_k": self.top_k,
             "top_p": self.top_p,
-            "do_sample": self.do_sample,
             "use_history": self.use_history,
         }
 
@@ -135,6 +136,10 @@ class Yuan2(LLM):
             input = prompt
 
         headers = {"Content-Type": "application/json"}
+        if self.top_p > 0 and self.top_k > 0:
+            logger.warning("top_p and top_k cannot be set simultaneously. set top_k to 0 instead...")
+            self.top_k = 0
+
         data = json.dumps(
             {
                 "ques_list": [{"id": "000", "ques": input}],
@@ -164,7 +169,7 @@ class Yuan2(LLM):
             if resp["errCode"] != "0":
                 raise ValueError(
                     f"Failed with error code [{resp['errCode']}], "
-                    f"error message: [{resp['errMessage']}]"
+                    f"error message: [{resp['exceptionMsg']}]"
                 )
 
             if "resData" in resp:
