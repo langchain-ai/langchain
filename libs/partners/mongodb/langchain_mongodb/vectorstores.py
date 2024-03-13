@@ -183,6 +183,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
+        remove_embedding: bool = True,
     ) -> List[Tuple[Document, float]]:
         params = {
             "queryVector": embedding,
@@ -206,6 +207,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
+            if remove_embedding:
+                del res[self._embedding_key]
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
@@ -310,20 +313,15 @@ class MongoDBAtlasVectorSearch(VectorStore):
             List of documents selected by maximal marginal relevance.
         """
         query_embedding = self._embedding.embed_query(query)
-        docs = self._similarity_search_with_score(
-            query_embedding,
-            k=fetch_k,
+        return self.max_marginal_relevance_search_by_vector(
+            embedding=query_embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
+            **kwargs,
         )
-        mmr_doc_indexes = maximal_marginal_relevance(
-            np.array(query_embedding),
-            [doc.metadata[self._embedding_key] for doc, _ in docs],
-            k=k,
-            lambda_mult=lambda_mult,
-        )
-        mmr_docs = [docs[i][0] for i in mmr_doc_indexes]
-        return mmr_docs
 
     @classmethod
     def from_texts(
@@ -433,6 +431,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             k=fetch_k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
+            remove_embedding=False,
         )
         mmr_doc_indexes = maximal_marginal_relevance(
             np.array(embedding),
