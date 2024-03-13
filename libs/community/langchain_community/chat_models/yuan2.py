@@ -44,7 +44,6 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from openai.types.chat import ChatCompletionMessage
 from tenacity import (
     before_sleep_log,
     retry,
