@@ -2,8 +2,6 @@
 from langchain_text_splitters import (
     Language,
     RecursiveCharacterTextSplitter,
-    SemanticCharacterTextSplitter,
-    SemanticTiktokenTextSplitter,
     TextSplitter,
     Tokenizer,
     TokenTextSplitter,
@@ -48,6 +46,4 @@ __all__ = [
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
     "CharacterTextSplitter",
-    "SemanticCharacterTextSplitter",
-    "SemanticTiktokenTextSplitter",
 ]
