@@ -1,4 +1,5 @@
 """Implementation of the RunnablePassthrough."""
+
 from __future__ import annotations
 
 import asyncio
@@ -165,7 +166,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             afunc = func
             func = None
 
-        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)
+        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -315,12 +316,45 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
+
+    The `RunnableAssign` class takes input dictionaries and, through a
+    `RunnableParallel` instance, applies transformations, then combines
+    these with the original data, introducing new key-value pairs based
+    on the mapper's logic.
+
+    Examples:
+        .. code-block:: python
+
+            # This is a RunnableAssign
+            from typing import Dict
+            from langchain_core.runnables.passthrough import (
+                RunnableAssign,
+                RunnableParallel,
+            )
+            from langchain_core.runnables.base import RunnableLambda
+
+            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+                return {"added": x["input"] + 10}
+
+            mapper = RunnableParallel(
+                {"add_step": RunnableLambda(add_ten),}
+            )
+
+            runnable_assign = RunnableAssign(mapper)
+
+            # Synchronous example
+            runnable_assign.invoke({"input": 5})
+            # returns {'input': 5, 'add_step': {'added': 15}}
+
+            # Asynchronous example
+            await runnable_assign.ainvoke({"input": 5})
+            # returns {'input': 5, 'add_step': {'added': 15}}
     """
 
     mapper: RunnableParallel[Dict[str, Any]]
 
     def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
-        super().__init__(mapper=mapper, **kwargs)
+        super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -582,7 +616,7 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     keys: Union[str, List[str]]
 
     def __init__(self, keys: Union[str, List[str]], **kwargs: Any) -> None:
-        super().__init__(keys=keys, **kwargs)
+        super().__init__(keys=keys, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

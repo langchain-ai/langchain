@@ -50,6 +50,11 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
     }
 
 
+@deprecated(
+    "0.0.27",
+    alternative="Use ElasticsearchStore class in langchain-elasticsearch package",
+    pending=True,
+)
 class ElasticVectorSearch(VectorStore):
     """
 
@@ -358,7 +363,11 @@ class ElasticVectorSearch(VectorStore):
             self.client.delete(index=self.index_name, id=id)
 
 
-@deprecated("0.0.1", alternative="ElasticsearchStore class.", pending=True)
+@deprecated(
+    "0.0.1",
+    alternative="Use ElasticsearchStore class in langchain-elasticsearch package",
+    pending=True,
+)
 class ElasticKnnSearch(VectorStore):
     """[DEPRECATED] `Elasticsearch` with k-nearest neighbor search
     (`k-NN`) vector store.
