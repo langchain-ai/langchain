@@ -2,9 +2,7 @@
 name = "rag-redis-multi-modal-multi-vector"
 version = "0.0.1"
 description = "Multi-modal RAG using Redis as the vectorstore and docstore"
-authors = [
-    "Tyler Hutcherson <tyler.hutcherson@redis.com>"
-]
+authors = ["Tyler Hutcherson <tyler.hutcherson@redis.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -19,7 +17,7 @@ pillow = "^10.2.0"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
-fastapi = "^0.104.0"
+fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
