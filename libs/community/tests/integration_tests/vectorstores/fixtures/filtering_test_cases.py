@@ -127,7 +127,7 @@ TYPE_2_FILTERING_TEST_CASES = [
         {"name": {"$ne": "adam"}},
         [2, 3],
     ),
-    # And also gt, gte, lt, lte relying on lexigraphical ordering
+    # And also gt, gte, lt, lte relying on lexicographical ordering
     (
         {"name": {"$gt": "jane"}},
         [],
