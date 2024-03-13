@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import cohere
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
@@ -25,8 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
-    import cohere
-
     min_seconds = 4
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
@@ -35,7 +33,7 @@ def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
         reraise=True,
         stop=stop_after_attempt(llm.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type(cohere.error.CohereError)),
+        retry=(retry_if_exception_type(cohere.errors.InternalServerError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -87,27 +85,19 @@ class BaseCohere(Serializable):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        try:
-            import cohere
-        except ImportError:
-            raise ImportError(
-                "Could not import cohere python package. "
-                "Please install it with `pip install cohere`."
-            )
-        else:
-            values["cohere_api_key"] = convert_to_secret_str(
-                get_from_dict_or_env(
-                    values, "cohere_api_key", "COHERE_API_KEY")
-            )
-            client_name = values["user_agent"]
-            values["client"] = cohere.Client(
-                api_key=values["cohere_api_key"].get_secret_value(),
-                client_name=client_name,
-            )
-            values["async_client"] = cohere.AsyncClient(
-                api_key=values["cohere_api_key"].get_secret_value(),
-                client_name=client_name,
-            )
+        values["cohere_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values, "cohere_api_key", "COHERE_API_KEY")
+        )
+        client_name = values["user_agent"]
+        values["client"] = cohere.Client(
+            api_key=values["cohere_api_key"].get_secret_value(),
+            client_name=client_name,
+        )
+        values["async_client"] = cohere.AsyncClient(
+            api_key=values["cohere_api_key"].get_secret_value(),
+            client_name=client_name,
+        )
         return values
 
 
