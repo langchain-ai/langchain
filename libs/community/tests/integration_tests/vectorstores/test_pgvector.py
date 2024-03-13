@@ -1,6 +1,6 @@
 """Test PGVector functionality."""
 import os
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Dict, List, Type, Union, Generator
 
 import pytest
 import sqlalchemy
@@ -393,7 +393,7 @@ def test_pgvector_with_custom_engine_args() -> None:
 # We should reuse this test-case across other integrations
 # Add database fixture using pytest
 @pytest.fixture
-def pgvector() -> PGVector:
+def pgvector() -> Generator[PGVector, None, None]:
     """Create a PGVector instance."""
     store = PGVector.from_documents(
         documents=DOCUMENTS,
@@ -409,25 +409,6 @@ def pgvector() -> PGVector:
     # Do clean up
     finally:
         store.drop_tables()
-
-
-# We should reuse this test-case across other integrations
-# Add database fixture using pytest
-@pytest.fixture
-def pgvector_json_deprecated() -> PGVector:
-    """Create a PGVector instance."""
-    store = PGVector.from_documents(
-        documents=DOCUMENTS,
-        collection_name="test_collection",
-        embedding=FakeEmbeddingsWithAdaDimension(),
-        connection_string=CONNECTION_STRING,
-        pre_delete_collection=True,
-        relevance_score_fn=lambda d: d * 0,
-        use_jsonb=False,
-    )
-    yield store
-    # Do clean up
-    store.drop_tables()
 
 
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
