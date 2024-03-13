@@ -176,6 +176,15 @@ def _get_embedding_collection_store(
 
             # custom_id : any user defined id
             custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+
+            __table_args__ = (
+                sqlalchemy.Index(
+                    "ix_cmetadata_gin",
+                    "cmetadata",
+                    postgresql_using="gin",
+                    postgresql_ops={"cmetadata": "jsonb_path_ops"},
+                ),
+            )
     else:
         # For backwards comaptibilty with older versions of pgvector
         # This should be removed in the future (remove during migration)
