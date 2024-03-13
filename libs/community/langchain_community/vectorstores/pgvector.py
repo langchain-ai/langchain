@@ -219,7 +219,7 @@ def _sanitized_double_quoted_string(string: str) -> str:
     # Escape all single quotes
     sanitized_string = string.replace("'", "''")
     # Escape all double quotes
-    sanitized_string = sanitized_string.replace('"', '"')
+    sanitized_string = sanitized_string.replace('"', '\\"')
     # Finally double quote the string
     return f'"{sanitized_string}"'
 

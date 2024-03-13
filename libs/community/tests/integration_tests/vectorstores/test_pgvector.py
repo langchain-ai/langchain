@@ -494,6 +494,7 @@ def test_invalid_filters(pgvector: PGVector, invalid_filter: Any) -> None:
             {"id": "'evil code' == 2"},
             "langchain_pg_embedding.cmetadata @@ '$.id == \"''evil code'' == 2\"'",
         ),
+        ({"name": 'a"b'}, 'langchain_pg_embedding.cmetadata @@ \'$.name == "a\\"b"\''),
     ],
 )
 def test_evil_code(
