@@ -81,7 +81,8 @@ class DashVector(VectorStore):
 
         # query by vector
         ret = self._collection.query(
-            embedding, topk=k, filter=filter, partition=partition)
+            embedding, topk=k, filter=filter, partition=partition
+        )
         if not ret:
             raise ValueError(
                 f"Fail to query docs by vector, error {self._collection.message}"
@@ -92,8 +93,7 @@ class DashVector(VectorStore):
             metadata = doc.fields
             text = metadata.pop(self._text_field)
             score = doc.score
-            docs.append(
-                (Document(page_content=text, metadata=metadata), score))
+            docs.append((Document(page_content=text, metadata=metadata), score))
         return docs
 
     def add_texts(
@@ -127,8 +127,7 @@ class DashVector(VectorStore):
 
             batch_texts = text_list[i:end]
             batch_ids = ids[i:end]
-            batch_embeddings = self._embedding.embed_documents(
-                list(batch_texts))
+            batch_embeddings = self._embedding.embed_documents(list(batch_texts))
 
             # batch metadatas
             if metadatas:
@@ -149,10 +148,7 @@ class DashVector(VectorStore):
         return ids
 
     def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        partition: str = "default",
-        **kwargs: Any
+        self, ids: Optional[List[str]] = None, partition: str = "default", **kwargs: Any
     ) -> bool:
         """Delete by vector ID.
 
@@ -188,7 +184,8 @@ class DashVector(VectorStore):
         """
 
         docs_and_scores = self.similarity_search_with_relevance_scores(
-            query, k, filter, partition)
+            query, k, filter, partition
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_with_relevance_scores(
@@ -316,7 +313,7 @@ class DashVector(VectorStore):
             topk=fetch_k,
             filter=filter,
             partition=partition,
-            include_vector=True
+            include_vector=True,
         )
         if not ret:
             raise ValueError(
@@ -330,8 +327,7 @@ class DashVector(VectorStore):
 
         metadatas = [ret.output[i].fields for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop(
-                self._text_field), metadata=metadata)
+            Document(page_content=metadata.pop(self._text_field), metadata=metadata)
             for metadata in metadatas
         ]
 
