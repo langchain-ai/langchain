@@ -66,16 +66,22 @@ class DashVector(VectorStore):
         self._embedding = embedding
         self._text_field = text_field
 
+    def _create_partition_if_not_exists(self, partition: str):
+        """Create a Partition in current Collection."""
+        return self._collection.create_partition(partition)
+
     def _similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
         filter: Optional[str] = None,
+        partition: str = "default",
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query vector, along with scores"""
 
         # query by vector
-        ret = self._collection.query(embedding, topk=k, filter=filter)
+        ret = self._collection.query(
+            embedding, topk=k, filter=filter, partition=partition)
         if not ret:
             raise ValueError(
                 f"Fail to query docs by vector, error {self._collection.message}"
@@ -86,7 +92,8 @@ class DashVector(VectorStore):
             metadata = doc.fields
             text = metadata.pop(self._text_field)
             score = doc.score
-            docs.append((Document(page_content=text, metadata=metadata), score))
+            docs.append(
+                (Document(page_content=text, metadata=metadata), score))
         return docs
 
     def add_texts(
@@ -95,6 +102,7 @@ class DashVector(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 25,
+        partition: str = "default",
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -104,11 +112,13 @@ class DashVector(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of ids associated with the texts.
             batch_size: Optional batch size to upsert docs.
+            partition: a partition name in collection. [optional].
             kwargs: vectorstore specific parameters
 
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        self._create_partition_if_not_exists(partition)
         ids = ids or [str(uuid.uuid4().hex) for _ in texts]
         text_list = list(texts)
         for i in range(0, len(text_list), batch_size):
@@ -117,7 +127,8 @@ class DashVector(VectorStore):
 
             batch_texts = text_list[i:end]
             batch_ids = ids[i:end]
-            batch_embeddings = self._embedding.embed_documents(list(batch_texts))
+            batch_embeddings = self._embedding.embed_documents(
+                list(batch_texts))
 
             # batch metadatas
             if metadatas:
@@ -129,7 +140,7 @@ class DashVector(VectorStore):
 
             # batch upsert to collection
             docs = list(zip(batch_ids, batch_embeddings, batch_metadatas))
-            ret = self._collection.upsert(docs)
+            ret = self._collection.upsert(docs, partition=partition)
             if not ret:
                 raise ValueError(
                     f"Fail to upsert docs to dashvector vector database,"
@@ -137,23 +148,25 @@ class DashVector(VectorStore):
                 )
         return ids
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> bool:
+    def delete(self, ids: Optional[List[str]] = None, partition: str = "default", **kwargs: Any) -> bool:
         """Delete by vector ID.
 
         Args:
             ids: List of ids to delete.
+            partition: a partition name in collection. [optional].
 
         Returns:
             True if deletion is successful,
             False otherwise.
         """
-        return bool(self._collection.delete(ids))
+        return bool(self._collection.delete(ids, partition=partition))
 
     def similarity_search(
         self,
         query: str,
         k: int = 4,
         filter: Optional[str] = None,
+        partition: str = "default",
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -163,12 +176,14 @@ class DashVector(VectorStore):
             k: Number of documents to return. Default to 4.
             filter: Doc fields filter conditions that meet the SQL where clause
                     specification.
+            partition: a partition name in collection. [optional].
 
         Returns:
             List of Documents most similar to the query text.
         """
 
-        docs_and_scores = self.similarity_search_with_relevance_scores(query, k, filter)
+        docs_and_scores = self.similarity_search_with_relevance_scores(
+            query, k, filter, partition)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_with_relevance_scores(
@@ -176,6 +191,7 @@ class DashVector(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[str] = None,
+        partition: str = "default",
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query text , alone with relevance scores.
@@ -187,6 +203,7 @@ class DashVector(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             filter: Doc fields filter conditions that meet the SQL where clause
                     specification.
+            partition: a partition name in collection. [optional].
 
         Returns:
             List of Tuples of (doc, similarity_score)
@@ -194,7 +211,7 @@ class DashVector(VectorStore):
 
         embedding = self._embedding.embed_query(query)
         return self._similarity_search_with_score_by_vector(
-            embedding, k=k, filter=filter
+            embedding, k=k, filter=filter, partition=partition
         )
 
     def similarity_search_by_vector(
@@ -202,6 +219,7 @@ class DashVector(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[str] = None,
+        partition: str = "default",
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -211,12 +229,13 @@ class DashVector(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             filter: Doc fields filter conditions that meet the SQL where clause
                     specification.
+            partition: a partition name in collection. [optional].
 
         Returns:
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self._similarity_search_with_score_by_vector(
-            embedding, k, filter
+            embedding, k, filter, partition
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -227,6 +246,7 @@ class DashVector(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[dict] = None,
+        partition: str = "default",
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -244,13 +264,14 @@ class DashVector(VectorStore):
                         Defaults to 0.5.
             filter: Doc fields filter conditions that meet the SQL where clause
                     specification.
+            partition: a partition name in collection. [optional].
 
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self._embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult, filter
+            embedding, k, fetch_k, lambda_mult, filter, partition
         )
 
     def max_marginal_relevance_search_by_vector(
@@ -260,6 +281,7 @@ class DashVector(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[dict] = None,
+        partition: str = "default",
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -277,6 +299,7 @@ class DashVector(VectorStore):
                         Defaults to 0.5.
             filter: Doc fields filter conditions that meet the SQL where clause
                     specification.
+            partition: a partition name in collection. [optional].
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -284,7 +307,7 @@ class DashVector(VectorStore):
 
         # query by vector
         ret = self._collection.query(
-            embedding, topk=fetch_k, filter=filter, include_vector=True
+            embedding, topk=fetch_k, filter=filter, partition=partition, include_vector=True
         )
         if not ret:
             raise ValueError(
@@ -298,7 +321,8 @@ class DashVector(VectorStore):
 
         metadatas = [ret.output[i].fields for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop(self._text_field), metadata=metadata)
+            Document(page_content=metadata.pop(
+                self._text_field), metadata=metadata)
             for metadata in metadatas
         ]
 
