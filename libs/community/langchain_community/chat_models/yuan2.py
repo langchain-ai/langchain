@@ -39,11 +39,12 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from openai.types.chat import ChatCompletionMessage
 from tenacity import (
     before_sleep_log,
     retry,
@@ -302,11 +303,11 @@ class ChatYuan2(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         generations = []
+        logger.debug(f"type(response): {type(response)}; response: {response}")
         if not isinstance(response, dict):
             response = response.dict()
-        logger.debug(f"type(response): {type(response)}; response: {response}")
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res["finish_reason"])
@@ -445,14 +446,13 @@ def _convert_delta_to_message_chunk(
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict.get("role")
     if role == "user":
-        return HumanMessage(content=_dict.get("content"))
+        return HumanMessage(content=_dict.get("content", ""))
     elif role == "assistant":
-        content = _dict.get("content") or ""
-        return AIMessage(content=content)
+        return AIMessage(content=_dict.get("content", ""))
     elif role == "system":
-        return SystemMessage(content=_dict.get("content"))
+        return SystemMessage(content=_dict.get("content", ""))
     else:
-        return ChatMessage(content=_dict.get("content"), role=role)
+        return ChatMessage(content=_dict.get("content", ""), role=role)
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
