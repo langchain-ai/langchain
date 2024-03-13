@@ -300,7 +300,18 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         """Create keyed fields for local caching layer"""
         return f"{prompt}#{llm_string}"
 
-    def clear(self, **kwargs: Any) -> DeleteResult:  # type: ignore
+    def clear(self, **kwargs: Any) -> None:  # type: ignore
+        """Clear cache that can take additional keyword arguments.
+        Any additional arguments will propagate as filtration criteria for
+        what gets deleted. It will delete any locally cached content regardless
+
+        E.g.
+            # Delete only entries that have llm_string as "fake-model"
+            self.clear(llm_string="fake-model")
+        """
+        self.clear_and_return(**kwargs)
+
+    def clear_and_return(self, **kwargs: Any) -> DeleteResult:  # type: ignore
         """Clear cache that can take additional keyword arguments.
         Any additional arguments will propagate as filtration criteria for
         what gets deleted. It will delete any locally cached content regardless
