@@ -136,7 +136,7 @@ class Yuan2(LLM):
             input = prompt
 
         headers = {"Content-Type": "application/json"}
-        if self.top_p > 0 and self.top_k > 0:
+        if (self.top_p or 0) > 0 and (self.top_k or 0) > 0:
             logger.warning(
                 "top_p and top_k cannot be set simultaneously. "
                 "set top_k to 0 instead..."
