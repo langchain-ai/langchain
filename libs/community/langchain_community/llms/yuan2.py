@@ -137,7 +137,10 @@ class Yuan2(LLM):
 
         headers = {"Content-Type": "application/json"}
         if self.top_p > 0 and self.top_k > 0:
-            logger.warning("top_p and top_k cannot be set simultaneously. set top_k to 0 instead...")
+            logger.warning(
+                "top_p and top_k cannot be set simultaneously. "
+                "set top_k to 0 instead..."
+            )
             self.top_k = 0
 
         data = json.dumps(
