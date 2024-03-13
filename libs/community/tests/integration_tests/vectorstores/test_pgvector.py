@@ -1,6 +1,6 @@
 """Test PGVector functionality."""
 import os
-from typing import Any, Dict, List, Type, Union, Generator
+from typing import Any, Dict, Generator, List, Type, Union
 
 import pytest
 import sqlalchemy
