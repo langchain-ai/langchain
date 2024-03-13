@@ -406,6 +406,17 @@ def _import_azure_openai() -> Type[BaseLLM]:
     return AzureOpenAI
 
 
+def _import_azure_chat_openai() -> Any:
+    warn_deprecated(
+        since="0.0.10",
+        removal="0.2",
+        alternative_import="langchain_openai.AzureChatOpenAI",
+    )
+    from langchain_community.chat_models.azure_openai import AzureChatOpenAI
+
+    return AzureChatOpenAI
+
+
 def _import_openai() -> Type[BaseLLM]:
     from langchain_community.llms.openai import OpenAI
 
@@ -911,6 +922,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "arcee": _import_arcee,
         "aviary": _import_aviary,
         "azure": _import_azure_openai,
+        "azure-openai-chat": _import_azure_chat_openai,
         "azureml_endpoint": _import_azureml_endpoint,
         "bananadev": _import_bananadev,
         "baseten": _import_baseten,
