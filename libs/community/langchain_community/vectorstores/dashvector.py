@@ -66,9 +66,9 @@ class DashVector(VectorStore):
         self._embedding = embedding
         self._text_field = text_field
 
-    def _create_partition_if_not_exists(self, partition: str):
+    def _create_partition_if_not_exists(self, partition: str) -> None:
         """Create a Partition in current Collection."""
-        return self._collection.create_partition(partition)
+        self._collection.create_partition(partition)
 
     def _similarity_search_with_score_by_vector(
         self,
