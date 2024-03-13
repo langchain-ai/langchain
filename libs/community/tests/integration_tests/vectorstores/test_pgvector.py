@@ -1,4 +1,5 @@
 """Test PGVector functionality."""
+import contextlib
 import os
 from typing import Any, Dict, List, Type, Union
 
@@ -55,7 +56,7 @@ class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
         return [float(1.0)] * (ADA_TOKEN_COUNT - 1) + [float(0.0)]
 
 
-def test_pgvector() -> None:
+def test_pgvector(pgvector: PGVector) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = PGVector.from_texts(
@@ -115,6 +116,7 @@ def test_pgvector_with_metadatas_with_scores() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+
 
 
 def test_pgvector_with_filter_match() -> None:
@@ -403,6 +405,25 @@ def pgvector() -> PGVector:
         pre_delete_collection=True,
         relevance_score_fn=lambda d: d * 0,
         use_jsonb=True,
+    )
+    yield store
+    # Do clean up
+    store.drop_tables()
+
+
+# We should re-use this test-case across other integrations
+# Add database fixture using pytest
+@pytest.fixture
+def pgvector_json_deprecated() -> PGVector:
+    """Create a PGVector instance."""
+    store = PGVector.from_documents(
+        documents=DOCUMENTS,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+        relevance_score_fn=lambda d: d * 0,
+        use_jsonb=False,
     )
     yield store
     # Do clean up
