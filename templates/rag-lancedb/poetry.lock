@@ -699,13 +699,16 @@ files = [
 
 [[package]]
 name = "lancedb"
-version = "0.5.7"
+version = "0.6.3"
 description = "lancedb"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "lancedb-0.5.7-py3-none-any.whl", hash = "sha256:6169966f715ef530be545950e1aaf9f3f160967e4ba7456cd67c9f30f678095d"},
-    {file = "lancedb-0.5.7.tar.gz", hash = "sha256:878914b493f91d09a77b14f1528104741f273234cbdd6671be705f447701fd51"},
+    {file = "lancedb-0.6.3-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:0d090eb3211d594b0025d3d0978c6999db4f79b30633309eaabe1423ac593a23"},
+    {file = "lancedb-0.6.3-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:56e68a1fab85d5ed9e203fb88813b707248c272f3d36d60d6e47aec77896b226"},
+    {file = "lancedb-0.6.3-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fde7bc38a451e7721d2f3d5f3f7da1b754f575e211a91e8df9b2c779387a090b"},
+    {file = "lancedb-0.6.3-cp38-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:643df736abb4f0fc076b55078cdbe52d5e4b44909775a3e0bc0abd71c9dac808"},
+    {file = "lancedb-0.6.3-cp38-abi3-win_amd64.whl", hash = "sha256:ca87b8f10b696265226fedd3d04546806eeffa81d47dc1fee0be7835ad023d7c"},
 ]
 
 [package.dependencies]
@@ -715,7 +718,7 @@ click = ">=8.1.7"
 deprecation = "*"
 overrides = ">=0.7"
 pydantic = ">=1.10"
-pylance = "0.9.18"
+pylance = "0.10.2"
 pyyaml = ">=6.0"
 ratelimiter = ">=1.0,<2.0"
 requests = ">=2.31.0"
@@ -727,7 +730,7 @@ tqdm = ">=4.27.0"
 clip = ["open-clip", "pillow", "torch"]
 dev = ["pre-commit", "ruff"]
 docs = ["mkdocs", "mkdocs-jupyter", "mkdocs-material", "mkdocs-ultralytics-plugin (==0.0.44)", "mkdocstrings[python]"]
-embeddings = ["InstructorEmbedding", "awscli (>=1.29.57)", "boto3 (>=1.28.57)", "botocore (>=1.31.57)", "cohere", "google.generativeai", "huggingface-hub", "open-clip-torch", "openai (>=1.6.1)", "pillow", "sentence-transformers", "torch"]
+embeddings = ["awscli (>=1.29.57)", "boto3 (>=1.28.57)", "botocore (>=1.31.57)", "cohere", "google-generativeai", "huggingface-hub", "instructorembedding", "open-clip-torch", "openai (>=1.6.1)", "pillow", "sentence-transformers", "torch"]
 tests = ["aiohttp", "duckdb", "pandas (>=1.4)", "polars (>=0.19)", "pytest", "pytest-asyncio", "pytest-mock", "pytz"]
 
 [[package]]
@@ -1404,16 +1407,16 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pylance"
-version = "0.9.18"
+version = "0.10.2"
 description = "python wrapper for Lance columnar format"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pylance-0.9.18-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:fe2445d922c594d90e89111385106f6b152caab27996217db7bb4b8947eb0bea"},
-    {file = "pylance-0.9.18-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:a2c424c50f5186edbbcc5a26f34063ed09d9a7390e28033395728ce02b5658f0"},
-    {file = "pylance-0.9.18-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:10af06edfde3e8451bf2251381d3980a0a164eab9d4c3d4dc8b6318969e958a6"},
-    {file = "pylance-0.9.18-cp38-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:d8bb9045d7163cc966b9fe34a917044192be37a90915475b77461e5b7d89e442"},
-    {file = "pylance-0.9.18-cp38-abi3-win_amd64.whl", hash = "sha256:5ea80b7bf70d992f3fe63bce2d2f064f742124c04eaedeb76baca408ded85a2c"},
+    {file = "pylance-0.10.2-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:e045609dde4701c37136d3c1a047a7dff072a2ca06c9440bb0ca2c56b629a35f"},
+    {file = "pylance-0.10.2-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:c801fc8da73418f049e60c494431cd613253bcd195bd93abe13713f2a122df0c"},
+    {file = "pylance-0.10.2-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bbec7eeb29d479319db61c7fd3bb91f096c8fd13824feab0773a5b5e268ca698"},
+    {file = "pylance-0.10.2-cp38-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:86c1ef6cefccf23e1b65a8686054aea6498af6cbcf370c35a92cd6f5bc87db11"},
+    {file = "pylance-0.10.2-cp38-abi3-win_amd64.whl", hash = "sha256:cdb776f9c22bd4b488792a40f68c3750b2e06795c053f4beb0356fcf34aab8ad"},
 ]
 
 [package.dependencies]
@@ -2112,4 +2115,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "43ee7f71a7b0028814c459f6686d06867dffaa41560fbec5e6ffb3c87b90f961"
+content-hash = "27382817951c799886422c6380455b16051d4647129f7f8ad465d4920dac3023"
