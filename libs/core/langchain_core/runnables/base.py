@@ -1339,7 +1339,24 @@ class Runnable(Generic[Input, Output], ABC):
         Return a new Runnable that maps a list of inputs to a list of outputs,
         by calling invoke() with each input.
         """
-        return RunnableEach(bound=self)
+        return RunnableLambda(
+            self.batch,
+            self.abatch,
+            input_schema=create_model(
+                self.get_name("Input"),
+                __root__=(
+                    List[self.get_input_schema()],  # type: ignore
+                    None,
+                ),
+            ),
+            output_schema=create_model(
+                self.get_name("Input"),
+                __root__=(
+                    List[self.get_output_schema()],  # type: ignore
+                    None,
+                ),
+            ),
+        )
 
     def with_fallbacks(
         self,
@@ -3341,6 +3358,8 @@ class RunnableLambda(Runnable[Input, Output]):
             ]
         ] = None,
         name: Optional[str] = None,
+        input_schema: Optional[Type[BaseModel]] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
     ) -> None:
         """Create a RunnableLambda from a callable, and async callable or both.
 
@@ -3381,6 +3400,9 @@ class RunnableLambda(Runnable[Input, Output]):
         except AttributeError:
             pass
 
+        self._input_schema = input_schema
+        self._output_schema = output_schema
+
     @property
     def InputType(self) -> Any:
         """The type of the input to this runnable."""
@@ -3399,6 +3421,9 @@ class RunnableLambda(Runnable[Input, Output]):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         """The pydantic schema for the input to this runnable."""
+        if self._input_schema:
+            return self._input_schema
+
         func = getattr(self, "func", None) or getattr(self, "afunc")
 
         if isinstance(func, itemgetter):
@@ -3448,6 +3473,13 @@ class RunnableLambda(Runnable[Input, Output]):
                 return Any
         except ValueError:
             return Any
+
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        if self._output_schema:
+            return self._output_schema
+        return super().get_output_schema(config)
 
     @property
     def deps(self) -> List[Runnable]:
@@ -3889,184 +3921,6 @@ class RunnableLambda(Runnable[Input, Output]):
 
         async for chunk in self.atransform(input_aiter(), config, **kwargs):
             yield chunk
-
-
-class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
-    """Runnable that delegates calls to another Runnable
-    with each element of the input sequence.
-
-    Use only if creating a new RunnableEach subclass with different __init__ args.
-
-    See documentation for RunnableEach for more details.
-    """
-
-    bound: Runnable[Input, Output]
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @property
-    def InputType(self) -> Any:
-        return List[self.bound.InputType]  # type: ignore[name-defined]
-
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        return create_model(
-            self.get_name("Input"),
-            __root__=(
-                List[self.bound.get_input_schema(config)],  # type: ignore
-                None,
-            ),
-        )
-
-    @property
-    def OutputType(self) -> Type[List[Output]]:
-        return List[self.bound.OutputType]  # type: ignore[name-defined]
-
-    def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        schema = self.bound.get_output_schema(config)
-        return create_model(
-            self.get_name("Output"),
-            __root__=(
-                List[schema],  # type: ignore
-                None,
-            ),
-        )
-
-    @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
-        return self.bound.config_specs
-
-    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
-        return self.bound.get_graph(config)
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return True
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
-
-    def _invoke(
-        self,
-        inputs: List[Input],
-        run_manager: CallbackManagerForChainRun,
-        config: RunnableConfig,
-        **kwargs: Any,
-    ) -> List[Output]:
-        return self.bound.batch(
-            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
-        )
-
-    def invoke(
-        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> List[Output]:
-        return self._call_with_config(self._invoke, input, config, **kwargs)
-
-    async def _ainvoke(
-        self,
-        inputs: List[Input],
-        run_manager: AsyncCallbackManagerForChainRun,
-        config: RunnableConfig,
-        **kwargs: Any,
-    ) -> List[Output]:
-        return await self.bound.abatch(
-            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
-        )
-
-    async def ainvoke(
-        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> List[Output]:
-        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
-
-    async def astream_events(
-        self,
-        input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
-    ) -> AsyncIterator[StreamEvent]:
-        for _ in range(1):
-            raise NotImplementedError(
-                "RunnableEach does not support astream_events yet."
-            )
-            yield
-
-
-class RunnableEach(RunnableEachBase[Input, Output]):
-    """Runnable that delegates calls to another Runnable
-    with each element of the input sequence.
-
-    It allows you to call multiple inputs with the bounded Runnable.
-
-    RunnableEach makes it easy to run multiple inputs for the runnable.
-    In the below example, we associate and run three inputs
-    with a Runnable:
-
-        .. code-block:: python
-
-            from langchain_core.runnables.base import RunnableEach
-            from langchain_openai import ChatOpenAI
-            from langchain_core.prompts import ChatPromptTemplate
-            from langchain_core.output_parsers import StrOutputParser
-            prompt = ChatPromptTemplate.from_template("Tell me a short joke about
-            {topic}")
-            model = ChatOpenAI()
-            output_parser = StrOutputParser()
-            runnable = prompt | model | output_parser
-            runnable_each = RunnableEach(bound=runnable)
-            output = runnable_each.invoke([{'topic':'Computer Science'},
-                                        {'topic':'Art'},
-                                        {'topic':'Biology'}])
-            print(output)  # noqa: T201
-    """
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
-
-    def get_name(
-        self, suffix: Optional[str] = None, *, name: Optional[str] = None
-    ) -> str:
-        name = name or self.name or f"RunnableEach<{self.bound.get_name()}>"
-        return super().get_name(suffix, name=name)
-
-    def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
-        return RunnableEach(bound=self.bound.bind(**kwargs))
-
-    def with_config(
-        self, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> RunnableEach[Input, Output]:
-        return RunnableEach(bound=self.bound.with_config(config, **kwargs))
-
-    def with_listeners(
-        self,
-        *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
-    ) -> RunnableEach[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
-
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
-
-        The Run object contains information about the run, including its id,
-        type, input, output, error, start_time, end_time, and any tags or metadata
-        added to the run.
-        """
-        return RunnableEach(
-            bound=self.bound.with_listeners(
-                on_start=on_start, on_end=on_end, on_error=on_error
-            )
-        )
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):

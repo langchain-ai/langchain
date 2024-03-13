@@ -572,7 +572,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         },
         "items": {"$ref": "#/definitions/PromptInput"},
         "type": "array",
-        "title": "RunnableEach<PromptTemplate>Input",
+        "title": "PromptTemplateInput",
     }
     assert prompt_mapper.output_schema.schema() == snapshot
 
@@ -3856,11 +3856,37 @@ def test_each(snapshot: SnapshotAssertion) -> None:
 
     chain = prompt | first_llm | parser | second_llm.map()
 
+    tracer = FakeTracer()
     assert dumps(chain, pretty=True) == snapshot
-    output = chain.invoke({"question": "What up"})
+    output = chain.invoke({"question": "What up"}, {"callbacks": [tracer]})
     assert output == ["this", "is", "a"]
+    assert len(tracer.runs[0].child_runs) == 4
 
     assert (parser | second_llm.map()).invoke("first item, second item") == [
+        "test",
+        "this",
+    ]
+
+
+def test_pipe_to_batch(snapshot: SnapshotAssertion) -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    first_llm = FakeStreamingListLLM(responses=["first item, second item, third item"])
+    parser = FakeSplitIntoListParser()
+    second_llm = FakeStreamingListLLM(responses=["this", "is", "a", "test"])
+
+    chain = prompt | first_llm | parser | second_llm.batch
+
+    assert dumps(chain, pretty=True) == snapshot
+
+    tracer = FakeTracer()
+    output = chain.invoke({"question": "What up"}, {"callbacks": [tracer]})
+    assert output == ["this", "is", "a"]
+    assert len(tracer.runs[0].child_runs) == 4
+
+    assert (parser | second_llm.batch).invoke("first item, second item") == [
         "test",
         "this",
     ]

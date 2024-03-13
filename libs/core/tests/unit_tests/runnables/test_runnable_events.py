@@ -2,8 +2,6 @@
 from itertools import cycle
 from typing import Any, AsyncIterator, Dict, List, Sequence, cast
 
-import pytest
-
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
@@ -1071,20 +1069,6 @@ async def test_with_llm() -> None:
             "tags": [],
         },
     ]
-
-
-async def test_runnable_each() -> None:
-    """Test runnable each astream_events."""
-
-    async def add_one(x: int) -> int:
-        return x + 1
-
-    add_one_map = RunnableLambda(add_one).map()  # type: ignore
-    assert await add_one_map.ainvoke([1, 2, 3]) == [2, 3, 4]
-
-    with pytest.raises(NotImplementedError):
-        async for _ in add_one_map.astream_events([1, 2, 3], version="v1"):
-            pass
 
 
 async def test_events_astream_config() -> None:

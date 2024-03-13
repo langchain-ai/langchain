@@ -439,18 +439,6 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "base",
         "RunnableSequence",
     ),
-    ("langchain", "schema", "runnable", "RunnableEach"): (
-        "langchain_core",
-        "runnables",
-        "base",
-        "RunnableEach",
-    ),
-    ("langchain", "schema", "runnable", "RunnableEachBase"): (
-        "langchain_core",
-        "runnables",
-        "base",
-        "RunnableEachBase",
-    ),
     ("langchain", "schema", "runnable", "RunnableConfigurableAlternatives"): (
         "langchain_core",
         "runnables",
@@ -830,18 +818,6 @@ OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "runnables",
         "base",
         "RunnableSequence",
-    ),
-    ("langchain_core", "runnables", "base", "RunnableEach"): (
-        "langchain_core",
-        "runnables",
-        "base",
-        "RunnableEach",
-    ),
-    ("langchain_core", "runnables", "base", "RunnableEachBase"): (
-        "langchain_core",
-        "runnables",
-        "base",
-        "RunnableEachBase",
     ),
     (
         "langchain_core",

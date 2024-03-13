@@ -4,8 +4,6 @@ EXPECTED_ALL = [
     "Runnable",
     "RunnableBinding",
     "RunnableBindingBase",
-    "RunnableEach",
-    "RunnableEachBase",
     "RunnableGenerator",
     "RunnableLambda",
     "RunnableMap",
