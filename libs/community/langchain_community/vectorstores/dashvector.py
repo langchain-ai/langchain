@@ -148,7 +148,12 @@ class DashVector(VectorStore):
                 )
         return ids
 
-    def delete(self, ids: Optional[List[str]] = None, partition: str = "default", **kwargs: Any) -> bool:
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        partition: str = "default",
+        **kwargs: Any
+    ) -> bool:
         """Delete by vector ID.
 
         Args:
@@ -307,7 +312,11 @@ class DashVector(VectorStore):
 
         # query by vector
         ret = self._collection.query(
-            embedding, topk=fetch_k, filter=filter, partition=partition, include_vector=True
+            embedding,
+            topk=fetch_k,
+            filter=filter,
+            partition=partition,
+            include_vector=True
         )
         if not ret:
             raise ValueError(
