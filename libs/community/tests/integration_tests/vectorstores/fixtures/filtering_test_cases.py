@@ -84,7 +84,8 @@ TYPE_1_FILTERING_TEST_CASES = [
 ]
 
 TYPE_2_FILTERING_TEST_CASES = [
-    # These involve equality checks and other operators like $ne, $gt, $gte, $lt, $lte, $not
+    # These involve equality checks and other operators
+    # like $ne, $gt, $gte, $lt, $lte, $not
     (
         {"id": 1},
         [1],
