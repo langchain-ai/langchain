@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
@@ -52,9 +51,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-if TYPE_CHECKING:
-    from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 logger = logging.getLogger(__name__)
 
