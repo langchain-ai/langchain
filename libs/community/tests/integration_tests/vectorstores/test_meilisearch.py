@@ -127,8 +127,7 @@ class TestMeilisearchVectorSearch:
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
     def test_meilisearch_with_metadatas_with_scores(
-        self, 
-        new_embedders: Dict[str, Any]
+        self, new_embedders: Dict[str, Any]
     ) -> None:
         """Test end to end construction and scored search."""
         texts = ["foo", "bar", "baz"]
