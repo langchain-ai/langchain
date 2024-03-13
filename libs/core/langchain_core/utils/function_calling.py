@@ -54,7 +54,6 @@ class ToolDescription(TypedDict):
 def _rm_titles(kv: dict) -> dict:
     new_kv = {}
     for k, v in kv.items():
-        # print(kv.keys())
         if k == "title" and "type" in kv.keys():
             continue
         elif isinstance(v, dict):
