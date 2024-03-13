@@ -390,7 +390,7 @@ def test_pgvector_with_custom_engine_args() -> None:
     assert output == [Document(page_content="foo")]
 
 
-# We should re-use this test-case across other integrations
+# We should reuse this test-case across other integrations
 # Add database fixture using pytest
 @pytest.fixture
 def pgvector() -> PGVector:
@@ -411,7 +411,7 @@ def pgvector() -> PGVector:
         store.drop_tables()
 
 
-# We should re-use this test-case across other integrations
+# We should reuse this test-case across other integrations
 # Add database fixture using pytest
 @pytest.fixture
 def pgvector_json_deprecated() -> PGVector:
