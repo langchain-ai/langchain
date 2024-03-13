@@ -51,10 +51,14 @@ class ToolDescription(TypedDict):
     function: FunctionDescription
 
 
-def _rm_titles(kv: dict) -> dict:
+def _rm_titles(
+    kv: dict
+) -> dict:
+
     new_kv = {}
     for k, v in kv.items():
-        if k == "title":
+        # print(kv.keys())
+        if k == "title" and 'type' in kv.keys():
             continue
         elif isinstance(v, dict):
             new_kv[k] = _rm_titles(v)
