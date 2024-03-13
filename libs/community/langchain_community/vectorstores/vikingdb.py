@@ -21,12 +21,16 @@ class VikingDBConfig(object):
     https://www.volcengine.com/docs/6459/1167770
 
     Attribute:
-        host(str):The access address of the vector database server that the client needs to connect to.
-        region(str):"cn-shanghai" or "cn-beijing" 
-        ak(str):Access Key ID, security credentials for accessing Volcano Engine services.
-        sk(str):Secret Access Key, security credentials for accessing Volcano Engine services.
+        host(str):The access address of the vector database server
+            that the client needs to connect to.
+        region(str):"cn-shanghai" or "cn-beijing"
+        ak(str):Access Key ID, security credentials for accessing
+            Volcano Engine services.
+        sk(str):Secret Access Key, security credentials for accessing
+            Volcano Engine services.
         scheme(str):http or https, defaulting to http.
     """
+
     def __init__(self, host="host", region="region", ak="ak", sk="sk", scheme="http"):  # type: ignore[no-untyped-def]
         self.host = host
         self.region = region
@@ -42,6 +46,7 @@ class VikingDB(VectorStore):
     See the following documentation for details:
     https://www.volcengine.com/docs/6459/1167774
     """
+
     def __init__(
         self,
         embedding_function: Embeddings,
