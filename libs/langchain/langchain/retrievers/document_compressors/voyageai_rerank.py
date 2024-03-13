@@ -15,8 +15,8 @@ from langchain.utils import get_from_dict_or_env
 class VoyageAIRerank(BaseDocumentCompressor):
     """Document compressor that uses `VoyageAI Rerank API`."""
 
-    _client: voyageai.Client = None
-    _aclient: voyageai.AsyncClient = None
+    client: voyageai.Client = None
+    aclient: voyageai.AsyncClient = None
     """VoyageAI clients to use for compressing documents."""
     top_k: Optional[int]
     """Number of documents to return."""
@@ -27,14 +27,17 @@ class VoyageAIRerank(BaseDocumentCompressor):
         VOYAGE_API_KEY."""
     truncation: bool = True
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         voyageai_api_key = get_from_dict_or_env(
             values, "voyageai_api_key", "VOYAGE_API_KEY"
         )
-        values["_client"] = voyageai.Client(api_key=voyageai_api_key)
-        values["_aclient"] = voyageai.AsyncClient(api_key=voyageai_api_key)
+        values["client"] = voyageai.Client(api_key=voyageai_api_key)
+        values["aclient"] = voyageai.AsyncClient(api_key=voyageai_api_key)
 
         return values
 
@@ -62,7 +65,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         ]
         model = model or self.model
         top_k = top_k if (top_k is None or top_k > 0) else self.top_k
-        results = self._client.rerank(
+        results = self.client.rerank(
             query=query,
             documents=docs,
             model=model,
@@ -100,7 +103,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         ]
         model = model or self.model
         top_k = top_k if (top_k is None or top_k > 0) else self.top_k
-        results = await self._aclient.rerank(
+        results = await self.aclient.rerank(
             query=query,
             documents=docs,
             model=model,
