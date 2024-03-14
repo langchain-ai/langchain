@@ -183,7 +183,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        remove_embedding: bool = True,
+        include_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         params = {
@@ -203,7 +203,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         ]
 
         # Exclude the embedding key from the return payload
-        if remove_embedding:
+        if not include_embedding:
             pipeline.append({"$project": {self._embedding_key: 0}})
 
         if post_filter_pipeline is not None:
@@ -438,7 +438,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             k=fetch_k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
-            remove_embedding=kwargs.pop("remove_embedding", False),
+            include_embedding=kwargs.pop("include_embedding", True),
             **kwargs,
         )
         mmr_doc_indexes = maximal_marginal_relevance(

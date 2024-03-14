@@ -130,7 +130,7 @@ class TestMongoDBAtlasVectorSearch:
             collection=collection,
             index_name=INDEX_NAME,
         )
-        output = vectorstore.similarity_search("Sandwich", k=1, remove_embedding=False)
+        output = vectorstore.similarity_search("Sandwich", k=1, include_embedding=True)
         assert len(output) == 1
         # Check for presence of embedding in each document
         assert all([key.metadata.get("embedding") for key in output])
