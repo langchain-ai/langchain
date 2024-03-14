@@ -1902,9 +1902,6 @@ requests = "^2"
 SQLAlchemy = ">=1.4,<3"
 tenacity = "^8.1.0"
 
-[package.extras]
-cli = []
-
 [package.source]
 type = "directory"
 url = "../community"
@@ -4787,21 +4784,7 @@ files = [
 docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
-[extras]
-all = []
-azure = []
-clarifai = []
-cli = []
-cohere = []
-docarray = []
-embeddings = []
-javascript = []
-llms = []
-openai = []
-qdrant = []
-text-helpers = []
-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b79531ac4fb3c8a970dea4ad48bc8ea78a8eb4bd5b0310f3b25e233c1961f72b"
+content-hash = "143cd9568603dcc9ac7e5a5bb3935312062c42e860d51b537020716474bdaf21"

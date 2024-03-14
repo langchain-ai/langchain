@@ -108,27 +108,6 @@ langchain-community = {path = "../community", develop = true}
 langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.extras]
-llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
-qdrant = ["qdrant-client"]
-openai = ["openai", "tiktoken"]
-text_helpers = ["chardet"]
-clarifai = ["clarifai"]
-cohere = ["cohere"]
-docarray = ["docarray"]
-embeddings = ["sentence-transformers"]
-javascript = ["esprima"]
-azure = [
-    "azure-identity",
-    "azure-cosmos",
-    "openai",
-    "azure-core",
-    "azure-ai-formrecognizer",
-    "azure-cognitiveservices-speech",
-    "azure-search-documents",
-    "azure-ai-textanalytics",
-]
-all = []
-cli = ["typer"]
 
 [tool.ruff]
 exclude = [
