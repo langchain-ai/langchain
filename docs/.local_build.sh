@@ -23,3 +23,5 @@ yarn
 
 poetry run quarto render versioned_docs
 poetry run quarto render docs
+
+yarn start

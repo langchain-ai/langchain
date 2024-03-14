@@ -83,6 +83,11 @@ const config = {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
           lastVersion: "current",
+          versions: {
+            current: {
+              label: '0.2.x',
+            }
+          },
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
@@ -150,9 +155,10 @@ const config = {
         logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
           {
-            to: "/docs/get_started/introduction",
-            label: "Docs",
-            position: "left",
+            type: 'doc',
+            docId: 'get_started/introduction',
+            label: 'Docs',
+            position: 'left',
           },
           {
             type: "docSidebar",
@@ -183,11 +189,13 @@ const config = {
             position: "left",
             items: [
               {
-                to: "/docs/people/",
+                type: 'doc',
+                docId: 'people',
                 label: "People",
               },
               {
-                to: "/docs/packages",
+                docId: "packages",
+                type: 'doc',
                 label: "Versioning",
               },
               {
@@ -196,7 +204,8 @@ const config = {
                 label: "Changelog",
               },
               {
-                to: "/docs/contributing",
+                docId: "contributing/index",
+                type: 'doc',
                 label: "Contributing",
               },
               {
@@ -209,14 +218,20 @@ const config = {
                 href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
-                to: "/docs/additional_resources/tutorials",
+                docId: "additional_resources/tutorials",
+                type: "doc",
                 label: "Tutorials"
               },
               {
-                to: "/docs/additional_resources/youtube",
+                docId: "additional_resources/youtube",
+                type: "doc",
                 label: "YouTube"
               },
             ]
+          },
+          {
+            type: 'docsVersionDropdown',
+            position: 'right'
           },
           {
             type: "dropdown",
@@ -234,10 +249,6 @@ const config = {
               {
                 href: "https://github.com/langchain-ai/langserve",
                 label: "LangServe GitHub",
-              },
-              {
-                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
-                label: "Templates GitHub",
               },
               {
                 label: "Templates Hub",
