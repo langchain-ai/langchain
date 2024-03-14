@@ -1,14 +1,12 @@
+import io
 import os
+import numpy as np
 
+from PIL import Image
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import UnstructuredFileLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from PIL import Image
-import numpy as np
-import io
 
 
 def pdf_loader(file_path):
@@ -46,8 +44,6 @@ def pdf_loader(file_path):
                         pageimg=pageimg+'.'
                 result=result+pageimg
     return result
-    
-
 
 def ingest_documents():
     """
@@ -58,7 +54,7 @@ def ingest_documents():
     data_path = "data/"
     doc_path = [os.path.join(data_path, file) for file in os.listdir(data_path)][0]
 
-    print("Parsing 10k filing doc for NIKE", doc)
+    print("Parsing 10k filing doc for NIKE", doc_path)
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1500, chunk_overlap=100, add_start_index=True

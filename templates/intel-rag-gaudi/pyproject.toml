@@ -16,6 +16,8 @@ sentence-transformers = "2.2.2"
 tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
 beautifulsoup4 = ">=4.12.2"
+pymupdf = ">=1.23.26"
+easyocr = ">=1.7.1"
 
 [tool.poetry.dependencies.unstructured]
 version = "^0.10.27"
