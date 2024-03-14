@@ -80,7 +80,7 @@ def get_cohere_chat_request(
         "AUTO" if documents is not None or connectors is not None else None
     )
 
-    return {
+    req = {
         "message": messages[-1].content,
         "chat_history": [
             {"role": get_role(x), "message": x.content} for x in messages[:-1]
@@ -90,6 +90,8 @@ def get_cohere_chat_request(
         "prompt_truncation": prompt_truncation,
         **kwargs,
     }
+
+    return {k: v for k, v in req.items() if v is not None}
 
 
 class ChatCohere(BaseChatModel, BaseCohere):
@@ -141,13 +143,15 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        stream = self.client.chat(**request, stream=True)
+        request = get_cohere_chat_request(
+            messages, **self._default_params, **kwargs)
+        stream = self.client.chat_stream(**request)
 
         for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(content=delta))
                 if run_manager:
                     run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
@@ -159,13 +163,15 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        stream = await self.async_client.chat(**request, stream=True)
+        request = get_cohere_chat_request(
+            messages, **self._default_params, **kwargs)
+        stream = await self.async_client.chat_stream(**request)
 
         async for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(content=delta))
                 if run_manager:
                     await run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
@@ -193,7 +199,8 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return generate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, **self._default_params, **kwargs)
         response = self.client.chat(**request)
 
         message = AIMessage(content=response.text)
@@ -202,7 +209,8 @@ class ChatCohere(BaseChatModel, BaseCohere):
             generation_info = self._get_generation_info(response)
         return ChatResult(
             generations=[
-                ChatGeneration(message=message, generation_info=generation_info)
+                ChatGeneration(message=message,
+                               generation_info=generation_info)
             ]
         )
 
@@ -219,8 +227,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return await agenerate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        response = self.client.chat(**request, stream=False)
+        request = get_cohere_chat_request(
+            messages, **self._default_params, **kwargs)
+        response = self.client.chat(**request)
 
         message = AIMessage(content=response.text)
         generation_info = None
@@ -228,7 +237,8 @@ class ChatCohere(BaseChatModel, BaseCohere):
             generation_info = self._get_generation_info(response)
         return ChatResult(
             generations=[
-                ChatGeneration(message=message, generation_info=generation_info)
+                ChatGeneration(message=message,
+                               generation_info=generation_info)
             ]
         )
 

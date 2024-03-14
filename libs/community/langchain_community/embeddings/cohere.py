@@ -34,8 +34,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
     cohere_api_key: Optional[str] = None
 
-    max_retries: Optional[int] = 3
-    """Maximum number of retries to make when generating."""
     request_timeout: Optional[float] = None
     """Timeout in seconds for the Cohere API request."""
     user_agent: str = "langchain"
@@ -52,7 +50,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
         )
-        max_retries = values.get("max_retries")
         request_timeout = values.get("request_timeout")
 
         try:
@@ -61,13 +58,11 @@ class CohereEmbeddings(BaseModel, Embeddings):
             client_name = values["user_agent"]
             values["client"] = cohere.Client(
                 cohere_api_key,
-                max_retries=max_retries,
                 timeout=request_timeout,
                 client_name=client_name,
             )
             values["async_client"] = cohere.AsyncClient(
                 cohere_api_key,
-                max_retries=max_retries,
                 timeout=request_timeout,
                 client_name=client_name,
             )
