@@ -106,12 +106,11 @@ class TestMongoDBAtlasVectorSearch:
             embedding_openai,
             collection=collection,
             index_name=INDEX_NAME,
-            remove_embedding=True,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert len(output) == 1
         # Check for presence of embedding in each document
-        assert all(["embedding" not in key.metadata for key in documents])
+        assert all(["embedding" not in key.metadata for key in output])
         # Check for the presence of the metadata key
         assert any([key.page_content == output[0].page_content for key in documents])
 
@@ -130,12 +129,11 @@ class TestMongoDBAtlasVectorSearch:
             embedding_openai,
             collection=collection,
             index_name=INDEX_NAME,
-            remove_embedding=False,
         )
-        output = vectorstore.similarity_search("Sandwich", k=1)
+        output = vectorstore.similarity_search("Sandwich", k=1, remove_embedding=False)
         assert len(output) == 1
         # Check for presence of embedding in each document
-        assert all([key.metadata.get("embedding") for key in documents])
+        assert all([key.metadata.get("embedding") for key in output])
         # Check for the presence of the metadata key
         assert any([key.page_content == output[0].page_content for key in documents])
 

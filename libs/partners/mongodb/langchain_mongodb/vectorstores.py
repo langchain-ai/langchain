@@ -204,7 +204,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         # Exclude the embedding key from the return payload
         if remove_embedding:
-            pipeline.extend({"$project": {self._embedding_key: 0}})
+            pipeline.append({"$project": {self._embedding_key: 0}})
 
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
