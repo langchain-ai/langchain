@@ -307,7 +307,33 @@ class ContextSet(RunnableSerializable):
 
 
 class Context:
-    """Context for a runnable."""
+    """
+    Context for a runnable.
+
+    The `Context` class provides methods for creating context scopes, getters, and setters
+    within a runnable. It allows for managing and accessing contextual information
+    throughout the execution of a program.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.beta.runnables.context import Context
+
+            # Create a context scope
+            scope = Context.create_scope("my_scope")
+
+            # Create a context getter
+            getter = scope.getter("my_key")
+
+            # Create a context setter
+            setter = scope.setter(my_key="my_value")
+
+            # Use the context getter to retrieve a value
+            value = getter.invoke(None)
+
+            # Use the context setter to set a value
+            setter.invoke(None)
+    """
 
     @staticmethod
     def create_scope(scope: str, /) -> "PrefixContext":
