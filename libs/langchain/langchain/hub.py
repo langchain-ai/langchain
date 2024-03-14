@@ -80,6 +80,12 @@ def pull(
     :param api_key: The API key to use to authenticate with the LangChain Hub API.
     """
     client = _get_client(api_url=api_url, api_key=api_key)
+
+    if hasattr(client, "pull"):  # <= 0.1.14
+        resp: str = client.pull(owner_repo_commit)
+        return loads(resp)
+
+    # >= 0.1.15
     res_dict = client.pull_repo(owner_repo_commit)
     obj = loads(json.dumps(res_dict["manifest"]))
     if isinstance(obj, BasePromptTemplate):
