@@ -287,7 +287,7 @@ class PGVector(VectorStore):
         if not use_jsonb:
             # Replace with a deprecation warning.
             warn_deprecated(
-                "0.0.27",
+                "0.0.29",
                 pending=True,
                 message=(
                     "Please use JSONB instead of JSON for metadata. "
@@ -660,10 +660,6 @@ class PGVector(VectorStore):
         else:  # Then we assume an equality operator
             operator = "$eq"
             filter_value = value
-
-        # Now that we know the operator and the value we can create the filter
-        # json_path_operation = self.EmbeddingStore.cmetadata.op("@@")
-        # Add double quotes
 
         if operator in COMPARISONS_TO_NATIVE:
             # Then we implement an equality filter
