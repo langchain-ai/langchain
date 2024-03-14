@@ -95,7 +95,7 @@ def test_get_len_safe_embeddings(
     expected_internal_embeddings_calls: int,
 ) -> None:
     llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)
-    llm.embed_documents(texts=texts, chunk_size=chunk_size)
+    llm.embed_documents(texts=texts, batch_size=chunk_size)
     assert (
         mock_client_with_embeddings.embed.create.call_count
         == expected_internal_embeddings_calls

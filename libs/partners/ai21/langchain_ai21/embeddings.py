@@ -9,9 +9,9 @@ from langchain_ai21.ai21_base import AI21Base
 _DEFAULT_CHUNK_SIZE = 128
 
 
-def chunked_text_generator(texts: List[str], chunk_size: int) -> Iterator[List[str]]:
+def _split_texts_into_batches(texts: List[str], batch_size: int) -> Iterator[List[str]]:
     texts_itr = iter(texts)
-    return iter(lambda: list(islice(texts_itr, chunk_size)), [])
+    return iter(lambda: list(islice(texts_itr, batch_size)), [])
 
 
 class AI21Embeddings(Embeddings, AI21Base):
@@ -28,19 +28,20 @@ class AI21Embeddings(Embeddings, AI21Base):
             query_result = embeddings.embed_query("Hello embeddings world!")
     """
 
-    chunk_size: int = _DEFAULT_CHUNK_SIZE
+    batch_size: int = _DEFAULT_CHUNK_SIZE
     """Maximum number of texts to embed in each batch"""
 
     def embed_documents(
         self,
         texts: List[str],
-        chunk_size: Optional[int] = None,
+        *,
+        batch_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[List[float]]:
         """Embed search docs."""
         return self._send_embeddings(
             texts=texts,
-            chunk_size=chunk_size or self.chunk_size,
+            batch_size=batch_size or self.batch_size,
             embed_type=EmbedType.SEGMENT,
             **kwargs,
         )
@@ -48,21 +49,22 @@ class AI21Embeddings(Embeddings, AI21Base):
     def embed_query(
         self,
         text: str,
-        chunk_size: Optional[int] = None,
+        *,
+        batch_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[float]:
         """Embed query text."""
         return self._send_embeddings(
             texts=[text],
-            chunk_size=chunk_size or self.chunk_size,
+            batch_size=batch_size or self.batch_size,
             embed_type=EmbedType.QUERY,
             **kwargs,
         )[0]
 
     def _send_embeddings(
-        self, texts: List[str], chunk_size: int, embed_type: EmbedType, **kwargs: Any
+        self, texts: List[str], *, batch_size: int, embed_type: EmbedType, **kwargs: Any
     ) -> List[List[float]]:
-        chunks = chunked_text_generator(texts, chunk_size)
+        chunks = _split_texts_into_batches(texts, batch_size)
         responses = [
             self.client.embed.create(
                 texts=chunk,
