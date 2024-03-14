@@ -144,7 +144,11 @@ class ChatCohere(BaseChatModel, BaseCohere):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        stream = self.client.chat_stream(**request)
+
+        if hasattr(self.client, "chat_stream"):  # detect and support sdk v5
+            stream = self.client.chat_stream(**request)
+        else:
+            stream = self.client.chat(**request, stream=True)
 
         for data in stream:
             if data.event_type == "text-generation":
@@ -162,7 +166,11 @@ class ChatCohere(BaseChatModel, BaseCohere):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        stream = await self.async_client.chat_stream(**request)
+
+        if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
+            stream = self.async_client.chat_stream(**request)
+        else:
+            stream = self.async_client.chat(**request, stream=True)
 
         async for data in stream:
             if data.event_type == "text-generation":
