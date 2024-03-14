@@ -119,7 +119,9 @@ def _load_map_reduce_documents_chain(
             config.pop("reduce_documents_chain"), **kwargs
         )
     elif "reduce_documents_chain_path" in config:
-        reduce_documents_chain = load_chain(config.pop("reduce_documents_chain_path"), **kwargs)
+        reduce_documents_chain = load_chain(
+            config.pop("reduce_documents_chain_path"), **kwargs
+        )
     else:
         reduce_documents_chain = _load_reduce_documents_chain(config, **kwargs)
 
@@ -136,14 +138,22 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
 
     if "combine_documents_chain" in config:
         combine_document_chain_config = config.pop("combine_documents_chain")
-        combine_documents_chain = load_chain_from_config(combine_document_chain_config, **kwargs)
+        combine_documents_chain = load_chain_from_config(
+            combine_document_chain_config, **kwargs
+        )
     elif "combine_document_chain" in config:
         combine_document_chain_config = config.pop("combine_document_chain")
-        combine_documents_chain = load_chain_from_config(combine_document_chain_config, **kwargs)
+        combine_documents_chain = load_chain_from_config(
+            combine_document_chain_config, **kwargs
+        )
     elif "combine_documents_chain_path" in config:
-        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"), **kwargs)
+        combine_documents_chain = load_chain(
+            config.pop("combine_documents_chain_path"), **kwargs
+        )
     elif "combine_document_chain_path" in config:
-        combine_documents_chain = load_chain(config.pop("combine_document_chain_path"), **kwargs)
+        combine_documents_chain = load_chain(
+            config.pop("combine_document_chain_path"), **kwargs
+        )
     else:
         raise ValueError(
             "One of `combine_documents_chain` or "
@@ -347,9 +357,13 @@ def _load_refine_documents_chain(config: dict, **kwargs: Any) -> RefineDocuments
 def _load_qa_with_sources_chain(config: dict, **kwargs: Any) -> QAWithSourcesChain:
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
-        combine_documents_chain = load_chain_from_config(combine_documents_chain_config, **kwargs)
+        combine_documents_chain = load_chain_from_config(
+            combine_documents_chain_config, **kwargs
+        )
     elif "combine_documents_chain_path" in config:
-        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"), **kwargs)
+        combine_documents_chain = load_chain(
+            config.pop("combine_documents_chain_path"), **kwargs
+        )
     else:
         raise ValueError(
             "One of `combine_documents_chain` or "
@@ -394,9 +408,13 @@ def _load_vector_db_qa_with_sources_chain(
         raise ValueError("`vectorstore` must be present.")
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
-        combine_documents_chain = load_chain_from_config(combine_documents_chain_config, **kwargs)
+        combine_documents_chain = load_chain_from_config(
+            combine_documents_chain_config, **kwargs
+        )
     elif "combine_documents_chain_path" in config:
-        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"), **kwargs)
+        combine_documents_chain = load_chain(
+            config.pop("combine_documents_chain_path"), **kwargs
+        )
     else:
         raise ValueError(
             "One of `combine_documents_chain` or "
@@ -416,9 +434,13 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
         raise ValueError("`retriever` must be present.")
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
-        combine_documents_chain = load_chain_from_config(combine_documents_chain_config, **kwargs)
+        combine_documents_chain = load_chain_from_config(
+            combine_documents_chain_config, **kwargs
+        )
     elif "combine_documents_chain_path" in config:
-        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"), **kwargs)
+        combine_documents_chain = load_chain(
+            config.pop("combine_documents_chain_path"), **kwargs
+        )
     else:
         raise ValueError(
             "One of `combine_documents_chain` or "
@@ -440,9 +462,13 @@ def _load_retrieval_qa_with_sources_chain(
         raise ValueError("`retriever` must be present.")
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
-        combine_documents_chain = load_chain_from_config(combine_documents_chain_config, **kwargs)
+        combine_documents_chain = load_chain_from_config(
+            combine_documents_chain_config, **kwargs
+        )
     elif "combine_documents_chain_path" in config:
-        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"), **kwargs)
+        combine_documents_chain = load_chain(
+            config.pop("combine_documents_chain_path"), **kwargs
+        )
     else:
         raise ValueError(
             "One of `combine_documents_chain` or "
@@ -462,9 +488,13 @@ def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
         raise ValueError("`vectorstore` must be present.")
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
-        combine_documents_chain = load_chain_from_config(combine_documents_chain_config, **kwargs)
+        combine_documents_chain = load_chain_from_config(
+            combine_documents_chain_config, **kwargs
+        )
     elif "combine_documents_chain_path" in config:
-        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"), **kwargs)
+        combine_documents_chain = load_chain(
+            config.pop("combine_documents_chain_path"), **kwargs
+        )
     else:
         raise ValueError(
             "One of `combine_documents_chain` or "
@@ -484,7 +514,9 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
         raise ValueError("`graph` must be present.")
     if "cypher_generation_chain" in config:
         cypher_generation_chain_config = config.pop("cypher_generation_chain")
-        cypher_generation_chain = load_chain_from_config(cypher_generation_chain_config, **kwargs)
+        cypher_generation_chain = load_chain_from_config(
+            cypher_generation_chain_config, **kwargs
+        )
     else:
         raise ValueError("`cypher_generation_chain` must be present.")
     if "qa_chain" in config:
