@@ -16,7 +16,7 @@ from .config import USE_PYDANTIC_V2
 
 try:
     if USE_PYDANTIC_V2:
-        from pydantic import *
+        from pydantic import *  # noqa: F403 # type: ignore
     else:
         from pydantic.v1 import *  # noqa: F403 # type: ignore
 except ImportError:
