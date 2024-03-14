@@ -815,6 +815,7 @@ class Runnable(Generic[Input, Output], ABC):
             diff=diff,
             stream=stream,
             with_streamed_output_list=with_streamed_output_list,
+            **kwargs,
         ):
             yield item
 
