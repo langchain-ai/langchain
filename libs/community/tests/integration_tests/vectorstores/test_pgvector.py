@@ -493,14 +493,16 @@ def test_invalid_filters(pgvector: PGVector, invalid_filter: Any) -> None:
         (
             {"id": "'evil code' == 2"},
             (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
+                "'$.id == $value', "
                 "'{\"value\": \"''evil code'' == 2\"}')"
             ),
         ),
         (
             {"name": 'a"b'},
             (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.name == $value', "
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
+                "'$.name == $value', "
                 '\'{"value": "a\\\\"b"}\')'
             ),
         ),
@@ -545,7 +547,8 @@ def test_evil_code(
         (
             {"name": "foo"},
             (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.name == $value', "
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
+                "'$.name == $value', "
                 '\'{"value": "foo"}\')'
             ),
         ),
