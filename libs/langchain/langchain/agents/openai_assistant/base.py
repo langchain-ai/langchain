@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from json import JSONDecodeError
 from time import sleep
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -74,6 +74,20 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
             "Please make sure you are using a v1.1-compatible version of openai. You "
             'can install with `pip install "openai>=1.1"`.'
         ) from e
+
+
+def _get_assistants_tool(
+        tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    ) -> Dict[str, Any]:
+    """Convert a raw function/class to an OpenAI tool.
+
+    Note that OpenAI assistants supports several built-in tools,
+    such as "code_interpreter" and "retrieval."
+    """
+    if isinstance(tool, dict) and "type" in tool:
+        return tool
+    else:
+        return convert_to_openai_tool(tool)
 
 
 OutputType = Union[
@@ -210,7 +224,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=[convert_to_openai_tool(tool) for tool in tools],  # type: ignore
+            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
             model=model,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
