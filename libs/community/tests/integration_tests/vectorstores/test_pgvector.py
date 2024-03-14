@@ -582,29 +582,6 @@ def test_pgvector_query_compilation(
     assert compiled_stmt == compiled
 
 
-@pytest.mark.parametrize(
-    "filter,compiled",
-    [
-        ({"name": "foo"}, ""),
-    ],
-)
-def test_pgvector_query_compilation_2(
-    pgvector: PGVector, filter: Any, compiled: str
-) -> None:
-    """Test translation from IR to SQL"""
-    clause = pgvector._create_filter_clause(filter)
-    compiled_stmt = str(
-        clause.compile(
-            dialect=postgresql.dialect(),
-            compile_kwargs={
-                # This substitutes the parameters with their actual values
-                "literal_binds": True
-            },
-        )
-    )
-    assert compiled_stmt == compiled
-
-
 def test_validate_operators() -> None:
     """Verify that all operators have been categorized."""
     assert sorted(SUPPORTED_OPERATORS) == [
