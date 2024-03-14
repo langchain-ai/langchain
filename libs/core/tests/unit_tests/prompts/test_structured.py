@@ -1,15 +1,22 @@
 from ast import Dict
 from functools import partial
+from inspect import isclass
 from typing import Type, Union
 
+from langchain_core.load.dump import dumps
+from langchain_core.load.load import loads
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from tests.unit_tests.fake.chat_model import FakeListChatModel
 
 
-def _fake_runnable(schema: Type[BaseModel], _) -> BaseModel:
-    return schema(name="yo", value=42)
+def _fake_runnable(schema: Union[Dict, Type[BaseModel]], _) -> BaseModel:
+    if isclass(schema) and issubclass(schema, BaseModel):
+        return schema(name="yo", value=42)
+    else:
+        params = schema["parameters"]
+        return {k: 1 for k, v in params.items()}
 
 
 class FakeStructuredChatModel(FakeListChatModel):
@@ -23,7 +30,7 @@ class FakeStructuredChatModel(FakeListChatModel):
         return "fake-messages-list-chat-model"
 
 
-def test_structured_prompt() -> None:
+def test_structured_prompt_pydantic() -> None:
     class OutputSchema(BaseModel):
         name: str
         value: int
@@ -40,3 +47,31 @@ def test_structured_prompt() -> None:
     chain = prompt | model
 
     assert chain.invoke({"hello": "there"}) == OutputSchema(name="yo", value=42)
+
+
+def test_structured_prompt_dict() -> None:
+    prompt = StructuredPrompt.from_messages_and_schema(
+        [
+            ("human", "I'm very structured, how about you?"),
+        ],
+        {
+            "name": "yo",
+            "description": "a structured output",
+            "parameters": {
+                "name": {"type": "string"},
+                "value": {"type": "integer"},
+            },
+        },
+    )
+
+    model = FakeStructuredChatModel(responses=[])
+
+    chain = prompt | model
+
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 1}
+
+    assert loads(dumps(prompt)) == prompt
+
+    chain = loads(dumps(prompt)) | model
+
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 1}
