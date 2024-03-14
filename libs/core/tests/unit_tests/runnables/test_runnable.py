@@ -5344,7 +5344,7 @@ async def test_default_atransform_with_dicts() -> None:
     assert chunks == [{"foo": "an"}]
 
 
-def test_passthrough_atransform_with_dicts() -> None:
+def test_passthrough_transform_with_dicts() -> None:
     """Test that default transform works with dicts."""
     runnable = RunnablePassthrough(lambda x: x)
     chunks = [chunk for chunk in runnable.transform(iter([{"foo": "a"}, {"foo": "n"}]))]
