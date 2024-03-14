@@ -35,7 +35,6 @@ def test_user_supplied_client() -> None:
     new=_create_mock_client,
 )
 def test_create_assistant() -> None:
-
     assistant = OpenAIAssistantRunnable.create_assistant(
         name="name",
         instructions="instructions",
