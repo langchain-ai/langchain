@@ -3,7 +3,18 @@ from __future__ import annotations
 import json
 from json import JSONDecodeError
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import CallbackManager
@@ -77,8 +88,8 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
 
 
 def _get_assistants_tool(
-        tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
-    ) -> Dict[str, Any]:
+    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI tool.
 
     Note that OpenAI assistants supports several built-in tools,
