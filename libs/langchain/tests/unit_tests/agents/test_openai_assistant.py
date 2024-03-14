@@ -30,6 +30,7 @@ def test_user_supplied_client() -> None:
     assert assistant.client == client
 
 
+@pytest.mark.requires("openai")
 @patch(
     "langchain.agents.openai_assistant.base._get_openai_client",
     new=_create_mock_client,
