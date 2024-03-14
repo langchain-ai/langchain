@@ -25,8 +25,10 @@ if TYPE_CHECKING:
 class _BaseGoogleVertexAISearchRetriever(BaseModel):
     project_id: str
     """Google Cloud Project ID."""
-    data_store_id: str
+    data_store_id: Optional[str] = None
     """Vertex AI Search data store ID."""
+    search_engine_id: Optional[str] = None
+    """Vertex AI Search app ID."""
     location_id: str = "global"
     """Vertex AI Search data store location."""
     serving_config_id: str = "default_config"
@@ -35,11 +37,12 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
     """The default custom credentials (google.auth.credentials.Credentials) to use
     when making API calls. If not provided, credentials will be ascertained from
     the environment."""
-    engine_data_type: int = Field(default=0, ge=0, le=2)
-    """ Defines the Vertex AI Search data type
+    engine_data_type: int = Field(default=0, ge=0, le=3)
+    """ Defines the Vertex AI Search app data type
     0 - Unstructured data 
     1 - Structured data
     2 - Website data
+    3 - Blended search
     """
 
     @root_validator(pre=True)
@@ -51,7 +54,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
             raise ImportError(
                 "google.cloud.discoveryengine is not installed."
                 "Please install it with pip install "
-                "google-cloud-discoveryengine>=0.11.0"
+                "google-cloud-discoveryengine>=0.11.10"
             ) from exc
         try:
             from google.api_core.exceptions import InvalidArgument  # noqa: F401
@@ -62,26 +65,11 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
             ) from exc
 
         values["project_id"] = get_from_dict_or_env(values, "project_id", "PROJECT_ID")
-
-        try:
-            # For backwards compatibility
-            search_engine_id = get_from_dict_or_env(
-                values, "search_engine_id", "SEARCH_ENGINE_ID"
-            )
-
-            if search_engine_id:
-                import warnings
-
-                warnings.warn(
-                    "The `search_engine_id` parameter is deprecated. Use `data_store_id` instead.",  # noqa: E501
-                    DeprecationWarning,
-                )
-                values["data_store_id"] = search_engine_id
-        except:  # noqa: E722
-            pass
-
         values["data_store_id"] = get_from_dict_or_env(
             values, "data_store_id", "DATA_STORE_ID"
+        )
+        values["search_engine_id"] = get_from_dict_or_env(
+            values, "search_engine_id", "SEARCH_ENGINE_ID"
         )
 
         return values
@@ -273,12 +261,24 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             client_info=get_client_info(module="vertex-ai-search"),
         )
 
-        self._serving_config = self._client.serving_config_path(
-            project=self.project_id,
-            location=self.location_id,
-            data_store=self.data_store_id,
-            serving_config=self.serving_config_id,
-        )
+        if self.engine_data_type == 3 and not self.search_engine_id:
+            raise ValueError(
+                "search_engine_id must be specified for blended search apps."
+            )
+
+        if self.search_engine_id:
+            self._serving_config = f"projects/{self.project_id}/locations/{self.location_id}/collections/default_collection/engines/{self.serving_config_id}/servingConfigs/default_config"
+        elif self.data_store_id:
+            self._serving_config = self._client.serving_config_path(
+                project=self.project_id,
+                location=self.location_id,
+                data_store=self.data_store_id,
+                serving_config=self.serving_config_id,
+            )
+        else:
+            raise ValueError(
+                "Either data_store_id or search_engine_id must be specified."
+            )
 
     def _create_search_request(self, query: str) -> SearchRequest:
         """Prepares a SearchRequest object."""
@@ -292,7 +292,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             mode=self.spell_correction_mode
         )
 
-        if self.engine_data_type == 0:
+        if self.engine_data_type == 0 or self.engine_data_type == 3:
             if self.get_extractive_answers:
                 extractive_content_spec = (
                     SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
@@ -322,7 +322,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         else:
             raise NotImplementedError(
                 "Only data store type 0 (Unstructured), 1 (Structured),"
-                "or 2 (Website) are supported currently."
+                "2 (Website), or 3 (Blended) are supported currently."
                 + f" Got {self.engine_data_type}"
             )
 
@@ -352,7 +352,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
                 + " This might be due to engine_data_type not set correctly."
             )
 
-        if self.engine_data_type == 0:
+        if self.engine_data_type == 0 or self.engine_data_type == 3:
             chunk_type = (
                 "extractive_answers"
                 if self.get_extractive_answers
@@ -373,7 +373,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         else:
             raise NotImplementedError(
                 "Only data store type 0 (Unstructured), 1 (Structured),"
-                "or 2 (Website) are supported currently."
+                "2 (Website), or 3 (Blended) are supported currently."
                 + f" Got {self.engine_data_type}"
             )
 
@@ -410,6 +410,9 @@ class GoogleVertexAIMultiTurnSearchRetriever(
             client_info=get_client_info(module="vertex-ai-search"),
         )
 
+        if not self.data_store_id:
+            raise ValueError("data_store_id is required for MultiTurnSearchRetriever.")
+
         self._serving_config = self._client.serving_config_path(
             project=self.project_id,
             location=self.location_id,
@@ -417,9 +420,9 @@ class GoogleVertexAIMultiTurnSearchRetriever(
             serving_config=self.serving_config_id,
         )
 
-        if self.engine_data_type == 1:
+        if self.engine_data_type == 1 or self.engine_data_type == 3:
             raise NotImplementedError(
-                "Data store type 1 (Structured)"
+                "Data store type 1 (Structured) and 3 (Blended)"
                 "is not currently supported for multi-turn search."
                 + f" Got {self.engine_data_type}"
             )
