@@ -109,18 +109,6 @@ class OneNoteLoader(BaseLoader, BaseModel):
                 else:
                     request_url = ""
 
-    def load(self) -> List[Document]:
-        """
-        Get pages from OneNote notebooks.
-
-        Returns:
-            A list of Documents with attributes:
-                - page_content
-                - metadata
-                    - title
-        """
-        return list(self.lazy_load())
-
     def _get_page_content(self, page_id: str) -> str:
         """Get page content from OneNote API"""
         request_url = self.onenote_api_base_url + f"/pages/{page_id}/content"

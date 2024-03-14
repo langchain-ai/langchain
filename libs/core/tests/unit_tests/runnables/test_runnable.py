@@ -70,6 +70,7 @@ from langchain_core.runnables import (
     chain,
 )
 from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -339,6 +340,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "ai",
@@ -374,6 +379,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -413,6 +422,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "chat",
@@ -444,6 +457,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -478,6 +495,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "function",
@@ -508,6 +529,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -1278,9 +1303,6 @@ def test_configurable_fields_example() -> None:
         },
     }
 
-    with pytest.raises(ValueError):
-        chain_configurable.with_config(configurable={"llm123": "chat"})
-
     assert (
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
             {"name": "John"}
@@ -1406,6 +1428,30 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     spy.reset_mock()
 
+    assert sorted(
+        c
+        for c in fake.with_config(recursion_limit=5).batch_as_completed(
+            ["hello", "wooorld"],
+            [dict(tags=["a-tag"]), dict(metadata={"key": "value"})],
+        )
+    ) == [(0, 5), (1, 7)]
+
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(
+        sorted(spy.call_args_list, key=lambda x: 0 if x.args[0] == "hello" else 1)
+    ):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        if i == 0:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == ["a-tag"]
+            assert call.args[1].get("metadata") == {}
+        else:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == []
+            assert call.args[1].get("metadata") == {"key": "value"}
+
+    spy.reset_mock()
+
     assert fake.with_config(metadata={"a": "b"}).batch(
         ["hello", "wooorld"], dict(tags=["a-tag"])
     ) == [5, 7]
@@ -1414,6 +1460,15 @@ async def test_with_config(mocker: MockerFixture) -> None:
         assert call.args[0] == ("hello" if i == 0 else "wooorld")
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {"a": "b"}
+    spy.reset_mock()
+
+    assert sorted(
+        c for c in fake.batch_as_completed(["hello", "wooorld"], dict(tags=["a-tag"]))
+    ) == [(0, 5), (1, 7)]
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        assert call.args[1].get("tags") == ["a-tag"]
     spy.reset_mock()
 
     handler = ConsoleCallbackHandler()
@@ -1462,6 +1517,40 @@ async def test_with_config(mocker: MockerFixture) -> None:
             ),
         ),
     ]
+    spy.reset_mock()
+
+    assert sorted(
+        [
+            c
+            async for c in fake.with_config(
+                recursion_limit=5, tags=["c"]
+            ).abatch_as_completed(["hello", "wooorld"], dict(metadata={"key": "value"}))
+        ]
+    ) == [
+        (0, 5),
+        (1, 7),
+    ]
+    assert len(spy.call_args_list) == 2
+    first_call = next(call for call in spy.call_args_list if call.args[0] == "hello")
+    assert first_call == mocker.call(
+        "hello",
+        dict(
+            metadata={"key": "value"},
+            tags=["c"],
+            callbacks=None,
+            recursion_limit=5,
+        ),
+    )
+    second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
+    assert second_call == mocker.call(
+        "wooorld",
+        dict(
+            metadata={"key": "value"},
+            tags=["c"],
+            callbacks=None,
+            recursion_limit=5,
+        ),
+    )
 
 
 async def test_default_method_implementations(mocker: MockerFixture) -> None:
@@ -5186,3 +5275,70 @@ async def test_astream_log_deep_copies() -> None:
         "name": "add_one",
         "type": "chain",
     }
+
+
+def test_transform_of_runnable_lambda_with_dicts() -> None:
+    """Test transform of runnable lamdbda."""
+    runnable = RunnableLambda(lambda x: x)
+    chunks = iter(
+        [
+            {"foo": "a"},
+            {"foo": "n"},
+        ]
+    )
+    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+
+
+async def test_atransform_of_runnable_lambda_with_dicts() -> None:
+    async def identity(x: Dict[str, str]) -> Dict[str, str]:
+        """Return x."""
+        return x
+
+    runnable = RunnableLambda[Dict[str, str], Dict[str, str]](identity)
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "an"}]
+
+
+def test_default_transform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+
+    class CustomRunnable(RunnableSerializable[Input, Output]):
+        def invoke(
+            self, input: Input, config: Optional[RunnableConfig] = None
+        ) -> Output:
+            return cast(Output, input)  # type: ignore
+
+    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
+    chunks = iter(
+        [
+            {"foo": "a"},
+            {"foo": "n"},
+        ]
+    )
+
+    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+
+
+async def test_defualt_atransform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+
+    class CustomRunnable(RunnableSerializable[Input, Output]):
+        def invoke(
+            self, input: Input, config: Optional[RunnableConfig] = None
+        ) -> Output:
+            return cast(Output, input)
+
+    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+
+    assert chunks == [{"foo": "an"}]

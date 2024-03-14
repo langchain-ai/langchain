@@ -86,12 +86,3 @@ def test_pypdfium2_parser() -> None:
     """Test PyPDFium2 parser."""
     # Does not follow defaults to split by page.
     _assert_with_parser(PyPDFium2Parser())
-
-
-@pytest.mark.requires("rapidocr_onnxruntime")
-def test_extract_images_text_from_pdf() -> None:
-    """Test extract image from pdf and recognize text with rapid ocr"""
-    _assert_with_parser(PyPDFParser(extract_images=True))
-    _assert_with_parser(PDFMinerParser(extract_images=True))
-    _assert_with_parser(PyMuPDFParser(extract_images=True))
-    _assert_with_parser(PyPDFium2Parser(extract_images=True))

@@ -398,22 +398,14 @@ async def test_event_stream_with_simple_chain() -> None:
         },
         {
             "data": {"chunk": AIMessageChunk(content="hello")},
-            "event": "on_chain_stream",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b", "foo": "bar"},
+            "name": "my_model",
             "run_id": "",
-            "tags": ["my_chain"],
+            "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
             "data": {"chunk": AIMessageChunk(content="hello")},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": "",
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content=" ")},
             "event": "on_chain_stream",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
@@ -429,7 +421,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!")},
+            "data": {"chunk": AIMessageChunk(content=" ")},
             "event": "on_chain_stream",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
@@ -443,6 +435,14 @@ async def test_event_stream_with_simple_chain() -> None:
             "name": "my_model",
             "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!")},
+            "event": "on_chain_stream",
+            "metadata": {"foo": "bar"},
+            "name": "my_chain",
+            "run_id": "",
+            "tags": ["my_chain"],
         },
         {
             "data": {
