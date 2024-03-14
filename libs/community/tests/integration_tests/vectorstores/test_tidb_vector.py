@@ -1,4 +1,5 @@
 """Test TiDB Vector functionality."""
+
 import os
 from typing import List
 

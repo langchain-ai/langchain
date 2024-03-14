@@ -1,4 +1,5 @@
 """Wrapper around Perplexity APIs."""
+
 from __future__ import annotations
 
 import logging

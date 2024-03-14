@@ -1955,13 +1955,13 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 index_name=index_name,
             )
         else:
-            self._cache_dict[
-                index_name
-            ] = AzureCosmosDBVectorSearch.from_connection_string(
-                connection_string=self.cosmosdb_connection_string,
-                namespace=namespace,
-                embedding=self.embedding,
-                index_name=index_name,
+            self._cache_dict[index_name] = (
+                AzureCosmosDBVectorSearch.from_connection_string(
+                    connection_string=self.cosmosdb_connection_string,
+                    namespace=namespace,
+                    embedding=self.embedding,
+                    index_name=index_name,
+                )
             )
 
         # create index for the vectorstore

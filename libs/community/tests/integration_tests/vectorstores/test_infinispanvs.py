@@ -1,4 +1,5 @@
 """Test Infinispan functionality."""
+
 from typing import Any, List, Optional
 
 from langchain_core.documents import Document

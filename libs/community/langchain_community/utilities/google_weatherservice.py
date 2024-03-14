@@ -9,7 +9,8 @@ from langchain_core.utils import get_from_dict_or_env
 
 class GCPWeatherInput(BaseModel):
     location: str = Field(
-        description="The location to look up. Can be a standalone city or town, or could include the accompanying state"
+        description="""The location to look up. Can be a standalone city or town,
+         or could include the accompanying state"""
     )
 
 
