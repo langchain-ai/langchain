@@ -4,7 +4,7 @@
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import MonkeyPatch
 
-from langchain_cohere import BaseCohere
+from langchain_cohere.llms import BaseCohere
 
 
 def test_cohere_api_key(monkeypatch: MonkeyPatch) -> None:
