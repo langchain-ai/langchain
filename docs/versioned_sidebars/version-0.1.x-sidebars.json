@@ -141,7 +141,7 @@
         "type": "doc",
         "id": "langsmith/index"
       }
-    },
+    }
   ],
   "integrations": [
     {
