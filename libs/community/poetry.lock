@@ -1512,7 +1512,7 @@ dev = ["coveralls", "pytest (>=3.6)", "pytest-cov", "wheel"]
 [[package]]
 name = "cligj"
 version = "0.7.2"
-description = "Click params for commmand line interfaces to GeoJSON"
+description = "Click params for command line interfaces to GeoJSON"
 optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, <4"
 files = [
@@ -3649,7 +3649,7 @@ testing = ["Django", "attrs", "colorama", "docopt", "pytest (<7.0.0)"]
 [[package]]
 name = "jieba3k"
 version = "0.35.1"
-description = "Chinese Words Segementation Utilities"
+description = "Chinese Words Segmentation Utilities"
 optional = true
 python-versions = "*"
 files = [
@@ -6989,7 +6989,7 @@ vcrpy = "*"
 [[package]]
 name = "pytest-watcher"
 version = "0.2.6"
-description = "Continiously runs pytest on changes in *.py files"
+description = "Continuously runs pytest on changes in *.py files"
 optional = false
 python-versions = ">=3.7.0,<4.0.0"
 files = [
