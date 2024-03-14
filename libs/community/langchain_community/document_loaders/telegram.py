@@ -262,3 +262,7 @@ class TelegramChatApiLoader(BaseLoader):
         combined_texts = self._combine_message_texts(message_threads, df)
 
         return text_to_docs(combined_texts)
+
+
+# For backwards compatibility
+TelegramChatLoader = TelegramChatFileLoader

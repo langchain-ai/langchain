@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pymongo = ">=4.6.1,<5.0"
-langchain-core = "^0.1.5"
+langchain-core = "^0.1.25"
 numpy = "^1"
 
 [tool.poetry.group.test]
