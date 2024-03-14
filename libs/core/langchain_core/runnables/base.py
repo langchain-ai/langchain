@@ -69,6 +69,7 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_context,
     accepts_run_manager,
+    adapt_first_streaming_chunk,
     create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -1178,7 +1179,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         for chunk in input:
             if not got_first_val:
-                final = _adapt_first_streaming_chunk(chunk)  # type: ignore
+                final = adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
@@ -1211,7 +1212,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         async for chunk in input:
             if not got_first_val:
-                final = _adapt_first_streaming_chunk(chunk)  # type: ignore
+                final = adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
@@ -3702,7 +3703,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         for ichunk in input:
             if final is None:
-                final = _adapt_first_streaming_chunk(ichunk)  # type: ignore
+                final = adapt_first_streaming_chunk(ichunk)  # type: ignore
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3786,7 +3787,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         async for ichunk in input:
             if final is None:
-                final = _adapt_first_streaming_chunk(ichunk)
+                final = adapt_first_streaming_chunk(ichunk)
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -4698,11 +4699,3 @@ def chain(
                 yield chunk
     """
     return RunnableLambda(func)
-
-
-def _adapt_first_streaming_chunk(chunk: Any) -> Any:
-    """This might transform the first chunk of a stream into an AddableDict."""
-    if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
-        return AddableDict(chunk)
-    else:
-        return chunk
