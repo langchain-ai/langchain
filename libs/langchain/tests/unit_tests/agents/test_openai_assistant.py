@@ -1,6 +1,15 @@
+from typing import Any
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from langchain.agents.openai_assistant import OpenAIAssistantRunnable
+
+
+def _create_mock_client(*args, **kwargs) -> Any:
+    client = MagicMock()
+    client.beta.assistants.create().id = "abc123"
+    return client
 
 
 @pytest.mark.requires("openai")
@@ -19,3 +28,18 @@ def test_user_supplied_client() -> None:
     )
 
     assert assistant.client == client
+
+
+@patch(
+    "langchain.agents.openai_assistant.base._get_openai_client",
+    new=_create_mock_client,
+)
+def test_create_assistant() -> None:
+
+    assistant = OpenAIAssistantRunnable.create_assistant(
+        name="name",
+        instructions="instructions",
+        tools=[{"type": "code_interpreter"}],
+        model="",
+    )
+    assert isinstance(assistant, OpenAIAssistantRunnable)
