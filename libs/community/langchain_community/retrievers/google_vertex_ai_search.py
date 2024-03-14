@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator, ValidationError
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env
 
@@ -65,12 +65,16 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
             ) from exc
 
         values["project_id"] = get_from_dict_or_env(values, "project_id", "PROJECT_ID")
-        values["data_store_id"] = get_from_dict_or_env(
-            values, "data_store_id", "DATA_STORE_ID"
-        )
-        values["search_engine_id"] = get_from_dict_or_env(
-            values, "search_engine_id", "SEARCH_ENGINE_ID"
-        )
+
+        try:
+            values["data_store_id"] = get_from_dict_or_env(
+                values, "data_store_id", "DATA_STORE_ID"
+            )
+            values["search_engine_id"] = get_from_dict_or_env(
+                values, "search_engine_id", "SEARCH_ENGINE_ID"
+            )
+        except Exception:
+            pass
 
         return values
 
@@ -292,7 +296,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             mode=self.spell_correction_mode
         )
 
-        if self.engine_data_type == 0 or self.engine_data_type == 3:
+        if self.engine_data_type == 0:
             if self.get_extractive_answers:
                 extractive_content_spec = (
                     SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
@@ -310,7 +314,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             )
         elif self.engine_data_type == 1:
             content_search_spec = None
-        elif self.engine_data_type == 2:
+        elif self.engine_data_type in (2, 3):
             content_search_spec = SearchRequest.ContentSearchSpec(
                 extractive_content_spec=SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
                     max_extractive_answer_count=self.max_extractive_answer_count,
@@ -352,7 +356,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
                 + " This might be due to engine_data_type not set correctly."
             )
 
-        if self.engine_data_type == 0 or self.engine_data_type == 3:
+        if self.engine_data_type == 0:
             chunk_type = (
                 "extractive_answers"
                 if self.get_extractive_answers
@@ -363,7 +367,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             )
         elif self.engine_data_type == 1:
             documents = self._convert_structured_search_response(response.results)
-        elif self.engine_data_type == 2:
+        elif self.engine_data_type in (2, 3):
             chunk_type = (
                 "extractive_answers" if self.get_extractive_answers else "snippets"
             )
