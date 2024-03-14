@@ -103,7 +103,20 @@ jobs:
         if: ${{ !startsWith(inputs.working-directory, 'libs/partners/airbyte') }}
         shell: bash
         run: make test
-
+      - name: Run pydantic with LC_PYDANTIC_V2_UNSAFE=True if pydantic version is 2
+        shell: bash
+        run: |
+          # Determine the major part of pydantic version
+          REGULAR_VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
+          # Echo the version of pydantic
+          echo "pydantic version: $REGULAR_VERSION"
+          # If version 2 then we run tests with LC_PYDANTIC_V2_UNSAFE=True
+          # Otherwise echo that there's nothing to do since the version is 1
+          if [[ "$REGULAR_VERSION" == "2" ]]; then
+              make test LC_PYDANTIC_V2_UNSAFE=True
+          else
+                echo "No running tests with LC_PYDANTIC_V2_UNSAFE=True since pydantic version is 1"
+          fi
       - name: Ensure the tests did not create any additional files
         shell: bash
         run: |
