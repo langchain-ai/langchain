@@ -13,7 +13,7 @@ open source projects by visiting the following link:
 Before reporting a vulnerability, please review:
 
 1) In-Scope Targets and Out-of-Scope Targets below.
-2) The LangChain repository structure as [langchain-ai/langchain](https://python.langchain.com/docs/contributing/repo_structure).
+2) The [langchain-ai/langchain](https://python.langchain.com/docs/contributing/repo_structure) monorepo structure.
 3) LangChain [security guidelines](https://python.langchain.com/docs/security) to
    understand what we consider to be a security vulnerability vs. developer
    responsibility.
