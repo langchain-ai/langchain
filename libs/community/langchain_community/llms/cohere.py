@@ -28,8 +28,11 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     import cohere
 
     # support v4 and v5
-    retry_conditions = retry_if_exception_type(
-        cohere.error.CohereError) if hasattr(cohere, "error") else retry_if_exception_type(Exception)
+    retry_conditions = (
+        retry_if_exception_type(cohere.error.CohereError)
+        if hasattr(cohere, "error")
+        else retry_if_exception_type(Exception)
+    )
 
     min_seconds = 4
     max_seconds = 10
@@ -100,8 +103,7 @@ class BaseCohere(Serializable):
             )
         else:
             values["cohere_api_key"] = convert_to_secret_str(
-                get_from_dict_or_env(
-                    values, "cohere_api_key", "COHERE_API_KEY")
+                get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
             )
             client_name = values["user_agent"]
             values["client"] = cohere.Client(
@@ -187,8 +189,7 @@ class Cohere(LLM, BaseCohere):
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         params = self._default_params
         if self.stop is not None and stop is not None:
-            raise ValueError(
-                "`stop` found in both the input and default params.")
+            raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
             params["stop_sequences"] = self.stop
         else:
