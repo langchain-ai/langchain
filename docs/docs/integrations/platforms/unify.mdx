@@ -1,0 +1,23 @@
+# Unify
+Unify is a platform that offers dynamic routing of queries to the most appropriate endpoint served by different providers like OpenAI, MistralAI, Perplexity AI, Together AI and more. It offers single sign on access with one api key to access all the different providers supported by the [platform](https://unify.ai/hub)
+
+This page covers how to use the full `Unify` ecosystem with Langchain
+
+## Installation and Setup
+
+- Get your Unify API Key from the [Unify console](https://console.unify.ai/)
+- Set the `UNIFY_API_KEY` environment variable to the API key.
+
+## Available Endpoints
+
+Unify supports a wide range of chat endpoints served by different providers with live benchmarking, with details available in the [platform](https://unify.ai/hub). 
+
+The OpenAI API format is also supported as are several other [features](https://unify.ai/docs/hub/).
+
+## Chat Models
+See a [usage example](https://python.langchain.com/docs/integrations/chat/unify)
+
+
+```python
+from langchain_unify.chat_models import ChatUnify
+```
