@@ -5324,7 +5324,7 @@ def test_default_transform_with_dicts() -> None:
     assert list(runnable.transform(chunks)) == [{"foo": "an"}]
 
 
-async def test_defualt_atransform_with_dicts() -> None:
+async def test_default_atransform_with_dicts() -> None:
     """Test that default transform works with dicts."""
 
     class CustomRunnable(RunnableSerializable[Input, Output]):
@@ -5342,3 +5342,22 @@ async def test_defualt_atransform_with_dicts() -> None:
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
 
     assert chunks == [{"foo": "an"}]
+
+
+def test_passthrough_transform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+    runnable = RunnablePassthrough(lambda x: x)
+    chunks = [chunk for chunk in runnable.transform(iter([{"foo": "a"}, {"foo": "n"}]))]
+    assert chunks == [{"foo": "a"}, {"foo": "n"}]
+
+
+async def test_passthrough_atransform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+    runnable = RunnablePassthrough(lambda x: x)
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "a"}, {"foo": "n"}]
