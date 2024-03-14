@@ -24,7 +24,7 @@ from langchain_community.llms.utils import enforce_stop_tokens
 logger = logging.getLogger(__name__)
 
 
-def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
+def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     import cohere
 
     # support v4 and v5
@@ -37,7 +37,7 @@ def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
     return retry(
         reraise=True,
-        stop=stop_after_attempt(llm.max_retries),
+        stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=retry_conditions,
         before_sleep=before_sleep_log(logger, logging.WARNING),
@@ -46,7 +46,7 @@ def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
 
 def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm.max_retries)
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
@@ -57,7 +57,7 @@ def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
 def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm.max_retries)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:

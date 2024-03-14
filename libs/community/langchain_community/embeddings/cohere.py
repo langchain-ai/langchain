@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from langchain_community.llms.cohere import _create_retry_decorator
 
 
 class CohereEmbeddings(BaseModel, Embeddings):
@@ -34,6 +35,8 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
     cohere_api_key: Optional[str] = None
 
+    max_retries: Optional[int] = 3
+    """Maximum number of retries to make when generating."""
     request_timeout: Optional[float] = None
     """Timeout in seconds for the Cohere API request."""
     user_agent: str = "langchain"
@@ -73,10 +76,30 @@ class CohereEmbeddings(BaseModel, Embeddings):
             )
         return values
 
+    def embed_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the embed call."""
+        retry_decorator = _create_retry_decorator(self.max_retries)
+
+        @retry_decorator
+        def _embed_with_retry(**kwargs: Any) -> Any:
+            return self.client.embed(**kwargs)
+
+        return _embed_with_retry(**kwargs)
+
+    def aembed_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the embed call."""
+        retry_decorator = _create_retry_decorator(self.max_retries)
+
+        @retry_decorator
+        async def _embed_with_retry(**kwargs: Any) -> Any:
+            return await self.async_client.embed(**kwargs)
+
+        return _embed_with_retry(**kwargs)
+
     def embed(
         self, texts: List[str], *, input_type: Optional[str] = None
     ) -> List[List[float]]:
-        embeddings = self.client.embed(
+        embeddings = self.embed_with_retry(
             model=self.model,
             texts=texts,
             input_type=input_type,
@@ -88,7 +111,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         self, texts: List[str], *, input_type: Optional[str] = None
     ) -> List[List[float]]:
         embeddings = (
-            await self.async_client.embed(
+            await self.aembed_with_retry(
                 model=self.model,
                 texts=texts,
                 input_type=input_type,
