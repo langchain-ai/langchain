@@ -310,9 +310,10 @@ class Context:
     """
     Context for a runnable.
 
-    The `Context` class provides methods for creating context scopes, getters, and setters
-    within a runnable. It allows for managing and accessing contextual information
-    throughout the execution of a program.
+    The `Context` class provides methods for creating context scopes,
+    getters, and setters within a runnable. It allows for managing
+    and accessing contextual information throughout the execution
+    of a program.
 
     Example:
         .. code-block:: python
