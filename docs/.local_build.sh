@@ -21,4 +21,5 @@ wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md 
 
 yarn
 
+poetry run quarto render versioned_docs
 poetry run quarto render docs
