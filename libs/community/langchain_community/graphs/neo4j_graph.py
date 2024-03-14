@@ -1,17 +1,20 @@
+from hashlib import md5
 from typing import Any, Dict, List, Optional
 
-from langchain_core.utils import get_from_env
+from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
 
 BASE_ENTITY_LABEL = "__Entity__"
+EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
+EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
 
 node_properties_query = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "node" 
-  AND NOT label IN [$BASE_ENTITY_LABEL]
+  AND NOT label IN $EXCLUDED_LABELS
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {labels: nodeLabels, properties: properties} AS output
 
@@ -21,6 +24,7 @@ rel_properties_query = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship"
+      AND NOT label in $EXCLUDED_LABELS
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {type: nodeLabels, properties: properties} AS output
 """
@@ -30,49 +34,58 @@ CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
-WITH * WHERE NOT label IN [$BASE_ENTITY_LABEL] 
-    AND NOT other_node IN [$BASE_ENTITY_LABEL]
+WITH * WHERE NOT label IN $EXCLUDED_LABELS
+    AND NOT other_node IN $EXCLUDED_LABELS
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 include_docs_query = (
-    "CREATE (d:Document) "
+    "MERGE (d:Document {id:$document.metadata.id}) "
     "SET d.text = $document.page_content "
     "SET d += $document.metadata "
     "WITH d "
 )
 
 
-def value_sanitize(d: Dict[str, Any]) -> Dict[str, Any]:
-    """Sanitize the input dictionary.
+def value_sanitize(d: Any) -> Any:
+    """Sanitize the input dictionary or list.
 
-    Sanitizes the input dictionary by removing embedding-like values,
+    Sanitizes the input by removing embedding-like values,
     lists with more than 128 elements, that are mostly irrelevant for
     generating answers in a LLM context. These properties, if left in
     results, can occupy significant context space and detract from
     the LLM's performance by introducing unnecessary noise and cost.
     """
     LIST_LIMIT = 128
-    # Create a new dictionary to avoid changing size during iteration
-    new_dict = {}
-    for key, value in d.items():
-        if isinstance(value, dict):
-            # Recurse to handle nested dictionaries
-            new_dict[key] = value_sanitize(value)
-        elif isinstance(value, list):
-            # check if it has less than LIST_LIMIT values
-            if len(value) < LIST_LIMIT:
-                # if value is a list, check if it contains dictionaries to clean
-                cleaned_list = []
-                for item in value:
-                    if isinstance(item, dict):
-                        cleaned_list.append(value_sanitize(item))
-                    else:
-                        cleaned_list.append(item)
-                new_dict[key] = cleaned_list  # type: ignore[assignment]
+    if isinstance(d, dict):
+        new_dict = {}
+        for key, value in d.items():
+            if isinstance(value, dict):
+                sanitized_value = value_sanitize(value)
+                if (
+                    sanitized_value is not None
+                ):  # Check if the sanitized value is not None
+                    new_dict[key] = sanitized_value
+            elif isinstance(value, list):
+                if len(value) < LIST_LIMIT:
+                    sanitized_value = value_sanitize(value)
+                    if (
+                        sanitized_value is not None
+                    ):  # Check if the sanitized value is not None
+                        new_dict[key] = sanitized_value
+                # Do not include the key if the list is oversized
+            else:
+                new_dict[key] = value
+        return new_dict
+    elif isinstance(d, list):
+        if len(d) < LIST_LIMIT:
+            return [
+                value_sanitize(item) for item in d if value_sanitize(item) is not None
+            ]
         else:
-            new_dict[key] = value
-    return new_dict
+            return None
+    else:
+        return d
 
 
 def _get_node_import_query(baseEntityLabel: bool, include_source: bool) -> str:
@@ -154,7 +167,7 @@ class Neo4jGraph(GraphStore):
         url: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        database: str = "neo4j",
+        database: Optional[str] = None,
         timeout: Optional[float] = None,
         sanitize: bool = False,
     ) -> None:
@@ -167,10 +180,16 @@ class Neo4jGraph(GraphStore):
                 "Please install it with `pip install neo4j`."
             )
 
-        url = get_from_env("url", "NEO4J_URI", url)
-        username = get_from_env("username", "NEO4J_USERNAME", username)
-        password = get_from_env("password", "NEO4J_PASSWORD", password)
-        database = get_from_env("database", "NEO4J_DATABASE", database)
+        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+        username = get_from_dict_or_env(
+            {"username": username}, "username", "NEO4J_USERNAME"
+        )
+        password = get_from_dict_or_env(
+            {"password": password}, "password", "NEO4J_PASSWORD"
+        )
+        database = get_from_dict_or_env(
+            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+        )
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
@@ -237,19 +256,21 @@ class Neo4jGraph(GraphStore):
         node_properties = [
             el["output"]
             for el in self.query(
-                node_properties_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+                node_properties_query,
+                params={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]},
             )
         ]
         rel_properties = [
             el["output"]
             for el in self.query(
-                rel_properties_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+                rel_properties_query, params={"EXCLUDED_LABELS": EXCLUDED_RELS}
             )
         ]
         relationships = [
             el["output"]
             for el in self.query(
-                rel_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+                rel_query,
+                params={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]},
             )
         ]
 
@@ -319,7 +340,10 @@ class Neo4jGraph(GraphStore):
         including nodes, relationships, and the source document information.
         - include_source (bool, optional): If True, stores the source document
         and links it to nodes in the graph using the MENTIONS relationship.
-        This is useful for tracing back the origin of data. Defaults to False.
+        This is useful for tracing back the origin of data. Merges source
+        documents based on the `id` property from the source document metadata
+        if available; otherwise it calculates the MD5 hash of `page_content`
+        for merging process. Defaults to False.
         - baseEntityLabel (bool, optional): If True, each newly created node
         gets a secondary __Entity__ label, which is indexed and improves import
         speed and performance. Defaults to False.
@@ -345,6 +369,11 @@ class Neo4jGraph(GraphStore):
         node_import_query = _get_node_import_query(baseEntityLabel, include_source)
         rel_import_query = _get_rel_import_query(baseEntityLabel)
         for document in graph_documents:
+            if not document.source.metadata.get("id"):
+                document.source.metadata["id"] = md5(
+                    document.source.page_content.encode("utf-8")
+                ).hexdigest()
+
             # Import nodes
             self.query(
                 node_import_query,

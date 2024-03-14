@@ -530,6 +530,76 @@ class Runnable(Generic[Input, Output], ABC):
         with get_executor_for_config(configs[0]) as executor:
             return cast(List[Output], list(executor.map(invoke, inputs, configs)))
 
+    @overload
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Output]]:
+        ...
+
+    @overload
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+        ...
+
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+        """Run invoke in parallel on a list of inputs,
+        yielding results as they complete."""
+
+        if not inputs:
+            return
+
+        configs = get_config_list(config, len(inputs))
+
+        def invoke(
+            i: int, input: Input, config: RunnableConfig
+        ) -> Tuple[int, Union[Output, Exception]]:
+            if return_exceptions:
+                try:
+                    out: Union[Output, Exception] = self.invoke(input, config, **kwargs)
+                except Exception as e:
+                    out = e
+            else:
+                out = self.invoke(input, config, **kwargs)
+
+            return (i, out)
+
+        if len(inputs) == 1:
+            yield invoke(0, inputs[0], configs[0])
+            return
+
+        with get_executor_for_config(configs[0]) as executor:
+            futures = {
+                executor.submit(invoke, i, input, config)
+                for i, (input, config) in enumerate(zip(inputs, configs))
+            }
+
+            try:
+                while futures:
+                    done, futures = wait(futures, return_when=FIRST_COMPLETED)
+                    while done:
+                        yield done.pop().result()
+            finally:
+                for future in futures:
+                    future.cancel()
+
     async def abatch(
         self,
         inputs: List[Input],
@@ -563,6 +633,64 @@ class Runnable(Generic[Input, Output], ABC):
 
         coros = map(ainvoke, inputs, configs)
         return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
+
+    @overload
+    def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Output]]:
+        ...
+
+    @overload
+    def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+        ...
+
+    async def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+        """Run ainvoke in parallel on a list of inputs,
+        yielding results as they complete."""
+
+        if not inputs:
+            return
+
+        configs = get_config_list(config, len(inputs))
+
+        async def ainvoke(
+            i: int, input: Input, config: RunnableConfig
+        ) -> Tuple[int, Union[Output, Exception]]:
+            if return_exceptions:
+                try:
+                    out: Union[Output, Exception] = await self.ainvoke(
+                        input, config, **kwargs
+                    )
+                except Exception as e:
+                    out = e
+            else:
+                out = await self.ainvoke(input, config, **kwargs)
+
+            return (i, out)
+
+        coros = map(ainvoke, range(len(inputs)), inputs, configs)
+
+        for coro in asyncio.as_completed(coros):
+            yield await coro
 
     def stream(
         self,
@@ -1050,12 +1178,19 @@ class Runnable(Generic[Input, Output], ABC):
 
         for chunk in input:
             if not got_first_val:
-                final = chunk
+                final = _adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
-                final = final + chunk  # type: ignore[operator]
+                try:
+                    final = final + chunk  # type: ignore[operator]
+                except TypeError:
+                    raise TypeError(
+                        f"Failed while trying to add together "
+                        f"type {type(final)} and {type(chunk)}."
+                        f"These types should be addable for transform to work."
+                    )
 
         if got_first_val:
             yield from self.stream(final, config, **kwargs)
@@ -1076,12 +1211,19 @@ class Runnable(Generic[Input, Output], ABC):
 
         async for chunk in input:
             if not got_first_val:
-                final = chunk
+                final = _adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
-                final = final + chunk  # type: ignore[operator]
+                try:
+                    final = final + chunk  # type: ignore[operator]
+                except TypeError:
+                    raise TypeError(
+                        f"Failed while trying to add together "
+                        f"type {type(final)} and {type(chunk)}."
+                        f"These types should be addable for atransform to work."
+                    )
 
         if got_first_val:
             async for output in self.astream(final, config, **kwargs):
@@ -1260,7 +1402,7 @@ class Runnable(Generic[Input, Output], ABC):
             output = cast(
                 Output,
                 context.run(
-                    call_func_with_variable_args,
+                    call_func_with_variable_args,  # type: ignore[arg-type]
                     func,  # type: ignore[arg-type]
                     input,  # type: ignore[arg-type]
                     config,
@@ -1888,7 +2030,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             raise ValueError(
                 f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
             )
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             first=steps_flat[0],
             middle=list(steps_flat[1:-1]),
             last=steps_flat[-1],
@@ -2574,7 +2716,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> None:
         merged = {**__steps} if __steps is not None else {}
         merged.update(kwargs)
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             steps={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
@@ -3001,7 +3143,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             func_for_name: Callable = atransform
 
         if inspect.isasyncgenfunction(transform):
-            self._atransform = transform
+            self._atransform = transform  # type: ignore[assignment]
             func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
             self._transform = transform
@@ -3066,7 +3208,10 @@ class RunnableGenerator(Runnable[Input, Output]):
         if not hasattr(self, "_transform"):
             raise NotImplementedError(f"{repr(self)} only supports async methods.")
         return self._transform_stream_with_config(
-            input, self._transform, config, **kwargs
+            input,
+            self._transform,  # type: ignore[arg-type]
+            config,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     def stream(
@@ -3557,7 +3702,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         for ichunk in input:
             if final is None:
-                final = ichunk
+                final = _adapt_first_streaming_chunk(ichunk)  # type: ignore
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3641,7 +3786,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         async for ichunk in input:
             if final is None:
-                final = ichunk
+                final = _adapt_first_streaming_chunk(ichunk)
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3995,7 +4140,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                 runnable with a custom type.
             **other_kwargs: Unpacked into the base class.
         """
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             bound=bound,
             kwargs=kwargs or {},
             config=config or {},
@@ -4004,6 +4149,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             custom_output_type=custom_output_type,
             **other_kwargs,
         )
+        # if we don't explicitly set config to the TypedDict here,
+        # the pydantic init above will strip out any of the "extra"
+        # fields even though total=False on the typed dict.
+        self.config = config or {}
 
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
@@ -4127,6 +4276,113 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             return_exceptions=return_exceptions,
             **{**self.kwargs, **kwargs},
         )
+
+    @overload
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Output]]:
+        ...
+
+    @overload
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+        ...
+
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+        if isinstance(config, list):
+            configs = cast(
+                List[RunnableConfig],
+                [self._merge_configs(conf) for conf in config],
+            )
+        else:
+            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+        # lol mypy
+        if return_exceptions:
+            yield from self.bound.batch_as_completed(
+                inputs,
+                configs,
+                return_exceptions=return_exceptions,
+                **{**self.kwargs, **kwargs},
+            )
+        else:
+            yield from self.bound.batch_as_completed(
+                inputs,
+                configs,
+                return_exceptions=return_exceptions,
+                **{**self.kwargs, **kwargs},
+            )
+
+    @overload
+    def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Output]]:
+        ...
+
+    @overload
+    def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+        ...
+
+    async def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+        if isinstance(config, list):
+            configs = cast(
+                List[RunnableConfig],
+                [self._merge_configs(conf) for conf in config],
+            )
+        else:
+            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+        if return_exceptions:
+            async for item in self.bound.abatch_as_completed(
+                inputs,
+                configs,
+                return_exceptions=return_exceptions,
+                **{**self.kwargs, **kwargs},
+            ):
+                yield item
+        else:
+            async for item in self.bound.abatch_as_completed(
+                inputs,
+                configs,
+                return_exceptions=return_exceptions,
+                **{**self.kwargs, **kwargs},
+            ):
+                yield item
 
     def stream(
         self,
@@ -4442,3 +4698,11 @@ def chain(
                 yield chunk
     """
     return RunnableLambda(func)
+
+
+def _adapt_first_streaming_chunk(chunk: Any) -> Any:
+    """This might transform the first chunk of a stream into an AddableDict."""
+    if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
+        return AddableDict(chunk)
+    else:
+        return chunk
