@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Callable, Dict, List, Optional
 
 import cohere
@@ -13,7 +14,6 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
-    enforce_stop_tokens,
     get_from_dict_or_env,
 )
 from tenacity import (
@@ -23,6 +23,12 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+
+def enforce_stop_tokens(text: str, stop: List[str]) -> str:
+    """Cut off the text as soon as any stop words occur."""
+    return re.split("|".join(stop), text, maxsplit=1)[0]
+
 
 logger = logging.getLogger(__name__)
 
