@@ -670,7 +670,7 @@ class PGVector(VectorStore):
                 f"$.{field} {native} $value",
                 json.dumps({"value": filter_value}),
             )
-        elif operator in "$between":
+        elif operator == "$between":
             # Use AND with two comparisons
             low, high = filter_value
 
