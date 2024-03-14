@@ -1,4 +1,5 @@
 """Vector Store in Google Cloud BigQuery."""
+
 from __future__ import annotations
 
 import asyncio

@@ -1,4 +1,5 @@
 """Base class for all loaders that uses O365 Package"""
+
 from __future__ import annotations
 
 import logging
@@ -59,9 +60,9 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
         if file_type.value == "doc":
             mime_types_mapping[file_type.value] = "application/msword"
         elif file_type.value == "docx":
-            mime_types_mapping[
-                file_type.value
-            ] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
+            mime_types_mapping[file_type.value] = (
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
+            )
         elif file_type.value == "pdf":
             mime_types_mapping[file_type.value] = "application/pdf"
     return mime_types_mapping

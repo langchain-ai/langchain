@@ -1,4 +1,5 @@
 """Module contains common parsers for PDFs."""
+
 from __future__ import annotations
 
 import warnings

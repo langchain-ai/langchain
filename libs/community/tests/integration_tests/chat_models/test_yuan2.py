@@ -1,4 +1,5 @@
 """Test ChatYuan2 wrapper."""
+
 from typing import List
 
 import pytest

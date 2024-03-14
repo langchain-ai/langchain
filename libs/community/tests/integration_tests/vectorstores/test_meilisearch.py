@@ -1,4 +1,5 @@
 """Test Meilisearch functionality."""
+
 from typing import TYPE_CHECKING, Generator
 
 import pytest

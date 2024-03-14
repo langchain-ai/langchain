@@ -14,6 +14,7 @@ The **Docstore** is a simplified version of the Document Loader.
 
     Document, AddableMixin
 """
+
 from langchain_community.docstore.arbitrary_fn import DocstoreFn
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.docstore.wikipedia import Wikipedia

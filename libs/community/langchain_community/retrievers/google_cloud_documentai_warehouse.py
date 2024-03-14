@@ -1,4 +1,5 @@
 """Retriever wrapper for Google Cloud Document AI Warehouse."""
+
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun

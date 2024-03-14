@@ -1,4 +1,5 @@
 """Test PGVector functionality."""
+
 import os
 from typing import List
 

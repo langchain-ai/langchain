@@ -1,4 +1,5 @@
 """ZHIPU AI chat models wrapper."""
+
 from __future__ import annotations
 
 import asyncio

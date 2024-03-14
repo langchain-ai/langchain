@@ -1,4 +1,5 @@
 """Wrapper around Minimax chat models."""
+
 import logging
 from typing import Any, Dict, List, Optional, cast
 

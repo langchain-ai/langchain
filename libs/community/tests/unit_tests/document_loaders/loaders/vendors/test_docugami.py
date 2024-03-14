@@ -1,4 +1,5 @@
 """Test DocugamiLoader."""
+
 from pathlib import Path
 
 import pytest

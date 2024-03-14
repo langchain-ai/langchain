@@ -1,4 +1,5 @@
 """Main entrypoint into package."""
+
 from importlib import metadata
 
 try:

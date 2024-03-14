@@ -1,4 +1,5 @@
 """Wrapper around YandexGPT embedding models."""
+
 from __future__ import annotations
 
 import logging
@@ -92,9 +93,9 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
         if not values["model_uri"]:
-            values[
-                "model_uri"
-            ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            values["model_uri"] = (
+                f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            )
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

@@ -1,5 +1,4 @@
-"""Chain that calls Google Places API.
-"""
+"""Chain that calls Google Places API."""
 
 import logging
 from typing import Any, Dict, Optional

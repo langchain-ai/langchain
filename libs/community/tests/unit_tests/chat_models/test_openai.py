@@ -1,4 +1,5 @@
 """Test OpenAI Chat API wrapper."""
+
 import json
 from typing import Any
 from unittest.mock import MagicMock, patch

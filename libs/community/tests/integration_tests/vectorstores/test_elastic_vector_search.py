@@ -1,4 +1,5 @@
 """Test ElasticSearch functionality."""
+
 import logging
 import os
 import uuid

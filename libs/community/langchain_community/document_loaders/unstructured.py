@@ -1,4 +1,5 @@
 """Loader that uses unstructured to load files."""
+
 import collections
 from abc import ABC, abstractmethod
 from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Union

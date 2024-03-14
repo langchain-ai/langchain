@@ -1,6 +1,5 @@
 """Test Titan Takeoff wrapper."""
 
-
 import responses
 
 from langchain_community.llms.titan_takeoff_pro import TitanTakeoffPro

@@ -1,4 +1,5 @@
 """FlyteKit callback handler."""
+
 from __future__ import annotations
 
 import logging

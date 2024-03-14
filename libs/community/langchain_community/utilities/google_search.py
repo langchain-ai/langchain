@@ -1,4 +1,5 @@
 """Util that calls Google Search."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator

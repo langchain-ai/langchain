@@ -1,4 +1,5 @@
 """Integration test for Wolfram Alpha API Wrapper."""
+
 from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 

@@ -1,4 +1,5 @@
 """Wrapper around TileDB vector database."""
+
 from __future__ import annotations
 
 import pickle

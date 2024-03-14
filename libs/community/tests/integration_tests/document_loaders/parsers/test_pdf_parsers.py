@@ -1,4 +1,5 @@
 """Tests for the various PDF parsers."""
+
 from pathlib import Path
 from typing import Iterator
 

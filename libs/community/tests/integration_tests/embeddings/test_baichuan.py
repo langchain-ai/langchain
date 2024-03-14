@@ -1,4 +1,5 @@
 """Test Baichuan Text Embedding."""
+
 from langchain_community.embeddings.baichuan import BaichuanTextEmbeddings
 
 

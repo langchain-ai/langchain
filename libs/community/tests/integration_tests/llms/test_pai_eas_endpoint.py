@@ -1,4 +1,5 @@
 """Test PaiEasEndpoint API wrapper."""
+
 import os
 from typing import Generator
 

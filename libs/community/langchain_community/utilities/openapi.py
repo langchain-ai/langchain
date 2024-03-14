@@ -1,4 +1,5 @@
 """Utility functions for parsing an OpenAPI spec."""
+
 from __future__ import annotations
 
 import copy

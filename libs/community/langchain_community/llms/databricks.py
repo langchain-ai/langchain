@@ -45,8 +45,7 @@ class _DatabricksClientBase(BaseModel, ABC):
     @abstractmethod
     def post(
         self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     @property
     def llm(self) -> bool:
@@ -241,7 +240,6 @@ def _pickle_fn_to_hex_string(fn: Callable) -> str:
 
 
 class Databricks(LLM):
-
     """Databricks serving endpoint or a cluster driver proxy app for LLM.
 
     It supports two endpoint types:

@@ -1,4 +1,5 @@
 """SAP HANA Cloud Vector Engine"""
+
 from __future__ import annotations
 
 import importlib.util

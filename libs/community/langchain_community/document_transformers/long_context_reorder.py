@@ -1,4 +1,5 @@
 """Reorder documents"""
+
 from typing import Any, List, Sequence
 
 from langchain_core.documents import BaseDocumentTransformer, Document

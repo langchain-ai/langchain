@@ -1,4 +1,5 @@
 """OpenAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging

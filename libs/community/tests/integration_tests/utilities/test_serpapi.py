@@ -1,4 +1,5 @@
 """Integration test for SerpAPI."""
+
 from langchain_community.utilities import SerpAPIWrapper
 
 

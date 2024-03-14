@@ -1,4 +1,5 @@
 """Test mosaicml embeddings."""
+
 from langchain_community.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 
 

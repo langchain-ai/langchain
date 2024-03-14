@@ -1,4 +1,5 @@
 """Test SingleStoreDB functionality."""
+
 import os
 import tempfile
 from typing import List

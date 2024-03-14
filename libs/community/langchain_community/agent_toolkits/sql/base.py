@@ -1,4 +1,5 @@
 """SQL agent."""
+
 from __future__ import annotations
 
 import warnings

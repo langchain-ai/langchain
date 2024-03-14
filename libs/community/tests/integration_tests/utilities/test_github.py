@@ -1,4 +1,5 @@
 """Integration test for Github Wrapper."""
+
 import pytest
 
 from langchain_community.utilities.github import GitHubAPIWrapper

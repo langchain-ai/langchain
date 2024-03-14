@@ -1,4 +1,5 @@
 """Callback Handler that prints to std out."""
+
 import threading
 from typing import Any, Dict, List
 

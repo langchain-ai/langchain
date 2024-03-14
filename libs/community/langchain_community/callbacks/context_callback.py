@@ -1,4 +1,5 @@
 """Callback handler for Context AI"""
+
 import os
 from typing import Any, Dict, List
 from uuid import UUID
