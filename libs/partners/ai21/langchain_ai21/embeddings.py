@@ -6,7 +6,7 @@ from langchain_core.embeddings import Embeddings
 
 from langchain_ai21.ai21_base import AI21Base
 
-_DEFAULT_CHUNK_SIZE = 128
+_DEFAULT_BATCH_SIZE = 128
 
 
 def _split_texts_into_batches(texts: List[str], batch_size: int) -> Iterator[List[str]]:
@@ -28,7 +28,7 @@ class AI21Embeddings(Embeddings, AI21Base):
             query_result = embeddings.embed_query("Hello embeddings world!")
     """
 
-    batch_size: int = _DEFAULT_CHUNK_SIZE
+    batch_size: int = _DEFAULT_BATCH_SIZE
     """Maximum number of texts to embed in each batch"""
 
     def embed_documents(
