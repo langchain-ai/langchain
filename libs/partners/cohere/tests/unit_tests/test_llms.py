@@ -1,13 +1,10 @@
 """Test Cohere API wrapper."""
 
-from pathlib import Path
 
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import MonkeyPatch
 
 from langchain_cohere import BaseCohere
-from langchain_community.llms.loading import load_llm
-from tests.integration_tests.llms.utils import assert_llm_equality  # type: ignore
 
 
 def test_cohere_api_key(monkeypatch: MonkeyPatch) -> None:

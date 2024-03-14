@@ -1,8 +1,10 @@
 from __future__ import annotations
-import cohere
+
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+import cohere
+from langchain_community.llms.utils import enforce_stop_tokens
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -18,8 +20,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +86,7 @@ class BaseCohere(Serializable):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["cohere_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, "cohere_api_key", "COHERE_API_KEY")
+            get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
         )
         client_name = values["user_agent"]
         values["client"] = cohere.Client(
@@ -173,8 +172,7 @@ class Cohere(LLM, BaseCohere):
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         params = self._default_params
         if self.stop is not None and stop is not None:
-            raise ValueError(
-                "`stop` found in both the input and default params.")
+            raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
             params["stop_sequences"] = self.stop
         else:

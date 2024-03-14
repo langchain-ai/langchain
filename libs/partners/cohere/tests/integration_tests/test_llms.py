@@ -1,5 +1,4 @@
 """Test BaseCohere llm."""
-from langchain_cohere.llms import BaseCohere
 
 
 # def test_stream() -> None:

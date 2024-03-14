@@ -1,10 +1,10 @@
-from typing import Any, Dict, List, Optional
+import typing
+from typing import Dict, List, Optional
 
+import cohere
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
-import cohere
-import typing
 
 
 class CohereEmbeddings(BaseModel, Embeddings):
@@ -71,7 +71,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return values
 
     def embed(
-        self, texts: List[str], *, input_type: typing.Optional[cohere.EmbedInputType] = None
+        self,
+        texts: List[str],
+        *,
+        input_type: typing.Optional[cohere.EmbedInputType] = None,
     ) -> List[List[float]]:
         embeddings = self.client.embed(
             model=self.model,
@@ -82,7 +85,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return [list(map(float, e)) for e in embeddings]
 
     async def aembed(
-        self, texts: List[str], *, input_type: typing.Optional[cohere.EmbedInputType] = None
+        self,
+        texts: List[str],
+        *,
+        input_type: typing.Optional[cohere.EmbedInputType] = None,
     ) -> List[List[float]]:
         embeddings = (
             await self.async_client.embed(
