@@ -1,0 +1,24 @@
+# Pinecone
+
+>[Pinecone](https://docs.pinecone.io/docs/overview) is a vector database with broad functionality.
+
+
+## Installation and Setup
+
+Install the Python SDK:
+
+```bash
+pip install pinecone-client
+```
+
+
+## Vector store
+
+There exists a wrapper around Pinecone indexes, allowing you to use it as a vectorstore,
+whether for semantic search or example selection.
+
+```python
+from langchain_pinecone import PineconeVectorStore
+```
+
+For a more detailed walkthrough of the Pinecone vectorstore, see [this notebook](/docs/integrations/vectorstores/pinecone)
