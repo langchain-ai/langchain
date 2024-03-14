@@ -2,7 +2,7 @@
 
 ## Reporting OSS Vulnerabilities
 
-LangChain is partnered with [huntr.dev](https://huntr.com/) to provide 
+LangChain is partnered with [huntr by Protect AI](https://huntr.com/) to provide 
 a bounty program for our open source projects. 
 
 Please report security vulnerabilities associated with the LangChain 
