@@ -1987,20 +1987,20 @@ class Qdrant(VectorStore):
         return out
 
     def _qdrant_filter_from_dict(
-        self, filter: Optional[DictFilter]
+        self, filter: Optional[DictFilter], condition_type: str = "must"
     ) -> Optional[rest.Filter]:
         from qdrant_client.http import models as rest
 
         if not filter:
             return None
 
-        return rest.Filter(
-            must=[
-                condition
-                for key, value in filter.items()
-                for condition in self._build_condition(key, value)
-            ]
-        )
+        conditions = [
+            condition
+            for key, value in filter.items()
+            for condition in self._build_condition(key, value)
+        ]
+
+        return rest.Filter(**{condition_type: conditions})
 
     def _embed_query(self, query: str) -> List[float]:
         """Embed query text.
