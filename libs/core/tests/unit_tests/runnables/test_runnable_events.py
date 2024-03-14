@@ -53,12 +53,12 @@ async def _collect_events(events: AsyncIterator[StreamEvent]) -> List[StreamEven
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool"""
 
-    def foo(x:int):
+    def foo(x: int) -> dict:
         """Foo"""
         return {"x": 5}
 
     @tool
-    def get_docs(x: int):
+    def get_docs(x: int) -> List[Document]:
         """Hello Doc"""
         return [Document(page_content="hello")]
 
