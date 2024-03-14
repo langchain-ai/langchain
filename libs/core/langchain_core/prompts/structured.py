@@ -13,11 +13,11 @@ from typing import (
 
 from langchain_core._api.beta_decorator import beta
 from langchain_core.language_models.base import BaseLanguageModel
-from langchain_core.messages import MessageLikeRepresentation
 from langchain_core.prompts.chat import (
     BaseChatPromptTemplate,
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
+    MessageLikeRepresentation,
     MessagesPlaceholder,
     _convert_to_message,
 )
@@ -48,20 +48,18 @@ class StructuredPrompt(ChatPromptTemplate):
 
             .. code-block:: python
 
-                template = ChatPromptTemplate.from_messages([
-                    ("human", "Hello, how are you?"),
-                    ("ai", "I'm doing well, thanks!"),
-                    ("human", "That's good to hear."),
-                ])
+                class OutputSchema(BaseModel):
+                    name: str
+                    value: int
 
-            Instantiation from mixed message formats:
-
-            .. code-block:: python
-
-                template = ChatPromptTemplate.from_messages([
-                    SystemMessage(content="hello"),
-                    ("human", "Hello, how are you?"),
-                ])
+                template = ChatPromptTemplate.from_messages(
+                    [
+                        ("human", "Hello, how are you?"),
+                        ("ai", "I'm doing well, thanks!"),
+                        ("human", "That's good to hear."),
+                    ],
+                    OutputSchema,
+                )
 
         Args:
             messages: sequence of message representations.
@@ -70,9 +68,10 @@ class StructuredPrompt(ChatPromptTemplate):
                   (message type, template); e.g., ("human", "{user_input}"),
                   (4) 2-tuple of (message class, template), (4) a string which is
                   shorthand for ("human", template); e.g., "{user_input}"
+            schema: a dictionary representation of function call, or a Pydantic model.
 
         Returns:
-            a chat prompt template
+            a structured prompt template
         """
         _messages = [_convert_to_message(message) for message in messages]
 
@@ -108,7 +107,9 @@ class StructuredPrompt(ChatPromptTemplate):
         ):
             return RunnableSequence(self, other.with_structured_output(self.schema_))
         else:
-            return super().__or__(other)
+            raise NotImplementedError(
+                "Structured prompts need to be piped to a language model."
+            )
 
     def pipe(
         self,
@@ -127,4 +128,6 @@ class StructuredPrompt(ChatPromptTemplate):
                 name=name,
             )
         else:
-            return super().pipe(*others, name=name)
+            raise NotImplementedError(
+                "Structured prompts need to be piped to a language model."
+            )

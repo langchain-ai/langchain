@@ -1,7 +1,6 @@
-from ast import Dict
 from functools import partial
 from inspect import isclass
-from typing import Type, Union
+from typing import Any, Dict, Type, Union, cast
 
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
@@ -11,11 +10,13 @@ from langchain_core.runnables.base import Runnable, RunnableLambda
 from tests.unit_tests.fake.chat_model import FakeListChatModel
 
 
-def _fake_runnable(schema: Union[Dict, Type[BaseModel]], _) -> BaseModel:
+def _fake_runnable(
+    schema: Union[Dict, Type[BaseModel]], _: Any
+) -> Union[BaseModel, Dict]:
     if isclass(schema) and issubclass(schema, BaseModel):
         return schema(name="yo", value=42)
     else:
-        params = schema["parameters"]
+        params = cast(Dict, schema)["parameters"]
         return {k: 1 for k, v in params.items()}
 
 
