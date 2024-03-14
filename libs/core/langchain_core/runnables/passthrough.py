@@ -617,22 +617,22 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     It returns a new dictionary containing only the selected keys.
 
     Example : 
-    .. code-block:: python
+        .. code-block:: python
+        
+            from langchain_core.runnables.passthrough import RunnablePick
 
-    from langchain_core.runnables.passthrough import RunnablePick
+            input_data = {
+                'name': 'John',
+                'age': 30,
+                'city': 'New York',
+                'country': 'USA'
+            }
 
-    input_data = {
-        'name': 'John',
-        'age': 30,
-        'city': 'New York',
-        'country': 'USA'
-    }
+            runnable = RunnablePick(keys=['name', 'age'])
 
-    runnable = RunnablePick(keys=['name', 'age'])
+            output_data = runnable.invoke(input_data)
 
-    output_data = runnable.invoke(input_data)
-
-    print(output_data)  # Output: {'name': 'John', 'age': 30}    
+            print(output_data)  # Output: {'name': 'John', 'age': 30}    
     """
 
     keys: Union[str, List[str]]
