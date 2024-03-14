@@ -83,7 +83,7 @@ const config = {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
           lastVersion: "current",
-          versions: {current: {label: "0.2.x", path: "0.2.x"}}
+          versions: {current: {label: "0.2.x", path: "0.2.x"}},
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
