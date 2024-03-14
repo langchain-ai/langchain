@@ -2,7 +2,7 @@ from typing import Any, List
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic import Field
 from langchain_core.utils import image as image_utils
 
 

@@ -11,7 +11,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic import BaseModel
 
 
 def _replace_new_line(match: re.Match[str]) -> str:

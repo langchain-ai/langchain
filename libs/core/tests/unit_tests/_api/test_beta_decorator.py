@@ -5,7 +5,7 @@ from typing import Any, Dict
 import pytest
 
 from langchain_core._api.beta_decorator import beta, warn_beta
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic import BaseModel
 
 
 @pytest.mark.parametrize(

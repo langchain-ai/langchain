@@ -3,7 +3,12 @@ from importlib import util
 from typing import Dict, Sequence
 
 import pytest
-from pytest import Config, Function, Parser
+from _pytest.config import Config
+from _pytest.terminal import TerminalReporter
+from pytest import Function, Parser
+
+from langchain_core.pydantic import _PYDANTIC_VERSION
+from langchain_core.pydantic.config import USE_PYDANTIC_V2
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -17,6 +22,20 @@ def pytest_addoption(parser: Parser) -> None:
         "--only-core",
         action="store_true",
         help="Only run core tests. Never runs any extended tests.",
+    )
+
+
+def pytest_terminal_summary(
+    terminalreporter: TerminalReporter, exitstatus: int, config: Config
+) -> None:
+    """Add custom information to the terminal summary."""
+    terminalreporter.write_sep("-", title="Pydantic Configuration")
+    terminalreporter.write_line(f"Testing with pydantic version {_PYDANTIC_VERSION}.")
+    # Let's print out the value of USE_PYDANTIC_V2
+    terminalreporter.write_line(
+        f"USE_PYDANTIC_V2: {USE_PYDANTIC_V2}. "
+        f"Enable with `LC_PYDANTIC_V2_UNSAFE=true` env variable "
+        f"and pydantic>=2 installed."
     )
 
 

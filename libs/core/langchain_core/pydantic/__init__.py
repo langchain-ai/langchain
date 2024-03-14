@@ -22,8 +22,9 @@ try:
 except ImportError:
     from pydantic import *  # noqa: F403 # type: ignore
 
+_PYDANTIC_VERSION = metadata.version("pydantic")
 
 try:
-    _PYDANTIC_MAJOR_VERSION: int = int(metadata.version("pydantic").split(".")[0])
+    _PYDANTIC_MAJOR_VERSION: int = int(_PYDANTIC_VERSION.split(".")[0])
 except metadata.PackageNotFoundError:
     _PYDANTIC_MAJOR_VERSION = 0

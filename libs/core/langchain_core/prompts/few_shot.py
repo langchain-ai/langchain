@@ -17,7 +17,7 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic import BaseModel, Extra, Field, root_validator
 
 
 class _FewShotPromptTemplateMixin(BaseModel):

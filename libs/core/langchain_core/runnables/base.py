@@ -42,7 +42,7 @@ from langchain_core.load.serializable import (
     SerializedConstructor,
     SerializedNotImplemented,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,

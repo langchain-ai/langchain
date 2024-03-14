@@ -21,7 +21,7 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
     _convert_to_message,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic import BaseModel
 from langchain_core.runnables.base import (
     Other,
     Runnable,

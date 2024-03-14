@@ -6,7 +6,7 @@ from langchain_core.output_parsers.openai_tools import (
     JsonOutputToolsParser,
     PydanticToolsParser,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic import BaseModel, Field
 
 STREAMED_MESSAGES: list = [
     AIMessageChunk(content=""),

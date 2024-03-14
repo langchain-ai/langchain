@@ -48,7 +48,7 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic import Field, root_validator
 from langchain_core.runnables.config import ensure_config, run_in_executor
 
 if TYPE_CHECKING:

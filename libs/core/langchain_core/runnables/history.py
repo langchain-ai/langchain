@@ -15,7 +15,7 @@ from typing import (
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.runnables.passthrough import RunnablePassthrough
@@ -83,7 +83,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         from langchain_core.documents import Document
         from langchain_core.messages import BaseMessage, AIMessage
         from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-        from langchain_core.pydantic_v1 import BaseModel, Field
+        from langchain_core.pydantic import BaseModel, Field
         from langchain_core.runnables import (
             RunnableLambda,
             ConfigurableFieldSpec,
