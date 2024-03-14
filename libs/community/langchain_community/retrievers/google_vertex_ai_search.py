@@ -267,7 +267,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             )
 
         if self.search_engine_id:
-            self._serving_config = f"projects/{self.project_id}/locations/{self.location_id}/collections/default_collection/engines/{self.serving_config_id}/servingConfigs/default_config"
+            self._serving_config = f"projects/{self.project_id}/locations/{self.location_id}/collections/default_collection/engines/{self.search_engine_id}/servingConfigs/default_config"
         elif self.data_store_id:
             self._serving_config = self._client.serving_config_path(
                 project=self.project_id,
