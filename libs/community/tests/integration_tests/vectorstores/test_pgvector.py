@@ -492,9 +492,18 @@ def test_invalid_filters(pgvector: PGVector, invalid_filter: Any) -> None:
         ({"id 'evil code'": 2}, ValueError),
         (
             {"id": "'evil code' == 2"},
-            "langchain_pg_embedding.cmetadata @@ '$.id == \"''evil code'' == 2\"'",
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
+                "'{\"value\": \"''evil code'' == 2\"}')"
+            ),
         ),
-        ({"name": 'a"b'}, 'langchain_pg_embedding.cmetadata @@ \'$.name == "a\\"b"\''),
+        (
+            {"name": 'a"b'},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.name == $value', "
+                '\'{"value": "a\\\\"b"}\')'
+            ),
+        ),
     ],
 )
 def test_evil_code(
@@ -521,31 +530,59 @@ def test_evil_code(
 @pytest.mark.parametrize(
     "filter,compiled",
     [
-        ({"id": 2}, "langchain_pg_embedding.cmetadata @@ '$.id == 2'"),
+        (
+            {"id": 2},
+            "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
+            "'{\"value\": 2}')",
+        ),
         (
             {"id": {"$eq": 2}},
-            "langchain_pg_embedding.cmetadata @@ '$.id == 2'",
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
+                "'{\"value\": 2}')"
+            ),
         ),
-        ({"name": "foo"}, "langchain_pg_embedding.cmetadata @@ '$.name == \"foo\"'"),
+        (
+            {"name": "foo"},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.name == $value', "
+                '\'{"value": "foo"}\')'
+            ),
+        ),
         (
             {"id": {"$ne": 2}},
-            "langchain_pg_embedding.cmetadata @@ '$.id != 2'",
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id != $value', "
+                "'{\"value\": 2}')"
+            ),
         ),
         (
             {"id": {"$gt": 2}},
-            "langchain_pg_embedding.cmetadata @@ '$.id > 2'",
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id > $value', "
+                "'{\"value\": 2}')"
+            ),
         ),
         (
             {"id": {"$gte": 2}},
-            "langchain_pg_embedding.cmetadata @@ '$.id >= 2'",
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id >= $value', "
+                "'{\"value\": 2}')"
+            ),
         ),
         (
             {"id": {"$lt": 2}},
-            "langchain_pg_embedding.cmetadata @@ '$.id < 2'",
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id < $value', "
+                "'{\"value\": 2}')"
+            ),
         ),
         (
             {"id": {"$lte": 2}},
-            "langchain_pg_embedding.cmetadata @@ '$.id <= 2'",
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id <= $value', "
+                "'{\"value\": 2}')"
+            ),
         ),
         (
             {"name": {"$ilike": "foo"}},
@@ -560,8 +597,9 @@ def test_evil_code(
             # Please note that this might not be super optimized
             # Another way to phrase the query is as
             # langchain_pg_embedding.cmetadata @@ '($.id == 1 || $.id == 2)'
-            "(langchain_pg_embedding.cmetadata @@ '$.id == 1') "
-            "OR (langchain_pg_embedding.cmetadata @@ '$.id == 2')",
+            "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
+            "'{\"value\": 1}') OR jsonb_path_match(langchain_pg_embedding.cmetadata, "
+            "'$.id == $value', '{\"value\": 2}')",
         ),
     ],
 )
