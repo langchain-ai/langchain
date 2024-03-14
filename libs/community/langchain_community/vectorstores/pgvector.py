@@ -20,8 +20,8 @@ from typing import (
 import numpy as np
 import sqlalchemy
 from langchain_core._api import warn_deprecated
-from sqlalchemy import SQLColumnExpression, cast, delete, func
-from sqlalchemy.dialects.postgresql import JSON, JSONB, JSONPATH, UUID
+from sqlalchemy import SQLColumnExpression, delete, func
+from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
 try:
@@ -91,17 +91,6 @@ SUPPORTED_OPERATORS = (
     .union(LOGICAL_OPERATORS)
     .union(SPECIAL_CASED_OPERATORS)
 )
-
-
-class Counter:
-    def __init__(self) -> None:
-        """Initialize the counter."""
-        self.count = 0
-
-    def increment(self) -> int:
-        """Increment the counter and get new value."""
-        self.count += 1
-        return self.count
 
 
 def _get_embedding_collection_store(
@@ -622,7 +611,6 @@ class PGVector(VectorStore):
         self,
         field: str,
         value: Any,
-        counter: Counter,
     ) -> SQLColumnExpression:
         """Create a filter for a specific field.
 
@@ -632,7 +620,6 @@ class PGVector(VectorStore):
                 If provided as is then this will be an equality filter
                 If provided as a dictionary then this will be a filter, the key
                 will be the operator and the value will be the value to filter by
-            counter: Counter
 
         Returns:
             sqlalchemy expression
@@ -819,9 +806,7 @@ class PGVector(VectorStore):
                 filter_clauses.append(filter_by_metadata)
         return filter_clauses
 
-    def _create_filter_clause(
-        self, filters: Any, *, counter: Optional[Counter] = None
-    ) -> Any:
+    def _create_filter_clause(self, filters: Any) -> Any:
         """Convert LangChain IR filter representation to matching SQLAlchemy clauses.
 
         At the top level, we still don't know if we're working with a field
@@ -830,13 +815,10 @@ class PGVector(VectorStore):
 
         Args:
             filters: Dictionary of filters to apply to the query.
-            counter: used for bind_params to make sure that variable placeholders
-                     are unique
 
         Returns:
             SQLAlchemy clause to apply to the query.
         """
-        counter = counter or Counter()
         if isinstance(filters, dict):
             if len(filters) == 1:
                 # The only operators allowed at the top level are $AND and $OR
@@ -851,7 +833,7 @@ class PGVector(VectorStore):
                         )
                 else:
                     # Then it's a field
-                    return self._handle_field_filter(key, filters[key], counter=counter)
+                    return self._handle_field_filter(key, filters[key])
 
                 # Here we handle the $and and $or operators
                 if not isinstance(value, list):
@@ -859,9 +841,7 @@ class PGVector(VectorStore):
                         f"Expected a list, but got {type(value)} for value: {value}"
                     )
                 if key.lower() == "$and":
-                    and_ = [
-                        self._create_filter_clause(el, counter=counter) for el in value
-                    ]
+                    and_ = [self._create_filter_clause(el) for el in value]
                     if len(and_) > 1:
                         return sqlalchemy.and_(*and_)
                     elif len(and_) == 1:
@@ -872,9 +852,7 @@ class PGVector(VectorStore):
                             "but got an empty dictionary"
                         )
                 elif key.lower() == "$or":
-                    or_ = [
-                        self._create_filter_clause(el, counter=counter) for el in value
-                    ]
+                    or_ = [self._create_filter_clause(el) for el in value]
                     if len(or_) > 1:
                         return sqlalchemy.or_(*or_)
                     elif len(or_) == 1:
@@ -897,9 +875,7 @@ class PGVector(VectorStore):
                             f"Invalid filter condition. Expected a field but got: {key}"
                         )
                 # These should all be fields and combined using an $and operator
-                and_ = [
-                    self._handle_field_filter(k, v, counter) for k, v in filters.items()
-                ]
+                and_ = [self._handle_field_filter(k, v) for k, v in filters.items()]
                 if len(and_) > 1:
                     return sqlalchemy.and_(*and_)
                 elif len(and_) == 1:
