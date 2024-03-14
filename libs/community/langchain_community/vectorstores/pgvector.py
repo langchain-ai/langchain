@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import enum
+import json
 import logging
 import uuid
 from typing import (
@@ -19,8 +20,8 @@ from typing import (
 import numpy as np
 import sqlalchemy
 from langchain_core._api import warn_deprecated
-from sqlalchemy import SQLColumnExpression, delete
-from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
+from sqlalchemy import SQLColumnExpression, cast, delete, func
+from sqlalchemy.dialects.postgresql import JSON, JSONB, JSONPATH, UUID
 from sqlalchemy.orm import Session, relationship
 
 try:
@@ -217,20 +218,6 @@ def _get_embedding_collection_store(
 def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     """Return docs from docs and scores."""
     return [doc for doc, _ in docs_and_scores]
-
-
-def _sanitized_double_quoted_string(string: str) -> str:
-    """First it sanitizes the input string and then it double quotes it.
-
-    DANGEROUS! This is a DANGEROUS piece of code that will attempt
-    to sanitize the input string.
-    """
-    # Escape all single quotes
-    sanitized_string = string.replace("'", "''")
-    # Escape all double quotes
-    sanitized_string = sanitized_string.replace('"', '\\"')
-    # Finally double quote the string
-    return f'"{sanitized_string}"'
 
 
 class PGVector(VectorStore):
@@ -688,44 +675,33 @@ class PGVector(VectorStore):
             filter_value = value
 
         # Now that we know the operator and the value we can create the filter
-        json_path_operation = self.EmbeddingStore.cmetadata.op("@@")
+        # json_path_operation = self.EmbeddingStore.cmetadata.op("@@")
+        # Add double quotes
 
         if operator in COMPARISONS_TO_NATIVE:
             # Then we implement an equality filter
             # native is trusted input
             native = COMPARISONS_TO_NATIVE[operator]
-            if isinstance(filter_value, str):
-                # Note: dangerous
-                # We're sanitizing the input here ourselves because it seems
-                # impossible to get SQLAlchemy to double quote the string
-                # rather than single quote.
-                # we need the double quote for the jsonpath operations.
-                sanitized_value = _sanitized_double_quoted_string(filter_value)
-                path_value = sqlalchemy.text(
-                    f"'$.{field} {native} {sanitized_value}'",
-                )
-            else:
-                placeholder_name = f"filter_value_{counter.increment()}"
-                path_value = sqlalchemy.text(
-                    f"'$.{field} {native} :{placeholder_name}'",
-                ).bindparams(**{placeholder_name: filter_value})
-            return json_path_operation(path_value)
+            return func.jsonb_path_match(
+                self.EmbeddingStore.cmetadata,
+                f"$.{field} {native} $value",
+                json.dumps({"value": filter_value}),
+            )
         elif operator in "$between":
             # Use AND with two comparisons
             low, high = filter_value
-            placeholder_name = f"value_{counter.increment()}"
-            lower_bound = sqlalchemy.text(
-                f"'$.{field} >= :{placeholder_name}'",
-            ).bindparams(**{placeholder_name: low})
 
-            placeholder_name = f"value_{counter.increment()}"
-            upper_bound = sqlalchemy.text(
-                f"'$.{field} <= :{placeholder_name}'",
-            ).bindparams(**{placeholder_name: high})
-            # and
-            return sqlalchemy.and_(
-                json_path_operation(lower_bound), json_path_operation(upper_bound)
+            lower_bound = func.jsonb_path_match(
+                self.EmbeddingStore.cmetadata,
+                f"$.{field} >= $value",
+                json.dumps({"value": low}),
             )
+            upper_bound = func.jsonb_path_match(
+                self.EmbeddingStore.cmetadata,
+                f"$.{field} <= $value",
+                json.dumps({"value": high}),
+            )
+            return sqlalchemy.and_(lower_bound, upper_bound)
         elif operator in {"$in", "$nin", "$like", "$ilike"}:
             # We'll do force coercion to text
             if operator in {"$in", "$nin"}:
