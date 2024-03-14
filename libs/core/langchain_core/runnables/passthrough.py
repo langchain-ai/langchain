@@ -40,6 +40,7 @@ from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
+    adapt_first_streaming_chunk,
     create_model,
 )
 from langchain_core.utils.aiter import atee, py_anext
@@ -248,7 +249,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
                 if final is None:
-                    final = chunk
+                    final = adapt_first_streaming_chunk(chunk)
                 else:
                     final = final + chunk
 
@@ -276,7 +277,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             ):
                 yield chunk
                 if final is None:
-                    final = chunk
+                    final = adapt_first_streaming_chunk(chunk)
                 else:
                     final = final + chunk
 
