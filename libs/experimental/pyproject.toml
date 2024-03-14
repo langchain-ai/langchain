@@ -10,8 +10,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.27"
-langchain = "^0.1.8"
+langchain-core = "^0.1.31"
+langchain = "^0.1.12"
 
 [tool.poetry.group.lint]
 optional = true
