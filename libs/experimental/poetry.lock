@@ -1472,20 +1472,6 @@ requests = "^2"
 SQLAlchemy = ">=1.4,<3"
 tenacity = "^8.1.0"
 
-[package.extras]
-all = []
-azure = []
-clarifai = []
-cli = []
-cohere = []
-docarray = []
-embeddings = []
-javascript = []
-llms = []
-openai = []
-qdrant = []
-text-helpers = []
-
 [package.source]
 type = "directory"
 url = "../langchain"
@@ -1509,9 +1495,6 @@ PyYAML = ">=5.3"
 requests = "^2"
 SQLAlchemy = ">=1.4,<3"
 tenacity = "^8.1.0"
-
-[package.extras]
-cli = []
 
 [package.source]
 type = "directory"
@@ -3469,4 +3452,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b5e4db614acab422c97c29ffebc849c38b04fa91fe18ebb1e52ac266a36ea88b"
+content-hash = "28fa64ac372e71a8d59dfd654b2f2125f8669a30d8ddfd6af7395f893d5090ef"

@@ -24,6 +24,8 @@ numpy = "^1"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
+dataclasses-json = ">= 0.5.7, < 0.7"
+async-timeout = {version = "^4.0.0", python = "<3.11"}
 
 [tool.poetry.group.test]
 optional = true
