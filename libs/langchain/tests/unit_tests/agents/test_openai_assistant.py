@@ -6,7 +6,7 @@ import pytest
 from langchain.agents.openai_assistant import OpenAIAssistantRunnable
 
 
-def _create_mock_client(*args, **kwargs) -> Any:
+def _create_mock_client(*args: Any, **kwargs: Any) -> Any:
     client = MagicMock()
     client.beta.assistants.create().id = "abc123"
     return client
