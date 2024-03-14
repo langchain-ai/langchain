@@ -46,7 +46,7 @@ feedparser
 xata
 xmltodict
 faiss-cpu
-openapi-pydantic
+openapi-pydantic==0.3.2
 markdownify
 arxiv
 sqlite-vss
