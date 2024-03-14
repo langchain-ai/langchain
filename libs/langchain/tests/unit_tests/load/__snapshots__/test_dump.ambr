@@ -188,6 +188,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -198,6 +202,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -240,6 +248,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -250,6 +262,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -292,6 +308,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -302,6 +322,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -344,6 +368,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -354,6 +382,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -391,6 +423,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -401,6 +437,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -439,6 +479,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -449,6 +493,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -655,6 +703,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -665,6 +717,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -707,6 +763,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -717,6 +777,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -759,6 +823,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -769,6 +837,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -811,6 +883,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -821,6 +897,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -858,6 +938,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -868,6 +952,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -906,6 +994,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -916,6 +1008,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -1175,6 +1271,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -1185,6 +1285,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -1227,6 +1331,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -1237,6 +1345,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -1279,6 +1391,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -1289,6 +1405,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -1331,6 +1451,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -1341,6 +1465,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -1378,6 +1506,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -1388,6 +1520,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -1426,6 +1562,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -1436,6 +1576,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -1564,6 +1708,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -1574,6 +1722,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -1616,6 +1768,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -1626,6 +1782,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -1668,6 +1828,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -1678,6 +1842,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -1720,6 +1888,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -1730,6 +1902,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -1767,6 +1943,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -1777,6 +1957,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -1815,6 +1999,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -1825,6 +2013,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -1990,6 +2182,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "ai",
@@ -2000,6 +2196,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "example": {
@@ -2042,6 +2242,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "human",
@@ -2052,6 +2256,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "example": {
@@ -2094,6 +2302,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "chat",
@@ -2104,6 +2316,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "role": {
@@ -2146,6 +2362,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "system",
@@ -2156,6 +2376,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 }
                               },
@@ -2193,6 +2417,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "function",
@@ -2203,6 +2431,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 }
                               },
@@ -2241,6 +2473,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "tool",
@@ -2251,6 +2487,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "tool_call_id": {
@@ -2424,6 +2664,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -2434,6 +2678,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -2476,6 +2724,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -2486,6 +2738,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -2528,6 +2784,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -2538,6 +2798,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -2580,6 +2844,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -2590,6 +2858,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -2627,6 +2899,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -2637,6 +2913,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -2675,6 +2955,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -2685,6 +2969,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -2944,6 +3232,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -2954,6 +3246,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -2996,6 +3292,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -3006,6 +3306,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -3048,6 +3352,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -3058,6 +3366,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -3100,6 +3412,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -3110,6 +3426,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -3147,6 +3467,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -3157,6 +3481,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -3195,6 +3523,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -3205,6 +3537,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -3411,6 +3747,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -3421,6 +3761,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -3463,6 +3807,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -3473,6 +3821,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -3515,6 +3867,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -3525,6 +3881,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -3567,6 +3927,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -3577,6 +3941,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -3614,6 +3982,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -3624,6 +3996,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -3662,6 +4038,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -3672,6 +4052,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -3921,6 +4305,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "ai",
@@ -3931,6 +4319,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "example": {
@@ -3973,6 +4365,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "human",
@@ -3983,6 +4379,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "example": {
@@ -4025,6 +4425,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "chat",
@@ -4035,6 +4439,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "role": {
@@ -4077,6 +4485,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "system",
@@ -4087,6 +4499,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   }
                 },
@@ -4124,6 +4540,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "function",
@@ -4134,6 +4554,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   }
                 },
@@ -4172,6 +4596,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "tool",
@@ -4182,6 +4610,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "tool_call_id": {

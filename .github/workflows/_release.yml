@@ -55,7 +55,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Upload build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -191,6 +191,11 @@ jobs:
           ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
           ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
           ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+          ES_URL: ${{ secrets.ES_URL }}
+          ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
+          ES_API_KEY: ${{ secrets.ES_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for airbyte
+          MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -241,7 +246,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           cache-key: release
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -280,7 +285,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           cache-key: release
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
