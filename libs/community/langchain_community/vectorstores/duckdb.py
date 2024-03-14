@@ -106,7 +106,7 @@ class DuckDB(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            kwargs: Additional parameters including optional 'ids' to associate 
+            kwargs: Additional parameters including optional 'ids' to associate
               with the texts.
 
         Returns:
@@ -183,7 +183,7 @@ class DuckDB(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> VST:
-        """Creates an instance of DuckDB and populates it with texts and 
+        """Creates an instance of DuckDB and populates it with texts and
           their embeddings.
 
         Args:
@@ -196,7 +196,7 @@ class DuckDB(VectorStore):
                 - vector_key: The column name for storing vectors. Default "vector".
                 - id_key: The column name for storing unique identifiers. Default "id".
                 - text_key: The column name for storing text. Defaults to "text".
-                - table_name: The name of the table to use for storing embeddings. 
+                - table_name: The name of the table to use for storing embeddings.
                     Defaults to "embeddings".
 
         Returns:
