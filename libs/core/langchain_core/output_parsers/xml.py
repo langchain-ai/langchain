@@ -1,7 +1,9 @@
 import re
 import xml.etree.ElementTree as ET
+
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.runnables.utils import AddableDict
@@ -47,10 +49,15 @@ class XMLOutputParser(BaseTransformOutputParser):
         if (text.startswith("<") or text.startswith("\n<")) and (
             text.endswith(">") or text.endswith(">\n")
         ):
-            root = ET.fromstring(text)
-            return self._root_to_dict(root)
+            try:
+                root = ET.fromstring(text)
+                return self._root_to_dict(root)
+
+            except ET.ParseError:
+                raise OutputParserException(f"Could not parse output: {text}")
+
         else:
-            raise ValueError(f"Could not parse output: {text}")
+            raise OutputParserException(f"Could not parse output: {text}")
 
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
