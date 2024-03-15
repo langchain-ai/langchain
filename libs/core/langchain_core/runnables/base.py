@@ -1380,6 +1380,29 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> RunnableWithFallbacksT[Input, Output]:
         """Add fallbacks to a runnable, returning a new Runnable.
 
+        Example:
+
+            .. code-block:: python
+
+                from typing import Iterator
+
+                from langchain_core.runnables import RunnableGenerator
+
+
+                def _generate_immediate_error(input: Iterator) -> Iterator[str]:
+                    raise ValueError()
+                    yield ""
+
+
+                def _generate(input: Iterator) -> Iterator[str]:
+                    yield from "foo bar"
+
+
+                runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
+                    [RunnableGenerator(_generate)]
+                    )
+                print(''.join(runnable.stream({}))) #foo bar
+
         Args:
             fallbacks: A sequence of runnables to try if the original runnable fails.
             exceptions_to_handle: A tuple of exception types to handle.
@@ -1391,6 +1414,7 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A new Runnable that will try the original runnable, and then each
             fallback in order, upon failures.
+
         """
         from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 
