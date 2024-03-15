@@ -218,6 +218,8 @@ def patch_config(
         config["callbacks"] = callbacks
         if "run_name" in config:
             del config["run_name"]
+        if "run_id" in config:
+            del config["run_id"]
     if recursion_limit is not None:
         config["recursion_limit"] = recursion_limit
     if max_concurrency is not None:
