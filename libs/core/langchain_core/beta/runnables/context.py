@@ -319,21 +319,33 @@ class Context:
         .. code-block:: python
 
             from langchain_core.beta.runnables.context import Context
+            from langchain_core.runnables.passthrough import RunnablePassthrough
+            from langchain_core.prompts.prompt import PromptTemplate
+            from langchain_core.output_parsers.string import StrOutputParser
+            from tests.unit_tests.fake.llm import FakeListLLM
 
-            # Create a context scope
-            scope = Context.create_scope("my_scope")
+            chain = (
+                Context.setter("input")
+                | {
+                    "context": RunnablePassthrough()
+                            | Context.setter("context"),
+                    "question": RunnablePassthrough(),
+                }
+                | PromptTemplate.from_template("{context} {question}")
+                | FakeListLLM(responses=["hello"])
+                | StrOutputParser()
+                | {
+                    "result": RunnablePassthrough(),
+                    "context": Context.getter("context"),
+                    "input": Context.getter("input"),
+                }
+            )
 
-            # Create a context getter
-            getter = scope.getter("my_key")
-
-            # Create a context setter
-            setter = scope.setter(my_key="my_value")
-
-            # Use the context getter to retrieve a value
-            value = getter.invoke(None)
-
-            # Use the context setter to set a value
-            setter.invoke(None)
+            # Use the chain
+            output = chain.invoke("What's your name?")
+            print(output["result"])  # Output: "hello"
+            print(output["context"])  # Output: "What's your name?"
+            print(output["input"])  # Output: "What's your name?
     """
 
     @staticmethod
