@@ -417,9 +417,9 @@ class Qdrant(VectorStore):
         Returns:
             List of documents most similar to the query text and distance for each.
         """
-        embedding = await self._aembed_query(query)
+        query_embedding = await self._aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
-            embedding,
+            query_embedding,
             k,
             filter=filter,
             search_params=search_params,
