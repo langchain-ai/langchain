@@ -12,7 +12,7 @@ from typing import (
 
 from typing_extensions import NotRequired
 
-from langchain_core.pydantic import BaseModel, PrivateAttr
+from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
 
 
 class BaseSerialized(TypedDict):

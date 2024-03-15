@@ -11,7 +11,7 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
-from langchain_core.pydantic import root_validator
+from langchain_core.pydantic_v1 import root_validator
 
 
 class PromptTemplate(StringPromptTemplate):

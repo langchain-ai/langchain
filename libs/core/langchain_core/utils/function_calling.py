@@ -19,7 +19,7 @@ from typing import (
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
-from langchain_core.pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.json_schema import dereference_refs
 
 if TYPE_CHECKING:

@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from langchain_core.outputs.generation import Generation
 from langchain_core.outputs.run_info import RunInfo
-from langchain_core.pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 
 class LLMResult(BaseModel):

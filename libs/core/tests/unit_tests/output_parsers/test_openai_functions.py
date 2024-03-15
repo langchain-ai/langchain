@@ -10,7 +10,7 @@ from langchain_core.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain_core.outputs import ChatGeneration
-from langchain_core.pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 
 def test_json_output_function_parser() -> None:

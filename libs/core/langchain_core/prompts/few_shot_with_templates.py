@@ -7,7 +7,7 @@ from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
 )
-from langchain_core.pydantic import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, root_validator
 
 
 class FewShotPromptWithTemplates(StringPromptTemplate):

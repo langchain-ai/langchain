@@ -7,7 +7,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
 
 class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):

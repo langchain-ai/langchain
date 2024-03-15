@@ -11,7 +11,7 @@ from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 
 from langchain_core._api import deprecated
 from langchain_core.outputs import LLMResult
-from langchain_core.pydantic import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 
 @deprecated("0.1.0", alternative="Use string instead.", removal="0.2.0")

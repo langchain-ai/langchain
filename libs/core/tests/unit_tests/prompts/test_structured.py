@@ -5,7 +5,7 @@ from typing import Any, Dict, Type, Union, cast
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts.structured import StructuredPrompt
-from langchain_core.pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from tests.unit_tests.fake.chat_model import FakeListChatModel
 

@@ -4,7 +4,7 @@ from typing import Generic, List, Type, TypeVar
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.pydantic import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
 TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 

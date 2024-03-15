@@ -16,7 +16,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from langchain_core.pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.graph_ascii import draw_ascii
 
 if TYPE_CHECKING:
