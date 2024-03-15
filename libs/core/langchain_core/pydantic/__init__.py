@@ -1,4 +1,3 @@
-# type: ignore
 from .config import _PYDANTIC_MAJOR_VERSION, _PYDANTIC_VERSION, USE_PYDANTIC_V2
 
 # This is a compatibility layer that pydantic 2 proper, pydantic.v1 in pydantic 2,
@@ -7,9 +6,9 @@ try:
     if USE_PYDANTIC_V2:
         from pydantic import BaseModel, Field, PrivateAttr
     else:
-        from pydantic.v1 import BaseModel, Field, PrivateAttr
+        from pydantic.v1 import BaseModel, Field, PrivateAttr  # type: ignore[no-redef]
 except ImportError:
-    from pydantic import BaseModel, Field, PrivateAttr
+    from pydantic import BaseModel, Field, PrivateAttr  # type: ignore[no-redef]
 
 # Only expose things that are common across all pydantic versions
 __all__ = [  # noqa: F405
