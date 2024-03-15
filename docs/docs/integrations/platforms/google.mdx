@@ -503,21 +503,21 @@ from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgresVectorStore
 
 ### Vertex AI Vector Search
 
-> [Google Cloud Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview) from Google Cloud,
+> [Google Cloud Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/vector-search/overview) from Google Cloud,
 > formerly known as `Vertex AI Matching Engine`, provides the industry's leading high-scale
 > low latency vector database. These vector databases are commonly
 > referred to as vector similarity-matching or an approximate nearest neighbor (ANN) service.
 
-We need to install several python packages.
+Install the python package:
 
 ```bash
-pip install tensorflow langchain-google-vertexai tensorflow-hub tensorflow-text
+pip install langchain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_search).
 
 ```python
-from langchain_community.vectorstores import MatchingEngine
+from langchain_google_vertexai import VectorSearchVectorStore
 ```
 
 ### ScaNN
