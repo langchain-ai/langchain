@@ -11,6 +11,7 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain_community.chat_models import ChatPremAI
 
+
 @pytest.fixture
 def chat() -> ChatPremAI:
     return ChatPremAI(project_id=8)
