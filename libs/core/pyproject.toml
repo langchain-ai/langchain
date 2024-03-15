@@ -67,6 +67,7 @@ optional = true
 dependencies = {}
 
 [tool.poetry.extras]
+extended_testing = ["jinja2"]
 
 [tool.ruff.lint]
 select = [

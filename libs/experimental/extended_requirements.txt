@@ -1,8 +1,0 @@
-presidio-anonymizer
-presidio-analyzer
-faker
-vowpal-wabbit-next
-sentence-transformers
-jinja2
-pandas
-tabulate
