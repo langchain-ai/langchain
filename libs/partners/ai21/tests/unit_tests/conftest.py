@@ -83,6 +83,23 @@ BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT = {
 }
 
 
+BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT = {
+    "num_results": 3,
+    "max_tokens": 20,
+    "min_tokens": 10,
+    "temperature": 0.5,
+    "top_p": 0.5,
+    "top_k_return": 0,
+    "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True).to_dict(),
+    "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True).to_dict(),
+    "count_penalty": Penalty(
+        scale=0.2,
+        apply_to_punctuation=True,
+        apply_to_emojis=True,
+    ).to_dict(),
+}
+
+
 @pytest.fixture
 def mocked_completion_response(mocker: MockerFixture) -> Mock:
     mocked_response = mocker.MagicMock(spec=CompletionsResponse)
