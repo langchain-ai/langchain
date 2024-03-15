@@ -1,5 +1,3 @@
-"""Taken from: https://docs.pinecone.io/docs/hybrid-search"""
-
 import hashlib
 from typing import Dict, List, Optional
 
