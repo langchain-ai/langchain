@@ -265,7 +265,9 @@ def _import_manticore_search() -> Any:
 
 
 def _import_manticore_search_settings() -> Any:
-    from langchain_community.vectorstores.manticore_search import ManticoreSearchSettings
+    from langchain_community.vectorstores.manticore_search import (
+        ManticoreSearchSettings,
+    )
 
     return ManticoreSearchSettings
 

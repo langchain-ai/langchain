@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import uuid
 import json
 import logging
+import uuid
 from hashlib import sha1
 from typing import Any, Dict, Iterable, List, Optional, Type
 
@@ -41,9 +41,10 @@ class ManticoreSearchSettings(BaseSettings):
     knn_dims: int = None  # Defaults autodetect
 
     # A mandatory setting that specifies the distance function used by the HNSW index.
-    hnsw_similarity: str = 'L2'  # Acceptable values are: L2 (Squared L2), IP (Inner product), COSINE (Cosine similarity)
+    hnsw_similarity: str = 'L2'  # Acceptable values are: L2, IP, COSINE
 
-    # An optional setting that defines the maximum amount of outgoing connections in the graph.
+    # An optional setting that defines the maximum amount of outgoing connections
+    # in the graph.
     hnsw_m: int = 16  # The default is 16.
 
     # An optional setting that defines a construction time/accuracy trade-off.
@@ -92,8 +93,8 @@ class ManticoreSearch(VectorStore):
             [manticoresearch-python](https://github.com/manticoresoftware/manticoresearch-python)
         """
         try:
-            import manticoresearch.api_client as API
             import manticoresearch.api as ENDPOINTS
+            import manticoresearch.api_client as API
         except ImportError:
             raise ImportError(
                 "Could not import manticoresearch python package. "
@@ -145,7 +146,12 @@ class ManticoreSearch(VectorStore):
 CREATE TABLE IF NOT EXISTS {self.config.table}(
     {self.config.column_map['id']} bigint,
     {self.config.column_map['document']} text indexed stored,
-    {self.config.column_map['embedding']} float_vector knn_type='{self.config.knn_type}' knn_dims='{self.dim}' hnsw_similarity='{self.config.hnsw_similarity}' hnsw_m='{self.config.hnsw_m}' hnsw_ef_construction='{self.config.hnsw_ef_construction}',
+    {self.config.column_map['embedding']} \
+        float_vector knn_type='{self.config.knn_type}' \
+        knn_dims='{self.dim}' \
+        hnsw_similarity='{self.config.hnsw_similarity}' \
+        hnsw_m='{self.config.hnsw_m}' \
+        hnsw_ef_construction='{self.config.hnsw_ef_construction}',
     {self.config.column_map['metadata']} json,
     {self.config.column_map['uuid']} text indexed stored
 )\
@@ -209,12 +215,16 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
                 self.config.column_map['metadata']: meta,
                 self.config.column_map['uuid']: doc_uuid
             }
-            transac.append({"replace": {"index": self.config.table, "id": ids[i], "doc": doc}})
+            transac.append({"replace": {
+                "index": self.config.table,
+                "id": ids[i],
+                "doc": doc
+            }})
 
             if len(transac) == batch_size:
                 body = '\n'.join(map(json.dumps, transac))
                 try:
-                    response = self.client['index'].bulk(body)
+                    self.client['index'].bulk(body)
                     transac = []
                 except Exception as e:
                     print(f"Error indexing documents: {e}")
@@ -222,7 +232,7 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         if len(transac) > 0:
             body = '\n'.join(map(json.dumps, transac))
             try:
-                response = self.client['index'].bulk(body)
+                self.client['index'].bulk(body)
             except Exception as e:
                 print(f"Error indexing documents: {e}")
 
@@ -305,7 +315,11 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         Returns:
             List[Document]: List of Documents
         """
-        return self.similarity_search_by_vector(self.embedding_function.embed_query(query), k, **kwargs)
+        return self.similarity_search_by_vector(
+            self.embedding_function.embed_query(query),
+            k,
+            **kwargs
+        )
 
     def similarity_search_by_vector(
             self,
@@ -357,15 +371,3 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
     @property
     def metadata_column(self) -> str:
         return self.config.column_map["metadata"]
-
-
-if __name__ == "__main__":
-    from langchain_community.embeddings import OllamaEmbeddings
-
-    config = ManticoreSearchSettings()
-    embedding = OllamaEmbeddings(model='llama2')
-    store = ManticoreSearch(embedding_function=embedding, config=config)
-    print(store)
-
-    test = store.similarity_search('test')
-    print(test)
