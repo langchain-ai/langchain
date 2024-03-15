@@ -29,6 +29,8 @@ from langchain_text_splitters.base import (
 from langchain_text_splitters.character import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
+    SemanticCharacterTextSplitter,
+    SemanticTiktokenTextSplitter,
 )
 from langchain_text_splitters.html import ElementType, HTMLHeaderTextSplitter
 from langchain_text_splitters.json import RecursiveJsonSplitter
@@ -68,4 +70,6 @@ __all__ = [
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
     "CharacterTextSplitter",
+    "SemanticCharacterTextSplitter",
+    "SemanticTiktokenTextSplitter",
 ]
