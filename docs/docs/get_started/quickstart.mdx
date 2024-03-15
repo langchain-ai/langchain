@@ -315,7 +315,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
-vector = FAISS.from_documents(documents, embeddings)
+pages = text_splitter.split_text(docs[0].page_content)
+split_docs = [Document(page_content=page, metadata=docs[0].metadata) for page in pages]
+vector = FAISS.from_documents(documents=split_docs, embedding=embeddings)
 ```
 
 Now that we have this data indexed in a vectorstore, we will create a retrieval chain.
@@ -324,7 +326,7 @@ This chain will take an incoming question, look up relevant documents, then pass
 First, let's set up the chain that takes a question and the retrieved documents and generates an answer.
 
 ```python
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.combine_documents.stuff import create_stuff_documents_chain
 
 prompt = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
 
