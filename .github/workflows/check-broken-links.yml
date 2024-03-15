@@ -15,7 +15,10 @@ jobs:
         with:
           node-version: 18.x
           cache: "yarn"
+          cache-dependency-path: ./docs/yarn.lock
       - name: Install dependencies
-        run: cd ./docs && yarn install --immutable --mode=skip-build
+        run: yarn install --immutable --mode=skip-build
+        working-directory: ./docs
       - name: Check broken links
-        run: cd ./docs && yarn check-broken-links
+        run: yarn check-broken-links
+        working-directory: ./docs
