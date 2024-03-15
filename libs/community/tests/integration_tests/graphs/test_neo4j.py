@@ -56,13 +56,13 @@ def test_cypher_return_correct_schema() -> None:
     graph.refresh_schema()
 
     node_properties = graph.query(
-        node_properties_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+        node_properties_query, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]}
     )
     relationships_properties = graph.query(
-        rel_properties_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+        rel_properties_query, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]}
     )
     relationships = graph.query(
-        rel_query, params={"BASE_ENTITY_LABEL": BASE_ENTITY_LABEL}
+        rel_query, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]}
     )
 
     expected_node_properties = [
@@ -249,3 +249,27 @@ def test_neo4j_add_data_base_source() -> None:
         {"label": [BASE_ENTITY_LABEL, "foo"], "count": 1},
     ]
     assert graph.structured_schema["metadata"]["constraint"] != []
+
+
+def test_neo4j_filtering_labels() -> None:
+    """Test that neo4j correctly filters excluded labels."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(url=url, username=username, password=password, sanitize=True)
+    # Delete all nodes in the graph
+    graph.query("MATCH (n) DETACH DELETE n")
+    # Remove all constraints
+    graph.query("CALL apoc.schema.assert({}, {})")
+    graph.query(
+        "CREATE (:`_Bloom_Scene_`)-[:_Bloom_HAS_SCENE_]->(:`_Bloom_Perspective_`)"
+    )
+    graph.refresh_schema()
+
+    # Assert both are empty
+    assert graph.structured_schema["node_props"] == {}
+    assert graph.structured_schema["relationships"] == []

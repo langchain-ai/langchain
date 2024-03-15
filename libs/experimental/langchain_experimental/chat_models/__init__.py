@@ -17,10 +17,11 @@ an interface where "chat messages" are the inputs and outputs.
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
 
-from langchain_experimental.chat_models.llm_wrapper import Llama2Chat, Orca, Vicuna
+from langchain_experimental.chat_models.llm_wrapper import (
+    Llama2Chat,
+    Mixtral,
+    Orca,
+    Vicuna,
+)
 
-__all__ = [
-    "Llama2Chat",
-    "Orca",
-    "Vicuna",
-]
+__all__ = ["Llama2Chat", "Orca", "Vicuna", "Mixtral"]

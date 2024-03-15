@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import logging
 import os
-import uuid
+from hashlib import md5
 from typing import (
     Any,
     Callable,
@@ -17,7 +17,7 @@ from typing import (
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_env
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import DistanceStrategy
@@ -155,7 +155,7 @@ class Neo4jVector(VectorStore):
         password: Optional[str] = None,
         url: Optional[str] = None,
         keyword_index_name: Optional[str] = "keyword",
-        database: str = "neo4j",
+        database: Optional[str] = None,
         index_name: str = "vector",
         node_label: str = "Chunk",
         embedding_node_property: str = "embedding",
@@ -186,11 +186,19 @@ class Neo4jVector(VectorStore):
         # Handle if the credentials are environment variables
 
         # Support URL for backwards compatibility
-        url = os.environ.get("NEO4J_URL", url)
-        url = get_from_env("url", "NEO4J_URI", url)
-        username = get_from_env("username", "NEO4J_USERNAME", username)
-        password = get_from_env("password", "NEO4J_PASSWORD", password)
-        database = get_from_env("database", "NEO4J_DATABASE", database)
+        if not url:
+            url = os.environ.get("NEO4J_URL")
+
+        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+        username = get_from_dict_or_env(
+            {"username": username}, "username", "NEO4J_USERNAME"
+        )
+        password = get_from_dict_or_env(
+            {"password": password}, "password", "NEO4J_PASSWORD"
+        )
+        database = get_from_dict_or_env(
+            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+        )
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
@@ -426,7 +434,7 @@ class Neo4jVector(VectorStore):
         **kwargs: Any,
     ) -> Neo4jVector:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -493,7 +501,7 @@ class Neo4jVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
