@@ -54,7 +54,7 @@ def test_loads_llmchain_env() -> None:
     if not has_env:
         os.environ["OPENAI_API_KEY"] = "env_variable"
 
-    llm = OpenAI(model="davinci", temperature=0.5)
+    llm = OpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     chain_string = dumps(chain)
@@ -125,7 +125,7 @@ def test_load_llmchain_env() -> None:
     if not has_env:
         os.environ["OPENAI_API_KEY"] = "env_variable"
 
-    llm = CommunityOpenAI(model="davinci", temperature=0.5)
+    llm = CommunityOpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     chain_obj = dumpd(chain)

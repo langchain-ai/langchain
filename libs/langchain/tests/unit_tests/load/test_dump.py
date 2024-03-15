@@ -110,7 +110,7 @@ def test_serialize_llmchain_env() -> None:
     if not has_env:
         os.environ["OPENAI_API_KEY"] = "env_variable"
 
-    llm_2 = OpenAI(model="davinci", temperature=0.5)
+    llm_2 = OpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
     prompt_2 = PromptTemplate.from_template("hello {name}!")
     chain_2 = LLMChain(llm=llm_2, prompt=prompt_2)
 
@@ -135,7 +135,7 @@ def test_serialize_llmchain_chat(snapshot: Any) -> None:
     if not has_env:
         os.environ["OPENAI_API_KEY"] = "env_variable"
 
-    llm_2 = ChatOpenAI(model="davinci", temperature=0.5)
+    llm_2 = ChatOpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
     prompt_2 = ChatPromptTemplate.from_messages(
         [HumanMessagePromptTemplate.from_template("hello {name}!")]
     )
@@ -230,7 +230,7 @@ def test_aliases_hidden() -> None:
         dumped = json.loads(dumps(test_class, pretty=True))
 
     # Check by alias
-    test_class = TestClass(my_favorite_secret_alias="hello", my_other_secret="world")
+    test_class = TestClass(my_favorite_secret_alias="hello", my_other_secret="world")  # type: ignore[call-arg]
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,

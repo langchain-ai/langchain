@@ -59,14 +59,14 @@ def _load_map_reduce_chain(
     map_chain = LLMChain(
         llm=llm,
         prompt=map_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callbacks=callbacks,  # type: ignore[arg-type]
     )
     _reduce_llm = reduce_llm or llm
     reduce_chain = LLMChain(
         llm=_reduce_llm,
         prompt=combine_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callbacks=callbacks,  # type: ignore[arg-type]
     )
     # TODO: document prompt

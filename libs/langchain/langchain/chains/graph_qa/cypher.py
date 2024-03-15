@@ -202,7 +202,7 @@ class GraphCypherQAChain(Chain):
         qa_chain = LLMChain(llm=qa_llm or llm, **use_qa_llm_kwargs)  # type: ignore[arg-type]
 
         cypher_generation_chain = LLMChain(
-            llm=cypher_llm or llm,
+            llm=cypher_llm or llm,  # type: ignore[arg-type]
             **use_cypher_llm_kwargs,  # type: ignore[arg-type]
         )
 
