@@ -1,5 +1,4 @@
 import os
-
 from importlib import metadata
 
 _PYDANTIC_VERSION = metadata.version("pydantic")
@@ -14,7 +13,7 @@ def _get_use_pydantic_v2() -> bool:
     """Get the value of the LC_PYDANTIC_V2_UNSAFE environment variable."""
     value = os.environ.get("LC_PYDANTIC_V2_UNSAFE", "false").lower()
     if value == "true":
-        if  _PYDANTIC_MAJOR_VERSION != 2:
+        if _PYDANTIC_MAJOR_VERSION != 2:
             raise ValueError(
                 f"LC_PYDANTIC_V2_UNSAFE is set to true, "
                 f"but pydantic version is {_PYDANTIC_VERSION}"

@@ -1,4 +1,4 @@
-from .config import USE_PYDANTIC_V2, _PYDANTIC_VERSION, _PYDANTIC_MAJOR_VERSION
+from .config import _PYDANTIC_MAJOR_VERSION, _PYDANTIC_VERSION, USE_PYDANTIC_V2
 
 ## Create namespaces for pydantic v1 and v2.
 # This code must stay at the top of the file before other modules may
@@ -14,18 +14,19 @@ from .config import USE_PYDANTIC_V2, _PYDANTIC_VERSION, _PYDANTIC_MAJOR_VERSION
 
 try:
     if USE_PYDANTIC_V2:
-        from pydantic import *
+        from pydantic import *  # noqa: F403 # type: ignore
     else:
         from pydantic.v1 import *  # noqa: F403 # type: ignore
 except ImportError:
     from pydantic import *  # noqa: F403 # type: ignore
 
+# Only expose things that are common across all pydantic versions
 __all__ = [
-    "BaseModel",
-    "Field",
-    "PrivateAttr",
-    "SecretStr",
-    "ValidationError",
+    "BaseModel",  # noqa: F405
+    "Field",  # noqa: F405
+    "PrivateAttr",  # noqa: F405
+    "SecretStr",  # noqa: F405
+    "ValidationError",  # noqa: F405
     "USE_PYDANTIC_V2",
     "_PYDANTIC_VERSION",
     "_PYDANTIC_MAJOR_VERSION",
