@@ -70,7 +70,11 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
             api_key=self.spark_api_key.get_secret_value(),
             api_secret=self.spark_api_secret.get_secret_value(),
         )
-        content = self._get_body(self.spark_app_id.get_secret_value(), texts)
+        query_context = {"messages": []}
+        for text in texts:
+            query_context["messages"].append({"content": text, "role": "user"})
+
+        content = self._get_body(self.spark_app_id.get_secret_value(), query_context)
         response = requests.post(
             url, json=content, headers={"content-type": "application/json"}
         ).text
@@ -100,11 +104,11 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
             Embeddings for the text, or None if an error occurs.
         """
         result = self._embed([text], EMBEDDING_Q_API_URL)
-        return result[0] if result is not None else None
+        return result
 
     @staticmethod
     def _assemble_ws_auth_url(
-        request_url: str, method: str = "GET", api_key: str = "", api_secret: str = ""
+            request_url: str, method: str = "GET", api_key: str = "", api_secret: str = ""
     ) -> str:
         u = SparkLLMTextEmbeddings._parse_url(request_url)
         host = u.host
@@ -121,8 +125,8 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         ).digest()
         signature_sha_str = base64.b64encode(signature_sha).decode(encoding="utf-8")
         authorization_origin = (
-            'api_key="%s", algorithm="%s", headers="%s", signature="%s"'
-            % (api_key, "hmac-sha256", "host date request-line", signature_sha_str)
+                'api_key="%s", algorithm="%s", headers="%s", signature="%s"'
+                % (api_key, "hmac-sha256", "host date request-line", signature_sha_str)
         )
         authorization = base64.b64encode(authorization_origin.encode("utf-8")).decode(
             encoding="utf-8"
@@ -134,7 +138,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     @staticmethod
     def _parse_url(request_url: str) -> Url:
         stidx = request_url.index("://")
-        host = request_url[stidx + 3 :]
+        host = request_url[stidx + 3:]
         schema = request_url[: stidx + 3]
         edidx = host.index("/")
         if edidx <= 0:
@@ -145,7 +149,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         return u
 
     @staticmethod
-    def _get_body(appid: str, text: List[str]) -> Dict[str, Any]:
+    def _get_body(appid: str, text: json) -> Dict[str, Any]:
         body = {
             "header": {"app_id": appid, "uid": "39769795890", "status": 3},
             "parameter": {"emb": {"feature": {"encoding": "utf8"}}},
@@ -159,7 +163,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
 
     @staticmethod
     def _parser_message(
-        message: str,
+            message: str,
     ) -> Optional[ndarray]:
         data = json.loads(message)
         code = data["header"]["code"]
