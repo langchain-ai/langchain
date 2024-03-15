@@ -48,7 +48,7 @@ class AI21LLM(BaseLLM, AI21Base):
     top_p: float = 1
     """A value controlling the diversity of the model's responses."""
 
-    top_k_returns: int = 0
+    top_k_return: int = 0
     """The number of top-scoring tokens to consider for each generation step."""
 
     frequency_penalty: Optional[Penalty] = None
@@ -83,7 +83,7 @@ class AI21LLM(BaseLLM, AI21Base):
             "min_tokens": self.min_tokens,
             "temperature": self.temperature,
             "top_p": self.top_p,
-            "top_k_returns": self.top_k_returns,
+            "top_k_return": self.top_k_return,
         }
 
         if self.count_penalty is not None:

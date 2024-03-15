@@ -669,7 +669,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 CallbackManager.configure(
-                    cast(Callbacks, callbacks),
+                        cast(Callbacks, callbacks),
                     self.callbacks,
                     self.verbose,
                     cast(List[str], tags),
