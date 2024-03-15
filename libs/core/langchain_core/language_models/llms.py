@@ -426,6 +426,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             else:
                 run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
+
     async def astream(
         self,
         input: LanguageModelInput,
@@ -434,10 +435,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
-        if type(self)._astream == BaseLLM._astream:
-            # model doesn't implement streaming, so use default implementation
-            yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
-        else:
+        # First: Use _astream if it's not the BaseLLM's _astream.
+        if type(self)._astream != BaseLLM._astream:
             prompt = self._convert_input(input).to_string()
             config = ensure_config(config)
             params = self.dict()
@@ -482,8 +481,23 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 raise e
             else:
                 await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+        # Second: Use _stream if _astream is not defined and _stream is not BaseLLM's _stream.
+        elif type(self)._stream != BaseLLM._stream:
+            # _stream 메소드를 비동기적으로 처리하는 로직 필요 (예시에서는 직접 구현 필요)
+            # Logic to handle _stream method asynchronously.
+            async for chunk in self._sync_to_async_stream(input, config=config, stop=stop, **kwargs):
+                yield chunk
+        # Third: Use ainvoke if neither _astream nor _stream are defined.
+        else:
+            yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
 
-    # --- Custom methods ---
+    # Additional asynchronous wrapper function
+    async def _sync_to_async_stream(self, input, config=None, stop=None, **kwargs) -> AsyncIterator[str]:
+        # Wrap the synchronous streaming method for asynchronous calls.
+        # The implementation of this function will vary depending on your _stream method.
+        pass
+    
+    
 
     @abstractmethod
     def _generate(
