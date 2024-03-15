@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.0.28",
+    since="0.0.29",
     removal="0.2.0",
     alternative_import="langchain_astradb.AstraDBLoader",
 )
