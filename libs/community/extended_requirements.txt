@@ -57,7 +57,7 @@ anthropic
 upstash-redis
 rspace_client
 fireworks-ai
-javelin-sdk
+javelin-sdk>=0.1.8,<0.2
 hologres-vector
 praw
 databricks-vectorsearch
