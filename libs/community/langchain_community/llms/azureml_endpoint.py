@@ -15,6 +15,9 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 class AzureMLEndpointClient(object):
     """AzureML Managed Endpoint client."""
 
+    timeout: int = 50
+    """Request timeout"""
+
     def __init__(
         self, endpoint_url: str, endpoint_api_key: str, deployment_name: str = ""
     ) -> None:
@@ -47,7 +50,9 @@ class AzureMLEndpointClient(object):
             headers["azureml-model-deployment"] = self.deployment_name
 
         req = urllib.request.Request(self.endpoint_url, body, headers)
-        response = urllib.request.urlopen(req, timeout=kwargs.get("timeout", 50))
+        response = urllib.request.urlopen(
+            req, timeout=kwargs.get("timeout", self.timeout)
+        )
         result = response.read()
         return result
 
