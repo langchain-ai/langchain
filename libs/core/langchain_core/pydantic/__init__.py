@@ -1,6 +1,4 @@
-from importlib import metadata
-
-from .config import USE_PYDANTIC_V2
+from .config import USE_PYDANTIC_V2, _PYDANTIC_VERSION, _PYDANTIC_MAJOR_VERSION
 
 ## Create namespaces for pydantic v1 and v2.
 # This code must stay at the top of the file before other modules may
@@ -22,9 +20,13 @@ try:
 except ImportError:
     from pydantic import *  # noqa: F403 # type: ignore
 
-_PYDANTIC_VERSION = metadata.version("pydantic")
-
-try:
-    _PYDANTIC_MAJOR_VERSION: int = int(_PYDANTIC_VERSION.split(".")[0])
-except metadata.PackageNotFoundError:
-    _PYDANTIC_MAJOR_VERSION = 0
+__all__ = [
+    "BaseModel",
+    "Field",
+    "PrivateAttr",
+    "SecretStr",
+    "ValidationError",
+    "USE_PYDANTIC_V2",
+    "_PYDANTIC_VERSION",
+    "_PYDANTIC_MAJOR_VERSION",
+]
