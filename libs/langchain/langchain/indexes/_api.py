@@ -109,8 +109,8 @@ class _HashedDocument(Document):
         cls, document: Document, *, uid: Optional[str] = None
     ) -> _HashedDocument:
         """Create a HashedDocument from a Document."""
-        return cls(
-            uid=uid,
+        return cls(  # type: ignore[call-arg]
+            uid=uid,  # type: ignore[arg-type]
             page_content=document.page_content,
             metadata=document.metadata,
         )

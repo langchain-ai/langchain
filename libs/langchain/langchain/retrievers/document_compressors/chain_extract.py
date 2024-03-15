@@ -92,7 +92,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
             if len(outputs[i]) == 0:
                 continue
             compressed_docs.append(
-                Document(page_content=outputs[i], metadata=doc.metadata)
+                Document(page_content=outputs[i], metadata=doc.metadata)  # type: ignore[arg-type]
             )
         return compressed_docs
 
@@ -108,4 +108,4 @@ class LLMChainExtractor(BaseDocumentCompressor):
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input
         llm_chain = LLMChain(llm=llm, prompt=_prompt, **(llm_chain_kwargs or {}))
-        return cls(llm_chain=llm_chain, get_input=_get_input)
+        return cls(llm_chain=llm_chain, get_input=_get_input)  # type: ignore[arg-type]

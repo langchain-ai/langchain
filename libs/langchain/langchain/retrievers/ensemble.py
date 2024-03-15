@@ -238,7 +238,7 @@ class EnsembleRetriever(BaseRetriever):
         # Enforce that retrieved docs are Documents for each list in retriever_docs
         for i in range(len(retriever_docs)):
             retriever_docs[i] = [
-                Document(page_content=doc) if not isinstance(doc, Document) else doc
+                Document(page_content=doc) if not isinstance(doc, Document) else doc  # type: ignore[arg-type]
                 for doc in retriever_docs[i]
             ]
 
