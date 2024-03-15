@@ -232,6 +232,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         request_payload = self.content_formatter.format_messages_request_payload(
             messages, _model_kwargs, self.endpoint_api_type
         )
+        self.http_client.timeout = self.timeout
         response_payload = self.http_client.call(
             body=request_payload, run_manager=run_manager
         )
