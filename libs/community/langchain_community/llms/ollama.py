@@ -1,5 +1,5 @@
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Union
 
 import aiohttp
 import requests
@@ -111,7 +111,7 @@ class _OllamaCommon(BaseLanguageModel):
     timeout: Optional[int] = None
     """Timeout for the request stream"""
 
-    keep_alive: Optional[int | str] = None
+    keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory.
 
     The parameter (Default: 5 minutes) can be set to:
