@@ -1,5 +1,6 @@
 """Test VoyageAI embeddings."""
-from langchain_voyageai.embeddings import VoyageAIEmbeddings
+
+from langchain_voyageai import VoyageAIEmbeddings
 
 # Please set VOYAGE_API_KEY in the environment variables
 MODEL = "voyage-2"
