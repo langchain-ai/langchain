@@ -40,6 +40,7 @@ from langchain_community.embeddings.fake import (
     FakeEmbeddings,
 )
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+from langchain_community.embeddings.gigachat import GigaChatEmbeddings
 from langchain_community.embeddings.google_palm import GooglePalmEmbeddings
 from langchain_community.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain_community.embeddings.gradient_ai import GradientEmbeddings
@@ -109,6 +110,7 @@ __all__ = [
     "HuggingFaceInferenceAPIEmbeddings",
     "InfinityEmbeddings",
     "InfinityEmbeddingsLocal",
+    "GigaChatEmbeddings",
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LaserEmbeddings",

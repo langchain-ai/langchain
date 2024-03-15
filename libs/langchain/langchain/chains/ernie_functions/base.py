@@ -340,15 +340,15 @@ def create_structured_output_runnable(
         function: Any = {
             "name": "output_formatter",
             "description": (
-                "Output formatter. Should always be used to format your response to the"
-                " user."
+                "Output formatter. Всегда используй его чтобы отформатировать свой"
+                " ответ пользователю."
             ),
             "parameters": output_schema,
         }
     else:
 
         class _OutputFormatter(BaseModel):
-            """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
+            """Output formatter. Всегда используй его чтобы отформатировать свой ответ пользователю."""  # noqa: E501
 
             output: output_schema  # type: ignore
 
@@ -525,15 +525,15 @@ def create_structured_output_chain(
         function: Any = {
             "name": "output_formatter",
             "description": (
-                "Output formatter. Should always be used to format your response to the"
-                " user."
+                "Output formatter. Всегда используй его чтобы отформатировать свой"
+                " ответ пользователю."
             ),
             "parameters": output_schema,
         }
     else:
 
         class _OutputFormatter(BaseModel):
-            """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
+            """Output formatter. Всегда используй его чтобы отформатировать свой ответ пользователю."""  # noqa: E501
 
             output: output_schema  # type: ignore
 
