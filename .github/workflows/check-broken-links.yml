@@ -1,0 +1,21 @@
+name: Check Broken Links
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '0 13 * * *'
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: "yarn"
+      - name: Install dependencies
+        run: cd ./docs && yarn install --immutable --mode=skip-build
+      - name: Check broken links
+        run: cd ./docs && yarn check-broken-links
