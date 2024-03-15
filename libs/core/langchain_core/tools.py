@@ -34,10 +34,9 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic import BaseModel, Field
 from langchain_core.pydantic_v1 import (
-    BaseModel,
     Extra,
-    Field,
     ValidationError,
     create_model,
     root_validator,

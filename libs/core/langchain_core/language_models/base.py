@@ -26,7 +26,8 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
+from langchain_core.pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import validator
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
