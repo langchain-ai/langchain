@@ -32,7 +32,7 @@ def pytest_addoption(parser: Parser) -> None:
         type=int,
         default=0,
         help="Maximum number of failed tests to allow. "
-        "Should only be set for LC_PYDANTIC_V2_UNSAFE=true.",
+        "Should only be set for LC_PYDANTIC_V2_EXPERIMENTAL=true.",
     )
 
 
@@ -58,7 +58,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if max_fail > 0 and not USE_PYDANTIC_V2:
         raise ValueError(
             "The `--max-fail` option should only be set when "
-            "running with `LC_PYDANTIC_V2_UNSAFE=true`."
+            "running with `LC_PYDANTIC_V2_EXPERIMENTAL=true`."
         )
     # This will set up a ratchet approach so that the number of failures
     # has to go down over time.
@@ -83,7 +83,7 @@ def pytest_terminal_summary(
     # Let's print out the value of USE_PYDANTIC_V2
     terminalreporter.write_line(
         f"USE_PYDANTIC_V2: {USE_PYDANTIC_V2}. "
-        f"Enable with `LC_PYDANTIC_V2_UNSAFE=true` env variable "
+        f"Enable with `LC_PYDANTIC_V2_EXPERIMENTAL=true` env variable "
         f"and pydantic>=2 installed."
     )
 
