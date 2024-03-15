@@ -7,7 +7,6 @@ Once you've loaded documents, you'll often want to transform them to better suit
 is you may want to split a long document into smaller chunks that can fit into your model's context window. LangChain
 has a number of built-in document transformers that make it easy to split, combine, filter, and otherwise manipulate documents.
 
-
 When you want to deal with long pieces of text, it is necessary to split up that text into chunks.
 As simple as this sounds, there is a lot of potential complexity here. Ideally, you want to keep the semantically related pieces of text together. What "semantically related" means could depend on the type of text.
 This notebook showcases several ways to do that.
@@ -25,7 +24,7 @@ That means there are two different axes along which you can customize your text 
 
 ## Types of Text Splitters
 
-LangChain offers many different types of text splitters. Below is a table listing all of them, along with a few characteristics:
+LangChain offers many different types of text splitters. These all live in the `langchain-text-splitters` package. Below is a table listing all of them, along with a few characteristics:
 
 **Name**: Name of the text splitter
 

@@ -7,12 +7,15 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
     Optional,
     Sequence,
+    Union,
     cast,
 )
 
@@ -50,12 +53,6 @@ from langchain_core.runnables.config import ensure_config, run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
-
-
-def _get_verbosity() -> bool:
-    from langchain_core.globals import get_verbose
-
-    return get_verbose()
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -100,21 +97,31 @@ async def agenerate_from_stream(
     )
 
 
+def _as_async_iterator(sync_iterator: Callable) -> Callable:
+    """Convert a sync iterator into an async iterator."""
+
+    async def _as_sync_iterator(*args: Any, **kwargs: Any) -> AsyncGenerator:
+        iterator = await run_in_executor(None, sync_iterator, *args, **kwargs)
+        done = object()
+        while True:
+            item = await run_in_executor(
+                None,
+                next,
+                iterator,
+                done,  # type: ignore[call-arg, arg-type]
+            )
+            if item is done:
+                break
+            yield item  # type: ignore[misc]
+
+    return _as_sync_iterator
+
+
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for Chat models."""
 
-    cache: Optional[bool] = None
-    """Whether to cache the response."""
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
-    callbacks: Callbacks = Field(default=None, exclude=True)
-    """Callbacks to add to the run trace."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
-    tags: Optional[List[str]] = Field(default=None, exclude=True)
-    """Tags to add to the run trace."""
-    metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
-    """Metadata to add to the run trace."""
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -234,6 +241,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
+                    chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     yield chunk.message
                     if generation is None:
                         generation = chunk
@@ -259,57 +267,75 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        if type(self)._astream == BaseChatModel._astream:
-            # model doesn't implement streaming, so use default implementation
+        if type(self)._astream is not BaseChatModel._astream:
+            # Then astream is implemented
+            _stream_implementation = self._astream
+        elif type(self)._stream is not BaseChatModel._stream:
+            # Then stream is implemented, so we can create an async iterator from it
+            # The typing is hard to type correctly with mypy here, so we cast
+            # and do a type ignore, this code is unit tested and should be fine.
+            _stream_implementation = cast(  # type: ignore
+                Callable[
+                    [
+                        List[BaseMessage],
+                        Optional[List[str]],
+                        CallbackManagerForLLMRun,
+                        Any,
+                    ],
+                    AsyncIterator[ChatGenerationChunk],
+                ],
+                _as_async_iterator(self._stream),
+            )
+        else:  # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
                 await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
+            return
+
+        config = ensure_config(config)
+        messages = self._convert_input(input).to_messages()
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        options = {"stop": stop, **kwargs}
+        callback_manager = AsyncCallbackManager.configure(
+            config.get("callbacks"),
+            self.callbacks,
+            self.verbose,
+            config.get("tags"),
+            self.tags,
+            config.get("metadata"),
+            self.metadata,
+        )
+        (run_manager,) = await callback_manager.on_chat_model_start(
+            dumpd(self),
+            [messages],
+            invocation_params=params,
+            options=options,
+            name=config.get("run_name"),
+            batch_size=1,
+        )
+        generation: Optional[ChatGenerationChunk] = None
+        try:
+            async for chunk in _stream_implementation(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                yield chunk.message
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+        except BaseException as e:
+            await run_manager.on_llm_error(
+                e,
+                response=LLMResult(generations=[[generation]] if generation else []),
+            )
+            raise e
         else:
-            config = ensure_config(config)
-            messages = self._convert_input(input).to_messages()
-            params = self._get_invocation_params(stop=stop, **kwargs)
-            options = {"stop": stop, **kwargs}
-            callback_manager = AsyncCallbackManager.configure(
-                config.get("callbacks"),
-                self.callbacks,
-                self.verbose,
-                config.get("tags"),
-                self.tags,
-                config.get("metadata"),
-                self.metadata,
+            await run_manager.on_llm_end(
+                LLMResult(generations=[[generation]]),
             )
-            (run_manager,) = await callback_manager.on_chat_model_start(
-                dumpd(self),
-                [messages],
-                invocation_params=params,
-                options=options,
-                name=config.get("run_name"),
-                batch_size=1,
-            )
-            generation: Optional[ChatGenerationChunk] = None
-            try:
-                async for chunk in self._astream(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                ):
-                    yield chunk.message
-                    if generation is None:
-                        generation = chunk
-                    else:
-                        generation += chunk
-                assert generation is not None
-            except BaseException as e:
-                await run_manager.on_llm_error(
-                    e,
-                    response=LLMResult(
-                        generations=[[generation]] if generation else []
-                    ),
-                )
-                raise e
-            else:
-                await run_manager.on_llm_end(
-                    LLMResult(generations=[[generation]]),
-                )
 
     # --- Custom methods ---
 
@@ -407,12 +433,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     run_managers[i].on_llm_error(e, response=LLMResult(generations=[]))
                 raise e
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item]
             for res in results
         ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        output = LLMResult(generations=generations, llm_output=llm_output)
+        output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
         if run_managers:
             run_infos = []
             for manager, flattened_output in zip(run_managers, flattened_outputs):
@@ -504,7 +530,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     *[
                         run_manager.on_llm_end(
                             LLMResult(
-                                generations=[res.generations], llm_output=res.llm_output
+                                generations=[res.generations],  # type: ignore[list-item, union-attr]
+                                llm_output=res.llm_output,  # type: ignore[list-item, union-attr]
                             )
                         )
                         for run_manager, res in zip(run_managers, results)
@@ -513,12 +540,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             raise exceptions[0]
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item, union-attr]
             for res in results
         ]
-        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
-        generations = [res.generations for res in results]
-        output = LLMResult(generations=generations, llm_output=llm_output)
+        llm_output = self._combine_llm_outputs([res.llm_output for res in results])  # type: ignore[union-attr]
+        generations = [res.generations for res in results]  # type: ignore[union-attr]
+        output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
         await asyncio.gather(
             *[
                 run_manager.on_llm_end(flattened_output)
@@ -562,38 +589,35 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        new_arg_supported = inspect.signature(self._generate).parameters.get(
-            "run_manager"
-        )
-        disregard_cache = self.cache is not None and not self.cache
         llm_cache = get_llm_cache()
-        if llm_cache is None or disregard_cache:
-            # This happens when langchain.cache is None, but self.cache is True
-            if self.cache is not None and self.cache:
+        check_cache = self.cache or self.cache is None
+        if check_cache:
+            if llm_cache:
+                llm_string = self._get_llm_string(stop=stop, **kwargs)
+                prompt = dumps(messages)
+                cache_val = llm_cache.lookup(prompt, llm_string)
+                if isinstance(cache_val, list):
+                    return ChatResult(generations=cache_val)
+            elif self.cache is None:
+                pass
+            else:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            if new_arg_supported:
-                return self._generate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                return self._generate(messages, stop=stop, **kwargs)
+        if inspect.signature(self._generate).parameters.get("run_manager"):
+            result = self._generate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            llm_string = self._get_llm_string(stop=stop, **kwargs)
-            prompt = dumps(messages)
-            cache_val = llm_cache.lookup(prompt, llm_string)
-            if isinstance(cache_val, list):
-                return ChatResult(generations=cache_val)
-            else:
-                if new_arg_supported:
-                    result = self._generate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                else:
-                    result = self._generate(messages, stop=stop, **kwargs)
-                llm_cache.update(prompt, llm_string, result.generations)
-                return result
+            result = self._generate(messages, stop=stop, **kwargs)
+
+        for generation in result.generations:
+            generation.message.response_metadata = _gen_info_and_msg_metadata(
+                generation
+            )
+        if check_cache and llm_cache:
+            llm_cache.update(prompt, llm_string, result.generations)
+        return result
 
     async def _agenerate_with_cache(
         self,
@@ -602,38 +626,34 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        new_arg_supported = inspect.signature(self._agenerate).parameters.get(
-            "run_manager"
-        )
-        disregard_cache = self.cache is not None and not self.cache
         llm_cache = get_llm_cache()
-        if llm_cache is None or disregard_cache:
-            # This happens when langchain.cache is None, but self.cache is True
-            if self.cache is not None and self.cache:
+        check_cache = self.cache or self.cache is None
+        if check_cache:
+            if llm_cache:
+                llm_string = self._get_llm_string(stop=stop, **kwargs)
+                prompt = dumps(messages)
+                cache_val = await llm_cache.alookup(prompt, llm_string)
+                if isinstance(cache_val, list):
+                    return ChatResult(generations=cache_val)
+            elif self.cache is None:
+                pass
+            else:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            if new_arg_supported:
-                return await self._agenerate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                return await self._agenerate(messages, stop=stop, **kwargs)
+        if inspect.signature(self._agenerate).parameters.get("run_manager"):
+            result = await self._agenerate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            llm_string = self._get_llm_string(stop=stop, **kwargs)
-            prompt = dumps(messages)
-            cache_val = await llm_cache.alookup(prompt, llm_string)
-            if isinstance(cache_val, list):
-                return ChatResult(generations=cache_val)
-            else:
-                if new_arg_supported:
-                    result = await self._agenerate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
-                    )
-                else:
-                    result = await self._agenerate(messages, stop=stop, **kwargs)
-                await llm_cache.aupdate(prompt, llm_string, result.generations)
-                return result
+            result = await self._agenerate(messages, stop=stop, **kwargs)
+        for generation in result.generations:
+            generation.message.response_metadata = _gen_info_and_msg_metadata(
+                generation
+            )
+        if check_cache and llm_cache:
+            await llm_cache.aupdate(prompt, llm_string, result.generations)
+        return result
 
     @abstractmethod
     def _generate(
@@ -777,11 +797,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         return await self._call_async(messages, stop=_stop, **kwargs)
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
-        """Get the identifying parameters."""
-        return {}
-
-    @property
     @abstractmethod
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -833,3 +848,12 @@ class SimpleChatModel(BaseChatModel):
             run_manager=run_manager.get_sync() if run_manager else None,
             **kwargs,
         )
+
+
+def _gen_info_and_msg_metadata(
+    generation: Union[ChatGeneration, ChatGenerationChunk],
+) -> dict:
+    return {
+        **(generation.generation_info or {}),
+        **generation.message.response_metadata,
+    }

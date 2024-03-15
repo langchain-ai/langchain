@@ -30,7 +30,7 @@ class LlamaIndexRetriever(BaseRetriever):
             )
         index = cast(BaseGPTIndex, self.index)
 
-        response = index.query(query, response_mode="no_text", **self.query_kwargs)
+        response = index.query(query, **self.query_kwargs)
         response = cast(Response, response)
         # parse source nodes
         docs = []

@@ -61,7 +61,3 @@ class BrowserlessLoader(BaseLoader):
                         "source": url,
                     },
                 )
-
-    def load(self) -> List[Document]:
-        """Load Documents from URLs."""
-        return list(self.lazy_load())
