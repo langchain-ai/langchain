@@ -1559,6 +1559,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
+            run_id=None,
         ),
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
