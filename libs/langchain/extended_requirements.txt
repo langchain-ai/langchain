@@ -52,7 +52,7 @@ dashvector
 sqlite-vss
 rapidocr-onnxruntime
 motor
-timescale-vector
+timescale-vector==0.0.1
 anthropic
 upstash-redis
 rspace_client
