@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Dict,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -33,6 +34,15 @@ from langchain_core.runnables.base import (
 @beta()
 class StructuredPrompt(ChatPromptTemplate):
     schema_: Union[Dict, Type[BaseModel]]
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object.
+
+        For example, if the class is `langchain.llms.openai.OpenAI`, then the
+        namespace is ["langchain", "llms", "openai"]
+        """
+        return cls.__module__.split(".")
 
     @classmethod
     def from_messages_and_schema(
