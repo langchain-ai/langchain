@@ -68,6 +68,7 @@ class HuggingFacePipeline(BaseLLM):
         cls,
         model_id: str,
         task: str,
+        backend: str = "default",
         device: Optional[int] = -1,
         device_map: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
@@ -95,9 +96,57 @@ class HuggingFacePipeline(BaseLLM):
 
         try:
             if task == "text-generation":
-                model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
+                if backend == "openvino":
+                    try:
+                        from optimum.intel.openvino import OVModelForCausalLM
+
+                    except ImportError:
+                        raise ValueError(
+                            "Could not import optimum-intel python package. "
+                            "Please install it with: "
+                            "pip install 'optimum[openvino,nncf]' "
+                        )
+                    try:
+                        # use local model
+                        model = OVModelForCausalLM.from_pretrained(
+                            model_id, **_model_kwargs
+                        )
+
+                    except Exception:
+                        # use remote model
+                        model = OVModelForCausalLM.from_pretrained(
+                            model_id, export=True, **_model_kwargs
+                        )
+                else:
+                    model = AutoModelForCausalLM.from_pretrained(
+                        model_id, **_model_kwargs
+                    )
             elif task in ("text2text-generation", "summarization"):
-                model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
+                if backend == "openvino":
+                    try:
+                        from optimum.intel.openvino import OVModelForSeq2SeqLM
+
+                    except ImportError:
+                        raise ValueError(
+                            "Could not import optimum-intel python package. "
+                            "Please install it with: "
+                            "pip install 'optimum[openvino,nncf]' "
+                        )
+                    try:
+                        # use local model
+                        model = OVModelForSeq2SeqLM.from_pretrained(
+                            model_id, **_model_kwargs
+                        )
+
+                    except Exception:
+                        # use remote model
+                        model = OVModelForSeq2SeqLM.from_pretrained(
+                            model_id, export=True, **_model_kwargs
+                        )
+                else:
+                    model = AutoModelForSeq2SeqLM.from_pretrained(
+                        model_id, **_model_kwargs
+                    )
             else:
                 raise ValueError(
                     f"Got invalid task {task}, "
@@ -112,9 +161,13 @@ class HuggingFacePipeline(BaseLLM):
             tokenizer.pad_token_id = model.config.eos_token_id
 
         if (
-            getattr(model, "is_loaded_in_4bit", False)
-            or getattr(model, "is_loaded_in_8bit", False)
-        ) and device is not None:
+            (
+                getattr(model, "is_loaded_in_4bit", False)
+                or getattr(model, "is_loaded_in_8bit", False)
+            )
+            and device is not None
+            and backend == "default"
+        ):
             logger.warning(
                 f"Setting the `device` argument to None from {device} to avoid "
                 "the error caused by attempting to move the model that was already "
@@ -123,7 +176,11 @@ class HuggingFacePipeline(BaseLLM):
             )
             device = None
 
-        if device is not None and importlib.util.find_spec("torch") is not None:
+        if (
+            device is not None
+            and importlib.util.find_spec("torch") is not None
+            and backend == "default"
+        ):
             import torch
 
             cuda_device_count = torch.cuda.device_count()
@@ -142,6 +199,8 @@ class HuggingFacePipeline(BaseLLM):
                     "can be a positive integer associated with CUDA device id.",
                     cuda_device_count,
                 )
+        if device is not None and device_map is not None and backend == "openvino":
+            logger.warning("Please set device for OpenVINO through: " "'model_kwargs'")
         if "trust_remote_code" in _model_kwargs:
             _model_kwargs = {
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
