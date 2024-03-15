@@ -12,7 +12,11 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 @pytest.fixture
 def chat() -> BedrockChat:
-    return BedrockChat(model_id="anthropic.claude-v2", model_kwargs={"temperature": 0})
+    return BedrockChat(
+        model_id="anthropic.claude-v2",
+        model_kwargs={"temperature": 0},
+        compute_token_usage=True,
+    )
 
 
 @pytest.mark.scheduled
@@ -37,6 +41,18 @@ def test_chat_bedrock_generate(chat: BedrockChat) -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+@pytest.mark.scheduled
+def test_chat_bedrock_generate_with_token_usage(chat: BedrockChat) -> None:
+    """Test BedrockChat wrapper with generate."""
+    message = HumanMessage(content="Hello")
+    response = chat.generate([[message], [message]])
+    assert isinstance(response, LLMResult)
+
+    token_usage = response.llm_output["token_usage"]
+    assert token_usage["prompt_tokens"] == 2
+    assert token_usage["completion_tokens"] > 0
 
 
 @pytest.mark.scheduled
@@ -80,7 +96,7 @@ def test_chat_bedrock_streaming_generation_info() -> None:
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
-    assert generation.generations[0][0].text == " Hello!"
+    assert generation.generations[0][0].text == "Hello!"
 
 
 @pytest.mark.scheduled
