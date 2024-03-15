@@ -434,14 +434,12 @@ class AzureMLBaseEndpoint(BaseModel):
         endpoint_url = values.get("endpoint_url")
         endpoint_key = values.get("endpoint_api_key")
         deployment_name = values.get("deployment_name")
-        timeout = values.get("timeout")
 
         http_client = AzureMLEndpointClient(
             endpoint_url,  # type: ignore
             endpoint_key.get_secret_value(),  # type: ignore
             deployment_name,  # type: ignore
         )
-        http_client.timeout = timeout
 
         return http_client
 
