@@ -551,7 +551,10 @@ MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTempla
 
 MessageLikeRepresentation = Union[
     MessageLike,
-    Tuple[Union[str, Type], Union[str, List[dict], List[object]]],
+    Tuple[
+        Union[str, Type],
+        Union[str, List[dict], List[object]],
+    ],
     str,
 ]
 
@@ -912,9 +915,16 @@ def _create_template_from_message_type(
     elif message_type == "placeholder":
         if isinstance(template, str):
             message = MessagesPlaceholder(variable_name=template)
+        elif len(template) == 2 and isinstance(template[1], bool):
+            var_name, is_optional = template
+            message = MessagesPlaceholder(variable_name=var_name, optional=is_optional)
         else:
-            var_name, placeholder_kwargs = template
-            message = MessagesPlaceholder(variable_name=var_name, **placeholder_kwargs)
+            raise ValueError(
+                "Unexpected arguments for placeholder message type."
+                " Expected either a single string variable name"
+                " or a list of [variable_name: str, is_optional: bool]."
+                f" Got: {template}"
+            )
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"
