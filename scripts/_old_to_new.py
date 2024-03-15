@@ -214,6 +214,176 @@ OLD_TO_NEW = {
         "name": "DataberryRetriever",
         "asname": None,
     },
+    ("langchain.retrievers", "OutlineRetriever"): {
+        "new_module": "langchain_community.retrievers.outline",
+        "name": "OutlineRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "ArceeRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "ArceeRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "KNNRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "KNNRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "ZillizRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "ZillizRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "LlamaIndexRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "LlamaIndexRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "GoogleCloudEnterpriseSearchRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "GoogleCloudEnterpriseSearchRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "PineconeHybridSearchRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "PineconeHybridSearchRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "ElasticSearchBM25Retriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "ElasticSearchBM25Retriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "CohereRagRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "CohereRagRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "GoogleVertexAISearchRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "GoogleVertexAISearchRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "EmbedchainRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "EmbedchainRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "LlamaIndexGraphRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "LlamaIndexGraphRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "GoogleDocumentAIWarehouseRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "GoogleDocumentAIWarehouseRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "BM25Retriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "BM25Retriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "DocArrayRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "DocArrayRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "KayAiRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "KayAiRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "WikipediaRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "WikipediaRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "TFIDFRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "TFIDFRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "MilvusRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "MilvusRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "AmazonKendraRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "AmazonKendraRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "VespaRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "VespaRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "RemoteLangChainRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "RemoteLangChainRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "ChatGPTPluginRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "ChatGPTPluginRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "SVMRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "SVMRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "MetalRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "MetalRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "ArxivRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "ArxivRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "WeaviateHybridSearchRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "WeaviateHybridSearchRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "PubMedRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "PubMedRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "TavilySearchAPIRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "TavilySearchAPIRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "ZepRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "ZepRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "AmazonKnowledgeBasesRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "AmazonKnowledgeBasesRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "ChaindeskRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "ChaindeskRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "AzureCognitiveSearchRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "AzureCognitiveSearchRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers", "GoogleVertexAIMultiTurnSearchRetriever"): {
+        "new_module": "langchain_community.retrievers",
+        "name": "GoogleVertexAIMultiTurnSearchRetriever",
+        "asname": None,
+    },
     ("langchain.retrievers.arcee", "ArceeRetriever"): {
         "new_module": "langchain_community.retrievers.arcee",
         "name": "ArceeRetriever",
@@ -332,6 +502,11 @@ OLD_TO_NEW = {
     ("langchain.retrievers.cohere_rag_retriever", "CohereRagRetriever"): {
         "new_module": "langchain_community.retrievers.cohere_rag_retriever",
         "name": "CohereRagRetriever",
+        "asname": None,
+    },
+    ("langchain.retrievers.pupmed", "PubMedRetriever"): {
+        "new_module": "langchain_community.retrievers.pubmed",
+        "name": "PubMedRetriever",
         "asname": None,
     },
     ("langchain.retrievers.tavily_search_api", "SearchDepth"): {
@@ -517,6 +692,266 @@ OLD_TO_NEW = {
     ("langchain.embeddings.embaas", "EmbaasEmbeddings"): {
         "new_module": "langchain_community.embeddings.embaas",
         "name": "EmbaasEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "DeterministicFakeEmbedding"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "DeterministicFakeEmbedding",
+        "asname": None,
+    },
+    ("langchain.embeddings", "GPT4AllEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "GPT4AllEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "AwaEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "AwaEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "JohnSnowLabsEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "JohnSnowLabsEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "ElasticsearchEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "ElasticsearchEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "AlephAlphaAsymmetricSemanticEmbedding"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "AlephAlphaAsymmetricSemanticEmbedding",
+        "asname": None,
+    },
+    ("langchain.embeddings", "VertexAIEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "VertexAIEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "NLPCloudEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "NLPCloudEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "LlamaCppEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "LlamaCppEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "LocalAIEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "LocalAIEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "JavelinAIGatewayEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "JavelinAIGatewayEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "FastEmbedEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "FastEmbedEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "FakeEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "FakeEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "JinaEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "JinaEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "MosaicMLInstructorEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "MosaicMLInstructorEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "ModelScopeEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "ModelScopeEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "DatabricksEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "DatabricksEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "SentenceTransformerEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "SentenceTransformerEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "MlflowEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "MlflowEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "DashScopeEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "DashScopeEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "QianfanEmbeddingsEndpoint"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "QianfanEmbeddingsEndpoint",
+        "asname": None,
+    },
+    ("langchain.embeddings", "VoyageEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "VoyageEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "HuggingFaceHubEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "HuggingFaceHubEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "AlephAlphaSymmetricSemanticEmbedding"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "AlephAlphaSymmetricSemanticEmbedding",
+        "asname": None,
+    },
+    ("langchain.embeddings", "MiniMaxEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "MiniMaxEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "SelfHostedEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "SelfHostedEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "HuggingFaceInstructEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "HuggingFaceInstructEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "OpenAIEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "OpenAIEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "EmbaasEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "EmbaasEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "HuggingFaceBgeEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "HuggingFaceBgeEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "MlflowAIGatewayEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "MlflowAIGatewayEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "EdenAiEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "EdenAiEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "DeepInfraEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "DeepInfraEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "SelfHostedHuggingFaceEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "SelfHostedHuggingFaceEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "XinferenceEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "XinferenceEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "AzureOpenAIEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "AzureOpenAIEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "InfinityEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "InfinityEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "OllamaEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "OllamaEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "ClarifaiEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "ClarifaiEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "BookendEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "BookendEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "SagemakerEndpointEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "SagemakerEndpointEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "ErnieEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "ErnieEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "HuggingFaceInferenceAPIEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "HuggingFaceInferenceAPIEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "TensorflowHubEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "TensorflowHubEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "HuggingFaceEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "HuggingFaceEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "SelfHostedHuggingFaceInstructEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "SelfHostedHuggingFaceInstructEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "GradientEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "GradientEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "SpacyEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "SpacyEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "GooglePalmEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "GooglePalmEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "CohereEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "CohereEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "BedrockEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "BedrockEmbeddings",
+        "asname": None,
+    },
+    ("langchain.embeddings", "OctoAIEmbeddings"): {
+        "new_module": "langchain_community.embeddings",
+        "name": "OctoAIEmbeddings",
         "asname": None,
     },
     ("langchain.embeddings.voyageai", "VoyageEmbeddings"): {
@@ -720,87 +1155,87 @@ OLD_TO_NEW = {
         "name": "ChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "AstraDBChatMessageHistory"): {
+    ("langchain.memory", "AstraDBChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "AstraDBChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "CassandraChatMessageHistory"): {
+    ("langchain.memory", "CassandraChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "CassandraChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "ChatMessageHistory"): {
+    ("langchain.memory", "ChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "ChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "CosmosDBChatMessageHistory"): {
+    ("langchain.memory", "CosmosDBChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "CosmosDBChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "DynamoDBChatMessageHistory"): {
+    ("langchain.memory", "DynamoDBChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "DynamoDBChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "ElasticsearchChatMessageHistory"): {
+    ("langchain.memory", "ElasticsearchChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "ElasticsearchChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "FileChatMessageHistory"): {
+    ("langchain.memory", "FileChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "FileChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "MomentoChatMessageHistory"): {
+    ("langchain.memory", "MomentoChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "MomentoChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "MongoDBChatMessageHistory"): {
+    ("langchain.memory", "MongoDBChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "MongoDBChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "PostgresChatMessageHistory"): {
+    ("langchain.memory", "PostgresChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "PostgresChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "RedisChatMessageHistory"): {
+    ("langchain.memory", "RedisChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "RedisChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "SingleStoreDBChatMessageHistory"): {
+    ("langchain.memory", "SingleStoreDBChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "SingleStoreDBChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "SQLChatMessageHistory"): {
+    ("langchain.memory", "SQLChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "SQLChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "StreamlitChatMessageHistory"): {
+    ("langchain.memory", "StreamlitChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "StreamlitChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "UpstashRedisChatMessageHistory"): {
+    ("langchain.memory", "UpstashRedisChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "UpstashRedisChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "XataChatMessageHistory"): {
+    ("langchain.memory", "XataChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "XataChatMessageHistory",
         "asname": None,
     },
-    ("langchain.memory.__init__", "ZepChatMessageHistory"): {
+    ("langchain.memory", "ZepChatMessageHistory"): {
         "new_module": "langchain_community.chat_message_histories",
         "name": "ZepChatMessageHistory",
         "asname": None,
@@ -888,6 +1323,121 @@ OLD_TO_NEW = {
     ("langchain.callbacks.aim_callback", "import_aim"): {
         "new_module": "langchain_community.callbacks.aim_callback",
         "name": "import_aim",
+        "asname": None,
+    },
+    ("langchain.callbacks", "ArthurCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "ArthurCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "LLMThoughtLabeler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "LLMThoughtLabeler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "TrubricsCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "TrubricsCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "MlflowCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "MlflowCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "CometCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "CometCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "HumanApprovalCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "HumanApprovalCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "wandb_tracing_enabled"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "wandb_tracing_enabled",
+        "asname": None,
+    },
+    ("langchain.callbacks", "LLMonitorCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "LLMonitorCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "WhyLabsCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "WhyLabsCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "StreamlitCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "StreamlitCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "OpenAICallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "OpenAICallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "AimCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "AimCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "get_openai_callback"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "get_openai_callback",
+        "asname": None,
+    },
+    ("langchain.callbacks", "ArgillaCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "ArgillaCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "ClearMLCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "ClearMLCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "LabelStudioCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "LabelStudioCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "WandbCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "WandbCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "SageMakerCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "SageMakerCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "ContextCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "ContextCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "ArizeCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "ArizeCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "FlyteCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "FlyteCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "InfinoCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "InfinoCallbackHandler",
+        "asname": None,
+    },
+    ("langchain.callbacks", "PromptLayerCallbackHandler"): {
+        "new_module": "langchain_community.callbacks",
+        "name": "PromptLayerCallbackHandler",
         "asname": None,
     },
     ("langchain.callbacks.context_callback", "ContextCallbackHandler"): {
@@ -1113,6 +1663,156 @@ OLD_TO_NEW = {
         "name": "ChatYandexGPT",
         "asname": None,
     },
+    ("langchain.chat_models", "FakeListChatModel"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "FakeListChatModel",
+        "asname": None,
+    },
+    ("langchain.chat_models", "JinaChat"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "JinaChat",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatLiteLLM"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatLiteLLM",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatFireworks"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatFireworks",
+        "asname": None,
+    },
+    ("langchain.chat_models", "AzureChatOpenAI"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "AzureChatOpenAI",
+        "asname": None,
+    },
+    ("langchain.chat_models", "MiniMaxChat"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "MiniMaxChat",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatVertexAI"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatVertexAI",
+        "asname": None,
+    },
+    ("langchain.chat_models", "HumanInputChatModel"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "HumanInputChatModel",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatHunyuan"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatHunyuan",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ErnieBotChat"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ErnieBotChat",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatKonko"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatKonko",
+        "asname": None,
+    },
+    ("langchain.chat_models", "VolcEngineMaasChat"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "VolcEngineMaasChat",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatGooglePalm"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatGooglePalm",
+        "asname": None,
+    },
+    ("langchain.chat_models", "PromptLayerChatOpenAI"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "PromptLayerChatOpenAI",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatYandexGPT"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatYandexGPT",
+        "asname": None,
+    },
+    ("langchain.chat_models", "QianfanChatEndpoint"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "QianfanChatEndpoint",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatAnyscale"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatAnyscale",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatBaichuan"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatBaichuan",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatMlflow"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatMlflow",
+        "asname": None,
+    },
+    ("langchain.chat_models", "PaiEasChatEndpoint"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "PaiEasChatEndpoint",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatAnthropic"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatAnthropic",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatMLflowAIGateway"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatMLflowAIGateway",
+        "asname": None,
+    },
+    ("langchain.chat_models", "GigaChat"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "GigaChat",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatEverlyAI"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatEverlyAI",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatDatabricks"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatDatabricks",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatJavelinAIGateway"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatJavelinAIGateway",
+        "asname": None,
+    },
+    ("langchain.chat_models", "BedrockChat"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "BedrockChat",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatOllama"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatOllama",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatOpenAI"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatOpenAI",
+        "asname": None,
+    },
+    ("langchain.chat_models", "ChatCohere"): {
+        "new_module": "langchain_community.chat_models",
+        "name": "ChatCohere",
+        "asname": None,
+    },
     ("langchain.chat_models.javelin_ai_gateway", "ChatJavelinAIGateway"): {
         "new_module": "langchain_community.chat_models.javelin_ai_gateway",
         "name": "ChatJavelinAIGateway",
@@ -1243,32 +1943,32 @@ OLD_TO_NEW = {
         "name": "convert_messages_to_prompt_llama",
         "asname": None,
     },
-    ("langchain.agents.__init__", "create_json_agent"): {
+    ("langchain.agents", "create_json_agent"): {
         "new_module": "langchain_community.agent_toolkits",
         "name": "create_json_agent",
         "asname": None,
     },
-    ("langchain.agents.__init__", "create_openapi_agent"): {
+    ("langchain.agents", "create_openapi_agent"): {
         "new_module": "langchain_community.agent_toolkits",
         "name": "create_openapi_agent",
         "asname": None,
     },
-    ("langchain.agents.__init__", "create_pbi_agent"): {
+    ("langchain.agents", "create_pbi_agent"): {
         "new_module": "langchain_community.agent_toolkits",
         "name": "create_pbi_agent",
         "asname": None,
     },
-    ("langchain.agents.__init__", "create_pbi_chat_agent"): {
+    ("langchain.agents", "create_pbi_chat_agent"): {
         "new_module": "langchain_community.agent_toolkits",
         "name": "create_pbi_chat_agent",
         "asname": None,
     },
-    ("langchain.agents.__init__", "create_spark_sql_agent"): {
+    ("langchain.agents", "create_spark_sql_agent"): {
         "new_module": "langchain_community.agent_toolkits",
         "name": "create_spark_sql_agent",
         "asname": None,
     },
-    ("langchain.agents.__init__", "create_sql_agent"): {
+    ("langchain.agents", "create_sql_agent"): {
         "new_module": "langchain_community.agent_toolkits",
         "name": "create_sql_agent",
         "asname": None,
@@ -1653,6 +2353,16 @@ OLD_TO_NEW = {
         "name": "convert_pydantic_to_openai_tool",
         "asname": None,
     },
+    ("langchain.utils", "cosine_similarity"): {
+        "new_module": "langchain_community.utils.math",
+        "name": "cosine_similarity",
+        "asname": None,
+    },
+    ("langchain.utils", "cosine_similarity_top_k"): {
+        "new_module": "langchain_community.utils.math",
+        "name": "cosine_similarity_top_k",
+        "asname": None,
+    },
     ("langchain.utils.openai", "is_openai_v1"): {
         "new_module": "langchain_community.utils.openai",
         "name": "is_openai_v1",
@@ -1673,6 +2383,21 @@ OLD_TO_NEW = {
         "name": "cosine_similarity_top_k",
         "asname": None,
     },
+    ("langchain.storage", "UpstashRedisByteStore"): {
+        "new_module": "langchain_community.storage",
+        "name": "UpstashRedisByteStore",
+        "asname": None,
+    },
+    ("langchain.storage", "UpstashRedisStore"): {
+        "new_module": "langchain_community.storage",
+        "name": "UpstashRedisStore",
+        "asname": None,
+    },
+    ("langchain.storage", "RedisStore"): {
+        "new_module": "langchain_community.storage",
+        "name": "RedisStore",
+        "asname": None,
+    },
     ("langchain.storage.upstash_redis", "UpstashRedisByteStore"): {
         "new_module": "langchain_community.storage.upstash_redis",
         "name": "UpstashRedisByteStore",
@@ -1689,6 +2414,11 @@ OLD_TO_NEW = {
         "asname": None,
     },
     ("langchain.storage.exceptions", "InvalidKeyException"): {
+        "new_module": "langchain_community.storage.exceptions",
+        "name": "InvalidKeyException",
+        "asname": None,
+    },
+    ("langchain.storage.file_system", "InvalidKeyException"): {
         "new_module": "langchain_community.storage.exceptions",
         "name": "InvalidKeyException",
         "asname": None,
@@ -1823,19 +2553,234 @@ OLD_TO_NEW = {
         "name": "BraveSearchWrapper",
         "asname": None,
     },
-    ("langchain.utilities.__init__", "Requests"): {
+    ("langchain.utilities", "Requests"): {
         "new_module": "langchain_community.utilities.requests",
         "name": "Requests",
         "asname": None,
     },
-    ("langchain.utilities.__init__", "RequestsWrapper"): {
+    ("langchain.utilities", "RequestsWrapper"): {
         "new_module": "langchain_community.utilities.requests",
         "name": "RequestsWrapper",
         "asname": None,
     },
-    ("langchain.utilities.__init__", "TextRequestsWrapper"): {
+    ("langchain.utilities", "TextRequestsWrapper"): {
         "new_module": "langchain_community.utilities.requests",
         "name": "TextRequestsWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "StackExchangeAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "StackExchangeAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "LambdaWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "LambdaWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "SteamWebAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "SteamWebAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GraphQLAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GraphQLAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "BingSearchAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "BingSearchAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "MetaphorSearchAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "MetaphorSearchAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "WikipediaAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "WikipediaAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "PythonREPL"): {
+        "new_module": "langchain_community.utilities",
+        "name": "PythonREPL",
+        "asname": None,
+    },
+    ("langchain.utilities", "PubMedAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "PubMedAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "NasaAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "NasaAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "MerriamWebsterAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "MerriamWebsterAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "TensorflowDatasets"): {
+        "new_module": "langchain_community.utilities",
+        "name": "TensorflowDatasets",
+        "asname": None,
+    },
+    ("langchain.utilities", "PowerBIDataset"): {
+        "new_module": "langchain_community.utilities",
+        "name": "PowerBIDataset",
+        "asname": None,
+    },
+    ("langchain.utilities", "TwilioAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "TwilioAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "BibtexparserWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "BibtexparserWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "ArceeWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "ArceeWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "JiraAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "JiraAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "SparkSQL"): {
+        "new_module": "langchain_community.utilities",
+        "name": "SparkSQL",
+        "asname": None,
+    },
+    ("langchain.utilities", "GoogleLensAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GoogleLensAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "ApifyWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "ApifyWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "WolframAlphaAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "WolframAlphaAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "MaxComputeAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "MaxComputeAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "OutlineAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "OutlineAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "BraveSearchWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "BraveSearchWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GoogleTrendsAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GoogleTrendsAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GooglePlacesAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GooglePlacesAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GoogleSerperAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GoogleSerperAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GoogleSearchAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GoogleSearchAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "SearxSearchWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "SearxSearchWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "ZapierNLAWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "ZapierNLAWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "SearchApiAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "SearchApiAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GoogleFinanceAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GoogleFinanceAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "AlphaVantageAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "AlphaVantageAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "SerpAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "SerpAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GoldenQueryAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GoldenQueryAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GoogleScholarAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GoogleScholarAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "ArxivAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "ArxivAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "GoogleJobsAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "GoogleJobsAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "SceneXplainAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "SceneXplainAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "DuckDuckGoSearchAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "DuckDuckGoSearchAPIWrapper",
+        "asname": None,
+    },
+    ("langchain.utilities", "SQLDatabase"): {
+        "new_module": "langchain_community.utilities",
+        "name": "SQLDatabase",
+        "asname": None,
+    },
+    ("langchain.utilities", "Portkey"): {
+        "new_module": "langchain_community.utilities",
+        "name": "Portkey",
+        "asname": None,
+    },
+    ("langchain.utilities", "OpenWeatherMapAPIWrapper"): {
+        "new_module": "langchain_community.utilities",
+        "name": "OpenWeatherMapAPIWrapper",
         "asname": None,
     },
     ("langchain.utilities.arcee", "ArceeDocument"): {
@@ -2303,6 +3248,341 @@ OLD_TO_NEW = {
         "name": "MatchingEngine",
         "asname": None,
     },
+    ("langchain.vectorstores", "ElasticsearchStore"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "ElasticsearchStore",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "LLMRails"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "LLMRails",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "LanceDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "LanceDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Annoy"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Annoy",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "MyScale"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "MyScale",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "FAISS"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "FAISS",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Zilliz"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Zilliz",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Milvus"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Milvus",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Hologres"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Hologres",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Pinecone"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Pinecone",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Vearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Vearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Vectara"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Vectara",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "ScaNN"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "ScaNN",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "DashVector"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "DashVector",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Weaviate"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Weaviate",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "DocArrayHnswSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "DocArrayHnswSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Dingo"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Dingo",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "PGVector"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "PGVector",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "TileDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "TileDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "DeepLake"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "DeepLake",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Marqo"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Marqo",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Rockset"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Rockset",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "USearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "USearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "OpenSearchVectorSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "OpenSearchVectorSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "VespaStore"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "VespaStore",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Epsilla"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Epsilla",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Yellowbrick"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Yellowbrick",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "AlibabaCloudOpenSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "AlibabaCloudOpenSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "SingleStoreDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "SingleStoreDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "AstraDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "AstraDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "MyScaleSettings"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "MyScaleSettings",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "SKLearnVectorStore"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "SKLearnVectorStore",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Clarifai"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Clarifai",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Redis"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Redis",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "AwaDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "AwaDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "DocArrayInMemorySearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "DocArrayInMemorySearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Clickhouse"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Clickhouse",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "AzureSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "AzureSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "AtlasDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "AtlasDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "TimescaleVector"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "TimescaleVector",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Chroma"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Chroma",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Meilisearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Meilisearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "PGEmbedding"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "PGEmbedding",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "MomentoVectorIndex"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "MomentoVectorIndex",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "SemaDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "SemaDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "AnalyticDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "AnalyticDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "MongoDBAtlasVectorSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "MongoDBAtlasVectorSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "MatchingEngine"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "MatchingEngine",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Vald"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Vald",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Cassandra"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Cassandra",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "DatabricksVectorSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "DatabricksVectorSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "ZepVectorStore"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "ZepVectorStore",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "ClickhouseSettings"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "ClickhouseSettings",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Neo4jVector"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Neo4jVector",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Qdrant"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Qdrant",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "AlibabaCloudOpenSearchSettings"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "AlibabaCloudOpenSearchSettings",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "ElasticKnnSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "ElasticKnnSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "SupabaseVectorStore"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "SupabaseVectorStore",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "TencentVectorDB"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "TencentVectorDB",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "StarRocks"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "StarRocks",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "SQLiteVSS"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "SQLiteVSS",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "ElasticVectorSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "ElasticVectorSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "AzureCosmosDBVectorSearch"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "AzureCosmosDBVectorSearch",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Bagel"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Bagel",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Tigris"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Tigris",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Typesense"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Typesense",
+        "asname": None,
+    },
+    ("langchain.vectorstores", "Tair"): {
+        "new_module": "langchain_community.vectorstores",
+        "name": "Tair",
+        "asname": None,
+    },
     ("langchain.vectorstores.pgembedding", "CollectionStore"): {
         "new_module": "langchain_community.vectorstores.pgembedding",
         "name": "CollectionStore",
@@ -2711,6 +3991,11 @@ OLD_TO_NEW = {
         "name": "GuardrailsOutputParser",
         "asname": None,
     },
+    ("langchain.output_parsers", "GuardrailsOutputParser"): {
+        "new_module": "langchain_community.output_parsers.rail_parser",
+        "name": "GuardrailsOutputParser",
+        "asname": None,
+    },
     (
         "langchain.document_transformers.doctran_text_extract",
         "DoctranPropertyExtractor",
@@ -2795,6 +4080,66 @@ OLD_TO_NEW = {
         "name": "Html2TextTransformer",
         "asname": None,
     },
+    ("langchain.document_transformers", "BeautifulSoupTransformer"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "BeautifulSoupTransformer",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "LongContextReorder"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "LongContextReorder",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "NucliaTextTransformer"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "NucliaTextTransformer",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "OpenAIMetadataTagger"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "OpenAIMetadataTagger",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "Html2TextTransformer"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "Html2TextTransformer",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "DoctranPropertyExtractor"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "DoctranPropertyExtractor",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "GoogleTranslateTransformer"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "GoogleTranslateTransformer",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "get_stateful_documents"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "get_stateful_documents",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "EmbeddingsClusteringFilter"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "EmbeddingsClusteringFilter",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "EmbeddingsRedundantFilter"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "EmbeddingsRedundantFilter",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "DoctranTextTranslator"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "DoctranTextTranslator",
+        "asname": None,
+    },
+    ("langchain.document_transformers", "DoctranQATransformer"): {
+        "new_module": "langchain_community.document_transformers",
+        "name": "DoctranQATransformer",
+        "asname": None,
+    },
     (
         "langchain.document_transformers.beautiful_soup_transformer",
         "BeautifulSoupTransformer",
@@ -2827,6 +4172,21 @@ OLD_TO_NEW = {
     ("langchain.docstore.arbitrary_fn", "DocstoreFn"): {
         "new_module": "langchain_community.docstore.arbitrary_fn",
         "name": "DocstoreFn",
+        "asname": None,
+    },
+    ("langchain.docstore", "Wikipedia"): {
+        "new_module": "langchain_community.docstore",
+        "name": "Wikipedia",
+        "asname": None,
+    },
+    ("langchain.docstore", "DocstoreFn"): {
+        "new_module": "langchain_community.docstore",
+        "name": "DocstoreFn",
+        "asname": None,
+    },
+    ("langchain.docstore", "InMemoryDocstore"): {
+        "new_module": "langchain_community.docstore",
+        "name": "InMemoryDocstore",
         "asname": None,
     },
     ("langchain.docstore.base", "AddableMixin"): {
@@ -3210,6 +4570,841 @@ OLD_TO_NEW = {
     ("langchain.document_loaders.xml", "UnstructuredXMLLoader"): {
         "new_module": "langchain_community.document_loaders.xml",
         "name": "UnstructuredXMLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "OBSDirectoryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "OBSDirectoryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DirectoryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DirectoryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PyPDFDirectoryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PyPDFDirectoryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "YoutubeLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "YoutubeLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "RocksetLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "RocksetLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PyPDFium2Loader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PyPDFium2Loader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredFileIOLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredFileIOLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BSHTMLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BSHTMLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "JSONLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "JSONLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TelegramChatLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TelegramChatLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "S3DirectoryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "S3DirectoryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "RedditPostsLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "RedditPostsLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TomlLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TomlLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "OBSFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "OBSFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DataFrameLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DataFrameLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "JoplinLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "JoplinLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "NotebookLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "NotebookLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "FaunaLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "FaunaLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DatadogLogsLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DatadogLogsLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteHubspotLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteHubspotLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PagedPDFSplitter"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PagedPDFSplitter",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "YoutubeAudioLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "YoutubeAudioLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BraveSearchLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BraveSearchLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "NotionDBLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "NotionDBLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ModernTreasuryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ModernTreasuryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AsyncChromiumLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AsyncChromiumLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredCSVLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredCSVLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "SitemapLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "SitemapLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "S3FileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "S3FileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AZLyricsLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AZLyricsLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ToMarkdownLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ToMarkdownLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DiffbotLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DiffbotLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "CoNLLULoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "CoNLLULoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TextLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TextLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GCSFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GCSFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "SeleniumURLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "SeleniumURLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "RoamLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "RoamLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "MastodonTootsLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "MastodonTootsLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PubMedLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PubMedLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "MaxComputeLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "MaxComputeLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "EverNoteLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "EverNoteLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirtableLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirtableLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BlackboardLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BlackboardLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredEPubLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredEPubLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "OnlinePDFLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "OnlinePDFLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "FigmaFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "FigmaFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ArcGISLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ArcGISLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "MathpixPDFLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "MathpixPDFLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "IMSDbLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "IMSDbLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PyPDFLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PyPDFLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteShopifyLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteShopifyLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GeoDataFrameLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GeoDataFrameLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PDFMinerPDFasHTMLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PDFMinerPDFasHTMLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "IFixitLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "IFixitLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GoogleSpeechToTextLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GoogleSpeechToTextLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ObsidianLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ObsidianLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TencentCOSDirectoryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TencentCOSDirectoryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredXMLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredXMLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BrowserlessLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BrowserlessLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ConfluenceLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ConfluenceLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AcreomLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AcreomLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "Blob"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "Blob",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "WikipediaLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "WikipediaLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "RecursiveUrlLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "RecursiveUrlLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "CubeSemanticLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "CubeSemanticLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PDFMinerLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PDFMinerLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PyMuPDFLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PyMuPDFLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ImageCaptionLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ImageCaptionLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AzureBlobStorageFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AzureBlobStorageFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ArxivLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ArxivLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteJSONLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteJSONLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GoogleApiClient"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GoogleApiClient",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "RSSFeedLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "RSSFeedLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredImageLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredImageLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "IuguLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "IuguLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PySparkDataFrameLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PySparkDataFrameLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredAPIFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredAPIFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredMarkdownLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredMarkdownLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "SRTLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "SRTLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DropboxLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DropboxLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GoogleApiYoutubeLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GoogleApiYoutubeLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GitLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GitLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "MWDumpLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "MWDumpLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "LakeFSLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "LakeFSLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PlaywrightURLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PlaywrightURLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "OutlookMessageLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "OutlookMessageLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TwitterTweetLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TwitterTweetLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "EtherscanLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "EtherscanLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "HuggingFaceDatasetLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "HuggingFaceDatasetLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "SlackDirectoryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "SlackDirectoryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DocugamiLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DocugamiLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteGongLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteGongLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "WebBaseLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "WebBaseLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "SnowflakeLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "SnowflakeLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GoogleDriveLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GoogleDriveLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TelegramChatApiLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TelegramChatApiLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AssemblyAIAudioTranscriptLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AssemblyAIAudioTranscriptLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DocusaurusLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DocusaurusLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "WhatsAppChatLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "WhatsAppChatLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredEmailLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredEmailLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AsyncHtmlLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AsyncHtmlLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BiliBiliLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BiliBiliLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "MHTMLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "MHTMLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "Docx2txtLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "Docx2txtLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredOrgModeLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredOrgModeLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BlobLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BlobLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PythonLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PythonLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteTypeformLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteTypeformLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "CouchbaseLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "CouchbaseLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "HNLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "HNLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "OneDriveLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "OneDriveLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PDFPlumberLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PDFPlumberLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "YuqueLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "YuqueLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ApifyDatasetLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ApifyDatasetLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "WeatherDataLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "WeatherDataLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TrelloLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TrelloLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredHTMLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredHTMLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TencentCOSFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TencentCOSFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "CollegeConfidentialLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "CollegeConfidentialLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteSalesforceLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteSalesforceLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredRSTLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredRSTLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "OneDriveFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "OneDriveFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AzureAIDataLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AzureAIDataLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "CSVLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "CSVLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "SharePointLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "SharePointLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "StripeLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "StripeLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteCDKLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteCDKLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "MergedDataLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "MergedDataLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ReadTheDocsLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ReadTheDocsLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "OpenCityDataLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "OpenCityDataLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BlockchainDocumentLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BlockchainDocumentLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredPDFLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredPDFLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AmazonTextractPDFLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AmazonTextractPDFLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "FacebookChatLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "FacebookChatLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GitHubIssuesLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GitHubIssuesLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "NewsURLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "NewsURLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "MongodbLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "MongodbLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PsychicLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PsychicLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "LarkSuiteDocLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "LarkSuiteDocLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BigQueryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BigQueryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GutenbergLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GutenbergLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredRTFLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredRTFLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredPowerPointLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredPowerPointLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "BibtexLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "BibtexLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredAPIFileIOLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredAPIFileIOLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredODTLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredODTLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AzureBlobStorageContainerLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AzureBlobStorageContainerLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TelegramChatFileLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TelegramChatFileLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "TensorflowDatasetLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "TensorflowDatasetLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DuckDBLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DuckDBLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ChatGPTLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ChatGPTLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredExcelLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredExcelLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredURLLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredURLLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredTSVLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredTSVLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteStripeLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteStripeLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "AirbyteZendeskSupportLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "AirbyteZendeskSupportLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "UnstructuredWordDocumentLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "UnstructuredWordDocumentLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "PolarsDataFrameLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "PolarsDataFrameLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GCSDirectoryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GCSDirectoryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "SpreedlyLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "SpreedlyLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "ConcurrentLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "ConcurrentLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "DiscordChatLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "DiscordChatLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "GitbookLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "GitbookLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "XorbitsLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "XorbitsLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "NotionDirectoryLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "NotionDirectoryLoader",
+        "asname": None,
+    },
+    ("langchain.document_loaders", "FileSystemBlobLoader"): {
+        "new_module": "langchain_community.document_loaders",
+        "name": "FileSystemBlobLoader",
         "asname": None,
     },
     ("langchain.document_loaders.odt", "UnstructuredODTLoader"): {
@@ -3873,6 +6068,56 @@ OLD_TO_NEW = {
         "name": "NeptuneGraph",
         "asname": None,
     },
+    ("langchain.graphs", "RdfGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "RdfGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "FalkorDBGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "FalkorDBGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "ArangoGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "ArangoGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "Neo4jGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "Neo4jGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "NebulaGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "NebulaGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "NetworkxEntityGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "NetworkxEntityGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "KuzuGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "KuzuGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "MemgraphGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "MemgraphGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "NeptuneGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "NeptuneGraph",
+        "asname": None,
+    },
+    ("langchain.graphs", "HugeGraph"): {
+        "new_module": "langchain_community.graphs",
+        "name": "HugeGraph",
+        "asname": None,
+    },
     ("langchain.graphs.kuzu_graph", "KuzuGraph"): {
         "new_module": "langchain_community.graphs.kuzu_graph",
         "name": "KuzuGraph",
@@ -4126,6 +6371,411 @@ OLD_TO_NEW = {
     ("langchain.llms.yandex", "YandexGPT"): {
         "new_module": "langchain_community.llms.yandex",
         "name": "YandexGPT",
+        "asname": None,
+    },
+    ("langchain.llms", "WatsonxLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "WatsonxLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "Cohere"): {
+        "new_module": "langchain_community.llms",
+        "name": "Cohere",
+        "asname": None,
+    },
+    ("langchain.llms", "RWKV"): {
+        "new_module": "langchain_community.llms",
+        "name": "RWKV",
+        "asname": None,
+    },
+    ("langchain.llms", "GradientLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "GradientLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "ForefrontAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "ForefrontAI",
+        "asname": None,
+    },
+    ("langchain.llms", "Beam"): {
+        "new_module": "langchain_community.llms",
+        "name": "Beam",
+        "asname": None,
+    },
+    ("langchain.llms", "PaiEasEndpoint"): {
+        "new_module": "langchain_community.llms",
+        "name": "PaiEasEndpoint",
+        "asname": None,
+    },
+    ("langchain.llms", "VLLMOpenAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "VLLMOpenAI",
+        "asname": None,
+    },
+    ("langchain.llms", "Xinference"): {
+        "new_module": "langchain_community.llms",
+        "name": "Xinference",
+        "asname": None,
+    },
+    ("langchain.llms", "TextGen"): {
+        "new_module": "langchain_community.llms",
+        "name": "TextGen",
+        "asname": None,
+    },
+    ("langchain.llms", "GooglePalm"): {
+        "new_module": "langchain_community.llms",
+        "name": "GooglePalm",
+        "asname": None,
+    },
+    ("langchain.llms", "PromptLayerOpenAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "PromptLayerOpenAI",
+        "asname": None,
+    },
+    ("langchain.llms", "OpenAIChat"): {
+        "new_module": "langchain_community.llms",
+        "name": "OpenAIChat",
+        "asname": None,
+    },
+    ("langchain.llms", "Baseten"): {
+        "new_module": "langchain_community.llms",
+        "name": "Baseten",
+        "asname": None,
+    },
+    ("langchain.llms", "CTransformers"): {
+        "new_module": "langchain_community.llms",
+        "name": "CTransformers",
+        "asname": None,
+    },
+    ("langchain.llms", "HuggingFaceHub"): {
+        "new_module": "langchain_community.llms",
+        "name": "HuggingFaceHub",
+        "asname": None,
+    },
+    ("langchain.llms", "HuggingFaceEndpoint"): {
+        "new_module": "langchain_community.llms",
+        "name": "HuggingFaceEndpoint",
+        "asname": None,
+    },
+    ("langchain.llms", "StochasticAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "StochasticAI",
+        "asname": None,
+    },
+    ("langchain.llms", "GPT4All"): {
+        "new_module": "langchain_community.llms",
+        "name": "GPT4All",
+        "asname": None,
+    },
+    ("langchain.llms", "Writer"): {
+        "new_module": "langchain_community.llms",
+        "name": "Writer",
+        "asname": None,
+    },
+    ("langchain.llms", "Fireworks"): {
+        "new_module": "langchain_community.llms",
+        "name": "Fireworks",
+        "asname": None,
+    },
+    ("langchain.llms", "Banana"): {
+        "new_module": "langchain_community.llms",
+        "name": "Banana",
+        "asname": None,
+    },
+    ("langchain.llms", "VertexAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "VertexAI",
+        "asname": None,
+    },
+    ("langchain.llms", "DeepSparse"): {
+        "new_module": "langchain_community.llms",
+        "name": "DeepSparse",
+        "asname": None,
+    },
+    ("langchain.llms", "JavelinAIGateway"): {
+        "new_module": "langchain_community.llms",
+        "name": "JavelinAIGateway",
+        "asname": None,
+    },
+    ("langchain.llms", "PipelineAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "PipelineAI",
+        "asname": None,
+    },
+    ("langchain.llms", "FakeListLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "FakeListLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "HumanInputLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "HumanInputLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "PredictionGuard"): {
+        "new_module": "langchain_community.llms",
+        "name": "PredictionGuard",
+        "asname": None,
+    },
+    ("langchain.llms", "Databricks"): {
+        "new_module": "langchain_community.llms",
+        "name": "Databricks",
+        "asname": None,
+    },
+    ("langchain.llms", "AzureMLOnlineEndpoint"): {
+        "new_module": "langchain_community.llms",
+        "name": "AzureMLOnlineEndpoint",
+        "asname": None,
+    },
+    ("langchain.llms", "SelfHostedPipeline"): {
+        "new_module": "langchain_community.llms",
+        "name": "SelfHostedPipeline",
+        "asname": None,
+    },
+    ("langchain.llms", "AzureOpenAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "AzureOpenAI",
+        "asname": None,
+    },
+    ("langchain.llms", "ChatGLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "ChatGLM",
+        "asname": None,
+    },
+    ("langchain.llms", "OpaquePrompts"): {
+        "new_module": "langchain_community.llms",
+        "name": "OpaquePrompts",
+        "asname": None,
+    },
+    ("langchain.llms", "MosaicML"): {
+        "new_module": "langchain_community.llms",
+        "name": "MosaicML",
+        "asname": None,
+    },
+    ("langchain.llms", "Arcee"): {
+        "new_module": "langchain_community.llms",
+        "name": "Arcee",
+        "asname": None,
+    },
+    ("langchain.llms", "SelfHostedHuggingFaceLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "SelfHostedHuggingFaceLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "OpenAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "OpenAI",
+        "asname": None,
+    },
+    ("langchain.llms", "Replicate"): {
+        "new_module": "langchain_community.llms",
+        "name": "Replicate",
+        "asname": None,
+    },
+    ("langchain.llms", "DeepInfra"): {
+        "new_module": "langchain_community.llms",
+        "name": "DeepInfra",
+        "asname": None,
+    },
+    ("langchain.llms", "PromptLayerOpenAIChat"): {
+        "new_module": "langchain_community.llms",
+        "name": "PromptLayerOpenAIChat",
+        "asname": None,
+    },
+    ("langchain.llms", "EdenAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "EdenAI",
+        "asname": None,
+    },
+    ("langchain.llms", "Predibase"): {
+        "new_module": "langchain_community.llms",
+        "name": "Predibase",
+        "asname": None,
+    },
+    ("langchain.llms", "OpenLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "OpenLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "Clarifai"): {
+        "new_module": "langchain_community.llms",
+        "name": "Clarifai",
+        "asname": None,
+    },
+    ("langchain.llms", "Tongyi"): {
+        "new_module": "langchain_community.llms",
+        "name": "Tongyi",
+        "asname": None,
+    },
+    ("langchain.llms", "GooseAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "GooseAI",
+        "asname": None,
+    },
+    ("langchain.llms", "AlephAlpha"): {
+        "new_module": "langchain_community.llms",
+        "name": "AlephAlpha",
+        "asname": None,
+    },
+    ("langchain.llms", "Petals"): {
+        "new_module": "langchain_community.llms",
+        "name": "Petals",
+        "asname": None,
+    },
+    ("langchain.llms", "Anthropic"): {
+        "new_module": "langchain_community.llms",
+        "name": "Anthropic",
+        "asname": None,
+    },
+    ("langchain.llms", "AmazonAPIGateway"): {
+        "new_module": "langchain_community.llms",
+        "name": "AmazonAPIGateway",
+        "asname": None,
+    },
+    ("langchain.llms", "MlflowAIGateway"): {
+        "new_module": "langchain_community.llms",
+        "name": "MlflowAIGateway",
+        "asname": None,
+    },
+    ("langchain.llms", "CTranslate2"): {
+        "new_module": "langchain_community.llms",
+        "name": "CTranslate2",
+        "asname": None,
+    },
+    ("langchain.llms", "LlamaCpp"): {
+        "new_module": "langchain_community.llms",
+        "name": "LlamaCpp",
+        "asname": None,
+    },
+    ("langchain.llms", "SagemakerEndpoint"): {
+        "new_module": "langchain_community.llms",
+        "name": "SagemakerEndpoint",
+        "asname": None,
+    },
+    ("langchain.llms", "NIBittensorLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "NIBittensorLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "KoboldApiLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "KoboldApiLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "VLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "VLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "Bedrock"): {
+        "new_module": "langchain_community.llms",
+        "name": "Bedrock",
+        "asname": None,
+    },
+    ("langchain.llms", "Anyscale"): {
+        "new_module": "langchain_community.llms",
+        "name": "Anyscale",
+        "asname": None,
+    },
+    ("langchain.llms", "TitanTakeoff"): {
+        "new_module": "langchain_community.llms",
+        "name": "TitanTakeoff",
+        "asname": None,
+    },
+    ("langchain.llms", "ManifestWrapper"): {
+        "new_module": "langchain_community.llms",
+        "name": "ManifestWrapper",
+        "asname": None,
+    },
+    ("langchain.llms", "Minimax"): {
+        "new_module": "langchain_community.llms",
+        "name": "Minimax",
+        "asname": None,
+    },
+    ("langchain.llms", "QianfanLLMEndpoint"): {
+        "new_module": "langchain_community.llms",
+        "name": "QianfanLLMEndpoint",
+        "asname": None,
+    },
+    ("langchain.llms", "VolcEngineMaasLLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "VolcEngineMaasLLM",
+        "asname": None,
+    },
+    ("langchain.llms", "CerebriumAI"): {
+        "new_module": "langchain_community.llms",
+        "name": "CerebriumAI",
+        "asname": None,
+    },
+    ("langchain.llms", "HuggingFaceTextGenInference"): {
+        "new_module": "langchain_community.llms",
+        "name": "HuggingFaceTextGenInference",
+        "asname": None,
+    },
+    ("langchain.llms", "Modal"): {
+        "new_module": "langchain_community.llms",
+        "name": "Modal",
+        "asname": None,
+    },
+    ("langchain.llms", "OpenLM"): {
+        "new_module": "langchain_community.llms",
+        "name": "OpenLM",
+        "asname": None,
+    },
+    ("langchain.llms", "AI21"): {
+        "new_module": "langchain_community.llms",
+        "name": "AI21",
+        "asname": None,
+    },
+    ("langchain.llms", "TitanTakeoffPro"): {
+        "new_module": "langchain_community.llms",
+        "name": "TitanTakeoffPro",
+        "asname": None,
+    },
+    ("langchain.llms", "Aviary"): {
+        "new_module": "langchain_community.llms",
+        "name": "Aviary",
+        "asname": None,
+    },
+    ("langchain.llms", "HuggingFacePipeline"): {
+        "new_module": "langchain_community.llms",
+        "name": "HuggingFacePipeline",
+        "asname": None,
+    },
+    ("langchain.llms", "VertexAIModelGarden"): {
+        "new_module": "langchain_community.llms",
+        "name": "VertexAIModelGarden",
+        "asname": None,
+    },
+    ("langchain.llms", "OctoAIEndpoint"): {
+        "new_module": "langchain_community.llms",
+        "name": "OctoAIEndpoint",
+        "asname": None,
+    },
+    ("langchain.llms", "NLPCloud"): {
+        "new_module": "langchain_community.llms",
+        "name": "NLPCloud",
+        "asname": None,
+    },
+    ("langchain.llms", "Nebula"): {
+        "new_module": "langchain_community.llms",
+        "name": "Nebula",
+        "asname": None,
+    },
+    ("langchain.llms", "GigaChat"): {
+        "new_module": "langchain_community.llms",
+        "name": "GigaChat",
+        "asname": None,
+    },
+    ("langchain.llms", "YandexGPT"): {
+        "new_module": "langchain_community.llms",
+        "name": "YandexGPT",
+        "asname": None,
+    },
+    ("langchain.llms", "Ollama"): {
+        "new_module": "langchain_community.llms",
+        "name": "Ollama",
         "asname": None,
     },
     ("langchain.llms.arcee", "Arcee"): {
@@ -4494,5 +7144,3 @@ OLD_TO_NEW = {
         "asname": None,
     },
 }
-
-OLD_TO_NEW_MODS_ONLY = {k[0] for k in OLD_TO_NEW}

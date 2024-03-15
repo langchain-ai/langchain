@@ -4,7 +4,9 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from _old_to_new import OLD_TO_NEW, OLD_TO_NEW_MODS_ONLY
+from _old_to_new import OLD_TO_NEW
+
+OLD_TO_NEW_MODS_ONLY = {k[0] for k in OLD_TO_NEW}
 
 
 def migrate(dir_: Union[str, Path]) -> None:
@@ -78,6 +80,7 @@ def migrate(dir_: Union[str, Path]) -> None:
             final_lines = lines
         with open(file_path, "w") as file:
             file.write("".join(final_lines))
+
 
 if __name__ == "__main__":
     migrate(sys.argv[1])
