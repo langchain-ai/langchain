@@ -909,6 +909,12 @@ def _create_template_from_message_type(
         message = AIMessagePromptTemplate.from_template(cast(str, template))
     elif message_type == "system":
         message = SystemMessagePromptTemplate.from_template(cast(str, template))
+    elif message_type == "placeholder":
+        if isinstance(template, str):
+            message = MessagesPlaceholder(variable_name=template)
+        else:
+            var_name, placeholder_kwargs = template
+            message = MessagesPlaceholder(variable_name=var_name, **placeholder_kwargs)
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"
