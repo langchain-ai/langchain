@@ -10,6 +10,10 @@ from pytest import Function, Parser
 from langchain_core.pydantic import _PYDANTIC_VERSION
 from langchain_core.pydantic.config import USE_PYDANTIC_V2
 
+# The maximum number of failed tests to allow when running with
+# This number should only be decreased over time until we're at 0!
+MAX_FAILED_LC_PYDANTIC_2_MIGRATION = 43
+
 
 def pytest_addoption(parser: Parser) -> None:
     """Add custom command line options to pytest."""
@@ -23,6 +27,51 @@ def pytest_addoption(parser: Parser) -> None:
         action="store_true",
         help="Only run core tests. Never runs any extended tests.",
     )
+    parser.addoption(
+        "--max-fail",
+        type=int,
+        default=0,
+        help="Maximum number of failed tests to allow. "
+        "Should only be set for LC_PYDANTIC_V2_UNSAFE=true.",
+    )
+
+
+def pytest_sessionstart(session):
+    """Initialize the count of passed and failed tests."""
+    session.count_failed = 0
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    result = outcome.get_result()
+
+    if result.when == "call" and result.failed:
+        item.session.count_failed += 1
+
+
+def pytest_sessionfinish(session, exitstatus: int) -> None:
+    """Exit with a non-zero status if not enough tests pass."""
+    max_fail = session.config.getoption(
+        "--max-fail", default=MAX_FAILED_LC_PYDANTIC_2_MIGRATION
+    )
+    if max_fail > 0 and not USE_PYDANTIC_V2:
+        raise ValueError(
+            "The `--max-fail` option should only be set when "
+            "running with `LC_PYDANTIC_V2_UNSAFE=true`."
+        )
+    # This will set up a ratchet approach so that the number of failures
+    # has to go down over time.
+    if session.count_failed > max_fail:
+        session.exitstatus = 1
+        reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+        reporter.section("Session errors", sep="-", red=True, bold=True)
+        reporter.line(
+            f"Regression in pydantic v2 migration. Expected at most {max_fail} failed "
+            f"tests. Instead found {session.count_failed} failed tests."
+        )
+    else:
+        session.exitstatus = 0
 
 
 def pytest_terminal_summary(
