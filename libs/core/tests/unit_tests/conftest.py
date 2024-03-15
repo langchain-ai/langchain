@@ -38,16 +38,16 @@ def pytest_addoption(parser: Parser) -> None:
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     """Initialize the count of passed and failed tests."""
-    session.count_failed = 0
+    session.count_failed = 0  # type: ignore[attr-defined]
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo) -> None:
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo) -> None:  # type: ignore
     outcome = yield
     result = outcome.get_result()
 
     if result.when == "call" and result.failed:
-        item.session.count_failed += 1
+        item.session.count_failed += 1  # type: ignore[attr-defined]
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
@@ -62,13 +62,13 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         )
     # This will set up a ratchet approach so that the number of failures
     # has to go down over time.
-    if session.count_failed > max_fail:
+    if session.count_failed > max_fail:  # type: ignore[attr-defined]
         session.exitstatus = 1
         reporter = session.config.pluginmanager.get_plugin("terminalreporter")
-        reporter.section("Session errors", sep="-", red=True, bold=True)
-        reporter.line(
+        reporter.section("Session errors", sep="-", red=True, bold=True)  # type: ignore[union-attr]
+        reporter.line(  # type: ignore[union-attr]
             f"Regression in pydantic v2 migration. Expected at most {max_fail} failed "
-            f"tests. Instead found {session.count_failed} failed tests."
+            f"tests. Instead found {session.count_failed} failed tests."  # type: ignore[attr-defined]
         )
     else:
         session.exitstatus = 0

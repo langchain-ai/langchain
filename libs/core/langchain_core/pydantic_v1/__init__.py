@@ -1,3 +1,4 @@
+# type: ignore
 from importlib import metadata
 
 ## Create namespaces for pydantic v1 and v2.
@@ -12,12 +13,45 @@ from importlib import metadata
 # * This change is easier to roll out and roll back.
 
 try:
-    from pydantic.v1 import *  # noqa: F403 # type: ignore
+    from pydantic.v1 import (  # noqa: F403 # type: ignore
+        BaseModel,
+        Extra,
+        Field,
+        PrivateAttr,
+        SecretStr,
+        ValidationError,
+        create_model,
+        root_validator,
+        validate_arguments,
+    )
 except ImportError:
-    from pydantic import *  # noqa: F403 # type: ignore
+    from pydantic import (  # noqa: F403 # type: ignore
+        BaseModel,
+        Extra,
+        Field,
+        PrivateAttr,
+        SecretStr,
+        ValidationError,
+        create_model,
+        root_validator,
+        validate_arguments,
+    )
 
 
 try:
     _PYDANTIC_MAJOR_VERSION: int = int(metadata.version("pydantic").split(".")[0])
 except metadata.PackageNotFoundError:
     _PYDANTIC_MAJOR_VERSION = 0
+
+__all__ = [
+    "BaseModel",
+    "Field",
+    "PrivateAttr",
+    "SecretStr",
+    "_PYDANTIC_MAJOR_VERSION",
+    "Extra",
+    "ValidationError",
+    "root_validator",
+    "validate_arguments",
+    "create_model",
+]

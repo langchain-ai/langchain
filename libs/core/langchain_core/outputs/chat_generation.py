@@ -23,7 +23,7 @@ class ChatGeneration(Generation):
         # Backwards compatibility delete text if it provided.
         # This would arise primarily from de-serialization of old objects.
         kwargs["text"] = message.content
-        super().__init__(message=message, **kwargs)
+        super().__init__(message=message, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

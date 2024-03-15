@@ -109,7 +109,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         return ["langchain", "prompts", "chat"]
 
     def __init__(self, variable_name: str, *, optional: bool = False, **kwargs: Any):
-        super().__init__(variable_name=variable_name, optional=optional, **kwargs)
+        super().__init__(variable_name=variable_name, optional=optional, **kwargs)  # type: ignore[call-arg]
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
