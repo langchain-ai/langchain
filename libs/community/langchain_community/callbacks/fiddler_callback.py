@@ -24,7 +24,7 @@ FAILURE = "failure"
 
 # Default values
 DEFAULT_MAX_TOKEN = 65536
-DEFAULT_MAX_DURATION = 120
+DEFAULT_MAX_DURATION = 120000
 
 # Fiddler specific constants
 PROMPT = "prompt"
@@ -154,7 +154,7 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
             dataset_info=dataset_info,
             dataset_id="train",
             model_task=self.fdl.ModelTask.LLM,
-            features=[PROMPT, RESPONSE, CONTEXT],
+            features=[PROMPT, CONTEXT, RESPONSE],
             target=FEEDBACK,
             metadata_cols=[
                 RUN_ID,
@@ -297,12 +297,12 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
     ) -> Any:
         run_id = kwargs[RUN_ID]
         self.run_id_prompts[run_id] = prompts
-        self.run_id_starttime[run_id] = int(time.time())
+        self.run_id_starttime[run_id] = int(time.time() * 1000)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         flattened_llmresult = response.flatten()
         run_id = kwargs[RUN_ID]
-        run_duration = self.run_id_starttime[run_id] - int(time.time())
+        run_duration = int(time.time() * 1000) - self.run_id_starttime[run_id]
         model_name = ""
         token_usage_dict = {}
 
@@ -329,7 +329,7 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
 
     def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         run_id = kwargs[RUN_ID]
-        duration = int(time.time()) - self.run_id_starttime[run_id]
+        duration = int(time.time() * 1000) - self.run_id_starttime[run_id]
 
         self._publish_events(
             run_id, [""] * len(self.run_id_prompts[run_id]), duration, FAILURE
