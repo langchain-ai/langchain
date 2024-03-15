@@ -66,3 +66,4 @@ dgml-utils
 cohere
 langchain-openai
 rdflib
+pydantic>=1,<2
