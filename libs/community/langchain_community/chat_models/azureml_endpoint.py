@@ -156,7 +156,7 @@ class MistralChatContentFormatter(LlamaChatContentFormatter):
         chat_messages = [self._convert_message_to_dict(message) for message in messages]
 
         if chat_messages and chat_messages[0]["role"] == "system":
-            # Mistral OSS models do not explicity support system prompts, so we have to
+            # Mistral OSS models do not explicitly support system prompts, so we have to
             # stash in the first user prompt
             chat_messages[1]["content"] = (
                 chat_messages[0]["content"] + "\n\n" + chat_messages[1]["content"]
