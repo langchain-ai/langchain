@@ -14,6 +14,7 @@ langchain-core = "^0.1.28"
 lxml = {version = "^5.1.0", optional = true}
 semantic-text-splitter = {version = "^0.6.3", optional = false} 
 
+
 [tool.poetry.group.lint]
 optional = true
 
@@ -57,11 +58,6 @@ langchain-core = {path = "../core", develop = true}
 [tool.poetry.group.test_integration]
 optional = true
 dependencies = {}
-
-[tool.poetry.extras]
-extended_testing = [
-  "lxml",
-]
 
 [tool.ruff.lint]
 select = [

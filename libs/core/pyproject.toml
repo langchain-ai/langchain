@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.1.31"
+version = "0.1.33-rc.1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -67,7 +67,6 @@ optional = true
 dependencies = {}
 
 [tool.poetry.extras]
-extended_testing = ["jinja2"]
 
 [tool.ruff.lint]
 select = [
