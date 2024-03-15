@@ -10,7 +10,7 @@ from langchain_core.utils._merge import merge_dicts
 class ChatGeneration(Generation):
     """A single chat generation output."""
 
-    # text: str = ""
+    text: str = ""
     # """*SHOULD NOT BE SET DIRECTLY* The text contents of the output message."""
     message: BaseMessage
     """The message output by the chat model."""
