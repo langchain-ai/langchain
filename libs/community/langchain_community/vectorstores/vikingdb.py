@@ -15,6 +15,22 @@ logger = logging.getLogger(__name__)
 
 
 class VikingDBConfig(object):
+    """vikingdb connection config
+
+    See the following documentation for details:
+    https://www.volcengine.com/docs/6459/1167770
+
+    Attribute:
+        host(str):The access address of the vector database server
+            that the client needs to connect to.
+        region(str):"cn-shanghai" or "cn-beijing"
+        ak(str):Access Key ID, security credentials for accessing
+            Volcano Engine services.
+        sk(str):Secret Access Key, security credentials for accessing
+            Volcano Engine services.
+        scheme(str):http or https, defaulting to http.
+    """
+
     def __init__(self, host="host", region="region", ak="ak", sk="sk", scheme="http"):  # type: ignore[no-untyped-def]
         self.host = host
         self.region = region
@@ -24,6 +40,13 @@ class VikingDBConfig(object):
 
 
 class VikingDB(VectorStore):
+    """vikingdb as a vector store
+
+    In order to use this you need to have a database instance.
+    See the following documentation for details:
+    https://www.volcengine.com/docs/6459/1167774
+    """
+
     def __init__(
         self,
         embedding_function: Embeddings,
@@ -150,6 +173,7 @@ class VikingDB(VectorStore):
         batch_size: int = 1000,
         **kwargs: Any,
     ) -> List[str]:
+        """Insert text data into VikingDB."""
         try:
             from volcengine.viking_db import Data
         except ImportError:
@@ -200,6 +224,7 @@ class VikingDB(VectorStore):
         params: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Perform a similarity search against the query string."""
         res = self.similarity_search_with_score(query=query, params=params, **kwargs)
         return [doc for doc, _ in res]
 
@@ -209,6 +234,7 @@ class VikingDB(VectorStore):
         params: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Perform a search on a query string and return results with score."""
         embedding = self.embedding_func.embed_query(query)
 
         res = self.similarity_search_with_score_by_vector(
@@ -222,6 +248,7 @@ class VikingDB(VectorStore):
         params: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Perform a similarity search against the query string."""
         res = self.similarity_search_with_score_by_vector(
             embedding=embedding, params=params, **kwargs
         )
@@ -233,6 +260,7 @@ class VikingDB(VectorStore):
         params: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Perform a search on a query string and return results with score."""
         if self.collection is None:
             logger.debug("No existing collection to search.")
             return []
@@ -277,6 +305,7 @@ class VikingDB(VectorStore):
         params: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Perform a search and return results that are reordered by MMR."""
         embedding = self.embedding_func.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding=embedding,
@@ -294,6 +323,7 @@ class VikingDB(VectorStore):
         params: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Perform a search and return results that are reordered by MMR."""
         if self.collection is None:
             logger.debug("No existing collection to search.")
             return []
@@ -361,6 +391,7 @@ class VikingDB(VectorStore):
         drop_old: bool = False,
         **kwargs: Any,
     ):
+        """Create a collection, indexes it and insert data."""
         if connection_args is None:
             raise Exception("VikingDBConfig does not exists")
         vector_db = cls(
