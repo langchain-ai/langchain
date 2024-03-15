@@ -49,6 +49,7 @@ def test_chat_bedrock_generate_with_token_usage(chat: BedrockChat) -> None:
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
+    assert isinstance(response.llm_output, dict)
 
     token_usage = response.llm_output["token_usage"]
     assert token_usage["prompt_tokens"] == 2

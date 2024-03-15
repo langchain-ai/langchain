@@ -311,7 +311,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
         self,
         messages: List[BaseMessage],
         completion: str,
-    ):
+    ) -> Dict[str, int]:
         prompt, system, formatted_messages = self._convert_messages(messages)
         prompt_tokens = 0
         if prompt:
@@ -331,10 +331,10 @@ class BedrockChat(BaseChatModel, BedrockBase):
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         if self.compute_token_usage:
             prompt_tokens = sum(
-                out["token_usage"]["prompt_tokens"] for out in llm_outputs
+                out["token_usage"]["prompt_tokens"] for out in llm_outputs if out
             )
             completion_tokens = sum(
-                out["token_usage"]["completion_tokens"] for out in llm_outputs
+                out["token_usage"]["completion_tokens"] for out in llm_outputs if out
             )
             llm_output = {
                 "model_name": self.model_id,
