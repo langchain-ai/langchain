@@ -69,6 +69,7 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_context,
     accepts_run_manager,
+    adapt_first_streaming_chunk,
     create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -459,7 +460,35 @@ class Runnable(Generic[Input, Output], ABC):
         ],
     ) -> RunnableSerializable[Any, Any]:
         """Assigns new fields to the dict output of this runnable.
-        Returns a new runnable."""
+        Returns a new runnable.
+
+        .. code-block:: python
+
+            from langchain_community.llms.fake import FakeStreamingListLLM
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import SystemMessagePromptTemplate
+            from langchain_core.runnables import Runnable
+            from operator import itemgetter
+
+            prompt = (
+                SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+                + "{question}"
+            )
+            llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+            chain: Runnable = prompt | llm | {"str": StrOutputParser()}
+
+            chain_with_assign = chain.assign(hello=itemgetter("str") | llm)
+
+            print(chain_with_assign.input_schema.schema())
+            # {'title': 'PromptInput', 'type': 'object', 'properties':
+            {'question': {'title': 'Question', 'type': 'string'}}}
+            print(chain_with_assign.output_schema.schema()) #
+            {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
+            {'str': {'title': 'Str',
+            'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
+
+        """
         from langchain_core.runnables.passthrough import RunnableAssign
 
         return self | RunnableAssign(RunnableParallel(kwargs))
@@ -815,6 +844,7 @@ class Runnable(Generic[Input, Output], ABC):
             diff=diff,
             stream=stream,
             with_streamed_output_list=with_streamed_output_list,
+            **kwargs,
         ):
             yield item
 
@@ -1178,7 +1208,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         for chunk in input:
             if not got_first_val:
-                final = _adapt_first_streaming_chunk(chunk)  # type: ignore
+                final = adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
@@ -1211,7 +1241,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         async for chunk in input:
             if not got_first_val:
-                final = _adapt_first_streaming_chunk(chunk)  # type: ignore
+                final = adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
@@ -1350,6 +1380,29 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> RunnableWithFallbacksT[Input, Output]:
         """Add fallbacks to a runnable, returning a new Runnable.
 
+        Example:
+
+            .. code-block:: python
+
+                from typing import Iterator
+
+                from langchain_core.runnables import RunnableGenerator
+
+
+                def _generate_immediate_error(input: Iterator) -> Iterator[str]:
+                    raise ValueError()
+                    yield ""
+
+
+                def _generate(input: Iterator) -> Iterator[str]:
+                    yield from "foo bar"
+
+
+                runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
+                    [RunnableGenerator(_generate)]
+                    )
+                print(''.join(runnable.stream({}))) #foo bar
+
         Args:
             fallbacks: A sequence of runnables to try if the original runnable fails.
             exceptions_to_handle: A tuple of exception types to handle.
@@ -1361,6 +1414,7 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A new Runnable that will try the original runnable, and then each
             fallback in order, upon failures.
+
         """
         from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 
@@ -3702,7 +3756,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         for ichunk in input:
             if final is None:
-                final = _adapt_first_streaming_chunk(ichunk)  # type: ignore
+                final = adapt_first_streaming_chunk(ichunk)  # type: ignore
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3786,7 +3840,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         async for ichunk in input:
             if final is None:
-                final = _adapt_first_streaming_chunk(ichunk)
+                final = adapt_first_streaming_chunk(ichunk)
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -4698,11 +4752,3 @@ def chain(
                 yield chunk
     """
     return RunnableLambda(func)
-
-
-def _adapt_first_streaming_chunk(chunk: Any) -> Any:
-    """This might transform the first chunk of a stream into an AddableDict."""
-    if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
-        return AddableDict(chunk)
-    else:
-        return chunk
