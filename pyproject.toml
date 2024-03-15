@@ -68,9 +68,10 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 [tool.ruff]
 extend-include = ["*.ipynb"]
 extend-exclude = [
-    "docs/docs/expression_language/why.ipynb"  # TODO: look into why linter errors
+    "docs/docs/expression_language/why.ipynb",  # TODO: look into why linter errors
+    "docs/versioned_docs/version-0.1.x/expression_language/why.ipynb" 
 ]
-
+ 
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
     "E402",  # allow imports to appear anywhere in docs
