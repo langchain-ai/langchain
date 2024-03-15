@@ -483,7 +483,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
         # Second: Use _stream if _astream is not defined and _stream is not BaseLLM's _stream.
         elif type(self)._stream != BaseLLM._stream:
-            # _stream 메소드를 비동기적으로 처리하는 로직 필요 (예시에서는 직접 구현 필요)
             # Logic to handle _stream method asynchronously.
             async for chunk in self._sync_to_async_stream(input, config=config, stop=stop, **kwargs):
                 yield chunk
