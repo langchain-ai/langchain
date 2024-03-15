@@ -41,7 +41,7 @@ class ManticoreSearchSettings(BaseSettings):
     knn_dims: int = None  # Defaults autodetect
 
     # A mandatory setting that specifies the distance function used by the HNSW index.
-    hnsw_similarity: str = 'L2'  # Acceptable values are: L2, IP, COSINE
+    hnsw_similarity: str = "L2"  # Acceptable values are: L2, IP, COSINE
 
     # An optional setting that defines the maximum amount of outgoing connections
     # in the graph.
@@ -51,7 +51,7 @@ class ManticoreSearchSettings(BaseSettings):
     hnsw_ef_construction = 100
 
     def get_connection_string(self) -> str:
-        return self.proto + '://' + self.host + ':' + str(self.port)
+        return self.proto + "://" + self.host + ":" + str(self.port)
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
@@ -79,10 +79,10 @@ class ManticoreSearch(VectorStore):
     """
 
     def __init__(
-            self,
-            embedding_function: Optional[Embeddings] = None,
-            config: Optional[ManticoreSearchSettings] = None,
-            **kwargs: Any,
+        self,
+        embedding_function: Optional[Embeddings] = None,
+        config: Optional[ManticoreSearchSettings] = None,
+        **kwargs: Any,
     ) -> None:
         """
         ManticoreSearch Wrapper to LangChain
@@ -103,6 +103,7 @@ class ManticoreSearch(VectorStore):
 
         try:
             from tqdm import tqdm
+
             self.pgbar = tqdm
         except ImportError:
             # Just in case if tqdm is not installed
@@ -119,17 +120,17 @@ class ManticoreSearch(VectorStore):
         assert self.config
         assert self.config.host and self.config.port
         assert (
-                self.config.column_map
-                # and self.config.database
-                and self.config.table
+            self.config.column_map
+            # and self.config.database
+            and self.config.table
         )
 
         assert (
-                self.config.knn_type
-                # and self.config.knn_dims
-                # and self.config.hnsw_m
-                # and self.config.hnsw_ef_construction
-                and self.config.hnsw_similarity
+            self.config.knn_type
+            # and self.config.knn_dims
+            # and self.config.hnsw_m
+            # and self.config.hnsw_ef_construction
+            and self.config.hnsw_similarity
         )
 
         for k in ["id", "embedding", "document", "metadata", "uuid"]:
@@ -173,19 +174,19 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         }
 
         # Create default schema if not exists
-        self.client['utils'].sql(self.schema)
+        self.client["utils"].sql(self.schema)
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            batch_size: int = 32,
-            text_ids: Optional[Iterable[str]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        batch_size: int = 32,
+        text_ids: Optional[Iterable[str]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """
         Insert more texts through the embeddings and add to the VectorStore.
@@ -202,7 +203,7 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         # Embed and create the documents
         ids = text_ids or [
             # See https://stackoverflow.com/questions/67219691/python-hash-function-that-returns-32-or-64-bits
-            int(sha1(t.encode('utf-8')).hexdigest()[:15], 16)
+            int(sha1(t.encode("utf-8")).hexdigest()[:15], 16)
             for t in texts
         ]
         transac = []
@@ -210,29 +211,27 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
             embed = self.embeddings.embed_query(text)
             doc_uuid = str(uuid.uuid1())
             doc = {
-                self.config.column_map['document']: text,
-                self.config.column_map['embedding']: embed,
-                self.config.column_map['metadata']: meta,
-                self.config.column_map['uuid']: doc_uuid
+                self.config.column_map["document"]: text,
+                self.config.column_map["embedding"]: embed,
+                self.config.column_map["metadata"]: meta,
+                self.config.column_map["uuid"]: doc_uuid,
             }
-            transac.append({"replace": {
-                "index": self.config.table,
-                "id": ids[i],
-                "doc": doc
-            }})
+            transac.append(
+                {"replace": {"index": self.config.table, "id": ids[i], "doc": doc}}
+            )
 
             if len(transac) == batch_size:
-                body = '\n'.join(map(json.dumps, transac))
+                body = "\n".join(map(json.dumps, transac))
                 try:
-                    self.client['index'].bulk(body)
+                    self.client["index"].bulk(body)
                     transac = []
                 except Exception as e:
                     print(f"Error indexing documents: {e}")
 
         if len(transac) > 0:
-            body = '\n'.join(map(json.dumps, transac))
+            body = "\n".join(map(json.dumps, transac))
             try:
-                self.client['index'].bulk(body)
+                self.client["index"].bulk(body)
             except Exception as e:
                 print(f"Error indexing documents: {e}")
 
@@ -240,14 +239,14 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
 
     @classmethod
     def from_texts(
-            cls: Type[ManticoreSearch],
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[Dict[Any, Any]]] = None,
-            config: Optional[ManticoreSearchSettings] = None,
-            text_ids: Optional[Iterable[str]] = None,
-            batch_size: int = 32,
-            **kwargs: Any,
+        cls: Type[ManticoreSearch],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        config: Optional[ManticoreSearchSettings] = None,
+        text_ids: Optional[Iterable[str]] = None,
+        batch_size: int = 32,
+        **kwargs: Any,
     ) -> ManticoreSearch:
         ctx = cls(embedding, config, **kwargs)
         ctx.add_texts(
@@ -262,13 +261,13 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
 
     @classmethod
     def from_documents(
-            cls: Type[ManticoreSearch],
-            documents: List[Document],
-            embedding: Embeddings,
-            config: Optional[ManticoreSearchSettings] = None,
-            text_ids: Optional[Iterable[str]] = None,
-            batch_size: int = 32,
-            **kwargs: Any,
+        cls: Type[ManticoreSearch],
+        documents: List[Document],
+        embedding: Embeddings,
+        config: Optional[ManticoreSearchSettings] = None,
+        text_ids: Optional[Iterable[str]] = None,
+        batch_size: int = 32,
+        **kwargs: Any,
     ) -> ManticoreSearch:
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
@@ -293,18 +292,13 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         _repr += f"http://{self.config.host}:{self.config.port}\033[0m\n\n"
         _repr += f"\033[1musername: {self.config.username}\033[0m\n\nTable Schema:\n"
         _repr += "-" * 51 + "\n"
-        for r in self.client['utils'].sql(f"DESCRIBE {self.config.table}")[0]['data']:
-            _repr += (
-                f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type'] + ' ' + r['Properties']:24s}\033[0m|\n"
-            )
+        for r in self.client["utils"].sql(f"DESCRIBE {self.config.table}")[0]["data"]:
+            _repr += f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type'] + ' ' + r['Properties']:24s}\033[0m|\n"
         _repr += "-" * 51 + "\n"
         return _repr
 
     def similarity_search(
-            self,
-            query: str,
-            k: int = DEFAULT_K,
-            **kwargs: Any
+        self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Document]:
         """Perform a similarity search with ManticoreSearch
 
@@ -316,16 +310,14 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
             List[Document]: List of Documents
         """
         return self.similarity_search_by_vector(
-            self.embedding_function.embed_query(query),
-            k,
-            **kwargs
+            self.embedding_function.embed_query(query), k, **kwargs
         )
 
     def similarity_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = DEFAULT_K,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search with ManticoreSearch by vectors
 
@@ -341,18 +333,18 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         request = {
             "index": self.config.table,
             "knn": {
-                "field": self.config.column_map['embedding'],
+                "field": self.config.column_map["embedding"],
                 "k": k,
                 "query_vector": embedding,
-            }
+            },
         }
 
         # Execute request and convert response to langchain.Document format
         try:
             return [
                 Document(
-                    page_content=r['_source'][self.config.column_map["document"]],
-                    metadata=r['_source'][self.config.column_map["metadata"]],
+                    page_content=r["_source"][self.config.column_map["document"]],
+                    metadata=r["_source"][self.config.column_map["metadata"]],
                 )
                 for r in self.client["search"].search(request, **kwargs).hits.hits[:k]
             ]
@@ -364,9 +356,7 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         """
         Helper function: Drop data
         """
-        self.client['utils'].sql(
-            f"DROP TABLE IF EXISTS {self.config.table}"
-        )
+        self.client["utils"].sql(f"DROP TABLE IF EXISTS {self.config.table}")
 
     @property
     def metadata_column(self) -> str:
