@@ -49,8 +49,10 @@ class RecursiveJsonSplitter:
         self,
         data: Dict[str, Any],
         current_path: List[str] = [],
-        chunks: List[Dict] = [{}],
+        chunks: List[Dict] = None,
     ) -> List[Dict]:
+        if chunks is None:
+            chunks = [{}]  
         """
         Split json into maximum size dictionaries while preserving structure.
         """
