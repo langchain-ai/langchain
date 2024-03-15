@@ -139,7 +139,6 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
         if not values.get("client"):
             sync_specific = {"http_client": values["http_client"]}
