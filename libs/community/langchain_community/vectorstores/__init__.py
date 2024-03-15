@@ -33,6 +33,7 @@ _module_lookup = {
     "AwaDB": "langchain_community.vectorstores.awadb",
     "AzureCosmosDBVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",
     "AzureSearch": "langchain_community.vectorstores.azuresearch",
+    "BaiduVectorDB": "langchain_community.vectorstores.baiduvectordb",
     "BESVectorStore": "langchain_community.vectorstores.baiducloud_vector_search",
     "Bagel": "langchain_community.vectorstores.bageldb",
     "BigQueryVectorSearch": "langchain_community.vectorstores.bigquery_vector_search",
