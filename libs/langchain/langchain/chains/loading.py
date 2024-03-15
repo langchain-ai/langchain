@@ -69,7 +69,9 @@ def _load_hyde_chain(config: dict, **kwargs: Any) -> HypotheticalDocumentEmbedde
     else:
         raise ValueError("`embeddings` must be present.")
     return HypotheticalDocumentEmbedder(
-        llm_chain=llm_chain, base_embeddings=embeddings, **config  # type: ignore[arg-type]
+        llm_chain=llm_chain,
+        base_embeddings=embeddings,
+        **config,  # type: ignore[arg-type]
     )
 
 

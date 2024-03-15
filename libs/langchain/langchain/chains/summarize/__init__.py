@@ -57,11 +57,17 @@ def _load_map_reduce_chain(
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(
-        llm=llm, prompt=map_prompt, verbose=verbose, callbacks=callbacks  # type: ignore[arg-type]
+        llm=llm,
+        prompt=map_prompt,
+        verbose=verbose,
+        callbacks=callbacks,  # type: ignore[arg-type]
     )
     _reduce_llm = reduce_llm or llm
     reduce_chain = LLMChain(
-        llm=_reduce_llm, prompt=combine_prompt, verbose=verbose, callbacks=callbacks  # type: ignore[arg-type]
+        llm=_reduce_llm,
+        prompt=combine_prompt,
+        verbose=verbose,
+        callbacks=callbacks,  # type: ignore[arg-type]
     )
     # TODO: document prompt
     combine_documents_chain = StuffDocumentsChain(
