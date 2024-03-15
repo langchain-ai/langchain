@@ -11,11 +11,13 @@ from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator, validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
+DEFAULT_TIMEOUT = 50
+
 
 class AzureMLEndpointClient(object):
     """AzureML Managed Endpoint client."""
 
-    timeout: int = 50
+    timeout: int = DEFAULT_TIMEOUT
     """Request timeout"""
 
     def __init__(
@@ -341,6 +343,9 @@ class AzureMLBaseEndpoint(BaseModel):
 
     http_client: Any = None  #: :meta private:
 
+    timeout: int = DEFAULT_TIMEOUT
+    """Request timeout"""
+
     content_formatter: Any = None
     """The content formatter that provides an input and output
     transform function to handle formats between the LLM and
@@ -429,12 +434,15 @@ class AzureMLBaseEndpoint(BaseModel):
         endpoint_url = values.get("endpoint_url")
         endpoint_key = values.get("endpoint_api_key")
         deployment_name = values.get("deployment_name")
+        timeout = values.get("timeout")
 
         http_client = AzureMLEndpointClient(
             endpoint_url,  # type: ignore
             endpoint_key.get_secret_value(),  # type: ignore
             deployment_name,  # type: ignore
         )
+        http_client.timeout = timeout
+
         return http_client
 
 
