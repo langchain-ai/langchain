@@ -2,12 +2,11 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from requests.exceptions import HTTPError
-
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import Field
+from requests.exceptions import HTTPError
 
 
 class MaritalkHTTPError(HTTPError):
