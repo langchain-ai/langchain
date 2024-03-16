@@ -105,7 +105,7 @@ def _convert_delta_response_to_message_chunk(
     response: ChatCompletionResponseStream, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     """Converts delta response to message chunk"""
-    _delta = response.choices[0].delta # type: ignore
+    _delta = response.choices[0].delta  # type: ignore
     role = _delta.get("role", "")
     content = _delta.get("content", "")
     additional_kwargs: Dict = {}
