@@ -142,38 +142,58 @@ schema3 = {
 }
 
 
-output4 = {'type': 'object',
- 'properties': {'properties': {
-   'description': 'Information to extract',
-   'type': 'object',
-   'properties': {'title': {
-     'description': 'Information about papers mentioned.',
-     'type': 'object',
-     'properties': {'title': { 'type': 'string'},
-      'author': {'type': 'string'}},
-     'required': ['title']}},
-   'required': ['title']}},
- 'required': ['properties']}
+output4 = {
+    "type": "object",
+    "properties": {
+        "properties": {
+            "description": "Information to extract",
+            "type": "object",
+            "properties": {
+                "title": {
+                    "description": "Information about papers mentioned.",
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "author": {"type": "string"},
+                    },
+                    "required": ["title"],
+                }
+            },
+            "required": ["title"],
+        }
+    },
+    "required": ["properties"],
+}
 
-schema4 = {'type': 'object',
- 'properties': {'properties': {'title': 'Info',
-   'description': 'Information to extract',
-   'type': 'object',
-   'properties': {'title': {'title': 'Paper',
-     'description': 'Information about papers mentioned.',
-     'type': 'object',
-     'properties': {'title': {'title': 'Title', 'type': 'string'},
-      'author': {'title': 'Author', 'type': 'string'}},
-     'required': ['title']}},
-   'required': ['title']}},
- 'required': ['properties']}
+schema4 = {
+    "type": "object",
+    "properties": {
+        "properties": {
+            "title": "Info",
+            "description": "Information to extract",
+            "type": "object",
+            "properties": {
+                "title": {
+                    "title": "Paper",
+                    "description": "Information about papers mentioned.",
+                    "type": "object",
+                    "properties": {
+                        "title": {"title": "Title", "type": "string"},
+                        "author": {"title": "Author", "type": "string"},
+                    },
+                    "required": ["title"],
+                }
+            },
+            "required": ["title"],
+        }
+    },
+    "required": ["properties"],
+}
+
 
 @pytest.mark.parametrize(
-    "schema, output", [
-        (schema1, output1), 
-        (schema2, output2), 
-        (schema3, output3), 
-        (schema4, output4)]
+    "schema, output",
+    [(schema1, output1), (schema2, output2), (schema3, output3), (schema4, output4)],
 )
-def test_rm_titles(schema, output):
+def test_rm_titles(schema: dict, output: dict) -> None:
     assert _rm_titles(schema) == output
