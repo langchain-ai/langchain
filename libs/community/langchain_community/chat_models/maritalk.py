@@ -16,13 +16,13 @@ class MaritalkHTTPError(HTTPError):
         try:
             response_json = request_obj.json()
             if "detail" in response_json:
-                api_message: str = response_json["detail"]
+                api_message = response_json["detail"]
             elif "message" in response_json:
-                api_message: str = response_json["message"]
+                api_message = response_json["message"]
             else:
-                api_message: Any = response_json
+                api_message = response_json
         except Exception:
-            api_message: str = request_obj.text
+            api_message = request_obj.text
 
         self.message = api_message
         self.status_code = request_obj.status_code
