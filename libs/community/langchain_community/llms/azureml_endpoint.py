@@ -17,11 +17,12 @@ DEFAULT_TIMEOUT = 50
 class AzureMLEndpointClient(object):
     """AzureML Managed Endpoint client."""
 
-    timeout: int = DEFAULT_TIMEOUT
-    """Request timeout"""
-
     def __init__(
-        self, endpoint_url: str, endpoint_api_key: str, deployment_name: str = ""
+        self,
+        endpoint_url: str,
+        endpoint_api_key: str,
+        deployment_name: str = "",
+        timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
         """Initialize the class."""
         if not endpoint_api_key or not endpoint_url:
@@ -32,6 +33,7 @@ class AzureMLEndpointClient(object):
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
         self.deployment_name = deployment_name
+        self.timeout = timeout
 
     def call(
         self,
@@ -341,10 +343,10 @@ class AzureMLBaseEndpoint(BaseModel):
     """Deployment Name for Endpoint. NOT REQUIRED to call endpoint. Should be passed 
         to constructor or specified as env var `AZUREML_DEPLOYMENT_NAME`."""
 
-    http_client: Any = None  #: :meta private:
-
     timeout: int = DEFAULT_TIMEOUT
-    """Request timeout"""
+    """Request timeout for calls to the endpoint"""
+
+    http_client: Any = None  #: :meta private:
 
     content_formatter: Any = None
     """The content formatter that provides an input and output
@@ -370,6 +372,9 @@ class AzureMLBaseEndpoint(BaseModel):
             "endpoint_api_type",
             "AZUREML_ENDPOINT_API_TYPE",
             AzureMLEndpointApiType.realtime,
+        )
+        values["timeout"] = get_from_dict_or_env(
+            values, "timeout", "AZUREML_TIMEOUT", ""
         )
 
         return values
@@ -434,11 +439,13 @@ class AzureMLBaseEndpoint(BaseModel):
         endpoint_url = values.get("endpoint_url")
         endpoint_key = values.get("endpoint_api_key")
         deployment_name = values.get("deployment_name")
+        timeout = values.get("timeout")
 
         http_client = AzureMLEndpointClient(
             endpoint_url,  # type: ignore
             endpoint_key.get_secret_value(),  # type: ignore
             deployment_name,  # type: ignore
+            timeout,
         )
 
         return http_client
