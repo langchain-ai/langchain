@@ -23,7 +23,10 @@ class GoogleNationalWeatherAPI(BaseTool):
     google_api_key: Optional[str] = None
 
     @root_validator(pre=True)
-    # Check the following link for updating the root_validator decorator; pull from pydantic v2, instead of langchain/pydantic v1. https://docs.pydantic.dev/latest/api/functional_validators/#pydantic.functional_validators.model_validator
+    # Check the following link for updating the root_validator decorator; 
+    # pull from pydantic v2, instead of langchain/pydantic v1. 
+    # https://docs.pydantic.dev/latest/api/functional_validators/
+    # #pydantic.functional_validators.model_validator
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         google_api_key = get_from_dict_or_env(
@@ -35,7 +38,8 @@ class GoogleNationalWeatherAPI(BaseTool):
 
         except ImportError:
             raise ImportError(
-                "googlemaps is not installed. Please install it with `pip install googlemaps`"
+                """googlemaps is not installed. 
+                Please install it with `pip install googlemaps`"""
             )
 
         gmaps = googlemaps.Client(google_api_key)
