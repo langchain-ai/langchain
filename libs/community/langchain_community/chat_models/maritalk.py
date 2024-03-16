@@ -29,7 +29,7 @@ class ChatMaritalk(SimpleChatModel):
     - `sabia-2-small`
     - `sabia-2-medium-2024-03-13`
     - `sabia-2-small-2024-03-13`
-    - `maritalk-2024-01-08` (deprecated)""""
+    - `maritalk-2024-01-08` (deprecated)"""
 
     temperature: float = Field(default=0.7, gt=0.0, lt=1.0)
     """Run inference with this temperature. 
