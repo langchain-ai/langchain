@@ -99,7 +99,7 @@ class ChatMaritalk(SimpleChatModel):
                 role = "assistant"
             elif isinstance(message, SystemMessage):
                 role = "system"
-                
+
             parsed_messages.append({"role": role, "content": message.content})
         return parsed_messages
 
