@@ -98,7 +98,7 @@ def _response_to_result(
                     text=content, message=ChatMessage(role=role, content=content)
                 )
             )
-        return ChatResult(generations=generations)
+    return ChatResult(generations=generations)
 
 
 def _convert_delta_response_to_message_chunk(
@@ -106,9 +106,12 @@ def _convert_delta_response_to_message_chunk(
 ) -> BaseMessageChunk:
     """Converts delta response to message chunk"""
     _delta = response.choices[0].delta
-    role = _delta["role"]
-    content = _delta["content"]
+    role = _delta.get("role", "")
+    content = _delta.get("content", "")
     additional_kwargs: Dict = {}
+    
+    if role is None or role == "":
+        raise ChatPremAPIError("Role can not be None. Please check the response")
 
     finish_reasons = response.choices[0].finish_reason
 
