@@ -5,6 +5,31 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import Field
+from requests.exceptions import HTTPError
+from http import HTTPStatus
+
+
+class MaritalkHTTPError(HTTPError):
+    def __init__(self, request_obj):
+        self.request_obj = request_obj
+        try:
+            response_json = request_obj.json()
+            if "detail" in response_json:
+                api_message = response_json["detail"]
+            elif "message" in response_json:
+                api_message = response_json["message"]
+            else:
+                api_message = response_json
+        except:
+            api_message = request_obj.text
+
+        self.message = api_message
+        self.status_code = request_obj.status_code
+
+    def __str__(self):
+        status_code_meaning = HTTPStatus(self.status_code).phrase
+        formatted_message = f"HTTP Error: {self.status_code} - {status_code_meaning}\nDetail: {self.message}"
+        return formatted_message
 
 
 class ChatMaritalk(SimpleChatModel):
@@ -124,10 +149,11 @@ class ChatMaritalk(SimpleChatModel):
             }
 
             response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 429:
-                return "Rate limited, please try again soon"
-            elif response.ok:
+
+            if response.ok:
                 return response.json().get("answer", "No answer found")
+            else:
+                raise MaritalkHTTPError(response)
 
         except requests.exceptions.RequestException as e:
             return f"An error occurred: {str(e)}"
