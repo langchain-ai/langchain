@@ -27,7 +27,7 @@ class PremAIEmbeddings(BaseModel, Embeddings):
     show_progress_bar: bool = False
     """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
 
-    max_retries: Optional[int] = 1
+    max_retries: int = 1
     """Max number of retries for tenacity"""
 
     client: Any
