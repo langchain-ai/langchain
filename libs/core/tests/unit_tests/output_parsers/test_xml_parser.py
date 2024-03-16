@@ -62,4 +62,4 @@ def test_xml_output_parser_fail(result: str) -> None:
 
     with pytest.raises(OutputParserException) as e:
         xml_parser.parse(result)
-    assert "Could not parse output" in str(e)
+    assert "Failed to parse" in str(e)

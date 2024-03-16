@@ -45,18 +45,13 @@ class XMLOutputParser(BaseTransformOutputParser):
             text = encoding_match.group(2)
 
         text = text.strip()
-        if (text.startswith("<") or text.startswith("\n<")) and (
-            text.endswith(">") or text.endswith(">\n")
-        ):
-            try:
-                root = ET.fromstring(text)
-                return self._root_to_dict(root)
+        try:
+            root = ET.fromstring(text)
+            return self._root_to_dict(root)
 
-            except ET.ParseError:
-                raise OutputParserException(f"Could not parse output: {text}")
-
-        else:
-            raise OutputParserException(f"Could not parse output: {text}")
+        except ET.ParseError as e:
+            msg = f"Failed to parse XML format from completion {text}. Got: {e}"
+            raise OutputParserException(msg, llm_output=text) from e
 
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
