@@ -445,7 +445,7 @@ class AzureMLBaseEndpoint(BaseModel):
             endpoint_url,  # type: ignore
             endpoint_key.get_secret_value(),  # type: ignore
             deployment_name,  # type: ignore
-            timeout,
+            timeout,  # type: ignore
         )
 
         return http_client
