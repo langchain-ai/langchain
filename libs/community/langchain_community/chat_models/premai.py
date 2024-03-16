@@ -109,7 +109,7 @@ def _convert_delta_response_to_message_chunk(
     role = _delta.get("role", "")
     content = _delta.get("content", "")
     additional_kwargs: Dict = {}
-    
+
     if role is None or role == "":
         raise ChatPremAPIError("Role can not be None. Please check the response")
 
