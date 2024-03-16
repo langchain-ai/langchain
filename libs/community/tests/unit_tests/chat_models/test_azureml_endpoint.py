@@ -28,7 +28,6 @@ def api_passed_via_constructor_fixture() -> AzureMLChatOnlineEndpoint:
     azure_chat = AzureMLChatOnlineEndpoint(
         endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
         endpoint_api_key="my-api-key",
-        timeout=55,
     )
     return azure_chat
 
