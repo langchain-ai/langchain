@@ -374,7 +374,10 @@ class AzureMLBaseEndpoint(BaseModel):
             AzureMLEndpointApiType.realtime,
         )
         values["timeout"] = get_from_dict_or_env(
-            values, "timeout", "AZUREML_TIMEOUT", ""
+            values,
+            "timeout",
+            "AZUREML_TIMEOUT",
+            DEFAULT_TIMEOUT,
         )
 
         return values
@@ -439,7 +442,7 @@ class AzureMLBaseEndpoint(BaseModel):
         endpoint_url = values.get("endpoint_url")
         endpoint_key = values.get("endpoint_api_key")
         deployment_name = values.get("deployment_name")
-        timeout = values.get("timeout")
+        timeout = values.get("timeout", DEFAULT_TIMEOUT)
 
         http_client = AzureMLEndpointClient(
             endpoint_url,  # type: ignore
@@ -460,6 +463,7 @@ class AzureMLOnlineEndpoint(BaseLLM, AzureMLBaseEndpoint):
                 endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
                 endpoint_api_type=AzureMLApiType.realtime,
                 endpoint_api_key="my-api-key",
+                timeout=120,
                 content_formatter=content_formatter,
             )
     """  # noqa: E501
