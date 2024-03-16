@@ -1,12 +1,13 @@
+from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from http import HTTPStatus
+from requests.exceptions import HTTPError
+
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import Field
-from requests.exceptions import HTTPError
 
 
 class MaritalkHTTPError(HTTPError):
@@ -28,8 +29,8 @@ class MaritalkHTTPError(HTTPError):
 
     def __str__(self):
         status_code_meaning = HTTPStatus(self.status_code).phrase
-        formatted_message = f"HTTP Error: {self.status_code} - {status_code_meaning}" + \
-        f"\nDetail: {self.message}"
+        formatted_message = f"HTTP Error: {self.status_code} - {status_code_meaning}"
+        formatted_message += f"\nDetail: {self.message}"
         return formatted_message
 
 
