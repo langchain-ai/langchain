@@ -377,7 +377,7 @@ class AzureMLBaseEndpoint(BaseModel):
             values,
             "timeout",
             "AZUREML_TIMEOUT",
-            DEFAULT_TIMEOUT,
+            str(DEFAULT_TIMEOUT),
         )
 
         return values
