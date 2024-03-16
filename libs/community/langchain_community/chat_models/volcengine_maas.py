@@ -112,7 +112,7 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        if "stop" not in kwargs and stop is not None:
+        if stop is not None:
             kwargs["stop"] = stop
         params = self._convert_prompt_msg_params(messages, **kwargs)
         for res in self.client.stream_chat(params):
@@ -135,7 +135,7 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 completion += chunk.text
         else:
-            if "stop" not in kwargs and stop is not None:
+            if stop is not None:
                 kwargs["stop"] = stop
             params = self._convert_prompt_msg_params(messages, **kwargs)
             res = self.client.chat(params)
