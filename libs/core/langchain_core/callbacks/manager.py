@@ -1198,12 +1198,9 @@ class CallbackManager(BaseCallbackManager):
                 prompt as an LLM run.
         """
         managers = []
-        for prompt in prompts:
-            if run_id is not None:
-                run_id_ = run_id
-                run_id = None
-            else:
-                run_id_ = uuid.uuid4()
+        for i, prompt in enumerate(prompts):
+            # Can't have duplicate runs with the same run ID (if provided)
+            run_id_ = run_id if i == 0 and run_id is not None else uuid.uuid4()
             handle_event(
                 self.handlers,
                 "on_llm_start",
