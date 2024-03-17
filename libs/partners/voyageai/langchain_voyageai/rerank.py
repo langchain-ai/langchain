@@ -17,7 +17,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
     client: voyageai.Client = None
     aclient: voyageai.AsyncClient = None
     """VoyageAI clients to use for compressing documents."""
-    top_k: Optional[int]
+    top_k: Optional[int] = None
     """Number of documents to return."""
     model: str
     """Model to use for reranking."""
