@@ -103,7 +103,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             )
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from DynamoDB"""
         try:
             from botocore.exceptions import ClientError
@@ -128,6 +128,13 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
         messages = messages_from_dict(items)
         return messages
+
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError(
+            "Direct assignment to 'messages' is not allowed."
+            " Use the 'add_messages' instead."
+        )
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in DynamoDB"""
