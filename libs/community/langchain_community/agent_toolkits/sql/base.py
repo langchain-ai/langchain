@@ -61,6 +61,7 @@ def create_sql_agent(
     *,
     db: Optional[SQLDatabase] = None,
     prompt: Optional[BasePromptTemplate] = None,
+    handle_parsing_errors : bool = False,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a SQL agent from an LLM and toolkit or database.
@@ -93,6 +94,10 @@ def create_sql_agent(
             using 'db' and 'llm'. Must provide exactly one of 'db' or 'toolkit'.
         prompt: Complete agent prompt. prompt and {prefix, suffix, format_instructions,
             input_variables} are mutually exclusive.
+        handle_parsing_errors: Occasionally the LLM cannot determine what step to take
+            because its outputs are not correctly formatted to be handled by the output
+            parser. In this case, by default the agent errors.
+            You can set handle_parsing_errors to True to handle such parsing errors.
         **kwargs: DEPRECATED. Not used, kept for backwards compatibility.
 
     Returns:
@@ -228,5 +233,6 @@ def create_sql_agent(
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
+        handle_parsing_errors=handle_parsing_errors,
         **(agent_executor_kwargs or {}),
     )
