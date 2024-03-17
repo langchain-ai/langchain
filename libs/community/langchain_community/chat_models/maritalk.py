@@ -1,10 +1,28 @@
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Unionm, AsyncIterator
+
+import httpx
+
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+import json
 
 import requests
-from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import SimpleChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+
+from langchain_core.language_models.chat_models import (
+    SimpleChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.pydantic_v1 import Field
 from requests import Response
 from requests.exceptions import HTTPError
@@ -162,6 +180,67 @@ class ChatMaritalk(SimpleChatModel):
 
         # Fallback return statement, in case of unexpected code paths
         return "An unexpected error occurred"
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        headers = {"Authorization": f"Key {self.api_key}"}
+        stopping_tokens = stop if stop is not None else []
+
+        parsed_messages = self.parse_messages_for_model(messages)
+
+        data = {
+            "messages": parsed_messages,
+            "model": self.model,
+            "do_sample": self.do_sample,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "stopping_tokens": stopping_tokens,
+            "stream": True,
+            **kwargs,
+        }
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", "https://chat.maritaca.ai/api/chat/inference", data=json.dumps(data), headers=headers) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data = line.replace("data: ", "")
+                        if data:
+                            parsed_data = json.loads(data)
+                            if 'text' in parsed_data:
+                                delta = parsed_data['text']
+                                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                                if run_manager:
+                                    await run_manager.on_llm_new_token(delta, chunk=chunk)
+                                yield chunk
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
+
+        # Fallback to the synchronous call if streaming is not enabled
+        response_text = self._call(messages, stop=stop, **kwargs)
+        message = AIMessage(content=response_text)
+        return ChatResult(
+            generations=[
+                ChatGeneration(message=message)
+            ]
+        )
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
