@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from langchain_core.documents import Document
 
@@ -78,13 +78,15 @@ class LTORQueryExpansion:
         self.model_reverse = MarianMTModel.from_pretrained(model_name_reverse)
         self.tokenizer_reverse = MarianTokenizer.from_pretrained(model_name_reverse)
 
-    def translate_pass(self, texts: List[str], pass_fwd_or_rev: str) -> List[str]:
+    def translate_pass(
+        self, texts: Union[str, List[str]], pass_fwd_or_rev: str
+    ) -> List[str]:
         """
         Performs translation using the specified
         translation direction ('fwd' or 'rev').
 
         Args:
-        - texts (List[str]): List of texts to be translated.
+        - texts (Union[str, List[str]]): List of texts to be translated.
         - pass_fwd_or_rev (str): Translation direction. Either
                                 'fwd' for forward translation or
                                 'rev' for reverse translation.
@@ -113,12 +115,13 @@ class LTORQueryExpansion:
         input_ids.to("cpu")
         return translated_texts
 
-    def rephrase_using_translation(self, query: str, iteration: int) -> List[str]:
+    def rephrase_using_translation(self, query: Union[str, List[str]], iteration: int)\
+            -> Union[List[str], List[List[str]]]:
         """
         Rephrases the query using translation iteratively.
 
         Args:
-        - query (str): Input query to be rephrased.
+        - query (Union[str, List[str]]): Input query to be rephrased.
         - iteration (int): Number of iterations for query rephrasing.
 
         Returns:
@@ -134,13 +137,13 @@ class LTORQueryExpansion:
         return queries
 
     def get_expanded_queries_ltor(
-        self, query: str, iteration: int = 1
+        self, query: Union[str, List[str]], iteration: int = 1
     ) -> List[List[str]]:
         """
         Returns expanded queries using LTOR approach.
 
         Args:
-        - query (str): Input query.
+        - query (Union[str, List[str]]): Input query.
         - iteration (int): Number of iterations for query expansion. Default is 1.
 
         Returns:
