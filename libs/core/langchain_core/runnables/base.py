@@ -1344,6 +1344,36 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> Runnable[Input, Output]:
         """Create a new Runnable that retries the original runnable on exceptions.
 
+        Example:
+
+        .. code-block:: python
+            from typing import Union
+
+            import pytest
+            from langchain_core.runnables import Runnable, RunnableLambda
+            from pytest_mock import MockerFixture
+
+
+            def test_retrying(mocker: MockerFixture) -> None:
+                def _lambda(x: int) -> Union[int, Runnable]:
+                    if x == 1:
+                        raise ValueError("x is 1")
+                    elif x == 2:
+                        raise RuntimeError("x is 2")
+                    else:
+                        return x
+
+                _lambda_mock = mocker.Mock(side_effect=_lambda)
+                runnable = RunnableLambda(_lambda_mock)
+
+                with pytest.raises(ValueError):
+                    runnable.with_retry(
+                        stop_after_attempt=2,
+                        retry_if_exception_type=(ValueError,),
+                    ).invoke(1)
+
+                assert _lambda_mock.call_count == 2  # retried
+
         Args:
             retry_if_exception_type: A tuple of exception types to retry on
             wait_exponential_jitter: Whether to add jitter to the wait time
