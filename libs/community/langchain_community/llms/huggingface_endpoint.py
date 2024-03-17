@@ -63,7 +63,7 @@ class HuggingFaceEndpoint(LLM):
             )
             print(llm("What is Deep Learning?"))
 
-    """
+    """  # noqa: E501
 
     endpoint_url: Optional[str] = None
     """Endpoint URL to use."""
