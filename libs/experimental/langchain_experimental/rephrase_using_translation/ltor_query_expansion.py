@@ -115,8 +115,9 @@ class LTORQueryExpansion:
         input_ids.to("cpu")
         return translated_texts
 
-    def rephrase_using_translation(self, query: Union[str, List[str]], iteration: int)\
-            -> Union[List[str], List[List[str]]]:
+    def rephrase_using_translation(
+        self, query: Union[str, List[str]], iteration: int
+    ) -> Union[List[str], List[List[str]]]:
         """
         Rephrases the query using translation iteratively.
 
