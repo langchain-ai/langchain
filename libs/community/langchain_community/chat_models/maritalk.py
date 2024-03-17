@@ -1,28 +1,25 @@
+import json
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Union, AsyncIterator
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
 import httpx
-
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-import json
-
 import requests
-from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
-
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.chat_models import (
     SimpleChatModel,
     agenerate_from_stream,
-    generate_from_stream,
 )
-
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    ChatMessage,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field
 from requests import Response
 from requests.exceptions import HTTPError
@@ -206,7 +203,12 @@ class ChatMaritalk(SimpleChatModel):
         }
 
         async with httpx.AsyncClient() as client:
-            async with client.stream("POST", "https://chat.maritaca.ai/api/chat/inference", data=json.dumps(data), headers=headers) as response:
+            async with client.stream(
+                    "POST",
+                    "https://chat.maritaca.ai/api/chat/inference", 
+                    data=json.dumps(data),
+                    headers=headers
+                ) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
@@ -215,9 +217,11 @@ class ChatMaritalk(SimpleChatModel):
                             parsed_data = json.loads(data)
                             if 'text' in parsed_data:
                                 delta = parsed_data['text']
-                                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                                chunk = ChatGenerationChunk(
+                                    message=AIMessageChunk(content=delta))
                                 if run_manager:
-                                    await run_manager.on_llm_new_token(delta, chunk=chunk)
+                                    await run_manager.on_llm_new_token(
+                                        delta, chunk=chunk)
                                 yield chunk
 
     async def _agenerate(
