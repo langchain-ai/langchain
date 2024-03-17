@@ -204,24 +204,26 @@ class ChatMaritalk(SimpleChatModel):
 
         async with httpx.AsyncClient() as client:
             async with client.stream(
-                    "POST",
-                    "https://chat.maritaca.ai/api/chat/inference", 
-                    data=json.dumps(data),
-                    headers=headers
-                ) as response:
+                "POST",
+                "https://chat.maritaca.ai/api/chat/inference", 
+                data=json.dumps(data),
+                headers=headers
+            ) as response:  
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
                         data = line.replace("data: ", "")
                         if data:
                             parsed_data = json.loads(data)
-                            if 'text' in parsed_data:
-                                delta = parsed_data['text']
+                            if "text" in parsed_data:
+                                delta = parsed_data["text"]
                                 chunk = ChatGenerationChunk(
-                                    message=AIMessageChunk(content=delta))
+                                    message=AIMessageChunk(content=delta)
+                                )
                                 if run_manager:
                                     await run_manager.on_llm_new_token(
-                                        delta, chunk=chunk)
+                                        delta, chunk=chunk
+                                    )
                                 yield chunk
 
     async def _agenerate(
@@ -240,11 +242,7 @@ class ChatMaritalk(SimpleChatModel):
         # Fallback to the synchronous call if streaming is not enabled
         response_text = self._call(messages, stop=stop, **kwargs)
         message = AIMessage(content=response_text)
-        return ChatResult(
-            generations=[
-                ChatGeneration(message=message)
-            ]
-        )
+        return ChatResult(generations=[ChatGeneration(message=message)])
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
