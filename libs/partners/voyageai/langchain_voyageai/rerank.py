@@ -44,9 +44,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         self,
         documents: Sequence[Union[str, Document]],
         query: str,
-        *,
-        model: Optional[str] = None,
-        top_k: Optional[int] = -1,
+        **kwargs,
     ) -> List[Dict[str, Any]]:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
@@ -62,8 +60,8 @@ class VoyageAIRerank(BaseDocumentCompressor):
         docs = [
             doc.page_content if isinstance(doc, Document) else doc for doc in documents
         ]
-        model = model or self.model
-        top_k = top_k if (top_k is None or top_k > 0) else self.top_k
+        top_k = kwargs.get("top_k", self.top_k)
+        model = kwargs.get("top_k", self.model)
         results = self.client.rerank(
             query=query,
             documents=docs,
@@ -82,9 +80,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         self,
         documents: Sequence[Union[str, Document]],
         query: str,
-        *,
-        model: Optional[str] = None,
-        top_k: Optional[int] = -1,
+        **kwargs,
     ) -> List[Dict[str, Any]]:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
@@ -100,8 +96,8 @@ class VoyageAIRerank(BaseDocumentCompressor):
         docs = [
             doc.page_content if isinstance(doc, Document) else doc for doc in documents
         ]
-        model = model or self.model
-        top_k = top_k if (top_k is None or top_k > 0) else self.top_k
+        top_k = kwargs.get("top_k", self.top_k)
+        model = kwargs.get("top_k", self.model)
         results = await self.aclient.rerank(
             query=query,
             documents=docs,
