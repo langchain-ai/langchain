@@ -1344,6 +1344,26 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> Runnable[Input, Output]:
         """Create a new Runnable that retries the original runnable on exceptions.
 
+        Example:
+
+            .. code-block:: python
+
+                import time
+                from langchain_core.runnables import RunnableLambda
+
+                def _generate_exception(input: str) -> None:
+                    raise NotImplementedError(
+                        f"Function not implemented at time: {time.time()}"
+                    )
+
+                runnable = RunnableLambda(_generate_exception)
+                runnable_with_retry = runnable.with_retry(
+                        retry_if_exception_type=(NotImplementedError,)
+                    )
+                print(runnable_with_retry.invoke("input string"))
+                #raises exception
+                #NotImplementedError: Function not implemented at time: 1710708883.3160
+
         Args:
             retry_if_exception_type: A tuple of exception types to retry on
             wait_exponential_jitter: Whether to add jitter to the wait time
