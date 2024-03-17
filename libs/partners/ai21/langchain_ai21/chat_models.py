@@ -2,7 +2,7 @@ import asyncio
 from functools import partial
 from typing import Any, List, Mapping, Optional, Tuple, cast
 
-from ai21.models import ChatMessage, Penalty, RoleType
+from ai21.models import ChatMessage, RoleType
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -109,13 +109,13 @@ class ChatAI21(BaseChatModel, AI21Base):
     top_k_return: int = 0
     """The number of top-scoring tokens to consider for each generation step."""
 
-    frequency_penalty: Optional[Penalty] = None
+    frequency_penalty: Optional[Any] = None
     """A penalty applied to tokens that are frequently generated."""
 
-    presence_penalty: Optional[Penalty] = None
+    presence_penalty: Optional[Any] = None
     """ A penalty applied to tokens that are already present in the prompt."""
 
-    count_penalty: Optional[Penalty] = None
+    count_penalty: Optional[Any] = None
     """A penalty applied to tokens based on their frequency 
     in the generated responses."""
 
