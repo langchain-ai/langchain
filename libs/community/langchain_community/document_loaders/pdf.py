@@ -1,12 +1,23 @@
 import json
 import logging
 import os
+import re
 import tempfile
 import time
 from abc import ABC
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
 from urllib.parse import urlparse
 
 import requests
@@ -25,6 +36,9 @@ from langchain_community.document_loaders.parsers.pdf import (
     PyPDFParser,
 )
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
+
+if TYPE_CHECKING:
+    from textractor.data.text_linearization_config import TextLinearizationConfig
 
 logger = logging.getLogger(__file__)
 
@@ -86,22 +100,21 @@ class BasePDFLoader(BaseLoader, ABC):
             if "~" in self.file_path:
                 self.file_path = os.path.expanduser(self.file_path)
 
-            # If the file is a web path or S3,
-            # download it to a temporary file, and use that
-            if not os.path.isfile(self.file_path) and self._is_valid_url(
-                self.file_path
-            ):
-                self.temp_dir = tempfile.TemporaryDirectory()
-                _, suffix = os.path.splitext(self.file_path)
-                temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
-                self.web_path = self.file_path
-                if not self._is_s3_url(self.file_path):
-                    r = requests.get(self.file_path, headers=self.headers)
-                    if r.status_code != 200:
-                        raise ValueError(
-                            "Check the url of your file; returned status code %s"
-                            % r.status_code
-                        )
+        # If the file is a web path or S3, download it to a temporary file, and use that
+        if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
+            self.temp_dir = tempfile.TemporaryDirectory()
+            _, suffix = os.path.splitext(self.file_path)
+            if self._is_s3_presigned_url(self.file_path):
+                suffix = urlparse(self.file_path).path.split("/")[-1]
+            temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
+            self.web_path = self.file_path
+            if not self._is_s3_url(self.file_path):
+                r = requests.get(self.file_path, headers=self.headers)
+                if r.status_code != 200:
+                    raise ValueError(
+                        "Check the url of your file; returned status code %s"
+                        % r.status_code
+                    )
 
                     with open(temp_pdf, mode="wb") as f:
                         f.write(r.content)
@@ -129,6 +142,15 @@ class BasePDFLoader(BaseLoader, ABC):
             if result.scheme == "s3" and result.netloc:
                 return True
             return False
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _is_s3_presigned_url(url: str) -> bool:
+        """Check if the url is a presigned S3 url."""
+        try:
+            result = urlparse(url)
+            return bool(re.search(r"\.s3\.amazonaws\.com$", result.netloc))
         except ValueError:
             return False
 
@@ -195,10 +217,6 @@ class PyPDFium2Loader(BasePDFLoader):
         """Initialize with a file path."""
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFium2Parser(extract_images=extract_images)
-
-    def load(self) -> List[Document]:
-        """Load given path as pages."""
-        return list(self.lazy_load())
 
     def lazy_load(
         self,
@@ -291,10 +309,6 @@ class PDFMinerLoader(BasePDFLoader):
             extract_images=extract_images, concatenate_pages=concatenate_pages
         )
 
-    def load(self) -> List[Document]:
-        """Eagerly load the content."""
-        return list(self.lazy_load())
-
     def lazy_load(
         self,
     ) -> Iterator[Document]:
@@ -323,7 +337,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 
         super().__init__(file_path, headers=headers)
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load file."""
         from pdfminer.high_level import extract_text_to_fp
         from pdfminer.layout import LAParams
@@ -341,7 +355,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         metadata = {
             "source": self.file_path if self.web_path is None else self.web_path
         }
-        return [Document(page_content=output_string.getvalue(), metadata=metadata)]
+        yield Document(page_content=output_string.getvalue(), metadata=metadata)
 
 
 class PyMuPDFLoader(BasePDFLoader):
@@ -367,8 +381,7 @@ class PyMuPDFLoader(BasePDFLoader):
         self.extract_images = extract_images
         self.text_kwargs = kwargs
 
-    def load(self, **kwargs: Any) -> List[Document]:
-        """Load file."""
+    def _lazy_load(self, **kwargs: Any) -> Iterator[Document]:
         if kwargs:
             logger.warning(
                 f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
@@ -385,7 +398,13 @@ class PyMuPDFLoader(BasePDFLoader):
             blob = Blob.from_data(self.file_path, path=self.source_path)
         else:
             blob = Blob.from_path(self.file_path)
-        return parser.parse(blob)
+        yield from parser.lazy_parse(blob)
+
+    def load(self, **kwargs: Any) -> List[Document]:
+        return list(self._lazy_load(**kwargs))
+
+    def lazy_load(self) -> Iterator[Document]:
+        yield from self._lazy_load()
 
 
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
@@ -611,6 +630,8 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         region_name: Optional[str] = None,
         endpoint_url: Optional[str] = None,
         headers: Optional[Dict] = None,
+        *,
+        linearization_config: Optional["TextLinearizationConfig"] = None,
     ) -> None:
         """Initialize the loader.
 
@@ -623,7 +644,9 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             credentials_profile_name: AWS profile name, if not default (Optional)
             region_name: AWS region, eg us-east-1 (Optional)
             endpoint_url: endpoint url for the textract service (Optional)
-
+            linearization_config: Config to be used for linearization of the output
+                                  should be an instance of TextLinearizationConfig from
+                                  the `textractor` pkg
         """
         super().__init__(file_path, headers=headers)
 
@@ -668,7 +691,11 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                     "Please check that credentials in the specified "
                     "profile name are valid."
                 ) from e
-        self.parser = AmazonTextractPDFParser(textract_features=features, client=client)
+        self.parser = AmazonTextractPDFParser(
+            textract_features=features,
+            client=client,
+            linearization_config=linearization_config,
+        )
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -772,3 +799,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         """Lazy load given path as pages."""
         blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
+
+
+# Legacy: only for backwards compatibility. Use PyPDFLoader instead
+PagedPDFSplitter = PyPDFLoader
