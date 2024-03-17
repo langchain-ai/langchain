@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Unionm, AsyncIterator
+from typing import Any, Dict, List, Optional, Union, AsyncIterator
 
 import httpx
 
