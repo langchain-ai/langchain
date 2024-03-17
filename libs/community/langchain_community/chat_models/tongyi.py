@@ -141,7 +141,7 @@ class ChatTongyi(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import Tongyi
+            from langchain_community.chat_models import ChatTongyi
             Tongyi_chat = ChatTongyi()
     """
 
