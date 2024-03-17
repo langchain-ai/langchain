@@ -82,7 +82,7 @@ def create_qa_with_structure_chain(
         HumanMessagePromptTemplate.from_template("Question: {question}"),
         HumanMessage(content="Tips: Make sure to answer in the correct format"),
     ]
-    prompt = prompt or ChatPromptTemplate(messages=messages)
+    prompt = prompt or ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
 
     chain = LLMChain(
         llm=llm,

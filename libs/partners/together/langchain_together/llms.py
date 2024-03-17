@@ -24,7 +24,14 @@ class Together(LLM):
     https://api.together.xyz/settings/api-keys. This can be passed in as init param
     ``together_api_key`` or set as environment variable ``TOGETHER_API_KEY``.
 
-    Together AI API reference: https://docs.together.ai/reference/inference
+    Together AI API reference: https://docs.together.ai/reference/completions
+
+    Example:
+        .. code-block:: python
+
+            from langchain_together import Together
+
+            model = Together(model_name="mistralai/Mixtral-8x7B-Instruct-v0.1")
     """
 
     base_url: str = "https://api.together.xyz/inference"

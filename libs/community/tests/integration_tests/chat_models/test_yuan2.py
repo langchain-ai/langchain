@@ -27,7 +27,7 @@ def test_chat_yuan2() -> None:
     messages = [
         HumanMessage(content="Hello"),
     ]
-    response = chat(messages)
+    response = chat.invoke(messages)
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -46,7 +46,7 @@ def test_chat_yuan2_system_message() -> None:
         SystemMessage(content="You are an AI assistant."),
         HumanMessage(content="Hello"),
     ]
-    response = chat(messages)
+    response = chat.invoke(messages)
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -89,12 +89,12 @@ def test_chat_yuan2_streaming() -> None:
         model_name="yuan2",
         max_retries=3,
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
     )
     messages = [
         HumanMessage(content="Hello"),
     ]
-    response = chat(messages)
+    response = chat.invoke(messages)
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 
@@ -136,7 +136,7 @@ async def test_async_chat_yuan2_streaming() -> None:
         model_name="yuan2",
         max_retries=3,
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
     )
     messages: List = [
         HumanMessage(content="Hello"),

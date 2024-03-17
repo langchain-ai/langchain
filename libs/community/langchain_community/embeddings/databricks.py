@@ -15,7 +15,7 @@ class DatabricksEmbeddings(MlflowEmbeddings):
     """Wrapper around embeddings LLMs in Databricks.
 
     To use, you should have the ``mlflow`` python package installed.
-    For more information, see https://mlflow.org/docs/latest/llms/deployments/databricks.html.
+    For more information, see https://mlflow.org/docs/latest/llms/deployments.
 
     Example:
         .. code-block:: python

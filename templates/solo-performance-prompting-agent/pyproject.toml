@@ -9,11 +9,11 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = "^0.1"
 openai = "<2"
-duckduckgo-search = "^3.9.3" 
+duckduckgo-search = "^3.9.3"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
-fastapi = "^0.104.0"
+fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]

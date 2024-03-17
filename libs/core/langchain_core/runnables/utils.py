@@ -521,3 +521,11 @@ def _create_model_cached(
     return _create_model_base(
         __model_name, __config__=_SchemaConfig, **field_definitions
     )
+
+
+def adapt_first_streaming_chunk(chunk: Any) -> Any:
+    """This might transform the first chunk of a stream into an AddableDict."""
+    if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
+        return AddableDict(chunk)
+    else:
+        return chunk

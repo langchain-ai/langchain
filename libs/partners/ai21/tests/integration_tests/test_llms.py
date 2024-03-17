@@ -1,7 +1,8 @@
 """Test AI21LLM llm."""
 
-
 from langchain_ai21.llms import AI21LLM
+
+_MODEL_NAME = "j2-mid"
 
 
 def _generate_llm() -> AI21LLM:
@@ -9,7 +10,7 @@ def _generate_llm() -> AI21LLM:
     Testing AI21LLm using non default parameters with the following parameters
     """
     return AI21LLM(
-        model="j2-ultra",
+        model=_MODEL_NAME,
         max_tokens=2,  # Use less tokens for a faster response
         temperature=0,  # for a consistent response
         epoch=1,
@@ -19,7 +20,7 @@ def _generate_llm() -> AI21LLM:
 def test_stream() -> None:
     """Test streaming tokens from AI21."""
     llm = AI21LLM(
-        model="j2-ultra",
+        model=_MODEL_NAME,
     )
 
     for token in llm.stream("I'm Pickle Rick"):
@@ -29,7 +30,7 @@ def test_stream() -> None:
 async def test_abatch() -> None:
     """Test streaming tokens from AI21LLM."""
     llm = AI21LLM(
-        model="j2-ultra",
+        model=_MODEL_NAME,
     )
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -40,7 +41,7 @@ async def test_abatch() -> None:
 async def test_abatch_tags() -> None:
     """Test batch tokens from AI21LLM."""
     llm = AI21LLM(
-        model="j2-ultra",
+        model=_MODEL_NAME,
     )
 
     result = await llm.abatch(
@@ -53,7 +54,7 @@ async def test_abatch_tags() -> None:
 def test_batch() -> None:
     """Test batch tokens from AI21LLM."""
     llm = AI21LLM(
-        model="j2-ultra",
+        model=_MODEL_NAME,
     )
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -64,7 +65,7 @@ def test_batch() -> None:
 async def test_ainvoke() -> None:
     """Test invoke tokens from AI21LLM."""
     llm = AI21LLM(
-        model="j2-ultra",
+        model=_MODEL_NAME,
     )
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
@@ -74,7 +75,7 @@ async def test_ainvoke() -> None:
 def test_invoke() -> None:
     """Test invoke tokens from AI21LLM."""
     llm = AI21LLM(
-        model="j2-ultra",
+        model=_MODEL_NAME,
     )
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))

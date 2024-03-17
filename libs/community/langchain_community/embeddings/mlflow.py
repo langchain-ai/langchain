@@ -16,7 +16,7 @@ class MlflowEmbeddings(Embeddings, BaseModel):
     """Embedding LLMs in MLflow.
 
     To use, you should have the `mlflow[genai]` python package installed.
-    For more information, see https://mlflow.org/docs/latest/llms/deployments/server.html.
+    For more information, see https://mlflow.org/docs/latest/llms/deployments.
 
     Example:
         .. code-block:: python

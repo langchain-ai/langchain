@@ -481,6 +481,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "retry",
         "RunnableRetry",
     ),
+    ("langchain_core", "prompts", "structured", "StructuredPrompt"): (
+        "langchain_core",
+        "prompts",
+        "structured",
+        "StructuredPrompt",
+    ),
 }
 
 # Needed for backwards compatibility for old versions of LangChain where things

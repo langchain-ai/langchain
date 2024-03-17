@@ -185,12 +185,17 @@ class AzureChatOpenAI(ChatOpenAI):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
-        values["client"] = openai.AzureOpenAI(**client_params).chat.completions
-        values["async_client"] = openai.AsyncAzureOpenAI(
-            **client_params
-        ).chat.completions
+        if not values.get("client"):
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.AzureOpenAI(
+                **client_params, **sync_specific
+            ).chat.completions
+        if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                **client_params, **async_specific
+            ).chat.completions
         return values
 
     @property

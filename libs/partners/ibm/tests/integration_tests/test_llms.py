@@ -17,11 +17,12 @@ from langchain_ibm import WatsonxLLM
 
 WX_APIKEY = os.environ.get("WATSONX_APIKEY", "")
 WX_PROJECT_ID = os.environ.get("WATSONX_PROJECT_ID", "")
+MODEL_ID = "google/flan-ul2"
 
 
 def test_watsonxllm_invoke() -> None:
     watsonxllm = WatsonxLLM(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         url="https://us-south.ml.cloud.ibm.com",
         project_id=WX_PROJECT_ID,
     )
@@ -39,7 +40,7 @@ def test_watsonxllm_invoke_with_params() -> None:
     }
 
     watsonxllm = WatsonxLLM(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         url="https://us-south.ml.cloud.ibm.com",
         project_id=WX_PROJECT_ID,
         params=parameters,
@@ -52,7 +53,7 @@ def test_watsonxllm_invoke_with_params() -> None:
 
 def test_watsonxllm_generate() -> None:
     watsonxllm = WatsonxLLM(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         url="https://us-south.ml.cloud.ibm.com",
         project_id=WX_PROJECT_ID,
     )
@@ -66,7 +67,7 @@ def test_watsonxllm_generate() -> None:
 
 def test_watsonxllm_generate_with_multiple_prompts() -> None:
     watsonxllm = WatsonxLLM(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         url="https://us-south.ml.cloud.ibm.com",
         project_id=WX_PROJECT_ID,
     )
@@ -82,7 +83,7 @@ def test_watsonxllm_generate_with_multiple_prompts() -> None:
 
 def test_watsonxllm_generate_stream() -> None:
     watsonxllm = WatsonxLLM(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         url="https://us-south.ml.cloud.ibm.com",
         project_id=WX_PROJECT_ID,
     )
@@ -96,7 +97,7 @@ def test_watsonxllm_generate_stream() -> None:
 
 def test_watsonxllm_stream() -> None:
     watsonxllm = WatsonxLLM(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         url="https://us-south.ml.cloud.ibm.com",
         project_id=WX_PROJECT_ID,
     )
@@ -119,7 +120,7 @@ def test_watsonxllm_stream() -> None:
 
 def test_watsonxllm_invoke_from_wx_model() -> None:
     model = Model(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         credentials={
             "apikey": WX_APIKEY,
             "url": "https://us-south.ml.cloud.ibm.com",
@@ -135,7 +136,7 @@ def test_watsonxllm_invoke_from_wx_model() -> None:
 
 def test_watsonxllm_invoke_from_wx_model_inference() -> None:
     model = ModelInference(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         credentials={
             "apikey": WX_APIKEY,
             "url": "https://us-south.ml.cloud.ibm.com",
@@ -159,7 +160,7 @@ def test_watsonxllm_invoke_from_wx_model_inference_with_params() -> None:
         GenTextParamsMetaNames.TOP_P: 1,
     }
     model = ModelInference(
-        model_id="google/flan-ul2",
+        model_id=MODEL_ID,
         credentials={
             "apikey": WX_APIKEY,
             "url": "https://us-south.ml.cloud.ibm.com",
@@ -197,3 +198,36 @@ def test_watsonxllm_invoke_from_wx_model_inference_with_params_as_enum() -> None
     print(f"\nResponse: {response}")
     assert isinstance(response, str)
     assert len(response) > 0
+
+
+async def test_watsonx_ainvoke() -> None:
+    watsonxllm = WatsonxLLM(
+        model_id=MODEL_ID,
+        url="https://us-south.ml.cloud.ibm.com",
+        project_id=WX_PROJECT_ID,
+    )
+    response = await watsonxllm.ainvoke("What color sunflower is?")
+    assert isinstance(response, str)
+
+
+async def test_watsonx_agenerate() -> None:
+    watsonxllm = WatsonxLLM(
+        model_id=MODEL_ID,
+        url="https://us-south.ml.cloud.ibm.com",
+        project_id=WX_PROJECT_ID,
+    )
+    response = await watsonxllm.agenerate(
+        ["What color sunflower is?", "What color turtle is?"]
+    )
+    assert len(response.generations) > 0
+    assert response.llm_output["token_usage"]["generated_token_count"] != 0  # type: ignore
+
+
+def test_get_num_tokens() -> None:
+    watsonxllm = WatsonxLLM(
+        model_id=MODEL_ID,
+        url="https://us-south.ml.cloud.ibm.com",
+        project_id=WX_PROJECT_ID,
+    )
+    num_tokens = watsonxllm.get_num_tokens("What color sunflower is?")
+    assert num_tokens > 0

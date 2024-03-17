@@ -21,8 +21,9 @@ class ElasticsearchRetriever(BaseRetriever):
             `from_es_params` method with parameters to initialize the client.
         index_name: The name of the index to query.
         body_func: Function to create an Elasticsearch DSL query body from a search
-            string. All parameters (including for example the `size` parameter to limit
-            the number of results) must also be set in the body.
+            string. The returned query body must fit what you would normally send in a
+            POST request the the _search endpoint. If applicable, it also includes
+            parameters the `size` parameter etc.
         content_field: The document field name that contains the page content.
         document_mapper: Function to map Elasticsearch hits to LangChain Documents.
     """

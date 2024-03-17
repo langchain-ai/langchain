@@ -13,6 +13,7 @@ from typing import (
     Optional,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -24,6 +25,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.29",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBLoader",
+)
 class AstraDBLoader(BaseLoader):
     def __init__(
         self,

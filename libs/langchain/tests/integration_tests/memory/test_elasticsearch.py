@@ -23,7 +23,7 @@ To run against Elastic Cloud, set the following environment variables:
 
 class TestElasticsearch:
     @pytest.fixture(scope="class", autouse=True)
-    def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:
+    def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:  # type: ignore[return]
         # Run this integration test against Elasticsearch on localhost,
         # or an Elastic Cloud instance
         from elasticsearch import Elasticsearch

@@ -49,6 +49,28 @@ def test_stream() -> None:
     assert isinstance(response.content, str)
 
 
+def test_stop() -> None:
+    """Test that stop works."""
+    chat = VolcEngineMaasChat(
+        model="skylark2-pro-4k", model_version="1.2", streaming=True
+    )
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+    response = chat(
+        messages=[
+            HumanMessage(content="repeat: hello world"),
+            AIMessage(content="hello world"),
+            HumanMessage(content="repeat: hello world"),
+        ],
+        stream=True,
+        callbacks=callback_manager,
+        stop=["world"],
+    )
+    assert callback_handler.llm_streams > 0
+    assert isinstance(response.content, str)
+    assert response.content.rstrip() == "hello"
+
+
 def test_multiple_messages() -> None:
     """Tests multiple messages works."""
     chat = VolcEngineMaasChat()

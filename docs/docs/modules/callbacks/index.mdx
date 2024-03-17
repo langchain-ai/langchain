@@ -153,7 +153,7 @@ chain = prompt | chain
 chain.invoke({"number":2}, config=config)
 ```
 
-**Note:** `chain = prompt | chain` is equivalent to `chain = LLMChain(llm=llm, prompt=prompt)` (check [LangChain Expression Language (LCEL) documentation](https://python.langchain.com/docs/expression_language/) for more details)
+**Note:** `chain = prompt | chain` is equivalent to `chain = LLMChain(llm=llm, prompt=prompt)` (check [LangChain Expression Language (LCEL) documentation](/docs/expression_language/) for more details)
 
 The `verbose` argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) as a constructor argument, e.g. `LLMChain(verbose=True)`, and it is equivalent to passing a `ConsoleCallbackHandler` to the `callbacks` argument of that object and all child objects. This is useful for debugging, as it will log all events to the console.
 

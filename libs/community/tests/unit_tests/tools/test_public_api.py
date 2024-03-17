@@ -91,6 +91,7 @@ _EXPECTED = [
     "PolygonLastQuote",
     "PolygonTickerNews",
     "RedditSearchRun",
+    "RedditSearchSchema",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",

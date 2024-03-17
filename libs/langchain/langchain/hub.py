@@ -80,12 +80,19 @@ def pull(
     :param api_key: The API key to use to authenticate with the LangChain Hub API.
     """
     client = _get_client(api_url=api_url, api_key=api_key)
-    res_dict = client.pull_repo(owner_repo_commit)
-    obj = loads(json.dumps(res_dict["manifest"]))
-    if isinstance(obj, BasePromptTemplate):
-        if obj.metadata is None:
-            obj.metadata = {}
-        obj.metadata["lc_hub_owner"] = res_dict["owner"]
-        obj.metadata["lc_hub_repo"] = res_dict["repo"]
-        obj.metadata["lc_hub_commit_hash"] = res_dict["commit_hash"]
-    return obj
+
+    if hasattr(client, "pull_repo"):
+        # >= 0.1.15
+        res_dict = client.pull_repo(owner_repo_commit)
+        obj = loads(json.dumps(res_dict["manifest"]))
+        if isinstance(obj, BasePromptTemplate):
+            if obj.metadata is None:
+                obj.metadata = {}
+            obj.metadata["lc_hub_owner"] = res_dict["owner"]
+            obj.metadata["lc_hub_repo"] = res_dict["repo"]
+            obj.metadata["lc_hub_commit_hash"] = res_dict["commit_hash"]
+        return obj
+
+    # Then it's < 0.1.15
+    resp: str = client.pull(owner_repo_commit)
+    return loads(resp)

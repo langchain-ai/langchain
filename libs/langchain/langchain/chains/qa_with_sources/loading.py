@@ -59,12 +59,12 @@ def _load_stuff_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
-    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)  # type: ignore[arg-type]
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
         document_prompt=document_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         **kwargs,
     )
 
@@ -83,14 +83,14 @@ def _load_map_reduce_chain(
     token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
-    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
+    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)  # type: ignore[arg-type]
     _reduce_llm = reduce_llm or llm
-    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)
+    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)  # type: ignore[arg-type]
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
         document_prompt=document_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
     )
     if collapse_prompt is None:
         collapse_chain = None
@@ -105,7 +105,7 @@ def _load_map_reduce_chain(
             llm_chain=LLMChain(
                 llm=_collapse_llm,
                 prompt=collapse_prompt,
-                verbose=verbose,
+                verbose=verbose,  # type: ignore[arg-type]
             ),
             document_variable_name=combine_document_variable_name,
             document_prompt=document_prompt,
@@ -114,13 +114,13 @@ def _load_map_reduce_chain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
         token_max=token_max,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
         reduce_documents_chain=reduce_documents_chain,
         document_variable_name=map_reduce_document_variable_name,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         **kwargs,
     )
 
@@ -136,16 +136,16 @@ def _load_refine_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
-    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
+    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)  # type: ignore[arg-type]
     _refine_llm = refine_llm or llm
-    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)
+    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)  # type: ignore[arg-type]
     return RefineDocumentsChain(
         initial_llm_chain=initial_chain,
         refine_llm_chain=refine_chain,
         document_variable_name=document_variable_name,
         initial_response_name=initial_response_name,
         document_prompt=document_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         **kwargs,
     )
 
