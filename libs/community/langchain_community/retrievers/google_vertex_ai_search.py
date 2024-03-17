@@ -137,14 +137,15 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
                 continue
 
             for chunk in derived_struct_data[chunk_type]:
-                doc_metadata["source"] = derived_struct_data.get("link", "")
+                chunk_metadata = doc_metadata.copy()
+                chunk_metadata["source"] = derived_struct_data.get("link", "")
 
                 if chunk_type == "extractive_answers":
-                    doc_metadata["source"] += f":{chunk.get('pageNumber', '')}"
+                    chunk_metadata["source"] += f":{chunk.get('pageNumber', '')}"
 
                 documents.append(
                     Document(
-                        page_content=chunk.get("content", ""), metadata=doc_metadata
+                        page_content=chunk.get("content", ""), metadata=chunk_metadata
                     )
                 )
 
