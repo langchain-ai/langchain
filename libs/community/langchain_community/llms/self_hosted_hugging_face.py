@@ -1,13 +1,10 @@
-import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
-import runhouse as rh
-from langchain_core.language_models.llms import LLM
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.pydantic_v1 import Extra
 
-from langchain_community.llms.self_hosted import SelfHostedPipeline
+from langchain_community.llms.self_hosted import SelfHostedPipeline, ModelPipeline
 from langchain_community.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_ID = "google/gemma-2b-it"
@@ -18,11 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 def _generate_text(
-    pipeline: Any,
-    prompt: str,
-    *args: Any,
-    stop: Optional[List[str]] = None,
-    **kwargs: Any,
+        pipeline: Any,
+        prompt: str,
+        *args: Any,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
 ) -> str:
     """Inference function to send to the remote hardware.
 
@@ -33,7 +30,7 @@ def _generate_text(
     response = pipeline(prompt, *args, **kwargs)
     if pipeline.task == "text-generation":
         # Text generation return includes the starter text.
-        text = response[0]["generated_text"][len(prompt) :]
+        text = response[0]["generated_text"][len(prompt):]
     elif pipeline.task == "text2text-generation":
         text = response[0]["generated_text"]
     elif pipeline.task == "summarization":
@@ -49,10 +46,9 @@ def _generate_text(
 
 
 def _load_transformer(
-    model_id: str = DEFAULT_MODEL_ID,
-    task: str = DEFAULT_TASK,
-    device: int = 0,
-    model_kwargs: Optional[dict] = None,
+        model_id: str = DEFAULT_MODEL_ID,
+        task: str = DEFAULT_TASK,
+        model_kwargs: Optional[dict] = None,
 ) -> Any:
     """Inference function to send to the remote hardware.
 
@@ -60,15 +56,16 @@ def _load_transformer(
     """
     from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer
     from transformers import pipeline as hf_pipeline
+    import torch
 
     _model_kwargs = model_kwargs or {}
     tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
     try:
         if task == "text-generation":
-            model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
+            model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16, **_model_kwargs)
         elif task in ("text2text-generation", "summarization"):
-            model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
+            model = AutoModelForSeq2SeqLM.from_pretrained(model_id, torch_dtype=torch.float16, **_model_kwargs)
         else:
             raise ValueError(
                 f"Got invalid task {task}, "
@@ -79,29 +76,10 @@ def _load_transformer(
             f"Could not load the {task} model due to missing dependencies."
         ) from e
 
-    if importlib.util.find_spec("torch") is not None:
-        import torch
-
-        cuda_device_count = torch.cuda.device_count()
-        if device < -1 or (device >= cuda_device_count):
-            raise ValueError(
-                f"Got device=={device}, "
-                f"device is required to be within [-1, {cuda_device_count})"
-            )
-        if device < 0 and cuda_device_count > 0:
-            logger.warning(
-                "Device has %d GPUs available. "
-                "Provide device={deviceId} to `from_model_id` to use available"
-                "GPUs for execution. deviceId is -1 for CPU and "
-                "can be a positive integer associated with CUDA device id.",
-                cuda_device_count,
-            )
-
     pipeline = hf_pipeline(
         task=task,
         model=model,
         tokenizer=tokenizer,
-        device=device,
         model_kwargs=_model_kwargs,
     )
     if pipeline.task not in VALID_TASKS:
@@ -110,6 +88,11 @@ def _load_transformer(
             f"currently only {VALID_TASKS} are supported"
         )
     return pipeline
+
+
+class LangchainLLMModelPipeline(ModelPipeline):
+    def __init__(self):
+        super().__init__(load_module_fn=_load_transformer, interface_fn=_generate_text)
 
 
 class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
@@ -154,28 +137,31 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
                 model_load_fn=get_pipeline, model_id="gpt2").to(gpu, env=model_env)
     """
 
-    name: Optional[str] = DEFAULT_MODEL_ID
+    # model_name: Optional[str] = Field(default=DEFAULT_MODEL_ID, alias='name')
+    # """Hugging Face model_id to load the model."""
     model_id: str = DEFAULT_MODEL_ID
     """Hugging Face model_id to load the model."""
     task: str = DEFAULT_TASK
     """Hugging Face task ("text-generation", "text2text-generation" or "summarization")."""
-    device: int = 0
-    """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
+    # device: int = 0
+    # """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
-    model_load_fn: rh.Function
-    # model_load_fn: Callable = _load_transformer
-    """Function to load the model remotely on the server."""
-    inference_fn: rh.Function  #: :meta private:
-    # inference_fn: Callable = _generate_text  #: :meta private:
-    """Inference function to send to the remote hardware."""
+    # model_load_fn: rh.Function
+    # """Function to load the model remotely on the server."""
+    # inference_fn: rh.Function  #: :meta private:
+    # """Inference function to send to the remote hardware."""
+
 
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = Extra.allow
+        # This configuration is necessary for Pydantic to use the alias
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, llm_model_pipeline: LangchainLLMModelPipeline, **kwargs: Any):
         """Construct the pipeline remotely using an auxiliary function.
 
         The load function needs to be importable to be imported
@@ -184,21 +170,21 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
         """
         load_fn_kwargs = {
             "model_id": kwargs.get("model_id"),
-            "device": kwargs.get("device", 0),  # TODO: set to auto according to the api or remove
-            #"task": kwargs.get("task", DEFAULT_TASK),
+            "model_name": kwargs.get("model_name"),
+            "task": kwargs.get("task", DEFAULT_TASK),
+            # "device": kwargs.get("device", 0),
             "inference_fn": kwargs.get("inference_fn", None),
             "model_load_fn": kwargs.get("model_load_fn", None),
             "load_fn_kwargs": kwargs.get("model_kwargs", None)
         }
-        super().__init__(**load_fn_kwargs)
-
+        super().__init__(model_pipeline=llm_model_pipeline, **load_fn_kwargs)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
             **{"model_id": self.model_id},
-            **{"model_kwargs": self.model_kwargs},
+            **{"model_kwargs": self.model_kwargs}
         }
 
     @property
@@ -206,11 +192,11 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
         return "selfhosted_huggingface_pipeline"
 
     def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> str:
         if not self.pipeline_ref:
             self._pipeline = self.model_load_fn()

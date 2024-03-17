@@ -1,10 +1,8 @@
 import importlib.util
 import logging
 import pickle
+from typing import Any, Callable, List, Mapping, Optional
 import runhouse as rh
-from typing import Any, List, Mapping, Optional
-from pydantic import Field
-
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -14,9 +12,9 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL_ID = "google/gemma-2b-it"
 
-def _generate_text(
+def _generic_interface_fn(
+        self,
         pipeline: Any,
         prompt: str,
         *args: Any,
@@ -36,33 +34,12 @@ def _generate_text(
     return text
 
 
-def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
-    """Send a pipeline to a device on the cluster."""
-    if isinstance(pipeline, str):
-        with open(pipeline, "rb") as f:
-            pipeline = pickle.load(f)
+class ModelPipeline(rh.Module):
 
-    if importlib.util.find_spec("torch") is not None:
-        import torch
-
-        cuda_device_count = torch.cuda.device_count()
-        if device < -1 or (device >= cuda_device_count):
-            raise ValueError(
-                f"Got device=={device}, "
-                f"device is required to be within [-1, {cuda_device_count})"
-            )
-        if device < 0 and cuda_device_count > 0:
-            logger.warning(
-                "Device has %d GPUs available. "
-                "Provide device={deviceId} to `from_model_id` to use available"
-                "GPUs for execution. deviceId is -1 for CPU and "
-                "can be a positive integer associated with CUDA device id.",
-                cuda_device_count,
-            )
-
-        pipeline.device = torch.device(device)
-        pipeline.model = pipeline.model.to(pipeline.device)
-    return pipeline
+    def __init__(self, load_module_fn: Callable, interface_fn: Optional[Callable] = _generic_interface_fn):
+        super().__init__()
+        self._load_module_fn = load_module_fn
+        self._interface_fn = interface_fn
 
 
 class SelfHostedPipeline(LLM):
@@ -102,23 +79,23 @@ class SelfHostedPipeline(LLM):
                 model_load_fn=load_pipeline_remote, inference_fn=inference_fn_remote).to(gpu, env=model_env)
 
     """
-
-    model_id: str = DEFAULT_MODEL_ID
-    device: int = 0
-    """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
-    inference_fn: rh.Function  #: :meta private:
-    """Inference function to send to the remote hardware."""
-    model_load_fn: rh.Function
-    """Function to load the model remotely on the server."""
+    pipeline_ref: Any  #: :meta private:
+    client: Any  #: :meta private:
+    # inference_fn: rh.Function  #: :meta private:
+    # """Inference function to send to the remote hardware."""
+    # model_load_fn: rh.Function
+    # """Function to load the model remotely on the server."""
     load_fn_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model load function."""
 
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = Extra.allow
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, model_pipeline: ModelPipeline, **kwargs: Any):
         """Init the pipeline with an auxiliary function.
 
         The load function must be in global scope to be imported
@@ -126,18 +103,17 @@ class SelfHostedPipeline(LLM):
         Then, initialize the remote inference function.
         """
         super().__init__(**kwargs)
-
-        # remote_load_fn = self.model_load_fn
-        # _load_fn_kwargs = self.load_fn_kwargs or {}
-        # # self.pipeline_ref = remote_load_fn.remote(**_load_fn_kwargs)
-
-        #self.inference_fn = self.inference_fn
+        _load_fn_kwargs = self.load_fn_kwargs or {}
+        self.pipeline_ref = model_pipeline.pipeline_ref
+        self.client = model_pipeline.inference_fn
+        self.hardware = model_pipeline.system
+        self.env = model_pipeline.env
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"hardware": self.system},
+            **{"hardware": self.hardware},
         }
 
     @property
