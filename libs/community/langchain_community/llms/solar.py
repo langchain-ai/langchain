@@ -79,8 +79,7 @@ class SolarCommon(BaseModel):
             raise ValueError("base_url must match with: " + SOLAR_SERVICE)
 
         values["_client"] = _SolarClient(
-            api_key=values["solar_api_key"],
-            base_url=values["base_url"]
+            api_key=values["solar_api_key"], base_url=values["base_url"]
         )
         return values
 
