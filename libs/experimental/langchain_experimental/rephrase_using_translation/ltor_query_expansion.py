@@ -19,23 +19,24 @@ class LTORQueryExpansion:
                                 Default is 'Helsinki-NLP/opus-mt-es-en'.
 
     Methods:
-    - translate_pass(texts: List[str],
+    - translate_pass(texts: Union[str, List[str]],
                      pass_fwd_or_rev: str) -> List[str]:
                                                         Performs translation
                                                         using the
                                                         specified translation
                                                         direction
                                                         ('fwd' or 'rev').
-    - rephrase_using_translation(query: str,
-                                 iteration: int) -> List[str]: Rephrases the query
-                                                  using translation iteratively.
-    - get_expanded_queries_ltor(query: str,
+    - rephrase_using_translation(query: Union[str, List[str]],
+                                 iteration: int) -> Union[List[str], List[List[str]]]:
+                                                    Rephrases the query
+                                                    using translation iteratively.
+    - get_expanded_queries_ltor(query: Union[str, List[str]],
                                 iteration: int = 1) -> List[List[str]]: Returns
                                                                         expanded
                                                                         queries
                                                                         using LTOR
                                                                         approach.
-    - get_relevant_documents(retriever,
+    - get_relevant_documents(retriever: Document,
                             queries: List[List[str]]) ->
                             List[List[Document]]: Retrieves relevant
                                                 documents for each query.
@@ -126,7 +127,7 @@ class LTORQueryExpansion:
         - iteration (int): Number of iterations for query rephrasing.
 
         Returns:
-        - queries (List[str]): List of rephrased queries.
+        - queries (Union[List[str], List[List[str]]]): List of rephrased queries.
         """
         queries = [query]
         current_query = query
